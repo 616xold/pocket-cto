@@ -18,6 +18,7 @@
     "test": "turbo run test",
     "check": "pnpm repo:hygiene && pnpm lint && pnpm typecheck && pnpm test",
     "db:generate": "pnpm --filter @pocket-cto/db db:generate",
+    "db:prepare:ci": "pnpm --filter @pocket-cto/db exec node ../../tools/ci-prepare-postgres.mjs",
     "db:migrate": "pnpm --filter @pocket-cto/db db:migrate",
     "compose:up": "docker compose up -d",
     "compose:down": "docker compose down -v"

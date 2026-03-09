@@ -4,20 +4,34 @@
     "composite": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "isolatedModules": true,
     "allowJs": false,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "noEmit": true
   },
-  "references": [{ "path": "../../packages/domain" }],
+  "references": [
+    {
+      "path": "../../packages/domain"
+    }
+  ],
   "include": [
-    "next-env.d.ts",
     "app/**/*.ts",
     "app/**/*.tsx",
     "components/**/*.ts",
     "components/**/*.tsx",
     "lib/**/*.ts",
-    "lib/**/*.tsx"
+    "lib/**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

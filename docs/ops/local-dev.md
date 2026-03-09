@@ -20,6 +20,12 @@ pnpm dev
 pnpm dev:worker   # optional until runtime execution work lands
 ```
 
+## CI environment
+
+GitHub Actions does not commit or generate a repo `.env` file.
+CI injects the required config env directly in the workflow, provisions a Postgres service, creates both `pocket_cto` and `pocket_cto_test`, and migrates both databases before running tests.
+Local development still uses `cp .env.example .env`.
+
 ## Git and repo hygiene
 
 Before making the first commit in a fresh checkout:

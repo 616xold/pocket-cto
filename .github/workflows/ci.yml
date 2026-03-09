@@ -5,8 +5,29 @@ on:
     branches: ["main"]
   pull_request:
 
+env:
+  CONTROL_PLANE_PORT: "4000"
+  WEB_PORT: "3000"
+  PUBLIC_APP_URL: http://127.0.0.1:3000
+  CONTROL_PLANE_URL: http://127.0.0.1:4000
+  NEXT_PUBLIC_CONTROL_PLANE_URL: http://127.0.0.1:4000
+  DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/pocket_cto
+  TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/pocket_cto_test
+  ARTIFACT_S3_ENDPOINT: http://127.0.0.1:9000
+  ARTIFACT_S3_REGION: us-east-1
+  ARTIFACT_S3_BUCKET: pocket-cto-ci-artifacts
+  ARTIFACT_S3_ACCESS_KEY: ci-access-key
+  ARTIFACT_S3_SECRET_KEY: ci-secret-key
+  ARTIFACT_S3_FORCE_PATH_STYLE: "true"
+  CODEX_APP_SERVER_COMMAND: node
+  CODEX_APP_SERVER_ARGS: --eval process.exit(0)
+  CODEX_DEFAULT_MODEL: gpt-5.2-codex
+  CODEX_DEFAULT_APPROVAL_POLICY: untrusted
+  CODEX_DEFAULT_SANDBOX: workspace-write
+  CODEX_DEFAULT_SERVICE_NAME: pocket-cto-ci
+
 jobs:
-  verify:
+  static:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,8 +38,53 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm repo:hygiene
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Repo hygiene
+        run: pnpm repo:hygiene
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build
+
+  integration-db:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare CI databases
+        run: pnpm db:prepare:ci
+      - name: Migrate app database
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+        run: pnpm --filter @pocket-cto/db db:migrate
+      - name: Migrate test database
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+        run: pnpm --filter @pocket-cto/db db:migrate
+      - name: Test
+        run: pnpm test

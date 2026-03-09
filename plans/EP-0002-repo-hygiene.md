@@ -15,6 +15,7 @@ The change is visible through three outcomes: the repository tree no longer cont
 - [x] (2026-03-09T18:46Z) Expanded root `.gitignore`, added `tools/repo-hygiene-check.mjs`, wired `pnpm repo:hygiene` into `package.json`, `pnpm check`, and CI, and added short repo-hygiene guidance to `AGENTS.md` plus `docs/ops/local-dev.md`.
 - [x] (2026-03-09T18:46Z) Fixed clean-checkout workspace validation gaps uncovered by the hygiene work: `packages/codex-runtime/src/client.ts` now uses type-only imports, `packages/stack-packs/tsconfig.json` and `apps/web/tsconfig.json` now declare the missing `@pocket-cto/domain` project references, `apps/web/package.json` now declares direct `zod`, `apps/web/lib/api.ts` now uses stable Zod output typing, `packages/config/package.json` test passes cleanly with no local specs, and `tools/typecheck-packages.mjs` now bootstraps declaration-only outputs into `dist/` without repopulating `src/`.
 - [x] (2026-03-09T18:46Z) Validation passed with the final scripts and workspace wiring: `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, and `pnpm test` all succeeded, then the checkout was cleaned again and `pnpm repo:hygiene` re-passed on the first-commit-ready tree.
+- [x] (2026-03-09T21:31Z) Recorded the follow-up repo hardening slice that split CI into static and integration-db jobs, removed the duplicate plan number by renaming the runtime bootstrap plan to `EP-0003`, and kept this hygiene document as the authoritative `EP-0002`.
 
 ## Surprises & Discoveries
 
@@ -53,6 +54,10 @@ The change is visible through three outcomes: the repository tree no longer cont
 
 - Decision: Fix the clean-checkout workspace baseline issues discovered during validation instead of documenting them as known failures.
   Rationale: The user explicitly required `pnpm lint`, `pnpm typecheck`, and `pnpm test` before stopping, and the uncovered issues were small contract or tooling gaps that could be corrected without widening product scope.
+  Date/Author: 2026-03-09 / Codex
+
+- Decision: Keep the hygiene plan as `EP-0002` when the later runtime bootstrap plan was renumbered.
+  Rationale: The repo-bootstrap and hygiene slice landed first and already serves as the stable reference point for clean-checkout policy, so later CI and runtime planning should move around it instead of renaming it.
   Date/Author: 2026-03-09 / Codex
 
 ## Context and Orientation
