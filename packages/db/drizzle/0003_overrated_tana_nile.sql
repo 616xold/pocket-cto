@@ -1,0 +1,1 @@
+ALTER TYPE "public"."replay_event_type" ADD VALUE 'runtime.thread_replaced' BEFORE 'runtime.thread_started';

@@ -27,6 +27,7 @@ export const MissionTaskRecordSchema = z.object({
   status: MissionTaskStatusSchema,
   attemptCount: z.number().int().nonnegative(),
   codexThreadId: z.string().nullable(),
+  codexTurnId: z.string().nullable(),
   workspaceId: z.string().uuid().nullable(),
   dependsOnTaskId: z.string().uuid().nullable(),
   summary: z.string().nullable(),

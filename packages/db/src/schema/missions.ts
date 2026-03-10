@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
@@ -100,6 +101,7 @@ export const missionTasks = pgTable(
     status: missionTaskStatusEnum("status").notNull(),
     dependsOnTaskId: uuid("depends_on_task_id"),
     codexThreadId: text("codex_thread_id"),
+    codexTurnId: text("codex_turn_id"),
     workspaceId: uuid("workspace_id"),
     summary: text("summary"),
     attemptCount: integer("attempt_count").notNull().default(0),
@@ -116,6 +118,9 @@ export const missionTasks = pgTable(
       table.missionId,
       table.sequence,
     ),
+    codexTurnUnique: uniqueIndex("mission_tasks_codex_turn_id_key")
+      .on(table.codexTurnId)
+      .where(sql`${table.codexTurnId} is not null`),
   }),
 );
 

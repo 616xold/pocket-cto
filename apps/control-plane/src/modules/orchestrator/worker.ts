@@ -69,17 +69,40 @@ export class OrchestratorWorker {
         return result;
       }
 
+      if (result.kind === "runtime_failed") {
+        log.error(
+          {
+            err: result.error,
+            event: "worker.tick",
+            missionId: result.task.missionId,
+            outcome: "runtime_failed",
+            role: result.task.role,
+            sequence: result.task.sequence,
+            stage: result.stage,
+            taskId: result.task.id,
+          },
+          "Worker failed during Codex runtime processing",
+        );
+        return result;
+      }
+
       log.info(
         {
+          codexThreadId: result.task.codexThreadId,
+          codexTurnId: result.turn.turnId,
           event: "worker.tick",
-          outcome: "claimed",
-          attemptCount: result.task.attemptCount,
+          outcome: "turn_completed",
+          finalStatus: result.task.status,
+          firstItemType: result.turn.firstItemType,
+          lastItemType: result.turn.lastItemType,
           missionId: result.task.missionId,
+          recoveryStrategy: result.turn.recoveryStrategy,
           role: result.task.role,
           sequence: result.task.sequence,
           taskId: result.task.id,
+          turnStatus: result.turn.status,
         },
-        "Worker claimed task",
+        "Worker completed Codex turn",
       );
 
       return result;

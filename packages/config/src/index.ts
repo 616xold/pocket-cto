@@ -23,10 +23,13 @@ export const EnvSchema = z.object({
   OPENAI_SUMMARY_MODEL: z.string().default("gpt-5-mini"),
   OPENAI_REASONING_MODEL: z.string().default("gpt-5"),
   CODEX_APP_SERVER_COMMAND: z.string().default("codex"),
-  CODEX_APP_SERVER_ARGS: z.string().default("app-server --stdio"),
+  CODEX_APP_SERVER_ARGS: z.string().default("app-server"),
   CODEX_DEFAULT_MODEL: z.string().default("gpt-5.2-codex"),
-  CODEX_DEFAULT_APPROVAL_POLICY: z.string().default("unlessTrusted"),
-  CODEX_DEFAULT_SANDBOX: z.string().default("workspaceWrite"),
+  CODEX_DEFAULT_APPROVAL_POLICY: z.string().default("untrusted"),
+  CODEX_DEFAULT_SANDBOX: z.string().default("workspace-write"),
+  CODEX_DEFAULT_SERVICE_NAME: z
+    .string()
+    .default("pocket-cto-control-plane"),
   WORKSPACE_ROOT: z.string().default(".workspaces"),
   WORKER_RUN_ONCE: z.coerce.boolean().default(false),
   WORKER_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(30_000),

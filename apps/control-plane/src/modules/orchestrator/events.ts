@@ -5,6 +5,9 @@ import type {
 } from "@pocket-cto/domain";
 
 export const taskStatusChangeReasons = {
+  runtimeTurnCompleted: "runtime_turn_completed",
+  runtimeTurnFailed: "runtime_turn_failed",
+  runtimeTurnStarted: "runtime_turn_started",
   taskCompleted: "task_completed",
   workerClaimed: "worker_claimed",
 } as const satisfies Record<string, TaskStatusChangeReason>;

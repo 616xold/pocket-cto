@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   artifacts,
   type Db,
@@ -118,8 +118,9 @@ export class DrizzleMissionRepository implements MissionRepository {
 
   async claimNextRunnableTask(session?: PersistenceSession) {
     const executor = this.getExecutor(session);
-    // Claim order is deterministic: oldest queued mission first, then the
-    // lowest task sequence inside that mission, then stable UUID tie-breakers.
+    // Claim order is deterministic across queued and running missions: oldest
+    // mission first, then the lowest task sequence inside that mission, then
+    // stable UUID tie-breakers.
     const pendingTasks = await executor
       .select({
         task: missionTasks,
@@ -127,7 +128,10 @@ export class DrizzleMissionRepository implements MissionRepository {
       .from(missionTasks)
       .innerJoin(missions, eq(missionTasks.missionId, missions.id))
       .where(
-        and(eq(missionTasks.status, "pending"), eq(missions.status, "queued")),
+        and(
+          eq(missionTasks.status, "pending"),
+          inArray(missions.status, ["queued", "running"]),
+        ),
       )
       .orderBy(
         asc(missions.createdAt),
@@ -182,6 +186,20 @@ export class DrizzleMissionRepository implements MissionRepository {
     return claimedTask ? mapMissionTaskRow(claimedTask) : null;
   }
 
+  async findOldestClaimedTaskReadyForTurn(session?: PersistenceSession) {
+    return this.findOldestClaimedTask(
+      and(
+        sql`${missionTasks.codexThreadId} is not null`,
+        isNull(missionTasks.codexTurnId),
+      ),
+      session,
+    );
+  }
+
+  async findOldestClaimedTaskWithoutThread(session?: PersistenceSession) {
+    return this.findOldestClaimedTask(isNull(missionTasks.codexThreadId), session);
+  }
+
   async getTaskById(taskId: string, session?: PersistenceSession) {
     const executor = this.getExecutor(session);
     const [task] = await executor
@@ -191,6 +209,116 @@ export class DrizzleMissionRepository implements MissionRepository {
       .limit(1);
 
     return task ? mapMissionTaskRow(task) : null;
+  }
+
+  async attachCodexThreadId(
+    taskId: string,
+    threadId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [updatedTask] = await executor
+      .update(missionTasks)
+      .set({
+        codexThreadId: threadId,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(missionTasks.id, taskId), isNull(missionTasks.codexThreadId)),
+      )
+      .returning();
+
+    if (updatedTask) {
+      return mapMissionTaskRow(updatedTask);
+    }
+
+    const existingTask = await this.getTaskById(taskId, session);
+
+    if (!existingTask) {
+      throw new Error(`Task ${taskId} was not found for thread attachment`);
+    }
+
+    return existingTask;
+  }
+
+  async replaceCodexThreadId(
+    taskId: string,
+    expectedCurrentThreadId: string,
+    newThreadId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [updatedTask] = await executor
+      .update(missionTasks)
+      .set({
+        codexThreadId: newThreadId,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(missionTasks.id, taskId),
+          eq(missionTasks.codexThreadId, expectedCurrentThreadId),
+        ),
+      )
+      .returning();
+
+    if (updatedTask) {
+      return mapMissionTaskRow(updatedTask);
+    }
+
+    const existingTask = await this.getTaskById(taskId, session);
+
+    if (!existingTask) {
+      throw new Error(`Task ${taskId} was not found for thread replacement`);
+    }
+
+    throw new Error(
+      `Task ${taskId} thread mismatch during replacement: expected ${expectedCurrentThreadId}, got ${existingTask.codexThreadId ?? "null"}`,
+    );
+  }
+
+  async attachCodexTurnId(
+    taskId: string,
+    turnId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [updatedTask] = await executor
+      .update(missionTasks)
+      .set({
+        codexTurnId: turnId,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(missionTasks.id, taskId), isNull(missionTasks.codexTurnId)))
+      .returning();
+
+    if (updatedTask) {
+      return mapMissionTaskRow(updatedTask);
+    }
+
+    const existingTask = await this.getTaskById(taskId, session);
+
+    if (!existingTask) {
+      throw new Error(`Task ${taskId} was not found for turn attachment`);
+    }
+
+    return existingTask;
+  }
+
+  async clearCodexTurnId(taskId: string, session?: PersistenceSession) {
+    const executor = this.getExecutor(session);
+    const [updatedTask] = await executor
+      .update(missionTasks)
+      .set({
+        codexTurnId: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(missionTasks.id, taskId))
+      .returning();
+
+    return mapMissionTaskRow(
+      getRequiredRow(updatedTask, `Task ${taskId} was not updated`),
+    );
   }
 
   async updateTaskStatus(
@@ -285,6 +413,35 @@ export class DrizzleMissionRepository implements MissionRepository {
 
   private getExecutor(session?: PersistenceSession) {
     return getSessionExecutor(session) ?? this.db;
+  }
+
+  private async findOldestClaimedTask(
+    predicate: ReturnType<typeof and>,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [candidate] = await executor
+      .select({
+        task: missionTasks,
+      })
+      .from(missionTasks)
+      .innerJoin(missions, eq(missionTasks.missionId, missions.id))
+      .where(
+        and(
+          eq(missionTasks.status, "claimed"),
+          inArray(missions.status, ["queued", "running"]),
+          predicate,
+        ),
+      )
+      .orderBy(
+        asc(missions.createdAt),
+        asc(missions.id),
+        asc(missionTasks.sequence),
+        asc(missionTasks.id),
+      )
+      .limit(1);
+
+    return candidate ? mapMissionTaskRow(candidate.task) : null;
   }
 }
 

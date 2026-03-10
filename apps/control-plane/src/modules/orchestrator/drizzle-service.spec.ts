@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   closeTestDatabase,
@@ -10,11 +11,23 @@ import { DrizzleMissionRepository } from "../missions/drizzle-repository";
 import { MissionService } from "../missions/service";
 import { DrizzleReplayRepository } from "../replay/drizzle-repository";
 import { ReplayService } from "../replay/service";
-import { taskStatusChangeReasons } from "./events";
+import { RuntimeCodexAdapter } from "../runtime-codex/adapter";
+import {
+  resolveCodexRuntimeClientOptions,
+  resolveCodexThreadDefaults,
+} from "../runtime-codex/config";
+import { CodexRuntimeService } from "../runtime-codex/service";
+import type { RuntimeCodexRunTurnResult } from "../runtime-codex/types";
 import { OrchestratorService } from "./service";
 import { OrchestratorWorker } from "./worker";
 
 const db = createTestDb();
+const fixturePath = fileURLToPath(
+  new URL(
+    "../../../../../packages/testkit/src/runtime/fake-codex-app-server.mjs",
+    import.meta.url,
+  ),
+);
 
 describe("OrchestratorWorker (DB-backed)", () => {
   beforeEach(async () => {
@@ -25,91 +38,102 @@ describe("OrchestratorWorker (DB-backed)", () => {
     await closeTestDatabase();
   });
 
-  it("persists deterministic task claims and dependency-aware replay ordering", async () => {
-    const { missionService, replayService, worker } = createHarness();
-    const log = {
-      error: vi.fn(),
-      info: vi.fn(),
-    };
+  it("starts the first turn in the same tick and persists codex ids while active", async () => {
+    const turnStarted = createDeferred<void>();
+    const releaseTurn = createDeferred<void>();
+    const { missionService, replayService, worker } = createHarness({
+      runtimeCodexService: createBlockedRuntimeService(turnStarted, releaseTurn),
+    });
     const created = await missionService.createFromText({
-      text: "Implement passkeys for sign-in",
+      text: "Inspect the repo without changing files",
       sourceKind: "manual_text",
       requestedBy: "operator",
     });
+    const plannerTask = created.tasks[0]!;
 
-    const plannerTask = created.tasks[0];
-    const executorTask = created.tasks[1];
-    expect(plannerTask?.role).toBe("planner");
-    expect(executorTask?.role).toBe("executor");
-
-    const firstTick = await worker.run({
-      log,
+    const turnTick = worker.run({
+      log: silentLog(),
       pollIntervalMs: 1,
       runOnce: true,
     });
-    expect(firstTick).toMatchObject({
-      kind: "claimed",
-      task: {
-        id: plannerTask?.id,
-        role: "planner",
-        status: "claimed",
-        attemptCount: 1,
-      },
+
+    await turnStarted.promise;
+
+    const activeDetail = await missionService.getMissionDetail(created.mission.id);
+    expect(activeDetail.mission.status).toBe("running");
+    expect(activeDetail.tasks[0]).toMatchObject({
+      id: plannerTask.id,
+      status: "running",
+      codexThreadId: "thread_blocked_1",
+      codexTurnId: "turn_blocked_1",
     });
 
-    const secondTick = await worker.run({
-      log,
-      pollIntervalMs: 1,
-      runOnce: true,
-    });
-    expect(secondTick).toEqual({ kind: "idle" });
-
-    await worker.transitionTaskStatus({
-      reason: taskStatusChangeReasons.taskCompleted,
-      taskId: plannerTask!.id,
-      to: "succeeded",
-    });
-
-    const thirdTick = await worker.run({
-      log,
-      pollIntervalMs: 1,
-      runOnce: true,
-    });
-    expect(thirdTick).toMatchObject({
-      kind: "claimed",
-      task: {
-        id: executorTask?.id,
-        role: "executor",
-        status: "claimed",
-        attemptCount: 1,
-      },
-    });
-
-    const repeatedTick = await worker.run({
-      log,
-      pollIntervalMs: 1,
-      runOnce: true,
-    });
-    expect(repeatedTick).toEqual({ kind: "idle" });
-
-    const detail = await missionService.getMissionDetail(created.mission.id);
-    expect(detail.tasks).toMatchObject([
-      {
-        id: plannerTask?.id,
-        status: "succeeded",
-        attemptCount: 1,
-      },
-      {
-        id: executorTask?.id,
-        status: "claimed",
-        attemptCount: 1,
-      },
+    const activeReplay = await replayService.getMissionEvents(created.mission.id);
+    expect(activeReplay.map((event) => event.type)).toEqual([
+      "mission.created",
+      "task.created",
+      "task.created",
+      "mission.status_changed",
+      "artifact.created",
+      "task.status_changed",
+      "runtime.thread_started",
+      "runtime.turn_started",
+      "mission.status_changed",
+      "task.status_changed",
     ]);
+
+    releaseTurn.resolve();
+
+    const completedTick = await turnTick;
+    expect(completedTick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: plannerTask.id,
+        status: "succeeded",
+        codexTurnId: null,
+      },
+      turn: {
+        recoveryStrategy: "same_session_bootstrap",
+        turnId: "turn_blocked_1",
+        status: "completed",
+      },
+    });
+  });
+
+  it("keeps the fake fixture happy path working for same-session bootstrap plus first turn", async () => {
+    const { missionService, replayService, worker } = createHarness();
+    const created = await missionService.createFromText({
+      text: "Inspect the planner task in read-only mode",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
+
+    const tick = await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: plannerTask.id,
+        status: "succeeded",
+        codexThreadId: "thread_fake_123",
+        codexTurnId: null,
+      },
+      turn: {
+        recoveryStrategy: "same_session_bootstrap",
+        threadId: "thread_fake_123",
+        turnId: "turn_fake_123",
+        status: "completed",
+        firstItemType: "plan",
+        lastItemType: "agentMessage",
+      },
+    });
 
     const replayEvents = await replayService.getMissionEvents(created.mission.id);
-    expect(replayEvents.map((event) => event.sequence)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8,
-    ]);
     expect(replayEvents.map((event) => event.type)).toEqual([
       "mission.created",
       "task.created",
@@ -117,37 +141,236 @@ describe("OrchestratorWorker (DB-backed)", () => {
       "mission.status_changed",
       "artifact.created",
       "task.status_changed",
+      "runtime.thread_started",
+      "runtime.turn_started",
+      "mission.status_changed",
       "task.status_changed",
+      "runtime.item_started",
+      "runtime.item_completed",
+      "runtime.item_started",
+      "runtime.item_completed",
+      "runtime.turn_completed",
       "task.status_changed",
     ]);
-    expect(replayEvents[5]).toMatchObject({
-      taskId: plannerTask?.id,
-      payload: {
-        from: "pending",
-        to: "claimed",
-        reason: "worker_claimed",
-      },
-    });
-    expect(replayEvents[6]).toMatchObject({
-      taskId: plannerTask?.id,
-      payload: {
-        from: "claimed",
-        to: "succeeded",
-        reason: "task_completed",
-      },
-    });
     expect(replayEvents[7]).toMatchObject({
-      taskId: executorTask?.id,
+      type: "runtime.turn_started",
       payload: {
-        from: "pending",
-        to: "claimed",
-        reason: "worker_claimed",
+        recoveryStrategy: "same_session_bootstrap",
       },
     });
   });
+
+  it("falls back to direct turn/start when thread/resume is unavailable for a pre-first-turn task", async () => {
+    const { missionRepository, missionService, replayService, worker } =
+      createHarness({
+        fixtureOptions: {
+          mode: "resume-gap-direct-turn-success",
+          threadId: "thread_gap_1",
+        },
+      });
+    const recoverableMission = await missionService.createFromText({
+      text: "Recover the stored thread without replacing it",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const pendingMission = await missionService.createFromText({
+      text: "Stay pending until the recoverable task is absorbed",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const recoverableTask = recoverableMission.tasks[0]!;
+
+    await missionRepository.updateTaskStatus(recoverableTask.id, "claimed");
+    await missionRepository.attachCodexThreadId(recoverableTask.id, "thread_gap_1");
+
+    const tick = await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: recoverableTask.id,
+        status: "succeeded",
+        codexThreadId: "thread_gap_1",
+      },
+      turn: {
+        recoveryStrategy: "direct_turn_start",
+        threadId: "thread_gap_1",
+        turnId: "turn_fake_123",
+      },
+    });
+
+    const pendingDetail = await missionService.getMissionDetail(pendingMission.mission.id);
+    expect(pendingDetail.tasks[0]).toMatchObject({
+      status: "pending",
+    });
+
+    const replayEvents = await replayService.getMissionEvents(
+      recoverableMission.mission.id,
+    );
+    expect(replayEvents.map((event) => event.type)).not.toContain(
+      "runtime.thread_replaced",
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        type: "runtime.turn_started",
+        payload: expect.objectContaining({
+          recoveryStrategy: "direct_turn_start",
+          threadId: "thread_gap_1",
+        }),
+      }),
+    );
+  });
+
+  it("replaces the thread for the pre-first-turn gap only after resume and direct turn/start both fail", async () => {
+    const { missionRepository, missionService, replayService, worker } =
+      createHarness({
+        fixtureOptions: {
+          mode: "resume-gap-direct-turn-failed",
+          threadId: "thread_gap_replace_1",
+        },
+      });
+    const recoverableMission = await missionService.createFromText({
+      text: "Replace the unusable first-turn thread",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const pendingMission = await missionService.createFromText({
+      text: "Remain pending while thread replacement happens",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const recoverableTask = recoverableMission.tasks[0]!;
+
+    await missionRepository.updateTaskStatus(recoverableTask.id, "claimed");
+    await missionRepository.attachCodexThreadId(
+      recoverableTask.id,
+      "thread_gap_replace_1",
+    );
+
+    const tick = await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: recoverableTask.id,
+        status: "succeeded",
+        codexThreadId: "thread_gap_replace_1_replacement_1",
+      },
+      turn: {
+        recoveryStrategy: "replacement_thread",
+        threadId: "thread_gap_replace_1_replacement_1",
+        turnId: "turn_fake_123",
+      },
+    });
+
+    const pendingDetail = await missionService.getMissionDetail(pendingMission.mission.id);
+    expect(pendingDetail.tasks[0]).toMatchObject({
+      status: "pending",
+    });
+
+    const replayEvents = await replayService.getMissionEvents(
+      recoverableMission.mission.id,
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        type: "runtime.thread_replaced",
+        payload: expect.objectContaining({
+          oldThreadId: "thread_gap_replace_1",
+          newThreadId: "thread_gap_replace_1_replacement_1",
+          reasonCode: "resume_unavailable",
+        }),
+      }),
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        type: "runtime.turn_started",
+        payload: expect.objectContaining({
+          recoveryStrategy: "replacement_thread",
+        }),
+      }),
+    );
+  });
+
+  it("does not replace the thread if the task has already emitted runtime.turn_started once", async () => {
+    const { missionRepository, missionService, replayService, worker } =
+      createHarness({
+        fixtureOptions: {
+          mode: "resume-gap-direct-turn-failed",
+          threadId: "thread_do_not_replace_1",
+        },
+      });
+    const mission = await missionService.createFromText({
+      text: "Do not replace a post-turn task",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const task = mission.tasks[0]!;
+
+    await missionRepository.updateTaskStatus(task.id, "claimed");
+    await missionRepository.attachCodexThreadId(task.id, "thread_do_not_replace_1");
+    await replayService.append({
+      missionId: mission.mission.id,
+      taskId: task.id,
+      type: "runtime.turn_started",
+      payload: {
+        missionId: mission.mission.id,
+        recoveryStrategy: "resumed_thread",
+        taskId: task.id,
+        threadId: "thread_do_not_replace_1",
+        turnId: "turn_old_1",
+      },
+    });
+
+    const tick = await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "runtime_failed",
+      task: {
+        id: task.id,
+        codexThreadId: "thread_do_not_replace_1",
+        status: "claimed",
+      },
+    });
+
+    const detail = await missionService.getMissionDetail(mission.mission.id);
+    expect(detail.tasks[0]).toMatchObject({
+      codexThreadId: "thread_do_not_replace_1",
+      codexTurnId: null,
+      status: "claimed",
+    });
+
+    const replayEvents = await replayService.getMissionEvents(mission.mission.id);
+    expect(replayEvents.map((event) => event.type)).not.toContain(
+      "runtime.thread_replaced",
+    );
+  });
 });
 
-function createHarness() {
+function createHarness(options?: {
+  fixtureOptions?: {
+    mode?:
+      | "success"
+      | "thread-start-error"
+      | "turn-completed-failed"
+      | "turn-start-error"
+      | "resume-gap-direct-turn-success"
+      | "resume-gap-direct-turn-failed";
+    threadId?: string;
+  };
+  runtimeCodexService?: Pick<CodexRuntimeService, "runTurn">;
+}) {
   const missionRepository = new DrizzleMissionRepository(db);
   const replayRepository = new DrizzleReplayRepository(db);
   const replayService = new ReplayService(replayRepository, missionRepository);
@@ -157,14 +380,182 @@ function createHarness() {
     replayService,
     new EvidenceService(),
   );
+  const runtimeCodexService =
+    options?.runtimeCodexService ??
+    new CodexRuntimeService(
+      new RuntimeCodexAdapter(
+        resolveCodexRuntimeClientOptions({
+          CODEX_APP_SERVER_COMMAND: process.execPath,
+          CODEX_APP_SERVER_ARGS: buildFixtureArgs(options?.fixtureOptions),
+          CODEX_DEFAULT_APPROVAL_POLICY: "untrusted",
+          CODEX_DEFAULT_MODEL: "gpt-5.2-codex",
+          CODEX_DEFAULT_SANDBOX: "workspace-write",
+          CODEX_DEFAULT_SERVICE_NAME: "pocket-cto-control-plane",
+        }),
+      ),
+      resolveCodexThreadDefaults(
+        {
+          CODEX_APP_SERVER_COMMAND: process.execPath,
+          CODEX_APP_SERVER_ARGS: buildFixtureArgs(options?.fixtureOptions),
+          CODEX_DEFAULT_APPROVAL_POLICY: "untrusted",
+          CODEX_DEFAULT_MODEL: "gpt-5.2-codex",
+          CODEX_DEFAULT_SANDBOX: "workspace-write",
+          CODEX_DEFAULT_SERVICE_NAME: "pocket-cto-control-plane",
+        },
+        process.cwd(),
+      ),
+    );
   const orchestratorService = new OrchestratorService(
     missionRepository,
     replayService,
+    runtimeCodexService,
   );
 
   return {
+    missionRepository,
     missionService,
     replayService,
     worker: new OrchestratorWorker(orchestratorService),
+  };
+}
+
+function buildFixtureArgs(options?: {
+  mode?:
+    | "success"
+    | "thread-start-error"
+    | "turn-completed-failed"
+    | "turn-start-error"
+    | "resume-gap-direct-turn-success"
+    | "resume-gap-direct-turn-failed";
+  threadId?: string;
+}) {
+  const args = [`"${fixturePath}"`];
+
+  if (options?.mode) {
+    args.push("--mode", options.mode);
+  }
+
+  if (options?.threadId) {
+    args.push("--thread-id", options.threadId);
+  }
+
+  return args.join(" ");
+}
+
+function createBlockedRuntimeService(
+  turnStarted: ReturnType<typeof createDeferred<void>>,
+  releaseTurn: ReturnType<typeof createDeferred<void>>,
+): Pick<CodexRuntimeService, "runTurn"> {
+  return {
+    async runTurn(input, observer = {}) {
+      const threadId = input.threadId ?? "thread_blocked_1";
+      const turnId = "turn_blocked_1";
+
+      if (!input.threadId) {
+        await observer.onThreadStarted?.({
+          approvalPolicy: "untrusted",
+          cwd: process.cwd(),
+          model: "gpt-5.2-codex",
+          modelProvider: "openai",
+          sandbox: {
+            type: "workspaceWrite",
+            writableRoots: [process.cwd()],
+            readOnlyAccess: {
+              type: "fullAccess",
+            },
+            networkAccess: false,
+            excludeTmpdirEnvVar: false,
+            excludeSlashTmp: false,
+          },
+          serviceName: "pocket-cto-control-plane",
+          thread: {
+            id: threadId,
+            preview: "blocked turn thread",
+            ephemeral: false,
+            modelProvider: "openai",
+            createdAt: 1,
+            updatedAt: 1,
+            status: {
+              type: "idle",
+            },
+            path: null,
+            cwd: process.cwd(),
+            cliVersion: "0.1.0",
+            source: "appServer",
+            agentNickname: null,
+            agentRole: null,
+            gitInfo: null,
+            name: "blocked turn thread",
+            turns: [],
+          },
+          threadId,
+          userAgent: "fake-codex/1.0.0",
+        });
+      }
+
+      await observer.onTurnStarted?.({
+        recoveryStrategy: input.threadId
+          ? "resumed_thread"
+          : "same_session_bootstrap",
+        threadId,
+        turnId,
+      });
+      turnStarted.resolve();
+      await releaseTurn.promise;
+
+      const items = [
+        {
+          itemId: "item_plan_blocked",
+          itemType: "plan",
+          phase: "started" as const,
+          threadId,
+          turnId,
+        },
+        {
+          itemId: "item_plan_blocked",
+          itemType: "plan",
+          phase: "completed" as const,
+          threadId,
+          turnId,
+        },
+      ];
+
+      await observer.onItemStarted?.(items[0]!);
+      await observer.onItemCompleted?.(items[1]!);
+
+      return {
+        firstItemType: "plan",
+        items,
+        lastItemType: "plan",
+        recoveryStrategy: input.threadId
+          ? "resumed_thread"
+          : "same_session_bootstrap",
+        status: "completed",
+        threadId,
+        turnId,
+      } satisfies RuntimeCodexRunTurnResult;
+    },
+  };
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((innerResolve, innerReject) => {
+    resolve = innerResolve;
+    reject = innerReject;
+  });
+
+  return {
+    promise,
+    reject,
+    resolve,
+  };
+}
+
+function silentLog() {
+  return {
+    error: vi.fn(),
+    info: vi.fn(),
   };
 }

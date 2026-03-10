@@ -1,3 +1,4 @@
+import { setTimeout as delay } from "node:timers/promises";
 import { describe, expect, it, vi } from "vitest";
 import { EvidenceService } from "../evidence/service";
 import { StubMissionCompiler } from "../missions/compiler";
@@ -5,27 +6,41 @@ import { InMemoryMissionRepository } from "../missions/repository";
 import { MissionService } from "../missions/service";
 import { InMemoryReplayRepository } from "../replay/repository";
 import { ReplayService } from "../replay/service";
-import { taskStatusChangeReasons } from "./events";
 import { OrchestratorService } from "./service";
 import { OrchestratorWorker } from "./worker";
 
 describe("OrchestratorWorker", () => {
-  it("claims runnable tasks one tick at a time in single-run mode", async () => {
-    const { missionService, worker } = createHarness();
+  it("recovers claimed tasks before claiming new work", async () => {
+    const { missionRepository, missionService, worker } = createHarness();
     const log = {
       error: vi.fn(),
       info: vi.fn(),
     };
-    const created = await missionService.createFromText({
-      text: "Implement passkeys for sign-in",
+
+    const oldestMission = await missionService.createFromText({
+      text: "Recover the oldest claimed task first",
       sourceKind: "manual_text",
       requestedBy: "operator",
     });
-    const plannerTask = created.tasks[0];
-    const executorTask = created.tasks[1];
+    await delay(10);
+    const secondMission = await missionService.createFromText({
+      text: "Recover the stranded thread next",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    await delay(10);
+    const newestMission = await missionService.createFromText({
+      text: "Do not claim this until claimed work is absorbed",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
 
-    expect(plannerTask?.role).toBe("planner");
-    expect(executorTask?.role).toBe("executor");
+    const oldestPlanner = oldestMission.tasks[0]!;
+    const secondPlanner = secondMission.tasks[0]!;
+
+    await missionRepository.updateTaskStatus(oldestPlanner.id, "claimed");
+    await missionRepository.updateTaskStatus(secondPlanner.id, "claimed");
+    await missionRepository.attachCodexThreadId(secondPlanner.id, "thread_existing");
 
     const firstTick = await worker.run({
       log,
@@ -34,45 +49,43 @@ describe("OrchestratorWorker", () => {
     });
 
     expect(firstTick).toMatchObject({
-      kind: "claimed",
+      kind: "turn_completed",
       task: {
-        id: plannerTask?.id,
-        role: "planner",
-        sequence: 0,
-        status: "claimed",
-        attemptCount: 1,
+        id: oldestPlanner.id,
+        status: "succeeded",
+        codexThreadId: "thread_1",
+      },
+      turn: {
+        recoveryStrategy: "same_session_bootstrap",
+        threadId: "thread_1",
+        turnId: "turn_1",
       },
     });
 
-    const detailAfterFirstTick = await missionService.getMissionDetail(
-      created.mission.id,
-    );
-    expect(detailAfterFirstTick.tasks).toMatchObject([
-      {
-        id: plannerTask?.id,
-        role: "planner",
-        status: "claimed",
-        attemptCount: 1,
-      },
-      {
-        id: executorTask?.id,
-        role: "executor",
-        status: "pending",
-        attemptCount: 0,
-      },
-    ]);
-
-    const blockedTick = await worker.run({
+    const secondTick = await worker.run({
       log,
       pollIntervalMs: 1,
       runOnce: true,
     });
-    expect(blockedTick).toEqual({ kind: "idle" });
 
-    await worker.transitionTaskStatus({
-      reason: taskStatusChangeReasons.taskCompleted,
-      taskId: plannerTask!.id,
-      to: "succeeded",
+    expect(secondTick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: secondPlanner.id,
+        status: "succeeded",
+      },
+      turn: {
+        recoveryStrategy: "resumed_thread",
+        threadId: "thread_existing",
+        turnId: "turn_2",
+      },
+    });
+
+    const newestDetail = await missionService.getMissionDetail(
+      newestMission.mission.id,
+    );
+    expect(newestDetail.tasks[0]).toMatchObject({
+      status: "pending",
     });
 
     const thirdTick = await worker.run({
@@ -82,38 +95,13 @@ describe("OrchestratorWorker", () => {
     });
 
     expect(thirdTick).toMatchObject({
-      kind: "claimed",
+      kind: "turn_completed",
       task: {
-        id: executorTask?.id,
-        role: "executor",
-        sequence: 1,
-        status: "claimed",
-        attemptCount: 1,
+        missionId: oldestMission.mission.id,
+        status: "succeeded",
       },
     });
 
-    const repeatedTick = await worker.run({
-      log,
-      pollIntervalMs: 1,
-      runOnce: true,
-    });
-    expect(repeatedTick).toEqual({ kind: "idle" });
-
-    expect(log.info).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event: "worker.tick",
-        outcome: "claimed",
-        taskId: plannerTask?.id,
-      }),
-      "Worker claimed task",
-    );
-    expect(log.info).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event: "worker.tick",
-        outcome: "idle",
-      }),
-      "Worker tick idle",
-    );
     expect(log.error).not.toHaveBeenCalled();
   });
 });
@@ -128,12 +116,117 @@ function createHarness() {
     replayService,
     new EvidenceService(),
   );
+  let threadCount = 0;
+  let turnCount = 0;
   const orchestratorService = new OrchestratorService(
     missionRepository,
     replayService,
+    {
+      async runTurn(input, observer = {}) {
+        turnCount += 1;
+        const threadId = input.threadId ?? `thread_${++threadCount}`;
+        const turnId = `turn_${turnCount}`;
+        const recoveryStrategy = input.threadId
+          ? "resumed_thread"
+          : "same_session_bootstrap";
+        const items = [
+          {
+            itemId: `item_plan_${turnCount}`,
+            itemType: "plan",
+            phase: "started" as const,
+            threadId,
+            turnId,
+          },
+          {
+            itemId: `item_plan_${turnCount}`,
+            itemType: "plan",
+            phase: "completed" as const,
+            threadId,
+            turnId,
+          },
+          {
+            itemId: `item_agent_${turnCount}`,
+            itemType: "agentMessage",
+            phase: "started" as const,
+            threadId,
+            turnId,
+          },
+          {
+            itemId: `item_agent_${turnCount}`,
+            itemType: "agentMessage",
+            phase: "completed" as const,
+            threadId,
+            turnId,
+          },
+        ];
+
+        if (!input.threadId) {
+          await observer.onThreadStarted?.({
+            approvalPolicy: "untrusted",
+            cwd: process.cwd(),
+            model: "gpt-5.2-codex",
+            modelProvider: "openai",
+            sandbox: {
+              type: "workspaceWrite",
+              writableRoots: [process.cwd()],
+              readOnlyAccess: {
+                type: "fullAccess",
+              },
+              networkAccess: false,
+              excludeTmpdirEnvVar: false,
+              excludeSlashTmp: false,
+            },
+            serviceName: "pocket-cto-control-plane",
+            thread: {
+              id: threadId,
+              preview: "test thread",
+              ephemeral: false,
+              modelProvider: "openai",
+              createdAt: 1,
+              updatedAt: 1,
+              status: {
+                type: "idle",
+              },
+              path: null,
+              cwd: process.cwd(),
+              cliVersion: "0.1.0",
+              source: "appServer",
+              agentNickname: null,
+              agentRole: null,
+              gitInfo: null,
+              name: "test thread",
+              turns: [],
+            },
+            threadId,
+            userAgent: "fake-codex/1.0.0",
+          });
+        }
+
+        await observer.onTurnStarted?.({
+          recoveryStrategy,
+          threadId,
+          turnId,
+        });
+        await observer.onItemStarted?.(items[0]!);
+        await observer.onItemCompleted?.(items[1]!);
+        await observer.onItemStarted?.(items[2]!);
+        await observer.onItemCompleted?.(items[3]!);
+
+        return {
+          firstItemType: items[0]!.itemType,
+          items,
+          lastItemType: items[3]!.itemType,
+          recoveryStrategy,
+          status: "completed",
+          threadId,
+          turnId,
+        };
+      },
+    },
   );
 
   return {
+    missionRepository,
     missionService,
     worker: new OrchestratorWorker(orchestratorService),
   };

@@ -3,55 +3,107 @@ import type {
   MissionTaskStatus,
   TaskStatusChangeReason,
 } from "@pocket-cto/domain";
-import type { PersistenceSession } from "../../lib/persistence";
+import { taskStatusChangeReasons } from "./events";
 import type { MissionRepository } from "../missions/repository";
 import type { ReplayService } from "../replay/service";
-import {
-  buildTaskStatusChangedPayload,
-  taskStatusChangeReasons,
-} from "./events";
+import type { CodexRuntimeService } from "../runtime-codex/service";
+import type { ExecuteClaimedTaskTurnResult } from "./runtime-phase";
+import { OrchestratorRuntimePhase } from "./runtime-phase";
+import { buildTaskStatusChangedPayload } from "./events";
 
 export type OrchestratorTickResult =
   | { kind: "idle" }
   | {
-      kind: "claimed";
+      kind: "runtime_failed";
+      error: Error;
+      stage: "turn_execution";
       task: MissionTaskRecord;
+    }
+  | {
+      kind: "turn_completed";
+      task: MissionTaskRecord;
+      turn: ExecuteClaimedTaskTurnResult["turn"];
     };
 
 export class OrchestratorService {
+  private readonly runtimePhase: OrchestratorRuntimePhase;
+
   constructor(
     private readonly missionRepository: Pick<
       MissionRepository,
       | "claimNextRunnableTask"
-      | "getTaskById"
+      | "findOldestClaimedTaskReadyForTurn"
+      | "findOldestClaimedTaskWithoutThread"
       | "transaction"
       | "updateTaskStatus"
+      | "attachCodexThreadId"
+      | "attachCodexTurnId"
+      | "clearCodexTurnId"
+      | "getMissionById"
+      | "getProofBundleByMissionId"
+      | "getTaskById"
+      | "replaceCodexThreadId"
+      | "updateMissionStatus"
     >,
-    private readonly replayService: Pick<ReplayService, "append">,
-  ) {}
+    private readonly replayService: Pick<
+      ReplayService,
+      "append" | "taskHasEventType"
+    >,
+    runtimeCodexService: Pick<CodexRuntimeService, "runTurn">,
+  ) {
+    this.runtimePhase = new OrchestratorRuntimePhase(
+      missionRepository,
+      replayService,
+      runtimeCodexService,
+    );
+  }
 
   async tick(): Promise<OrchestratorTickResult> {
-    return this.missionRepository.transaction(async (session) => {
-      const claimedTask =
-        await this.missionRepository.claimNextRunnableTask(session);
+    const claimedTaskWithoutThread =
+      await this.missionRepository.findOldestClaimedTaskWithoutThread();
 
-      if (!claimedTask) {
-        return { kind: "idle" };
-      }
+    if (claimedTaskWithoutThread) {
+      return this.executeTaskTurn(claimedTaskWithoutThread);
+    }
 
-      await this.appendTaskStatusChanged(
-        claimedTask,
-        "pending",
-        claimedTask.status,
-        taskStatusChangeReasons.workerClaimed,
-        session,
-      );
+    const claimedTaskReadyForTurn =
+      await this.missionRepository.findOldestClaimedTaskReadyForTurn();
 
-      return {
-        kind: "claimed",
-        task: claimedTask,
-      };
-    });
+    if (claimedTaskReadyForTurn) {
+      return this.executeTaskTurn(claimedTaskReadyForTurn);
+    }
+
+    const claimedTask = await this.missionRepository.transaction(
+      async (session) => {
+        const task = await this.missionRepository.claimNextRunnableTask(session);
+
+        if (!task) {
+          return null;
+        }
+
+        await this.replayService.append(
+          {
+            missionId: task.missionId,
+            taskId: task.id,
+            type: "task.status_changed",
+            payload: buildTaskStatusChangedPayload(
+              "pending",
+              task.status,
+              taskStatusChangeReasons.workerClaimed,
+            ),
+          },
+          session,
+        );
+
+        return task;
+      },
+    );
+
+    if (!claimedTask) {
+      return { kind: "idle" };
+    }
+
+    return this.executeTaskTurn(claimedTask);
   }
 
   async transitionTaskStatus(input: {
@@ -59,59 +111,31 @@ export class OrchestratorService {
     taskId: string;
     to: MissionTaskStatus;
   }) {
-    return this.missionRepository.transaction(async (session) => {
-      const currentTask = await this.getRequiredTask(input.taskId, session);
-
-      if (currentTask.status === input.to) {
-        return currentTask;
-      }
-
-      const updatedTask = await this.missionRepository.updateTaskStatus(
-        input.taskId,
-        input.to,
-        session,
-      );
-
-      await this.appendTaskStatusChanged(
-        updatedTask,
-        currentTask.status,
-        updatedTask.status,
-        input.reason,
-        session,
-      );
-
-      return updatedTask;
-    });
+    return this.runtimePhase.transitionTaskStatus(input);
   }
 
-  private async appendTaskStatusChanged(
+  private async executeTaskTurn(
     task: MissionTaskRecord,
-    from: MissionTaskStatus,
-    to: MissionTaskStatus,
-    reason: TaskStatusChangeReason,
-    session: PersistenceSession,
-  ) {
-    await this.replayService.append(
-      {
-        missionId: task.missionId,
-        taskId: task.id,
-        type: "task.status_changed",
-        payload: buildTaskStatusChangedPayload(from, to, reason),
-      },
-      session,
-    );
-  }
+  ): Promise<OrchestratorTickResult> {
+    try {
+      const completedTurn = await this.runtimePhase.executeClaimedTaskTurn(task.id);
 
-  private async getRequiredTask(
-    taskId: string,
-    session: PersistenceSession,
-  ): Promise<MissionTaskRecord> {
-    const task = await this.missionRepository.getTaskById(taskId, session);
-
-    if (!task) {
-      throw new Error(`Task ${taskId} not found`);
+      return {
+        kind: "turn_completed",
+        task: completedTurn.task,
+        turn: completedTurn.turn,
+      };
+    } catch (error) {
+      return {
+        kind: "runtime_failed",
+        error: asError(error, "Codex turn execution failed"),
+        stage: "turn_execution",
+        task,
+      };
     }
-
-    return task;
   }
+}
+
+function asError(error: unknown, fallbackMessage: string) {
+  return error instanceof Error ? error : new Error(fallbackMessage);
 }

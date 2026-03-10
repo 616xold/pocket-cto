@@ -33,7 +33,7 @@ export function isTaskRunnable(input: {
   dependencyStatus: MissionTaskStatus | null;
 }) {
   return (
-    input.missionStatus === "queued" &&
+    ["queued", "running"].includes(input.missionStatus) &&
     input.taskStatus === "pending" &&
     (input.dependencyStatus === null || input.dependencyStatus === "succeeded")
   );

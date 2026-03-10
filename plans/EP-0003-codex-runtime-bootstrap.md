@@ -12,6 +12,7 @@ After creating a queued mission and running one worker tick, the planner task sh
 
 ## Progress
 
+- [x] (2026-03-10T22:18Z) Audited the runtime release-candidate worktree against the shipped M1.1 bootstrap slice and recorded the current handoff explicitly: this plan remains the historical bootstrap milestone, while the actual release-candidate behavior is now governed by `plans/EP-0005-turn-lifecycle-and-replay.md` because the real local binary cannot later-session resume a fresh no-turn thread.
 - [x] (2026-03-09T19:05Z) Read `START_HERE.md`, `README.md`, `AGENTS.md`, `PLANS.md`, `plans/ROADMAP.md`, `plans/EP-0001-mission-spine.md`, the Codex runtime docs, the state machine and replay docs, and the current runtime, mission, replay, orchestrator, worker, and DB schema modules named in the prompt.
 - [x] (2026-03-09T19:05Z) Verified the local Codex binary protocol surface with `codex app-server --help` and `codex app-server generate-ts --out tmp/codex-app-server-schema`, then compared the generated bindings and OpenAI's February 4, 2026 Codex App Server article against `packages/codex-runtime/src/protocol.ts` and `packages/codex-runtime/src/client.ts`.
 - [x] (2026-03-09T19:21Z) Implemented the M1.1 bootstrap slice across `packages/codex-runtime`, `apps/control-plane/src/modules/runtime-codex/`, the mission repository, and the orchestrator so claimed tasks now initialize Codex App Server, start a thread, persist `codexThreadId`, and append `runtime.thread_started` without widening task or mission statuses.
@@ -146,6 +147,9 @@ Implementation order:
 
 ## Validation and Acceptance
 
+These checks remain the acceptance evidence for the narrow M1.1 bootstrap slice only.
+The current runtime release candidate has advanced under `plans/EP-0005-turn-lifecycle-and-replay.md`: newly claimed or threadless tasks now bootstrap and start the first read-only turn in the same short-lived session because the real local binary does not yet support cross-session resume or direct `turn/start` for a fresh no-turn thread.
+
 Success for M1.1 is demonstrated when all of the following are true:
 
 1. A protocol-level fake app-server test shows the runtime client can:
@@ -265,3 +269,6 @@ The locally installed `codex` binary omits `jsonrpc` on the wire even though the
 
 The main remaining gap to M1.2 is turn lifecycle and longer-lived runtime state.
 Pocket CTO can now create and persist Codex threads for claimed tasks, but it does not yet start turns, map runtime item events into replay, persist approvals, recover orphaned threads after post-start persistence failures, or move missions from `queued` to `running`.
+
+That statement is now historical.
+The current runtime release candidate has since landed those M1.2 lifecycle changes in `plans/EP-0005-turn-lifecycle-and-replay.md`, including same-session first-turn bootstrap, `codexTurnId` persistence, structural item replay, and the narrow pre-first-turn replacement fallback for the real local fresh-thread resume gap.

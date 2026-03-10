@@ -147,7 +147,15 @@ function createThrowAfterProofBundleRepository(
     createTask: repository.createTask.bind(repository),
     updateMissionStatus: repository.updateMissionStatus.bind(repository),
     claimNextRunnableTask: repository.claimNextRunnableTask.bind(repository),
+    findOldestClaimedTaskReadyForTurn:
+      repository.findOldestClaimedTaskReadyForTurn.bind(repository),
+    findOldestClaimedTaskWithoutThread:
+      repository.findOldestClaimedTaskWithoutThread.bind(repository),
     getTaskById: repository.getTaskById.bind(repository),
+    attachCodexThreadId: repository.attachCodexThreadId.bind(repository),
+    replaceCodexThreadId: repository.replaceCodexThreadId.bind(repository),
+    attachCodexTurnId: repository.attachCodexTurnId.bind(repository),
+    clearCodexTurnId: repository.clearCodexTurnId.bind(repository),
     updateTaskStatus: repository.updateTaskStatus.bind(repository),
     getMissionById: repository.getMissionById.bind(repository),
     getTasksByMissionId: repository.getTasksByMissionId.bind(repository),

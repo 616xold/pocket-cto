@@ -1,27 +1,71 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import {
+  spawn,
+  type ChildProcessWithoutNullStreams,
+  type SpawnOptionsWithoutStdio,
+} from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { setTimeout as delay } from "node:timers/promises";
 import EventEmitter from "eventemitter3";
+import type { ZodType } from "zod";
+import { CodexAppServerRequestError } from "./errors";
 import {
   InitializeParamsSchema,
+  InitializeResponseSchema,
   JsonRpcErrorSchema,
   JsonRpcNotificationSchema,
   JsonRpcSuccessSchema,
+  KnownServerNotificationSchema,
+  ThreadResumeParamsSchema,
+  ThreadResumeResponseSchema,
+  ThreadStartParamsSchema,
+  ThreadStartResponseSchema,
+  TurnInterruptParamsSchema,
+  TurnInterruptResponseSchema,
+  TurnStartParamsSchema,
+  TurnStartResponseSchema,
+  type InitializeParams,
+  type InitializeResponse,
+  type JsonRpcRequest,
+  type KnownServerNotification,
+  type ThreadResumeParams,
+  type ThreadResumeResponse,
+  type ThreadStartParams,
+  type ThreadStartResponse,
+  type TurnInterruptParams,
+  type TurnInterruptResponse,
+  type TurnStartParams,
+  type TurnStartResponse,
 } from "./protocol";
-import type { JsonRpcRequest, TurnStartParams } from "./protocol";
 
 type PendingRequest = {
-  resolve: (value: unknown) => void;
+  method: string;
   reject: (reason: unknown) => void;
+  resolve: (value: unknown) => void;
+  resultSchema: ZodType<unknown>;
+};
+
+export type CodexRuntimeNotificationEvent = {
+  kind: "notification";
+  notification: KnownServerNotification | { method: string; params?: unknown };
+};
+
+export type CodexRuntimeProtocolErrorEvent = {
+  kind: "protocol_error";
+  error: Error;
+  line: string;
 };
 
 export type CodexRuntimeEvent =
-  | { kind: "notification"; method: string; params: unknown }
+  | CodexRuntimeNotificationEvent
+  | CodexRuntimeProtocolErrorEvent
+  | { kind: "exit"; code: number | null; signal: NodeJS.Signals | null }
   | { kind: "stderr"; line: string };
 
 export type CodexRuntimeClientOptions = {
-  command: string;
   args: string[];
+  command: string;
   cwd?: string;
+  stopTimeoutMs?: number;
 };
 
 export class CodexAppServerClient {
@@ -30,9 +74,12 @@ export class CodexAppServerClient {
   }>();
 
   private process?: ChildProcessWithoutNullStreams;
-  private readonly pending = new Map<string, PendingRequest>();
+  private startPromise?: Promise<void>;
+  private stopPromise?: Promise<void>;
   private stdoutBuffer = "";
   private stderrBuffer = "";
+  private readonly pending = new Map<string, PendingRequest>();
+  private exitPromise: Promise<void> = Promise.resolve();
 
   constructor(private readonly options: CodexRuntimeClientOptions) {}
 
@@ -46,43 +93,71 @@ export class CodexAppServerClient {
       return;
     }
 
-    this.process = spawn(this.options.command, this.options.args, {
-      cwd: this.options.cwd,
-      stdio: "pipe",
+    if (this.startPromise) {
+      return this.startPromise;
+    }
+
+    this.startPromise = this.doStart();
+
+    try {
+      await this.startPromise;
+    } finally {
+      this.startPromise = undefined;
+    }
+  }
+
+  async initialize(params: InitializeParams): Promise<InitializeResponse> {
+    const parsedParams = InitializeParamsSchema.parse(params);
+    return this.request(
+      "initialize",
+      parsedParams,
+      InitializeResponseSchema,
+    );
+  }
+
+  async initialized() {
+    await this.start();
+    this.write({
+      method: "initialized",
     });
-
-    this.process.stdout.setEncoding("utf8");
-    this.process.stderr.setEncoding("utf8");
-    this.process.stdout.on("data", (chunk: string) => this.handleStdout(chunk));
-    this.process.stderr.on("data", (chunk: string) => this.handleStderr(chunk));
   }
 
-  async initialize() {
-    const params = InitializeParamsSchema.parse({
-      clientInfo: { name: "pocket-cto", version: "0.1.0" },
-      capabilities: { experimentalApi: false },
-    });
-
-    await this.request("initialize", params);
-    await this.notify("initialized", {});
+  async startThread(
+    params: ThreadStartParams,
+  ): Promise<ThreadStartResponse> {
+    const parsedParams = ThreadStartParamsSchema.parse(params);
+    return this.request(
+      "thread/start",
+      parsedParams,
+      ThreadStartResponseSchema,
+    );
   }
 
-  async startThread(params: {
-    cwd?: string;
-    model?: string;
-    approvalPolicy?: string;
-    sandbox?: string;
-    serviceName?: string;
-  }) {
-    return this.request("thread/start", params);
+  async resumeThread(
+    params: ThreadResumeParams,
+  ): Promise<ThreadResumeResponse> {
+    const parsedParams = ThreadResumeParamsSchema.parse(params);
+    return this.request(
+      "thread/resume",
+      parsedParams,
+      ThreadResumeResponseSchema,
+    );
   }
 
-  async startTurn(params: TurnStartParams) {
-    return this.request("turn/start", params);
+  async startTurn(params: TurnStartParams): Promise<TurnStartResponse> {
+    const parsedParams = TurnStartParamsSchema.parse(params);
+    return this.request("turn/start", parsedParams, TurnStartResponseSchema);
   }
 
-  async interruptTurn(params: { threadId: string; turnId: string }) {
-    return this.request("turn/interrupt", params);
+  async interruptTurn(
+    params: TurnInterruptParams,
+  ): Promise<TurnInterruptResponse> {
+    const parsedParams = TurnInterruptParamsSchema.parse(params);
+    return this.request(
+      "turn/interrupt",
+      parsedParams,
+      TurnInterruptResponseSchema,
+    );
   }
 
   async stop() {
@@ -90,32 +165,104 @@ export class CodexAppServerClient {
       return;
     }
 
-    this.process.kill("SIGTERM");
-    this.process = undefined;
+    if (this.stopPromise) {
+      return this.stopPromise;
+    }
+
+    const child = this.process;
+    const exitPromise = this.exitPromise;
+    this.stopPromise = this.doStop(child, exitPromise);
+
+    try {
+      await this.stopPromise;
+    } finally {
+      this.stopPromise = undefined;
+    }
   }
 
-  private async request(method: string, params: unknown) {
+  private async doStart() {
+    const child = spawn(this.options.command, this.options.args, {
+      ...(this.options.cwd ? { cwd: this.options.cwd } : {}),
+      stdio: "pipe",
+    } satisfies SpawnOptionsWithoutStdio);
+
+    this.process = child;
+    this.stdoutBuffer = "";
+    this.stderrBuffer = "";
+    this.exitPromise = new Promise((resolve) => {
+      child.once("close", (code, signal) => {
+        this.handleProcessClose(code, signal);
+        resolve();
+      });
+    });
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => this.handleStdout(chunk));
+    child.stderr.on("data", (chunk: string) => this.handleStderr(chunk));
+    child.once("error", (error) => {
+      this.handleProtocolFailure(
+        asError(error, "Codex app server process failed"),
+        "",
+      );
+    });
+  }
+
+  private async doStop(
+    child: ChildProcessWithoutNullStreams,
+    exitPromise: Promise<void>,
+  ) {
+    if (child.exitCode !== null || child.signalCode !== null) {
+      await exitPromise;
+      return;
+    }
+
+    child.kill("SIGTERM");
+
+    const didExit = await Promise.race([
+      exitPromise.then(() => true),
+      delay(this.options.stopTimeoutMs ?? 1_000).then(() => false),
+    ]);
+
+    if (didExit) {
+      return;
+    }
+
+    if (child.exitCode === null && child.signalCode === null) {
+      child.kill("SIGKILL");
+    }
+
+    await exitPromise;
+  }
+
+  private async request<TResult>(
+    method: string,
+    params: unknown,
+    resultSchema: ZodType<TResult>,
+  ): Promise<TResult> {
+    await this.start();
+
     const id = randomUUID();
     const payload: JsonRpcRequest = {
-      jsonrpc: "2.0",
       id,
       method,
       params,
     };
 
-    const promise = new Promise<unknown>((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-    });
+    return new Promise<TResult>((resolve, reject) => {
+      this.pending.set(id, {
+        method,
+        reject,
+        resolve: (value) => resolve(value as TResult),
+        resultSchema: resultSchema as ZodType<unknown>,
+      });
 
-    this.write(payload);
-    return promise;
-  }
-
-  private async notify(method: string, params: unknown) {
-    this.write({
-      jsonrpc: "2.0",
-      method,
-      params,
+      try {
+        this.write(payload);
+      } catch (error) {
+        this.pending.delete(id);
+        reject(error);
+      }
     });
   }
 
@@ -136,10 +283,10 @@ export class CodexAppServerClient {
         break;
       }
 
-      const line = this.stdoutBuffer.slice(0, newlineIndex).trim();
+      const line = this.stdoutBuffer.slice(0, newlineIndex);
       this.stdoutBuffer = this.stdoutBuffer.slice(newlineIndex + 1);
 
-      if (!line) {
+      if (!line.trim()) {
         continue;
       }
 
@@ -156,10 +303,10 @@ export class CodexAppServerClient {
         break;
       }
 
-      const line = this.stderrBuffer.slice(0, newlineIndex).trim();
+      const line = this.stderrBuffer.slice(0, newlineIndex);
       this.stderrBuffer = this.stderrBuffer.slice(newlineIndex + 1);
 
-      if (!line) {
+      if (!line.trim()) {
         continue;
       }
 
@@ -168,16 +315,53 @@ export class CodexAppServerClient {
   }
 
   private handleStdoutLine(line: string) {
-    const parsed = JSON.parse(line);
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(line);
+    } catch (error) {
+      this.handleProtocolFailure(
+        new Error(
+          `Failed to parse Codex app server stdout as JSON: ${line}`,
+          {
+            cause: error,
+          },
+        ),
+        line,
+      );
+      return;
+    }
 
     const success = JsonRpcSuccessSchema.safeParse(parsed);
     if (success.success) {
       const key = String(success.data.id);
       const pending = this.pending.get(key);
 
-      if (pending) {
-        this.pending.delete(key);
-        pending.resolve(success.data.result);
+      if (!pending) {
+        this.handleProtocolFailure(
+          new Error(
+            `Received unexpected JSON-RPC success for id ${success.data.id}`,
+          ),
+          line,
+        );
+        return;
+      }
+
+      this.pending.delete(key);
+
+      try {
+        pending.resolve(pending.resultSchema.parse(success.data.result));
+      } catch (error) {
+        pending.reject(
+          new Error(
+            `Failed to parse ${pending.method} response: ${formatErrorMessage(
+              error,
+            )}`,
+            {
+              cause: error,
+            },
+          ),
+        );
       }
 
       return;
@@ -185,14 +369,46 @@ export class CodexAppServerClient {
 
     const error = JsonRpcErrorSchema.safeParse(parsed);
     if (error.success) {
+      if (error.data.id === undefined || error.data.id === null) {
+        this.rejectPending(
+          new Error(
+            `Codex app server returned an unbound JSON-RPC error (${error.data.error.code}): ${error.data.error.message}`,
+          ),
+        );
+        return;
+      }
+
       const key = String(error.data.id);
       const pending = this.pending.get(key);
 
-      if (pending) {
-        this.pending.delete(key);
-        pending.reject(error.data.error);
+      if (!pending) {
+        this.handleProtocolFailure(
+          new Error(
+            `Received unexpected JSON-RPC error for id ${error.data.id}: ${error.data.error.message}`,
+          ),
+          line,
+        );
+        return;
       }
 
+      this.pending.delete(key);
+      pending.reject(
+        new CodexAppServerRequestError({
+          code: error.data.error.code,
+          data: error.data.error.data,
+          message: error.data.error.message,
+          method: pending.method,
+        }),
+      );
+      return;
+    }
+
+    const knownNotification = KnownServerNotificationSchema.safeParse(parsed);
+    if (knownNotification.success) {
+      this.events.emit("event", {
+        kind: "notification",
+        notification: knownNotification.data,
+      });
       return;
     }
 
@@ -200,12 +416,88 @@ export class CodexAppServerClient {
     if (notification.success) {
       this.events.emit("event", {
         kind: "notification",
-        method: notification.data.method,
-        params: notification.data.params,
+        notification: {
+          method: notification.data.method,
+          params: notification.data.params,
+        },
       });
       return;
     }
 
-    throw new Error(`Unrecognized Codex App Server message: ${line}`);
+    this.handleProtocolFailure(
+      new Error(`Unrecognized Codex app server message: ${line}`),
+      line,
+    );
   }
+
+  private handleProcessClose(
+    code: number | null,
+    signal: NodeJS.Signals | null,
+  ) {
+    this.flushStderrBuffer();
+
+    if (this.stdoutBuffer.trim()) {
+      this.handleProtocolFailure(
+        new Error(
+          `Codex app server exited with an incomplete stdout line: ${this.stdoutBuffer.trim()}`,
+        ),
+        this.stdoutBuffer.trim(),
+      );
+      this.stdoutBuffer = "";
+    }
+
+    this.process = undefined;
+    this.events.emit("event", {
+      kind: "exit",
+      code,
+      signal,
+    });
+
+    this.rejectPending(
+      new Error(
+        `Codex app server exited before all pending requests completed (code=${code ?? "null"}, signal=${signal ?? "null"})`,
+      ),
+    );
+  }
+
+  private flushStderrBuffer() {
+    const line = this.stderrBuffer.trim();
+    this.stderrBuffer = "";
+
+    if (!line) {
+      return;
+    }
+
+    this.events.emit("event", { kind: "stderr", line });
+  }
+
+  private handleProtocolFailure(error: Error, line: string) {
+    this.events.emit("event", {
+      kind: "protocol_error",
+      error,
+      line,
+    });
+
+    this.rejectPending(error);
+
+    if (this.process && this.process.exitCode === null) {
+      this.process.kill("SIGTERM");
+    }
+  }
+
+  private rejectPending(error: Error) {
+    for (const pending of this.pending.values()) {
+      pending.reject(error);
+    }
+
+    this.pending.clear();
+  }
+}
+
+function asError(error: unknown, fallbackMessage: string) {
+  return error instanceof Error ? error : new Error(fallbackMessage);
+}
+
+function formatErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
 }

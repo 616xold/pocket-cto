@@ -26,6 +26,11 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 - [x] (2026-03-10T22:58Z) Added `pnpm ci:repro:current`, pinned the workflow to `pnpm` 10.4.1 to match `packageManager`, and documented the temp-worktree reproduction path so future CI diagnosis validates the exact next push instead of only the last commit on `main`.
 - [x] (2026-03-10T23:00Z) Extended `tools/ci-check-clean-tree.mjs` with an optional baseline snapshot mode so `pnpm ci:repro:current` can compare post-build or post-test churn against the overlaid starting state rather than against `HEAD`.
 - [x] (2026-03-10T23:01Z) Re-ran `pnpm ci:repro:current` after that baseline fix and verified the exact next intended push now passes install, `pnpm ci:static`, and `pnpm ci:integration-db` from a fresh temp worktree with local Postgres.
+- [x] (2026-03-10T23:16Z) Re-audited the live repo on branch `codex/next-push-ci` at `cc3918379789e3961a2bee5eb5d49742931cf717`, confirmed `origin/codex/next-push-ci` points at the same pushed commit, and verified the remaining branch-visibility gap: the workflow still limited `push` to `main`, so plain branch pushes showed no CI status despite the repo already having `ci:repro:current` and the exact `pnpm` pin.
+- [x] (2026-03-10T23:18Z) Removed the `main`-only push filter, added `workflow_dispatch` plus per-ref workflow concurrency, and documented that CI now runs on branch pushes so future Codex branches show visible status before opening a PR.
+- [x] (2026-03-10T23:23Z) Reproduced the latest pushed branch commit `cc3918379789e3961a2bee5eb5d49742931cf717` from a clean temp worktree and confirmed both `pnpm ci:static` and `pnpm ci:integration-db` pass under runner-style env with local Postgres.
+- [x] (2026-03-10T23:27Z) Re-ran the requested root validation commands in the live dirty checkout, confirmed `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm test` still pass, and confirmed `pnpm ci:static` plus `pnpm ci:integration-db` fail there only at `ci:clean-tree` because the worktree intentionally contains unstaged runtime changes.
+- [x] (2026-03-10T23:29Z) Re-ran `pnpm ci:repro:current` after the branch-trigger change and verified the exact next intended push still passes install, `pnpm ci:static`, and `pnpm ci:integration-db` from a fresh temp worktree at `/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-ci-repro-U8JSVW/repo`.
 
 ## Surprises & Discoveries
 
@@ -55,6 +60,12 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 
 - Observation: Reproducing a dirty next-push snapshot needs a clean-tree baseline, otherwise the guard will correctly flag the overlaid diff itself as churn.
   Evidence: the first `pnpm ci:repro:current` attempt failed after a successful build because `tools/ci-check-clean-tree.mjs` compared the temp worktree against `HEAD` instead of the captured overlay state; writing a baseline snapshot before install fixed the false failure.
+
+- Observation: The current remote branch tip already contains the hermetic CI scripts and reproduction helper, but branch pushes still look silent because the workflow trigger is narrower than the validation contract.
+  Evidence: `origin/codex/next-push-ci` resolves to `cc3918379789e3961a2bee5eb5d49742931cf717`, `package.json` already exposes `pnpm ci:repro:current`, `tools/ci-repro-current-worktree.mjs` exists in the tree, and `.github/workflows/ci.yml` still declares `push.branches: ["main"]`.
+
+- Observation: The root `ci:static` and `ci:integration-db` scripts are behaving correctly in the live checkout by failing only at the final clean-tree gate, not in lint, typecheck, build, migration, or tests.
+  Evidence: after the branch-trigger fix, both commands completed their substantive steps successfully and then reported the existing tracked and untracked runtime files already present in the dirty worktree.
 
 ## Decision Log
 
@@ -104,6 +115,10 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 
 - Decision: Keep `tools/ci-check-clean-tree.mjs` as the single clean-tree authority and let `pnpm ci:repro:current` supply an optional baseline snapshot file.
   Rationale: The workflow still wants empty-baseline semantics on a real clean checkout, but local next-push reproduction needs to preserve the current diff while catching any additional churn introduced by install, build, or test.
+  Date/Author: 2026-03-10 / Codex
+
+- Decision: Run CI on every branch push for the current repo stage, keep `pull_request`, add `workflow_dispatch`, and add per-ref concurrency cancellation.
+  Rationale: The real operator problem is invisible status on `codex/*` pushes, not excessive CI volume, and this repo is still in a high-churn bootstrap phase where branch pushes need visible feedback before PR creation. Manual dispatch and concurrency make reruns clearer without widening runtime behavior.
   Date/Author: 2026-03-10 / Codex
 
 ## Context and Orientation
@@ -286,3 +301,11 @@ The latest follow-up diagnosis established two concrete truths for the next push
 That next-push gap is now covered by the fixture fix, the exact `pnpm` 10.4.1 workflow pin, and `pnpm ci:repro:current`, which reproduces the live worktree diff in a clean temp checkout before the branch is pushed.
 
 One final repo-level nuance is now explicit in the tooling and docs: `pnpm ci:static` and `pnpm ci:integration-db` are truthful mirrors of Actions and therefore expect a clean checkout, while `pnpm ci:repro:current` is the supported way to validate a dirty local snapshot by baselining the current diff and then running those same scripts in a temp worktree.
+
+The final branch-visibility fix is intentionally small but important: GitHub Actions now runs on any branch push, on pull requests, and through manual dispatch, so a push to `codex/next-push-ci` will surface CI status directly instead of looking idle until a PR is opened.
+
+The final validation picture is now explicit:
+
+- the latest pushed branch commit is green from a clean temp worktree
+- the exact current next-push snapshot is green through `pnpm ci:repro:current`
+- the live dirty checkout still fails `pnpm ci:static` and `pnpm ci:integration-db` only because the clean-tree guard correctly sees the unstaged runtime slice that has not been committed yet

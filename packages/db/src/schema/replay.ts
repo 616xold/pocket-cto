@@ -18,8 +18,10 @@ export const replayEventTypeEnum = pgEnum("replay_event_type", [
   "artifact.created",
   "approval.requested",
   "approval.resolved",
+  "runtime.thread_replaced",
   "runtime.thread_started",
   "runtime.turn_started",
+  "runtime.turn_completed",
   "runtime.item_started",
   "runtime.item_completed",
 ]);

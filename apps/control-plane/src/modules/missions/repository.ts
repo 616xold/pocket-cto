@@ -65,10 +65,42 @@ export interface MissionRepository extends TransactionalRepository {
     session?: PersistenceSession,
   ): Promise<MissionTaskRecord | null>;
 
+  findOldestClaimedTaskReadyForTurn(
+    session?: PersistenceSession,
+  ): Promise<MissionTaskRecord | null>;
+
+  findOldestClaimedTaskWithoutThread(
+    session?: PersistenceSession,
+  ): Promise<MissionTaskRecord | null>;
+
   getTaskById(
     taskId: string,
     session?: PersistenceSession,
   ): Promise<MissionTaskRecord | null>;
+
+  attachCodexThreadId(
+    taskId: string,
+    threadId: string,
+    session?: PersistenceSession,
+  ): Promise<MissionTaskRecord>;
+
+  replaceCodexThreadId(
+    taskId: string,
+    expectedCurrentThreadId: string,
+    newThreadId: string,
+    session?: PersistenceSession,
+  ): Promise<MissionTaskRecord>;
+
+  attachCodexTurnId(
+    taskId: string,
+    turnId: string,
+    session?: PersistenceSession,
+  ): Promise<MissionTaskRecord>;
+
+  clearCodexTurnId(
+    taskId: string,
+    session?: PersistenceSession,
+  ): Promise<MissionTaskRecord>;
 
   updateTaskStatus(
     taskId: string,
@@ -150,6 +182,7 @@ export class InMemoryMissionRepository implements MissionRepository {
       status: input.status,
       attemptCount: 0,
       codexThreadId: null,
+      codexTurnId: null,
       workspaceId: null,
       dependsOnTaskId: input.dependsOnTaskId ?? null,
       summary: null,
@@ -199,6 +232,21 @@ export class InMemoryMissionRepository implements MissionRepository {
     });
   }
 
+  async findOldestClaimedTaskReadyForTurn(): Promise<MissionTaskRecord | null> {
+    return this.findClaimedTask(
+      (task) =>
+        task.status === "claimed" &&
+        task.codexThreadId !== null &&
+        task.codexTurnId === null,
+    );
+  }
+
+  async findOldestClaimedTaskWithoutThread(): Promise<MissionTaskRecord | null> {
+    return this.findClaimedTask(
+      (task) => task.status === "claimed" && task.codexThreadId === null,
+    );
+  }
+
   async getTaskById(taskId: string): Promise<MissionTaskRecord | null> {
     for (const tasks of this.tasks.values()) {
       const task = tasks.find((candidate) => candidate.id === taskId);
@@ -208,6 +256,76 @@ export class InMemoryMissionRepository implements MissionRepository {
     }
 
     return null;
+  }
+
+  async attachCodexThreadId(
+    taskId: string,
+    threadId: string,
+  ): Promise<MissionTaskRecord> {
+    const existingTask = await this.getTaskById(taskId);
+
+    if (!existingTask) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+
+    if (existingTask.codexThreadId) {
+      return existingTask;
+    }
+
+    return this.replaceTask(taskId, {
+      codexThreadId: threadId,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  async replaceCodexThreadId(
+    taskId: string,
+    expectedCurrentThreadId: string,
+    newThreadId: string,
+  ): Promise<MissionTaskRecord> {
+    const existingTask = await this.getTaskById(taskId);
+
+    if (!existingTask) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+
+    if (existingTask.codexThreadId !== expectedCurrentThreadId) {
+      throw new Error(
+        `Task ${taskId} thread mismatch during replacement: expected ${expectedCurrentThreadId}, got ${existingTask.codexThreadId ?? "null"}`,
+      );
+    }
+
+    return this.replaceTask(taskId, {
+      codexThreadId: newThreadId,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  async attachCodexTurnId(
+    taskId: string,
+    turnId: string,
+  ): Promise<MissionTaskRecord> {
+    const existingTask = await this.getTaskById(taskId);
+
+    if (!existingTask) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+
+    if (existingTask.codexTurnId) {
+      return existingTask;
+    }
+
+    return this.replaceTask(taskId, {
+      codexTurnId: turnId,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  async clearCodexTurnId(taskId: string): Promise<MissionTaskRecord> {
+    return this.replaceTask(taskId, {
+      codexTurnId: null,
+      updatedAt: new Date().toISOString(),
+    });
   }
 
   async updateTaskStatus(
@@ -276,6 +394,40 @@ export class InMemoryMissionRepository implements MissionRepository {
             dependencyStatus,
           })
         ) {
+          candidates.push({ mission, task });
+        }
+      }
+    }
+
+    candidates.sort((left, right) => {
+      return (
+        left.mission.createdAt.localeCompare(right.mission.createdAt) ||
+        left.mission.id.localeCompare(right.mission.id) ||
+        left.task.sequence - right.task.sequence ||
+        left.task.id.localeCompare(right.task.id)
+      );
+    });
+
+    return candidates[0]?.task ?? null;
+  }
+
+  private findClaimedTask(
+    predicate: (task: MissionTaskRecord, mission: MissionRecord) => boolean,
+  ) {
+    const candidates: Array<{
+      mission: MissionRecord;
+      task: MissionTaskRecord;
+    }> = [];
+
+    for (const mission of this.missions.values()) {
+      if (!["queued", "running"].includes(mission.status)) {
+        continue;
+      }
+
+      const tasks = this.tasks.get(mission.id) ?? [];
+
+      for (const task of tasks) {
+        if (predicate(task, mission)) {
           candidates.push({ mission, task });
         }
       }

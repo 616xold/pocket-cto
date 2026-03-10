@@ -11,37 +11,54 @@ import { OrchestratorWorker } from "./modules/orchestrator/worker";
 import { DrizzleReplayRepository } from "./modules/replay/drizzle-repository";
 import { InMemoryReplayRepository } from "./modules/replay/repository";
 import { ReplayService } from "./modules/replay/service";
+import { RuntimeCodexAdapter } from "./modules/runtime-codex/adapter";
+import {
+  resolveCodexRuntimeClientOptions,
+  resolveCodexThreadDefaults,
+} from "./modules/runtime-codex/config";
+import { CodexRuntimeService } from "./modules/runtime-codex/service";
 
 export async function createContainer(): Promise<AppContainer> {
-  const services = buildDbServices();
+  const env = loadEnv();
+  const db = createDb(env.DATABASE_URL);
 
-  return {
-    missionService: services.missionService,
-    replayService: services.replayService,
-  };
+  return buildAppContainer({
+    missionRepository: new DrizzleMissionRepository(db),
+    replayRepository: new DrizzleReplayRepository(db),
+  });
 }
 
 export async function createWorkerContainer(): Promise<WorkerContainer> {
-  const services = buildDbServices();
+  const env = loadEnv();
+  const db = createDb(env.DATABASE_URL);
+  const missionRepository = new DrizzleMissionRepository(db);
+  const replayRepository = new DrizzleReplayRepository(db);
+  const replayService = new ReplayService(replayRepository, missionRepository);
+
+  const runtimeCodexService = new CodexRuntimeService(
+    new RuntimeCodexAdapter(resolveCodexRuntimeClientOptions(env)),
+    resolveCodexThreadDefaults(env, process.cwd()),
+  );
 
   return {
-    worker: new OrchestratorWorker(services.orchestratorService),
+    worker: new OrchestratorWorker(
+      new OrchestratorService(
+        missionRepository,
+        replayService,
+        runtimeCodexService,
+      ),
+    ),
   };
 }
 
 export function createInMemoryContainer(): AppContainer {
-  const services = buildServices({
+  return buildAppContainer({
     missionRepository: new InMemoryMissionRepository(),
     replayRepository: new InMemoryReplayRepository(),
   });
-
-  return {
-    missionService: services.missionService,
-    replayService: services.replayService,
-  };
 }
 
-function buildServices(deps: {
+function buildAppContainer(deps: {
   missionRepository: ConstructorParameters<typeof MissionService>[1];
   replayRepository: ConstructorParameters<typeof ReplayService>[0];
 }) {
@@ -51,30 +68,14 @@ function buildServices(deps: {
   );
   const evidenceService = new EvidenceService();
   const missionCompiler = new StubMissionCompiler();
-  const missionService = new MissionService(
-    missionCompiler,
-    deps.missionRepository,
-    replayService,
-    evidenceService,
-  );
-  const orchestratorService = new OrchestratorService(
-    deps.missionRepository,
-    replayService,
-  );
 
   return {
-    missionService,
+    missionService: new MissionService(
+      missionCompiler,
+      deps.missionRepository,
+      replayService,
+      evidenceService,
+    ),
     replayService,
-    orchestratorService,
   };
-}
-
-function buildDbServices() {
-  const env = loadEnv();
-  const db = createDb(env.DATABASE_URL);
-
-  return buildServices({
-    missionRepository: new DrizzleMissionRepository(db),
-    replayRepository: new DrizzleReplayRepository(db),
-  });
 }

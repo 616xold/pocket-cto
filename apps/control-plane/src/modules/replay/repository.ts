@@ -1,4 +1,4 @@
-import type { ReplayEvent } from "@pocket-cto/domain";
+import type { ReplayEvent, ReplayEventType } from "@pocket-cto/domain";
 import type { PersistenceSession } from "../../lib/persistence";
 
 export type ReplayEventAppend = Omit<ReplayEvent, "sequence">;
@@ -13,6 +13,12 @@ export interface ReplayRepository {
     missionId: string,
     session?: PersistenceSession,
   ): Promise<ReplayEvent[]>;
+
+  hasTaskEventType(
+    taskId: string,
+    type: ReplayEventType,
+    session?: PersistenceSession,
+  ): Promise<boolean>;
 }
 
 export class InMemoryReplayRepository implements ReplayRepository {
@@ -39,5 +45,18 @@ export class InMemoryReplayRepository implements ReplayRepository {
   async listByMissionId(missionId: string): Promise<ReplayEvent[]> {
     const events = this.events.get(missionId) ?? [];
     return [...events].sort((left, right) => left.sequence - right.sequence);
+  }
+
+  async hasTaskEventType(
+    taskId: string,
+    type: ReplayEventType,
+  ): Promise<boolean> {
+    for (const events of this.events.values()) {
+      if (events.some((event) => event.taskId === taskId && event.type === type)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

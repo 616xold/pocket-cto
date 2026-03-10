@@ -1,9 +1,16 @@
-import type { CodexAppServerClient } from "@pocket-cto/codex-runtime";
+import {
+  CodexAppServerClient,
+  type CodexRuntimeClientOptions,
+} from "@pocket-cto/codex-runtime";
 
-export class RuntimeCodexAdapter {
-  constructor(private readonly client: CodexAppServerClient) {}
+export type RuntimeCodexClientFactory = {
+  createClient(): CodexAppServerClient;
+};
 
-  getClient() {
-    return this.client;
+export class RuntimeCodexAdapter implements RuntimeCodexClientFactory {
+  constructor(private readonly clientOptions: CodexRuntimeClientOptions) {}
+
+  createClient() {
+    return new CodexAppServerClient(this.clientOptions);
   }
 }

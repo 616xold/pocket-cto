@@ -1,10 +1,15 @@
 import process from "node:process";
 import readline from "node:readline";
 
-const { mode, threadId } = readFlags(process.argv.slice(2));
+const { mode, threadId: seedThreadId } = readFlags(process.argv.slice(2));
 
 let sawInitialize = false;
 let sawInitialized = false;
+let activeThreadId = seedThreadId;
+let sawDirectTurnMissing = false;
+let sawResumeGap = false;
+let threadStartCount = 0;
+const loadedThreadIds = new Set();
 
 const readlineInterface = readline.createInterface({
   input: process.stdin,
@@ -61,10 +66,19 @@ readlineInterface.on("line", (line) => {
       return;
     }
 
+    threadStartCount += 1;
+
     const cwd = message.params?.cwd ?? process.cwd();
     const approvalPolicy = message.params?.approvalPolicy ?? "untrusted";
     const sandboxMode = message.params?.sandbox ?? "workspace-write";
-    const thread = buildThread(threadId, cwd);
+    activeThreadId = buildStartedThreadId({
+      seed: seedThreadId,
+      count: threadStartCount,
+      replacement: sawResumeGap || sawDirectTurnMissing,
+    });
+    loadedThreadIds.add(activeThreadId);
+
+    const thread = buildThread(activeThreadId, cwd);
 
     write({
       id: message.id,
@@ -89,11 +103,173 @@ readlineInterface.on("line", (line) => {
     return;
   }
 
+  if (message.method === "thread/resume") {
+    if (!sawInitialize || !sawInitialized) {
+      writeError(
+        message.id,
+        -32000,
+        "initialize handshake incomplete before thread/resume",
+      );
+      return;
+    }
+
+    const resumedThreadId = message.params?.threadId ?? activeThreadId;
+
+    if (isResumeGapMode(mode)) {
+      sawResumeGap = true;
+      writeError(
+        message.id,
+        -32600,
+        `no rollout found for thread id ${resumedThreadId}`,
+      );
+      return;
+    }
+
+    const cwd = message.params?.cwd ?? process.cwd();
+    const approvalPolicy = message.params?.approvalPolicy ?? "untrusted";
+    const sandboxMode = message.params?.sandbox ?? "workspace-write";
+    const thread = buildThread(resumedThreadId, cwd);
+    activeThreadId = resumedThreadId;
+    loadedThreadIds.add(resumedThreadId);
+
+    write({
+      id: message.id,
+      result: {
+        thread,
+        model: message.params?.model ?? "gpt-5.2-codex",
+        modelProvider: message.params?.modelProvider ?? "openai",
+        serviceTier: null,
+        cwd,
+        approvalPolicy,
+        sandbox: buildSandboxPolicy(sandboxMode, cwd),
+        reasoningEffort: null,
+      },
+    });
+    return;
+  }
+
+  if (message.method === "turn/start") {
+    if (!sawInitialize || !sawInitialized) {
+      writeError(
+        message.id,
+        -32000,
+        "initialize handshake incomplete before turn/start",
+      );
+      return;
+    }
+
+    if (mode === "turn-start-error") {
+      writeError(message.id, -32002, "simulated turn/start failure");
+      return;
+    }
+
+    const targetThreadId = message.params?.threadId ?? activeThreadId;
+
+    if (
+      mode === "resume-gap-direct-turn-failed" &&
+      !loadedThreadIds.has(targetThreadId)
+    ) {
+      sawDirectTurnMissing = true;
+      writeError(message.id, -32600, `thread not found: ${targetThreadId}`);
+      return;
+    }
+
+    if (
+      mode === "resume-gap-direct-turn-success" &&
+      targetThreadId !== seedThreadId &&
+      !loadedThreadIds.has(targetThreadId)
+    ) {
+      writeError(message.id, -32600, `thread not found: ${targetThreadId}`);
+      return;
+    }
+
+    const turn = buildTurn("turn_fake_123", "inProgress", null);
+    const lifecycle = buildLifecycle(mode);
+
+    write({
+      id: message.id,
+      result: {
+        turn,
+      },
+    });
+
+    queueNotification({
+      method: "turn/started",
+      params: {
+        threadId: targetThreadId,
+        turn,
+      },
+    });
+
+    for (const item of lifecycle.items) {
+      queueNotification({
+        method: "item/started",
+        params: {
+          item,
+          threadId: targetThreadId,
+          turnId: turn.id,
+        },
+      });
+      queueNotification({
+        method: "item/completed",
+        params: {
+          item,
+          threadId: targetThreadId,
+          turnId: turn.id,
+        },
+      });
+    }
+
+    if (lifecycle.terminalInteraction) {
+      queueNotification({
+        method: "item/commandExecution/terminalInteraction",
+        params: {
+          threadId: targetThreadId,
+          turnId: turn.id,
+          itemId: lifecycle.terminalInteraction.itemId,
+          processId: lifecycle.terminalInteraction.processId,
+          stdin: lifecycle.terminalInteraction.stdin,
+        },
+      });
+    }
+
+    queueNotification({
+      method: "turn/completed",
+      params: {
+        threadId: targetThreadId,
+        turn: buildTurn(
+          turn.id,
+          lifecycle.status,
+          lifecycle.status === "failed"
+            ? {
+                message: "simulated turn failure",
+                codexErrorInfo: null,
+                additionalDetails: "fake app server failure mode",
+              }
+            : null,
+        ),
+      },
+    });
+    return;
+  }
+
+  if (message.method === "turn/interrupt") {
+    write({
+      id: message.id,
+      result: {},
+    });
+    return;
+  }
+
   writeError(message.id ?? null, -32601, `Method not found: ${message.method}`);
 });
 
 function write(payload) {
   process.stdout.write(`${JSON.stringify(payload)}\n`);
+}
+
+function queueNotification(payload) {
+  globalThis.setTimeout(() => write(payload), 5);
 }
 
 function writeError(id, code, message) {
@@ -162,6 +338,83 @@ function buildSandboxPolicy(sandboxMode, cwd) {
     excludeTmpdirEnvVar: false,
     excludeSlashTmp: false,
   };
+}
+
+function buildTurn(id, status, error) {
+  return {
+    id,
+    items: [],
+    status,
+    error,
+  };
+}
+
+function buildLifecycle(currentMode) {
+  if (currentMode === "turn-completed-failed") {
+    return {
+      status: "failed",
+      items: [
+        {
+          type: "commandExecution",
+          id: "item_command_1",
+          command: "git status --short",
+          cwd: process.cwd(),
+          processId: "pty_1",
+          status: "completed",
+          commandActions: [],
+          aggregatedOutput: "M README.md",
+          exitCode: 0,
+          durationMs: 3,
+        },
+      ],
+      terminalInteraction: {
+        itemId: "item_command_1",
+        processId: "pty_1",
+        stdin: "q",
+      },
+    };
+  }
+
+  return {
+    status: "completed",
+    items: [
+      {
+        type: "plan",
+        id: "item_plan_1",
+        text: "Inspect repository state and propose next steps without changing files.",
+      },
+      {
+        type: "agentMessage",
+        id: "item_agent_1",
+        text: "Read-only turn completed with a safe assessment.",
+        phase: null,
+      },
+    ],
+    terminalInteraction: null,
+  };
+}
+
+function buildStartedThreadId(input) {
+  if (input.count === 1 && !input.replacement) {
+    return input.seed;
+  }
+
+  if (input.replacement) {
+    return `${input.seed}_replacement_${input.count}`;
+  }
+
+  if (input.count === 1) {
+    return input.seed;
+  }
+
+  return `${input.seed}_replacement_${input.count - 1}`;
+}
+
+function isResumeGapMode(currentMode) {
+  return [
+    "resume-gap-direct-turn-success",
+    "resume-gap-direct-turn-failed",
+  ].includes(currentMode);
 }
 
 function readFlags(argv) {

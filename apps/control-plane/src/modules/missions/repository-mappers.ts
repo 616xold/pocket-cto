@@ -42,6 +42,7 @@ export function mapMissionTaskRow(row: MissionTaskRow): MissionTaskRecord {
     status: row.status,
     attemptCount: row.attemptCount,
     codexThreadId: row.codexThreadId,
+    codexTurnId: row.codexTurnId,
     workspaceId: row.workspaceId,
     dependsOnTaskId: row.dependsOnTaskId,
     summary: row.summary,

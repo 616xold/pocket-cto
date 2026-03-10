@@ -38,6 +38,14 @@ export class ReplayService {
     return this.repository.listByMissionId(missionId);
   }
 
+  async taskHasEventType(
+    taskId: string,
+    type: ReplayEventType,
+    session?: PersistenceSession,
+  ) {
+    return this.repository.hasTaskEventType(taskId, type, session);
+  }
+
   async getMissionEvents(missionId: string) {
     const mission = await this.missionRepository.getMissionById(missionId);
 
