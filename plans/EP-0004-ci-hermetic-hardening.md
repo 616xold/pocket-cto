@@ -18,6 +18,9 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 - [x] (2026-03-09T21:43Z) Kept CI and tests independent from a committed `.env`, a manually provisioned database, and a real `codex` binary by injecting all required env in the workflow, validating the existing fake Codex fixture paths, and pinning a harmless CI runtime default.
 - [x] (2026-03-09T21:44Z) Updated docs with the new CI contract, recorded the numbering cleanup in the hygiene and runtime plans, and kept `apps/web/tsconfig.json` stable so `pnpm build` no longer rewrites tracked config on each run.
 - [x] (2026-03-09T21:47Z) Ran `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm test`, then ran the encoded DB-prep and dual migration commands against the local Postgres instance available in this session.
+- [x] (2026-03-10T01:16Z) Re-diagnosed the currently red CI path from a fresh clone because `gh` was unavailable locally, audited tracked-ignored and ignored-path behavior with git-index commands, and reproduced two concrete clean-checkout issues: `pnpm build` mutates tracked `apps/web/next-env.d.ts`, and `pnpm test` under `turbo run test` strips required env such as `DATABASE_URL` and artifact placeholders from control-plane DB-backed specs.
+- [x] (2026-03-10T01:27Z) Added shared root `ci:static` and `ci:integration-db` scripts, introduced small `tools/ci-check-clean-tree.mjs` and `tools/ci-migrate-databases.mjs` helpers, wired the workflow to those scripts with explicit CI telemetry or color env plus version steps, and updated `turbo.json` so the required runtime env reaches task processes.
+- [x] (2026-03-10T01:27Z) Revalidated the hardened path from a fresh overlay clone of the current work: `pnpm ci:static` passed with a clean tree after build, and `pnpm ci:integration-db` passed after DB prep, dual migrations, tests, and a second clean-tree check.
 
 ## Surprises & Discoveries
 
@@ -35,6 +38,12 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 
 - Observation: The fake Codex app-server fixture already avoided a real `codex` binary, but lint on a clean run still failed until the fixture imported `process` explicitly under the repo's ESLint rules.
   Evidence: `pnpm lint` failed on `packages/testkit/src/runtime/fake-codex-app-server.mjs` with `no-undef` before the explicit Node import was added.
+
+- Observation: The committed CI workflow can look green locally until `turbo run test` is exercised under a runner-style env, because Turbo 2 does not pass arbitrary env through to task processes unless the repo declares them.
+  Evidence: in a fresh clone of `21d1381`, `pnpm test` failed inside `apps/control-plane/src/test/database.ts` with `DATABASE_URL`, `ARTIFACT_S3_ENDPOINT`, `ARTIFACT_S3_BUCKET`, `ARTIFACT_S3_ACCESS_KEY`, and `ARTIFACT_S3_SECRET_KEY` all reported as `undefined`, while `pnpm --filter @pocket-cto/control-plane exec node -e 'console.log(process.env.DATABASE_URL)'` in the same shell still showed the values.
+
+- Observation: The committed web build still mutates a tracked file even after the earlier `tsconfig.json` stabilization.
+  Evidence: a fresh clone of `21d1381` ran `pnpm build` successfully but left `apps/web/next-env.d.ts` modified with the new typed-routes reference and updated Next.js comment block.
 
 ## Decision Log
 
@@ -61,6 +70,18 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 - Decision: Fix the fake Codex fixture lint failure directly instead of weakening lint rules or changing test behavior.
   Rationale: Importing the Node global explicitly is the smallest change that keeps the existing fake-fixture test path intact and lets CI stay green without widening runtime behavior.
   Date/Author: 2026-03-09 / Codex
+
+- Decision: Mirror GitHub Actions through shared root scripts instead of duplicating long command chains in the workflow.
+  Rationale: The repo needed one diagnosable CI contract that can run both on Actions and from a fresh local clone, and root scripts make the clean-checkout path explicit and reusable.
+  Date/Author: 2026-03-10 / Codex
+
+- Decision: Add the CI env contract to `turbo.json` via `globalEnv`.
+  Rationale: The real integration-db failure was not missing workflow env but Turbo's strict env forwarding, so the smallest durable fix is to declare the exact env surface the build and test tasks need.
+  Date/Author: 2026-03-10 / Codex
+
+- Decision: Keep the new clean-tree guard focused on post-command worktree churn and untracked non-ignored files, not staged differences.
+  Rationale: The workflow only needs to prove a clean checkout stays clean after build or test, and matching `git diff --exit-code` behavior keeps the helper aligned with the user's requested CI shape while still catching untracked debris.
+  Date/Author: 2026-03-10 / Codex
 
 ## Context and Orientation
 
@@ -105,6 +126,17 @@ The intended edit surface is:
 - `tools/ci-prepare-postgres.mjs`
 - `apps/web/tsconfig.json`
 - `packages/testkit/src/runtime/fake-codex-app-server.mjs`
+
+The continuation edit surface for the March 10 diagnosis and hardening pass is:
+
+- `plans/EP-0004-ci-hermetic-hardening.md`
+- `package.json`
+- `turbo.json`
+- `.github/workflows/ci.yml`
+- `docs/ops/local-dev.md`
+- `apps/web/next-env.d.ts`
+- `tools/ci-check-clean-tree.mjs`
+- `tools/ci-migrate-databases.mjs`
 
 Implementation should avoid widening into application modules unless a tiny test harness or config adjustment is necessary for hermetic CI.
 
@@ -216,3 +248,10 @@ Validation succeeded locally with:
 - `DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/pocket_cto_test pnpm --filter @pocket-cto/db db:migrate`
 
 The only scope-adjacent fixes required by validation were repo-hygiene stabilizers: checking in the Next.js `tsconfig` additions that `pnpm build` already writes automatically and importing `process` explicitly in the fake Codex fixture so lint passes on a clean runner.
+
+The follow-up March 10 diagnosis found two remaining clean-checkout gaps in the committed CI path:
+
+- `pnpm build` still rewrote tracked `apps/web/next-env.d.ts`.
+- `pnpm test` still failed in the integration-db job because Turbo stripped required CI env from task processes.
+
+Those gaps are now addressed by the shared `pnpm ci:static` and `pnpm ci:integration-db` scripts, the explicit `turbo.json` env contract, the checked-in `next-env.d.ts` update, and the post-build or post-test clean-tree guard. A fresh overlay clone of the current work passed both new root scripts under runner-style env with no tracked or untracked non-ignored churn after either job path.

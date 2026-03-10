@@ -1,5 +1,30 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "CI",
+    "NO_COLOR",
+    "NEXT_TELEMETRY_DISABLED",
+    "TURBO_TELEMETRY_DISABLED",
+    "CONTROL_PLANE_PORT",
+    "WEB_PORT",
+    "PUBLIC_APP_URL",
+    "CONTROL_PLANE_URL",
+    "NEXT_PUBLIC_CONTROL_PLANE_URL",
+    "DATABASE_URL",
+    "TEST_DATABASE_URL",
+    "ARTIFACT_S3_ENDPOINT",
+    "ARTIFACT_S3_REGION",
+    "ARTIFACT_S3_BUCKET",
+    "ARTIFACT_S3_ACCESS_KEY",
+    "ARTIFACT_S3_SECRET_KEY",
+    "ARTIFACT_S3_FORCE_PATH_STYLE",
+    "CODEX_APP_SERVER_COMMAND",
+    "CODEX_APP_SERVER_ARGS",
+    "CODEX_DEFAULT_MODEL",
+    "CODEX_DEFAULT_APPROVAL_POLICY",
+    "CODEX_DEFAULT_SANDBOX",
+    "CODEX_DEFAULT_SERVICE_NAME"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -6,6 +6,10 @@ on:
   pull_request:
 
 env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  TURBO_TELEMETRY_DISABLED: "1"
+  NO_COLOR: "1"
   CONTROL_PLANE_PORT: "4000"
   WEB_PORT: "3000"
   PUBLIC_APP_URL: http://127.0.0.1:3000
@@ -38,16 +42,14 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - name: Tool versions
+        run: |
+          node --version
+          pnpm --version
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Repo hygiene
-        run: pnpm repo:hygiene
-      - name: Lint
-        run: pnpm lint
-      - name: Typecheck
-        run: pnpm typecheck
-      - name: Build
-        run: pnpm build
+      - name: Run static CI
+        run: pnpm ci:static
 
   integration-db:
     runs-on: ubuntu-latest
@@ -74,17 +76,11 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - name: Tool versions
+        run: |
+          node --version
+          pnpm --version
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Prepare CI databases
-        run: pnpm db:prepare:ci
-      - name: Migrate app database
-        env:
-          DATABASE_URL: ${{ env.DATABASE_URL }}
-        run: pnpm --filter @pocket-cto/db db:migrate
-      - name: Migrate test database
-        env:
-          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
-        run: pnpm --filter @pocket-cto/db db:migrate
-      - name: Test
-        run: pnpm test
+      - name: Run integration DB CI
+        run: pnpm ci:integration-db
