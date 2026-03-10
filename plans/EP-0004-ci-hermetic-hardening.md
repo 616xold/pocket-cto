@@ -21,6 +21,11 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 - [x] (2026-03-10T01:16Z) Re-diagnosed the currently red CI path from a fresh clone because `gh` was unavailable locally, audited tracked-ignored and ignored-path behavior with git-index commands, and reproduced two concrete clean-checkout issues: `pnpm build` mutates tracked `apps/web/next-env.d.ts`, and `pnpm test` under `turbo run test` strips required env such as `DATABASE_URL` and artifact placeholders from control-plane DB-backed specs.
 - [x] (2026-03-10T01:27Z) Added shared root `ci:static` and `ci:integration-db` scripts, introduced small `tools/ci-check-clean-tree.mjs` and `tools/ci-migrate-databases.mjs` helpers, wired the workflow to those scripts with explicit CI telemetry or color env plus version steps, and updated `turbo.json` so the required runtime env reaches task processes.
 - [x] (2026-03-10T01:27Z) Revalidated the hardened path from a fresh overlay clone of the current work: `pnpm ci:static` passed with a clean tree after build, and `pnpm ci:integration-db` passed after DB prep, dual migrations, tests, and a second clean-tree check.
+- [x] (2026-03-10T22:52Z) Audited the live repo state before editing, confirmed `gh` was unavailable in this environment, and reproduced two clean snapshots from temp worktrees: the pushed `95b45cbaf875229bd138f63b992ef0da35773493` commit and the exact next intended push assembled from the current tracked diff plus untracked runtime files.
+- [x] (2026-03-10T22:58Z) Identified the first concrete next-push break in that temp overlay: `pnpm ci:static` failed in `@pocket-cto/testkit#lint` because `packages/testkit/src/runtime/fake-codex-app-server.mjs` referenced bare `setTimeout` under the repo ESLint globals contract.
+- [x] (2026-03-10T22:58Z) Added `pnpm ci:repro:current`, pinned the workflow to `pnpm` 10.4.1 to match `packageManager`, and documented the temp-worktree reproduction path so future CI diagnosis validates the exact next push instead of only the last commit on `main`.
+- [x] (2026-03-10T23:00Z) Extended `tools/ci-check-clean-tree.mjs` with an optional baseline snapshot mode so `pnpm ci:repro:current` can compare post-build or post-test churn against the overlaid starting state rather than against `HEAD`.
+- [x] (2026-03-10T23:01Z) Re-ran `pnpm ci:repro:current` after that baseline fix and verified the exact next intended push now passes install, `pnpm ci:static`, and `pnpm ci:integration-db` from a fresh temp worktree with local Postgres.
 
 ## Surprises & Discoveries
 
@@ -44,6 +49,12 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 
 - Observation: The committed web build still mutates a tracked file even after the earlier `tsconfig.json` stabilization.
   Evidence: a fresh clone of `21d1381` ran `pnpm build` successfully but left `apps/web/next-env.d.ts` modified with the new typed-routes reference and updated Next.js comment block.
+
+- Observation: The currently pushed `95b45cbaf875229bd138f63b992ef0da35773493` snapshot is locally green, but the exact next intended push can still be red because the active worktree contains additional runtime files beyond `origin/main`.
+  Evidence: a clean temp worktree at `95b45cbaf875229bd138f63b992ef0da35773493` passed both `pnpm ci:static` and `pnpm ci:integration-db`, while the temp worktree overlaid with the live diff failed immediately in `@pocket-cto/testkit#lint`.
+
+- Observation: Reproducing a dirty next-push snapshot needs a clean-tree baseline, otherwise the guard will correctly flag the overlaid diff itself as churn.
+  Evidence: the first `pnpm ci:repro:current` attempt failed after a successful build because `tools/ci-check-clean-tree.mjs` compared the temp worktree against `HEAD` instead of the captured overlay state; writing a baseline snapshot before install fixed the false failure.
 
 ## Decision Log
 
@@ -81,6 +92,18 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 
 - Decision: Keep the new clean-tree guard focused on post-command worktree churn and untracked non-ignored files, not staged differences.
   Rationale: The workflow only needs to prove a clean checkout stays clean after build or test, and matching `git diff --exit-code` behavior keeps the helper aligned with the user's requested CI shape while still catching untracked debris.
+  Date/Author: 2026-03-10 / Codex
+
+- Decision: Add `pnpm ci:repro:current` as a checked-in temp-worktree overlay command instead of relying on manual git plumbing for dirty-tree CI diagnosis.
+  Rationale: The repo now needs to validate the exact next intended push, including uncommitted runtime files, and the smallest durable way to do that is one helper that applies tracked diffs plus untracked files onto a clean checkout and then runs the same shared CI scripts.
+  Date/Author: 2026-03-10 / Codex
+
+- Decision: Pin `pnpm/action-setup` to `10.4.1`.
+  Rationale: The root `packageManager` already declares `pnpm@10.4.1`, and matching the workflow exactly removes another source of local-versus-Actions drift.
+  Date/Author: 2026-03-10 / Codex
+
+- Decision: Keep `tools/ci-check-clean-tree.mjs` as the single clean-tree authority and let `pnpm ci:repro:current` supply an optional baseline snapshot file.
+  Rationale: The workflow still wants empty-baseline semantics on a real clean checkout, but local next-push reproduction needs to preserve the current diff while catching any additional churn introduced by install, build, or test.
   Date/Author: 2026-03-10 / Codex
 
 ## Context and Orientation
@@ -131,12 +154,11 @@ The continuation edit surface for the March 10 diagnosis and hardening pass is:
 
 - `plans/EP-0004-ci-hermetic-hardening.md`
 - `package.json`
-- `turbo.json`
 - `.github/workflows/ci.yml`
 - `docs/ops/local-dev.md`
-- `apps/web/next-env.d.ts`
 - `tools/ci-check-clean-tree.mjs`
-- `tools/ci-migrate-databases.mjs`
+- `tools/ci-repro-current-worktree.mjs`
+- `packages/testkit/src/runtime/fake-codex-app-server.mjs`
 
 Implementation should avoid widening into application modules unless a tiny test harness or config adjustment is necessary for hermetic CI.
 
@@ -234,7 +256,7 @@ Environment notes:
 
 ## Outcomes & Retrospective
 
-The repo now has a unique ExecPlan sequence through `EP-0003`, a split GitHub Actions workflow with distinct static and DB-backed stages, and a checked-in Postgres prep helper that provisions both `pocket_cto` and `pocket_cto_test` before migrations and tests.
+The repo now has a unique ExecPlan sequence through `EP-0003`, a split GitHub Actions workflow with distinct static and DB-backed stages, a checked-in Postgres prep helper that provisions both `pocket_cto` and `pocket_cto_test` before migrations and tests, and a temp-worktree reproduction command for validating the exact next intended push.
 
 Validation succeeded locally with:
 
@@ -254,4 +276,13 @@ The follow-up March 10 diagnosis found two remaining clean-checkout gaps in the 
 - `pnpm build` still rewrote tracked `apps/web/next-env.d.ts`.
 - `pnpm test` still failed in the integration-db job because Turbo stripped required CI env from task processes.
 
-Those gaps are now addressed by the shared `pnpm ci:static` and `pnpm ci:integration-db` scripts, the explicit `turbo.json` env contract, the checked-in `next-env.d.ts` update, and the post-build or post-test clean-tree guard. A fresh overlay clone of the current work passed both new root scripts under runner-style env with no tracked or untracked non-ignored churn after either job path.
+Those committed gaps are now addressed by the shared `pnpm ci:static` and `pnpm ci:integration-db` scripts, the explicit `turbo.json` env contract, the checked-in `next-env.d.ts` update, and the post-build or post-test clean-tree guard.
+
+The latest follow-up diagnosis established two concrete truths for the next push:
+
+- the pushed `95b45cbaf875229bd138f63b992ef0da35773493` snapshot already passes `pnpm ci:static` and `pnpm ci:integration-db` from a clean temp worktree under runner-style env
+- the exact next intended push initially failed from a clean temp worktree because `packages/testkit/src/runtime/fake-codex-app-server.mjs` referenced bare `setTimeout`
+
+That next-push gap is now covered by the fixture fix, the exact `pnpm` 10.4.1 workflow pin, and `pnpm ci:repro:current`, which reproduces the live worktree diff in a clean temp checkout before the branch is pushed.
+
+One final repo-level nuance is now explicit in the tooling and docs: `pnpm ci:static` and `pnpm ci:integration-db` are truthful mirrors of Actions and therefore expect a clean checkout, while `pnpm ci:repro:current` is the supported way to validate a dirty local snapshot by baselining the current diff and then running those same scripts in a temp worktree.

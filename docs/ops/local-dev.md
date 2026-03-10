@@ -25,6 +25,7 @@ pnpm dev:worker   # optional until runtime execution work lands
 GitHub Actions does not commit or generate a repo `.env` file.
 CI injects the required config env directly in the workflow, provisions a Postgres service, creates both `pocket_cto` and `pocket_cto_test`, and migrates both databases before running tests.
 Use `pnpm ci:static` and `pnpm ci:integration-db` locally when you want to mirror the GitHub Actions path from a clean checkout.
+Use `pnpm ci:repro:current` when you need a temp worktree that applies the exact current unstaged snapshot and then runs the same CI commands from scratch.
 Those CI scripts expect runner-style env to be present in the shell; `.env` stays local-only for development and should remain uncommitted.
 Local development still uses `cp .env.example .env`.
 

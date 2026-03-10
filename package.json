@@ -9,6 +9,7 @@
     "build": "turbo run build",
     "ci:clean-tree": "node tools/ci-check-clean-tree.mjs",
     "ci:integration-db": "pnpm db:prepare:ci && pnpm run db:migrate:ci && pnpm test && pnpm run ci:clean-tree",
+    "ci:repro:current": "node tools/ci-repro-current-worktree.mjs",
     "ci:static": "pnpm repo:hygiene && pnpm lint && pnpm typecheck && pnpm build && pnpm run ci:clean-tree",
     "db:migrate:ci": "node tools/ci-migrate-databases.mjs",
     "dev": "turbo run dev --parallel --filter=@pocket-cto/control-plane --filter=@pocket-cto/web",
