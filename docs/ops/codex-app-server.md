@@ -71,6 +71,9 @@ Before runtime bootstrap or turn execution, Pocket CTO now ensures a task worksp
 
 The source repo root is resolved from `POCKET_CTO_SOURCE_REPO_ROOT` when set.
 If unset, Pocket CTO dogfoods against the current repo resolved by `git rev-parse --show-toplevel`.
+If `WORKSPACE_ROOT` is unset or blank, Pocket CTO uses a sibling `<repo-name>.workspaces` directory outside that source repo.
+If `WORKSPACE_ROOT` is relative, it is resolved from the source repo parent directory.
+Pocket CTO rejects any workspace root that resolves to the source repo root itself or to a path nested inside it.
 
 Runtime `cwd` now comes from the persisted workspace root, not from the control-plane process directory.
 That applies to same-session bootstrap for threadless claimed tasks and to later resumed-thread or replacement-thread paths.

@@ -1,5 +1,5 @@
 import { hostname } from "node:os";
-import { isAbsolute, resolve } from "node:path";
+import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
 import type { Env } from "@pocket-cto/config";
 import type { WorkspaceGitManager } from "./git-manager";
 
@@ -24,18 +24,32 @@ export async function resolveWorkspaceServiceConfig(input: {
   const sourceRepoCandidate =
     normalizeSourceRepoRoot(input.env.POCKET_CTO_SOURCE_REPO_ROOT) ??
     input.processCwd;
+  const sourceRepoRoot = await input.gitManager.resolveRepoRoot(sourceRepoCandidate);
+  const workspaceRoot = resolveWorkspaceRoot({
+    configuredWorkspaceRoot: input.env.WORKSPACE_ROOT,
+    sourceRepoRoot,
+  });
 
   return {
     leaseDurationMs:
       input.leaseDurationMs ?? defaultWorkspaceLeaseDurationMs,
     leaseOwner: input.leaseOwner ?? buildWorkspaceLeaseOwner(),
-    sourceRepoRoot: await input.gitManager.resolveRepoRoot(sourceRepoCandidate),
-    workspaceRoot: resolve(input.processCwd, input.env.WORKSPACE_ROOT),
+    sourceRepoRoot,
+    workspaceRoot,
   };
 }
 
 export function buildWorkspaceLeaseOwner() {
   return `pocket-cto-worker:${hostname()}:${process.pid}`;
+}
+
+export function buildDefaultWorkspaceRoot(sourceRepoRoot: string) {
+  const normalizedSourceRepoRoot = resolve(sourceRepoRoot);
+
+  return resolve(
+    dirname(normalizedSourceRepoRoot),
+    `${basename(normalizedSourceRepoRoot)}.workspaces`,
+  );
 }
 
 function normalizeSourceRepoRoot(candidate: string | null | undefined) {
@@ -54,3 +68,60 @@ function normalizeSourceRepoRoot(candidate: string | null | undefined) {
   return resolve(trimmed);
 }
 
+function resolveWorkspaceRoot(input: {
+  configuredWorkspaceRoot: string | null | undefined;
+  sourceRepoRoot: string;
+}) {
+  const sourceRepoRoot = resolve(input.sourceRepoRoot);
+  const configuredWorkspaceRoot = input.configuredWorkspaceRoot?.trim() ?? "";
+  const workspaceRoot = configuredWorkspaceRoot
+    ? resolveConfiguredWorkspaceRoot(configuredWorkspaceRoot, sourceRepoRoot)
+    : buildDefaultWorkspaceRoot(sourceRepoRoot);
+
+  assertWorkspaceRootSafe({
+    sourceRepoRoot,
+    workspaceRoot,
+  });
+
+  return workspaceRoot;
+}
+
+function resolveConfiguredWorkspaceRoot(
+  configuredWorkspaceRoot: string,
+  sourceRepoRoot: string,
+) {
+  if (isAbsolute(configuredWorkspaceRoot)) {
+    return resolve(configuredWorkspaceRoot);
+  }
+
+  return resolve(dirname(sourceRepoRoot), configuredWorkspaceRoot);
+}
+
+function assertWorkspaceRootSafe(input: {
+  sourceRepoRoot: string;
+  workspaceRoot: string;
+}) {
+  const sourceRepoRoot = resolve(input.sourceRepoRoot);
+  const workspaceRoot = resolve(input.workspaceRoot);
+  const recommendedWorkspaceRoot = buildDefaultWorkspaceRoot(sourceRepoRoot);
+  const relativePath = relative(sourceRepoRoot, workspaceRoot);
+
+  if (relativePath === "") {
+    throw new Error(
+      [
+        `Resolved workspace root ${workspaceRoot} must not equal source repo root ${sourceRepoRoot}.`,
+        `Set WORKSPACE_ROOT to a path outside ${sourceRepoRoot} or leave it blank to use ${recommendedWorkspaceRoot}.`,
+      ].join(" "),
+    );
+  }
+
+  if (!relativePath.startsWith("..") && !isAbsolute(relativePath)) {
+    throw new Error(
+      [
+        `Resolved workspace root ${workspaceRoot} must sit outside source repo root ${sourceRepoRoot}.`,
+        `Nested workspace roots are not supported for local dogfooding.`,
+        `Set WORKSPACE_ROOT to a path outside ${sourceRepoRoot} or leave it blank to use ${recommendedWorkspaceRoot}.`,
+      ].join(" "),
+    );
+  }
+}

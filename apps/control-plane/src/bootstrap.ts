@@ -18,6 +18,7 @@ import {
 } from "./modules/runtime-codex/config";
 import { CodexRuntimeService } from "./modules/runtime-codex/service";
 import {
+  buildDefaultWorkspaceRoot,
   DrizzleWorkspaceRepository,
   InMemoryWorkspaceRepository,
   LocalWorkspaceGitManager,
@@ -109,7 +110,7 @@ export function createInMemoryWorkspaceService() {
       leaseDurationMs: 15 * 60_000,
       leaseOwner: "pocket-cto-worker:test:0",
       sourceRepoRoot: process.cwd(),
-      workspaceRoot: process.cwd(),
+      workspaceRoot: buildDefaultWorkspaceRoot(process.cwd()),
     },
   );
 }

@@ -35,6 +35,8 @@ A mission should move right only when the mission type, evidence, and approvals 
 - one workspace or worktree per mission task
 - no shared mutable workspace across unrelated missions
 - keep the workspace inside `WORKSPACE_ROOT`
+- keep `WORKSPACE_ROOT` itself outside the source repo checkout
+- reject any workspace root that equals or is nested inside the source repo root
 - reject any path escape
 - attach lease ownership to running tasks
 

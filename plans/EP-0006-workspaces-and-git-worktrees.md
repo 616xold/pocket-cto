@@ -19,6 +19,8 @@ A queued mission processed by one worker tick should create and persist a worksp
 - [x] (2026-03-11T00:18Z) Wired workspace acquisition into the orchestrator before runtime bootstrap or turn execution, passed `workspace.rootPath` as runtime `cwd`, recorded bootstrap `cwd` in `runtime.thread_started`, and released workspace leases on terminal task completion while keeping worktrees on disk.
 - [x] (2026-03-11T00:18Z) Added a temp-git-repo workspace service test plus expanded DB-backed control-plane tests for deterministic workspace creation, runtime `cwd` propagation, same-task workspace reuse after a failed tick, and terminal lease release.
 - [x] (2026-03-11T00:18Z) Ran `pnpm db:generate`, `pnpm db:migrate`, `pnpm --filter @pocket-cto/control-plane test`, `pnpm --filter @pocket-cto/control-plane typecheck`, and `pnpm --filter @pocket-cto/control-plane lint`, then completed one manual local temp-repo acceptance and recorded the observed workspace and runtime `cwd` below.
+- [x] (2026-03-11T01:54Z) Corrected M1.3 workspace-root safety so the default dogfooding root resolves to a sibling `<repo>.workspaces` directory outside the source repo, rejects equal or nested workspace roots clearly, and updated docs plus `.env.example` to match the actual runtime behavior.
+- [x] (2026-03-11T01:54Z) Audited `mission_tasks.workspace_id` linkage and deferred the reverse DB foreign key because the current `workspaces.task_id -> mission_tasks.id` relationship would make it a cyclic-FK migration for a narrow M1.3 polish pass; added a focused repository invariant test instead.
 
 ## Surprises & Discoveries
 
@@ -36,6 +38,9 @@ A queued mission processed by one worker tick should create and persist a worksp
 
 - Observation: On this macOS environment, temp paths under `/var/...` are canonicalized by Git to `/private/var/...`, so worktree verification and test assertions must compare canonical realpaths instead of raw `resolve(...)` output.
   Evidence: the first workspace-manager test failed until `LocalWorkspaceGitManager` and the temp-repo helpers normalized paths through `realpath(...)`, after which both workspace and DB-backed integration tests passed.
+
+- Observation: The first M1.3 pass left `WORKSPACE_ROOT` defaulted to `.workspaces` and resolved it from `process.cwd()`, which makes dogfooding create worktrees inside the same repo checkout that is being used as the source repo.
+  Evidence: `.env.example` set `WORKSPACE_ROOT=.workspaces`, and `apps/control-plane/src/modules/workspaces/config.ts` previously called `resolve(processCwd, env.WORKSPACE_ROOT)`.
 
 ## Decision Log
 
@@ -67,6 +72,14 @@ A queued mission processed by one worker tick should create and persist a worksp
   Rationale: macOS temp paths can surface as `/var/...` while Git reports `/private/var/...`; comparing canonical paths keeps the deterministic-path contract intact without weakening verification.
   Date/Author: 2026-03-11 / Codex
 
+- Decision: Treat blank or unset `WORKSPACE_ROOT` as a request for a safe sibling directory outside the source repo and resolve relative `WORKSPACE_ROOT` values from the source repo parent directory, not from `process.cwd()`.
+  Rationale: Dogfooding must not create worktrees inside the source checkout by default. A sibling `<repo-name>.workspaces` directory keeps the one-repo pre-M2 model intact while making the isolation boundary explicit and local-only.
+  Date/Author: 2026-03-11 / Codex
+
+- Decision: Defer a DB-level foreign key from `mission_tasks.workspace_id` to `workspaces.id` in M1.3 and enforce the linkage with repository writes plus an invariant test instead.
+  Rationale: `workspaces.task_id` already references `mission_tasks.id`. Adding the reverse FK in this slice would introduce a cyclic-FK migration and schema-definition complication that is not justified by this narrow safety fix.
+  Date/Author: 2026-03-11 / Codex
+
 ## Context and Orientation
 
 Pocket CTO already persists missions, mission tasks, proof-bundle placeholders, and replay events.
@@ -91,7 +104,7 @@ Platform assumptions for this plan:
 - The checkout root resolved by `git rev-parse --show-toplevel` is `/Users/sohaib/Downloads/pocket-cto-starter`.
 - Local git worktrees can be created and removed from this checkout.
 - Pre-M2, Pocket CTO manages exactly one local source repo root and never fetches or clones from a remote.
-- `WORKSPACE_ROOT` may be relative in env, but the resolved on-disk workspace root must remain inside the process-local workspace root directory.
+- `WORKSPACE_ROOT` may be relative in env, but the resolved workspace root must remain outside the source repo root and inside the chosen external workspace-root directory.
 
 Expected edit surface for this slice:
 
@@ -229,13 +242,27 @@ Replay and evidence notes for this slice:
 - Workspace persistence is an execution precondition, not a new mission or task state machine step.
 - Manual acceptance evidence must include the workspace record identity, deterministic path, branch name, lease fields, and observed runtime `cwd`.
 
-Validation results captured after implementation:
+Validation results captured after the first M1.3 implementation:
 
 - `pnpm db:generate` passed and generated `packages/db/drizzle/0004_wet_thor_girl.sql`.
 - `pnpm db:migrate` passed against the local development database.
 - `pnpm --filter @pocket-cto/control-plane test` passed with 21 tests, including the new temp-repo workspace service test and the DB-backed workspace/runtime assertions.
 - `pnpm --filter @pocket-cto/control-plane typecheck` initially failed on stale referenced package declarations after adding `POCKET_CTO_SOURCE_REPO_ROOT` and `runtime.thread_started.payload.cwd`; rebuilding `@pocket-cto/config`, `@pocket-cto/domain`, and `@pocket-cto/db` resolved that drift, after which the required control-plane typecheck command passed.
 - `pnpm --filter @pocket-cto/control-plane lint` passed.
+
+Validation results captured after the workspace-root safety correction:
+
+- `pnpm db:generate` passed with `No schema changes, nothing to migrate`.
+- `pnpm db:migrate` passed.
+- `pnpm --filter @pocket-cto/control-plane test` passed with 26 tests, including the new workspace-config and workspace-repository invariant coverage.
+- `pnpm --filter @pocket-cto/control-plane typecheck` passed.
+- `pnpm --filter @pocket-cto/control-plane lint` passed.
+- Manual acceptance with blank `WORKSPACE_ROOT` and a temp local source repo resolved:
+  - source repo root: `/private/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-source-repo-SfGskJ`
+  - workspace root: `/private/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-source-repo-SfGskJ.workspaces`
+  - workspace path: `/private/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-source-repo-SfGskJ.workspaces/11111111-1111-4111-8111-111111111111/0-planner`
+  - branch name: `pocket-cto/11111111-1111-4111-8111-111111111111/0-planner`
+  - workspace root outside source repo: `true`
 
 Manual acceptance evidence captured on 2026-03-11 against a temp local git repo:
 
@@ -282,6 +309,8 @@ Important local dependencies and tools:
 M1.3 landed as the intended narrow isolation slice.
 Every claimed task now gets one persisted workspace row, one deterministic git worktree and branch, an explicit lease, and a runtime `cwd` that points at that workspace instead of the control-plane process directory.
 The worker preserves the M1.2 claimed-task recovery order, ensures workspace state before any runtime bootstrap or turn execution, records the bootstrap `cwd` in replay, and releases the workspace lease on terminal completion without deleting the worktree.
+The follow-up safety correction moves the default dogfooding workspace root outside the source repo, aligns `.env.example` and ops docs with that behavior, and makes nested workspace roots a clear configuration error instead of an accidental default.
+The `mission_tasks.workspace_id` reverse FK remains deferred for now; repository writes plus a focused invariant test keep the linkage explicit without forcing a cyclic schema dependency into this slice.
 
 What remains is the work the prompt explicitly deferred:
 

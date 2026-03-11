@@ -40,7 +40,7 @@ pnpm repo:hygiene
 ```
 
 Keep `pnpm-lock.yaml`, `packages/db/drizzle/*.sql`, `packages/db/drizzle/meta/**`, and `apps/web/next-env.d.ts` committed.
-Do not commit local runtime artifacts such as `node_modules/`, `dist/`, `.next/`, `.workspaces/`, `artifacts-local/`, logs, or machine-local env files.
+Do not commit local runtime artifacts such as `node_modules/`, `dist/`, `.next/`, `artifacts-local/`, logs, machine-local env files, or any external workspace-root directories created for task worktrees.
 
 ## Workspace isolation
 
@@ -48,18 +48,37 @@ Before M2 GitHub integration lands, Pocket CTO manages exactly one local source 
 Set `POCKET_CTO_SOURCE_REPO_ROOT` to an absolute local git repo path when you want the worker to operate on another checkout.
 If it is unset, the worker dogfoods against the current repo root resolved by `git rev-parse --show-toplevel`.
 
-Worktrees are created under `WORKSPACE_ROOT`, which defaults to `.workspaces`.
+Worktrees are created under `WORKSPACE_ROOT`.
+If `WORKSPACE_ROOT` is unset or blank, Pocket CTO derives a safe default sibling directory outside the source repo:
+
+```text
+<source-repo-parent>/<source-repo-name>.workspaces
+```
+
+If `WORKSPACE_ROOT` is relative, it is resolved from the source repo parent directory, not from inside the repo checkout.
+Pocket CTO rejects any resolved workspace root that equals the source repo root or sits inside it.
 Each claimed task uses a deterministic path of the form:
 
 ```text
-.workspaces/<mission-id>/<task.sequence>-<task.role>
+<workspace-root>/<mission-id>/<task.sequence>-<task.role>
 ```
 
 To inspect created worktrees:
 
 ```bash
-git -C "${POCKET_CTO_SOURCE_REPO_ROOT:-$(git rev-parse --show-toplevel)}" worktree list
-find .workspaces -maxdepth 2 -mindepth 2 -type d
+SOURCE_REPO_ROOT="${POCKET_CTO_SOURCE_REPO_ROOT:-$(git rev-parse --show-toplevel)}"
+
+if [ -n "${WORKSPACE_ROOT:-}" ]; then
+  case "$WORKSPACE_ROOT" in
+    /*) RESOLVED_WORKSPACE_ROOT="$WORKSPACE_ROOT" ;;
+    *) RESOLVED_WORKSPACE_ROOT="$(dirname "$SOURCE_REPO_ROOT")/$WORKSPACE_ROOT" ;;
+  esac
+else
+  RESOLVED_WORKSPACE_ROOT="$(dirname "$SOURCE_REPO_ROOT")/$(basename "$SOURCE_REPO_ROOT").workspaces"
+fi
+
+git -C "$SOURCE_REPO_ROOT" worktree list
+find "$RESOLVED_WORKSPACE_ROOT" -maxdepth 2 -mindepth 2 -type d
 ```
 
 ## Running specific apps
