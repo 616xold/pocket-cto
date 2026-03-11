@@ -24,6 +24,7 @@ export function buildRuntimeThreadReplacedPayload(input: {
 }
 
 export function buildRuntimeThreadStartedPayload(input: {
+  cwd: string;
   model: string | null;
   modelProvider: string | null;
   serviceName: string | null;

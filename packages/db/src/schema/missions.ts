@@ -121,24 +121,37 @@ export const missionTasks = pgTable(
     codexTurnUnique: uniqueIndex("mission_tasks_codex_turn_id_key")
       .on(table.codexTurnId)
       .where(sql`${table.codexTurnId} is not null`),
+    workspaceUnique: uniqueIndex("mission_tasks_workspace_id_key")
+      .on(table.workspaceId)
+      .where(sql`${table.workspaceId} is not null`),
   }),
 );
 
-export const workspaces = pgTable("workspaces", {
-  id: id(),
-  missionId: uuid("mission_id")
-    .references(() => missions.id, { onDelete: "cascade" })
-    .notNull(),
-  taskId: uuid("task_id")
-    .references(() => missionTasks.id, { onDelete: "cascade" })
-    .notNull(),
-  repo: text("repo").notNull(),
-  rootPath: text("root_path").notNull(),
-  branchName: text("branch_name"),
-  sandboxMode: text("sandbox_mode").notNull(),
-  leaseOwner: text("lease_owner"),
-  leaseExpiresAt: text("lease_expires_at"),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: createdAt(),
-  updatedAt: updatedAt(),
-});
+export const workspaces = pgTable(
+  "workspaces",
+  {
+    id: id(),
+    missionId: uuid("mission_id")
+      .references(() => missions.id, { onDelete: "cascade" })
+      .notNull(),
+    taskId: uuid("task_id")
+      .references(() => missionTasks.id, { onDelete: "cascade" })
+      .notNull(),
+    repo: text("repo").notNull(),
+    rootPath: text("root_path").notNull(),
+    branchName: text("branch_name"),
+    sandboxMode: text("sandbox_mode").notNull(),
+    leaseOwner: text("lease_owner"),
+    leaseExpiresAt: text("lease_expires_at"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    taskUnique: uniqueIndex("workspaces_task_id_key").on(table.taskId),
+    rootPathUnique: uniqueIndex("workspaces_root_path_key").on(table.rootPath),
+    branchUnique: uniqueIndex("workspaces_branch_name_key")
+      .on(table.branchName)
+      .where(sql`${table.branchName} is not null`),
+  }),
+);

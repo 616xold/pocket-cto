@@ -17,6 +17,13 @@ import {
   resolveCodexThreadDefaults,
 } from "./modules/runtime-codex/config";
 import { CodexRuntimeService } from "./modules/runtime-codex/service";
+import {
+  DrizzleWorkspaceRepository,
+  InMemoryWorkspaceRepository,
+  LocalWorkspaceGitManager,
+  resolveWorkspaceServiceConfig,
+  WorkspaceService,
+} from "./modules/workspaces";
 
 export async function createContainer(): Promise<AppContainer> {
   const env = loadEnv();
@@ -33,7 +40,18 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
   const db = createDb(env.DATABASE_URL);
   const missionRepository = new DrizzleMissionRepository(db);
   const replayRepository = new DrizzleReplayRepository(db);
+  const workspaceRepository = new DrizzleWorkspaceRepository(db);
   const replayService = new ReplayService(replayRepository, missionRepository);
+  const gitManager = new LocalWorkspaceGitManager();
+  const workspaceService = new WorkspaceService(
+    workspaceRepository,
+    gitManager,
+    await resolveWorkspaceServiceConfig({
+      env,
+      gitManager,
+      processCwd: process.cwd(),
+    }),
+  );
 
   const runtimeCodexService = new CodexRuntimeService(
     new RuntimeCodexAdapter(resolveCodexRuntimeClientOptions(env)),
@@ -46,6 +64,7 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
         missionRepository,
         replayService,
         runtimeCodexService,
+        workspaceService,
       ),
     ),
   };
@@ -78,4 +97,19 @@ function buildAppContainer(deps: {
     ),
     replayService,
   };
+}
+
+export function createInMemoryWorkspaceService() {
+  return new WorkspaceService(
+    new InMemoryWorkspaceRepository(),
+    {
+      async ensureWorktree() {},
+    },
+    {
+      leaseDurationMs: 15 * 60_000,
+      leaseOwner: "pocket-cto-worker:test:0",
+      sourceRepoRoot: process.cwd(),
+      workspaceRoot: process.cwd(),
+    },
+  );
 }

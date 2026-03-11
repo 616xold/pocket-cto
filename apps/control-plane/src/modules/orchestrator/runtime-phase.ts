@@ -30,6 +30,7 @@ import type {
   RuntimeCodexThreadReplacedEvent,
   RuntimeTurnRecoveryStrategy,
 } from "../runtime-codex/types";
+import type { WorkspaceService } from "../workspaces/service";
 import {
   buildTaskStatusChangedPayload,
   taskStatusChangeReasons,
@@ -60,6 +61,10 @@ export class OrchestratorRuntimePhase {
       "append" | "taskHasEventType"
     >,
     private readonly runtimeCodexService: Pick<CodexRuntimeService, "runTurn">,
+    private readonly workspaceService: Pick<
+      WorkspaceService,
+      "ensureTaskWorkspace" | "releaseTaskWorkspaceLease"
+    >,
   ) {}
 
   async executeClaimedTaskTurn(
@@ -84,9 +89,14 @@ export class OrchestratorRuntimePhase {
       "runtime.turn_started",
     );
     const readOnlyPolicy = buildReadOnlyTurnPolicy();
+    const workspace = await this.workspaceService.ensureTaskWorkspace({
+      sandboxMode: "read-only",
+      task,
+    });
     const turn = await this.runtimeCodexService.runTurn(
       {
         approvalPolicy: readOnlyPolicy.approvalPolicy,
+        cwd: workspace.rootPath,
         hasPriorTurnStarted,
         input: buildReadOnlyTurnInput({
           mission,
@@ -157,6 +167,13 @@ export class OrchestratorRuntimePhase {
         input.reason,
         session,
       );
+
+      if (isTerminalTaskStatus(updatedTask.status)) {
+        await this.workspaceService.releaseTaskWorkspaceLease(
+          updatedTask.id,
+          session,
+        );
+      }
 
       return updatedTask;
     });
@@ -235,6 +252,7 @@ export class OrchestratorRuntimePhase {
           taskId: persistedTask.id,
           type: "runtime.thread_started",
           payload: buildRuntimeThreadStartedPayload({
+            cwd: bootstrap.cwd,
             model: bootstrap.model,
             modelProvider: bootstrap.modelProvider,
             serviceName: bootstrap.serviceName,
@@ -433,6 +451,8 @@ export class OrchestratorRuntimePhase {
         session,
       );
 
+      await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
+
       return updatedTask;
     });
   }
@@ -483,4 +503,8 @@ export class OrchestratorRuntimePhase {
 
     return task;
   }
+}
+
+function isTerminalTaskStatus(status: MissionTaskStatus) {
+  return status === "succeeded" || status === "failed" || status === "cancelled";
 }

@@ -55,6 +55,7 @@ export const TaskStatusChangedPayloadSchema = z.object({
 });
 
 export const RuntimeThreadStartedPayloadSchema = z.object({
+  cwd: z.string(),
   threadId: z.string(),
   taskId: z.string().uuid(),
   model: z.string().nullable().default(null),

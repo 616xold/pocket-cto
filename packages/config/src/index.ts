@@ -31,6 +31,7 @@ export const EnvSchema = z.object({
     .string()
     .default("pocket-cto-control-plane"),
   WORKSPACE_ROOT: z.string().default(".workspaces"),
+  POCKET_CTO_SOURCE_REPO_ROOT: z.string().optional(),
   WORKER_RUN_ONCE: z.coerce.boolean().default(false),
   WORKER_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(30_000),
   GITHUB_APP_ID: z.string().optional(),

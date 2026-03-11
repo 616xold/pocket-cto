@@ -28,7 +28,7 @@ export function buildReadOnlyTurnInput(input: {
     "Expected output:",
     "- Summarize the current situation relevant to this task.",
     "- Call out blockers, risks, or missing context.",
-    "- Suggest next safe steps for a later workspace-isolated turn.",
+    "- Suggest next safe steps for a later file-changing planner or executor turn.",
   ];
 
   return [

@@ -42,6 +42,26 @@ pnpm repo:hygiene
 Keep `pnpm-lock.yaml`, `packages/db/drizzle/*.sql`, `packages/db/drizzle/meta/**`, and `apps/web/next-env.d.ts` committed.
 Do not commit local runtime artifacts such as `node_modules/`, `dist/`, `.next/`, `.workspaces/`, `artifacts-local/`, logs, or machine-local env files.
 
+## Workspace isolation
+
+Before M2 GitHub integration lands, Pocket CTO manages exactly one local source repo root for workspace creation.
+Set `POCKET_CTO_SOURCE_REPO_ROOT` to an absolute local git repo path when you want the worker to operate on another checkout.
+If it is unset, the worker dogfoods against the current repo root resolved by `git rev-parse --show-toplevel`.
+
+Worktrees are created under `WORKSPACE_ROOT`, which defaults to `.workspaces`.
+Each claimed task uses a deterministic path of the form:
+
+```text
+.workspaces/<mission-id>/<task.sequence>-<task.role>
+```
+
+To inspect created worktrees:
+
+```bash
+git -C "${POCKET_CTO_SOURCE_REPO_ROOT:-$(git rev-parse --show-toplevel)}" worktree list
+find .workspaces -maxdepth 2 -mindepth 2 -type d
+```
+
 ## Running specific apps
 
 ```bash

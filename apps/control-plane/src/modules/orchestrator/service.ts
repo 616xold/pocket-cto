@@ -7,6 +7,7 @@ import { taskStatusChangeReasons } from "./events";
 import type { MissionRepository } from "../missions/repository";
 import type { ReplayService } from "../replay/service";
 import type { CodexRuntimeService } from "../runtime-codex/service";
+import type { WorkspaceService } from "../workspaces/service";
 import type { ExecuteClaimedTaskTurnResult } from "./runtime-phase";
 import { OrchestratorRuntimePhase } from "./runtime-phase";
 import { buildTaskStatusChangedPayload } from "./events";
@@ -50,11 +51,16 @@ export class OrchestratorService {
       "append" | "taskHasEventType"
     >,
     runtimeCodexService: Pick<CodexRuntimeService, "runTurn">,
+    workspaceService: Pick<
+      WorkspaceService,
+      "ensureTaskWorkspace" | "releaseTaskWorkspaceLease"
+    >,
   ) {
     this.runtimePhase = new OrchestratorRuntimePhase(
       missionRepository,
       replayService,
       runtimeCodexService,
+      workspaceService,
     );
   }
 

@@ -6,6 +6,10 @@ import { InMemoryMissionRepository } from "../missions/repository";
 import { MissionService } from "../missions/service";
 import { InMemoryReplayRepository } from "../replay/repository";
 import { ReplayService } from "../replay/service";
+import {
+  InMemoryWorkspaceRepository,
+  WorkspaceService,
+} from "../workspaces";
 import { OrchestratorService } from "./service";
 import { OrchestratorWorker } from "./worker";
 
@@ -116,6 +120,18 @@ function createHarness() {
     replayService,
     new EvidenceService(),
   );
+  const workspaceService = new WorkspaceService(
+    new InMemoryWorkspaceRepository(),
+    {
+      async ensureWorktree() {},
+    },
+    {
+      leaseDurationMs: 60_000,
+      leaseOwner: "pocket-cto-worker:test:123",
+      sourceRepoRoot: process.cwd(),
+      workspaceRoot: "/tmp/pocket-cto-worker-spec-workspaces",
+    },
+  );
   let threadCount = 0;
   let turnCount = 0;
   const orchestratorService = new OrchestratorService(
@@ -163,12 +179,12 @@ function createHarness() {
         if (!input.threadId) {
           await observer.onThreadStarted?.({
             approvalPolicy: "untrusted",
-            cwd: process.cwd(),
+            cwd: input.cwd ?? process.cwd(),
             model: "gpt-5.2-codex",
             modelProvider: "openai",
             sandbox: {
               type: "workspaceWrite",
-              writableRoots: [process.cwd()],
+              writableRoots: [input.cwd ?? process.cwd()],
               readOnlyAccess: {
                 type: "fullAccess",
               },
@@ -188,7 +204,7 @@ function createHarness() {
                 type: "idle",
               },
               path: null,
-              cwd: process.cwd(),
+              cwd: input.cwd ?? process.cwd(),
               cliVersion: "0.1.0",
               source: "appServer",
               agentNickname: null,
@@ -223,6 +239,7 @@ function createHarness() {
         };
       },
     },
+    workspaceService,
   );
 
   return {

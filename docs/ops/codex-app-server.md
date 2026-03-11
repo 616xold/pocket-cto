@@ -8,11 +8,12 @@ Pocket CTO uses Codex App Server as the worker runtime.
 - each task can own one persisted Codex thread id
 - a claimed task can temporarily own one active Codex turn id
 - replay records structural runtime lifecycle, not every token delta
-- approvals, workspaces, and file-changing execution are later milestones
+- approvals and file-changing execution are later milestones
 
-M1.2 is still deliberately narrow.
-The worker now maps thread and turn lifecycle, but it remains read-only.
-It does not create workspaces, worktrees, Git branches, approval records, PRs, or artifact bundles beyond replay.
+M1.3 keeps the runtime surface narrow but fixes isolation.
+The worker now ensures one persisted workspace record and one deterministic local git worktree per claimed task before runtime bootstrap or turn execution starts.
+Turns still remain read-only.
+Pocket CTO does not yet create approval records, PRs, or artifact bundles beyond replay.
 
 ## Protocol alignment notes
 
@@ -59,6 +60,21 @@ CODEX_DEFAULT_SERVICE_NAME=pocket-cto-control-plane
 
 `CODEX_APP_SERVER_COMMAND` and `CODEX_APP_SERVER_ARGS` are parsed separately with shell-style quoting support before the process is spawned.
 
+## Workspace cwd contract
+
+Before runtime bootstrap or turn execution, Pocket CTO now ensures a task workspace with:
+
+- one persisted `workspaces` row per task
+- deterministic path `WORKSPACE_ROOT/<missionId>/<task.sequence>-<task.role>`
+- deterministic branch `pocket-cto/<missionId>/<task.sequence>-<task.role>`
+- one local git worktree created from the single pre-M2 source repo root
+
+The source repo root is resolved from `POCKET_CTO_SOURCE_REPO_ROOT` when set.
+If unset, Pocket CTO dogfoods against the current repo resolved by `git rev-parse --show-toplevel`.
+
+Runtime `cwd` now comes from the persisted workspace root, not from the control-plane process directory.
+That applies to same-session bootstrap for threadless claimed tasks and to later resumed-thread or replacement-thread paths.
+
 ## Fresh-thread resume compatibility
 
 The installed local Codex binary still exposes `thread/resume` in the generated schema, but real local behavior on March 10, 2026 has an important gap:
@@ -74,17 +90,19 @@ The durable task-to-thread model stays in place, but first-turn execution now av
 
 For a claimed task with `codexThreadId = null`, Pocket CTO now performs bootstrap and the first read-only turn in the same short-lived stdio session:
 
-1. spawn the configured Codex App Server command
-2. send `initialize`
-3. send `initialized`
-4. send `thread/start`
-5. persist `mission_tasks.codex_thread_id`
-6. append `runtime.thread_started`
-7. send `turn/start`
-8. persist `mission_tasks.codex_turn_id` on `turn/started`
-9. stream structural item replay until terminal completion
-10. clear `mission_tasks.codex_turn_id`
-11. stop the short-lived client
+1. ensure the task has a persisted workspace row, lease, branch, and git worktree
+2. spawn the configured Codex App Server command
+3. send `initialize`
+4. send `initialized`
+5. send `thread/start` with `cwd = workspace.rootPath`
+6. persist `mission_tasks.codex_thread_id`
+7. append `runtime.thread_started`
+8. send `turn/start`
+9. persist `mission_tasks.codex_turn_id` on `turn/started`
+10. stream structural item replay until terminal completion
+11. clear `mission_tasks.codex_turn_id`
+12. release the workspace lease but keep the worktree on disk
+13. stop the short-lived client
 
 This keeps new or previously threadless claimed tasks off the broken cross-session pre-turn resume path.
 If bootstrap fails before `thread/start` succeeds, the task stays `claimed`, `codexThreadId` stays `null`, and no `runtime.thread_started` replay event is appended.
@@ -160,7 +178,8 @@ When `turn/completed` arrives:
 2. clear `mission_tasks.codex_turn_id`
 3. on `status = "completed"`, transition the task `running -> succeeded` with `reason = "runtime_turn_completed"`
 4. on `status = "failed"` or `status = "interrupted"`, transition the task `running -> failed` with `reason = "runtime_turn_failed"`
-5. stop the short-lived client
+5. release the workspace lease but keep the worktree on disk
+6. stop the short-lived client
 
 M1.2 does not change final mission completion or approval semantics yet.
 The first real turn moves the mission to `running`; later mission terminal states remain a later slice.
@@ -182,7 +201,7 @@ The resulting task prompt tells Codex:
 
 This is temporary and explicit.
 
-- M1.3 will introduce workspace isolation and worktree management
+- M1.3 now provides workspace isolation and deterministic worktree management
 - M1.4 will introduce a real planner prompt
 - M1.5 will introduce a real executor prompt
 
@@ -203,6 +222,7 @@ Replay remains structural and compact.
 Pocket CTO does not persist every token delta in M1.2.
 `item/started` and `item/completed` are the source of truth for item lifecycle, while `turn/completed` is the source of truth for terminal turn state.
 `runtime.turn_started.payload.recoveryStrategy` records whether the turn came from same-session bootstrap, a resumed thread, direct `turn/start`, or a replacement-thread fallback.
+`runtime.thread_started.payload.cwd` records the workspace root used for thread bootstrap.
 
 ## Persistence contract
 
@@ -210,6 +230,16 @@ Task runtime state now uses:
 
 - `mission_tasks.codex_thread_id`
 - `mission_tasks.codex_turn_id`
+- `mission_tasks.workspace_id`
+
+Workspace isolation state now uses:
+
+- `workspaces.repo`
+- `workspaces.root_path`
+- `workspaces.branch_name`
+- `workspaces.lease_owner`
+- `workspaces.lease_expires_at`
+- `workspaces.is_active`
 
 `codex_turn_id` is nullable and only populated while the task has an active turn.
 The schema adds a partial unique index on non-null turn ids so one active persisted turn maps to at most one task.
