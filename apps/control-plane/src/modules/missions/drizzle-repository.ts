@@ -19,6 +19,7 @@ import type {
 } from "@pocket-cto/domain";
 import type {
   AddMissionInput,
+  CreateArtifactInput,
   CreateMissionInput,
   CreateTaskInput,
   MissionRepository,
@@ -341,6 +342,26 @@ export class DrizzleMissionRepository implements MissionRepository {
     );
   }
 
+  async updateTaskSummary(
+    taskId: string,
+    summary: string | null,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [updatedTask] = await executor
+      .update(missionTasks)
+      .set({
+        summary,
+        updatedAt: new Date(),
+      })
+      .where(eq(missionTasks.id, taskId))
+      .returning();
+
+    return mapMissionTaskRow(
+      getRequiredRow(updatedTask, `Task ${taskId} summary was not updated`),
+    );
+  }
+
   async getMissionById(missionId: string, session?: PersistenceSession) {
     const executor = this.getExecutor(session);
     const [mission] = await executor
@@ -391,23 +412,84 @@ export class DrizzleMissionRepository implements MissionRepository {
     bundle: ProofBundleManifest,
     session?: PersistenceSession,
   ) {
-    const executor = this.getExecutor(session);
-    const [artifact] = await executor
-      .insert(artifacts)
-      .values({
+    return this.saveArtifact(
+      {
         missionId: bundle.missionId,
-        taskId: null,
         kind: "proof_bundle_manifest",
         uri: buildProofBundleUri(bundle.missionId),
         mimeType: "application/json",
         metadata: {
           manifest: bundle,
         },
+      },
+      session,
+    );
+  }
+
+  async saveArtifact(
+    input: CreateArtifactInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [artifact] = await executor
+      .insert(artifacts)
+      .values({
+        missionId: input.missionId,
+        taskId: input.taskId ?? null,
+        kind: input.kind,
+        uri: input.uri,
+        mimeType: input.mimeType ?? null,
+        sha256: input.sha256 ?? null,
+        metadata: input.metadata ?? {},
       })
       .returning();
 
     return mapArtifactRow(
-      getRequiredRow(artifact, "Proof bundle insert did not return a row"),
+      getRequiredRow(artifact, "Artifact insert did not return a row"),
+    );
+  }
+
+  async upsertProofBundle(
+    bundle: ProofBundleManifest,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [existingArtifact] = await executor
+      .select({
+        id: artifacts.id,
+      })
+      .from(artifacts)
+      .where(
+        and(
+          eq(artifacts.missionId, bundle.missionId),
+          eq(artifacts.kind, "proof_bundle_manifest"),
+        ),
+      )
+      .orderBy(desc(artifacts.createdAt), desc(artifacts.id))
+      .limit(1);
+
+    if (!existingArtifact) {
+      return this.saveProofBundle(bundle, session);
+    }
+
+    const [artifact] = await executor
+      .update(artifacts)
+      .set({
+        metadata: {
+          manifest: bundle,
+        },
+        mimeType: "application/json",
+        updatedAt: new Date(),
+        uri: buildProofBundleUri(bundle.missionId),
+      })
+      .where(eq(artifacts.id, existingArtifact.id))
+      .returning();
+
+    return mapArtifactRow(
+      getRequiredRow(
+        artifact,
+        `Proof bundle ${existingArtifact.id} was not updated`,
+      ),
     );
   }
 

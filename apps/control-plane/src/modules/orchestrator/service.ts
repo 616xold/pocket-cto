@@ -3,6 +3,7 @@ import type {
   MissionTaskStatus,
   TaskStatusChangeReason,
 } from "@pocket-cto/domain";
+import type { EvidenceService } from "../evidence/service";
 import { taskStatusChangeReasons } from "./events";
 import type { MissionRepository } from "../missions/repository";
 import type { ReplayService } from "../replay/service";
@@ -44,13 +45,22 @@ export class OrchestratorService {
       | "getProofBundleByMissionId"
       | "getTaskById"
       | "replaceCodexThreadId"
+      | "saveArtifact"
+      | "updateTaskSummary"
       | "updateMissionStatus"
+      | "upsertProofBundle"
     >,
     private readonly replayService: Pick<
       ReplayService,
       "append" | "taskHasEventType"
     >,
     runtimeCodexService: Pick<CodexRuntimeService, "runTurn">,
+    evidenceService: Pick<
+      EvidenceService,
+      | "attachPlannerArtifactToProofBundle"
+      | "buildPlannerArtifact"
+      | "buildPlannerTaskSummary"
+    >,
     workspaceService: Pick<
       WorkspaceService,
       "ensureTaskWorkspace" | "releaseTaskWorkspaceLease"
@@ -60,6 +70,7 @@ export class OrchestratorService {
       missionRepository,
       replayService,
       runtimeCodexService,
+      evidenceService,
       workspaceService,
     );
   }

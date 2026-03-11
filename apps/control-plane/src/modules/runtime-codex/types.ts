@@ -53,6 +53,13 @@ export type RuntimeCodexItemLifecycleEvent = {
   turnId: string;
 };
 
+export type RuntimeCodexCompletedAgentMessage = {
+  itemId: string;
+  text: string;
+  threadId: string;
+  turnId: string;
+};
+
 export type RuntimeCodexRunTurnInput = {
   approvalPolicy?: AskForApproval;
   cwd?: string | null;
@@ -84,6 +91,8 @@ export type RuntimeCodexRunTurnObserver = {
 };
 
 export type RuntimeCodexRunTurnResult = {
+  completedAgentMessages: RuntimeCodexCompletedAgentMessage[];
+  finalAgentMessageText: string | null;
   firstItemType: string | null;
   items: RuntimeCodexItemLifecycleEvent[];
   lastItemType: string | null;

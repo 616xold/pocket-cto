@@ -181,6 +181,15 @@ export const ThreadItemSchema = z
   })
   .passthrough();
 
+export const AgentMessageThreadItemSchema = z
+  .object({
+    type: z.literal("agentMessage"),
+    id: z.string(),
+    text: z.string(),
+    phase: z.unknown().nullable().optional(),
+  })
+  .passthrough();
+
 export const TurnSchema = z.object({
   id: z.string(),
   items: z.array(ThreadItemSchema),
@@ -406,6 +415,9 @@ export type AskForApproval = z.infer<typeof AskForApprovalSchema>;
 export type SandboxMode = z.infer<typeof SandboxModeSchema>;
 export type SandboxPolicy = z.infer<typeof SandboxPolicySchema>;
 export type ThreadItem = z.infer<typeof ThreadItemSchema>;
+export type AgentMessageThreadItem = z.infer<
+  typeof AgentMessageThreadItemSchema
+>;
 export type Thread = z.infer<typeof ThreadSchema>;
 export type ThreadStartParams = z.infer<typeof ThreadStartParamsSchema>;
 export type ThreadStartResponse = z.infer<typeof ThreadStartResponseSchema>;
@@ -421,3 +433,10 @@ export type TurnInterruptResponse = z.infer<typeof TurnInterruptResponseSchema>;
 export type KnownServerNotification = z.infer<
   typeof KnownServerNotificationSchema
 >;
+
+export function readAgentMessageThreadItem(
+  item: ThreadItem,
+): AgentMessageThreadItem | null {
+  const parsed = AgentMessageThreadItemSchema.safeParse(item);
+  return parsed.success ? parsed.data : null;
+}

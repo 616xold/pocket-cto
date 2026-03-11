@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { count, eq } from "drizzle-orm";
-import { workspaces } from "@pocket-cto/db";
+import { and, count, eq } from "drizzle-orm";
+import { artifacts, workspaces } from "@pocket-cto/db";
 import {
   closeTestDatabase,
   createTestDb,
@@ -200,6 +200,7 @@ describe("OrchestratorWorker (DB-backed)", () => {
       "runtime.item_completed",
       "runtime.turn_completed",
       "task.status_changed",
+      "artifact.created",
     ]);
     expect(replayEvents[7]).toMatchObject({
       type: "runtime.turn_started",
@@ -227,6 +228,97 @@ describe("OrchestratorWorker (DB-backed)", () => {
     ]);
     expect(currentBranch).toBe(`pocket-cto/${created.mission.id}/0-planner`);
     expect(worktreePaths).toContain(persistedWorkspace!.rootPath);
+  });
+
+  it("persists a planner plan artifact, updates task summary, and appends replay for it", async () => {
+    const harness = await createHarness();
+    cleanups.push(harness.cleanup);
+    const { missionService, replayService, worker } = harness;
+    const created = await missionService.createFromText({
+      text: "Plan the passkey implementation without touching files",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
+
+    const tick = await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: plannerTask.id,
+        role: "planner",
+        status: "succeeded",
+      },
+      turn: {
+        finalAgentMessageText: expect.stringContaining(
+          "## Objective understanding",
+        ),
+        firstItemType: "plan",
+        lastItemType: "agentMessage",
+      },
+    });
+    if (tick?.kind !== "turn_completed") {
+      throw new Error("Expected a completed planner turn");
+    }
+    expect(
+      tick.turn.items.some((item: RuntimeCodexRunTurnResult["items"][number]) => item.itemType === "commandExecution"),
+    ).toBe(false);
+
+    const [planArtifact] = await db
+      .select()
+      .from(artifacts)
+      .where(
+        and(
+          eq(artifacts.missionId, created.mission.id),
+          eq(artifacts.kind, "plan"),
+        ),
+      )
+      .limit(1);
+    const detail = await missionService.getMissionDetail(created.mission.id);
+    const replayEvents = await replayService.getMissionEvents(created.mission.id);
+
+    expect(planArtifact).toBeDefined();
+    expect(planArtifact).toMatchObject({
+      kind: "plan",
+      missionId: created.mission.id,
+      taskId: plannerTask.id,
+      mimeType: "text/markdown",
+      uri: `pocket-cto://missions/${created.mission.id}/tasks/${plannerTask.id}/plan`,
+    });
+    expect(readArtifactMetadata(planArtifact!.metadata)).toMatchObject({
+      body: expect.stringContaining("## Proposed steps"),
+      source: "runtime_codex_planner",
+      threadId: "thread_fake_123",
+      turnId: "turn_fake_123",
+      workflowPolicy: {
+        injected: false,
+        path: null,
+        truncated: false,
+      },
+    });
+    expect(detail.tasks[0]).toMatchObject({
+      id: plannerTask.id,
+      summary: "Plan the passkey work without changing files and preserve the existing email-login path.",
+    });
+    expect(detail.proofBundle.artifactIds).toContain(planArtifact!.id);
+    expect(detail.proofBundle.decisionTrace).toContain(
+      `Planner task 0 produced plan artifact ${planArtifact!.id}.`,
+    );
+    expect(
+      replayEvents.filter((event) => event.type === "artifact.created"),
+    ).toHaveLength(2);
+    expect(replayEvents.at(-1)).toMatchObject({
+      type: "artifact.created",
+      payload: {
+        artifactId: planArtifact!.id,
+        kind: "plan",
+      },
+    });
   });
 
   it("reuses the same persisted workspace after a failed recovery tick", async () => {
@@ -580,6 +672,7 @@ async function createHarness(options?: {
     missionRepository,
     replayService,
     runtimeCodexService,
+    new EvidenceService(),
     workspaceService,
   );
 
@@ -702,6 +795,8 @@ function createBlockedRuntimeService(
       await observer.onItemCompleted?.(items[1]!);
 
       return {
+        completedAgentMessages: [],
+        finalAgentMessageText: null,
         firstItemType: "plan",
         items,
         lastItemType: "plan",
@@ -757,4 +852,10 @@ async function getWorkspaceByTaskId(taskId: string) {
         updatedAt: workspace.updatedAt.toISOString(),
       }
     : null;
+}
+
+function readArtifactMetadata(metadata: unknown) {
+  return typeof metadata === "object" && metadata !== null
+    ? (metadata as Record<string, unknown>)
+    : {};
 }

@@ -258,6 +258,26 @@ Expected worker log shape:
 
 Inspect the mission detail after the claim:
 
+## Planner Artifact Note
+
+After M1.4, the first successful planner worker tick now persists more than replay:
+
+- `mission_tasks.summary` becomes a concise planner summary
+- a second `artifact.created` replay entry appears for `artifacts.kind = 'plan'`
+- the placeholder proof-bundle manifest references that plan artifact id and adds one planner decision-trace line
+
+You can inspect the summary through `GET /missions/:missionId`.
+The persisted plan artifact currently lives in the database evidence ledger, so local DB inspection should show:
+
+```text
+artifacts.kind = 'plan'
+artifacts.task_id = <planner-task-id>
+artifacts.uri = pocket-cto://missions/<mission-id>/tasks/<task-id>/plan
+```
+
+Planner execution remains strictly read-only in this milestone.
+The worker should not request or attempt file mutation, patch application, installs, formatter runs, or git changes.
+
 ```bash
 curl -i "http://localhost:4000/missions/$MISSION_ID"
 ```

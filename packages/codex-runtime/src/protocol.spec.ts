@@ -5,6 +5,7 @@ import { CodexAppServerClient } from "./client";
 import {
   ThreadResumeParamsSchema,
   ThreadStartParamsSchema,
+  readAgentMessageThreadItem,
   type KnownServerNotification,
 } from "./protocol";
 
@@ -143,7 +144,9 @@ describe("codex runtime protocol", () => {
       (notification) => notification.method === "item/started",
     );
     const itemCompleted = notifications.find(
-      (notification) => notification.method === "item/completed",
+      (notification) =>
+        notification.method === "item/completed" &&
+        notification.params.item.type === "agentMessage",
     );
     const turnCompleted = notifications.find(
       (notification) => notification.method === "turn/completed",
@@ -166,10 +169,17 @@ describe("codex runtime protocol", () => {
         threadId: "thread_fake_123",
         turnId: "turn_fake_123",
         item: {
-          id: "item_plan_1",
-          type: "plan",
+          id: "item_agent_1",
+          type: "agentMessage",
         },
       },
+    });
+    if (!itemCompleted || itemCompleted.method !== "item/completed") {
+      throw new Error("Expected an item/completed notification for agentMessage");
+    }
+    expect(readAgentMessageThreadItem(itemCompleted.params.item)).toMatchObject({
+      id: "item_agent_1",
+      text: expect.stringContaining("## Objective understanding"),
     });
     expect(turnCompleted).toMatchObject({
       method: "turn/completed",

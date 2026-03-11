@@ -3,8 +3,10 @@ import type {
   CodexRuntimeEvent,
   KnownServerNotification,
 } from "@pocket-cto/codex-runtime";
+import { readAgentMessageThreadItem as readCompletedAgentMessage } from "@pocket-cto/codex-runtime";
 import type {
   RuntimeCodexBootstrapResult,
+  RuntimeCodexCompletedAgentMessage,
   RuntimeCodexItemLifecycleEvent,
   RuntimeCodexRunTurnObserver,
   RuntimeCodexRunTurnResult,
@@ -50,6 +52,7 @@ export async function observeTurnLifecycle(input: {
     execution: TurnExecutionState;
   }) => Promise<void>;
 }): Promise<RuntimeCodexRunTurnResult> {
+  const completedAgentMessages: RuntimeCodexCompletedAgentMessage[] = [];
   const lifecycleItems: RuntimeCodexItemLifecycleEvent[] = [];
   const execution: TurnExecutionState = {
     recoveryStrategy: null,
@@ -102,6 +105,7 @@ export async function observeTurnLifecycle(input: {
   const unsubscribe = input.client.onEvent((event) => {
     handleTurnEvent({
       event,
+      completedAgentMessages,
       execution,
       lifecycleItems,
       observer: input.observer,
@@ -130,6 +134,7 @@ export async function observeTurnLifecycle(input: {
 
 function handleTurnEvent(input: {
   event: CodexRuntimeEvent;
+  completedAgentMessages: RuntimeCodexCompletedAgentMessage[];
   execution: TurnExecutionState;
   lifecycleItems: RuntimeCodexItemLifecycleEvent[];
   observer: RuntimeCodexRunTurnObserver;
@@ -209,6 +214,19 @@ function handleTurnEvent(input: {
           turnId: notification.params.turnId,
         };
         input.lifecycleItems.push(observed);
+        const completedAgentMessage = readCompletedAgentMessage(
+          notification.params.item,
+        );
+
+        if (completedAgentMessage) {
+          input.completedAgentMessages.push({
+            itemId: completedAgentMessage.id,
+            text: completedAgentMessage.text,
+            threadId: notification.params.threadId,
+            turnId: notification.params.turnId,
+          });
+        }
+
         await input.observer.onItemCompleted?.(observed);
       });
       return;
@@ -225,6 +243,10 @@ function handleTurnEvent(input: {
       input.queueNotification(() => {
         input.execution.turnId = notification.params.turn.id;
         input.onResolve({
+          completedAgentMessages: [...input.completedAgentMessages],
+          finalAgentMessageText:
+            input.completedAgentMessages[input.completedAgentMessages.length - 1]
+              ?.text ?? null,
           firstItemType: input.lifecycleItems[0]?.itemType ?? null,
           items: [...input.lifecycleItems],
           lastItemType:

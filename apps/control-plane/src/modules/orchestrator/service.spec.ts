@@ -108,6 +108,41 @@ describe("OrchestratorWorker", () => {
 
     expect(log.error).not.toHaveBeenCalled();
   });
+
+  it("leaves executor turns on the generic non-mutating path without plan artifacts", async () => {
+    const { missionRepository, missionService, replayService, worker } = createHarness();
+    const created = await missionService.createFromText({
+      text: "Keep executor read-only until M1.5",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const executorTask = created.tasks[1]!;
+
+    await missionRepository.updateTaskStatus(created.tasks[0]!.id, "succeeded");
+    await missionRepository.updateTaskStatus(executorTask.id, "claimed");
+
+    const tick = await worker.run({
+      log: {
+        error: vi.fn(),
+        info: vi.fn(),
+      },
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: executorTask.id,
+        role: "executor",
+        status: "succeeded",
+        summary: null,
+      },
+    });
+
+    const replay = await replayService.getMissionEvents(created.mission.id);
+    expect(replay.filter((event) => event.type === "artifact.created")).toHaveLength(1);
+  });
 });
 
 function createHarness() {
@@ -229,6 +264,27 @@ function createHarness() {
         await observer.onItemCompleted?.(items[3]!);
 
         return {
+          completedAgentMessages:
+            input.threadId || input.input[0]?.type !== "text"
+              ? []
+              : [
+                  {
+                    itemId: `item_agent_${turnCount}`,
+                    text: [
+                      "## Objective understanding",
+                      "Inspect the current task without making any changes.",
+                    ].join("\n"),
+                    threadId,
+                    turnId,
+                  },
+                ],
+          finalAgentMessageText:
+            input.threadId || input.input[0]?.type !== "text"
+              ? null
+              : [
+                  "## Objective understanding",
+                  "Inspect the current task without making any changes.",
+                ].join("\n"),
           firstItemType: items[0]!.itemType,
           items,
           lastItemType: items[3]!.itemType,
@@ -239,12 +295,14 @@ function createHarness() {
         };
       },
     },
+    new EvidenceService(),
     workspaceService,
   );
 
   return {
     missionRepository,
     missionService,
+    replayService,
     worker: new OrchestratorWorker(orchestratorService),
   };
 }

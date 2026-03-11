@@ -5,6 +5,8 @@ import type {
   TaskStatusChangeReason,
 } from "@pocket-cto/domain";
 import type { PersistenceSession } from "../../lib/persistence";
+import type { EvidenceService } from "../evidence/service";
+import { persistPlannerTurnEvidence } from "../evidence/planner-output";
 import {
   buildRuntimeStartedMissionStatusChangedPayload,
 } from "../missions/events";
@@ -21,6 +23,11 @@ import {
   buildRuntimeTurnCompletedPayload,
   buildRuntimeTurnStartedPayload,
 } from "../runtime-codex/events";
+import {
+  loadPlannerPromptContext,
+  type PlannerPromptContext,
+} from "../runtime-codex/planner-context";
+import { buildPlannerTurnInput } from "../runtime-codex/planner-prompt";
 import type { CodexRuntimeService } from "../runtime-codex/service";
 import { buildReadOnlyTurnInput } from "../runtime-codex/turn-input";
 import type {
@@ -52,15 +59,24 @@ export class OrchestratorRuntimePhase {
       | "getProofBundleByMissionId"
       | "getTaskById"
       | "replaceCodexThreadId"
+      | "saveArtifact"
       | "transaction"
+      | "updateTaskSummary"
       | "updateMissionStatus"
       | "updateTaskStatus"
+      | "upsertProofBundle"
     >,
     private readonly replayService: Pick<
       ReplayService,
       "append" | "taskHasEventType"
     >,
     private readonly runtimeCodexService: Pick<CodexRuntimeService, "runTurn">,
+    private readonly evidenceService: Pick<
+      EvidenceService,
+      | "attachPlannerArtifactToProofBundle"
+      | "buildPlannerArtifact"
+      | "buildPlannerTaskSummary"
+    >,
     private readonly workspaceService: Pick<
       WorkspaceService,
       "ensureTaskWorkspace" | "releaseTaskWorkspaceLease"
@@ -93,16 +109,26 @@ export class OrchestratorRuntimePhase {
       sandboxMode: "read-only",
       task,
     });
+    const plannerContext =
+      task.role === "planner"
+        ? await loadPlannerPromptContext({
+            mission,
+            task,
+            workspace,
+          })
+        : null;
     const turn = await this.runtimeCodexService.runTurn(
       {
         approvalPolicy: readOnlyPolicy.approvalPolicy,
         cwd: workspace.rootPath,
         hasPriorTurnStarted,
-        input: buildReadOnlyTurnInput({
-          mission,
-          proofBundle,
-          task,
-        }),
+        input: plannerContext
+          ? buildPlannerTurnInput(plannerContext)
+          : buildReadOnlyTurnInput({
+              mission,
+              proofBundle,
+              task,
+            }),
         sandboxPolicy: readOnlyPolicy.sandboxPolicy,
         threadId: task.codexThreadId,
       },
@@ -134,7 +160,11 @@ export class OrchestratorRuntimePhase {
       },
     );
 
-    const updatedTask = await this.handleTurnCompleted(taskId, turn);
+    const updatedTask = await this.handleTurnCompleted(
+      taskId,
+      turn,
+      plannerContext,
+    );
 
     return {
       task: updatedTask,
@@ -391,6 +421,7 @@ export class OrchestratorRuntimePhase {
   private async handleTurnCompleted(
     taskId: string,
     turn: RuntimeCodexRunTurnResult,
+    plannerContext: PlannerPromptContext | null,
   ) {
     return this.missionRepository.transaction(async (session) => {
       const task = await this.getRequiredTask(taskId, session);
@@ -451,9 +482,21 @@ export class OrchestratorRuntimePhase {
         session,
       );
 
+      const taskWithPlannerEvidence = await persistPlannerTurnEvidence({
+        deps: {
+          evidenceService: this.evidenceService,
+          missionRepository: this.missionRepository,
+          replayService: this.replayService,
+        },
+        plannerContext,
+        session,
+        task: updatedTask,
+        turn,
+      });
+
       await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
 
-      return updatedTask;
+      return taskWithPlannerEvidence;
     });
   }
 

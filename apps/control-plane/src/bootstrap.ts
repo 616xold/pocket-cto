@@ -43,6 +43,7 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
   const replayRepository = new DrizzleReplayRepository(db);
   const workspaceRepository = new DrizzleWorkspaceRepository(db);
   const replayService = new ReplayService(replayRepository, missionRepository);
+  const evidenceService = new EvidenceService();
   const gitManager = new LocalWorkspaceGitManager();
   const workspaceService = new WorkspaceService(
     workspaceRepository,
@@ -65,6 +66,7 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
         missionRepository,
         replayService,
         runtimeCodexService,
+        evidenceService,
         workspaceService,
       ),
     ),

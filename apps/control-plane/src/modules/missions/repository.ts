@@ -39,6 +39,16 @@ export type CreateTaskInput = {
   dependsOnTaskId?: string | null;
 };
 
+export type CreateArtifactInput = {
+  kind: ArtifactRecord["kind"];
+  metadata?: Record<string, unknown>;
+  mimeType?: string | null;
+  missionId: string;
+  sha256?: string | null;
+  taskId?: string | null;
+  uri: string;
+};
+
 export interface MissionRepository extends TransactionalRepository {
   createMission(
     input: CreateMissionInput,
@@ -102,6 +112,12 @@ export interface MissionRepository extends TransactionalRepository {
     session?: PersistenceSession,
   ): Promise<MissionTaskRecord>;
 
+  updateTaskSummary(
+    taskId: string,
+    summary: string | null,
+    session?: PersistenceSession,
+  ): Promise<MissionTaskRecord>;
+
   updateTaskStatus(
     taskId: string,
     status: MissionTaskRecord["status"],
@@ -127,12 +143,23 @@ export interface MissionRepository extends TransactionalRepository {
     bundle: ProofBundleManifest,
     session?: PersistenceSession,
   ): Promise<ArtifactRecord>;
+
+  saveArtifact(
+    input: CreateArtifactInput,
+    session?: PersistenceSession,
+  ): Promise<ArtifactRecord>;
+
+  upsertProofBundle(
+    bundle: ProofBundleManifest,
+    session?: PersistenceSession,
+  ): Promise<ArtifactRecord>;
 }
 
 export class InMemoryMissionRepository implements MissionRepository {
   private readonly missions = new Map<string, MissionRecord>();
   private readonly inputs: AddMissionInput[] = [];
   private readonly tasks = new Map<string, MissionTaskRecord[]>();
+  private readonly artifactLedger: ArtifactRecord[] = [];
   private readonly proofBundles = new Map<
     string,
     {
@@ -338,6 +365,16 @@ export class InMemoryMissionRepository implements MissionRepository {
     });
   }
 
+  async updateTaskSummary(
+    taskId: string,
+    summary: string | null,
+  ): Promise<MissionTaskRecord> {
+    return this.replaceTask(taskId, {
+      summary,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   async getMissionById(missionId: string): Promise<MissionRecord | null> {
     return this.missions.get(missionId) ?? null;
   }
@@ -353,23 +390,73 @@ export class InMemoryMissionRepository implements MissionRepository {
   }
 
   async saveProofBundle(bundle: ProofBundleManifest): Promise<ArtifactRecord> {
-    const now = new Date().toISOString();
-    const artifact: ArtifactRecord = {
-      id: crypto.randomUUID(),
+    const artifact = await this.saveArtifact({
       missionId: bundle.missionId,
-      taskId: null,
       kind: "proof_bundle_manifest",
       uri: `pocket-cto://missions/${bundle.missionId}/proof-bundle-manifest`,
       mimeType: "application/json",
-      sha256: null,
       metadata: {
         manifest: bundle,
       },
-      createdAt: now,
-    };
+    });
 
     this.proofBundles.set(bundle.missionId, { artifact, bundle });
     return artifact;
+  }
+
+  async saveArtifact(input: CreateArtifactInput): Promise<ArtifactRecord> {
+    const artifact: ArtifactRecord = {
+      id: crypto.randomUUID(),
+      missionId: input.missionId,
+      taskId: input.taskId ?? null,
+      kind: input.kind,
+      uri: input.uri,
+      mimeType: input.mimeType ?? null,
+      sha256: input.sha256 ?? null,
+      metadata: input.metadata ?? {},
+      createdAt: new Date().toISOString(),
+    };
+
+    this.artifactLedger.push(artifact);
+
+    if (artifact.kind === "proof_bundle_manifest") {
+      const bundle = readProofBundleFromMetadata(artifact.metadata);
+
+      if (bundle) {
+        this.proofBundles.set(bundle.missionId, { artifact, bundle });
+      }
+    }
+
+    return artifact;
+  }
+
+  async upsertProofBundle(bundle: ProofBundleManifest): Promise<ArtifactRecord> {
+    const existing = this.proofBundles.get(bundle.missionId);
+
+    if (!existing) {
+      return this.saveProofBundle(bundle);
+    }
+
+    const updatedArtifact: ArtifactRecord = {
+      ...existing.artifact,
+      metadata: {
+        manifest: bundle,
+      },
+    };
+
+    this.proofBundles.set(bundle.missionId, {
+      artifact: updatedArtifact,
+      bundle,
+    });
+    const ledgerIndex = this.artifactLedger.findIndex(
+      (artifact) => artifact.id === updatedArtifact.id,
+    );
+
+    if (ledgerIndex >= 0) {
+      this.artifactLedger[ledgerIndex] = updatedArtifact;
+    }
+
+    return updatedArtifact;
   }
 
   private findNextRunnableTask() {
@@ -473,4 +560,16 @@ export class InMemoryMissionRepository implements MissionRepository {
 
     throw new Error(`Task ${taskId} not found`);
   }
+}
+
+function readProofBundleFromMetadata(
+  metadata: Record<string, unknown>,
+): ProofBundleManifest | null {
+  const manifest = metadata.manifest;
+
+  if (!manifest || typeof manifest !== "object") {
+    return null;
+  }
+
+  return manifest as ProofBundleManifest;
 }

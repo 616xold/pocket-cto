@@ -10,9 +10,10 @@ Pocket CTO uses Codex App Server as the worker runtime.
 - replay records structural runtime lifecycle, not every token delta
 - approvals and file-changing execution are later milestones
 
-M1.3 keeps the runtime surface narrow but fixes isolation.
+M1.4 keeps the runtime surface narrow but makes planner output useful.
 The worker now ensures one persisted workspace record and one deterministic local git worktree per claimed task before runtime bootstrap or turn execution starts.
-Turns still remain read-only.
+Planner turns now use a dedicated read-only planner prompt assembled from the mission contract, workspace context, and repository workflow policy when `WORKFLOW.md` exists at the workspace root.
+Non-planner turns still remain on the generic read-only placeholder path.
 Pocket CTO does not yet create approval records, PRs, or artifact bundles beyond replay.
 
 ## Protocol alignment notes
@@ -34,6 +35,7 @@ The checked-in wrapper now covers the M1.2 subset needed by the control plane:
 
 The generated schema also exposes `item/commandExecution/terminalInteraction` and several delta notifications.
 Pocket CTO parses the small stable subset above for M1.2 and keeps replay driven by structural item start and completion events rather than token or text deltas.
+For M1.4, Pocket CTO also extracts final completed `agentMessage` text from `item/completed` payloads so the planner task can persist a compact plan artifact without storing every token delta.
 
 The current local wire envelope is method or id based and does not require a `jsonrpc` field.
 Pocket CTO accepts both forms for safety, but writes the current stable field set used by the installed `codex` binary.
@@ -189,26 +191,45 @@ The first real turn moves the mission to `running`; later mission terminal state
 
 ## Read-only safety posture
 
-M1.2 turn inputs are explicitly read-only.
-Pocket CTO now does two things on purpose:
+M1.4 planner turns are explicitly read-only, and all other roles remain on the generic read-only placeholder path.
+Pocket CTO now does three things on purpose:
 
-- it builds turn input through a dedicated module that tells the runtime to inspect only and avoid file changes
+- it builds planner turn input through dedicated planner-context and planner-prompt modules
+- it keeps non-planner turn input on a generic read-only placeholder module
 - it overrides the turn with `approvalPolicy = "never"` and a read-only sandbox policy
 
-The resulting task prompt tells Codex:
+The resulting planner prompt tells Codex:
 
 - do not create, edit, rename, delete, or stage files
-- do not apply patches or change git state
+- do not apply patches, installs, generators, formatters, or change git state
 - do not request or attempt approvals for mutating actions
 - if a tool would mutate state, skip it and explain why
+- return concise structured sections for objective understanding, context, risks, proposed steps, validation, and executor handoff
 
 This is temporary and explicit.
 
 - M1.3 now provides workspace isolation and deterministic worktree management
-- M1.4 will introduce a real planner prompt
+- M1.4 now introduces a real planner prompt and planner-output persistence
 - M1.5 will introduce a real executor prompt
 
 Until those milestones land, turn execution remains intentionally safe and read-only.
+
+## Planner output capture
+
+Completed planner turns still use structural lifecycle replay as the operator narrative, but M1.4 adds one narrow result-shape extension for evidence:
+
+- `RuntimeCodexRunTurnResult.completedAgentMessages`
+- `RuntimeCodexRunTurnResult.finalAgentMessageText`
+
+Those fields are populated from completed `agentMessage` items only.
+Pocket CTO does not persist token deltas or every runtime message.
+
+Planner evidence uses that final message text to:
+
+- derive a concise `mission_tasks.summary`
+- persist one `artifacts.kind = 'plan'` row with the planner text body in metadata
+- append `artifact.created` for that plan artifact
+- optionally enrich the placeholder proof-bundle manifest with the new plan artifact id and one decision-trace line
 
 ## Replay contract
 
@@ -224,6 +245,7 @@ M1.2 runtime replay now includes:
 Replay remains structural and compact.
 Pocket CTO does not persist every token delta in M1.2.
 `item/started` and `item/completed` are the source of truth for item lifecycle, while `turn/completed` is the source of truth for terminal turn state.
+M1.4 planner artifact persistence reads the final completed `agentMessage` text from the runtime result, but replay itself remains structural and compact.
 `runtime.turn_started.payload.recoveryStrategy` records whether the turn came from same-session bootstrap, a resumed thread, direct `turn/start`, or a replacement-thread fallback.
 `runtime.thread_started.payload.cwd` records the workspace root used for thread bootstrap.
 

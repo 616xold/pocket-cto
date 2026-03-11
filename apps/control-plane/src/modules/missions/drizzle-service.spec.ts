@@ -156,15 +156,18 @@ function createThrowAfterProofBundleRepository(
     replaceCodexThreadId: repository.replaceCodexThreadId.bind(repository),
     attachCodexTurnId: repository.attachCodexTurnId.bind(repository),
     clearCodexTurnId: repository.clearCodexTurnId.bind(repository),
+    updateTaskSummary: repository.updateTaskSummary.bind(repository),
     updateTaskStatus: repository.updateTaskStatus.bind(repository),
     getMissionById: repository.getMissionById.bind(repository),
     getTasksByMissionId: repository.getTasksByMissionId.bind(repository),
     getProofBundleByMissionId:
       repository.getProofBundleByMissionId.bind(repository),
+    saveArtifact: repository.saveArtifact.bind(repository),
     saveProofBundle: async (bundle, session) => {
       await repository.saveProofBundle(bundle, session);
       throw new Error("forced rollback after proof bundle persistence");
     },
+    upsertProofBundle: repository.upsertProofBundle.bind(repository),
   };
 }
 
