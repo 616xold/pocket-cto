@@ -152,6 +152,8 @@ function createThrowAfterProofBundleRepository(
     findOldestClaimedTaskWithoutThread:
       repository.findOldestClaimedTaskWithoutThread.bind(repository),
     getTaskById: repository.getTaskById.bind(repository),
+    getLatestPlannerArtifactForExecutor:
+      repository.getLatestPlannerArtifactForExecutor.bind(repository),
     attachCodexThreadId: repository.attachCodexThreadId.bind(repository),
     replaceCodexThreadId: repository.replaceCodexThreadId.bind(repository),
     attachCodexTurnId: repository.attachCodexTurnId.bind(repository),

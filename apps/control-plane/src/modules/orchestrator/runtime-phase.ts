@@ -2,19 +2,30 @@ import type {
   MissionRecord,
   MissionTaskRecord,
   MissionTaskStatus,
+  ProofBundleManifest,
   TaskStatusChangeReason,
 } from "@pocket-cto/domain";
 import type { PersistenceSession } from "../../lib/persistence";
+import {
+  buildExecutorTaskSummary,
+  buildMissingPlannerArtifactSummary,
+} from "../evidence/executor-output";
 import type { EvidenceService } from "../evidence/service";
 import { persistPlannerTurnEvidence } from "../evidence/planner-output";
 import {
   buildRuntimeStartedMissionStatusChangedPayload,
 } from "../missions/events";
+import type { ExecutorPlannerArtifactRecord } from "../missions/planner-artifact";
 import type { MissionRepository } from "../missions/repository";
 import type { ReplayService } from "../replay/service";
 import {
+  buildExecutorTurnPolicy,
   buildReadOnlyTurnPolicy,
 } from "../runtime-codex/config";
+import {
+  loadExecutorPromptContext,
+} from "../runtime-codex/executor-context";
+import { buildExecutorTurnInput } from "../runtime-codex/executor-prompt";
 import {
   buildRuntimeItemCompletedPayload,
   buildRuntimeItemStartedPayload,
@@ -37,6 +48,8 @@ import type {
   RuntimeCodexThreadReplacedEvent,
   RuntimeTurnRecoveryStrategy,
 } from "../runtime-codex/types";
+import type { ExecutorValidationService } from "../validation";
+import type { WorkspaceRecord } from "../workspaces";
 import type { WorkspaceService } from "../workspaces/service";
 import {
   buildTaskStatusChangedPayload,
@@ -56,6 +69,7 @@ export class OrchestratorRuntimePhase {
       | "attachCodexTurnId"
       | "clearCodexTurnId"
       | "getMissionById"
+      | "getLatestPlannerArtifactForExecutor"
       | "getProofBundleByMissionId"
       | "getTaskById"
       | "replaceCodexThreadId"
@@ -81,6 +95,10 @@ export class OrchestratorRuntimePhase {
       WorkspaceService,
       "ensureTaskWorkspace" | "releaseTaskWorkspaceLease"
     >,
+    private readonly validationService: Pick<
+      ExecutorValidationService,
+      "validateExecutorTurn"
+    >,
   ) {}
 
   async executeClaimedTaskTurn(
@@ -104,32 +122,38 @@ export class OrchestratorRuntimePhase {
       task.id,
       "runtime.turn_started",
     );
-    const readOnlyPolicy = buildReadOnlyTurnPolicy();
+    const plannerArtifact =
+      task.role === "executor"
+        ? await this.missionRepository.getLatestPlannerArtifactForExecutor(task.id)
+        : null;
+
+    if (task.role === "executor" && !plannerArtifact) {
+      await this.failExecutorForMissingPlannerArtifact(task.id);
+      throw new Error(
+        `Executor task ${task.id} has no planner plan artifact to use as input`,
+      );
+    }
+
     const workspace = await this.workspaceService.ensureTaskWorkspace({
-      sandboxMode: "read-only",
+      sandboxMode: task.role === "executor" ? "workspace-write" : "read-only",
       task,
     });
+    const taskRunPreparation = await this.prepareTaskRun({
+      mission,
+      plannerArtifact,
+      proofBundle,
+      task,
+      workspace,
+    });
     const plannerContext =
-      task.role === "planner"
-        ? await loadPlannerPromptContext({
-            mission,
-            task,
-            workspace,
-          })
-        : null;
+      taskRunPreparation.plannerContext;
     const turn = await this.runtimeCodexService.runTurn(
       {
-        approvalPolicy: readOnlyPolicy.approvalPolicy,
+        approvalPolicy: taskRunPreparation.approvalPolicy,
         cwd: workspace.rootPath,
         hasPriorTurnStarted,
-        input: plannerContext
-          ? buildPlannerTurnInput(plannerContext)
-          : buildReadOnlyTurnInput({
-              mission,
-              proofBundle,
-              task,
-            }),
-        sandboxPolicy: readOnlyPolicy.sandboxPolicy,
+        input: taskRunPreparation.input,
+        sandboxPolicy: taskRunPreparation.sandboxPolicy,
         threadId: task.codexThreadId,
       },
       {
@@ -162,8 +186,10 @@ export class OrchestratorRuntimePhase {
 
     const updatedTask = await this.handleTurnCompleted(
       taskId,
+      mission,
       turn,
       plannerContext,
+      workspace.rootPath,
     );
 
     return {
@@ -420,8 +446,10 @@ export class OrchestratorRuntimePhase {
 
   private async handleTurnCompleted(
     taskId: string,
+    mission: MissionRecord,
     turn: RuntimeCodexRunTurnResult,
     plannerContext: PlannerPromptContext | null,
+    workspaceRoot: string,
   ) {
     return this.missionRepository.transaction(async (session) => {
       const task = await this.getRequiredTask(taskId, session);
@@ -462,23 +490,71 @@ export class OrchestratorRuntimePhase {
 
       await this.missionRepository.clearCodexTurnId(taskId, session);
 
-      const nextStatus: MissionTaskStatus =
-        turn.status === "completed" ? "succeeded" : "failed";
-      const reason =
-        turn.status === "completed"
-          ? taskStatusChangeReasons.runtimeTurnCompleted
-          : taskStatusChangeReasons.runtimeTurnFailed;
-      const updatedTask = await this.missionRepository.updateTaskStatus(
+      if (turn.status !== "completed") {
+        const failedTask = await this.missionRepository.updateTaskStatus(
+          taskId,
+          "failed",
+          session,
+        );
+
+        await this.appendTaskStatusChanged(
+          failedTask,
+          task.status,
+          failedTask.status,
+          taskStatusChangeReasons.runtimeTurnFailed,
+          session,
+        );
+
+        await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
+
+        return failedTask;
+      }
+
+      if (task.role === "executor") {
+        const validation = await this.validationService.validateExecutorTurn({
+          mission,
+          task,
+          workspaceRoot,
+        });
+        const summary = buildExecutorTaskSummary({
+          turn,
+          validation,
+        });
+        await this.missionRepository.updateTaskSummary(taskId, summary, session);
+        const nextStatus: MissionTaskStatus =
+          validation.status === "passed" ? "succeeded" : "failed";
+        const finalizedTask = await this.missionRepository.updateTaskStatus(
+          taskId,
+          nextStatus,
+          session,
+        );
+
+        await this.appendTaskStatusChanged(
+          finalizedTask,
+          task.status,
+          finalizedTask.status,
+          validation.status === "passed"
+            ? taskStatusChangeReasons.runtimeTurnCompleted
+            : taskStatusChangeReasons.executorValidationFailed,
+          session,
+        );
+
+        await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
+
+        return finalizedTask;
+      }
+
+      const succeededTask = await this.missionRepository.updateTaskStatus(
         taskId,
-        nextStatus,
+        "succeeded",
         session,
       );
 
       await this.appendTaskStatusChanged(
-        updatedTask,
+        succeededTask,
         task.status,
-        updatedTask.status,
-        reason,
+        succeededTask.status,
+        taskStatusChangeReasons.runtimeTurnCompleted,
         session,
       );
 
@@ -490,7 +566,7 @@ export class OrchestratorRuntimePhase {
         },
         plannerContext,
         session,
-        task: updatedTask,
+        task: succeededTask,
         turn,
       });
 
@@ -545,6 +621,98 @@ export class OrchestratorRuntimePhase {
     }
 
     return task;
+  }
+
+  private async prepareTaskRun(input: {
+    mission: MissionRecord;
+    plannerArtifact: ExecutorPlannerArtifactRecord | null;
+    proofBundle: ProofBundleManifest | null;
+    task: MissionTaskRecord;
+    workspace: WorkspaceRecord;
+  }) {
+    if (input.task.role === "planner") {
+      const plannerContext = await loadPlannerPromptContext({
+        mission: input.mission,
+        task: input.task,
+        workspace: input.workspace,
+      });
+      const readOnlyPolicy = buildReadOnlyTurnPolicy();
+
+      return {
+        approvalPolicy: readOnlyPolicy.approvalPolicy,
+        input: buildPlannerTurnInput(plannerContext),
+        plannerContext,
+        sandboxPolicy: readOnlyPolicy.sandboxPolicy,
+      };
+    }
+
+    if (input.task.role === "executor") {
+      if (!input.plannerArtifact) {
+        throw new Error(
+          `Executor task ${input.task.id} requires a planner artifact before execution`,
+        );
+      }
+
+      const executorContext = await loadExecutorPromptContext({
+        mission: input.mission,
+        plannerArtifact: input.plannerArtifact,
+        task: input.task,
+        workspace: input.workspace,
+      });
+      const executorPolicy = buildExecutorTurnPolicy(input.workspace.rootPath);
+
+      return {
+        approvalPolicy: executorPolicy.approvalPolicy,
+        input: buildExecutorTurnInput(executorContext),
+        plannerContext: null,
+        sandboxPolicy: executorPolicy.sandboxPolicy,
+      };
+    }
+
+    const readOnlyPolicy = buildReadOnlyTurnPolicy();
+
+    return {
+      approvalPolicy: readOnlyPolicy.approvalPolicy,
+      input: buildReadOnlyTurnInput({
+        mission: input.mission,
+        proofBundle: input.proofBundle,
+        task: input.task,
+      }),
+      plannerContext: null,
+      sandboxPolicy: readOnlyPolicy.sandboxPolicy,
+    };
+  }
+
+  private async failExecutorForMissingPlannerArtifact(taskId: string) {
+    return this.missionRepository.transaction(async (session) => {
+      const task = await this.getRequiredTask(taskId, session);
+
+      if (task.status !== "claimed") {
+        return task;
+      }
+
+      await this.missionRepository.updateTaskSummary(
+        taskId,
+        buildMissingPlannerArtifactSummary(),
+        session,
+      );
+      const failedTask = await this.missionRepository.updateTaskStatus(
+        taskId,
+        "failed",
+        session,
+      );
+
+      await this.appendTaskStatusChanged(
+        failedTask,
+        task.status,
+        failedTask.status,
+        taskStatusChangeReasons.executorMissingPlannerArtifact,
+        session,
+      );
+      await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
+
+      return failedTask;
+    });
   }
 }
 

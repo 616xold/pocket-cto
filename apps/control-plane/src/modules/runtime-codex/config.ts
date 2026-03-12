@@ -71,6 +71,25 @@ export function buildReadOnlyTurnPolicy(): {
   };
 }
 
+export function buildExecutorTurnPolicy(workspaceRoot: string): {
+  approvalPolicy: AskForApproval;
+  sandboxPolicy: SandboxPolicy;
+} {
+  return {
+    approvalPolicy: "never",
+    sandboxPolicy: {
+      type: "workspaceWrite",
+      writableRoots: [workspaceRoot],
+      readOnlyAccess: {
+        type: "fullAccess",
+      },
+      networkAccess: false,
+      excludeTmpdirEnvVar: false,
+      excludeSlashTmp: false,
+    },
+  };
+}
+
 export function splitShellWords(input: string) {
   const tokens: string[] = [];
   let current = "";
