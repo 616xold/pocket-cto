@@ -3,12 +3,14 @@ import {
   RuntimeItemStartedPayloadSchema,
   RuntimeThreadReplacedPayloadSchema,
   RuntimeThreadStartedPayloadSchema,
+  RuntimeTurnInterruptRequestedPayloadSchema,
   RuntimeTurnCompletedPayloadSchema,
   RuntimeTurnStartedPayloadSchema,
   type RuntimeItemCompletedPayload,
   type RuntimeItemStartedPayload,
   type RuntimeThreadReplacedPayload,
   type RuntimeThreadStartedPayload,
+  type RuntimeTurnInterruptRequestedPayload,
   type RuntimeTurnCompletedPayload,
   type RuntimeTurnStartedPayload,
 } from "@pocket-cto/domain";
@@ -42,6 +44,17 @@ export function buildRuntimeTurnStartedPayload(input: {
   turnId: string;
 }): RuntimeTurnStartedPayload {
   return RuntimeTurnStartedPayloadSchema.parse(input);
+}
+
+export function buildRuntimeTurnInterruptRequestedPayload(input: {
+  missionId: string;
+  requestedBy: string;
+  rationale: string | null;
+  taskId: string;
+  threadId: string;
+  turnId: string;
+}): RuntimeTurnInterruptRequestedPayload {
+  return RuntimeTurnInterruptRequestedPayloadSchema.parse(input);
 }
 
 export function buildRuntimeTurnCompletedPayload(input: {

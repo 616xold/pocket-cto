@@ -3,6 +3,14 @@ import type {
   MissionTaskStatus,
   TaskStatusChangeReason,
 } from "@pocket-cto/domain";
+import type {
+  ApprovalService,
+  ResolveApprovalInput,
+} from "../approvals/service";
+import type {
+  InterruptActiveTurnInput,
+  RuntimeControlService,
+} from "../runtime-codex/control-service";
 import type { OrchestratorService } from "./service";
 
 export type WorkerLogger = {
@@ -18,7 +26,13 @@ export type WorkerRunOptions = {
 };
 
 export class OrchestratorWorker {
-  constructor(private readonly orchestratorService: OrchestratorService) {}
+  constructor(
+    private readonly orchestratorService: OrchestratorService,
+    private readonly deps?: {
+      approvalService?: Pick<ApprovalService, "resolveApproval">;
+      runtimeControlService?: Pick<RuntimeControlService, "interruptActiveTurn">;
+    },
+  ) {}
 
   async tick() {
     return this.orchestratorService.tick();
@@ -54,6 +68,22 @@ export class OrchestratorWorker {
     return this.orchestratorService.transitionTaskStatus(input);
   }
 
+  async resolveApproval(input: ResolveApprovalInput) {
+    if (!this.deps?.approvalService) {
+      throw new Error("Approval resolution is not configured on this worker");
+    }
+
+    return this.deps.approvalService.resolveApproval(input);
+  }
+
+  async interruptActiveTurn(input: InterruptActiveTurnInput) {
+    if (!this.deps?.runtimeControlService) {
+      throw new Error("Runtime interruption is not configured on this worker");
+    }
+
+    return this.deps.runtimeControlService.interruptActiveTurn(input);
+  }
+
   private async runTick(log: WorkerLogger) {
     try {
       const result = await this.orchestratorService.tick();
@@ -82,6 +112,27 @@ export class OrchestratorWorker {
             taskId: result.task.id,
           },
           "Worker failed during Codex runtime processing",
+        );
+        return result;
+      }
+
+      if (result.kind === "task_failed") {
+        log.info(
+          {
+            classification: "controlled_failure",
+            codexThreadId: result.task.codexThreadId,
+            errorMessage: result.error.message,
+            event: "worker.tick",
+            finalStatus: result.task.status,
+            missionId: result.task.missionId,
+            outcome: "task_failed",
+            role: result.task.role,
+            sequence: result.task.sequence,
+            stage: result.stage,
+            summary: result.task.summary,
+            taskId: result.task.id,
+          },
+          "Worker terminalized task after controlled failure",
         );
         return result;
       }

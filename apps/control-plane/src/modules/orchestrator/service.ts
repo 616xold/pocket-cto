@@ -3,6 +3,7 @@ import type {
   MissionTaskStatus,
   TaskStatusChangeReason,
 } from "@pocket-cto/domain";
+import type { ApprovalService } from "../approvals/service";
 import type { EvidenceService } from "../evidence/service";
 import { taskStatusChangeReasons } from "./events";
 import type { MissionRepository } from "../missions/repository";
@@ -16,6 +17,12 @@ import { buildTaskStatusChangedPayload } from "./events";
 
 export type OrchestratorTickResult =
   | { kind: "idle" }
+  | {
+      kind: "task_failed";
+      error: Error;
+      stage: "turn_execution";
+      task: MissionTaskRecord;
+    }
   | {
       kind: "runtime_failed";
       error: Error;
@@ -56,6 +63,10 @@ export class OrchestratorService {
       ReplayService,
       "append" | "taskHasEventType"
     >,
+    approvalService: Pick<
+      ApprovalService,
+      "requestCommandExecutionApproval" | "requestFileChangeApproval"
+    >,
     runtimeCodexService: Pick<CodexRuntimeService, "runTurn">,
     evidenceService: Pick<
       EvidenceService,
@@ -75,6 +86,7 @@ export class OrchestratorService {
     this.runtimePhase = new OrchestratorRuntimePhase(
       missionRepository,
       replayService,
+      approvalService,
       runtimeCodexService,
       evidenceService,
       workspaceService,
@@ -151,10 +163,20 @@ export class OrchestratorService {
       };
     } catch (error) {
       const latestTask = await this.missionRepository.getTaskById(task.id);
+      const classifiedError = asError(error, "Codex turn execution failed");
+
+      if (isControlledTaskFailure(latestTask)) {
+        return {
+          kind: "task_failed",
+          error: classifiedError,
+          stage: "turn_execution",
+          task: latestTask,
+        };
+      }
 
       return {
         kind: "runtime_failed",
-        error: asError(error, "Codex turn execution failed"),
+        error: classifiedError,
         stage: "turn_execution",
         task: latestTask ?? task,
       };
@@ -164,4 +186,10 @@ export class OrchestratorService {
 
 function asError(error: unknown, fallbackMessage: string) {
   return error instanceof Error ? error : new Error(fallbackMessage);
+}
+
+function isControlledTaskFailure(
+  task: MissionTaskRecord | null,
+): task is MissionTaskRecord {
+  return task?.status === "failed" && task.codexTurnId === null;
 }

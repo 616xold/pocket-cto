@@ -6,6 +6,13 @@ import type {
 import type {
   AskForApproval,
   ClientInfo,
+  CommandExecutionRequestApprovalParams,
+  CommandExecutionRequestApprovalResponse,
+  FileChangeRequestApprovalParams,
+  FileChangeRequestApprovalResponse,
+  JsonRpcId,
+  PermissionsRequestApprovalParams,
+  PermissionsRequestApprovalResponse,
   SandboxMode,
   SandboxPolicy,
   Thread,
@@ -75,6 +82,7 @@ export type RuntimeCodexRunTurnInput = {
   input: UserInput[];
   model?: string | null;
   sandboxPolicy?: SandboxPolicy | null;
+  taskId: string;
   threadId?: string | null;
 };
 
@@ -86,7 +94,51 @@ export type RuntimeCodexThreadReplacedEvent = {
   reasonCode: RuntimeThreadReplacementReason;
 };
 
+export type RuntimeCodexServerRequestResolvedEvent = {
+  requestId: JsonRpcId;
+  threadId: string;
+};
+
+export type RuntimeCodexFileChangeApprovalRequestEvent =
+  FileChangeRequestApprovalParams & {
+    requestId: JsonRpcId;
+  };
+
+export type RuntimeCodexCommandExecutionApprovalRequestEvent =
+  CommandExecutionRequestApprovalParams & {
+    requestId: JsonRpcId;
+  };
+
+export type RuntimeCodexPermissionsApprovalRequestEvent =
+  PermissionsRequestApprovalParams & {
+    requestId: JsonRpcId;
+  };
+
+export type RuntimeCodexApprovalResponse =
+  | {
+      method: "item/fileChange/requestApproval";
+      response: FileChangeRequestApprovalResponse;
+    }
+  | {
+      method: "item/commandExecution/requestApproval";
+      response: CommandExecutionRequestApprovalResponse;
+    }
+  | {
+      method: "item/permissions/requestApproval";
+      response: PermissionsRequestApprovalResponse;
+    };
+
 export type RuntimeCodexRunTurnObserver = {
+  onCommandExecutionApprovalRequest?(
+    event: RuntimeCodexCommandExecutionApprovalRequestEvent,
+  ):
+    | Promise<CommandExecutionRequestApprovalResponse>
+    | CommandExecutionRequestApprovalResponse;
+  onFileChangeApprovalRequest?(
+    event: RuntimeCodexFileChangeApprovalRequestEvent,
+  ):
+    | Promise<FileChangeRequestApprovalResponse>
+    | FileChangeRequestApprovalResponse;
   onThreadReplaced?(
     event: RuntimeCodexThreadReplacedEvent,
   ): Promise<void> | void;
@@ -95,6 +147,14 @@ export type RuntimeCodexRunTurnObserver = {
   ): Promise<void> | void;
   onItemCompleted?(event: RuntimeCodexItemLifecycleEvent): Promise<void> | void;
   onItemStarted?(event: RuntimeCodexItemLifecycleEvent): Promise<void> | void;
+  onPermissionsApprovalRequest?(
+    event: RuntimeCodexPermissionsApprovalRequestEvent,
+  ):
+    | Promise<PermissionsRequestApprovalResponse>
+    | PermissionsRequestApprovalResponse;
+  onServerRequestResolved?(
+    event: RuntimeCodexServerRequestResolvedEvent,
+  ): Promise<void> | void;
   onTurnStarted?(event: RuntimeCodexTurnStartedEvent): Promise<void> | void;
 };
 

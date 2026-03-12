@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  ApprovalDecisionSchema,
+  ApprovalKindSchema,
+  ApprovalStatusSchema,
+  RuntimeApprovalRequestMethodSchema,
+} from "./approval";
 import { MissionStatusSchema } from "./mission";
 import { MissionTaskStatusSchema } from "./mission-task";
 
@@ -12,6 +18,7 @@ export const ReplayEventTypeSchema = z.enum([
   "approval.resolved",
   "runtime.thread_replaced",
   "runtime.thread_started",
+  "runtime.turn_interrupt_requested",
   "runtime.turn_started",
   "runtime.turn_completed",
   "runtime.item_started",
@@ -31,6 +38,8 @@ export const ReplayEventSchema = z.object({
 
 export const MissionStatusChangeReasonSchema = z.enum([
   "tasks_materialized",
+  "approval_requested",
+  "approval_resolved",
   "runtime_turn_started",
 ]);
 
@@ -41,11 +50,14 @@ export const MissionStatusChangedPayloadSchema = z.object({
 });
 
 export const TaskStatusChangeReasonSchema = z.enum([
+  "approval_requested",
+  "approval_resolved",
   "worker_claimed",
   "task_completed",
   "runtime_turn_started",
   "runtime_turn_completed",
   "runtime_turn_failed",
+  "runtime_turn_interrupted",
   "planner_evidence_failed",
   "executor_missing_planner_artifact",
   "executor_no_changes",
@@ -102,6 +114,15 @@ export const RuntimeTurnStartedPayloadSchema = z.object({
   recoveryStrategy: RuntimeTurnRecoveryStrategySchema,
 });
 
+export const RuntimeTurnInterruptRequestedPayloadSchema = z.object({
+  missionId: z.string().uuid(),
+  taskId: z.string().uuid(),
+  threadId: z.string(),
+  turnId: z.string(),
+  requestedBy: z.string(),
+  rationale: z.string().nullable().default(null),
+});
+
 export const RuntimeTurnCompletedPayloadSchema = z.object({
   missionId: z.string().uuid(),
   taskId: z.string().uuid(),
@@ -126,6 +147,36 @@ export const RuntimeItemCompletedPayloadSchema = z.object({
   turnId: z.string(),
   itemId: z.string(),
   itemType: RuntimeItemTypeSchema,
+});
+
+export const ApprovalRequestedPayloadSchema = z.object({
+  approvalId: z.string().uuid(),
+  missionId: z.string().uuid(),
+  taskId: z.string().uuid(),
+  kind: ApprovalKindSchema,
+  requestId: z.union([z.string(), z.number()]),
+  requestMethod: RuntimeApprovalRequestMethodSchema,
+  threadId: z.string(),
+  turnId: z.string(),
+  itemId: z.string().nullable().default(null),
+  details: z.record(z.string(), z.unknown()).default({}),
+});
+
+export const ApprovalResolvedPayloadSchema = z.object({
+  approvalId: z.string().uuid(),
+  missionId: z.string().uuid(),
+  taskId: z.string().uuid(),
+  kind: ApprovalKindSchema,
+  status: ApprovalStatusSchema,
+  decision: ApprovalDecisionSchema,
+  requestId: z.union([z.string(), z.number()]),
+  requestMethod: RuntimeApprovalRequestMethodSchema,
+  threadId: z.string(),
+  turnId: z.string(),
+  itemId: z.string().nullable().default(null),
+  resolvedBy: z.string().nullable().default(null),
+  rationale: z.string().nullable().default(null),
+  details: z.record(z.string(), z.unknown()).default({}),
 });
 
 export type ReplayEventType = z.infer<typeof ReplayEventTypeSchema>;
@@ -161,6 +212,9 @@ export type RuntimeTurnTerminalStatus = z.infer<
 export type RuntimeTurnStartedPayload = z.infer<
   typeof RuntimeTurnStartedPayloadSchema
 >;
+export type RuntimeTurnInterruptRequestedPayload = z.infer<
+  typeof RuntimeTurnInterruptRequestedPayloadSchema
+>;
 export type RuntimeTurnCompletedPayload = z.infer<
   typeof RuntimeTurnCompletedPayloadSchema
 >;
@@ -169,4 +223,10 @@ export type RuntimeItemStartedPayload = z.infer<
 >;
 export type RuntimeItemCompletedPayload = z.infer<
   typeof RuntimeItemCompletedPayloadSchema
+>;
+export type ApprovalRequestedPayload = z.infer<
+  typeof ApprovalRequestedPayloadSchema
+>;
+export type ApprovalResolvedPayload = z.infer<
+  typeof ApprovalResolvedPayloadSchema
 >;

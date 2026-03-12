@@ -2,8 +2,12 @@ import type {
   CodexAppServerClient,
   CodexRuntimeEvent,
   KnownServerNotification,
+  KnownServerRequest,
 } from "@pocket-cto/codex-runtime";
-import { readTextualThreadItem as readCompletedTextOutput } from "@pocket-cto/codex-runtime";
+import {
+  CodexAppServerServerRequestRejectedError,
+  readTextualThreadItem as readCompletedTextOutput,
+} from "@pocket-cto/codex-runtime";
 import type {
   RuntimeCodexBootstrapResult,
   RuntimeCodexCompletedAgentMessage,
@@ -117,6 +121,35 @@ export async function observeTurnLifecycle(input: {
       queueNotification,
     });
   });
+  input.client.setServerRequestHandler(async (request) => {
+    if (!isTurnLifecycleServerRequest(request)) {
+      throw new CodexAppServerServerRequestRejectedError({
+        code: -32601,
+        message: `Unsupported server request during Pocket CTO turn lifecycle: ${request.method}`,
+      });
+    }
+
+    if (!matchesTurnScopedRequest(request, execution)) {
+      throw new CodexAppServerServerRequestRejectedError({
+        code: -32600,
+        message: `Turn-scoped server request ${request.method} did not match the active Pocket CTO turn`,
+      });
+    }
+
+    await notificationChain;
+
+    if (settled) {
+      throw new CodexAppServerServerRequestRejectedError({
+        code: -32603,
+        message: `Pocket CTO turn lifecycle already settled before handling ${request.method}`,
+      });
+    }
+
+    return handleTurnServerRequest({
+      observer: input.observer,
+      request,
+    });
+  });
 
   try {
     await input.start({
@@ -131,6 +164,7 @@ export async function observeTurnLifecycle(input: {
 
     return await terminalTurn;
   } finally {
+    input.client.setServerRequestHandler(undefined);
     unsubscribe();
   }
 }
@@ -273,6 +307,19 @@ function handleTurnEvent(input: {
       });
       return;
     }
+    case "serverRequest/resolved": {
+      if (notification.params.threadId !== input.execution.threadId) {
+        return;
+      }
+
+      input.queueNotification(async () => {
+        await input.observer.onServerRequestResolved?.({
+          requestId: notification.params.requestId,
+          threadId: notification.params.threadId,
+        });
+      });
+      return;
+    }
     default:
       return;
   }
@@ -321,6 +368,54 @@ function asError(error: unknown, fallbackMessage: string) {
   return error instanceof Error ? error : new Error(fallbackMessage);
 }
 
+async function handleTurnServerRequest(input: {
+  observer: RuntimeCodexRunTurnObserver;
+  request: KnownServerRequest;
+}) {
+  switch (input.request.method) {
+    case "item/fileChange/requestApproval": {
+      if (!input.observer.onFileChangeApprovalRequest) {
+        throw new CodexAppServerServerRequestRejectedError({
+          code: -32601,
+          message: "Pocket CTO has no file-change approval handler for this turn",
+        });
+      }
+
+      return input.observer.onFileChangeApprovalRequest({
+        requestId: input.request.id,
+        ...input.request.params,
+      });
+    }
+    case "item/commandExecution/requestApproval": {
+      if (!input.observer.onCommandExecutionApprovalRequest) {
+        throw new CodexAppServerServerRequestRejectedError({
+          code: -32601,
+          message:
+            "Pocket CTO has no command-execution approval handler for this turn",
+        });
+      }
+
+      return input.observer.onCommandExecutionApprovalRequest({
+        requestId: input.request.id,
+        ...input.request.params,
+      });
+    }
+    case "item/permissions/requestApproval": {
+      if (!input.observer.onPermissionsApprovalRequest) {
+        throw new CodexAppServerServerRequestRejectedError({
+          code: -32601,
+          message: "Pocket CTO has no permissions approval handler for this turn",
+        });
+      }
+
+      return input.observer.onPermissionsApprovalRequest({
+        requestId: input.request.id,
+        ...input.request.params,
+      });
+    }
+  }
+}
+
 function isTurnLifecycleNotification(
   notification: KnownServerNotification | { method: string; params?: unknown },
 ): notification is KnownServerNotification {
@@ -329,5 +424,26 @@ function isTurnLifecycleNotification(
     "item/started",
     "item/completed",
     "turn/completed",
+    "serverRequest/resolved",
   ].includes(notification.method);
+}
+
+function isTurnLifecycleServerRequest(
+  request: KnownServerRequest | { method: string },
+): request is KnownServerRequest {
+  return [
+    "item/fileChange/requestApproval",
+    "item/commandExecution/requestApproval",
+    "item/permissions/requestApproval",
+  ].includes(request.method);
+}
+
+function matchesTurnScopedRequest(
+  request: KnownServerRequest,
+  execution: TurnExecutionState,
+) {
+  return (
+    request.params.threadId === execution.threadId &&
+    (execution.turnId === null || request.params.turnId === execution.turnId)
+  );
 }

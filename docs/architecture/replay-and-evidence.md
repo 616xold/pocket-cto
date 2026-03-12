@@ -48,6 +48,17 @@ For the M0 text-intake spine, the initial replay order is deliberate:
 That ordering keeps the queued transition visibly tied to task materialization
 before later worker or runtime events exist.
 
+For M1.6 live approvals and interrupts, the replay narrative now also includes:
+
+1. `approval.requested` when Codex App Server asks for approval mid-turn
+2. `task.status_changed` and `mission.status_changed` into `awaiting_approval`
+3. `approval.resolved` when the operator accepts, declines, or cancels
+4. `task.status_changed` and `mission.status_changed` back to `running` when the approval is accepted and no other pending approvals remain
+5. `runtime.turn_interrupt_requested` when the operator interrupts an active live turn
+6. terminal `runtime.turn_completed` plus final `task.status_changed` with `reason = "runtime_turn_interrupted"` when the runtime later reports `interrupted`
+
+This keeps approval trace and operator interrupt intent durable in replay instead of hiding them inside worker memory.
+
 ## Required artifact classes
 
 - plan

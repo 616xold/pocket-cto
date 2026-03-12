@@ -3,7 +3,7 @@ import { buildExecutorTurnPolicy, buildReadOnlyTurnPolicy } from "./config";
 
 describe("runtime turn policy builders", () => {
   it("keeps the existing read-only policy for planner and non-executor turns", () => {
-    const policy = buildReadOnlyTurnPolicy();
+    const policy = buildReadOnlyTurnPolicy("planner");
 
     expect(policy.approvalPolicy).toBe("never");
     expect(policy.sandboxPolicy).toMatchObject({
@@ -14,10 +14,11 @@ describe("runtime turn policy builders", () => {
 
   it("builds a workspace-write executor policy constrained to the task workspace root", () => {
     const policy = buildExecutorTurnPolicy(
+      "executor",
       "/tmp/pocket-cto-executor-policy-workspace",
     );
 
-    expect(policy.approvalPolicy).toBe("never");
+    expect(policy.approvalPolicy).toBe("on-request");
     expect(policy.sandboxPolicy).toEqual({
       type: "workspaceWrite",
       writableRoots: ["/tmp/pocket-cto-executor-policy-workspace"],

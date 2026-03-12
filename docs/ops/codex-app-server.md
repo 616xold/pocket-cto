@@ -8,34 +8,41 @@ Pocket CTO uses Codex App Server as the worker runtime.
 - each task can own one persisted Codex thread id
 - a claimed task can temporarily own one active Codex turn id
 - replay records structural runtime lifecycle, not every token delta
-- approvals and file-changing execution are later milestones
+- runtime approvals can now pause a live turn and persist durable approval records
 
-M1.5 keeps the runtime surface narrow but now makes executor mutation explicit and locally governed.
+M1.6 keeps the runtime surface narrow but now makes executor mutation explicit, approval-aware, and locally governed.
 The worker now ensures one persisted workspace record and one deterministic local git worktree per claimed task before runtime bootstrap or turn execution starts.
 Planner turns now use a dedicated read-only planner prompt assembled from the mission contract, workspace context, and repository workflow policy when `WORKFLOW.md` exists at the workspace root.
 Executor turns now use a dedicated mutation-capable prompt that consumes the latest relevant planner artifact as handoff input and runs under local file-change guardrails plus post-turn validation hooks.
-Pocket CTO still does not yet create approval records, PRs, or rich runtime artifacts beyond replay plus the planner plan artifact and executor task summary.
+When the runtime asks for approval mid-turn, Pocket CTO now persists the approval row plus replay, moves mission and task state to `awaiting_approval`, and waits on the same live app-server session until an operator resolves or interrupts the turn.
+Pocket CTO still does not yet create PRs or rich runtime artifacts beyond replay plus the planner plan artifact and executor task summary.
 
 ## Protocol alignment notes
 
-Pocket CTO's runtime wrapper is aligned to the local Codex CLI checked on 2026-03-10 with:
+Pocket CTO's runtime wrapper is aligned to the local Codex CLI checked on 2026-03-12 with:
 
 - `codex app-server --help`
-- `codex app-server generate-ts --out tmp/codex-app-server-schema-m1.2-polish`
+- `codex app-server generate-ts --out tmp/codex-app-server-schema-m1.6`
 
-The checked-in wrapper now covers the M1.2 subset needed by the control plane:
+The checked-in wrapper now covers the stable M1.6 subset Pocket CTO needs:
 
 - `initialize` and `initialized`
 - `thread/start`
 - `thread/resume`
 - `turn/start`
+- `turn/interrupt`
 - `turn/completed`
 - `item/started`
 - `item/completed`
+- `item/fileChange/requestApproval`
+- `item/commandExecution/requestApproval`
+- `item/permissions/requestApproval`
+- `serverRequest/resolved`
 
 The generated schema also exposes `item/commandExecution/terminalInteraction` and several delta notifications.
-Pocket CTO parses the small stable subset above for M1.2 and keeps replay driven by structural item start and completion events rather than token or text deltas.
-For M1.4, Pocket CTO also extracts completed textual outputs from `item/completed` payloads for `plan` and `agentMessage` items so the planner task can persist a compact plan artifact without storing every token delta.
+Pocket CTO still keeps replay driven by structural item start and completion events rather than token or text deltas.
+It also extracts completed textual outputs from `item/completed` payloads for `plan` and `agentMessage` items so the planner task can persist a compact plan artifact without storing every token delta.
+Approval requests are now handled as inbound server-initiated JSON-RPC requests rather than being misclassified as notifications.
 
 The current local wire envelope is method or id based and does not require a `jsonrpc` field.
 Pocket CTO accepts both forms for safety, but writes the current stable field set used by the installed `codex` binary.
@@ -61,6 +68,10 @@ CODEX_DEFAULT_SERVICE_NAME=pocket-cto-control-plane
 ```
 
 `CODEX_APP_SERVER_COMMAND` and `CODEX_APP_SERVER_ARGS` are parsed separately with shell-style quoting support before the process is spawned.
+The env default approval policy remains `untrusted`, but Pocket CTO now resolves per-turn policy explicitly:
+
+- planner and other read-only turns use `approvalPolicy = "never"`
+- executor mutation turns use `approvalPolicy = "on-request"`
 
 ## Workspace cwd contract
 
@@ -195,7 +206,7 @@ Executor validation failures now map to `executor_validation_failed`, and execut
 
 ## Planner and executor safety posture
 
-Planner turns remain explicitly read-only in M1.5.
+Planner turns remain explicitly read-only in M1.6.
 Pocket CTO still builds planner turn input through dedicated planner-context and planner-prompt modules, and it still overrides planner turns with `approvalPolicy = "never"` and a read-only sandbox policy.
 
 The resulting planner prompt still tells Codex:
@@ -211,7 +222,7 @@ Pocket CTO does four things on purpose:
 
 - it resolves the latest relevant planner `plan` artifact before the executor turn starts
 - it builds executor turn input through dedicated executor-context and executor-prompt modules
-- it overrides the executor turn with `approvalPolicy = "never"` plus a `workspaceWrite` sandbox policy rooted at the executor workspace
+- it overrides the executor turn with `approvalPolicy = "on-request"` plus a `workspaceWrite` sandbox policy rooted at the executor workspace
 - it validates the resulting local diff before marking the executor task successful
 
 The resulting executor prompt tells Codex:
@@ -224,11 +235,49 @@ The resulting executor prompt tells Codex:
 - do not run installs, generators, migrations, package-manager commands, or formatters
 - return a concise final report with intended change, files changed, validations run, remaining risks, and operator handoff
 
-Pocket CTO still stops short of approval persistence and rich artifact capture here.
+Pocket CTO now includes approval persistence for live runtime requests, but it still stops short of richer runtime artifact capture.
 
-- M1.5 ends with controlled executor mutation and local validation hooks
-- M1.6 will add approval persistence
+- M1.6 adds approval persistence plus live-turn interrupts
 - M1.7 will add richer runtime-to-evidence artifact plumbing
+
+## Approval and interrupt lifecycle
+
+Pocket CTO now persists live runtime approvals without pretending the turn is stateless.
+
+When Codex App Server sends `item/fileChange/requestApproval` or `item/commandExecution/requestApproval` for the active task turn:
+
+1. the runtime wrapper parses the inbound server request inside `@pocket-cto/codex-runtime`
+2. the control-plane approval service persists a `pending` approval row with `requestId`, `threadId`, `turnId`, `itemId`, and request-specific details
+3. replay appends `approval.requested`
+4. the task transitions `running -> awaiting_approval` with `reason = "approval_requested"`
+5. if the mission was `running`, it transitions `running -> awaiting_approval` with the same reason
+6. the live turn stays parked in the worker's in-memory session registry until the operator resolves or interrupts it
+
+When the operator accepts or accepts-for-session:
+
+1. the approval row updates to `approved`
+2. replay appends `approval.resolved`
+3. the task transitions `awaiting_approval -> running` with `reason = "approval_resolved"`
+4. the mission transitions back to `running` when no pending approvals remain
+5. the same live app-server session receives the approval response and continues the turn honestly
+
+When the operator declines or cancels:
+
+1. the approval row updates to `declined` or `cancelled`
+2. replay appends `approval.resolved`
+3. Pocket CTO returns the decline or cancel decision to the live runtime session
+4. the later terminal task outcome is whatever the runtime actually reports; Pocket CTO does not fabricate success
+
+Interrupts use the same live-session seam:
+
+1. the worker command surface resolves the active task session by `taskId`
+2. replay appends `runtime.turn_interrupt_requested`
+3. any pending approvals for that task are cancelled durably
+4. Pocket CTO sends `turn/interrupt` to the live app-server client
+5. when the runtime later reports terminal `interrupted`, the task finalizes as `cancelled` with `reason = "runtime_turn_interrupted"`
+
+There is no separate HTTP approval route yet in M1.6.
+Pocket CTO intentionally keeps approval resolution and interrupts on the worker command surface because the live continuation lives in the worker process's in-memory session registry.
 
 ## Planner output capture
 

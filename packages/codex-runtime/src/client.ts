@@ -7,13 +7,18 @@ import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import EventEmitter from "eventemitter3";
 import type { ZodType } from "zod";
-import { CodexAppServerRequestError } from "./errors";
+import {
+  CodexAppServerRequestError,
+  CodexAppServerServerRequestRejectedError,
+} from "./errors";
 import {
   InitializeParamsSchema,
   InitializeResponseSchema,
   JsonRpcErrorSchema,
   JsonRpcNotificationSchema,
   JsonRpcSuccessSchema,
+  JsonRpcRequestSchema,
+  KnownServerRequestSchema,
   KnownServerNotificationSchema,
   ThreadResumeParamsSchema,
   ThreadResumeResponseSchema,
@@ -26,6 +31,7 @@ import {
   type InitializeParams,
   type InitializeResponse,
   type JsonRpcRequest,
+  type KnownServerRequest,
   type KnownServerNotification,
   type ThreadResumeParams,
   type ThreadResumeResponse,
@@ -35,6 +41,7 @@ import {
   type TurnInterruptResponse,
   type TurnStartParams,
   type TurnStartResponse,
+  parseKnownServerRequestResult,
 } from "./protocol";
 
 type PendingRequest = {
@@ -61,6 +68,10 @@ export type CodexRuntimeEvent =
   | { kind: "exit"; code: number | null; signal: NodeJS.Signals | null }
   | { kind: "stderr"; line: string };
 
+export type CodexAppServerServerRequestHandler = (
+  request: KnownServerRequest | JsonRpcRequest,
+) => Promise<unknown> | unknown;
+
 export type CodexRuntimeClientOptions = {
   args: string[];
   command: string;
@@ -80,12 +91,17 @@ export class CodexAppServerClient {
   private stderrBuffer = "";
   private readonly pending = new Map<string, PendingRequest>();
   private exitPromise: Promise<void> = Promise.resolve();
+  private serverRequestHandler?: CodexAppServerServerRequestHandler;
 
   constructor(private readonly options: CodexRuntimeClientOptions) {}
 
   onEvent(listener: (event: CodexRuntimeEvent) => void) {
     this.events.on("event", listener);
     return () => this.events.off("event", listener);
+  }
+
+  setServerRequestHandler(handler?: CodexAppServerServerRequestHandler) {
+    this.serverRequestHandler = handler;
   }
 
   async start() {
@@ -403,6 +419,18 @@ export class CodexAppServerClient {
       return;
     }
 
+    const knownServerRequest = KnownServerRequestSchema.safeParse(parsed);
+    if (knownServerRequest.success) {
+      this.handleServerRequest(knownServerRequest.data);
+      return;
+    }
+
+    const serverRequest = JsonRpcRequestSchema.safeParse(parsed);
+    if (serverRequest.success) {
+      this.handleServerRequest(serverRequest.data);
+      return;
+    }
+
     const knownNotification = KnownServerNotificationSchema.safeParse(parsed);
     if (knownNotification.success) {
       this.events.emit("event", {
@@ -492,6 +520,58 @@ export class CodexAppServerClient {
 
     this.pending.clear();
   }
+
+  private handleServerRequest(request: KnownServerRequest | JsonRpcRequest) {
+    const handler = this.serverRequestHandler;
+
+    if (!handler) {
+      this.writeJsonRpcError({
+        code: -32601,
+        id: request.id,
+        message: `Unhandled server request: ${request.method}`,
+      });
+      return;
+    }
+
+    void Promise.resolve()
+      .then(() => handler(request))
+      .then((result) => {
+        this.writeJsonRpcSuccess(request, result);
+      })
+      .catch((error) => {
+        this.writeJsonRpcError(buildServerRequestErrorPayload(request.id, error));
+      });
+  }
+
+  private writeJsonRpcSuccess(
+    request: KnownServerRequest | JsonRpcRequest,
+    result: unknown,
+  ) {
+    const validatedResult = isKnownServerRequest(request)
+      ? parseKnownServerRequestResult(request.method, result)
+      : result;
+
+    this.write({
+      id: request.id,
+      result: validatedResult,
+    });
+  }
+
+  private writeJsonRpcError(input: {
+    code: number;
+    data?: unknown;
+    id: string | number;
+    message: string;
+  }) {
+    this.write({
+      id: input.id,
+      error: {
+        code: input.code,
+        ...(input.data === undefined ? {} : { data: input.data }),
+        message: input.message,
+      },
+    });
+  }
 }
 
 function asError(error: unknown, fallbackMessage: string) {
@@ -500,4 +580,31 @@ function asError(error: unknown, fallbackMessage: string) {
 
 function formatErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function buildServerRequestErrorPayload(
+  id: string | number,
+  error: unknown,
+) {
+  if (error instanceof CodexAppServerServerRequestRejectedError) {
+    return {
+      code: error.code,
+      data: error.data,
+      id,
+      message: error.message,
+    };
+  }
+
+  return {
+    code: -32603,
+    id,
+    message: error instanceof Error ? error.message : String(error),
+  };
+}
+
+function isKnownServerRequest(
+  request: KnownServerRequest | JsonRpcRequest,
+): request is KnownServerRequest {
+  const parsed = KnownServerRequestSchema.safeParse(request);
+  return parsed.success;
 }

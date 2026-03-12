@@ -1,6 +1,8 @@
 import type { MissionStatus } from "@pocket-cto/domain";
 
 export const missionStatusChangeReasons = {
+  approvalRequested: "approval_requested",
+  approvalResolved: "approval_resolved",
   runtimeTurnStarted: "runtime_turn_started",
   tasksMaterialized: "tasks_materialized",
 } as const;
@@ -30,5 +32,27 @@ export function buildRuntimeStartedMissionStatusChangedPayload(
     from,
     to,
     reason: missionStatusChangeReasons.runtimeTurnStarted,
+  };
+}
+
+export function buildApprovalRequestedMissionStatusChangedPayload(
+  from: MissionStatus,
+  to: MissionStatus,
+): MissionStatusChangedPayload {
+  return {
+    from,
+    to,
+    reason: missionStatusChangeReasons.approvalRequested,
+  };
+}
+
+export function buildApprovalResolvedMissionStatusChangedPayload(
+  from: MissionStatus,
+  to: MissionStatus,
+): MissionStatusChangedPayload {
+  return {
+    from,
+    to,
+    reason: missionStatusChangeReasons.approvalResolved,
   };
 }

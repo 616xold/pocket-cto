@@ -9,6 +9,7 @@ import {
   initializeRuntimeClient,
   observeTurnLifecycle,
 } from "./turn-lifecycle";
+import type { InMemoryRuntimeSessionRegistry } from "./live-session-registry";
 import type {
   RuntimeCodexBootstrapInput,
   RuntimeCodexBootstrapResult,
@@ -22,6 +23,14 @@ export class CodexRuntimeService {
   constructor(
     private readonly clientFactory: RuntimeCodexClientFactory,
     private readonly defaults: RuntimeCodexThreadDefaults,
+    private readonly liveSessionRegistry: Pick<
+      InMemoryRuntimeSessionRegistry,
+      | "clearResolvedRequest"
+      | "closeTaskSession"
+      | "openTaskSession"
+      | "updateThreadId"
+      | "updateTurnId"
+    >,
   ) {}
 
   async bootstrapThread(
@@ -42,6 +51,17 @@ export class CodexRuntimeService {
     observer: RuntimeCodexRunTurnObserver = {},
   ): Promise<RuntimeCodexRunTurnResult> {
     const client = this.clientFactory.createClient();
+    this.liveSessionRegistry.openTaskSession({
+      interrupt: async ({ threadId, turnId }) => {
+        await client.interruptTurn({
+          threadId,
+          turnId,
+        });
+      },
+      taskId: input.taskId,
+      threadId: input.threadId ?? null,
+    });
+    const sessionObserver = this.wrapSessionObserver(input.taskId, observer);
 
     try {
       const initializeResult = await initializeRuntimeClient(client, this.defaults);
@@ -50,7 +70,7 @@ export class CodexRuntimeService {
         return await this.runTurnOnNewThread(
           client,
           input,
-          observer,
+          sessionObserver,
           initializeResult.userAgent,
         );
       }
@@ -58,10 +78,11 @@ export class CodexRuntimeService {
       return await this.runTurnOnPersistedThread(
         client,
         input,
-        observer,
+        sessionObserver,
         initializeResult.userAgent,
       );
     } finally {
+      this.liveSessionRegistry.closeTaskSession(input.taskId);
       await client.stop();
     }
   }
@@ -244,6 +265,28 @@ export class CodexRuntimeService {
         : {}),
       ...(input.sandboxPolicy ? { sandboxPolicy: input.sandboxPolicy } : {}),
       ...(input.model ? { model: input.model } : {}),
+    };
+  }
+
+  private wrapSessionObserver(
+    taskId: string,
+    observer: RuntimeCodexRunTurnObserver,
+  ): RuntimeCodexRunTurnObserver {
+    return {
+      ...observer,
+      onServerRequestResolved: async (event) => {
+        this.liveSessionRegistry.clearResolvedRequest(taskId, event.requestId);
+        await observer.onServerRequestResolved?.(event);
+      },
+      onThreadStarted: async (event) => {
+        this.liveSessionRegistry.updateThreadId(taskId, event.threadId);
+        await observer.onThreadStarted?.(event);
+      },
+      onTurnStarted: async (event) => {
+        this.liveSessionRegistry.updateThreadId(taskId, event.threadId);
+        this.liveSessionRegistry.updateTurnId(taskId, event.turnId);
+        await observer.onTurnStarted?.(event);
+      },
     };
   }
 }

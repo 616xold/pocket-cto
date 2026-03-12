@@ -1,10 +1,13 @@
+import { setTimeout as delay } from "node:timers/promises";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, count, eq } from "drizzle-orm";
-import { artifacts, missions, workspaces } from "@pocket-cto/db";
+import { approvals, artifacts, missions, workspaces } from "@pocket-cto/db";
 import type { MissionRecord } from "@pocket-cto/domain";
+import { DrizzleApprovalRepository } from "../approvals/drizzle-repository";
+import { ApprovalService } from "../approvals/service";
 import {
   closeTestDatabase,
   createTestDb,
@@ -18,10 +21,12 @@ import { MissionService } from "../missions/service";
 import { DrizzleReplayRepository } from "../replay/drizzle-repository";
 import { ReplayService } from "../replay/service";
 import { RuntimeCodexAdapter } from "../runtime-codex/adapter";
+import { RuntimeControlService } from "../runtime-codex/control-service";
 import {
   resolveCodexRuntimeClientOptions,
   resolveCodexThreadDefaults,
 } from "../runtime-codex/config";
+import { InMemoryRuntimeSessionRegistry } from "../runtime-codex/live-session-registry";
 import { CodexRuntimeService } from "../runtime-codex/service";
 import type { RuntimeCodexRunTurnResult } from "../runtime-codex/types";
 import {
@@ -237,6 +242,322 @@ describe("OrchestratorWorker (DB-backed)", () => {
     ]);
     expect(currentBranch).toBe(`pocket-cto/${created.mission.id}/0-planner`);
     expect(worktreePaths).toContain(persistedWorkspace!.rootPath);
+  });
+
+  it("persists pending file-change approvals, moves task and mission to awaiting_approval, and resumes the live turn on acceptance", async () => {
+    const harness = await createHarness({
+      fixtureOptions: {
+        mode: "file-change-approval",
+      },
+    });
+    cleanups.push(harness.cleanup);
+    const { missionService, replayService, worker } = harness;
+    const created = await missionService.createFromText({
+      text: "Implement the executor change with a file approval gate first",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const executorTask = created.tasks[1]!;
+
+    await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const executorTick = worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+    let executorTickSettled = false;
+    void executorTick.then(() => {
+      executorTickSettled = true;
+    });
+
+    const pendingApproval = await waitForPendingApproval(executorTask.id);
+    const awaitingDetail = await waitForTaskStatus(
+      missionService,
+      created.mission.id,
+      executorTask.id,
+      "awaiting_approval",
+    );
+
+    expect(awaitingDetail.mission.status).toBe("awaiting_approval");
+    expect(pendingApproval).toMatchObject({
+      kind: "file_change",
+      missionId: created.mission.id,
+      status: "pending",
+      taskId: executorTask.id,
+    });
+    expect(readArtifactMetadata(pendingApproval.payload)).toMatchObject({
+      itemId: "item_file_change_1",
+      requestId: "approval_file_change_1",
+      requestMethod: "item/fileChange/requestApproval",
+      threadId: "thread_fake_123",
+      turnId: "turn_fake_123",
+    });
+
+    const awaitingReplay = await replayService.getMissionEvents(created.mission.id);
+    expect(awaitingReplay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.requested",
+        payload: expect.objectContaining({
+          itemId: "item_file_change_1",
+          kind: "file_change",
+          requestId: "approval_file_change_1",
+          requestMethod: "item/fileChange/requestApproval",
+        }),
+      }),
+    );
+    expect(awaitingReplay).toContainEqual(
+      expect.objectContaining({
+        type: "task.status_changed",
+        payload: {
+          from: "running",
+          to: "awaiting_approval",
+          reason: "approval_requested",
+        },
+      }),
+    );
+    expect(awaitingReplay).toContainEqual(
+      expect.objectContaining({
+        type: "mission.status_changed",
+        payload: {
+          from: "running",
+          to: "awaiting_approval",
+          reason: "approval_requested",
+        },
+      }),
+    );
+
+    await worker.resolveApproval({
+      approvalId: pendingApproval.id,
+      decision: "accept",
+      rationale: "Scoped workspace write is acceptable",
+      resolvedBy: "operator",
+    });
+
+    await delay(1);
+
+    const resumedDetail = await missionService.getMissionDetail(created.mission.id);
+    const resumedExecutorTask = resumedDetail.tasks.find(
+      (task) => task.id === executorTask.id,
+    );
+    expect(executorTickSettled).toBe(false);
+    expect(resumedDetail.mission.status).toBe("running");
+    expect(resumedExecutorTask).toMatchObject({
+      id: executorTask.id,
+      status: "running",
+    });
+
+    const completedTick = await executorTick;
+    expect(completedTick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: executorTask.id,
+        status: "succeeded",
+      },
+      turn: {
+        status: "completed",
+      },
+    });
+
+    const resolvedApproval = await getApprovalById(pendingApproval.id);
+    expect(resolvedApproval).toMatchObject({
+      id: pendingApproval.id,
+      status: "approved",
+    });
+
+    const finalReplay = await replayService.getMissionEvents(created.mission.id);
+    expect(finalReplay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.resolved",
+        payload: expect.objectContaining({
+          decision: "accept",
+          status: "approved",
+        }),
+      }),
+    );
+    expect(finalReplay).toContainEqual(
+      expect.objectContaining({
+        type: "task.status_changed",
+        payload: {
+          from: "awaiting_approval",
+          to: "running",
+          reason: "approval_resolved",
+        },
+      }),
+    );
+    expect(finalReplay).toContainEqual(
+      expect.objectContaining({
+        type: "mission.status_changed",
+        payload: {
+          from: "awaiting_approval",
+          to: "running",
+          reason: "approval_resolved",
+        },
+      }),
+    );
+  });
+
+  it("persists declined approvals and lets the live turn finish with a truthful failed outcome", async () => {
+    const harness = await createHarness({
+      fixtureOptions: {
+        mode: "file-change-approval",
+      },
+    });
+    cleanups.push(harness.cleanup);
+    const { missionService, replayService, worker } = harness;
+    const created = await missionService.createFromText({
+      text: "Decline the executor file approval and fail honestly",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const executorTask = created.tasks[1]!;
+
+    await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const executorTick = worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const pendingApproval = await waitForPendingApproval(executorTask.id);
+    await waitForTaskStatus(
+      missionService,
+      created.mission.id,
+      executorTask.id,
+      "awaiting_approval",
+    );
+
+    await worker.resolveApproval({
+      approvalId: pendingApproval.id,
+      decision: "decline",
+      rationale: "Do not allow this mutation",
+      resolvedBy: "operator",
+    });
+
+    const completedTick = await executorTick;
+    expect(completedTick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: executorTask.id,
+        status: "failed",
+      },
+      turn: {
+        status: "failed",
+      },
+    });
+
+    const resolvedApproval = await getApprovalById(pendingApproval.id);
+    expect(resolvedApproval).toMatchObject({
+      id: pendingApproval.id,
+      status: "declined",
+    });
+
+    const replay = await replayService.getMissionEvents(created.mission.id);
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.resolved",
+        payload: expect.objectContaining({
+          decision: "decline",
+          status: "declined",
+        }),
+      }),
+    );
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "task.status_changed",
+        payload: {
+          from: "awaiting_approval",
+          to: "failed",
+          reason: "runtime_turn_failed",
+        },
+      }),
+    );
+  });
+
+  it("interrupts an active turn through the live registry and terminalizes as runtime_turn_interrupted", async () => {
+    const harness = await createHarness({
+      fixtureOptions: {
+        mode: "interruptible-turn",
+      },
+    });
+    cleanups.push(harness.cleanup);
+    const { missionService, replayService, worker } = harness;
+    const created = await missionService.createFromText({
+      text: "Interrupt the live planner turn cleanly",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
+
+    const plannerTick = worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    await waitForTaskStatus(
+      missionService,
+      created.mission.id,
+      plannerTask.id,
+      "running",
+    );
+
+    const interrupt = await worker.interruptActiveTurn({
+      rationale: "Operator requested stop",
+      requestedBy: "operator",
+      taskId: plannerTask.id,
+    });
+
+    expect(interrupt).toMatchObject({
+      cancelledApprovals: [],
+      taskId: plannerTask.id,
+      threadId: "thread_fake_123",
+      turnId: "turn_fake_123",
+    });
+
+    const completedTick = await plannerTick;
+    expect(completedTick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: plannerTask.id,
+        status: "cancelled",
+      },
+      turn: {
+        status: "interrupted",
+      },
+    });
+
+    const replay = await replayService.getMissionEvents(created.mission.id);
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "runtime.turn_interrupt_requested",
+        payload: expect.objectContaining({
+          requestedBy: "operator",
+          taskId: plannerTask.id,
+          threadId: "thread_fake_123",
+          turnId: "turn_fake_123",
+        }),
+      }),
+    );
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "task.status_changed",
+        payload: {
+          from: "running",
+          to: "cancelled",
+          reason: "runtime_turn_interrupted",
+        },
+      }),
+    );
   });
 
   it("persists a planner plan artifact, updates task summary, and appends replay for it", async () => {
@@ -662,6 +983,72 @@ describe("OrchestratorWorker (DB-backed)", () => {
     expect(planArtifact?.id).toBeDefined();
     expect(await readFile(join(executorWorkspace!.rootPath, "README.md"), "utf8")).toContain(
       "executor change",
+    );
+  });
+
+  it("classifies missing planner artifacts as controlled task failures", async () => {
+    const harness = await createHarness();
+    cleanups.push(harness.cleanup);
+    const log = silentLog();
+    const created = await harness.missionService.createFromText({
+      text: "Do not start the executor without planner handoff evidence",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
+    const executorTask = created.tasks[1]!;
+
+    await harness.missionRepository.updateTaskStatus(plannerTask.id, "succeeded");
+    await harness.missionRepository.updateTaskStatus(executorTask.id, "claimed");
+
+    const tick = await harness.worker.run({
+      log,
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "task_failed",
+      task: {
+        id: executorTask.id,
+        role: "executor",
+        status: "failed",
+        codexTurnId: null,
+        summary:
+          "Executor could not start because no planner plan artifact was available for handoff.",
+      },
+    });
+
+    const detail = await harness.missionService.getMissionDetail(created.mission.id);
+    const replayEvents = await harness.replayService.getMissionEvents(
+      created.mission.id,
+    );
+
+    expect(detail.tasks[1]).toMatchObject({
+      id: executorTask.id,
+      codexTurnId: null,
+      status: "failed",
+    });
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: executorTask.id,
+        type: "task.status_changed",
+        payload: expect.objectContaining({
+          from: "claimed",
+          reason: "executor_missing_planner_artifact",
+          to: "failed",
+        }),
+      }),
+    );
+    expect(log.error).not.toHaveBeenCalled();
+    expect(log.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        classification: "controlled_failure",
+        missionId: created.mission.id,
+        outcome: "task_failed",
+        taskId: executorTask.id,
+      }),
+      "Worker terminalized task after controlled failure",
     );
   });
 
@@ -1301,11 +1688,14 @@ async function createHarness(options?: {
       | "success"
       | "plan-only"
       | "multi-text"
+      | "file-change-approval"
+      | "command-approval"
+      | "interruptible-turn"
       | "thread-start-error"
       | "turn-completed-failed"
       | "turn-start-error"
       | "resume-gap-direct-turn-success"
-    | "resume-gap-direct-turn-failed";
+      | "resume-gap-direct-turn-failed";
     threadId?: string;
   };
   missionRepository?: DrizzleMissionRepository;
@@ -1335,9 +1725,11 @@ async function createHarness(options?: {
 
   const missionRepository =
     options?.missionRepository ?? new DrizzleMissionRepository(db);
+  const approvalRepository = new DrizzleApprovalRepository(db);
   const replayRepository = new DrizzleReplayRepository(db);
   const workspaceRepository = new DrizzleWorkspaceRepository(db);
   const replayService = new ReplayService(replayRepository, missionRepository);
+  const liveSessionRegistry = new InMemoryRuntimeSessionRegistry();
   const missionService = new MissionService(
     new StubMissionCompiler(),
     missionRepository,
@@ -1378,15 +1770,29 @@ async function createHarness(options?: {
         },
         resolvedWorkspaceRoot,
       ),
+      liveSessionRegistry,
     );
+  const approvalService = new ApprovalService(
+    approvalRepository,
+    missionRepository,
+    replayService,
+    liveSessionRegistry,
+  );
   const orchestratorService = new OrchestratorService(
     missionRepository,
     replayService,
+    approvalService,
     runtimeCodexService,
     new EvidenceService(),
     workspaceService,
     options?.validationService ??
       new LocalExecutorValidationService(new LocalWorkspaceValidationGitClient()),
+  );
+  const runtimeControlService = new RuntimeControlService(
+    missionRepository,
+    replayService,
+    approvalService,
+    liveSessionRegistry,
   );
 
   return {
@@ -1397,9 +1803,13 @@ async function createHarness(options?: {
     missionRepository,
     missionService,
     replayService,
+    runtimeControlService,
     sourceRepoRoot,
     workspaceRoot: resolvedWorkspaceRoot,
-    worker: new OrchestratorWorker(orchestratorService),
+    worker: new OrchestratorWorker(orchestratorService, {
+      approvalService,
+      runtimeControlService,
+    }),
   };
 }
 
@@ -1408,6 +1818,9 @@ function buildFixtureArgs(options?: {
     | "success"
     | "plan-only"
     | "multi-text"
+    | "file-change-approval"
+    | "command-approval"
+    | "interruptible-turn"
     | "thread-start-error"
     | "turn-completed-failed"
     | "turn-start-error"
@@ -1706,6 +2119,77 @@ async function getWorkspaceByTaskId(taskId: string) {
         updatedAt: workspace.updatedAt.toISOString(),
       }
     : null;
+}
+
+async function getApprovalById(approvalId: string) {
+  const [approval] = await db
+    .select()
+    .from(approvals)
+    .where(eq(approvals.id, approvalId))
+    .limit(1);
+
+  return approval
+    ? {
+        ...approval,
+        createdAt: approval.createdAt.toISOString(),
+        updatedAt: approval.updatedAt.toISOString(),
+      }
+    : null;
+}
+
+async function waitForPendingApproval(taskId: string) {
+  return waitFor(async () => {
+    const [approval] = await db
+      .select()
+      .from(approvals)
+      .where(and(eq(approvals.taskId, taskId), eq(approvals.status, "pending")))
+      .limit(1);
+
+    return approval
+      ? {
+          ...approval,
+          createdAt: approval.createdAt.toISOString(),
+          updatedAt: approval.updatedAt.toISOString(),
+        }
+      : null;
+  });
+}
+
+async function waitForTaskStatus(
+  missionService: MissionService,
+  missionId: string,
+  taskId: string,
+  status: string,
+) {
+  return waitFor(async () => {
+    const detail = await missionService.getMissionDetail(missionId);
+    const task = detail.tasks.find((candidate) => candidate.id === taskId);
+
+    return task?.status === status ? detail : null;
+  });
+}
+
+async function waitFor<T>(
+  reader: () => Promise<T | null>,
+  options?: {
+    attempts?: number;
+    delayMs?: number;
+  },
+) {
+  const attempts = options?.attempts ?? 100;
+  const delayMs = options?.delayMs ?? 10;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const value = await reader();
+
+    if (value !== null) {
+      return value;
+    }
+
+    await delay(delayMs);
+  }
+
+  throw new Error("Timed out waiting for expected value");
 }
 
 function readArtifactMetadata(metadata: unknown) {

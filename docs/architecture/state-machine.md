@@ -44,7 +44,9 @@ The task state tells the orchestrator what is safe to do next.
 - `planned -> queued` when tasks are materialized
 - `queued -> running` when the first task starts
 - `running -> awaiting_approval` when an approval gate blocks progress
-- `awaiting_approval -> running` when approval is granted
+  Pocket CTO now emits `mission.status_changed` with `reason = "approval_requested"` for this transition
+- `awaiting_approval -> running` when approval is granted and no other mission approvals remain pending
+  Pocket CTO now emits `mission.status_changed` with `reason = "approval_resolved"` for this transition
 - `running -> succeeded` when required tasks succeed and the proof bundle is complete
 - `running -> failed` when a terminal failure occurs
 - any non-terminal state -> `cancelled` when the operator cancels
@@ -56,10 +58,14 @@ The task state tells the orchestrator what is safe to do next.
 - `claimed -> running` when runtime execution starts
 - `running -> blocked` when prerequisites or context are missing
 - `running -> awaiting_approval` when the runtime requests a gated action
+  Pocket CTO now emits `task.status_changed` with `reason = "approval_requested"` for this transition
 - `awaiting_approval -> running` when approved
+  Pocket CTO now emits `task.status_changed` with `reason = "approval_resolved"` for this transition
 - `running -> succeeded` when outputs are valid
 - `running -> failed` when retries are exhausted or a fatal error occurs
 - `claimed` or `running -> cancelled` on operator cancellation
+- `running -> cancelled` when an active runtime turn later completes as `interrupted`
+  Pocket CTO now emits `task.status_changed` with `reason = "runtime_turn_interrupted"` for that path
 
 ## Replay requirements
 

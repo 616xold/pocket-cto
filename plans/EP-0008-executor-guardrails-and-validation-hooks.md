@@ -13,6 +13,7 @@ It does not add approval persistence, GitHub or PR side effects, richer artifact
 
 ## Progress
 
+- [x] (2026-03-12T21:41Z) Split controlled business failures from runtime crashes at the orchestrator result boundary: executor missing-planner-artifact now returns `task_failed` instead of `runtime_failed`, worker logging records that path as a controlled failure, and true runtime/protocol exceptions still stay on the `runtime_failed` path for future metrics and approval handling.
 - [x] (2026-03-12T16:24Z) Re-ran the full required validation list after the hardening pass, refreshed `@pocket-cto/domain` declarations for the additive replay reasons, and completed two manual temp-repo acceptances that confirmed no-op executor turns and planner-evidence-failure turns both terminalize with cleared `codexTurnId` and released workspace leases.
 - [x] (2026-03-12T16:20Z) Hardened post-turn terminalization so completed runtime turns no longer strand planner or executor tasks in `running`: terminal outcomes are now computed before the final DB write, executor validation hook exceptions become structured failed reports, executor no-op turns fail explicitly, and fallback terminalization clears `codexTurnId` plus releases the workspace lease even when planner evidence persistence or later validation work fails.
 - [x] (2026-03-12T03:14Z) Re-read the required repo docs, active ExecPlans, architecture and ops docs, DB and domain schemas, orchestrator/runtime modules, workspace modules, evidence modules, and the fake Codex App Server fixture named in the prompt.
@@ -22,6 +23,7 @@ It does not add approval persistence, GitHub or PR side effects, richer artifact
 - [x] (2026-03-12T03:34Z) Added dedicated executor context and prompt modules, a shared workflow-policy loader, and an executor turn policy builder that uses `workspaceWrite` with writable roots limited to the task workspace and `networkAccess = false`.
 - [x] (2026-03-12T03:34Z) Added `modules/validation/` with changed-path capture, allowlist enforcement, and `git diff --check`, then wired executor summaries plus terminal task decisions through `orchestrator/runtime-phase.ts`.
 - [x] (2026-03-12T03:34Z) Added focused prompt, validation, repository, in-memory orchestrator, and DB-backed executor tests; updated the two ops docs; ran the required validation commands; and captured one manual temp-repo executor acceptance with a stub writer runtime.
+- [x] (2026-03-12T22:31Z) Added the minimal M1.6 handoff note: executor mutation turns no longer stay on `approvalPolicy = "never"` after this milestone and now resolve approval posture through the dedicated M1.6 approval-policy resolver, while planner and other read-only turns remain `never`.
 
 ## Surprises & Discoveries
 
@@ -51,6 +53,9 @@ It does not add approval persistence, GitHub or PR side effects, richer artifact
 
 - Observation: plain `git diff --check --relative HEAD --` does not inspect brand-new untracked files, so executor whitespace and conflict-marker validation would have had a blind spot for newly created files.
   Evidence: a local probe against a temp repo showed `git diff --check` ignored an untracked file with trailing whitespace, while `git diff --no-index --check -- <empty-file> <path>` reported the issue correctly.
+
+- Observation: the orchestrator result seam still treated any exception from `executeClaimedTaskTurn(...)` as `runtime_failed`, even when `RuntimePhase` had already terminalized the task as a controlled business failure and cleared active turn state.
+  Evidence: `apps/control-plane/src/modules/orchestrator/service.ts` caught every thrown error from `executeTaskTurn(...)` and returned `runtime_failed` after only reloading the task, while `apps/control-plane/src/modules/orchestrator/runtime-phase.ts` already used `failExecutorForMissingPlannerArtifact(...)` to mark the task `failed` before rethrowing.
 
 ## Decision Log
 
@@ -92,6 +97,10 @@ It does not add approval persistence, GitHub or PR side effects, richer artifact
 
 - Decision: `git diff --check` coverage now extends to untracked files by running the narrow no-index check against each untracked path.
   Rationale: This closes a real hygiene gap for brand-new files without introducing a generic command-runner or CI surface.
+  Date/Author: 2026-03-12 / Codex
+
+- Decision: Add a separate orchestrator tick result `task_failed` for controlled policy or business failures that have already been persisted as terminal `failed` tasks with no active `codexTurnId`, and reserve `runtime_failed` for actual runtime, protocol, or infrastructure failures.
+  Rationale: Worker logs and future metrics should distinguish deterministic business-policy failures such as missing planner handoff from genuine Codex runtime crashes. Reclassifying at the orchestrator boundary keeps `RuntimePhase` narrow and avoids widening the approval slice.
   Date/Author: 2026-03-12 / Codex
 
 ## Context and Orientation
@@ -238,6 +247,17 @@ Post-turn terminalization integrity gap captured before the hardening pass:
 4. Hardening strategy:
    compute validation and planner-evidence preparation before the final transaction, catch hook exceptions into structured failed validation reports, and if the first finalization attempt throws after runtime completion, perform one fallback failed terminalization instead of leaving the task active.
 
+Controlled failure classification gap captured before implementation:
+
+1. True runtime failures:
+   bootstrap, resume, turn-start, or protocol execution failures where the task has not already been deterministically terminalized stay on the `runtime_failed` path.
+2. Controlled failures that were misclassified:
+   the executor missing-planner-artifact path already marked the task `failed` with explicit summary and replay reason, but still surfaced from the worker as `runtime_failed` because `executeTaskTurn(...)` treated every thrown error the same way.
+3. Narrow classification strategy:
+   after a caught turn-execution exception, the orchestrator now reloads the latest task and returns `task_failed` when that task is already `failed` and `codexTurnId` is clear; otherwise it returns `runtime_failed`.
+4. Expected worker-log effect:
+   controlled policy failures are logged separately from runtime crashes so later metrics and M1.6 approval handling can trust the distinction.
+
 Validation results captured after implementation:
 
 - `pnpm db:generate` passed with `No schema changes, nothing to migrate`.
@@ -315,6 +335,7 @@ Pocket CTO now resolves a planner `plan` artifact before executor execution, fee
 The most important lifecycle change is that runtime completion is no longer the whole success condition for executor tasks.
 Replay still records the existing runtime turn structure, but final task status now depends on local guardrails too.
 If the planner handoff is missing, the executor task fails fast with `executor_missing_planner_artifact`.
+That controlled pre-turn failure now surfaces from the worker as `task_failed` rather than `runtime_failed`, keeping worker output honest about business-policy failures versus actual runtime crashes.
 If the runtime turn completes but local validation fails, the executor task ends `failed` with `executor_validation_failed`.
 If the runtime turn completes but changes nothing, the executor task now ends `failed` with `executor_no_changes`.
 If validation passes, the executor task ends `succeeded` and stores a concise `mission_tasks.summary` that names the intended change and validation result.

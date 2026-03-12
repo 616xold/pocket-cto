@@ -1,0 +1,1 @@
+ALTER TYPE "public"."replay_event_type" ADD VALUE 'runtime.turn_interrupt_requested' BEFORE 'runtime.turn_started';

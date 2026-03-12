@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { RuntimeCodexAdapter } from "./adapter";
 import { buildReadOnlyTurnPolicy } from "./config";
+import { InMemoryRuntimeSessionRegistry } from "./live-session-registry";
 import { CodexRuntimeService } from "./service";
 
 const fixturePath = fileURLToPath(
@@ -13,7 +14,7 @@ const fixturePath = fileURLToPath(
 
 describe("CodexRuntimeService", () => {
   it("surfaces the final completed agent message text from a planner-style turn", async () => {
-    const readOnlyPolicy = buildReadOnlyTurnPolicy();
+    const readOnlyPolicy = buildReadOnlyTurnPolicy("planner");
     const service = createRuntimeService();
 
     const result = await service.runTurn({
@@ -28,6 +29,7 @@ describe("CodexRuntimeService", () => {
         },
       ],
       sandboxPolicy: readOnlyPolicy.sandboxPolicy,
+      taskId: crypto.randomUUID(),
       threadId: null,
     });
 
@@ -45,7 +47,7 @@ describe("CodexRuntimeService", () => {
   });
 
   it("captures ordered completed textual outputs for plan-only and multi-text planner turns", async () => {
-    const readOnlyPolicy = buildReadOnlyTurnPolicy();
+    const readOnlyPolicy = buildReadOnlyTurnPolicy("planner");
     const planOnlyService = createRuntimeService(["--mode", "plan-only"]);
     const multiTextService = createRuntimeService(["--mode", "multi-text"]);
 
@@ -62,6 +64,7 @@ describe("CodexRuntimeService", () => {
           },
         ],
         sandboxPolicy: readOnlyPolicy.sandboxPolicy,
+        taskId: crypto.randomUUID(),
         threadId: null,
       }),
       multiTextService.runTurn({
@@ -76,6 +79,7 @@ describe("CodexRuntimeService", () => {
           },
         ],
         sandboxPolicy: readOnlyPolicy.sandboxPolicy,
+        taskId: crypto.randomUUID(),
         threadId: null,
       }),
     ]);
@@ -121,5 +125,6 @@ function createRuntimeService(fixtureArgs: string[] = []) {
       sandbox: "workspace-write",
       serviceName: "pocket-cto-control-plane",
     },
+    new InMemoryRuntimeSessionRegistry(),
   );
 }

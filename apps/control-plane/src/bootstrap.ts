@@ -1,6 +1,8 @@
 import { loadEnv } from "@pocket-cto/config";
 import { createDb } from "@pocket-cto/db";
 import type { AppContainer, WorkerContainer } from "./lib/types";
+import { DrizzleApprovalRepository } from "./modules/approvals/drizzle-repository";
+import { ApprovalService } from "./modules/approvals/service";
 import { EvidenceService } from "./modules/evidence/service";
 import { StubMissionCompiler } from "./modules/missions/compiler";
 import { DrizzleMissionRepository } from "./modules/missions/drizzle-repository";
@@ -12,10 +14,12 @@ import { DrizzleReplayRepository } from "./modules/replay/drizzle-repository";
 import { InMemoryReplayRepository } from "./modules/replay/repository";
 import { ReplayService } from "./modules/replay/service";
 import { RuntimeCodexAdapter } from "./modules/runtime-codex/adapter";
+import { RuntimeControlService } from "./modules/runtime-codex/control-service";
 import {
   resolveCodexRuntimeClientOptions,
   resolveCodexThreadDefaults,
 } from "./modules/runtime-codex/config";
+import { InMemoryRuntimeSessionRegistry } from "./modules/runtime-codex/live-session-registry";
 import { CodexRuntimeService } from "./modules/runtime-codex/service";
 import {
   buildDefaultWorkspaceRoot,
@@ -44,10 +48,12 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
   const env = loadEnv();
   const db = createDb(env.DATABASE_URL);
   const missionRepository = new DrizzleMissionRepository(db);
+  const approvalRepository = new DrizzleApprovalRepository(db);
   const replayRepository = new DrizzleReplayRepository(db);
   const workspaceRepository = new DrizzleWorkspaceRepository(db);
   const replayService = new ReplayService(replayRepository, missionRepository);
   const evidenceService = new EvidenceService();
+  const liveSessionRegistry = new InMemoryRuntimeSessionRegistry();
   const gitManager = new LocalWorkspaceGitManager();
   const workspaceService = new WorkspaceService(
     workspaceRepository,
@@ -62,9 +68,22 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
   const runtimeCodexService = new CodexRuntimeService(
     new RuntimeCodexAdapter(resolveCodexRuntimeClientOptions(env)),
     resolveCodexThreadDefaults(env, process.cwd()),
+    liveSessionRegistry,
   );
   const validationService = new LocalExecutorValidationService(
     new LocalWorkspaceValidationGitClient(),
+  );
+  const approvalService = new ApprovalService(
+    approvalRepository,
+    missionRepository,
+    replayService,
+    liveSessionRegistry,
+  );
+  const runtimeControlService = new RuntimeControlService(
+    missionRepository,
+    replayService,
+    approvalService,
+    liveSessionRegistry,
   );
 
   return {
@@ -72,11 +91,16 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
       new OrchestratorService(
         missionRepository,
         replayService,
+        approvalService,
         runtimeCodexService,
         evidenceService,
         workspaceService,
         validationService,
       ),
+      {
+        approvalService,
+        runtimeControlService,
+      },
     ),
   };
 }

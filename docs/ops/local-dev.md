@@ -30,6 +30,7 @@ Use `pnpm ci:static` and `pnpm ci:integration-db` locally when you want to mirro
 Use `pnpm ci:repro:current` when you need a temp worktree that applies the exact current unstaged snapshot and then runs the same CI commands from scratch.
 Those CI scripts expect runner-style env to be present in the shell; `.env` stays local-only for development and should remain uncommitted.
 Local development still uses `cp .env.example .env`.
+If you add a DB enum or other migration that affects tests, run `pnpm run db:migrate:ci` as well so both `DATABASE_URL` and `TEST_DATABASE_URL` stay aligned.
 
 ## Git and repo hygiene
 
@@ -81,6 +82,19 @@ fi
 git -C "$SOURCE_REPO_ROOT" worktree list
 find "$RESOLVED_WORKSPACE_ROOT" -maxdepth 2 -mindepth 2 -type d
 ```
+
+## Live approval limitation
+
+M1.6 approval continuity is intentionally single-process.
+The worker keeps the active app-server client, pending approval responders, and interrupt handles in an in-memory registry keyed by `taskId`.
+
+That means:
+
+- durable approval rows and replay survive worker restarts
+- live turn continuation does not survive worker restarts
+- approval resolution and interrupt operations must reach the same worker process that owns the active turn
+
+If the worker restarts while a task is awaiting approval, the durable audit trail remains intact, but Pocket CTO cannot honestly resume that already-live turn.
 
 ## Running specific apps
 

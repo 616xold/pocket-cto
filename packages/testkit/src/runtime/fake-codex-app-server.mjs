@@ -1,15 +1,19 @@
 import process from "node:process";
 import readline from "node:readline";
+import { appendFile } from "node:fs/promises";
+import { join } from "node:path";
 
 const { mode, threadId: seedThreadId } = readFlags(process.argv.slice(2));
 
 let sawInitialize = false;
 let sawInitialized = false;
 let activeThreadId = seedThreadId;
+let activeTurn = null;
 let sawDirectTurnMissing = false;
 let sawResumeGap = false;
 let threadStartCount = 0;
 const loadedThreadIds = new Set();
+let pendingServerRequest = null;
 
 const readlineInterface = readline.createInterface({
   input: process.stdin,
@@ -30,6 +34,11 @@ readlineInterface.on("line", (line) => {
     message = JSON.parse(trimmed);
   } catch (error) {
     writeError(null, -32700, `Invalid JSON: ${String(error)}`);
+    return;
+  }
+
+  if (!message.method && message.id !== undefined) {
+    void handleServerRequestResponse(message);
     return;
   }
 
@@ -185,6 +194,14 @@ readlineInterface.on("line", (line) => {
 
     const turn = buildTurn("turn_fake_123", "inProgress", null);
     const lifecycle = buildLifecycle(mode);
+    const turnApprovalPolicy = message.params?.approvalPolicy ?? "untrusted";
+    const turnSandboxPolicy = message.params?.sandboxPolicy ?? null;
+    const turnCwd = message.params?.cwd ?? process.cwd();
+    activeTurn = {
+      cwd: turnCwd,
+      threadId: targetThreadId,
+      turnId: turn.id,
+    };
 
     write({
       id: message.id,
@@ -200,6 +217,76 @@ readlineInterface.on("line", (line) => {
         turn,
       },
     });
+
+    if (
+      mode === "file-change-approval" &&
+      allowsInteractiveApproval({
+        approvalPolicy: turnApprovalPolicy,
+        sandboxPolicy: turnSandboxPolicy,
+      })
+    ) {
+      const approvalRequest = buildFileChangeApprovalRequest({
+        cwd: turnCwd,
+        threadId: targetThreadId,
+        turnId: turn.id,
+      });
+      pendingServerRequest = {
+        acceptedLifecycle: buildFileChangeApprovalLifecycle("accept"),
+        cwd: turnCwd,
+        id: approvalRequest.id,
+        method: approvalRequest.method,
+        rejectedLifecycle: buildFileChangeApprovalLifecycle("decline"),
+        threadId: targetThreadId,
+        turnId: turn.id,
+      };
+      queueServerRequest(approvalRequest);
+      return;
+    }
+
+    if (
+      mode === "command-approval" &&
+      allowsInteractiveApproval({
+        approvalPolicy: turnApprovalPolicy,
+        sandboxPolicy: turnSandboxPolicy,
+      })
+    ) {
+      const approvalRequest = buildCommandApprovalRequest({
+        cwd: turnCwd,
+        threadId: targetThreadId,
+        turnId: turn.id,
+      });
+      pendingServerRequest = {
+        acceptedLifecycle: buildCommandApprovalLifecycle("accept"),
+        cwd: turnCwd,
+        id: approvalRequest.id,
+        method: approvalRequest.method,
+        rejectedLifecycle: buildCommandApprovalLifecycle("decline"),
+        threadId: targetThreadId,
+        turnId: turn.id,
+      };
+      queueServerRequest(approvalRequest);
+      return;
+    }
+
+    if (mode === "interruptible-turn") {
+      queueNotification({
+        method: "item/started",
+        params: {
+            item: {
+              type: "commandExecution",
+              id: "item_command_1",
+              command: "pnpm test",
+              cwd: turnCwd,
+              processId: "pty_1",
+              status: "inProgress",
+              commandActions: [],
+          },
+          threadId: targetThreadId,
+          turnId: turn.id,
+        },
+      });
+      return;
+    }
 
     for (const item of lifecycle.items) {
       queueNotification({
@@ -258,6 +345,23 @@ readlineInterface.on("line", (line) => {
       id: message.id,
       result: {},
     });
+
+    if (
+      activeTurn &&
+      message.params?.threadId === activeTurn.threadId &&
+      message.params?.turnId === activeTurn.turnId
+    ) {
+      queueNotification({
+        method: "turn/completed",
+        params: {
+          threadId: activeTurn.threadId,
+          turn: buildTurn(activeTurn.turnId, "interrupted", null),
+        },
+      });
+      activeTurn = null;
+      pendingServerRequest = null;
+    }
+
     return;
   }
 
@@ -269,6 +373,10 @@ function write(payload) {
 }
 
 function queueNotification(payload) {
+  globalThis.setTimeout(() => write(payload), 5);
+}
+
+function queueServerRequest(payload) {
   globalThis.setTimeout(() => write(payload), 5);
 }
 
@@ -439,6 +547,103 @@ function buildLifecycle(currentMode) {
   };
 }
 
+function buildFileChangeApprovalRequest(input) {
+  return {
+    method: "item/fileChange/requestApproval",
+    id: "approval_file_change_1",
+    params: {
+      threadId: input.threadId,
+      turnId: input.turnId,
+      itemId: "item_file_change_1",
+      reason: "Requesting extra write access for the planned file edits.",
+      grantRoot: `${input.cwd}/src`,
+    },
+  };
+}
+
+function buildCommandApprovalRequest(input) {
+  return {
+    method: "item/commandExecution/requestApproval",
+    id: "approval_command_1",
+    params: {
+      threadId: input.threadId,
+      turnId: input.turnId,
+      itemId: "item_command_approval_1",
+      approvalId: "approval_subcommand_1",
+      reason: "Network access is required to fetch dependency metadata.",
+      command: "pnpm view pocket-cto version",
+      cwd: input.cwd,
+      commandActions: [],
+      networkApprovalContext: {
+        host: "registry.npmjs.org",
+      },
+      availableDecisions: [
+        "accept",
+        "acceptForSession",
+        "decline",
+        "cancel",
+      ],
+    },
+  };
+}
+
+function buildFileChangeApprovalLifecycle(decision) {
+  if (decision === "accept") {
+    return {
+      status: "completed",
+      items: [
+        {
+          type: "fileChange",
+          id: "item_file_change_1",
+          changes: [
+            {
+              type: "write",
+              path: "README.md",
+            },
+          ],
+          status: "completed",
+        },
+      ],
+      terminalInteraction: null,
+    };
+  }
+
+  return {
+    status: "failed",
+    items: [],
+    terminalInteraction: null,
+  };
+}
+
+function buildCommandApprovalLifecycle(decision) {
+  if (decision === "accept") {
+    return {
+      status: "completed",
+      items: [
+        {
+          type: "commandExecution",
+          id: "item_command_approval_1",
+          command: "pnpm view pocket-cto version",
+          cwd: process.cwd(),
+          processId: "pty_approval_1",
+          status: "completed",
+          commandActions: [],
+          aggregatedOutput: "1.0.0",
+          exitCode: 0,
+          durationMs: 2,
+        },
+      ],
+      terminalInteraction: null,
+    };
+  }
+
+  return {
+    status: "failed",
+    items: [],
+    terminalInteraction: null,
+  };
+}
+
 function buildPlanOnlyText() {
   return [
     "## Objective understanding",
@@ -517,6 +722,85 @@ function isResumeGapMode(currentMode) {
     "resume-gap-direct-turn-success",
     "resume-gap-direct-turn-failed",
   ].includes(currentMode);
+}
+
+function allowsInteractiveApproval(input) {
+  if (input.approvalPolicy === "never") {
+    return false;
+  }
+
+  return (
+    input.sandboxPolicy?.type === "workspaceWrite" ||
+    input.sandboxPolicy?.type === "dangerFullAccess"
+  );
+}
+
+async function handleServerRequestResponse(message) {
+  if (!pendingServerRequest || message.id !== pendingServerRequest.id) {
+    return;
+  }
+
+  const decision = message.result?.decision;
+  const accepted =
+    decision === "accept" || decision === "acceptForSession";
+  const lifecycle = accepted
+    ? pendingServerRequest.acceptedLifecycle
+    : pendingServerRequest.rejectedLifecycle;
+
+  if (accepted && pendingServerRequest.method === "item/fileChange/requestApproval") {
+    await appendFile(
+      join(pendingServerRequest.cwd, "README.md"),
+      "\nexecutor change via approval fixture\n",
+    );
+  }
+
+  queueNotification({
+    method: "serverRequest/resolved",
+    params: {
+      threadId: pendingServerRequest.threadId,
+      requestId: pendingServerRequest.id,
+    },
+  });
+
+  for (const item of lifecycle.items) {
+    queueNotification({
+      method: "item/started",
+      params: {
+        item,
+        threadId: pendingServerRequest.threadId,
+        turnId: pendingServerRequest.turnId,
+      },
+    });
+    queueNotification({
+      method: "item/completed",
+      params: {
+        item,
+        threadId: pendingServerRequest.threadId,
+        turnId: pendingServerRequest.turnId,
+      },
+    });
+  }
+
+  queueNotification({
+    method: "turn/completed",
+    params: {
+      threadId: pendingServerRequest.threadId,
+      turn: buildTurn(
+        pendingServerRequest.turnId,
+        lifecycle.status,
+        lifecycle.status === "failed"
+          ? {
+              message: "simulated approval rejection",
+              codexErrorInfo: null,
+              additionalDetails: "fake approval rejection path",
+            }
+          : null,
+      ),
+    },
+  });
+
+  activeTurn = null;
+  pendingServerRequest = null;
 }
 
 function readFlags(argv) {

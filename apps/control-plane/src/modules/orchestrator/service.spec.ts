@@ -1,11 +1,15 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { describe, expect, it, vi } from "vitest";
+import { InMemoryApprovalRepository } from "../approvals/repository";
+import { ApprovalService } from "../approvals/service";
 import { EvidenceService } from "../evidence/service";
 import { StubMissionCompiler } from "../missions/compiler";
 import { InMemoryMissionRepository } from "../missions/repository";
 import { MissionService } from "../missions/service";
 import { InMemoryReplayRepository } from "../replay/repository";
 import { ReplayService } from "../replay/service";
+import { RuntimeControlService } from "../runtime-codex/control-service";
+import { InMemoryRuntimeSessionRegistry } from "../runtime-codex/live-session-registry";
 import type { RuntimeCodexRunTurnResult } from "../runtime-codex/types";
 import type { ExecutorValidationService } from "../validation";
 import {
@@ -186,7 +190,7 @@ describe("OrchestratorWorker", () => {
       "You are the Pocket CTO planner task. Produce a read-only implementation plan only.",
     );
     expect(observedInputs[1]).toMatchObject({
-      approvalPolicy: "never",
+      approvalPolicy: "on-request",
       sandboxPolicy: {
         type: "workspaceWrite",
         writableRoots: [
@@ -214,6 +218,10 @@ describe("OrchestratorWorker", () => {
 
   it("fails executor tasks explicitly when no planner artifact is available", async () => {
     const { missionRepository, missionService, worker } = createHarness();
+    const log = {
+      error: vi.fn(),
+      info: vi.fn(),
+    };
     const created = await missionService.createFromText({
       text: "Do not let the executor run without a plan artifact",
       sourceKind: "manual_text",
@@ -226,16 +234,13 @@ describe("OrchestratorWorker", () => {
     await missionRepository.updateTaskStatus(executorTask.id, "claimed");
 
     const tick = await worker.run({
-      log: {
-        error: vi.fn(),
-        info: vi.fn(),
-      },
+      log,
       pollIntervalMs: 1,
       runOnce: true,
     });
 
     expect(tick).toMatchObject({
-      kind: "runtime_failed",
+      kind: "task_failed",
       task: {
         id: executorTask.id,
         role: "executor",
@@ -243,6 +248,59 @@ describe("OrchestratorWorker", () => {
         summary: "Executor could not start because no planner plan artifact was available for handoff.",
       },
     });
+    expect(log.error).not.toHaveBeenCalled();
+    expect(log.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        classification: "controlled_failure",
+        missionId: created.mission.id,
+        outcome: "task_failed",
+        taskId: executorTask.id,
+      }),
+      "Worker terminalized task after controlled failure",
+    );
+  });
+
+  it("keeps true runtime exceptions classified as runtime_failed", async () => {
+    const log = {
+      error: vi.fn(),
+      info: vi.fn(),
+    };
+    const { missionService, worker } = createHarness({
+      runtimeCodexService: {
+        async runTurn() {
+          throw new Error("codex transport crashed");
+        },
+      },
+    });
+    const created = await missionService.createFromText({
+      text: "Surface real runtime failures distinctly",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
+
+    const tick = await worker.run({
+      log,
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "runtime_failed",
+      task: {
+        id: plannerTask.id,
+        role: "planner",
+        status: "claimed",
+      },
+    });
+    expect(log.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        missionId: created.mission.id,
+        outcome: "runtime_failed",
+        taskId: plannerTask.id,
+      }),
+      "Worker failed during Codex runtime processing",
+    );
   });
 });
 
@@ -259,6 +317,13 @@ function createHarness(options?: {
     missionRepository,
     replayService,
     evidenceService,
+  );
+  const liveSessionRegistry = new InMemoryRuntimeSessionRegistry();
+  const approvalService = new ApprovalService(
+    new InMemoryApprovalRepository(),
+    missionRepository,
+    replayService,
+    liveSessionRegistry,
   );
   const workspaceService = new WorkspaceService(
     new InMemoryWorkspaceRepository(),
@@ -290,23 +355,35 @@ function createHarness(options?: {
   const orchestratorService = new OrchestratorService(
     missionRepository,
     replayService,
+    approvalService,
     runtimeCodexService,
     evidenceService,
     workspaceService,
     options?.validationService ?? createValidationService(),
   );
+  const runtimeControlService = new RuntimeControlService(
+    missionRepository,
+    replayService,
+    approvalService,
+    liveSessionRegistry,
+  );
 
   return {
+    approvalService,
     missionRepository,
     missionService,
     replayService,
-    worker: new OrchestratorWorker(orchestratorService),
+    runtimeControlService,
+    worker: new OrchestratorWorker(orchestratorService, {
+      approvalService,
+      runtimeControlService,
+    }),
   };
 }
 
 type OrchestratorServiceRuntimeDeps = ConstructorParameters<
   typeof OrchestratorService
->[2];
+>[3];
 
 async function createCompletedTurnResult(
   input: Parameters<OrchestratorServiceRuntimeDeps["runTurn"]>[0],

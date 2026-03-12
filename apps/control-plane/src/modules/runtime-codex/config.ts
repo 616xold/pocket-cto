@@ -1,3 +1,4 @@
+import type { MissionTaskRole } from "@pocket-cto/domain";
 import type {
   AskForApproval,
   CodexRuntimeClientOptions,
@@ -6,6 +7,7 @@ import type {
 } from "@pocket-cto/codex-runtime";
 import type { Env } from "@pocket-cto/config";
 import type { RuntimeCodexThreadDefaults } from "./types";
+import { resolveTaskApprovalPolicy } from "./approval-policy";
 
 type RuntimeCodexEnv = Pick<
   Env,
@@ -55,12 +57,15 @@ export function resolveCodexThreadDefaults(
   };
 }
 
-export function buildReadOnlyTurnPolicy(): {
+export function buildReadOnlyTurnPolicy(role: MissionTaskRole): {
   approvalPolicy: AskForApproval;
   sandboxPolicy: SandboxPolicy;
 } {
   return {
-    approvalPolicy: "never",
+    approvalPolicy: resolveTaskApprovalPolicy({
+      role,
+      writesWorkspace: false,
+    }),
     sandboxPolicy: {
       type: "readOnly",
       access: {
@@ -71,12 +76,18 @@ export function buildReadOnlyTurnPolicy(): {
   };
 }
 
-export function buildExecutorTurnPolicy(workspaceRoot: string): {
+export function buildExecutorTurnPolicy(
+  role: MissionTaskRole,
+  workspaceRoot: string,
+): {
   approvalPolicy: AskForApproval;
   sandboxPolicy: SandboxPolicy;
 } {
   return {
-    approvalPolicy: "never",
+    approvalPolicy: resolveTaskApprovalPolicy({
+      role,
+      writesWorkspace: true,
+    }),
     sandboxPolicy: {
       type: "workspaceWrite",
       writableRoots: [workspaceRoot],

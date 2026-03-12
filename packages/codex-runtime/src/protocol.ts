@@ -68,6 +68,8 @@ export const AskForApprovalSchema = z.union([
     reject: z.object({
       sandbox_approval: z.boolean(),
       rules: z.boolean(),
+      skill_approval: z.boolean(),
+      request_permissions: z.boolean(),
       mcp_elicitations: z.boolean(),
     }),
   }),
@@ -345,6 +347,103 @@ export const TurnInterruptParamsSchema = z.object({
 
 export const TurnInterruptResponseSchema = z.object({});
 
+export const AdditionalPermissionProfileSchema = z
+  .object({
+    network: z.unknown().nullable(),
+    fileSystem: z.unknown().nullable(),
+    macos: z.unknown().nullable(),
+  })
+  .passthrough();
+
+export const GrantedPermissionProfileSchema = z
+  .object({
+    network: z.unknown().optional(),
+    fileSystem: z.unknown().optional(),
+    macos: z.unknown().optional(),
+  })
+  .passthrough();
+
+export const PermissionGrantScopeSchema = z.union([
+  z.literal("turn"),
+  z.literal("session"),
+]);
+
+export const FileChangeApprovalDecisionSchema = z.union([
+  z.literal("accept"),
+  z.literal("acceptForSession"),
+  z.literal("decline"),
+  z.literal("cancel"),
+]);
+
+export const FileChangeRequestApprovalParamsSchema = z.object({
+  threadId: z.string(),
+  turnId: z.string(),
+  itemId: z.string(),
+  reason: z.string().nullable().optional(),
+  grantRoot: z.string().nullable().optional(),
+});
+
+export const FileChangeRequestApprovalResponseSchema = z.object({
+  decision: FileChangeApprovalDecisionSchema,
+});
+
+export const CommandExecutionApprovalDecisionSchema = z.union([
+  z.literal("accept"),
+  z.literal("acceptForSession"),
+  z.object({
+    acceptWithExecpolicyAmendment: z.object({
+      execpolicy_amendment: z.record(z.string(), z.unknown()),
+    }),
+  }),
+  z.object({
+    applyNetworkPolicyAmendment: z.object({
+      network_policy_amendment: z.record(z.string(), z.unknown()),
+    }),
+  }),
+  z.literal("decline"),
+  z.literal("cancel"),
+]);
+
+export const CommandExecutionRequestApprovalParamsSchema = z.object({
+  threadId: z.string(),
+  turnId: z.string(),
+  itemId: z.string(),
+  approvalId: z.string().nullable().optional(),
+  reason: z.string().nullable().optional(),
+  networkApprovalContext: z.unknown().nullable().optional(),
+  command: z.string().nullable().optional(),
+  cwd: z.string().nullable().optional(),
+  commandActions: z.array(z.unknown()).nullable().optional(),
+  additionalPermissions: AdditionalPermissionProfileSchema.nullable().optional(),
+  skillMetadata: z.unknown().nullable().optional(),
+  proposedExecpolicyAmendment: z.record(z.string(), z.unknown()).nullable().optional(),
+  proposedNetworkPolicyAmendments: z
+    .array(z.record(z.string(), z.unknown()))
+    .nullable()
+    .optional(),
+  availableDecisions: z
+    .array(CommandExecutionApprovalDecisionSchema)
+    .nullable()
+    .optional(),
+});
+
+export const CommandExecutionRequestApprovalResponseSchema = z.object({
+  decision: CommandExecutionApprovalDecisionSchema,
+});
+
+export const PermissionsRequestApprovalParamsSchema = z.object({
+  threadId: z.string(),
+  turnId: z.string(),
+  itemId: z.string(),
+  reason: z.string().nullable(),
+  permissions: AdditionalPermissionProfileSchema,
+});
+
+export const PermissionsRequestApprovalResponseSchema = z.object({
+  permissions: GrantedPermissionProfileSchema,
+  scope: PermissionGrantScopeSchema,
+});
+
 export const ThreadStartedNotificationSchema = z.object({
   thread: ThreadSchema,
 });
@@ -386,6 +485,29 @@ export const ErrorNotificationSchema = z.object({
   turnId: z.string(),
 });
 
+export const ServerRequestResolvedNotificationSchema = z.object({
+  threadId: z.string(),
+  requestId: JsonRpcIdSchema,
+});
+
+export const KnownServerRequestSchema = z.union([
+  z.object({
+    method: z.literal("item/fileChange/requestApproval"),
+    id: JsonRpcIdSchema,
+    params: FileChangeRequestApprovalParamsSchema,
+  }),
+  z.object({
+    method: z.literal("item/commandExecution/requestApproval"),
+    id: JsonRpcIdSchema,
+    params: CommandExecutionRequestApprovalParamsSchema,
+  }),
+  z.object({
+    method: z.literal("item/permissions/requestApproval"),
+    id: JsonRpcIdSchema,
+    params: PermissionsRequestApprovalParamsSchema,
+  }),
+]);
+
 export const KnownServerNotificationSchema = z.union([
   z.object({
     method: z.literal("thread/started"),
@@ -412,12 +534,17 @@ export const KnownServerNotificationSchema = z.union([
     params: TerminalInteractionNotificationSchema,
   }),
   z.object({
+    method: z.literal("serverRequest/resolved"),
+    params: ServerRequestResolvedNotificationSchema,
+  }),
+  z.object({
     method: z.literal("error"),
     params: ErrorNotificationSchema,
   }),
 ]);
 
 export type JsonRpcRequest = z.infer<typeof JsonRpcRequestSchema>;
+export type JsonRpcId = z.infer<typeof JsonRpcIdSchema>;
 export type JsonRpcSuccess = z.infer<typeof JsonRpcSuccessSchema>;
 export type JsonRpcError = z.infer<typeof JsonRpcErrorSchema>;
 export type JsonRpcNotification = z.infer<typeof JsonRpcNotificationSchema>;
@@ -445,6 +572,38 @@ export type TurnStartParams = z.infer<typeof TurnStartParamsSchema>;
 export type TurnStartResponse = z.infer<typeof TurnStartResponseSchema>;
 export type TurnInterruptParams = z.infer<typeof TurnInterruptParamsSchema>;
 export type TurnInterruptResponse = z.infer<typeof TurnInterruptResponseSchema>;
+export type AdditionalPermissionProfile = z.infer<
+  typeof AdditionalPermissionProfileSchema
+>;
+export type GrantedPermissionProfile = z.infer<
+  typeof GrantedPermissionProfileSchema
+>;
+export type PermissionGrantScope = z.infer<typeof PermissionGrantScopeSchema>;
+export type FileChangeApprovalDecision = z.infer<
+  typeof FileChangeApprovalDecisionSchema
+>;
+export type FileChangeRequestApprovalParams = z.infer<
+  typeof FileChangeRequestApprovalParamsSchema
+>;
+export type FileChangeRequestApprovalResponse = z.infer<
+  typeof FileChangeRequestApprovalResponseSchema
+>;
+export type CommandExecutionApprovalDecision = z.infer<
+  typeof CommandExecutionApprovalDecisionSchema
+>;
+export type CommandExecutionRequestApprovalParams = z.infer<
+  typeof CommandExecutionRequestApprovalParamsSchema
+>;
+export type CommandExecutionRequestApprovalResponse = z.infer<
+  typeof CommandExecutionRequestApprovalResponseSchema
+>;
+export type PermissionsRequestApprovalParams = z.infer<
+  typeof PermissionsRequestApprovalParamsSchema
+>;
+export type PermissionsRequestApprovalResponse = z.infer<
+  typeof PermissionsRequestApprovalResponseSchema
+>;
+export type KnownServerRequest = z.infer<typeof KnownServerRequestSchema>;
 export type KnownServerNotification = z.infer<
   typeof KnownServerNotificationSchema
 >;
@@ -461,4 +620,18 @@ export function readAgentMessageThreadItem(
 ): AgentMessageThreadItem | null {
   const parsed = AgentMessageThreadItemSchema.safeParse(item);
   return parsed.success ? parsed.data : null;
+}
+
+export function parseKnownServerRequestResult(
+  method: KnownServerRequest["method"],
+  result: unknown,
+) {
+  switch (method) {
+    case "item/fileChange/requestApproval":
+      return FileChangeRequestApprovalResponseSchema.parse(result);
+    case "item/commandExecution/requestApproval":
+      return CommandExecutionRequestApprovalResponseSchema.parse(result);
+    case "item/permissions/requestApproval":
+      return PermissionsRequestApprovalResponseSchema.parse(result);
+  }
 }

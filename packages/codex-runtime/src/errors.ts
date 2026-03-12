@@ -24,3 +24,25 @@ export function isCodexAppServerRequestError(
 ): error is CodexAppServerRequestError {
   return error instanceof CodexAppServerRequestError;
 }
+
+export class CodexAppServerServerRequestRejectedError extends Error {
+  readonly code: number;
+  readonly data?: unknown;
+
+  constructor(input: {
+    code: number;
+    data?: unknown;
+    message: string;
+  }) {
+    super(input.message);
+    this.name = "CodexAppServerServerRequestRejectedError";
+    this.code = input.code;
+    this.data = input.data;
+  }
+}
+
+export function isCodexAppServerServerRequestRejectedError(
+  error: unknown,
+): error is CodexAppServerServerRequestRejectedError {
+  return error instanceof CodexAppServerServerRequestRejectedError;
+}

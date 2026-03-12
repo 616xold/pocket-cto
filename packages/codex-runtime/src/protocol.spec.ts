@@ -1,3 +1,5 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
@@ -295,6 +297,143 @@ describe("codex runtime protocol", () => {
     );
   });
 
+  it("handles server-initiated file-change approval requests and serverRequest/resolved", async () => {
+    const approvalCwd = await mkdtemp(
+      `${tmpdir()}/pocket-cto-codex-runtime-approval-`,
+    );
+    const client = new CodexAppServerClient({
+      command: process.execPath,
+      args: [fixturePath, "--mode", "file-change-approval"],
+    });
+    const notifications: KnownServerNotification[] = [];
+    const approvalRequests: Array<{
+      itemId: string;
+      requestId: string | number;
+      threadId: string;
+      turnId: string;
+    }> = [];
+    const unsubscribe = client.onEvent((event) => {
+      if (event.kind === "notification") {
+        const notification = event.notification;
+        if (isObservedNotification(notification)) {
+          notifications.push(notification);
+        }
+      }
+    });
+
+    client.setServerRequestHandler(async (request) => {
+      if (request.method !== "item/fileChange/requestApproval") {
+        throw new Error(`Unexpected server request method ${request.method}`);
+      }
+
+      const fileChangeRequest = request as Extract<
+        typeof request,
+        { method: "item/fileChange/requestApproval" }
+      >;
+
+      approvalRequests.push({
+        itemId: fileChangeRequest.params.itemId,
+        requestId: fileChangeRequest.id,
+        threadId: fileChangeRequest.params.threadId,
+        turnId: fileChangeRequest.params.turnId,
+      });
+
+      return {
+        decision: "accept",
+      };
+    });
+
+    try {
+      await client.initialize({
+        clientInfo: {
+          name: "pocket-cto-control-plane",
+          title: "Pocket CTO Control Plane",
+          version: "0.1.0",
+        },
+        capabilities: {
+          experimentalApi: false,
+        },
+      });
+      await client.initialized();
+      const threadStart = await client.startThread({
+        approvalPolicy: "untrusted",
+        cwd: approvalCwd,
+        experimentalRawEvents: false,
+        model: "gpt-5.2-codex",
+        persistExtendedHistory: false,
+        sandbox: "workspace-write",
+        serviceName: "pocket-cto-control-plane",
+      });
+      await client.startTurn({
+        threadId: threadStart.thread.id,
+        approvalPolicy: "on-request",
+        input: [
+          {
+            type: "text",
+            text: "Make the bounded file change only after approval.",
+            text_elements: [],
+          },
+        ],
+        sandboxPolicy: {
+          type: "workspaceWrite",
+          writableRoots: [approvalCwd],
+          readOnlyAccess: {
+            type: "fullAccess",
+          },
+          networkAccess: false,
+          excludeTmpdirEnvVar: false,
+          excludeSlashTmp: false,
+        },
+      });
+
+      await delay(80);
+    } finally {
+      await client.stop();
+      unsubscribe();
+      await rm(approvalCwd, { recursive: true, force: true });
+    }
+
+    expect(approvalRequests).toEqual([
+      {
+        itemId: "item_file_change_1",
+        requestId: "approval_file_change_1",
+        threadId: "thread_fake_123",
+        turnId: "turn_fake_123",
+      },
+    ]);
+    expect(notifications).toContainEqual(
+      expect.objectContaining({
+        method: "serverRequest/resolved",
+        params: {
+          threadId: "thread_fake_123",
+          requestId: "approval_file_change_1",
+        },
+      }),
+    );
+    expect(notifications).toContainEqual(
+      expect.objectContaining({
+        method: "item/completed",
+        params: expect.objectContaining({
+          item: expect.objectContaining({
+            id: "item_file_change_1",
+            type: "fileChange",
+          }),
+        }),
+      }),
+    );
+    expect(notifications).toContainEqual(
+      expect.objectContaining({
+        method: "turn/completed",
+        params: expect.objectContaining({
+          turn: expect.objectContaining({
+            id: "turn_fake_123",
+            status: "completed",
+          }),
+        }),
+      }),
+    );
+  });
+
   it("surfaces resume-gap failures and still allows direct turn/start when the runtime supports it", async () => {
     const sessionA = new CodexAppServerClient({
       command: process.execPath,
@@ -398,6 +537,7 @@ function isObservedNotification(
     "item/started",
     "item/completed",
     "item/commandExecution/terminalInteraction",
+    "serverRequest/resolved",
     "error",
   ].includes(notification.method);
 }

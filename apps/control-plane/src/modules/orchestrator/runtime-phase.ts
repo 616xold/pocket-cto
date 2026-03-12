@@ -12,6 +12,7 @@ import {
   buildMissingPlannerArtifactSummary,
 } from "../evidence/executor-output";
 import type { EvidenceService } from "../evidence/service";
+import type { ApprovalService } from "../approvals/service";
 import {
   buildPlannerEvidenceFailureSummary,
   persistPlannerTurnEvidence,
@@ -97,6 +98,10 @@ export class OrchestratorRuntimePhase {
       ReplayService,
       "append" | "taskHasEventType"
     >,
+    private readonly approvalService: Pick<
+      ApprovalService,
+      "requestCommandExecutionApproval" | "requestFileChangeApproval"
+    >,
     private readonly runtimeCodexService: Pick<CodexRuntimeService, "runTurn">,
     private readonly evidenceService: Pick<
       EvidenceService,
@@ -167,6 +172,7 @@ export class OrchestratorRuntimePhase {
         hasPriorTurnStarted,
         input: taskRunPreparation.input,
         sandboxPolicy: taskRunPreparation.sandboxPolicy,
+        taskId: task.id,
         threadId: task.codexThreadId,
       },
       {
@@ -194,6 +200,16 @@ export class OrchestratorRuntimePhase {
             "runtime.item_completed",
           );
         },
+        onCommandExecutionApprovalRequest: (event) =>
+          this.approvalService.requestCommandExecutionApproval({
+            taskId,
+            ...event,
+          }),
+        onFileChangeApprovalRequest: (event) =>
+          this.approvalService.requestFileChangeApproval({
+            taskId,
+            ...event,
+          }),
       },
     );
     const completionOutcome = await this.resolveTurnCompletionOutcome({
@@ -496,6 +512,15 @@ export class OrchestratorRuntimePhase {
     turn: RuntimeCodexRunTurnResult;
     workspaceRoot: string;
   }): Promise<TurnCompletionOutcome> {
+    if (input.turn.status === "interrupted") {
+      return {
+        nextStatus: "cancelled",
+        preparedPlannerEvidence: null,
+        reason: taskStatusChangeReasons.runtimeTurnInterrupted,
+        summary: null,
+      };
+    }
+
     if (input.turn.status !== "completed") {
       return {
         nextStatus: "failed",
@@ -668,6 +693,15 @@ export class OrchestratorRuntimePhase {
     taskRole: MissionTaskRecord["role"];
     turn: RuntimeCodexRunTurnResult;
   }): TurnCompletionOutcome {
+    if (input.turn.status === "interrupted") {
+      return {
+        nextStatus: "cancelled",
+        preparedPlannerEvidence: null,
+        reason: taskStatusChangeReasons.runtimeTurnInterrupted,
+        summary: input.completionOutcome.summary,
+      };
+    }
+
     if (input.turn.status !== "completed") {
       return {
         nextStatus: "failed",
@@ -724,7 +758,7 @@ export class OrchestratorRuntimePhase {
     task: MissionTaskRecord,
     turn: RuntimeCodexRunTurnResult,
   ) {
-    if (task.status !== "running") {
+    if (task.status !== "running" && task.status !== "awaiting_approval") {
       throw new Error(
         `Task ${task.id} changed state before turn completion persistence: ${task.status}`,
       );
@@ -803,7 +837,7 @@ export class OrchestratorRuntimePhase {
         task: input.task,
         workspace: input.workspace,
       });
-      const readOnlyPolicy = buildReadOnlyTurnPolicy();
+      const readOnlyPolicy = buildReadOnlyTurnPolicy(input.task.role);
 
       return {
         approvalPolicy: readOnlyPolicy.approvalPolicy,
@@ -826,7 +860,10 @@ export class OrchestratorRuntimePhase {
         task: input.task,
         workspace: input.workspace,
       });
-      const executorPolicy = buildExecutorTurnPolicy(input.workspace.rootPath);
+      const executorPolicy = buildExecutorTurnPolicy(
+        input.task.role,
+        input.workspace.rootPath,
+      );
 
       return {
         approvalPolicy: executorPolicy.approvalPolicy,
@@ -836,7 +873,7 @@ export class OrchestratorRuntimePhase {
       };
     }
 
-    const readOnlyPolicy = buildReadOnlyTurnPolicy();
+    const readOnlyPolicy = buildReadOnlyTurnPolicy(input.task.role);
 
     return {
       approvalPolicy: readOnlyPolicy.approvalPolicy,
