@@ -278,6 +278,24 @@ artifacts.uri = pocket-cto://missions/<mission-id>/tasks/<task-id>/plan
 Planner execution remains strictly read-only in this milestone.
 The worker should not request or attempt file mutation, patch application, installs, formatter runs, or git changes.
 
+## Executor Guardrails Note
+
+After M1.5, the later successful executor worker tick now does more than “read the repo”:
+
+- it resolves the latest relevant planner `plan` artifact before execution
+- it runs with a `workspaceWrite` turn policy rooted at the executor workspace
+- it validates local changes with changed-path capture plus `git diff --check`
+- it updates `mission_tasks.summary` with a concise change and validation summary
+
+If `mission.spec.constraints.allowedPaths` is non-empty, every changed file must stay under one of those paths relative to the executor workspace root.
+If the executor changes an out-of-scope path or `git diff --check` fails, the task now ends `failed` with an explicit summary instead of silently succeeding.
+
+This is still a narrow local-only executor slice.
+
+- M1.5 ends with controlled workspace mutation and local validation hooks
+- M1.6 will add approval persistence
+- M1.7 will add richer runtime-to-evidence artifact plumbing
+
 ```bash
 curl -i "http://localhost:4000/missions/$MISSION_ID"
 ```

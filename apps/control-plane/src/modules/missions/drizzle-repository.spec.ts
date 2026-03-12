@@ -106,4 +106,106 @@ describe("DrizzleMissionRepository", () => {
     expect(storedProofBundle?.missionId).toBe(created.mission.id);
     expect(storedProofBundle?.status).toBe("placeholder");
   });
+
+  it("prefers the dependency plan artifact and otherwise falls back to the latest planner artifact in the mission", async () => {
+    const missionSpec = buildMissionFixture();
+
+    const created = await repository.transaction(async (session) => {
+      const mission = await repository.createMission(
+        {
+          type: missionSpec.type,
+          title: missionSpec.title,
+          objective: missionSpec.objective,
+          sourceKind: "manual_text",
+          sourceRef: null,
+          createdBy: "operator",
+          primaryRepo: missionSpec.repos[0] ?? null,
+          spec: missionSpec,
+        },
+        session,
+      );
+
+      const dependencyPlanner = await repository.createTask(
+        {
+          missionId: mission.id,
+          role: "planner",
+          sequence: 0,
+          status: "succeeded",
+        },
+        session,
+      );
+      const fallbackPlanner = await repository.createTask(
+        {
+          missionId: mission.id,
+          role: "planner",
+          sequence: 2,
+          status: "succeeded",
+        },
+        session,
+      );
+      const executorTask = await repository.createTask(
+        {
+          missionId: mission.id,
+          role: "executor",
+          sequence: 3,
+          status: "claimed",
+          dependsOnTaskId: dependencyPlanner.id,
+        },
+        session,
+      );
+
+      return {
+        dependencyPlanner,
+        executorTask,
+        fallbackPlanner,
+        mission,
+      };
+    });
+
+    const fallbackArtifact = await repository.saveArtifact({
+      kind: "plan",
+      metadata: {
+        body: "fallback planner body",
+        summary: "fallback planner summary",
+      },
+      missionId: created.mission.id,
+      mimeType: "text/markdown",
+      taskId: created.fallbackPlanner.id,
+      uri: `pocket-cto://missions/${created.mission.id}/tasks/${created.fallbackPlanner.id}/plan`,
+    });
+
+    const fallbackLookup = await repository.getLatestPlannerArtifactForExecutor(
+      created.executorTask.id,
+    );
+
+    expect(fallbackLookup).toMatchObject({
+      artifactId: fallbackArtifact.id,
+      resolution: "mission_latest_planner",
+      sourceTaskId: created.fallbackPlanner.id,
+      summary: "fallback planner summary",
+    });
+
+    const dependencyArtifact = await repository.saveArtifact({
+      kind: "plan",
+      metadata: {
+        body: "dependency planner body",
+        summary: "dependency planner summary",
+      },
+      missionId: created.mission.id,
+      mimeType: "text/markdown",
+      taskId: created.dependencyPlanner.id,
+      uri: `pocket-cto://missions/${created.mission.id}/tasks/${created.dependencyPlanner.id}/plan`,
+    });
+
+    const dependencyLookup = await repository.getLatestPlannerArtifactForExecutor(
+      created.executorTask.id,
+    );
+
+    expect(dependencyLookup).toMatchObject({
+      artifactId: dependencyArtifact.id,
+      resolution: "dependency_task",
+      sourceTaskId: created.dependencyPlanner.id,
+      summary: "dependency planner summary",
+    });
+  });
 });

@@ -10,11 +10,11 @@ Pocket CTO uses Codex App Server as the worker runtime.
 - replay records structural runtime lifecycle, not every token delta
 - approvals and file-changing execution are later milestones
 
-M1.4 keeps the runtime surface narrow but makes planner output useful.
+M1.5 keeps the runtime surface narrow but now makes executor mutation explicit and locally governed.
 The worker now ensures one persisted workspace record and one deterministic local git worktree per claimed task before runtime bootstrap or turn execution starts.
 Planner turns now use a dedicated read-only planner prompt assembled from the mission contract, workspace context, and repository workflow policy when `WORKFLOW.md` exists at the workspace root.
-Non-planner turns still remain on the generic read-only placeholder path.
-Pocket CTO does not yet create approval records, PRs, or artifact bundles beyond replay.
+Executor turns now use a dedicated mutation-capable prompt that consumes the latest relevant planner artifact as handoff input and runs under local file-change guardrails plus post-turn validation hooks.
+Pocket CTO still does not yet create approval records, PRs, or rich runtime artifacts beyond replay plus the planner plan artifact and executor task summary.
 
 ## Protocol alignment notes
 
@@ -189,16 +189,12 @@ When `turn/completed` arrives:
 M1.2 does not change final mission completion or approval semantics yet.
 The first real turn moves the mission to `running`; later mission terminal states remain a later slice.
 
-## Read-only safety posture
+## Planner and executor safety posture
 
-M1.4 planner turns are explicitly read-only, and all other roles remain on the generic read-only placeholder path.
-Pocket CTO now does three things on purpose:
+Planner turns remain explicitly read-only in M1.5.
+Pocket CTO still builds planner turn input through dedicated planner-context and planner-prompt modules, and it still overrides planner turns with `approvalPolicy = "never"` and a read-only sandbox policy.
 
-- it builds planner turn input through dedicated planner-context and planner-prompt modules
-- it keeps non-planner turn input on a generic read-only placeholder module
-- it overrides the turn with `approvalPolicy = "never"` and a read-only sandbox policy
-
-The resulting planner prompt tells Codex:
+The resulting planner prompt still tells Codex:
 
 - do not create, edit, rename, delete, or stage files
 - do not apply patches, installs, generators, formatters, or change git state
@@ -206,13 +202,29 @@ The resulting planner prompt tells Codex:
 - if a tool would mutate state, skip it and explain why
 - return concise structured sections for objective understanding, context, risks, proposed steps, validation, and executor handoff
 
-This is temporary and explicit.
+Executor turns now have their own explicit mutation posture.
+Pocket CTO does four things on purpose:
 
-- M1.3 now provides workspace isolation and deterministic worktree management
-- M1.4 now introduces a real planner prompt and planner-output persistence
-- M1.5 will introduce a real executor prompt
+- it resolves the latest relevant planner `plan` artifact before the executor turn starts
+- it builds executor turn input through dedicated executor-context and executor-prompt modules
+- it overrides the executor turn with `approvalPolicy = "never"` plus a `workspaceWrite` sandbox policy rooted at the executor workspace
+- it validates the resulting local diff before marking the executor task successful
 
-Until those milestones land, turn execution remains intentionally safe and read-only.
+The resulting executor prompt tells Codex:
+
+- mutate only inside the assigned task workspace
+- mutate only inside `mission.spec.constraints.allowedPaths` when that allowlist is non-empty
+- do not change branches, commit, push, merge, rebase, stash, or reset
+- do not perform destructive cleanup
+- do not use network access
+- do not run installs, generators, migrations, package-manager commands, or formatters
+- return a concise final report with intended change, files changed, validations run, remaining risks, and operator handoff
+
+Pocket CTO still stops short of approval persistence and rich artifact capture here.
+
+- M1.5 ends with controlled executor mutation and local validation hooks
+- M1.6 will add approval persistence
+- M1.7 will add richer runtime-to-evidence artifact plumbing
 
 ## Planner output capture
 
@@ -240,6 +252,24 @@ Planner evidence then uses that selected planner body to:
 - persist one `artifacts.kind = 'plan'` row with the planner text body in metadata
 - append `artifact.created` for that plan artifact
 - optionally enrich the placeholder proof-bundle manifest with the new plan artifact id and one decision-trace line
+
+## Executor validation hooks
+
+M1.5 adds a small local validation surface for executor turns after the runtime turn completes successfully.
+Pocket CTO does not run a generic CI pipeline here. It runs exactly two built-in checks inside the executor worktree:
+
+1. changed-path capture from local git state
+2. `git diff --check`
+
+Changed-path capture uses the local worktree to gather modified and untracked paths relative to the executor workspace root.
+If `mission.spec.constraints.allowedPaths` is non-empty, every changed path must live inside one of those allowed roots.
+If any changed path escapes the allowlist, the executor task fails with task-status reason `executor_validation_failed`.
+
+`git diff --check` then enforces a narrow diff hygiene bar for whitespace and merge-marker issues.
+If that command fails, the executor task also fails with task-status reason `executor_validation_failed`.
+
+If no relevant planner artifact exists before the executor turn starts, Pocket CTO does not silently continue.
+It marks the executor task failed with task-status reason `executor_missing_planner_artifact` and stores a concise summary explaining that the planner handoff was missing.
 
 ## Replay contract
 
@@ -283,7 +313,7 @@ The schema adds a partial unique index on non-null turn ids so one active persis
 
 - protocol types: `packages/codex-runtime/src/protocol.ts`
 - stdio client wrapper: `packages/codex-runtime/src/client.ts`
-- runtime policy and read-only turn input: `apps/control-plane/src/modules/runtime-codex/`
+- runtime policy and planner or executor turn input: `apps/control-plane/src/modules/runtime-codex/`
 - worker lifecycle decisions: `apps/control-plane/src/modules/orchestrator/`
 - task persistence: `apps/control-plane/src/modules/missions/`
 

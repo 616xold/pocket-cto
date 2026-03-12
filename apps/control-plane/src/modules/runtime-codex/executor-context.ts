@@ -1,11 +1,12 @@
 import type { MissionRecord, MissionTaskRecord } from "@pocket-cto/domain";
+import type { ExecutorPlannerArtifactRecord } from "../missions/planner-artifact";
 import type { WorkspaceRecord } from "../workspaces";
 import {
-  readWorkflowPolicyContext as readSharedWorkflowPolicyContext,
+  readWorkflowPolicyContext,
   type WorkflowPolicyContext,
 } from "./workflow-policy-context";
 
-export type PlannerPromptContext = {
+export type ExecutorPromptContext = {
   mission: {
     acceptance: string[];
     constraints: MissionRecord["spec"]["constraints"];
@@ -13,6 +14,7 @@ export type PlannerPromptContext = {
     objective: string;
     type: MissionRecord["type"];
   };
+  plannerArtifact: ExecutorPlannerArtifactRecord;
   task: {
     role: MissionTaskRecord["role"];
     sequence: number;
@@ -25,11 +27,12 @@ export type PlannerPromptContext = {
   };
 };
 
-export async function loadPlannerPromptContext(input: {
+export async function loadExecutorPromptContext(input: {
   mission: MissionRecord;
+  plannerArtifact: ExecutorPlannerArtifactRecord;
   task: MissionTaskRecord;
   workspace: WorkspaceRecord;
-}): Promise<PlannerPromptContext> {
+}): Promise<ExecutorPromptContext> {
   return {
     mission: {
       acceptance: [...input.mission.spec.acceptance],
@@ -38,6 +41,7 @@ export async function loadPlannerPromptContext(input: {
       objective: input.mission.objective,
       type: input.mission.type,
     },
+    plannerArtifact: input.plannerArtifact,
     task: {
       role: input.task.role,
       sequence: input.task.sequence,
@@ -49,10 +53,4 @@ export async function loadPlannerPromptContext(input: {
       rootPath: input.workspace.rootPath,
     },
   };
-}
-
-export async function readWorkflowPolicyContext(
-  workspaceRoot: string,
-): Promise<WorkflowPolicyContext | null> {
-  return readSharedWorkflowPolicyContext(workspaceRoot);
 }

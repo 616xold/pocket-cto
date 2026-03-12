@@ -8,6 +8,7 @@ import { taskStatusChangeReasons } from "./events";
 import type { MissionRepository } from "../missions/repository";
 import type { ReplayService } from "../replay/service";
 import type { CodexRuntimeService } from "../runtime-codex/service";
+import type { ExecutorValidationService } from "../validation";
 import type { WorkspaceService } from "../workspaces/service";
 import type { ExecuteClaimedTaskTurnResult } from "./runtime-phase";
 import { OrchestratorRuntimePhase } from "./runtime-phase";
@@ -42,6 +43,7 @@ export class OrchestratorService {
       | "attachCodexTurnId"
       | "clearCodexTurnId"
       | "getMissionById"
+      | "getLatestPlannerArtifactForExecutor"
       | "getProofBundleByMissionId"
       | "getTaskById"
       | "replaceCodexThreadId"
@@ -65,6 +67,10 @@ export class OrchestratorService {
       WorkspaceService,
       "ensureTaskWorkspace" | "releaseTaskWorkspaceLease"
     >,
+    validationService: Pick<
+      ExecutorValidationService,
+      "validateExecutorTurn"
+    >,
   ) {
     this.runtimePhase = new OrchestratorRuntimePhase(
       missionRepository,
@@ -72,6 +78,7 @@ export class OrchestratorService {
       runtimeCodexService,
       evidenceService,
       workspaceService,
+      validationService,
     );
   }
 
@@ -143,11 +150,13 @@ export class OrchestratorService {
         turn: completedTurn.turn,
       };
     } catch (error) {
+      const latestTask = await this.missionRepository.getTaskById(task.id);
+
       return {
         kind: "runtime_failed",
         error: asError(error, "Codex turn execution failed"),
         stage: "turn_execution",
-        task,
+        task: latestTask ?? task,
       };
     }
   }

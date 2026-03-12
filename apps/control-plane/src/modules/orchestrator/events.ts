@@ -5,6 +5,8 @@ import type {
 } from "@pocket-cto/domain";
 
 export const taskStatusChangeReasons = {
+  executorMissingPlannerArtifact: "executor_missing_planner_artifact",
+  executorValidationFailed: "executor_validation_failed",
   runtimeTurnCompleted: "runtime_turn_completed",
   runtimeTurnFailed: "runtime_turn_failed",
   runtimeTurnStarted: "runtime_turn_started",

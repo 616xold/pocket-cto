@@ -6,6 +6,8 @@ import { InMemoryMissionRepository } from "../missions/repository";
 import { MissionService } from "../missions/service";
 import { InMemoryReplayRepository } from "../replay/repository";
 import { ReplayService } from "../replay/service";
+import type { RuntimeCodexRunTurnResult } from "../runtime-codex/types";
+import type { ExecutorValidationService } from "../validation";
 import {
   InMemoryWorkspaceRepository,
   WorkspaceService,
@@ -109,16 +111,117 @@ describe("OrchestratorWorker", () => {
     expect(log.error).not.toHaveBeenCalled();
   });
 
-  it("leaves executor turns on the generic non-mutating path without plan artifacts", async () => {
-    const { missionRepository, missionService, replayService, worker } = createHarness();
+  it("keeps planner turns read-only and runs executor turns with workspace-write policy plus workspace cwd", async () => {
+    const observedInputs: Array<{
+      approvalPolicy: string | undefined;
+      cwd: string | null | undefined;
+      sandboxPolicy: unknown;
+      text: string;
+    }> = [];
+    const { missionService, worker } = createHarness({
+      runtimeCodexService: {
+        async runTurn(input, observer = {}) {
+          observedInputs.push({
+            approvalPolicy:
+              typeof input.approvalPolicy === "string"
+                ? input.approvalPolicy
+                : undefined,
+            cwd: input.cwd,
+            sandboxPolicy: input.sandboxPolicy,
+            text:
+              input.input[0]?.type === "text"
+                ? input.input[0].text
+                : "",
+          });
+
+          return createCompletedTurnResult(input, observer, observedInputs.length);
+        },
+      },
+      validationService: {
+        async validateExecutorTurn() {
+          return {
+            changedPaths: ["README.md"],
+            checks: [],
+            diffCheckOutput: null,
+            diffCheckPassed: true,
+            escapedPaths: [],
+            status: "passed" as const,
+          };
+        },
+      },
+    });
     const created = await missionService.createFromText({
-      text: "Keep executor read-only until M1.5",
+      text: "Implement passkeys with a planner handoff first",
       sourceKind: "manual_text",
       requestedBy: "operator",
     });
+
+    await worker.run({
+      log: {
+        error: vi.fn(),
+        info: vi.fn(),
+      },
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+    const secondTick = await worker.run({
+      log: {
+        error: vi.fn(),
+        info: vi.fn(),
+      },
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(observedInputs).toHaveLength(2);
+    expect(observedInputs[0]).toMatchObject({
+      approvalPolicy: "never",
+      sandboxPolicy: {
+        type: "readOnly",
+        networkAccess: false,
+      },
+    });
+    expect(observedInputs[0]?.text).toContain(
+      "You are the Pocket CTO planner task. Produce a read-only implementation plan only.",
+    );
+    expect(observedInputs[1]).toMatchObject({
+      approvalPolicy: "never",
+      sandboxPolicy: {
+        type: "workspaceWrite",
+        writableRoots: [
+          `/tmp/pocket-cto-worker-spec-workspaces/${created.mission.id}/1-executor`,
+        ],
+        networkAccess: false,
+      },
+    });
+    expect(observedInputs[1]?.cwd).toBe(
+      `/tmp/pocket-cto-worker-spec-workspaces/${created.mission.id}/1-executor`,
+    );
+    expect(observedInputs[1]?.text).toContain(
+      "You are the Pocket CTO executor task. Implement the approved change only inside the assigned task workspace.",
+    );
+    expect(observedInputs[1]?.text).toContain("Planner artifact id:");
+    expect(secondTick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        role: "executor",
+        status: "succeeded",
+        summary: expect.stringContaining("Validation passed"),
+      },
+    });
+  });
+
+  it("fails executor tasks explicitly when no planner artifact is available", async () => {
+    const { missionRepository, missionService, worker } = createHarness();
+    const created = await missionService.createFromText({
+      text: "Do not let the executor run without a plan artifact",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
     const executorTask = created.tasks[1]!;
 
-    await missionRepository.updateTaskStatus(created.tasks[0]!.id, "succeeded");
+    await missionRepository.updateTaskStatus(plannerTask.id, "succeeded");
     await missionRepository.updateTaskStatus(executorTask.id, "claimed");
 
     const tick = await worker.run({
@@ -131,21 +234,21 @@ describe("OrchestratorWorker", () => {
     });
 
     expect(tick).toMatchObject({
-      kind: "turn_completed",
+      kind: "runtime_failed",
       task: {
         id: executorTask.id,
         role: "executor",
-        status: "succeeded",
-        summary: null,
+        status: "failed",
+        summary: "Executor could not start because no planner plan artifact was available for handoff.",
       },
     });
-
-    const replay = await replayService.getMissionEvents(created.mission.id);
-    expect(replay.filter((event) => event.type === "artifact.created")).toHaveLength(1);
   });
 });
 
-function createHarness() {
+function createHarness(options?: {
+  runtimeCodexService?: Pick<OrchestratorServiceRuntimeDeps, "runTurn">;
+  validationService?: Pick<ExecutorValidationService, "validateExecutorTurn">;
+}) {
   const missionRepository = new InMemoryMissionRepository();
   const replayRepository = new InMemoryReplayRepository();
   const replayService = new ReplayService(replayRepository, missionRepository);
@@ -169,156 +272,26 @@ function createHarness() {
   );
   let threadCount = 0;
   let turnCount = 0;
-  const orchestratorService = new OrchestratorService(
-    missionRepository,
-    replayService,
+  const runtimeCodexService =
+    options?.runtimeCodexService ??
     {
       async runTurn(input, observer = {}) {
         turnCount += 1;
-        const threadId = input.threadId ?? `thread_${++threadCount}`;
-        const turnId = `turn_${turnCount}`;
-        const recoveryStrategy = input.threadId
-          ? "resumed_thread"
-          : "same_session_bootstrap";
-        const items = [
-          {
-            itemId: `item_plan_${turnCount}`,
-            itemType: "plan",
-            phase: "started" as const,
-            threadId,
-            turnId,
-          },
-          {
-            itemId: `item_plan_${turnCount}`,
-            itemType: "plan",
-            phase: "completed" as const,
-            threadId,
-            turnId,
-          },
-          {
-            itemId: `item_agent_${turnCount}`,
-            itemType: "agentMessage",
-            phase: "started" as const,
-            threadId,
-            turnId,
-          },
-          {
-            itemId: `item_agent_${turnCount}`,
-            itemType: "agentMessage",
-            phase: "completed" as const,
-            threadId,
-            turnId,
-          },
-        ];
-
-        if (!input.threadId) {
-          await observer.onThreadStarted?.({
-            approvalPolicy: "untrusted",
-            cwd: input.cwd ?? process.cwd(),
-            model: "gpt-5.2-codex",
-            modelProvider: "openai",
-            sandbox: {
-              type: "workspaceWrite",
-              writableRoots: [input.cwd ?? process.cwd()],
-              readOnlyAccess: {
-                type: "fullAccess",
-              },
-              networkAccess: false,
-              excludeTmpdirEnvVar: false,
-              excludeSlashTmp: false,
-            },
-            serviceName: "pocket-cto-control-plane",
-            thread: {
-              id: threadId,
-              preview: "test thread",
-              ephemeral: false,
-              modelProvider: "openai",
-              createdAt: 1,
-              updatedAt: 1,
-              status: {
-                type: "idle",
-              },
-              path: null,
-              cwd: input.cwd ?? process.cwd(),
-              cliVersion: "0.1.0",
-              source: "appServer",
-              agentNickname: null,
-              agentRole: null,
-              gitInfo: null,
-              name: "test thread",
-              turns: [],
-            },
-            threadId,
-            userAgent: "fake-codex/1.0.0",
-          });
-        }
-
-        await observer.onTurnStarted?.({
-          recoveryStrategy,
-          threadId,
-          turnId,
-        });
-        await observer.onItemStarted?.(items[0]!);
-        await observer.onItemCompleted?.(items[1]!);
-        await observer.onItemStarted?.(items[2]!);
-        await observer.onItemCompleted?.(items[3]!);
-
-        return {
-          completedAgentMessages:
-            input.threadId || input.input[0]?.type !== "text"
-              ? []
-              : [
-                  {
-                    itemId: `item_agent_${turnCount}`,
-                    text: [
-                      "## Objective understanding",
-                      "Inspect the current task without making any changes.",
-                    ].join("\n"),
-                    threadId,
-                    turnId,
-                  },
-                ],
-          completedTextOutputs:
-            input.threadId || input.input[0]?.type !== "text"
-              ? []
-              : [
-                  {
-                    itemId: `item_plan_${turnCount}`,
-                    itemType: "plan",
-                    text: "Inspect repository state and propose next steps without changing files.",
-                    threadId,
-                    turnId,
-                  },
-                  {
-                    itemId: `item_agent_${turnCount}`,
-                    itemType: "agentMessage",
-                    text: [
-                      "## Objective understanding",
-                      "Inspect the current task without making any changes.",
-                    ].join("\n"),
-                    threadId,
-                    turnId,
-                  },
-                ],
-          finalAgentMessageText:
-            input.threadId || input.input[0]?.type !== "text"
-              ? null
-              : [
-                  "## Objective understanding",
-                  "Inspect the current task without making any changes.",
-                ].join("\n"),
-          firstItemType: items[0]!.itemType,
-          items,
-          lastItemType: items[3]!.itemType,
-          recoveryStrategy,
-          status: "completed",
-          threadId,
-          turnId,
-        };
+        return createCompletedTurnResult(
+          input,
+          observer,
+          turnCount,
+          input.threadId ?? `thread_${++threadCount}`,
+        );
       },
-    },
+    };
+  const orchestratorService = new OrchestratorService(
+    missionRepository,
+    replayService,
+    runtimeCodexService,
     new EvidenceService(),
     workspaceService,
+    options?.validationService ?? createValidationService(),
   );
 
   return {
@@ -326,5 +299,202 @@ function createHarness() {
     missionService,
     replayService,
     worker: new OrchestratorWorker(orchestratorService),
+  };
+}
+
+type OrchestratorServiceRuntimeDeps = ConstructorParameters<
+  typeof OrchestratorService
+>[2];
+
+async function createCompletedTurnResult(
+  input: Parameters<OrchestratorServiceRuntimeDeps["runTurn"]>[0],
+  observer: Parameters<OrchestratorServiceRuntimeDeps["runTurn"]>[1],
+  turnNumber: number,
+  bootstrapThreadId?: string,
+): Promise<RuntimeCodexRunTurnResult> {
+  const threadId = input.threadId ?? bootstrapThreadId ?? `thread_${turnNumber}`;
+  const turnId = `turn_${turnNumber}`;
+  const recoveryStrategy = input.threadId
+    ? "resumed_thread"
+    : "same_session_bootstrap";
+  const itemTypes =
+    input.input[0]?.type === "text" &&
+    input.input[0].text.includes("executor task")
+      ? ["agentMessage"]
+      : ["plan", "agentMessage"];
+  const items = itemTypes.flatMap((itemType) => [
+    {
+      itemId: `item_${itemType}_${turnNumber}`,
+      itemType,
+      phase: "started" as const,
+      threadId,
+      turnId,
+    },
+    {
+      itemId: `item_${itemType}_${turnNumber}`,
+      itemType,
+      phase: "completed" as const,
+      threadId,
+      turnId,
+    },
+  ]);
+
+  if (!input.threadId) {
+    await observer?.onThreadStarted?.({
+      approvalPolicy: "untrusted",
+      cwd: input.cwd ?? process.cwd(),
+      model: "gpt-5.2-codex",
+      modelProvider: "openai",
+      sandbox: {
+        type: "workspaceWrite",
+        writableRoots: [input.cwd ?? process.cwd()],
+        readOnlyAccess: {
+          type: "fullAccess",
+        },
+        networkAccess: false,
+        excludeTmpdirEnvVar: false,
+        excludeSlashTmp: false,
+      },
+      serviceName: "pocket-cto-control-plane",
+      thread: {
+        id: threadId,
+        preview: "test thread",
+        ephemeral: false,
+        modelProvider: "openai",
+        createdAt: 1,
+        updatedAt: 1,
+        status: {
+          type: "idle",
+        },
+        path: null,
+        cwd: input.cwd ?? process.cwd(),
+        cliVersion: "0.1.0",
+        source: "appServer",
+        agentNickname: null,
+        agentRole: null,
+        gitInfo: null,
+        name: "test thread",
+        turns: [],
+      },
+      threadId,
+      userAgent: "fake-codex/1.0.0",
+    });
+  }
+
+  await observer?.onTurnStarted?.({
+    recoveryStrategy,
+    threadId,
+    turnId,
+  });
+
+  for (const item of items) {
+    if (item.phase === "started") {
+      await observer?.onItemStarted?.(item);
+    } else {
+      await observer?.onItemCompleted?.(item);
+    }
+  }
+
+  const isExecutor =
+    input.input[0]?.type === "text" &&
+    input.input[0].text.includes("executor task");
+
+  return {
+    completedAgentMessages: [
+      {
+        itemId: isExecutor
+          ? `item_agentMessage_${turnNumber}`
+          : `item_agentMessage_${turnNumber}`,
+        text: isExecutor
+          ? [
+              "## Intended change",
+              "Apply the planner handoff inside the allowed workspace paths.",
+              "",
+              "## Files changed",
+              "- README.md",
+              "",
+              "## Validations run",
+              "- git diff --check",
+              "",
+              "## Remaining risks",
+              "- none",
+              "",
+              "## Operator handoff",
+              "- ready for review",
+            ].join("\n")
+          : [
+              "## Objective understanding",
+              "Inspect the current task without making any changes.",
+            ].join("\n"),
+        threadId,
+        turnId,
+      },
+    ],
+    completedTextOutputs: isExecutor
+      ? [
+          {
+            itemId: `item_agentMessage_${turnNumber}`,
+            itemType: "agentMessage",
+            text: [
+              "## Intended change",
+              "Apply the planner handoff inside the allowed workspace paths.",
+            ].join("\n"),
+            threadId,
+            turnId,
+          },
+        ]
+      : [
+          {
+            itemId: `item_plan_${turnNumber}`,
+            itemType: "plan",
+            text: "Inspect repository state and propose next steps without changing files.",
+            threadId,
+            turnId,
+          },
+          {
+            itemId: `item_agentMessage_${turnNumber}`,
+            itemType: "agentMessage",
+            text: [
+              "## Objective understanding",
+              "Inspect the current task without making any changes.",
+            ].join("\n"),
+            threadId,
+            turnId,
+          },
+        ],
+    finalAgentMessageText: isExecutor
+      ? [
+          "## Intended change",
+          "Apply the planner handoff inside the allowed workspace paths.",
+        ].join("\n")
+      : [
+          "## Objective understanding",
+          "Inspect the current task without making any changes.",
+        ].join("\n"),
+    firstItemType: items[0]?.itemType ?? null,
+    items,
+    lastItemType: items[items.length - 1]?.itemType ?? null,
+    recoveryStrategy,
+    status: "completed",
+    threadId,
+    turnId,
+  };
+}
+
+function createValidationService(): Pick<
+  ExecutorValidationService,
+  "validateExecutorTurn"
+> {
+  return {
+    async validateExecutorTurn() {
+      return {
+        changedPaths: [],
+        checks: [],
+        diffCheckOutput: null,
+        diffCheckPassed: true,
+        escapedPaths: [],
+        status: "passed" as const,
+      };
+    },
   };
 }

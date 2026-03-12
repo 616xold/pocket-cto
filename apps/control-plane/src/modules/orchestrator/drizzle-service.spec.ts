@@ -1,7 +1,10 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, count, eq } from "drizzle-orm";
-import { artifacts, workspaces } from "@pocket-cto/db";
+import { artifacts, missions, workspaces } from "@pocket-cto/db";
+import type { MissionRecord } from "@pocket-cto/domain";
 import {
   closeTestDatabase,
   createTestDb,
@@ -20,6 +23,10 @@ import {
 } from "../runtime-codex/config";
 import { CodexRuntimeService } from "../runtime-codex/service";
 import type { RuntimeCodexRunTurnResult } from "../runtime-codex/types";
+import {
+  LocalExecutorValidationService,
+  LocalWorkspaceValidationGitClient,
+} from "../validation";
 import {
   DrizzleWorkspaceRepository,
   LocalWorkspaceGitManager,
@@ -485,6 +492,236 @@ describe("OrchestratorWorker (DB-backed)", () => {
     });
   });
 
+  it("passes executor validation for allowed file changes and updates the executor summary", async () => {
+    const sourceRepo = await createTempGitRepo();
+    const workspaceRoot = await createTempWorkspaceRoot();
+    cleanups.push(sourceRepo.cleanup, workspaceRoot.cleanup);
+
+    const plannerHarness = await createHarness({
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+    const created = await plannerHarness.missionService.createFromText({
+      text: "Implement passkeys with a guarded executor step",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    await setMissionAllowedPaths(created.mission.id, created.mission.spec, [
+      "README.md",
+    ]);
+
+    await plannerHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const planArtifact = await getPlanArtifact(created.mission.id);
+    const executorHarness = await createHarness({
+      runtimeCodexService: createFileWritingRuntimeService({
+        finalReportText: [
+          "## Intended change",
+          "Apply the planner handoff to the README inside the allowed workspace root.",
+          "",
+          "## Files changed",
+          "- README.md",
+          "",
+          "## Validations run",
+          "- git diff --check",
+          "",
+          "## Remaining risks",
+          "- none",
+          "",
+          "## Operator handoff",
+          "- ready for review",
+        ].join("\n"),
+        writes: [
+          {
+            path: "README.md",
+            text: "temp repo\nexecutor change\n",
+          },
+        ],
+      }),
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+
+    const tick = await executorHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        role: "executor",
+        status: "succeeded",
+        summary: expect.stringContaining("Validation passed"),
+      },
+    });
+    if (tick?.kind !== "turn_completed") {
+      throw new Error("Expected a completed executor turn");
+    }
+    expect(tick.task.summary).toContain("README.md");
+    const detail = await executorHarness.missionService.getMissionDetail(
+      created.mission.id,
+    );
+    const executorWorkspace = await getWorkspaceByTaskId(created.tasks[1]!.id);
+
+    expect(detail.tasks[1]).toMatchObject({
+      id: created.tasks[1]!.id,
+      status: "succeeded",
+      summary: expect.stringContaining("Validation passed"),
+    });
+    expect(planArtifact?.id).toBeDefined();
+    expect(await readFile(join(executorWorkspace!.rootPath, "README.md"), "utf8")).toContain(
+      "executor change",
+    );
+  });
+
+  it("fails executor validation when changed files escape the allowed-path boundary", async () => {
+    const sourceRepo = await createTempGitRepo();
+    const workspaceRoot = await createTempWorkspaceRoot();
+    cleanups.push(sourceRepo.cleanup, workspaceRoot.cleanup);
+
+    const plannerHarness = await createHarness({
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+    const created = await plannerHarness.missionService.createFromText({
+      text: "Keep executor changes inside README only",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    await setMissionAllowedPaths(created.mission.id, created.mission.spec, [
+      "README.md",
+    ]);
+
+    await plannerHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const executorHarness = await createHarness({
+      runtimeCodexService: createFileWritingRuntimeService({
+        finalReportText: [
+          "## Intended change",
+          "Write an out-of-scope note file.",
+          "",
+          "## Files changed",
+          "- notes/outside.md",
+          "",
+          "## Validations run",
+          "- git diff --check",
+          "",
+          "## Remaining risks",
+          "- allowlist breach",
+          "",
+          "## Operator handoff",
+          "- blocked by validation",
+        ].join("\n"),
+        writes: [
+          {
+            path: "notes/outside.md",
+            text: "outside change\n",
+          },
+        ],
+      }),
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+
+    const tick = await executorHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        role: "executor",
+        status: "failed",
+        summary: expect.stringContaining("Validation failed"),
+      },
+    });
+    if (tick?.kind !== "turn_completed") {
+      throw new Error("Expected a completed executor turn");
+    }
+    expect(tick.task.summary).toContain("notes/outside.md");
+  });
+
+  it("fails executor validation when git diff --check reports whitespace issues", async () => {
+    const sourceRepo = await createTempGitRepo();
+    const workspaceRoot = await createTempWorkspaceRoot();
+    cleanups.push(sourceRepo.cleanup, workspaceRoot.cleanup);
+
+    const plannerHarness = await createHarness({
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+    const created = await plannerHarness.missionService.createFromText({
+      text: "Let executor change README but reject bad diff formatting",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    await setMissionAllowedPaths(created.mission.id, created.mission.spec, [
+      "README.md",
+    ]);
+
+    await plannerHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const executorHarness = await createHarness({
+      runtimeCodexService: createFileWritingRuntimeService({
+        finalReportText: [
+          "## Intended change",
+          "Update the README but leave trailing whitespace behind.",
+          "",
+          "## Files changed",
+          "- README.md",
+          "",
+          "## Validations run",
+          "- git diff --check",
+          "",
+          "## Remaining risks",
+          "- whitespace cleanup needed",
+          "",
+          "## Operator handoff",
+          "- blocked by validation",
+        ].join("\n"),
+        writes: [
+          {
+            path: "README.md",
+            text: "temp repo  \nexecutor bad whitespace \n",
+          },
+        ],
+      }),
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+
+    const tick = await executorHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        role: "executor",
+        status: "failed",
+        summary: expect.stringContaining("git diff --check"),
+      },
+    });
+  });
+
   it("reuses the same persisted workspace after a failed recovery tick", async () => {
     const sourceRepo = await createTempGitRepo();
     const workspaceRoot = await createTempWorkspaceRoot();
@@ -771,6 +1008,10 @@ async function createHarness(options?: {
   };
   runtimeCodexService?: Pick<CodexRuntimeService, "runTurn">;
   sourceRepoRoot?: string;
+  validationService?: Pick<
+    LocalExecutorValidationService,
+    "validateExecutorTurn"
+  >;
   workspaceRoot?: string;
 }) {
   const sourceRepo =
@@ -840,6 +1081,8 @@ async function createHarness(options?: {
     runtimeCodexService,
     new EvidenceService(),
     workspaceService,
+    options?.validationService ??
+      new LocalExecutorValidationService(new LocalWorkspaceValidationGitClient()),
   );
 
   return {
@@ -991,6 +1234,123 @@ function createBlockedRuntimeService(
   };
 }
 
+function createFileWritingRuntimeService(input: {
+  finalReportText: string;
+  writes: Array<{
+    path: string;
+    text: string;
+  }>;
+}): Pick<CodexRuntimeService, "runTurn"> {
+  return {
+    async runTurn(turnInput, observer = {}) {
+      const threadId = turnInput.threadId ?? "thread_executor_1";
+      const turnId = "turn_executor_1";
+      const cwd = turnInput.cwd ?? process.cwd();
+
+      if (!turnInput.threadId) {
+        await observer.onThreadStarted?.({
+          approvalPolicy: "untrusted",
+          cwd,
+          model: "gpt-5.2-codex",
+          modelProvider: "openai",
+          sandbox: {
+            type: "workspaceWrite",
+            writableRoots: [cwd],
+            readOnlyAccess: {
+              type: "fullAccess",
+            },
+            networkAccess: false,
+            excludeTmpdirEnvVar: false,
+            excludeSlashTmp: false,
+          },
+          serviceName: "pocket-cto-control-plane",
+          thread: {
+            id: threadId,
+            preview: "executor test thread",
+            ephemeral: false,
+            modelProvider: "openai",
+            createdAt: 1,
+            updatedAt: 1,
+            status: {
+              type: "idle",
+            },
+            path: null,
+            cwd,
+            cliVersion: "0.1.0",
+            source: "appServer",
+            agentNickname: null,
+            agentRole: null,
+            gitInfo: null,
+            name: "executor test thread",
+            turns: [],
+          },
+          threadId,
+          userAgent: "fake-codex/1.0.0",
+        });
+      }
+
+      await observer.onTurnStarted?.({
+        recoveryStrategy: turnInput.threadId
+          ? "resumed_thread"
+          : "same_session_bootstrap",
+        threadId,
+        turnId,
+      });
+
+      for (const write of input.writes) {
+        const filePath = join(cwd, write.path);
+        await mkdir(dirname(filePath), { recursive: true });
+        await writeFile(filePath, write.text, "utf8");
+      }
+
+      const itemStarted = {
+        itemId: "item_agent_executor_1",
+        itemType: "agentMessage",
+        phase: "started" as const,
+        threadId,
+        turnId,
+      };
+      const itemCompleted = {
+        ...itemStarted,
+        phase: "completed" as const,
+      };
+
+      await observer.onItemStarted?.(itemStarted);
+      await observer.onItemCompleted?.(itemCompleted);
+
+      return {
+        completedAgentMessages: [
+          {
+            itemId: itemCompleted.itemId,
+            text: input.finalReportText,
+            threadId,
+            turnId,
+          },
+        ],
+        completedTextOutputs: [
+          {
+            itemId: itemCompleted.itemId,
+            itemType: "agentMessage",
+            text: input.finalReportText,
+            threadId,
+            turnId,
+          },
+        ],
+        finalAgentMessageText: input.finalReportText,
+        firstItemType: itemStarted.itemType,
+        items: [itemStarted, itemCompleted],
+        lastItemType: itemCompleted.itemType,
+        recoveryStrategy: turnInput.threadId
+          ? "resumed_thread"
+          : "same_session_bootstrap",
+        status: "completed",
+        threadId,
+        turnId,
+      } satisfies RuntimeCodexRunTurnResult;
+    },
+  };
+}
+
 function createDeferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
   let reject!: (reason?: unknown) => void;
@@ -1011,6 +1371,16 @@ function silentLog() {
     error: vi.fn(),
     info: vi.fn(),
   };
+}
+
+async function getPlanArtifact(missionId: string) {
+  const [artifact] = await db
+    .select()
+    .from(artifacts)
+    .where(and(eq(artifacts.missionId, missionId), eq(artifacts.kind, "plan")))
+    .limit(1);
+
+  return artifact ?? null;
 }
 
 async function countWorkspaces() {
@@ -1038,6 +1408,26 @@ function readArtifactMetadata(metadata: unknown) {
   return typeof metadata === "object" && metadata !== null
     ? (metadata as Record<string, unknown>)
     : {};
+}
+
+async function setMissionAllowedPaths(
+  missionId: string,
+  spec: MissionRecord["spec"],
+  allowedPaths: string[],
+) {
+  await db
+    .update(missions)
+    .set({
+      spec: {
+        ...spec,
+        constraints: {
+          ...spec.constraints,
+          allowedPaths,
+        },
+      },
+      updatedAt: new Date(),
+    })
+    .where(eq(missions.id, missionId));
 }
 
 function buildExpectedPlanOnlyText() {

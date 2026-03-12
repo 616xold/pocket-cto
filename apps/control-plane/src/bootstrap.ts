@@ -25,6 +25,10 @@ import {
   resolveWorkspaceServiceConfig,
   WorkspaceService,
 } from "./modules/workspaces";
+import {
+  LocalExecutorValidationService,
+  LocalWorkspaceValidationGitClient,
+} from "./modules/validation";
 
 export async function createContainer(): Promise<AppContainer> {
   const env = loadEnv();
@@ -59,6 +63,9 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
     new RuntimeCodexAdapter(resolveCodexRuntimeClientOptions(env)),
     resolveCodexThreadDefaults(env, process.cwd()),
   );
+  const validationService = new LocalExecutorValidationService(
+    new LocalWorkspaceValidationGitClient(),
+  );
 
   return {
     worker: new OrchestratorWorker(
@@ -68,6 +75,7 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
         runtimeCodexService,
         evidenceService,
         workspaceService,
+        validationService,
       ),
     ),
   };

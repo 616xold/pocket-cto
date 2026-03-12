@@ -30,6 +30,10 @@ import {
   mapMissionTaskRow,
   readProofBundleManifest,
 } from "./repository-mappers";
+import {
+  readPlannerArtifactMetadata,
+  type ExecutorPlannerArtifactRecord,
+} from "./planner-artifact";
 
 export class DrizzleMissionRepository implements MissionRepository {
   constructor(private readonly db: Db) {}
@@ -210,6 +214,50 @@ export class DrizzleMissionRepository implements MissionRepository {
       .limit(1);
 
     return task ? mapMissionTaskRow(task) : null;
+  }
+
+  async getLatestPlannerArtifactForExecutor(
+    taskId: string,
+    session?: PersistenceSession,
+  ) {
+    const task = await this.getTaskById(taskId, session);
+
+    if (!task) {
+      return null;
+    }
+
+    const dependencyArtifact = task.dependsOnTaskId
+      ? await this.selectPlannerArtifactByTaskId(
+          task.missionId,
+          task.dependsOnTaskId,
+          session,
+        )
+      : null;
+
+    if (dependencyArtifact) {
+      return {
+        ...dependencyArtifact,
+        justification: `Using dependency task ${dependencyArtifact.sourceTaskSequence} plan artifact ${dependencyArtifact.artifactId}.`,
+        resolution: "dependency_task",
+      } satisfies ExecutorPlannerArtifactRecord;
+    }
+
+    const latestPlannerArtifact = await this.selectLatestMissionPlannerArtifact(
+      task.missionId,
+      session,
+    );
+
+    if (!latestPlannerArtifact) {
+      return null;
+    }
+
+    return {
+      ...latestPlannerArtifact,
+      justification: task.dependsOnTaskId
+        ? `Dependency task ${task.dependsOnTaskId} has no plan artifact; falling back to latest planner task plan artifact ${latestPlannerArtifact.artifactId}.`
+        : `Task has no dependency plan artifact; using latest planner task plan artifact ${latestPlannerArtifact.artifactId}.`,
+      resolution: "mission_latest_planner",
+    } satisfies ExecutorPlannerArtifactRecord;
   }
 
   async attachCodexThreadId(
@@ -524,6 +572,99 @@ export class DrizzleMissionRepository implements MissionRepository {
       .limit(1);
 
     return candidate ? mapMissionTaskRow(candidate.task) : null;
+  }
+
+  private async selectLatestMissionPlannerArtifact(
+    missionId: string,
+    session?: PersistenceSession,
+  ): Promise<Omit<ExecutorPlannerArtifactRecord, "justification" | "resolution"> | null> {
+    const executor = this.getExecutor(session);
+    const [artifact] = await executor
+      .select({
+        artifactId: artifacts.id,
+        metadata: artifacts.metadata,
+        taskId: missionTasks.id,
+        taskSequence: missionTasks.sequence,
+        taskSummary: missionTasks.summary,
+        uri: artifacts.uri,
+      })
+      .from(artifacts)
+      .innerJoin(missionTasks, eq(artifacts.taskId, missionTasks.id))
+      .where(
+        and(
+          eq(artifacts.missionId, missionId),
+          eq(artifacts.kind, "plan"),
+          eq(missionTasks.role, "planner"),
+        ),
+      )
+      .orderBy(desc(artifacts.createdAt), desc(artifacts.id))
+      .limit(1);
+
+    if (!artifact) {
+      return null;
+    }
+
+    const metadata = readPlannerArtifactMetadata(artifact.metadata);
+
+    if (!metadata) {
+      return null;
+    }
+
+    return {
+      artifactId: artifact.artifactId,
+      body: metadata.body,
+      sourceTaskId: artifact.taskId,
+      sourceTaskSequence: artifact.taskSequence,
+      summary: artifact.taskSummary ?? metadata.summary,
+      uri: artifact.uri,
+    };
+  }
+
+  private async selectPlannerArtifactByTaskId(
+    missionId: string,
+    plannerTaskId: string,
+    session?: PersistenceSession,
+  ): Promise<Omit<ExecutorPlannerArtifactRecord, "justification" | "resolution"> | null> {
+    const executor = this.getExecutor(session);
+    const [artifact] = await executor
+      .select({
+        artifactId: artifacts.id,
+        metadata: artifacts.metadata,
+        taskId: missionTasks.id,
+        taskSequence: missionTasks.sequence,
+        taskSummary: missionTasks.summary,
+        uri: artifacts.uri,
+      })
+      .from(artifacts)
+      .innerJoin(missionTasks, eq(artifacts.taskId, missionTasks.id))
+      .where(
+        and(
+          eq(artifacts.missionId, missionId),
+          eq(artifacts.kind, "plan"),
+          eq(artifacts.taskId, plannerTaskId),
+        ),
+      )
+      .orderBy(desc(artifacts.createdAt), desc(artifacts.id))
+      .limit(1);
+
+    if (!artifact) {
+      return null;
+    }
+
+    const metadata = readPlannerArtifactMetadata(artifact.metadata);
+
+    if (!metadata) {
+      return null;
+    }
+
+    return {
+      artifactId: artifact.artifactId,
+      body: metadata.body,
+      sourceTaskId: artifact.taskId,
+      sourceTaskSequence: artifact.taskSequence,
+      summary: artifact.taskSummary ?? metadata.summary,
+      uri: artifact.uri,
+    };
   }
 }
 

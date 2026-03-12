@@ -10,6 +10,8 @@ import {
   type TransactionalRepository,
 } from "../../lib/persistence";
 import { isTaskRunnable } from "../orchestrator/task-state-machine";
+import type { ExecutorPlannerArtifactRecord } from "./planner-artifact";
+import { readPlannerArtifactMetadata } from "./planner-artifact";
 
 export type CreateMissionInput = {
   type: MissionRecord["type"];
@@ -87,6 +89,11 @@ export interface MissionRepository extends TransactionalRepository {
     taskId: string,
     session?: PersistenceSession,
   ): Promise<MissionTaskRecord | null>;
+
+  getLatestPlannerArtifactForExecutor(
+    taskId: string,
+    session?: PersistenceSession,
+  ): Promise<ExecutorPlannerArtifactRecord | null>;
 
   attachCodexThreadId(
     taskId: string,
@@ -283,6 +290,44 @@ export class InMemoryMissionRepository implements MissionRepository {
     }
 
     return null;
+  }
+
+  async getLatestPlannerArtifactForExecutor(
+    taskId: string,
+  ): Promise<ExecutorPlannerArtifactRecord | null> {
+    const task = await this.getTaskById(taskId);
+
+    if (!task) {
+      return null;
+    }
+
+    const dependencyArtifact = task.dependsOnTaskId
+      ? this.findPlannerArtifactByTaskId(task.missionId, task.dependsOnTaskId)
+      : null;
+
+    if (dependencyArtifact) {
+      return {
+        ...dependencyArtifact,
+        justification: `Using dependency task ${dependencyArtifact.sourceTaskSequence} plan artifact ${dependencyArtifact.artifactId}.`,
+        resolution: "dependency_task",
+      };
+    }
+
+    const latestMissionPlannerArtifact = this.findLatestMissionPlannerArtifact(
+      task.missionId,
+    );
+
+    if (!latestMissionPlannerArtifact) {
+      return null;
+    }
+
+    return {
+      ...latestMissionPlannerArtifact,
+      justification: task.dependsOnTaskId
+        ? `Dependency task ${task.dependsOnTaskId} has no plan artifact; falling back to latest planner task plan artifact ${latestMissionPlannerArtifact.artifactId}.`
+        : `Task has no dependency plan artifact; using latest planner task plan artifact ${latestMissionPlannerArtifact.artifactId}.`,
+      resolution: "mission_latest_planner",
+    };
   }
 
   async attachCodexThreadId(
@@ -559,6 +604,95 @@ export class InMemoryMissionRepository implements MissionRepository {
     }
 
     throw new Error(`Task ${taskId} not found`);
+  }
+
+  private findLatestMissionPlannerArtifact(
+    missionId: string,
+  ): Omit<ExecutorPlannerArtifactRecord, "justification" | "resolution"> | null {
+    const plannerTasks = new Map(
+      (this.tasks.get(missionId) ?? [])
+        .filter((task) => task.role === "planner")
+        .map((task) => [task.id, task]),
+    );
+
+    for (let index = this.artifactLedger.length - 1; index >= 0; index -= 1) {
+      const artifact = this.artifactLedger[index];
+
+      if (
+        !artifact ||
+        artifact.missionId !== missionId ||
+        artifact.kind !== "plan" ||
+        !artifact.taskId
+      ) {
+        continue;
+      }
+
+      const plannerTask = plannerTasks.get(artifact.taskId);
+
+      if (!plannerTask) {
+        continue;
+      }
+
+      const metadata = readPlannerArtifactMetadata(artifact.metadata);
+
+      if (!metadata) {
+        continue;
+      }
+
+      return {
+        artifactId: artifact.id,
+        body: metadata.body,
+        sourceTaskId: plannerTask.id,
+        sourceTaskSequence: plannerTask.sequence,
+        summary: plannerTask.summary ?? metadata.summary,
+        uri: artifact.uri,
+      };
+    }
+
+    return null;
+  }
+
+  private findPlannerArtifactByTaskId(
+    missionId: string,
+    plannerTaskId: string,
+  ): Omit<ExecutorPlannerArtifactRecord, "justification" | "resolution"> | null {
+    const plannerTask = (this.tasks.get(missionId) ?? []).find(
+      (task) => task.id === plannerTaskId,
+    );
+
+    if (!plannerTask) {
+      return null;
+    }
+
+    for (let index = this.artifactLedger.length - 1; index >= 0; index -= 1) {
+      const artifact = this.artifactLedger[index];
+
+      if (
+        !artifact ||
+        artifact.missionId !== missionId ||
+        artifact.kind !== "plan" ||
+        artifact.taskId !== plannerTaskId
+      ) {
+        continue;
+      }
+
+      const metadata = readPlannerArtifactMetadata(artifact.metadata);
+
+      if (!metadata) {
+        continue;
+      }
+
+      return {
+        artifactId: artifact.id,
+        body: metadata.body,
+        sourceTaskId: plannerTask.id,
+        sourceTaskSequence: plannerTask.sequence,
+        summary: plannerTask.summary ?? metadata.summary,
+        uri: artifact.uri,
+      };
+    }
+
+    return null;
   }
 }
 

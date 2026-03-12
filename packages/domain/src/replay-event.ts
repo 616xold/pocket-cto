@@ -46,6 +46,8 @@ export const TaskStatusChangeReasonSchema = z.enum([
   "runtime_turn_started",
   "runtime_turn_completed",
   "runtime_turn_failed",
+  "executor_missing_planner_artifact",
+  "executor_validation_failed",
 ]);
 
 export const TaskStatusChangedPayloadSchema = z.object({
