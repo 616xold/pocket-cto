@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { MissionRecord, MissionTaskRecord } from "@pocket-cto/domain";
 import { LocalExecutorValidationService } from "./service";
 import type { WorkspaceValidationGitClient } from "./git-client";
+import type { ExecutorValidationHook } from "./types";
 
 describe("LocalExecutorValidationService", () => {
   it("passes when changed paths stay inside the allowlist and diff check succeeds", async () => {
@@ -16,6 +17,7 @@ describe("LocalExecutorValidationService", () => {
     const result = await service.validateExecutorTurn(buildValidationContext());
 
     expect(result.status).toBe("passed");
+    expect(result.failureCode).toBe("none");
     expect(result.changedPaths).toEqual(["apps/web/login.tsx"]);
     expect(result.escapedPaths).toEqual([]);
     expect(result.diffCheckPassed).toBe(true);
@@ -33,8 +35,29 @@ describe("LocalExecutorValidationService", () => {
     const result = await service.validateExecutorTurn(buildValidationContext());
 
     expect(result.status).toBe("failed");
+    expect(result.failureCode).toBe("guardrail_failed");
     expect(result.escapedPaths).toEqual(["apps/api/server.ts"]);
     expect(result.checks[0]).toMatchObject({
+      name: "changed_paths",
+      status: "failed",
+    });
+  });
+
+  it("fails when the executor completed without changing any files", async () => {
+    const service = new LocalExecutorValidationService(
+      createGitClient({
+        changedPaths: [],
+        diffCheckOutput: null,
+        diffCheckOk: true,
+      }),
+    );
+
+    const result = await service.validateExecutorTurn(buildValidationContext());
+
+    expect(result.status).toBe("failed");
+    expect(result.failureCode).toBe("no_changes");
+    expect(result.checks[0]).toMatchObject({
+      code: "no_changes",
       name: "changed_paths",
       status: "failed",
     });
@@ -52,10 +75,52 @@ describe("LocalExecutorValidationService", () => {
     const result = await service.validateExecutorTurn(buildValidationContext());
 
     expect(result.status).toBe("failed");
+    expect(result.failureCode).toBe("guardrail_failed");
     expect(result.diffCheckPassed).toBe(false);
     expect(result.diffCheckOutput).toContain("trailing whitespace");
     expect(result.checks[1]).toMatchObject({
       name: "git_diff_check",
+      status: "failed",
+    });
+  });
+
+  it("returns a structured failed report when a validation hook throws", async () => {
+    const service = new LocalExecutorValidationService(createGitClient({
+      changedPaths: ["apps/web/login.tsx"],
+      diffCheckOutput: null,
+      diffCheckOk: true,
+    }), [
+      {
+        name: "changed_paths",
+        async run() {
+          throw new Error("git status failed");
+        },
+      },
+      {
+        name: "git_diff_check",
+        async run() {
+          return {
+            name: "git_diff_check",
+            status: "passed" as const,
+            summary: "git diff --check passed.",
+          };
+        },
+      },
+    ] satisfies ExecutorValidationHook[]);
+
+    const result = await service.validateExecutorTurn(buildValidationContext());
+
+    expect(result.status).toBe("failed");
+    expect(result.failureCode).toBe("guardrail_failed");
+    expect(result.checks[0]).toMatchObject({
+      code: "hook_error",
+      details: {
+        error: {
+          message: "git status failed",
+          name: "Error",
+        },
+      },
+      name: "changed_paths",
       status: "failed",
     });
   });

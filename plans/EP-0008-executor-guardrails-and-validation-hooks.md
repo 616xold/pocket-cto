@@ -13,6 +13,8 @@ It does not add approval persistence, GitHub or PR side effects, richer artifact
 
 ## Progress
 
+- [x] (2026-03-12T16:24Z) Re-ran the full required validation list after the hardening pass, refreshed `@pocket-cto/domain` declarations for the additive replay reasons, and completed two manual temp-repo acceptances that confirmed no-op executor turns and planner-evidence-failure turns both terminalize with cleared `codexTurnId` and released workspace leases.
+- [x] (2026-03-12T16:20Z) Hardened post-turn terminalization so completed runtime turns no longer strand planner or executor tasks in `running`: terminal outcomes are now computed before the final DB write, executor validation hook exceptions become structured failed reports, executor no-op turns fail explicitly, and fallback terminalization clears `codexTurnId` plus releases the workspace lease even when planner evidence persistence or later validation work fails.
 - [x] (2026-03-12T03:14Z) Re-read the required repo docs, active ExecPlans, architecture and ops docs, DB and domain schemas, orchestrator/runtime modules, workspace modules, evidence modules, and the fake Codex App Server fixture named in the prompt.
 - [x] (2026-03-12T03:14Z) Confirmed the current executor gap before coding: executor tasks still use the generic read-only prompt path, there is no repository read path for planner plan artifacts, and there is no post-turn workspace validation module or hook surface beyond runtime completion status.
 - [x] (2026-03-12T03:14Z) Drafted this ExecPlan with the bounded M1.5 scope, exact edit surface, validation commands, replay implications, and evidence handoff.
@@ -41,6 +43,15 @@ It does not add approval persistence, GitHub or PR side effects, richer artifact
 - Observation: `@pocket-cto/control-plane` typecheck still needs the referenced `@pocket-cto/domain` declarations refreshed after additive replay-event enum changes.
   Evidence: the first `pnpm --filter @pocket-cto/control-plane typecheck` after code changes still saw the old `TaskStatusChangeReason` union until `pnpm --filter @pocket-cto/domain build` regenerated the referenced declarations.
 
+- Observation: the original M1.5 completion path still ran executor validation, planner evidence persistence, `clearCodexTurnId`, task finalization, and workspace release inside one transaction, so a thrown post-turn step could roll back the runtime terminalization work and leave the task `running`.
+  Evidence: `apps/control-plane/src/modules/orchestrator/runtime-phase.ts` previously executed `validateExecutorTurn(...)` and `persistPlannerTurnEvidence(...)` inside the same `missionRepository.transaction(...)` that appended `runtime.turn_completed` and cleared `codexTurnId`.
+
+- Observation: the in-memory mission repository does not model transactional rollback, so the terminalization-integrity failure mode only reproduces accurately in the DB-backed orchestrator harness.
+  Evidence: an initial in-memory planner-evidence-failure spec left the task `succeeded` after a thrown `saveArtifact(...)` because `InMemoryMissionRepository.transaction(...)` is only a session wrapper, not a rollback-capable transaction.
+
+- Observation: plain `git diff --check --relative HEAD --` does not inspect brand-new untracked files, so executor whitespace and conflict-marker validation would have had a blind spot for newly created files.
+  Evidence: a local probe against a temp repo showed `git diff --check` ignored an untracked file with trailing whitespace, while `git diff --no-index --check -- <empty-file> <path>` reported the issue correctly.
+
 ## Decision Log
 
 - Decision: Executor tasks will fail fast when no usable planner artifact can be resolved.
@@ -65,6 +76,22 @@ It does not add approval persistence, GitHub or PR side effects, richer artifact
 
 - Decision: Executor outcomes in M1.5 will persist only to `mission_tasks.summary`, not to new executor artifacts.
   Rationale: The prompt explicitly narrows this milestone away from richer runtime-to-evidence artifact mapping. A concise task summary is the smallest operator-visible surface that still records change plus validation outcome.
+  Date/Author: 2026-03-12 / Codex
+
+- Decision: Post-turn terminalization will compute executor validation and planner evidence preparation before the final task-state write transaction, then persist one deterministic terminal outcome in a transaction, with one fallback failure terminalization attempt if the first persistence pass throws.
+  Rationale: This is the narrowest way to keep runtime transport unchanged while ensuring a completed turn does not leave the task `running` with a stale `codexTurnId` because later validation or evidence work failed.
+  Date/Author: 2026-03-12 / Codex
+
+- Decision: Completed executor turns with zero changed paths now fail explicitly with `executor_no_changes`.
+  Rationale: A no-op executor turn does not satisfy the M1.5 mutation slice and should not silently count as successful work.
+  Date/Author: 2026-03-12 / Codex
+
+- Decision: Validation hooks catch ordinary git or filesystem exceptions inside `LocalExecutorValidationService`, convert them into structured failed checks, and continue terminalization.
+  Rationale: Hook failures are part of the executor guardrail result, not a reason to crash post-turn cleanup.
+  Date/Author: 2026-03-12 / Codex
+
+- Decision: `git diff --check` coverage now extends to untracked files by running the narrow no-index check against each untracked path.
+  Rationale: This closes a real hygiene gap for brand-new files without introducing a generic command-runner or CI surface.
   Date/Author: 2026-03-12 / Codex
 
 ## Context and Orientation
@@ -160,11 +187,12 @@ Success for M1.5 is demonstrated when all of the following are true:
 3. Executor turns use a dedicated `workspace-write` sandbox policy with writable roots restricted to the task workspace root and `networkAccess = false`.
 4. Planner and other non-executor roles remain on the current read-only policy and prompt path unless a tiny compatibility adjustment is required.
 5. When a relevant planner artifact is missing, the executor task does not silently proceed and instead reaches an explicit failed or blocked outcome that cites the planner-artifact gap.
-6. Local validation captures changed paths, enforces the `allowedPaths` boundary when non-empty, and fails the task on `git diff --check` errors.
+6. Local validation captures changed paths, enforces the `allowedPaths` boundary when non-empty, fails the task when no files changed, and fails the task on `git diff --check` errors for both tracked and untracked files.
 7. Executor validation failures after runtime completion still mark the task terminally and explicitly, with replay-compatible task status changes.
-8. Successful executor turns update `mission_tasks.summary` with a concise change and validation summary.
-9. No test depends on a real `codex` binary or any remote service.
-10. `docs/ops/codex-app-server.md` documents the executor mutation posture and validation-hook behavior, and `docs/ops/local-dev.md` documents how to inspect local executor results if useful.
+8. Planner evidence persistence failures after runtime completion still mark the planner task terminally, clear `codexTurnId`, and release the workspace lease.
+9. Successful executor turns update `mission_tasks.summary` with a concise change and validation summary.
+10. No test depends on a real `codex` binary or any remote service.
+11. `docs/ops/codex-app-server.md` documents the executor mutation posture and validation-hook behavior, and `docs/ops/local-dev.md` documents how to inspect local executor results if useful.
 
 Manual acceptance should show one executor task in a temp worktree:
 
@@ -199,13 +227,24 @@ M1.5 executor gap analysis captured before implementation:
 
 Validation results and manual acceptance evidence will be added here as implementation proceeds.
 
+Post-turn terminalization integrity gap captured before the hardening pass:
+
+1. Current post-turn behavior:
+   `handleTurnCompleted(...)` appended `runtime.turn_completed`, cleared `codexTurnId`, ran executor validation or planner evidence persistence, updated task status, and released the workspace lease inside one transaction.
+2. Stranding risk:
+   a thrown executor validation or planner evidence exception could roll back that transaction and leave the task `running` with the old `codexTurnId`.
+3. Executor no-op behavior before hardening:
+   a completed executor turn with zero changed paths still passed if `git diff --check` passed.
+4. Hardening strategy:
+   compute validation and planner-evidence preparation before the final transaction, catch hook exceptions into structured failed validation reports, and if the first finalization attempt throws after runtime completion, perform one fallback failed terminalization instead of leaving the task active.
+
 Validation results captured after implementation:
 
 - `pnpm db:generate` passed with `No schema changes, nothing to migrate`.
 - `pnpm db:migrate` passed.
 - `pnpm --filter @pocket-cto/codex-runtime test` passed with 5 tests.
 - `pnpm --filter @pocket-cto/codex-runtime typecheck` passed.
-- `pnpm --filter @pocket-cto/control-plane test` passed with 45 tests.
+- `pnpm --filter @pocket-cto/control-plane test` passed with 50 tests.
 - `pnpm --filter @pocket-cto/control-plane typecheck` passed after refreshing `@pocket-cto/domain` declarations with `pnpm --filter @pocket-cto/domain build`.
 - `pnpm --filter @pocket-cto/control-plane lint` passed.
 
@@ -218,6 +257,21 @@ Manual acceptance captured after implementation:
 - validation passed: `true`
 - task summary: `Apply the planner handoff to README.md inside the allowed workspace root. Validation passed for README.md and a clean git diff check.`
 - changed paths escaping the allowlist: none
+- command: `pnpm exec tsx <<'EOF' ... manual no-op executor and planner-evidence-failure harness ... EOF` from `apps/control-plane`
+- manual no-op executor result:
+  - workspace path: `/private/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-workspaces-tbuEXV/42b9a582-7e74-4fa1-a603-1f8fe58dd354/1-executor`
+  - final task status: `failed`
+  - final reason: `executor_no_changes`
+  - `codexTurnId` after completion: `null`
+  - workspace lease: released (`isActive = false`, `leaseOwner = null`)
+  - stranded after completion: `false`
+- manual planner evidence failure result:
+  - workspace path: `/private/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-workspaces-fCpOSI/bad2b7f0-2d23-4fbb-a4e3-4a4c1084cb88/0-planner`
+  - final task status: `failed`
+  - final reason: `planner_evidence_failed`
+  - `codexTurnId` after completion: `null`
+  - workspace lease: released (`isActive = false`, `leaseOwner = null`)
+  - stranded after completion: `false`
 
 ## Interfaces and Dependencies
 
@@ -262,7 +316,13 @@ The most important lifecycle change is that runtime completion is no longer the 
 Replay still records the existing runtime turn structure, but final task status now depends on local guardrails too.
 If the planner handoff is missing, the executor task fails fast with `executor_missing_planner_artifact`.
 If the runtime turn completes but local validation fails, the executor task ends `failed` with `executor_validation_failed`.
+If the runtime turn completes but changes nothing, the executor task now ends `failed` with `executor_no_changes`.
 If validation passes, the executor task ends `succeeded` and stores a concise `mission_tasks.summary` that names the intended change and validation result.
+
+Post-turn terminalization is now also safer for later milestones to build on.
+Planner evidence persistence and executor validation no longer have to succeed inside the same narrow transaction that clears `codexTurnId`.
+If planner evidence persistence still throws after a completed planner turn, Pocket CTO now marks the task `failed` with `planner_evidence_failed` instead of leaving it `running`.
+If a validation hook throws, the hook result is recorded as a structured failed validation check and the executor task still terminalizes cleanly.
 
 The new local validation surface is intentionally small:
 

@@ -46,7 +46,9 @@ export const TaskStatusChangeReasonSchema = z.enum([
   "runtime_turn_started",
   "runtime_turn_completed",
   "runtime_turn_failed",
+  "planner_evidence_failed",
   "executor_missing_planner_artifact",
+  "executor_no_changes",
   "executor_validation_failed",
 ]);
 

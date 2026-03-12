@@ -35,6 +35,11 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 - [x] (2026-03-11T00:16Z) Added `WORKSPACE_ROOT` and `POCKET_CTO_SOURCE_REPO_ROOT` to Turbo `globalEnv`, set safe workflow defaults (`/tmp/pocket-cto-workspaces` and `${{ github.workspace }}`), mirrored the same contract in `ci:repro:current` with temp-rooted values, and updated local-dev docs plus this ExecPlan to explain the reason.
 - [x] (2026-03-11T02:15Z) Re-ran `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm test` in the live checkout, then confirmed `pnpm ci:static` and `pnpm ci:integration-db` fail there only at `ci:clean-tree` because the current repo intentionally contains the tracked workspace-env edits from this slice.
 - [x] (2026-03-11T02:15Z) Re-ran `pnpm ci:repro:current` with local Postgres and verified the clean temp worktree passes install, `pnpm ci:static`, and `pnpm ci:integration-db` with `WORKSPACE_ROOT` rooted outside the repo and `POCKET_CTO_SOURCE_REPO_ROOT` pointed at the temp checkout.
+- [x] (2026-03-12T16:27Z) Fetched the remote state, confirmed `gh` is unavailable locally, and found that `origin/main` now points at merge commit `08b53f1a9552a16465db7a37b69b7dde475783d7` while the current branch head is `fc137bcdfd5e860e1d9d7e992f0173aa5253684b`.
+- [x] (2026-03-12T16:29Z) Confirmed `origin/main` and `HEAD` share the same git tree object, which rules out a content-only merge skew as the primary explanation for the reported post-merge `integration-db` failure.
+- [x] (2026-03-12T16:32Z) Added `pnpm ci:repro:ref` plus `tools/ci-repro-ref.mjs` and `tools/ci-repro-shared.mjs` so any clean ref can be reproduced with the same workflow env contract and optional repeated `integration-db` runs.
+- [x] (2026-03-12T16:33Z) Reproduced `pnpm ci:integration-db` from clean temp worktrees 5 times against `origin/main` and once against `HEAD`, with every run passing install, DB prep, dual migrations, tests, and the clean-tree check.
+- [x] (2026-03-12T16:34Z) Re-ran `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm test` on the live branch, then re-ran `pnpm ci:static` and `pnpm ci:integration-db` against a baseline snapshot so both entrypoints stayed green relative to the current dirty M1.5 worktree.
 
 ## Surprises & Discoveries
 
@@ -73,6 +78,12 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 
 - Observation: The repo had already documented safe external workspace semantics for M1.3, but CI and Turbo still treated workspace env changes as invisible.
   Evidence: `packages/config/src/index.ts` and `docs/ops/local-dev.md` already mention `WORKSPACE_ROOT` and `POCKET_CTO_SOURCE_REPO_ROOT`, while `turbo.json` omitted both from `globalEnv`, `.github/workflows/ci.yml` set neither, and `tools/ci-repro-current-worktree.mjs` exported neither in its `CI_ENV` contract.
+
+- Observation: The latest merged `origin/main` commit and the current branch head are content-identical.
+  Evidence: `git rev-parse origin/main^{tree} HEAD^{tree}` returned the same tree hash `1234a3d66a258689e97cf93bb5692714fa83cf2a`.
+
+- Observation: The reported `integration-db` failure on main is not reproducible from clean temp worktrees in this environment.
+  Evidence: `pnpm ci:repro:ref --ref origin/main --step integration-db --repeat 5` passed all five iterations, and `pnpm ci:repro:ref --ref HEAD --step integration-db` also passed with the same workflow env contract.
 
 ## Decision Log
 
@@ -131,6 +142,10 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 - Decision: Treat M1.3 workspace envs as part of the repo-level CI contract now, even before planner or executor file-mutation work lands.
   Rationale: `WORKSPACE_ROOT` and `POCKET_CTO_SOURCE_REPO_ROOT` already influence workspace placement and safety checks. If Turbo caching, Actions env, and local repro do not all see them, future M1.4 and M1.5 work can inherit stale workspace semantics or unsafe defaults silently.
   Date/Author: 2026-03-11 / Codex
+
+- Decision: Add a generic clean-ref CI reproduction helper with repeat support instead of relying on one-off shell commands for post-merge diagnosis.
+  Rationale: The repo now needs two distinct reproduction modes: dirty-snapshot overlay reproduction for local branch work and clean-ref reproduction for merged commits or merge targets. A checked-in helper keeps both paths on the same workflow env contract and makes flake checks repeatable.
+  Date/Author: 2026-03-12 / Codex
 
 ## Context and Orientation
 
@@ -322,3 +337,7 @@ The final validation picture is now explicit:
 - the live dirty checkout still fails `pnpm ci:static` and `pnpm ci:integration-db` only because the clean-tree guard correctly sees the unstaged runtime slice that has not been committed yet
 
 The latest follow-up keeps that contract aligned with M1.3 workspace semantics. Turbo cache invalidation now includes `WORKSPACE_ROOT` and `POCKET_CTO_SOURCE_REPO_ROOT`, GitHub Actions supplies safe external defaults for both, and `pnpm ci:repro:current` mirrors the same env contract with temp-local workspace paths so branch CI and local clean-checkout reproduction observe the same workspace-root assumptions.
+
+The March 12 diagnosis narrows the reported post-merge `integration-db` red run to an unresolved but unreproduced failure. In this environment, `origin/main` and `HEAD` resolve to the same tree, `pnpm ci:integration-db` passes 5 out of 5 times from clean temp worktrees on `origin/main`, and the same clean-ref reproduction passes on `HEAD`. That evidence does not support a deterministic code or merge-tree defect.
+
+The concrete hardening from this pass is diagnostic rather than behavioral: `pnpm ci:repro:ref` now makes it straightforward to rerun clean-ref static or integration reproduction, including repeat stress, against `origin/main`, a merge commit SHA, or any branch head under the same workflow env contract. On the live dirty branch, baseline-backed `pnpm ci:static` and `pnpm ci:integration-db` also stayed green relative to the current checkout, which keeps the CI surface trustworthy while M1.5 work remains in progress.

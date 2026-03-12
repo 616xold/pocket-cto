@@ -145,6 +145,7 @@ describe("OrchestratorWorker", () => {
             diffCheckOutput: null,
             diffCheckPassed: true,
             escapedPaths: [],
+            failureCode: "none" as const,
             status: "passed" as const,
           };
         },
@@ -252,11 +253,12 @@ function createHarness(options?: {
   const missionRepository = new InMemoryMissionRepository();
   const replayRepository = new InMemoryReplayRepository();
   const replayService = new ReplayService(replayRepository, missionRepository);
+  const evidenceService = new EvidenceService();
   const missionService = new MissionService(
     new StubMissionCompiler(),
     missionRepository,
     replayService,
-    new EvidenceService(),
+    evidenceService,
   );
   const workspaceService = new WorkspaceService(
     new InMemoryWorkspaceRepository(),
@@ -289,7 +291,7 @@ function createHarness(options?: {
     missionRepository,
     replayService,
     runtimeCodexService,
-    new EvidenceService(),
+    evidenceService,
     workspaceService,
     options?.validationService ?? createValidationService(),
   );
@@ -488,11 +490,12 @@ function createValidationService(): Pick<
   return {
     async validateExecutorTurn() {
       return {
-        changedPaths: [],
+        changedPaths: ["README.md"],
         checks: [],
         diffCheckOutput: null,
         diffCheckPassed: true,
         escapedPaths: [],
+        failureCode: "none" as const,
         status: "passed" as const,
       };
     },

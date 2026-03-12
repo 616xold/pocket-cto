@@ -8,10 +8,16 @@ import type {
 import type { PersistenceSession } from "../../lib/persistence";
 import {
   buildExecutorTaskSummary,
+  buildExecutorTerminalizationFailureSummary,
   buildMissingPlannerArtifactSummary,
 } from "../evidence/executor-output";
 import type { EvidenceService } from "../evidence/service";
-import { persistPlannerTurnEvidence } from "../evidence/planner-output";
+import {
+  buildPlannerEvidenceFailureSummary,
+  persistPlannerTurnEvidence,
+  preparePlannerTurnEvidence,
+  type PreparedPlannerTurnEvidence,
+} from "../evidence/planner-output";
 import {
   buildRuntimeStartedMissionStatusChangedPayload,
 } from "../missions/events";
@@ -59,6 +65,13 @@ import {
 export type ExecuteClaimedTaskTurnResult = {
   task: MissionTaskRecord;
   turn: RuntimeCodexRunTurnResult;
+};
+
+type TurnCompletionOutcome = {
+  nextStatus: MissionTaskStatus;
+  preparedPlannerEvidence: PreparedPlannerTurnEvidence | null;
+  reason: TaskStatusChangeReason;
+  summary: string | null;
 };
 
 export class OrchestratorRuntimePhase {
@@ -183,13 +196,20 @@ export class OrchestratorRuntimePhase {
         },
       },
     );
+    const completionOutcome = await this.resolveTurnCompletionOutcome({
+      mission,
+      plannerContext,
+      proofBundle,
+      task,
+      turn,
+      workspaceRoot: workspace.rootPath,
+    });
 
     const updatedTask = await this.handleTurnCompleted(
       taskId,
-      mission,
       turn,
-      plannerContext,
-      workspace.rootPath,
+      task.role,
+      completionOutcome,
     );
 
     return {
@@ -446,31 +466,141 @@ export class OrchestratorRuntimePhase {
 
   private async handleTurnCompleted(
     taskId: string,
-    mission: MissionRecord,
     turn: RuntimeCodexRunTurnResult,
-    plannerContext: PlannerPromptContext | null,
-    workspaceRoot: string,
+    taskRole: MissionTaskRecord["role"],
+    completionOutcome: TurnCompletionOutcome,
+  ) {
+    try {
+      return await this.persistTurnCompletionOutcome(
+        taskId,
+        turn,
+        completionOutcome,
+      );
+    } catch (error) {
+      const fallbackOutcome = this.buildFallbackTurnCompletionOutcome({
+        completionOutcome,
+        error,
+        taskRole,
+        turn,
+      });
+
+      return this.persistTurnCompletionOutcome(taskId, turn, fallbackOutcome);
+    }
+  }
+
+  private async resolveTurnCompletionOutcome(input: {
+    mission: MissionRecord;
+    plannerContext: PlannerPromptContext | null;
+    proofBundle: ProofBundleManifest | null;
+    task: MissionTaskRecord;
+    turn: RuntimeCodexRunTurnResult;
+    workspaceRoot: string;
+  }): Promise<TurnCompletionOutcome> {
+    if (input.turn.status !== "completed") {
+      return {
+        nextStatus: "failed",
+        preparedPlannerEvidence: null,
+        reason: taskStatusChangeReasons.runtimeTurnFailed,
+        summary: null,
+      };
+    }
+
+    if (input.task.role === "executor") {
+      return this.resolveExecutorTurnCompletionOutcome(input);
+    }
+
+    if (input.task.role === "planner") {
+      return this.resolvePlannerTurnCompletionOutcome(input);
+    }
+
+    return {
+      nextStatus: "succeeded",
+      preparedPlannerEvidence: null,
+      reason: taskStatusChangeReasons.runtimeTurnCompleted,
+      summary: null,
+    };
+  }
+
+  private async resolveExecutorTurnCompletionOutcome(input: {
+    mission: MissionRecord;
+    task: MissionTaskRecord;
+    turn: RuntimeCodexRunTurnResult;
+    workspaceRoot: string;
+  }): Promise<TurnCompletionOutcome> {
+    try {
+      const validation = await this.validationService.validateExecutorTurn({
+        mission: input.mission,
+        task: input.task,
+        workspaceRoot: input.workspaceRoot,
+      });
+      const summary = buildExecutorTaskSummary({
+        turn: input.turn,
+        validation,
+      });
+
+      return {
+        nextStatus: validation.status === "passed" ? "succeeded" : "failed",
+        preparedPlannerEvidence: null,
+        reason:
+          validation.status === "passed"
+            ? taskStatusChangeReasons.runtimeTurnCompleted
+            : validation.failureCode === "no_changes"
+              ? taskStatusChangeReasons.executorNoChanges
+              : taskStatusChangeReasons.executorValidationFailed,
+        summary,
+      };
+    } catch (error) {
+      return {
+        nextStatus: "failed",
+        preparedPlannerEvidence: null,
+        reason: taskStatusChangeReasons.executorValidationFailed,
+        summary: buildExecutorTerminalizationFailureSummary(error),
+      };
+    }
+  }
+
+  private resolvePlannerTurnCompletionOutcome(input: {
+    mission: MissionRecord;
+    plannerContext: PlannerPromptContext | null;
+    proofBundle: ProofBundleManifest | null;
+    task: MissionTaskRecord;
+    turn: RuntimeCodexRunTurnResult;
+  }): TurnCompletionOutcome {
+    try {
+      const preparedPlannerEvidence = preparePlannerTurnEvidence({
+        evidenceService: this.evidenceService,
+        mission: input.mission,
+        plannerContext: input.plannerContext,
+        proofBundle: input.proofBundle,
+        task: input.task,
+        turn: input.turn,
+      });
+
+      return {
+        nextStatus: "succeeded",
+        preparedPlannerEvidence,
+        reason: taskStatusChangeReasons.runtimeTurnCompleted,
+        summary: preparedPlannerEvidence?.summary ?? null,
+      };
+    } catch (error) {
+      return {
+        nextStatus: "failed",
+        preparedPlannerEvidence: null,
+        reason: taskStatusChangeReasons.plannerEvidenceFailed,
+        summary: buildPlannerEvidenceFailureSummary(error),
+      };
+    }
+  }
+
+  private async persistTurnCompletionOutcome(
+    taskId: string,
+    turn: RuntimeCodexRunTurnResult,
+    completionOutcome: TurnCompletionOutcome,
   ) {
     return this.missionRepository.transaction(async (session) => {
       const task = await this.getRequiredTask(taskId, session);
 
-      if (task.status !== "running") {
-        throw new Error(
-          `Task ${taskId} changed state before turn completion persistence: ${task.status}`,
-        );
-      }
-
-      if (task.codexThreadId !== turn.threadId) {
-        throw new Error(
-          `Task ${taskId} thread mismatch at turn completion: expected ${task.codexThreadId ?? "null"}, got ${turn.threadId}`,
-        );
-      }
-
-      if (task.codexTurnId !== turn.turnId) {
-        throw new Error(
-          `Task ${taskId} turn mismatch at completion: expected ${task.codexTurnId ?? "null"}, got ${turn.turnId}`,
-        );
-      }
+      this.assertTurnCompletionState(task, turn);
 
       await this.replayService.append(
         {
@@ -490,90 +620,127 @@ export class OrchestratorRuntimePhase {
 
       await this.missionRepository.clearCodexTurnId(taskId, session);
 
-      if (turn.status !== "completed") {
-        const failedTask = await this.missionRepository.updateTaskStatus(
+      if (completionOutcome.summary !== null) {
+        await this.missionRepository.updateTaskSummary(
           taskId,
-          "failed",
+          completionOutcome.summary,
           session,
         );
-
-        await this.appendTaskStatusChanged(
-          failedTask,
-          task.status,
-          failedTask.status,
-          taskStatusChangeReasons.runtimeTurnFailed,
-          session,
-        );
-
-        await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
-
-        return failedTask;
       }
 
-      if (task.role === "executor") {
-        const validation = await this.validationService.validateExecutorTurn({
-          mission,
-          task,
-          workspaceRoot,
-        });
-        const summary = buildExecutorTaskSummary({
-          turn,
-          validation,
-        });
-        await this.missionRepository.updateTaskSummary(taskId, summary, session);
-        const nextStatus: MissionTaskStatus =
-          validation.status === "passed" ? "succeeded" : "failed";
-        const finalizedTask = await this.missionRepository.updateTaskStatus(
-          taskId,
-          nextStatus,
-          session,
-        );
-
-        await this.appendTaskStatusChanged(
-          finalizedTask,
-          task.status,
-          finalizedTask.status,
-          validation.status === "passed"
-            ? taskStatusChangeReasons.runtimeTurnCompleted
-            : taskStatusChangeReasons.executorValidationFailed,
-          session,
-        );
-
-        await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
-
-        return finalizedTask;
-      }
-
-      const succeededTask = await this.missionRepository.updateTaskStatus(
+      const finalizedTask = await this.missionRepository.updateTaskStatus(
         taskId,
-        "succeeded",
+        completionOutcome.nextStatus,
         session,
       );
 
       await this.appendTaskStatusChanged(
-        succeededTask,
+        finalizedTask,
         task.status,
-        succeededTask.status,
-        taskStatusChangeReasons.runtimeTurnCompleted,
+        finalizedTask.status,
+        completionOutcome.reason,
         session,
       );
 
-      const taskWithPlannerEvidence = await persistPlannerTurnEvidence({
-        deps: {
-          evidenceService: this.evidenceService,
-          missionRepository: this.missionRepository,
-          replayService: this.replayService,
-        },
-        plannerContext,
-        session,
-        task: succeededTask,
-        turn,
-      });
+      if (completionOutcome.preparedPlannerEvidence) {
+        await persistPlannerTurnEvidence({
+          deps: {
+            evidenceService: this.evidenceService,
+            missionRepository: this.missionRepository,
+            replayService: this.replayService,
+          },
+          preparedEvidence: completionOutcome.preparedPlannerEvidence,
+          session,
+          task: finalizedTask,
+          turn,
+        });
+      }
 
       await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
 
-      return taskWithPlannerEvidence;
+      return finalizedTask;
     });
+  }
+
+  private buildFallbackTurnCompletionOutcome(input: {
+    completionOutcome: TurnCompletionOutcome;
+    error: unknown;
+    taskRole: MissionTaskRecord["role"];
+    turn: RuntimeCodexRunTurnResult;
+  }): TurnCompletionOutcome {
+    if (input.turn.status !== "completed") {
+      return {
+        nextStatus: "failed",
+        preparedPlannerEvidence: null,
+        reason: taskStatusChangeReasons.runtimeTurnFailed,
+        summary: input.completionOutcome.summary,
+      };
+    }
+
+    if (input.taskRole === "planner") {
+      const plannerEvidenceFailed =
+        input.completionOutcome.preparedPlannerEvidence !== null ||
+        input.completionOutcome.reason === taskStatusChangeReasons.plannerEvidenceFailed;
+
+      return {
+        nextStatus: "failed",
+        preparedPlannerEvidence: null,
+        reason: plannerEvidenceFailed
+          ? taskStatusChangeReasons.plannerEvidenceFailed
+          : taskStatusChangeReasons.runtimeTurnFailed,
+        summary: plannerEvidenceFailed
+          ? buildPlannerEvidenceFailureSummary(input.error)
+          : input.completionOutcome.summary,
+      };
+    }
+
+    if (input.taskRole === "executor") {
+      if (input.completionOutcome.reason === taskStatusChangeReasons.executorNoChanges) {
+        return {
+          nextStatus: "failed",
+          preparedPlannerEvidence: null,
+          reason: taskStatusChangeReasons.executorNoChanges,
+          summary: input.completionOutcome.summary,
+        };
+      }
+
+      return {
+        nextStatus: "failed",
+        preparedPlannerEvidence: null,
+        reason: taskStatusChangeReasons.executorValidationFailed,
+        summary: buildExecutorTerminalizationFailureSummary(input.error),
+      };
+    }
+
+    return {
+      nextStatus: "failed",
+      preparedPlannerEvidence: null,
+      reason: taskStatusChangeReasons.runtimeTurnFailed,
+      summary: input.completionOutcome.summary,
+    };
+  }
+
+  private assertTurnCompletionState(
+    task: MissionTaskRecord,
+    turn: RuntimeCodexRunTurnResult,
+  ) {
+    if (task.status !== "running") {
+      throw new Error(
+        `Task ${task.id} changed state before turn completion persistence: ${task.status}`,
+      );
+    }
+
+    if (task.codexThreadId !== turn.threadId) {
+      throw new Error(
+        `Task ${task.id} thread mismatch at turn completion: expected ${task.codexThreadId ?? "null"}, got ${turn.threadId}`,
+      );
+    }
+
+    if (task.codexTurnId !== turn.turnId) {
+      throw new Error(
+        `Task ${task.id} turn mismatch at completion: expected ${task.codexTurnId ?? "null"}, got ${turn.turnId}`,
+      );
+    }
   }
 
   private async appendTaskStatusChanged(

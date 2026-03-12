@@ -12,6 +12,7 @@ This is roadmap submilestone `M1.4 basic planner task` only. It must not widen i
 
 ## Progress
 
+- [x] (2026-03-12T16:20Z) Added the M1.4-to-M1.5 handoff hardening note: if planner evidence persistence now fails after a completed runtime turn, the planner task terminalizes as `failed` with explicit replay reason `planner_evidence_failed`, clears `codexTurnId`, and releases the workspace lease instead of remaining stranded in `running`.
 - [x] (2026-03-11T02:24Z) Read `START_HERE.md`, `README.md`, `AGENTS.md`, `WORKFLOW.md`, `PLANS.md`, `plans/ROADMAP.md`, `plans/EP-0001-mission-spine.md`, `plans/EP-0005-turn-lifecycle-and-replay.md`, `plans/EP-0006-workspaces-and-git-worktrees.md`, the requested architecture and ops docs, the runtime and evidence modules, the DB/domain schema files, the local generated Codex App Server bindings, and the fake runtime fixture named in the prompt.
 - [x] (2026-03-11T02:24Z) Verified the M1.4 runtime-output gap before coding: the generated App Server schema and fake fixture already expose completed `agentMessage.text`, but Pocket CTO currently reduces runtime items to `itemId` plus `itemType`, so planner turns cannot yet persist plan text or derive task summaries from final runtime output.
 - [x] (2026-03-11T02:24Z) Drafted this ExecPlan with the bounded M1.4 scope, expected edit surface, replay and evidence implications, validation commands, and recovery posture.
@@ -247,6 +248,7 @@ Planner turns have their own prompt builder and workspace-aware context loader, 
 
 Planner artifacts are now robust enough to serve as a stable executor prerequisite for M1.5.
 The persisted planner body is assembled deterministically from completed `plan` and `agentMessage` outputs, and artifact metadata records the capture strategy plus ordered source items that contributed to that body.
+The later M1.5 hardening pass also keeps planner evidence failure explicit: if plan-artifact persistence now fails after runtime completion, the planner task terminalizes with `planner_evidence_failed` instead of leaving the M1.4 handoff task stranded.
 
 Non-planner behavior remains intentionally narrow.
 `executor`, `scout`, `reviewer`, and `sre` still use the generic read-only placeholder prompt and do not persist planner artifacts.

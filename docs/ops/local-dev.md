@@ -288,7 +288,8 @@ After M1.5, the later successful executor worker tick now does more than “read
 - it updates `mission_tasks.summary` with a concise change and validation summary
 
 If `mission.spec.constraints.allowedPaths` is non-empty, every changed file must stay under one of those paths relative to the executor workspace root.
-If the executor changes an out-of-scope path or `git diff --check` fails, the task now ends `failed` with an explicit summary instead of silently succeeding.
+If the executor changes an out-of-scope path, makes no file changes at all, or `git diff --check` fails, the task now ends `failed` with an explicit summary instead of silently succeeding.
+If a post-turn planner evidence or executor validation step fails after the runtime turn already completed, the task still terminalizes, clears `codexTurnId`, and releases the workspace lease instead of remaining stranded in `running`.
 
 This is still a narrow local-only executor slice.
 
