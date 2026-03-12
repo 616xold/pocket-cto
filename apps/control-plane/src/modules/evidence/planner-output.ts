@@ -1,27 +1,33 @@
-import type { MissionTaskRecord } from "@pocket-cto/domain";
+import type {
+  MissionRecord,
+  MissionTaskRecord,
+  ProofBundleManifest,
+} from "@pocket-cto/domain";
 import type { PersistenceSession } from "../../lib/persistence";
 import type { MissionRepository } from "../missions/repository";
 import type { ReplayService } from "../replay/service";
 import type { PlannerPromptContext } from "../runtime-codex/planner-context";
 import type { RuntimeCodexRunTurnResult } from "../runtime-codex/types";
-import type { EvidenceService, PlannerArtifactCapture } from "./service";
+import type {
+  EvidenceArtifactDraft,
+  EvidenceService,
+  PlannerArtifactCapture,
+} from "./service";
 
 const PLANNER_CAPTURE_STRATEGY = "completed_text_outputs.plan_agent_message.v1";
 const PLANNER_TEXT_OUTPUT_TYPES = new Set(["plan", "agentMessage"]);
 
+export type PreparedPlannerTurnEvidence = {
+  artifactDraft: EvidenceArtifactDraft;
+  proofBundle: ProofBundleManifest | null;
+  summary: string;
+};
+
 type PlannerOutputDeps = {
-  evidenceService: Pick<
-    EvidenceService,
-    | "attachPlannerArtifactToProofBundle"
-    | "buildPlannerArtifact"
-    | "buildPlannerTaskSummary"
-  >;
+  evidenceService: Pick<EvidenceService, "attachPlannerArtifactToProofBundle">;
   missionRepository: Pick<
     MissionRepository,
-    | "getMissionById"
-    | "getProofBundleByMissionId"
     | "saveArtifact"
-    | "updateTaskSummary"
     | "upsertProofBundle"
   >;
   replayService: Pick<ReplayService, "append">;
@@ -29,7 +35,7 @@ type PlannerOutputDeps = {
 
 export async function persistPlannerTurnEvidence(input: {
   deps: PlannerOutputDeps;
-  plannerContext: PlannerPromptContext | null;
+  preparedEvidence: PreparedPlannerTurnEvidence;
   session: PersistenceSession;
   task: MissionTaskRecord;
   turn: RuntimeCodexRunTurnResult;
@@ -37,47 +43,15 @@ export async function persistPlannerTurnEvidence(input: {
   if (input.task.role !== "planner" || input.turn.status !== "completed") {
     return input.task;
   }
-
-  const plannerCapture = buildPlannerArtifactCapture(input.turn);
-
-  if (!plannerCapture || !input.plannerContext) {
-    return input.task;
-  }
-
-  const mission = await input.deps.missionRepository.getMissionById(
-    input.task.missionId,
-    input.session,
-  );
-
-  if (!mission) {
-    throw new Error(`Mission ${input.task.missionId} not found`);
-  }
-
-  const summary = input.deps.evidenceService.buildPlannerTaskSummary(
-    plannerCapture.body,
-  );
-  const taskWithSummary = await input.deps.missionRepository.updateTaskSummary(
-    input.task.id,
-    summary,
-    input.session,
-  );
-  const artifactDraft = input.deps.evidenceService.buildPlannerArtifact({
-    mission,
-    plannerCapture,
-    plannerContext: input.plannerContext,
-    summary,
-    task: taskWithSummary,
-    turn: input.turn,
-  });
   const artifact = await input.deps.missionRepository.saveArtifact(
-    artifactDraft,
+    input.preparedEvidence.artifactDraft,
     input.session,
   );
 
   await input.deps.replayService.append(
     {
-      missionId: taskWithSummary.missionId,
-      taskId: taskWithSummary.id,
+      missionId: input.task.missionId,
+      taskId: input.task.id,
       type: "artifact.created",
       payload: {
         artifactId: artifact.id,
@@ -87,25 +61,69 @@ export async function persistPlannerTurnEvidence(input: {
     input.session,
   );
 
-  const proofBundle = await input.deps.missionRepository.getProofBundleByMissionId(
-    taskWithSummary.missionId,
-    input.session,
-  );
-
-  if (proofBundle) {
+  if (input.preparedEvidence.proofBundle) {
     await input.deps.missionRepository.upsertProofBundle(
       input.deps.evidenceService.attachPlannerArtifactToProofBundle(
-        proofBundle,
+        input.preparedEvidence.proofBundle,
         {
           artifactId: artifact.id,
-          task: taskWithSummary,
+          task: input.task,
         },
       ),
       input.session,
     );
   }
 
-  return taskWithSummary;
+  return input.task;
+}
+
+export function preparePlannerTurnEvidence(input: {
+  evidenceService: Pick<
+    EvidenceService,
+    "buildPlannerArtifact" | "buildPlannerTaskSummary"
+  >;
+  mission: MissionRecord;
+  plannerContext: PlannerPromptContext | null;
+  proofBundle: ProofBundleManifest | null;
+  task: MissionTaskRecord;
+  turn: RuntimeCodexRunTurnResult;
+}): PreparedPlannerTurnEvidence | null {
+  if (
+    input.task.role !== "planner" ||
+    input.turn.status !== "completed" ||
+    !input.plannerContext
+  ) {
+    return null;
+  }
+
+  const plannerCapture = buildPlannerArtifactCapture(input.turn);
+
+  if (!plannerCapture) {
+    return null;
+  }
+
+  const summary = input.evidenceService.buildPlannerTaskSummary(plannerCapture.body);
+
+  return {
+    artifactDraft: input.evidenceService.buildPlannerArtifact({
+      mission: input.mission,
+      plannerCapture,
+      plannerContext: input.plannerContext,
+      summary,
+      task: input.task,
+      turn: input.turn,
+    }),
+    proofBundle: input.proofBundle,
+    summary,
+  };
+}
+
+export function buildPlannerEvidenceFailureSummary(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return truncate(
+    `Planner completed a runtime turn, but planner evidence persistence failed: ${message}.`,
+    240,
+  );
 }
 
 export function buildPlannerArtifactCapture(
@@ -149,4 +167,10 @@ export function buildPlannerArtifactCapture(
 
 function normalizeTextBlock(text: string) {
   return text.replace(/\r\n/g, "\n").trim();
+}
+
+function truncate(value: string, maxLength: number) {
+  return value.length <= maxLength
+    ? value
+    : `${value.slice(0, maxLength - 3).trimEnd()}...`;
 }

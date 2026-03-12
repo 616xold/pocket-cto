@@ -179,15 +179,19 @@ Each payload is machine-readable and includes:
 
 When `turn/completed` arrives:
 
-1. append `runtime.turn_completed` with the terminal status
-2. clear `mission_tasks.codex_turn_id`
-3. on `status = "completed"`, transition the task `running -> succeeded` with `reason = "runtime_turn_completed"`
-4. on `status = "failed"` or `status = "interrupted"`, transition the task `running -> failed` with `reason = "runtime_turn_failed"`
-5. release the workspace lease but keep the worktree on disk
-6. stop the short-lived client
+1. compute executor validation or planner evidence preparation outside the narrow final state-write transaction where possible
+2. append `runtime.turn_completed` with the terminal status
+3. clear `mission_tasks.codex_turn_id`
+4. persist one deterministic terminal task state and then release the workspace lease while keeping the worktree on disk
+5. stop the short-lived client
 
 M1.2 does not change final mission completion or approval semantics yet.
 The first real turn moves the mission to `running`; later mission terminal states remain a later slice.
+
+Once the runtime turn is terminal, Pocket CTO now treats later validation or evidence failures as terminal task outcomes too.
+It does not leave the task `running` with a stale `codexTurnId`.
+Planner evidence persistence failures now map to `planner_evidence_failed`.
+Executor validation failures now map to `executor_validation_failed`, and executor no-op turns now map to `executor_no_changes`.
 
 ## Planner and executor safety posture
 
@@ -264,9 +268,14 @@ Pocket CTO does not run a generic CI pipeline here. It runs exactly two built-in
 Changed-path capture uses the local worktree to gather modified and untracked paths relative to the executor workspace root.
 If `mission.spec.constraints.allowedPaths` is non-empty, every changed path must live inside one of those allowed roots.
 If any changed path escapes the allowlist, the executor task fails with task-status reason `executor_validation_failed`.
+If the changed-path set is empty after a completed executor turn, the task fails with task-status reason `executor_no_changes`.
 
 `git diff --check` then enforces a narrow diff hygiene bar for whitespace and merge-marker issues.
+Pocket CTO also runs the equivalent `--check` path for untracked files so brand-new files are not exempt from that hygiene bar.
 If that command fails, the executor task also fails with task-status reason `executor_validation_failed`.
+
+Validation hook exceptions are caught inside the validation service and returned as structured failed checks.
+Those failures still terminalize the executor task, clear `codexTurnId`, and release the workspace lease instead of bubbling out as uncaught post-turn exceptions.
 
 If no relevant planner artifact exists before the executor turn starts, Pocket CTO does not silently continue.
 It marks the executor task failed with task-status reason `executor_missing_planner_artifact` and stores a concise summary explaining that the planner handoff was missing.

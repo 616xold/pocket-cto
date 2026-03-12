@@ -13,6 +13,7 @@ import {
 import { EvidenceService } from "../evidence/service";
 import { StubMissionCompiler } from "../missions/compiler";
 import { DrizzleMissionRepository } from "../missions/drizzle-repository";
+import type { CreateArtifactInput } from "../missions/repository";
 import { MissionService } from "../missions/service";
 import { DrizzleReplayRepository } from "../replay/drizzle-repository";
 import { ReplayService } from "../replay/service";
@@ -27,6 +28,7 @@ import {
   LocalExecutorValidationService,
   LocalWorkspaceValidationGitClient,
 } from "../validation";
+import type { ExecutorValidationHook } from "../validation";
 import {
   DrizzleWorkspaceRepository,
   LocalWorkspaceGitManager,
@@ -492,6 +494,89 @@ describe("OrchestratorWorker (DB-backed)", () => {
     });
   });
 
+  it("terminalizes planner tasks when plan artifact persistence fails after runtime completion", async () => {
+    class FailingPlanArtifactRepository extends DrizzleMissionRepository {
+      override async saveArtifact(
+        input: CreateArtifactInput,
+        session?: Parameters<DrizzleMissionRepository["saveArtifact"]>[1],
+      ) {
+        if (input.kind === "plan") {
+          throw new Error("plan insert failed");
+        }
+
+        return super.saveArtifact(input, session);
+      }
+    }
+
+    const sourceRepo = await createTempGitRepo();
+    const workspaceRoot = await createTempWorkspaceRoot();
+    cleanups.push(sourceRepo.cleanup, workspaceRoot.cleanup);
+
+    const plannerHarness = await createHarness({
+      missionRepository: new FailingPlanArtifactRepository(db),
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+    const created = await plannerHarness.missionService.createFromText({
+      text: "Planner evidence persistence should not strand the task",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
+
+    const tick = await plannerHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: plannerTask.id,
+        status: "failed",
+        codexTurnId: null,
+        summary: expect.stringContaining("planner evidence persistence failed"),
+      },
+    });
+
+    const detail = await plannerHarness.missionService.getMissionDetail(
+      created.mission.id,
+    );
+    const replayEvents = await plannerHarness.replayService.getMissionEvents(
+      created.mission.id,
+    );
+    const workspace = await getWorkspaceByTaskId(plannerTask.id);
+
+    expect(detail.tasks[0]).toMatchObject({
+      id: plannerTask.id,
+      codexTurnId: null,
+      status: "failed",
+    });
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: plannerTask.id,
+        type: "runtime.turn_completed",
+      }),
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: plannerTask.id,
+        type: "task.status_changed",
+        payload: expect.objectContaining({
+          from: "running",
+          reason: "planner_evidence_failed",
+          to: "failed",
+        }),
+      }),
+    );
+    expect(workspace).toMatchObject({
+      isActive: false,
+      leaseExpiresAt: null,
+      leaseOwner: null,
+    });
+  });
+
   it("passes executor validation for allowed file changes and updates the executor summary", async () => {
     const sourceRepo = await createTempGitRepo();
     const workspaceRoot = await createTempWorkspaceRoot();
@@ -719,6 +804,223 @@ describe("OrchestratorWorker (DB-backed)", () => {
         status: "failed",
         summary: expect.stringContaining("git diff --check"),
       },
+    });
+  });
+
+  it("fails executor turns explicitly when no files changed and still clears runtime state", async () => {
+    const sourceRepo = await createTempGitRepo();
+    const workspaceRoot = await createTempWorkspaceRoot();
+    cleanups.push(sourceRepo.cleanup, workspaceRoot.cleanup);
+
+    const plannerHarness = await createHarness({
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+    const created = await plannerHarness.missionService.createFromText({
+      text: "Executor no-op turns must not silently pass",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    await setMissionAllowedPaths(created.mission.id, created.mission.spec, [
+      "README.md",
+    ]);
+
+    await plannerHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const executorHarness = await createHarness({
+      runtimeCodexService: createFileWritingRuntimeService({
+        finalReportText: [
+          "## Intended change",
+          "No code changes were necessary after inspecting the planner handoff.",
+          "",
+          "## Files changed",
+          "- none",
+          "",
+          "## Validations run",
+          "- git diff --check",
+          "",
+          "## Remaining risks",
+          "- implementation still missing",
+          "",
+          "## Operator handoff",
+          "- blocked until real changes are made",
+        ].join("\n"),
+        writes: [],
+      }),
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+
+    const tick = await executorHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        role: "executor",
+        status: "failed",
+        codexTurnId: null,
+        summary: expect.stringContaining("without changing any files"),
+      },
+    });
+
+    const detail = await executorHarness.missionService.getMissionDetail(
+      created.mission.id,
+    );
+    const replayEvents = await executorHarness.replayService.getMissionEvents(
+      created.mission.id,
+    );
+    const executorWorkspace = await getWorkspaceByTaskId(created.tasks[1]!.id);
+
+    expect(detail.tasks[1]).toMatchObject({
+      id: created.tasks[1]!.id,
+      codexTurnId: null,
+      status: "failed",
+    });
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: created.tasks[1]!.id,
+        type: "task.status_changed",
+        payload: expect.objectContaining({
+          from: "running",
+          reason: "executor_no_changes",
+          to: "failed",
+        }),
+      }),
+    );
+    expect(executorWorkspace).toMatchObject({
+      isActive: false,
+      leaseExpiresAt: null,
+      leaseOwner: null,
+    });
+  });
+
+  it("terminalizes executor tasks when a validation hook throws unexpectedly", async () => {
+    const sourceRepo = await createTempGitRepo();
+    const workspaceRoot = await createTempWorkspaceRoot();
+    cleanups.push(sourceRepo.cleanup, workspaceRoot.cleanup);
+
+    const plannerHarness = await createHarness({
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+    const created = await plannerHarness.missionService.createFromText({
+      text: "Validation hook failures should not strand the executor",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    await setMissionAllowedPaths(created.mission.id, created.mission.spec, [
+      "README.md",
+    ]);
+
+    await plannerHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const throwingValidationService = new LocalExecutorValidationService(
+      new LocalWorkspaceValidationGitClient(),
+      [
+        {
+          name: "changed_paths",
+          async run() {
+            throw new Error("git status failed");
+          },
+        },
+        {
+          name: "git_diff_check",
+          async run() {
+            return {
+              name: "git_diff_check",
+              status: "passed" as const,
+              summary: "git diff --check passed.",
+            };
+          },
+        },
+      ] satisfies ExecutorValidationHook[],
+    );
+    const executorHarness = await createHarness({
+      runtimeCodexService: createFileWritingRuntimeService({
+        finalReportText: [
+          "## Intended change",
+          "Update the README inside the allowed workspace.",
+          "",
+          "## Files changed",
+          "- README.md",
+          "",
+          "## Validations run",
+          "- git diff --check",
+          "",
+          "## Remaining risks",
+          "- validation hook error",
+          "",
+          "## Operator handoff",
+          "- blocked by validation",
+        ].join("\n"),
+        writes: [
+          {
+            path: "README.md",
+            text: "temp repo\nexecutor hook failure\n",
+          },
+        ],
+      }),
+      sourceRepoRoot: sourceRepo.repoRoot,
+      validationService: throwingValidationService,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+
+    const tick = await executorHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        role: "executor",
+        status: "failed",
+        codexTurnId: null,
+        summary: expect.stringContaining("failed unexpectedly"),
+      },
+    });
+
+    const detail = await executorHarness.missionService.getMissionDetail(
+      created.mission.id,
+    );
+    const replayEvents = await executorHarness.replayService.getMissionEvents(
+      created.mission.id,
+    );
+    const executorWorkspace = await getWorkspaceByTaskId(created.tasks[1]!.id);
+
+    expect(detail.tasks[1]).toMatchObject({
+      id: created.tasks[1]!.id,
+      codexTurnId: null,
+      status: "failed",
+    });
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: created.tasks[1]!.id,
+        type: "task.status_changed",
+        payload: expect.objectContaining({
+          from: "running",
+          reason: "executor_validation_failed",
+          to: "failed",
+        }),
+      }),
+    );
+    expect(executorWorkspace).toMatchObject({
+      isActive: false,
+      leaseExpiresAt: null,
+      leaseOwner: null,
     });
   });
 
@@ -1003,9 +1305,10 @@ async function createHarness(options?: {
       | "turn-completed-failed"
       | "turn-start-error"
       | "resume-gap-direct-turn-success"
-      | "resume-gap-direct-turn-failed";
+    | "resume-gap-direct-turn-failed";
     threadId?: string;
   };
+  missionRepository?: DrizzleMissionRepository;
   runtimeCodexService?: Pick<CodexRuntimeService, "runTurn">;
   sourceRepoRoot?: string;
   validationService?: Pick<
@@ -1030,7 +1333,8 @@ async function createHarness(options?: {
     throw new Error("Workspace harness roots were not resolved");
   }
 
-  const missionRepository = new DrizzleMissionRepository(db);
+  const missionRepository =
+    options?.missionRepository ?? new DrizzleMissionRepository(db);
   const replayRepository = new DrizzleReplayRepository(db);
   const workspaceRepository = new DrizzleWorkspaceRepository(db);
   const replayService = new ReplayService(replayRepository, missionRepository);

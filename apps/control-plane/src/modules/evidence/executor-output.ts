@@ -32,17 +32,25 @@ export function buildMissingPlannerArtifactSummary() {
   return "Executor could not start because no planner plan artifact was available for handoff.";
 }
 
-function buildValidationPassedSentence(validation: ExecutorValidationReport) {
-  if (validation.changedPaths.length === 0) {
-    return "Validation passed with no changed paths and a clean git diff check.";
-  }
+export function buildExecutorTerminalizationFailureSummary(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return truncate(
+    `Executor completed a runtime turn, but local validation or terminalization failed: ${message}.`,
+    EXECUTOR_SUMMARY_MAX_LENGTH,
+  );
+}
 
+function buildValidationPassedSentence(validation: ExecutorValidationReport) {
   return `Validation passed for ${formatChangedPathSummary(
     validation.changedPaths,
   )} and a clean git diff check.`;
 }
 
 function buildValidationFailureReason(validation: ExecutorValidationReport) {
+  if (validation.failureCode === "no_changes") {
+    return "the executor turn completed without changing any files";
+  }
+
   const reasons: string[] = [];
 
   if (validation.escapedPaths.length > 0) {
@@ -55,6 +63,16 @@ function buildValidationFailureReason(validation: ExecutorValidationReport) {
 
   if (!validation.diffCheckPassed) {
     reasons.push("git diff --check reported whitespace or merge-marker issues");
+  }
+
+  const unexpectedHookFailure = validation.checks.find(
+    (check) => check.code === "hook_error",
+  );
+
+  if (unexpectedHookFailure) {
+    reasons.push(
+      `${unexpectedHookFailure.name} failed unexpectedly during local validation`,
+    );
   }
 
   return reasons.join("; ") || "a local executor validation hook failed";

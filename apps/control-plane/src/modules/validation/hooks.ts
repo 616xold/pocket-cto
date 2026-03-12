@@ -15,8 +15,22 @@ export function buildExecutorValidationHooks(
           context.mission.spec.constraints.allowedPaths,
         );
 
+        if (state.changedPaths.length === 0) {
+          return {
+            code: "no_changes",
+            details: {
+              allowedPaths: context.mission.spec.constraints.allowedPaths,
+              changedPaths: [],
+            },
+            name: "changed_paths",
+            status: "failed",
+            summary: "Executor completed without changing any files.",
+          };
+        }
+
         if (state.escapedPaths.length > 0) {
           return {
+            code: "allowed_paths_violation",
             details: {
               allowedPaths: context.mission.spec.constraints.allowedPaths,
               changedPaths: state.changedPaths,
@@ -56,6 +70,7 @@ export function buildExecutorValidationHooks(
               summary: "git diff --check passed.",
             }
           : {
+              code: "git_diff_check_failed",
               details: {
                 output: result.output,
               },

@@ -7,11 +7,17 @@ export type ExecutorValidationContext = {
 };
 
 export type ExecutorValidationCheckResult = {
+  code?: string;
   details?: Record<string, unknown>;
   name: string;
   status: "passed" | "failed";
   summary: string;
 };
+
+export type ExecutorValidationFailureCode =
+  | "none"
+  | "no_changes"
+  | "guardrail_failed";
 
 export type ExecutorValidationHookState = {
   changedPaths: string[];
@@ -26,6 +32,7 @@ export type ExecutorValidationReport = {
   diffCheckOutput: string | null;
   diffCheckPassed: boolean;
   escapedPaths: string[];
+  failureCode: ExecutorValidationFailureCode;
   status: "passed" | "failed";
 };
 
