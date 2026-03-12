@@ -60,6 +60,14 @@ export type RuntimeCodexCompletedAgentMessage = {
   turnId: string;
 };
 
+export type RuntimeCodexCompletedTextOutput = {
+  itemId: string;
+  itemType: string;
+  text: string;
+  threadId: string;
+  turnId: string;
+};
+
 export type RuntimeCodexRunTurnInput = {
   approvalPolicy?: AskForApproval;
   cwd?: string | null;
@@ -92,6 +100,7 @@ export type RuntimeCodexRunTurnObserver = {
 
 export type RuntimeCodexRunTurnResult = {
   completedAgentMessages: RuntimeCodexCompletedAgentMessage[];
+  completedTextOutputs: RuntimeCodexCompletedTextOutput[];
   finalAgentMessageText: string | null;
   firstItemType: string | null;
   items: RuntimeCodexItemLifecycleEvent[];

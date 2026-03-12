@@ -292,7 +292,18 @@ describe("OrchestratorWorker (DB-backed)", () => {
     });
     expect(readArtifactMetadata(planArtifact!.metadata)).toMatchObject({
       body: expect.stringContaining("## Proposed steps"),
+      captureStrategy: "completed_text_outputs.plan_agent_message.v1",
       source: "runtime_codex_planner",
+      sourceItems: [
+        {
+          itemId: "item_plan_1",
+          itemType: "plan",
+        },
+        {
+          itemId: "item_agent_1",
+          itemType: "agentMessage",
+        },
+      ],
       threadId: "thread_fake_123",
       turnId: "turn_fake_123",
       workflowPolicy: {
@@ -318,6 +329,159 @@ describe("OrchestratorWorker (DB-backed)", () => {
         artifactId: planArtifact!.id,
         kind: "plan",
       },
+    });
+  });
+
+  it("persists planner evidence when only a completed plan item contains the substantive text", async () => {
+    const harness = await createHarness({
+      fixtureOptions: {
+        mode: "plan-only",
+      },
+    });
+    cleanups.push(harness.cleanup);
+    const { missionService, replayService, worker } = harness;
+    const created = await missionService.createFromText({
+      text: "Plan the passkey rollout without touching files",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
+
+    const tick = await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: plannerTask.id,
+        role: "planner",
+        status: "succeeded",
+      },
+      turn: {
+        completedTextOutputs: [
+          expect.objectContaining({
+            itemId: "item_plan_1",
+            itemType: "plan",
+          }),
+        ],
+        finalAgentMessageText: null,
+      },
+    });
+
+    const [planArtifact] = await db
+      .select()
+      .from(artifacts)
+      .where(
+        and(
+          eq(artifacts.missionId, created.mission.id),
+          eq(artifacts.kind, "plan"),
+        ),
+      )
+      .limit(1);
+    const detail = await missionService.getMissionDetail(created.mission.id);
+    const replayEvents = await replayService.getMissionEvents(created.mission.id);
+
+    expect(planArtifact).toBeDefined();
+    expect(readArtifactMetadata(planArtifact!.metadata)).toMatchObject({
+      body: buildExpectedPlanOnlyText(),
+      captureStrategy: "completed_text_outputs.plan_agent_message.v1",
+      sourceItems: [
+        {
+          itemId: "item_plan_1",
+          itemType: "plan",
+        },
+      ],
+    });
+    expect(detail.tasks[0]).toMatchObject({
+      id: plannerTask.id,
+      summary:
+        "Plan the passkey rollout without changing files and preserve the existing email-login path.",
+    });
+    expect(replayEvents.at(-1)).toMatchObject({
+      type: "artifact.created",
+      payload: {
+        artifactId: planArtifact!.id,
+        kind: "plan",
+      },
+    });
+  });
+
+  it("combines multiple textual planner outputs deterministically and records ordered source items", async () => {
+    const harness = await createHarness({
+      fixtureOptions: {
+        mode: "multi-text",
+      },
+    });
+    cleanups.push(harness.cleanup);
+    const { missionService, worker } = harness;
+    const created = await missionService.createFromText({
+      text: "Combine planner text outputs deterministically",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
+
+    const tick = await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      turn: {
+        completedTextOutputs: [
+          expect.objectContaining({ itemId: "item_plan_1", itemType: "plan" }),
+          expect.objectContaining({ itemId: "item_plan_2", itemType: "plan" }),
+          expect.objectContaining({
+            itemId: "item_agent_1",
+            itemType: "agentMessage",
+          }),
+          expect.objectContaining({
+            itemId: "item_agent_2",
+            itemType: "agentMessage",
+          }),
+        ],
+      },
+    });
+
+    const [planArtifact] = await db
+      .select()
+      .from(artifacts)
+      .where(
+        and(
+          eq(artifacts.missionId, created.mission.id),
+          eq(artifacts.kind, "plan"),
+        ),
+      )
+      .limit(1);
+    const detail = await missionService.getMissionDetail(created.mission.id);
+
+    expect(planArtifact).toBeDefined();
+    expect(readArtifactMetadata(planArtifact!.metadata)).toMatchObject({
+      body: [
+        buildExpectedMultiTextPlanBlock(),
+        buildExpectedPlannerAgentMessageText(),
+      ].join("\n\n"),
+      captureStrategy: "completed_text_outputs.plan_agent_message.v1",
+      sourceItems: [
+        {
+          itemId: "item_plan_1",
+          itemType: "plan",
+        },
+        {
+          itemId: "item_agent_1",
+          itemType: "agentMessage",
+        },
+      ],
+    });
+    expect(detail.tasks[0]).toMatchObject({
+      id: plannerTask.id,
+      summary:
+        "Plan the passkey work without changing files and preserve the existing email-login path.",
     });
   });
 
@@ -596,6 +760,8 @@ async function createHarness(options?: {
   fixtureOptions?: {
     mode?:
       | "success"
+      | "plan-only"
+      | "multi-text"
       | "thread-start-error"
       | "turn-completed-failed"
       | "turn-start-error"
@@ -693,6 +859,8 @@ async function createHarness(options?: {
 function buildFixtureArgs(options?: {
   mode?:
     | "success"
+    | "plan-only"
+    | "multi-text"
     | "thread-start-error"
     | "turn-completed-failed"
     | "turn-start-error"
@@ -796,6 +964,18 @@ function createBlockedRuntimeService(
 
       return {
         completedAgentMessages: [],
+        completedTextOutputs: [
+          {
+            itemId: "item_plan_blocked",
+            itemType: "plan",
+            text: [
+              "## Objective understanding",
+              "Keep the planner blocked turn read-only while it prepares handoff notes.",
+            ].join("\n"),
+            threadId,
+            turnId,
+          },
+        ],
         finalAgentMessageText: null,
         firstItemType: "plan",
         items,
@@ -858,4 +1038,61 @@ function readArtifactMetadata(metadata: unknown) {
   return typeof metadata === "object" && metadata !== null
     ? (metadata as Record<string, unknown>)
     : {};
+}
+
+function buildExpectedPlanOnlyText() {
+  return [
+    "## Objective understanding",
+    "Plan the passkey rollout without changing files and preserve the existing email-login path.",
+    "",
+    "## Relevant context",
+    "- The repo already separates planner and executor responsibilities.",
+    "",
+    "## Risks and unknowns",
+    "- Auth storage, browser support, and recovery flows still need confirmation.",
+    "",
+    "## Proposed steps",
+    "1. Inspect auth entrypoints and passkey-related domain models.",
+    "2. Map UI and API touchpoints before any executor mutation.",
+    "3. Define the smallest safe validation set for login continuity.",
+    "",
+    "## Validation plan",
+    "- Keep later executor validation focused on auth and sign-in regression coverage.",
+    "",
+    "## Handoff notes",
+    "- Leave implementation changes to the later executor turn.",
+  ].join("\n");
+}
+
+function buildExpectedMultiTextPlanBlock() {
+  return [
+    "Repository scan complete.",
+    "- auth and web sign-in paths look like the likely passkey touchpoints.",
+    "- executor work should stay bounded to authentication flows.",
+  ].join("\n");
+}
+
+function buildExpectedPlannerAgentMessageText() {
+  return [
+    "## Objective understanding",
+    "Plan the passkey work without changing files and preserve the existing email-login path.",
+    "",
+    "## Relevant context",
+    "- The repo already has planner and executor tasks.",
+    "- WORKFLOW.md requires explicit validation before completion.",
+    "",
+    "## Risks and unknowns",
+    "- Auth touchpoints and test ownership still need confirmation.",
+    "",
+    "## Proposed steps",
+    "1. Inspect the auth entrypoints and existing sign-in flows.",
+    "2. Map passkey data and UI changes before any executor mutation.",
+    "3. Identify the minimum regression tests needed for email-login continuity.",
+    "",
+    "## Validation plan",
+    "- Run targeted auth and web tests after the later executor turn.",
+    "",
+    "## Handoff notes",
+    "- Keep the later executor constrained to auth and web paths only.",
+  ].join("\n");
 }

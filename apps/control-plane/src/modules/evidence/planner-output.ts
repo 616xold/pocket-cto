@@ -4,7 +4,10 @@ import type { MissionRepository } from "../missions/repository";
 import type { ReplayService } from "../replay/service";
 import type { PlannerPromptContext } from "../runtime-codex/planner-context";
 import type { RuntimeCodexRunTurnResult } from "../runtime-codex/types";
-import type { EvidenceService } from "./service";
+import type { EvidenceService, PlannerArtifactCapture } from "./service";
+
+const PLANNER_CAPTURE_STRATEGY = "completed_text_outputs.plan_agent_message.v1";
+const PLANNER_TEXT_OUTPUT_TYPES = new Set(["plan", "agentMessage"]);
 
 type PlannerOutputDeps = {
   evidenceService: Pick<
@@ -35,9 +38,9 @@ export async function persistPlannerTurnEvidence(input: {
     return input.task;
   }
 
-  const plannerText = input.turn.finalAgentMessageText?.trim();
+  const plannerCapture = buildPlannerArtifactCapture(input.turn);
 
-  if (!plannerText || !input.plannerContext) {
+  if (!plannerCapture || !input.plannerContext) {
     return input.task;
   }
 
@@ -50,7 +53,9 @@ export async function persistPlannerTurnEvidence(input: {
     throw new Error(`Mission ${input.task.missionId} not found`);
   }
 
-  const summary = input.deps.evidenceService.buildPlannerTaskSummary(plannerText);
+  const summary = input.deps.evidenceService.buildPlannerTaskSummary(
+    plannerCapture.body,
+  );
   const taskWithSummary = await input.deps.missionRepository.updateTaskSummary(
     input.task.id,
     summary,
@@ -58,8 +63,8 @@ export async function persistPlannerTurnEvidence(input: {
   );
   const artifactDraft = input.deps.evidenceService.buildPlannerArtifact({
     mission,
+    plannerCapture,
     plannerContext: input.plannerContext,
-    plannerText,
     summary,
     task: taskWithSummary,
     turn: input.turn,
@@ -101,4 +106,47 @@ export async function persistPlannerTurnEvidence(input: {
   }
 
   return taskWithSummary;
+}
+
+export function buildPlannerArtifactCapture(
+  turn: RuntimeCodexRunTurnResult,
+): PlannerArtifactCapture | null {
+  const blocks: string[] = [];
+  const sourceItems: PlannerArtifactCapture["sourceItems"] = [];
+
+  for (const output of turn.completedTextOutputs) {
+    if (!PLANNER_TEXT_OUTPUT_TYPES.has(output.itemType)) {
+      continue;
+    }
+
+    const normalizedText = normalizeTextBlock(output.text);
+
+    if (!normalizedText) {
+      continue;
+    }
+
+    if (blocks[blocks.length - 1] === normalizedText) {
+      continue;
+    }
+
+    blocks.push(normalizedText);
+    sourceItems.push({
+      itemId: output.itemId,
+      itemType: output.itemType,
+    });
+  }
+
+  if (blocks.length === 0) {
+    return null;
+  }
+
+  return {
+    body: blocks.join("\n\n"),
+    captureStrategy: PLANNER_CAPTURE_STRATEGY,
+    sourceItems,
+  };
+}
+
+function normalizeTextBlock(text: string) {
+  return text.replace(/\r\n/g, "\n").trim();
 }

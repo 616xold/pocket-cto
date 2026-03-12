@@ -18,6 +18,17 @@ export type EvidenceArtifactDraft = {
   uri: string;
 };
 
+export type PlannerArtifactSourceItem = {
+  itemId: string;
+  itemType: string;
+};
+
+export type PlannerArtifactCapture = {
+  body: string;
+  captureStrategy: string;
+  sourceItems: PlannerArtifactSourceItem[];
+};
+
 export class EvidenceService {
   createPlaceholder(mission: MissionRecord): ProofBundleManifest {
     return {
@@ -36,8 +47,8 @@ export class EvidenceService {
 
   buildPlannerArtifact(input: {
     mission: MissionRecord;
+    plannerCapture: PlannerArtifactCapture;
     plannerContext: PlannerPromptContext;
-    plannerText: string;
     summary: string;
     task: MissionTaskRecord;
     turn: RuntimeCodexRunTurnResult;
@@ -50,9 +61,11 @@ export class EvidenceService {
       mimeType: "text/markdown",
       sha256: null,
       metadata: {
-        body: input.plannerText,
+        body: input.plannerCapture.body,
+        captureStrategy: input.plannerCapture.captureStrategy,
         generatedAt: new Date().toISOString(),
         source: "runtime_codex_planner",
+        sourceItems: input.plannerCapture.sourceItems,
         summary: input.summary,
         taskRole: input.task.role,
         threadId: input.turn.threadId,

@@ -278,6 +278,28 @@ function createHarness() {
                     turnId,
                   },
                 ],
+          completedTextOutputs:
+            input.threadId || input.input[0]?.type !== "text"
+              ? []
+              : [
+                  {
+                    itemId: `item_plan_${turnCount}`,
+                    itemType: "plan",
+                    text: "Inspect repository state and propose next steps without changing files.",
+                    threadId,
+                    turnId,
+                  },
+                  {
+                    itemId: `item_agent_${turnCount}`,
+                    itemType: "agentMessage",
+                    text: [
+                      "## Objective understanding",
+                      "Inspect the current task without making any changes.",
+                    ].join("\n"),
+                    threadId,
+                    turnId,
+                  },
+                ],
           finalAgentMessageText:
             input.threadId || input.input[0]?.type !== "text"
               ? null

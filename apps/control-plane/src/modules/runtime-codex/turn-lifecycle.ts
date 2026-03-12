@@ -3,10 +3,11 @@ import type {
   CodexRuntimeEvent,
   KnownServerNotification,
 } from "@pocket-cto/codex-runtime";
-import { readAgentMessageThreadItem as readCompletedAgentMessage } from "@pocket-cto/codex-runtime";
+import { readTextualThreadItem as readCompletedTextOutput } from "@pocket-cto/codex-runtime";
 import type {
   RuntimeCodexBootstrapResult,
   RuntimeCodexCompletedAgentMessage,
+  RuntimeCodexCompletedTextOutput,
   RuntimeCodexItemLifecycleEvent,
   RuntimeCodexRunTurnObserver,
   RuntimeCodexRunTurnResult,
@@ -53,6 +54,7 @@ export async function observeTurnLifecycle(input: {
   }) => Promise<void>;
 }): Promise<RuntimeCodexRunTurnResult> {
   const completedAgentMessages: RuntimeCodexCompletedAgentMessage[] = [];
+  const completedTextOutputs: RuntimeCodexCompletedTextOutput[] = [];
   const lifecycleItems: RuntimeCodexItemLifecycleEvent[] = [];
   const execution: TurnExecutionState = {
     recoveryStrategy: null,
@@ -106,6 +108,7 @@ export async function observeTurnLifecycle(input: {
     handleTurnEvent({
       event,
       completedAgentMessages,
+      completedTextOutputs,
       execution,
       lifecycleItems,
       observer: input.observer,
@@ -135,6 +138,7 @@ export async function observeTurnLifecycle(input: {
 function handleTurnEvent(input: {
   event: CodexRuntimeEvent;
   completedAgentMessages: RuntimeCodexCompletedAgentMessage[];
+  completedTextOutputs: RuntimeCodexCompletedTextOutput[];
   execution: TurnExecutionState;
   lifecycleItems: RuntimeCodexItemLifecycleEvent[];
   observer: RuntimeCodexRunTurnObserver;
@@ -214,14 +218,22 @@ function handleTurnEvent(input: {
           turnId: notification.params.turnId,
         };
         input.lifecycleItems.push(observed);
-        const completedAgentMessage = readCompletedAgentMessage(
-          notification.params.item,
-        );
+        const completedTextOutput = readCompletedTextOutput(notification.params.item);
 
-        if (completedAgentMessage) {
+        if (completedTextOutput) {
+          input.completedTextOutputs.push({
+            itemId: completedTextOutput.id,
+            itemType: completedTextOutput.type,
+            text: completedTextOutput.text,
+            threadId: notification.params.threadId,
+            turnId: notification.params.turnId,
+          });
+        }
+
+        if (completedTextOutput?.type === "agentMessage") {
           input.completedAgentMessages.push({
-            itemId: completedAgentMessage.id,
-            text: completedAgentMessage.text,
+            itemId: completedTextOutput.id,
+            text: completedTextOutput.text,
             threadId: notification.params.threadId,
             turnId: notification.params.turnId,
           });
@@ -244,6 +256,7 @@ function handleTurnEvent(input: {
         input.execution.turnId = notification.params.turn.id;
         input.onResolve({
           completedAgentMessages: [...input.completedAgentMessages],
+          completedTextOutputs: [...input.completedTextOutputs],
           finalAgentMessageText:
             input.completedAgentMessages[input.completedAgentMessages.length - 1]
               ?.text ?? null,

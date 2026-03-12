@@ -190,6 +190,19 @@ export const AgentMessageThreadItemSchema = z
   })
   .passthrough();
 
+export const PlanThreadItemSchema = z
+  .object({
+    type: z.literal("plan"),
+    id: z.string(),
+    text: z.string(),
+  })
+  .passthrough();
+
+export const TextualThreadItemSchema = z.union([
+  AgentMessageThreadItemSchema,
+  PlanThreadItemSchema,
+]);
+
 export const TurnSchema = z.object({
   id: z.string(),
   items: z.array(ThreadItemSchema),
@@ -418,6 +431,8 @@ export type ThreadItem = z.infer<typeof ThreadItemSchema>;
 export type AgentMessageThreadItem = z.infer<
   typeof AgentMessageThreadItemSchema
 >;
+export type PlanThreadItem = z.infer<typeof PlanThreadItemSchema>;
+export type TextualThreadItem = z.infer<typeof TextualThreadItemSchema>;
 export type Thread = z.infer<typeof ThreadSchema>;
 export type ThreadStartParams = z.infer<typeof ThreadStartParamsSchema>;
 export type ThreadStartResponse = z.infer<typeof ThreadStartResponseSchema>;
@@ -433,6 +448,13 @@ export type TurnInterruptResponse = z.infer<typeof TurnInterruptResponseSchema>;
 export type KnownServerNotification = z.infer<
   typeof KnownServerNotificationSchema
 >;
+
+export function readTextualThreadItem(
+  item: ThreadItem,
+): TextualThreadItem | null {
+  const parsed = TextualThreadItemSchema.safeParse(item);
+  return parsed.success ? parsed.data : null;
+}
 
 export function readAgentMessageThreadItem(
   item: ThreadItem,

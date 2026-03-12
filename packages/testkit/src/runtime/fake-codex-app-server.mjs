@@ -375,6 +375,51 @@ function buildLifecycle(currentMode) {
     };
   }
 
+  if (currentMode === "plan-only") {
+    return {
+      status: "completed",
+      items: [
+        {
+          type: "plan",
+          id: "item_plan_1",
+          text: buildPlanOnlyText(),
+        },
+      ],
+      terminalInteraction: null,
+    };
+  }
+
+  if (currentMode === "multi-text") {
+    return {
+      status: "completed",
+      items: [
+        {
+          type: "plan",
+          id: "item_plan_1",
+          text: buildMultiTextPlanBlock(),
+        },
+        {
+          type: "plan",
+          id: "item_plan_2",
+          text: buildMultiTextPlanBlock(),
+        },
+        {
+          type: "agentMessage",
+          id: "item_agent_1",
+          text: buildPlannerAgentMessageText(),
+          phase: null,
+        },
+        {
+          type: "agentMessage",
+          id: "item_agent_2",
+          text: buildPlannerAgentMessageText(),
+          phase: null,
+        },
+      ],
+      terminalInteraction: null,
+    };
+  }
+
   return {
     status: "completed",
     items: [
@@ -386,33 +431,69 @@ function buildLifecycle(currentMode) {
       {
         type: "agentMessage",
         id: "item_agent_1",
-        text: [
-          "## Objective understanding",
-          "Plan the passkey work without changing files and preserve the existing email-login path.",
-          "",
-          "## Relevant context",
-          "- The repo already has planner and executor tasks.",
-          "- WORKFLOW.md requires explicit validation before completion.",
-          "",
-          "## Risks and unknowns",
-          "- Auth touchpoints and test ownership still need confirmation.",
-          "",
-          "## Proposed steps",
-          "1. Inspect the auth entrypoints and existing sign-in flows.",
-          "2. Map passkey data and UI changes before any executor mutation.",
-          "3. Identify the minimum regression tests needed for email-login continuity.",
-          "",
-          "## Validation plan",
-          "- Run targeted auth and web tests after the later executor turn.",
-          "",
-          "## Handoff notes",
-          "- Keep the later executor constrained to auth and web paths only.",
-        ].join("\n"),
+        text: buildPlannerAgentMessageText(),
         phase: null,
       },
     ],
     terminalInteraction: null,
   };
+}
+
+function buildPlanOnlyText() {
+  return [
+    "## Objective understanding",
+    "Plan the passkey rollout without changing files and preserve the existing email-login path.",
+    "",
+    "## Relevant context",
+    "- The repo already separates planner and executor responsibilities.",
+    "",
+    "## Risks and unknowns",
+    "- Auth storage, browser support, and recovery flows still need confirmation.",
+    "",
+    "## Proposed steps",
+    "1. Inspect auth entrypoints and passkey-related domain models.",
+    "2. Map UI and API touchpoints before any executor mutation.",
+    "3. Define the smallest safe validation set for login continuity.",
+    "",
+    "## Validation plan",
+    "- Keep later executor validation focused on auth and sign-in regression coverage.",
+    "",
+    "## Handoff notes",
+    "- Leave implementation changes to the later executor turn.",
+  ].join("\n");
+}
+
+function buildMultiTextPlanBlock() {
+  return [
+    "Repository scan complete.",
+    "- auth and web sign-in paths look like the likely passkey touchpoints.",
+    "- executor work should stay bounded to authentication flows.",
+  ].join("\n");
+}
+
+function buildPlannerAgentMessageText() {
+  return [
+    "## Objective understanding",
+    "Plan the passkey work without changing files and preserve the existing email-login path.",
+    "",
+    "## Relevant context",
+    "- The repo already has planner and executor tasks.",
+    "- WORKFLOW.md requires explicit validation before completion.",
+    "",
+    "## Risks and unknowns",
+    "- Auth touchpoints and test ownership still need confirmation.",
+    "",
+    "## Proposed steps",
+    "1. Inspect the auth entrypoints and existing sign-in flows.",
+    "2. Map passkey data and UI changes before any executor mutation.",
+    "3. Identify the minimum regression tests needed for email-login continuity.",
+    "",
+    "## Validation plan",
+    "- Run targeted auth and web tests after the later executor turn.",
+    "",
+    "## Handoff notes",
+    "- Keep the later executor constrained to auth and web paths only.",
+  ].join("\n");
 }
 
 function buildStartedThreadId(input) {

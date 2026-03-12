@@ -6,6 +6,7 @@ import {
   ThreadResumeParamsSchema,
   ThreadStartParamsSchema,
   readAgentMessageThreadItem,
+  readTextualThreadItem,
   type KnownServerNotification,
 } from "./protocol";
 
@@ -31,6 +32,40 @@ describe("codex runtime protocol", () => {
     expect(parsed.experimentalRawEvents).toBe(false);
     expect(parsed.persistExtendedHistory).toBe(false);
     expect(resume.persistExtendedHistory).toBe(false);
+  });
+
+  it("reads completed textual thread items for planner-relevant output types", () => {
+    expect(
+      readTextualThreadItem({
+        type: "plan",
+        id: "item_plan_1",
+        text: "Inspect repository state and propose next steps.",
+      }),
+    ).toMatchObject({
+      type: "plan",
+      id: "item_plan_1",
+      text: expect.stringContaining("Inspect repository state"),
+    });
+
+    expect(
+      readTextualThreadItem({
+        type: "agentMessage",
+        id: "item_agent_1",
+        text: "## Objective understanding\nKeep the planner read-only.",
+        phase: null,
+      }),
+    ).toMatchObject({
+      type: "agentMessage",
+      id: "item_agent_1",
+      text: expect.stringContaining("## Objective understanding"),
+    });
+
+    expect(
+      readTextualThreadItem({
+        type: "commandExecution",
+        id: "item_command_1",
+      }),
+    ).toBeNull();
   });
 
   it("bootstraps, resumes, and streams structural turn lifecycle over stdio", async () => {

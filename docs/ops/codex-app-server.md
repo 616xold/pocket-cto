@@ -35,7 +35,7 @@ The checked-in wrapper now covers the M1.2 subset needed by the control plane:
 
 The generated schema also exposes `item/commandExecution/terminalInteraction` and several delta notifications.
 Pocket CTO parses the small stable subset above for M1.2 and keeps replay driven by structural item start and completion events rather than token or text deltas.
-For M1.4, Pocket CTO also extracts final completed `agentMessage` text from `item/completed` payloads so the planner task can persist a compact plan artifact without storing every token delta.
+For M1.4, Pocket CTO also extracts completed textual outputs from `item/completed` payloads for `plan` and `agentMessage` items so the planner task can persist a compact plan artifact without storing every token delta.
 
 The current local wire envelope is method or id based and does not require a `jsonrpc` field.
 Pocket CTO accepts both forms for safety, but writes the current stable field set used by the installed `codex` binary.
@@ -218,13 +218,23 @@ Until those milestones land, turn execution remains intentionally safe and read-
 
 Completed planner turns still use structural lifecycle replay as the operator narrative, but M1.4 adds one narrow result-shape extension for evidence:
 
+- `RuntimeCodexRunTurnResult.completedTextOutputs`
 - `RuntimeCodexRunTurnResult.completedAgentMessages`
 - `RuntimeCodexRunTurnResult.finalAgentMessageText`
 
-Those fields are populated from completed `agentMessage` items only.
+`completedTextOutputs` is populated from completed `plan` and `agentMessage` items in completion order.
+`completedAgentMessages` and `finalAgentMessageText` remain compatibility fields derived from the `agentMessage` subset only.
 Pocket CTO does not persist token deltas or every runtime message.
 
-Planner evidence uses that final message text to:
+Planner evidence deterministically builds the persisted planner body from completed `plan` and `agentMessage` outputs by:
+
+- trimming empty blocks
+- collapsing identical adjacent blocks
+- concatenating the remaining blocks in completion order with blank lines between them
+
+Planner artifact metadata records the capture strategy plus the ordered source item ids and types that contributed to the persisted body.
+
+Planner evidence then uses that selected planner body to:
 
 - derive a concise `mission_tasks.summary`
 - persist one `artifacts.kind = 'plan'` row with the planner text body in metadata
@@ -245,7 +255,7 @@ M1.2 runtime replay now includes:
 Replay remains structural and compact.
 Pocket CTO does not persist every token delta in M1.2.
 `item/started` and `item/completed` are the source of truth for item lifecycle, while `turn/completed` is the source of truth for terminal turn state.
-M1.4 planner artifact persistence reads the final completed `agentMessage` text from the runtime result, but replay itself remains structural and compact.
+M1.4 planner artifact persistence reads ordered completed textual outputs from the runtime result, but replay itself remains structural and compact.
 `runtime.turn_started.payload.recoveryStrategy` records whether the turn came from same-session bootstrap, a resumed thread, direct `turn/start`, or a replacement-thread fallback.
 `runtime.thread_started.payload.cwd` records the workspace root used for thread bootstrap.
 

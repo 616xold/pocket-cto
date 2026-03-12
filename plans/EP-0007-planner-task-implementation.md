@@ -6,7 +6,7 @@ This ExecPlan is a living document. Keep `Progress`, `Surprises & Discoveries`, 
 
 After this slice, the first claimed `planner` task in Pocket CTO no longer runs on the generic read-only placeholder prompt. It runs on a dedicated planner prompt assembled from the mission contract, task role, workspace context, and repository workflow policy, then persists its read-only plan output as an explicit `plan` artifact tied to the task.
 
-The operator-visible proof is concrete. A planner task in an isolated workspace should complete one read-only turn, update `mission_tasks.summary` with a concise planner summary, append `artifact.created` for a `plan` artifact, and keep replay compact by storing only the final completed planner message text instead of token deltas.
+The operator-visible proof is concrete. A planner task in an isolated workspace should complete one read-only turn, update `mission_tasks.summary` with a concise planner summary, append `artifact.created` for a `plan` artifact, and keep replay compact by storing only deterministic completed textual planner outputs instead of token deltas.
 
 This is roadmap submilestone `M1.4 basic planner task` only. It must not widen into executor file mutation, GitHub integration, approval persistence, or later M1.5 through M2 behavior.
 
@@ -19,6 +19,7 @@ This is roadmap submilestone `M1.4 basic planner task` only. It must not widen i
 - [x] (2026-03-11T02:41Z) Extended the runtime result shape to capture completed agent-message text compactly through `completedAgentMessages` and `finalAgentMessageText`, keeping low-level item parsing in `@pocket-cto/codex-runtime` and leaving replay structural.
 - [x] (2026-03-11T02:41Z) Added a narrow planner evidence path: planner task summaries now persist to `mission_tasks.summary`, successful planner turns persist one `plan` artifact with stable URI and thread/turn metadata, `artifact.created` replay is appended for that artifact, and the placeholder proof-bundle manifest is updated in place with the plan artifact id and one decision-trace line.
 - [x] (2026-03-11T02:41Z) Added focused runtime, planner-prompt, in-memory orchestrator, and DB-backed orchestrator tests; updated the Codex runtime and local-dev ops docs; ran the required validation commands; and completed one manual planner acceptance against the fake fixture with `WORKFLOW.md` injection and no mutation attempts.
+- [x] (2026-03-12T03:07Z) Hardened M1.4 planner evidence so it no longer depends on a rich final `agentMessage`: the runtime now captures ordered completed textual outputs for `plan` and `agentMessage` items, planner evidence deterministically combines them, plan artifacts record capture provenance in metadata, and fake fixture modes plus integration tests now cover `plan-only` and `multi-text` planner output paths.
 
 ## Surprises & Discoveries
 
@@ -30,6 +31,9 @@ This is roadmap submilestone `M1.4 basic planner task` only. It must not widen i
 
 - Observation: Pocket CTO currently discards planner-useful text before it reaches control-plane persistence.
   Evidence: `packages/codex-runtime/src/protocol.ts` parses thread items as passthrough objects, but `apps/control-plane/src/modules/runtime-codex/turn-lifecycle.ts` stores only `{ itemId, itemType, phase, threadId, turnId }`, and `apps/control-plane/src/modules/runtime-codex/types.ts` exposes no field for final message text.
+
+- Observation: Planner turns can emit substantive `plan` text before or instead of a rich final `agentMessage`, so a final-message-only capture path is not stable enough for executor handoff.
+  Evidence: the fake runtime fixture success mode already emits both `plan` and `agentMessage` items, and the new `plan-only` and `multi-text` fixture modes demonstrate planner-complete turns where the final `agentMessage` is absent or duplicated.
 
 - Observation: The current prompt path is deliberately generic and read-only for every task role, so planner specialization must move into new small modules rather than accreting more text into `turn-input.ts`.
   Evidence: `apps/control-plane/src/modules/runtime-codex/turn-input.ts` builds one shared read-only prompt keyed only by role-specific one-line instructions.
@@ -47,8 +51,12 @@ This is roadmap submilestone `M1.4 basic planner task` only. It must not widen i
   Date/Author: 2026-03-11 / Codex
 
 - Decision: Capture only completed `agentMessage` text and ignore token or delta streams for planner persistence.
-  Rationale: The milestone requires compact replay and a narrow runtime extension. Completed planner text is sufficient for a plan artifact and summary without widening into streaming storage.
+  Rationale: The original M1.4 slice only needed compact replay and a narrow runtime extension. That kept the first planner artifact implementation small while avoiding streaming storage.
   Date/Author: 2026-03-11 / Codex
+
+- Decision: Build persisted planner bodies from ordered completed textual outputs of type `plan` and `agentMessage`, trim empty blocks, collapse identical adjacent blocks, and record the contributing item ids and types in artifact metadata.
+  Rationale: This keeps transport parsing generic, keeps planner selection policy inside the control-plane evidence boundary, preserves substantive plan text when no rich final `agentMessage` exists, and gives M1.5 a deterministic planner artifact contract to consume.
+  Date/Author: 2026-03-12 / Codex
 
 - Decision: Specialize planner prompt building in dedicated modules under `apps/control-plane/src/modules/runtime-codex/`, leaving non-planner roles on the current read-only placeholder path.
   Rationale: This preserves modularity, keeps M1.4 scoped to planner behavior, and makes the later M1.5 executor prompt replacement explicit.
@@ -107,9 +115,9 @@ This slice is not expected to change GitHub App permissions, webhook expectation
 
 First, split planner prompt assembly out of the current generic read-only turn-input builder. The new planner path should gather mission objective, mission type, constraints, acceptance, evidence requirements, task role, and workspace context, then inject a bounded summary of workspace-root `WORKFLOW.md` when present. The prompt must explicitly forbid file edits, patches, installs, git changes, formatter runs, and approvals for mutation, and must request concise structured sections that an executor can consume later.
 
-Next, extend the runtime protocol and lifecycle mapping just enough to surface final completed `agentMessage` text. The App Server already sends the full item object; Pocket CTO only needs typed extraction of completed agent-message items, ideally as one `finalAgentMessageText` or a tiny completed-message array on `RuntimeCodexRunTurnResult`. This extraction stays inside `packages/codex-runtime` and `runtime-codex/turn-lifecycle.ts`, not in the orchestrator.
+Next, extend the runtime protocol and lifecycle mapping just enough to surface completed textual outputs from `plan` and `agentMessage` items. The App Server already sends the full item object; Pocket CTO only needs typed extraction of those completed text items plus compatibility fields such as `finalAgentMessageText` for the agent-message subset. This extraction stays inside `packages/codex-runtime` and `runtime-codex/turn-lifecycle.ts`, not in the orchestrator.
 
-Then, add a narrow evidence persistence boundary for planner outputs. The orchestrator runtime phase should, only for `task.role === "planner"` and only after a successful completed turn with final planner text, derive a concise task summary, persist a `plan` artifact with a stable URI and task/thread/turn linkage metadata, append `artifact.created`, and conservatively update the placeholder proof-bundle manifest so its artifact index and decision trace acknowledge the planner artifact when possible.
+Then, add a narrow evidence persistence boundary for planner outputs. The orchestrator runtime phase should, only for `task.role === "planner"` and only after a successful completed turn with planner-useful textual output, derive a concise task summary, persist a `plan` artifact with a stable URI and task/thread/turn linkage metadata, append `artifact.created`, and conservatively update the placeholder proof-bundle manifest so its artifact index and decision trace acknowledge the planner artifact when possible.
 
 Finally, add focused tests across the runtime wrapper and the DB-backed control-plane path, update the docs and this ExecPlan, and run the required migration, test, typecheck, and lint commands plus one manual planner acceptance if the local runtime path remains available.
 
@@ -152,7 +160,7 @@ Success for M1.4 is demonstrated when all of the following are true:
 
 1. Planner prompt construction includes the mission objective, mission type, acceptance criteria, evidence requirements, workspace context, and explicit read-only rules.
 2. Planner context includes a bounded summary or excerpt of workspace-root `WORKFLOW.md` when present and omits it cleanly when absent.
-3. `@pocket-cto/codex-runtime` can surface final completed `agentMessage` text from a planner turn without storing every token delta.
+3. `@pocket-cto/codex-runtime` can surface ordered completed textual outputs from planner turns, while preserving compatibility access to final completed `agentMessage` text without storing every token delta.
 4. A successful planner task persists exactly one `plan` artifact tied to the mission and task.
 5. The planner task stores a concise `mission_tasks.summary` derived from the planner output.
 6. Replay includes `artifact.created` for the new plan artifact.
@@ -182,7 +190,7 @@ Verified M1.4 runtime-output notes before implementation:
 - Generated schema: `tmp/codex-app-server-schema-m1.2-polish/v2/ThreadItem.ts` includes `agentMessage.text` and `plan.text`.
 - Generated schema: `tmp/codex-app-server-schema-m1.2-polish/v2/ItemCompletedNotification.ts` includes the full `ThreadItem`.
 - Fake fixture: `packages/testkit/src/runtime/fake-codex-app-server.mjs` success mode emits a completed `plan` item and completed `agentMessage` item with text.
-- Current gap: `apps/control-plane/src/modules/runtime-codex/turn-lifecycle.ts` currently resolves turn results with only item ids and item types, so the orchestrator cannot persist a plan artifact body yet.
+- Current gap before the robustness pass: `apps/control-plane/src/modules/runtime-codex/turn-lifecycle.ts` resolved turn results with only `completedAgentMessages` and `finalAgentMessageText`, so planner evidence could still miss substantive `plan` output.
 
 Expected evidence impact for this slice:
 
@@ -235,10 +243,13 @@ External/runtime dependencies:
 ## Outcomes & Retrospective
 
 M1.4 now ends with planner specialization and persisted plan artifacts in read-only isolated workspaces.
-Planner turns have their own prompt builder and workspace-aware context loader, completed planner text is surfaced without delta storage, planner summaries persist to `mission_tasks.summary`, plan artifacts persist to the evidence ledger with `artifact.created` replay, and the placeholder proof bundle now acknowledges the planner artifact conservatively.
+Planner turns have their own prompt builder and workspace-aware context loader, completed textual planner outputs are surfaced without delta storage, planner summaries persist to `mission_tasks.summary`, plan artifacts persist to the evidence ledger with `artifact.created` replay, and the placeholder proof bundle now acknowledges the planner artifact conservatively.
+
+Planner artifacts are now robust enough to serve as a stable executor prerequisite for M1.5.
+The persisted planner body is assembled deterministically from completed `plan` and `agentMessage` outputs, and artifact metadata records the capture strategy plus ordered source items that contributed to that body.
 
 Non-planner behavior remains intentionally narrow.
 `executor`, `scout`, `reviewer`, and `sre` still use the generic read-only placeholder prompt and do not persist planner artifacts.
 
 The precise remaining gap to M1.5 is controlled executor mutation.
-M1.5 still needs executor-specific prompt guardrails, file-change approval and mutation policy, controlled write-path handling, and the evidence semantics for executor-produced diffs, test reports, and later PR artifacts.
+M1.5 still needs executor-specific prompt guardrails, file-change approval and mutation policy, controlled write-path handling, validation execution, and the evidence semantics for executor-produced diffs, test reports, and later PR artifacts.
