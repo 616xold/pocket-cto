@@ -93,6 +93,8 @@ That means:
 - durable approval rows and replay survive worker restarts
 - live turn continuation does not survive worker restarts
 - approval resolution and interrupt operations must reach the same worker process that owns the active turn
+- accepted approvals only move task or mission state back to `running` after the live response handoff succeeds
+- if a durable approval resolution outlives its live session, Pocket CTO records `payload.liveContinuation.status = "delivery_failed"` on that approval row instead of faking a resumed turn
 
 If the worker restarts while a task is awaiting approval, the durable audit trail remains intact, but Pocket CTO cannot honestly resume that already-live turn.
 

@@ -31,6 +31,10 @@ import {
   buildApprovalRequestedPayload,
   buildApprovalResolvedPayload,
 } from "./events";
+import {
+  readRuntimeApprovalPayload,
+  withApprovalContinuationFailurePayload,
+} from "./payload";
 import type { ApprovalRepository } from "./repository";
 
 export type ResolveApprovalInput = {
@@ -61,9 +65,8 @@ export class ApprovalService {
     private readonly liveSessionRegistry: Pick<
       InMemoryRuntimeSessionRegistry,
       | "awaitApprovalResolution"
-      | "getPendingApproval"
       | "hasTaskSession"
-      | "resolveApproval"
+      | "tryResolveApproval"
     >,
   ) {}
 
@@ -120,41 +123,32 @@ export class ApprovalService {
   }
 
   async resolveApproval(input: ResolveApprovalInput) {
-    const liveApproval = this.liveSessionRegistry.getPendingApproval(input.approvalId);
-
-    if (!liveApproval) {
-      throw new Error(
-        `Approval ${input.approvalId} has no live runtime continuation; worker restart continuity is not supported in M1.6`,
-      );
-    }
-
     const resolution = await this.missionRepository.transaction(
       async (session) => {
         const approval = await this.getRequiredApproval(input.approvalId, session);
         const approvalContext = readRuntimeApprovalPayload(approval);
-        const task = await this.getRequiredTask(approvalContext.taskId, session);
-        const mission = await this.getRequiredMission(approval.missionId, session);
 
         if (approval.status !== "pending") {
           return {
             approval,
-            shouldResolveLiveSession: false,
+            approvalContext,
+            shouldAttemptLiveDelivery: false,
+            shouldResumeTaskAndMission: false,
           };
         }
 
         const nextStatus = mapDecisionToApprovalStatus(input.decision);
-        const updatedPayload = {
-          ...approval.payload,
-          resolution: {
-            decision: input.decision,
-            rationale: input.rationale ?? null,
-            resolvedBy: input.resolvedBy,
-          },
-        };
         const updated = await this.approvalRepository.updateApproval(
           {
             approvalId: approval.id,
-            payload: updatedPayload,
+            payload: {
+              ...approval.payload,
+              resolution: {
+                decision: input.decision,
+                rationale: input.rationale ?? null,
+                resolvedBy: input.resolvedBy,
+              },
+            },
             rationale: input.rationale ?? null,
             resolvedBy: input.resolvedBy,
             status: nextStatus,
@@ -188,28 +182,44 @@ export class ApprovalService {
           session,
         );
 
-        if (isAcceptedDecision(input.decision)) {
-          await this.resumeTaskAndMissionIfReady(mission, task, session);
-        }
-
         return {
           approval: updated,
-          shouldResolveLiveSession: true,
+          approvalContext,
+          shouldAttemptLiveDelivery: true,
+          shouldResumeTaskAndMission: isAcceptedDecision(input.decision),
         };
       },
     );
 
-    if (!resolution.shouldResolveLiveSession) {
+    if (!resolution.shouldAttemptLiveDelivery) {
       return resolution.approval;
     }
 
-    this.liveSessionRegistry.resolveApproval({
+    const liveDelivery = this.liveSessionRegistry.tryResolveApproval({
       approvalId: resolution.approval.id,
       response: buildRuntimeApprovalResponse(
-        readRuntimeApprovalPayload(resolution.approval).requestMethod,
+        resolution.approvalContext.requestMethod,
         input.decision,
       ),
     });
+
+    if (!liveDelivery.delivered) {
+      await this.recordLiveContinuationFailure({
+        approvalId: resolution.approval.id,
+        errorMessage: liveDelivery.error.message,
+      });
+
+      throw new Error(
+        `Approval ${resolution.approval.id} was durably resolved as ${resolution.approval.status}, but the live runtime continuation could not be resumed: ${liveDelivery.error.message}`,
+      );
+    }
+
+    if (resolution.shouldResumeTaskAndMission) {
+      await this.resumeTaskAndMissionAfterDeliveredResolution(
+        resolution.approval.missionId,
+        resolution.approvalContext.taskId,
+      );
+    }
 
     return resolution.approval;
   }
@@ -281,23 +291,26 @@ export class ApprovalService {
       },
     );
 
-    for (const approval of updatedApprovals) {
-      const liveApproval = this.liveSessionRegistry.getPendingApproval(approval.id);
+    return Promise.all(
+      updatedApprovals.map(async (approval) => {
+        const delivery = this.liveSessionRegistry.tryResolveApproval({
+          approvalId: approval.id,
+          response: buildRuntimeApprovalResponse(
+            readRuntimeApprovalPayload(approval).requestMethod,
+            "cancel",
+          ),
+        });
 
-      if (!liveApproval) {
-        continue;
-      }
+        if (delivery.delivered) {
+          return approval;
+        }
 
-      this.liveSessionRegistry.resolveApproval({
-        approvalId: approval.id,
-        response: buildRuntimeApprovalResponse(
-          readRuntimeApprovalPayload(approval).requestMethod,
-          "cancel",
-        ),
-      });
-    }
-
-    return updatedApprovals;
+        return this.recordLiveContinuationFailure({
+          approvalId: approval.id,
+          errorMessage: delivery.error.message,
+        });
+      }),
+    );
   }
 
   private async requestRuntimeApproval(input: {
@@ -470,6 +483,41 @@ export class ApprovalService {
     }
   }
 
+  private async resumeTaskAndMissionAfterDeliveredResolution(
+    missionId: string,
+    taskId: string,
+  ) {
+    await this.missionRepository.transaction(async (session) => {
+      const task = await this.getRequiredTask(taskId, session);
+      const mission = await this.getRequiredMission(missionId, session);
+
+      await this.resumeTaskAndMissionIfReady(mission, task, session);
+    });
+  }
+
+  private async recordLiveContinuationFailure(input: {
+    approvalId: string;
+    errorMessage: string;
+  }) {
+    return this.missionRepository.transaction(async (session) => {
+      const approval = await this.getRequiredApproval(input.approvalId, session);
+
+      return this.approvalRepository.updateApproval(
+        {
+          approvalId: approval.id,
+          payload: withApprovalContinuationFailurePayload(approval, {
+            attemptedAt: new Date().toISOString(),
+            errorMessage: input.errorMessage,
+          }),
+          rationale: approval.rationale,
+          resolvedBy: approval.resolvedBy,
+          status: approval.status,
+        },
+        session,
+      );
+    });
+  }
+
   private async getRequiredApproval(
     approvalId: string,
     session?: PersistenceSession,
@@ -574,49 +622,4 @@ function mapDecisionToRuntimeDecision(decision: ApprovalDecision) {
     case "cancel":
       return "cancel";
   }
-}
-
-function readRuntimeApprovalPayload(approval: ApprovalRecord): {
-  details: Record<string, unknown>;
-  itemId: string | null;
-  requestId: JsonRpcId;
-  requestMethod: RuntimeApprovalRequestMethod;
-  taskId: string;
-  threadId: string;
-  turnId: string;
-} {
-  const requestId = approval.payload.requestId;
-  const requestMethod = approval.payload.requestMethod;
-  const threadId = approval.payload.threadId;
-  const turnId = approval.payload.turnId;
-
-  if (
-    (typeof requestId !== "string" && typeof requestId !== "number") ||
-    (requestMethod !== "item/commandExecution/requestApproval" &&
-      requestMethod !== "item/fileChange/requestApproval" &&
-      requestMethod !== "item/permissions/requestApproval") ||
-    typeof threadId !== "string" ||
-    typeof turnId !== "string" ||
-    !approval.taskId
-  ) {
-    throw new Error(`Approval ${approval.id} does not contain a valid runtime payload`);
-  }
-
-  return {
-    details:
-      approval.payload.details &&
-      typeof approval.payload.details === "object" &&
-      !Array.isArray(approval.payload.details)
-        ? (approval.payload.details as Record<string, unknown>)
-        : {},
-    itemId:
-      typeof approval.payload.itemId === "string"
-        ? approval.payload.itemId
-        : null,
-    requestId,
-    requestMethod,
-    taskId: approval.taskId,
-    threadId,
-    turnId,
-  };
 }

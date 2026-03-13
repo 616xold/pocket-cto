@@ -2,6 +2,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
+  StepError,
   buildCiEnv,
   gitOutput,
   isPostgresReachable,
@@ -65,6 +66,7 @@ async function main() {
   );
 
   let lastWorktreePath = null;
+  const failures = [];
   for (let iteration = 1; iteration <= repeat; iteration += 1) {
     const tempRoot = mkdtempSync(join(tmpdir(), "pocket-cto-ci-ref-"));
     const worktreePath = join(tempRoot, "repo");
@@ -84,34 +86,62 @@ async function main() {
       baselinePath,
     });
 
-    runStep(
-      "pnpm install --frozen-lockfile",
-      worktreePath,
-      env,
-      ["install", "--frozen-lockfile"],
-      worktreePath,
-    );
-
-    if (shouldRunStatic) {
-      runStep("pnpm ci:static", worktreePath, env, ["ci:static"], worktreePath);
-    }
-
-    if (shouldRunIntegration) {
-      const databaseUrl = env.TEST_DATABASE_URL ?? env.DATABASE_URL;
-      if (!databaseUrl || !(await isPostgresReachable(databaseUrl))) {
-        throw new Error(
-          `Postgres is not reachable for integration reproduction. Temp worktree: ${worktreePath}`,
-        );
-      }
-
+    try {
       runStep(
-        "pnpm ci:integration-db",
+        "pnpm install --frozen-lockfile",
         worktreePath,
         env,
-        ["ci:integration-db"],
+        ["install", "--frozen-lockfile"],
         worktreePath,
       );
+
+      if (shouldRunStatic) {
+        runStep("pnpm ci:static", worktreePath, env, ["ci:static"], worktreePath);
+      }
+
+      if (shouldRunIntegration) {
+        const databaseUrl = env.TEST_DATABASE_URL ?? env.DATABASE_URL;
+        if (!databaseUrl || !(await isPostgresReachable(databaseUrl))) {
+          throw new Error(
+            `Postgres is not reachable for integration reproduction. Temp worktree: ${worktreePath}`,
+          );
+        }
+
+        runStep(
+          "pnpm ci:integration-db",
+          worktreePath,
+          env,
+          ["ci:integration-db"],
+          worktreePath,
+        );
+      }
+    } catch (error) {
+      if (repeat === 1) {
+        throw error;
+      }
+
+      const message = error instanceof Error ? error.message : String(error);
+      failures.push({
+        iteration,
+        message,
+        step: error instanceof StepError ? error.step : "unknown",
+        tempPath: error instanceof StepError ? error.tempPath : worktreePath,
+      });
+      console.error(`Iteration ${iteration} failed: ${message}`);
     }
+  }
+
+  if (failures.length > 0) {
+    console.error(
+      [
+        `Ref reproduction found ${failures.length} failure${failures.length === 1 ? "" : "s"} out of ${repeat} iteration${repeat === 1 ? "" : "s"} for ${resolvedRef}.`,
+        ...failures.map(
+          (failure) =>
+            ` - iteration ${failure.iteration}: ${failure.step} (${failure.tempPath})`,
+        ),
+      ].join("\n"),
+    );
+    process.exit(1);
   }
 
   console.log(

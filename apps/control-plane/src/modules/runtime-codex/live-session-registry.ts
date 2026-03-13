@@ -28,6 +28,15 @@ export type RuntimeLiveApprovalRef = {
   taskId: string;
 };
 
+export type ResolveRuntimeApprovalResult =
+  | {
+      delivered: true;
+    }
+  | {
+      delivered: false;
+      error: Error;
+    };
+
 export class InMemoryRuntimeSessionRegistry {
   private readonly sessions = new Map<string, ActiveTurnSession>();
 
@@ -191,6 +200,24 @@ export class InMemoryRuntimeSessionRegistry {
     approval.resolveResponse(input.response);
   }
 
+  tryResolveApproval(input: {
+    approvalId: string;
+    response: RuntimeCodexApprovalResponse["response"];
+  }): ResolveRuntimeApprovalResult {
+    try {
+      this.resolveApproval(input);
+
+      return {
+        delivered: true,
+      };
+    } catch (error) {
+      return {
+        delivered: false,
+        error: asError(error, "Approval response delivery failed"),
+      };
+    }
+  }
+
   async interruptTask(taskId: string) {
     const session = this.getRequiredSession(taskId);
 
@@ -256,4 +283,8 @@ export class InMemoryRuntimeSessionRegistry {
 
 function toRequestKey(requestId: JsonRpcId) {
   return `${typeof requestId}:${String(requestId)}`;
+}
+
+function asError(error: unknown, fallbackMessage: string) {
+  return error instanceof Error ? error : new Error(fallbackMessage);
 }

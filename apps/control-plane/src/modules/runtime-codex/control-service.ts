@@ -69,7 +69,13 @@ export class RuntimeControlService {
       }),
     });
 
-    await this.liveSessionRegistry.interruptTask(input.taskId);
+    try {
+      await this.liveSessionRegistry.interruptTask(input.taskId);
+    } catch (error) {
+      throw new Error(
+        `Interrupt intent for task ${task.id} was durably recorded, but the live turn could not be interrupted: ${asError(error, "Interrupt failed").message}`,
+      );
+    }
 
     return {
       cancelledApprovals,
@@ -78,4 +84,8 @@ export class RuntimeControlService {
       turnId: activeTurn.turnId,
     };
   }
+}
+
+function asError(error: unknown, fallbackMessage: string) {
+  return error instanceof Error ? error : new Error(fallbackMessage);
 }
