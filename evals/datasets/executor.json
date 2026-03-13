@@ -1,0 +1,133 @@
+[
+  {
+    "id": "executor-passkeys-final-report",
+    "notes": "Executor report should stay inside the workspace boundary, name the changed files, and surface risks plus operator handoff clearly.",
+    "context": {
+      "mission": {
+        "objective": "Implement passkeys for sign-in without breaking the existing email-login fallback.",
+        "type": "build",
+        "acceptance": [
+          "preserve the existing email-login fallback",
+          "update apps/web sign-in surfaces and supporting docs",
+          "produce a concise final report"
+        ],
+        "constraints": {
+          "mustNot": [
+            "change branches",
+            "use network access",
+            "run package manager commands"
+          ],
+          "allowedPaths": ["apps/web", "docs"],
+          "targetBranch": "feat/passkeys"
+        },
+        "evidenceRequirements": ["test report", "risk note"]
+      },
+      "plannerArtifact": {
+        "artifactId": "artifact-plan-passkeys",
+        "uri": "pocket-cto://missions/m-passkeys/tasks/t-plan/plan",
+        "resolution": "dependency_task",
+        "justification": "Executor depends on the planner task for scoped implementation guidance.",
+        "sourceTaskId": "task-plan-passkeys",
+        "sourceTaskSequence": 0,
+        "summary": "Preserve email login while adding passkeys in apps/web and docs only.",
+        "body": "## Objective understanding\nPreserve the email-login fallback while introducing passkeys in apps/web and docs.\n\n## Proposed steps\n1. Update the sign-in CTA and passkey messaging in apps/web.\n2. Refresh the relevant docs copy.\n3. Keep validation and risk notes visible in the final report."
+      },
+      "task": {
+        "role": "executor",
+        "sequence": 1
+      },
+      "workflowPolicy": {
+        "path": "WORKFLOW.md",
+        "excerpt": "Do not auto-merge. Evidence must mention risk and rollback notes when user-visible auth flows change.",
+        "truncated": false
+      },
+      "workspace": {
+        "repo": "/workspace/pocket-cto",
+        "rootPath": "/workspace/pocket-cto.workspaces/mission-passkeys/1-executor",
+        "branchName": "mission/passkeys"
+      }
+    },
+    "expectations": {
+      "requiredSections": [
+        "Intended change",
+        "Files changed",
+        "Validations run",
+        "Remaining risks",
+        "Operator handoff"
+      ],
+      "mustMention": [
+        "apps/web/app/sign-in/page.tsx",
+        "docs/passkeys.md",
+        "email login",
+        "operator"
+      ],
+      "forbiddenPhrases": ["npm install", "git push", "merge branch"],
+      "evidenceSignals": ["validation", "git diff --check", "risk"],
+      "actionabilitySignals": ["apps/web/app/sign-in/page.tsx", "docs/passkeys.md", "operator", "handoff"]
+    },
+    "dryRunOutput": "## Intended change\nAdd passkey affordances to the apps/web sign-in page while preserving the existing email login fallback and updating the supporting docs.\n\n## Files changed\n- apps/web/app/sign-in/page.tsx\n- docs/passkeys.md\n\n## Validations run\n- Reviewed the planner constraints before editing.\n- Ran git diff --check and confirmed the final diff stayed clean.\n- Confirmed the report still calls out the email login fallback.\n\n## Remaining risks\nBrowser passkey support and copy clarity still need operator review before rollout.\n\n## Operator handoff\nPlease review the apps/web/app/sign-in/page.tsx fallback copy and the docs/passkeys.md update before approving the next step."
+  },
+  {
+    "id": "executor-approval-recovery-report",
+    "notes": "Executor report should emphasize replay validation and avoid forbidden actions like network, package manager commands, or branch manipulation.",
+    "context": {
+      "mission": {
+        "objective": "Harden approval interrupt recovery so executor tasks do not strand after a live-turn interruption.",
+        "type": "build",
+        "acceptance": [
+          "keep work inside apps/control-plane",
+          "preserve truthful replay and evidence outputs",
+          "produce a concise final report"
+        ],
+        "constraints": {
+          "mustNot": [
+            "touch GitHub integration",
+            "change branches",
+            "use network access"
+          ],
+          "allowedPaths": ["apps/control-plane", "docs"],
+          "targetBranch": "feat/approval-recovery"
+        },
+        "evidenceRequirements": ["replay trace", "risk note"]
+      },
+      "plannerArtifact": {
+        "artifactId": "artifact-plan-approval",
+        "uri": "pocket-cto://missions/m-approval/tasks/t-plan/plan",
+        "resolution": "mission_latest_planner",
+        "justification": "The latest planner artifact already scopes the executor changes to approval and replay modules.",
+        "sourceTaskId": "task-plan-approval",
+        "sourceTaskSequence": 0,
+        "summary": "Keep the hardening inside apps/control-plane and verify replay truthfulness.",
+        "body": "## Objective understanding\nKeep approval interrupt recovery inside apps/control-plane.\n\n## Proposed steps\n1. Update the live-session and approval modules.\n2. Verify replay evidence for interrupted turns.\n3. Hand off a concise operator-facing summary."
+      },
+      "task": {
+        "role": "executor",
+        "sequence": 1
+      },
+      "workflowPolicy": {
+        "path": "WORKFLOW.md",
+        "excerpt": "Replay events are mandatory. Evidence should let another engineer understand what happened without rereading the whole thread.",
+        "truncated": false
+      },
+      "workspace": {
+        "repo": "/workspace/pocket-cto",
+        "rootPath": "/workspace/pocket-cto.workspaces/mission-approval/1-executor",
+        "branchName": "mission/approval-recovery"
+      }
+    },
+    "expectations": {
+      "requiredSections": [
+        "Intended change",
+        "Files changed",
+        "Validations run",
+        "Remaining risks",
+        "Operator handoff"
+      ],
+      "mustMention": ["apps/control-plane", "replay", "risk", "operator"],
+      "forbiddenPhrases": ["npm install", "git push", "checkout -b"],
+      "evidenceSignals": ["replay", "validation", "risk"],
+      "actionabilitySignals": ["apps/control-plane", "operator", "handoff"]
+    },
+    "dryRunOutput": "## Intended change\nHarden approval interrupt recovery in apps/control-plane so interrupted executor turns do not strand and the replay trail stays truthful.\n\n## Files changed\n- apps/control-plane/src/modules/approvals/service.ts\n- apps/control-plane/src/modules/runtime-codex/live-session-registry.ts\n- docs/ops/local-dev.md\n\n## Validations run\n- Checked that the replay path still records the interrupted lifecycle clearly.\n- Reviewed the task summary and evidence output for the failed-interrupt case.\n- Kept the scope inside apps/control-plane and docs only.\n\n## Remaining risks\nRace conditions around live-session loss can still require careful operator review in manual acceptance.\n\n## Operator handoff\nPlease verify the replay timeline for an interrupted turn and confirm the evidence note stays understandable without rereading the thread."
+  }
+]

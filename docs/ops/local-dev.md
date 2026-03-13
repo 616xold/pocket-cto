@@ -32,6 +32,51 @@ Those CI scripts expect runner-style env to be present in the shell; `.env` stay
 Local development still uses `cp .env.example .env`.
 If you add a DB enum or other migration that affects tests, run `pnpm run db:migrate:ci` as well so both `DATABASE_URL` and `TEST_DATABASE_URL` stay aligned.
 
+## Real-model eval lane
+
+Pocket CTO now includes a manual real-LLM eval lane for prompt and artifact quality.
+It is intentionally outside CI.
+`pnpm ci:static`, `pnpm ci:integration-db`, `pnpm test`, and `pnpm check` do not run any paid model calls.
+
+Required env for live evals:
+
+- `OPENAI_API_KEY`
+- `OPENAI_EVALS_ENABLED=true`
+- `OPENAI_EVAL_MODEL` defaults to `gpt-5-mini`
+- `OPENAI_EVAL_GRADER_MODEL` defaults to `gpt-5-mini`
+- `OPENAI_EVAL_REFERENCE_MODEL` defaults to `gpt-5-codex` and is only used when you add `--with-reference`
+
+Checked-in datasets live under `evals/datasets/`.
+The grading rubric lives under `evals/rubrics/quality-rubric.md`.
+Timestamped result files are written to the gitignored `evals/results/` directory as JSONL.
+
+Run the lane manually from the repo root:
+
+```bash
+pnpm eval:planner -- --dry-run
+pnpm eval:executor -- --dry-run
+pnpm eval:compiler -- --dry-run
+pnpm eval:all -- --dry-run
+```
+
+Run live evals only when you explicitly opt in:
+
+```bash
+OPENAI_EVALS_ENABLED=true pnpm eval:planner
+OPENAI_EVALS_ENABLED=true pnpm eval:executor
+OPENAI_EVALS_ENABLED=true pnpm eval:compiler
+OPENAI_EVALS_ENABLED=true pnpm eval:all
+```
+
+Optional reference runs use a second model pass for comparison:
+
+```bash
+OPENAI_EVALS_ENABLED=true pnpm eval:planner -- --limit 1 --with-reference
+```
+
+If either the key or opt-in flag is missing, the live eval scripts fail fast with a clear message.
+Use `--dry-run` when you want to exercise dataset loading, prompt generation, grading flow, and result writing without paid calls.
+
 ## Git and repo hygiene
 
 Before making the first commit in a fresh checkout:
@@ -311,7 +356,7 @@ This is still a narrow local-only executor slice.
 
 - M1.5 ends with controlled workspace mutation and local validation hooks
 - M1.6 will add approval persistence
-- M1.7 will add richer runtime-to-evidence artifact plumbing
+- M1.7 adds richer runtime-to-evidence artifact plumbing
 
 ```bash
 curl -i "http://localhost:4000/missions/$MISSION_ID"
@@ -359,6 +404,28 @@ Expected new tail event:
   }
 }
 ```
+
+## Executor Evidence Placeholder Note
+
+After M1.7, a successful executor worker tick now persists more than replay and
+`mission_tasks.summary`:
+
+- `artifacts.kind = 'diff_summary'` captures changed-path and local diff posture
+- `artifacts.kind = 'test_report'` captures local executor validation results as a placeholder verification artifact
+- terminalized executor failures can also persist `artifacts.kind = 'log_excerpt'`
+- replay appends one `artifact.created` entry for each persisted runtime artifact
+- the proof-bundle manifest moves to `status = 'ready'` once runtime evidence artifacts exist and references their artifact ids
+
+Local DB inspection should show deterministic URIs of the form:
+
+```text
+pocket-cto://missions/<mission-id>/tasks/<task-id>/diff-summary
+pocket-cto://missions/<mission-id>/tasks/<task-id>/test-report
+pocket-cto://missions/<mission-id>/tasks/<task-id>/log-excerpt
+```
+
+`pr_link` is still intentionally absent in local development until M2 GitHub
+App work lands.
 
 For a long-running local worker loop instead of a single tick:
 

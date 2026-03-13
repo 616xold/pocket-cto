@@ -1,12 +1,19 @@
 import type {
+  ArtifactRecord,
   ArtifactKind,
   MissionRecord,
   MissionTaskRecord,
+  MissionTaskStatus,
   ProofBundleManifest,
 } from "@pocket-cto/domain";
 import { ProofBundleManifestSchema } from "@pocket-cto/domain";
 import type { RuntimeCodexRunTurnResult } from "../runtime-codex/types";
 import type { PlannerPromptContext } from "../runtime-codex/planner-context";
+import {
+  extractMarkdownSection,
+  stripMarkdownPrefix,
+  truncate,
+} from "./text";
 
 export type EvidenceArtifactDraft = {
   kind: ArtifactKind;
@@ -89,8 +96,8 @@ export class EvidenceService {
   buildPlannerTaskSummary(plannerText: string) {
     const normalized = plannerText.replace(/\r\n/g, "\n").trim();
     const objectiveSection =
-      extractSection(normalized, "Objective understanding") ??
-      extractSection(normalized, "Relevant context") ??
+      extractMarkdownSection(normalized, "Objective understanding") ??
+      extractMarkdownSection(normalized, "Relevant context") ??
       normalized;
     const firstSentence = objectiveSection
       .split("\n")
@@ -123,30 +130,50 @@ export class EvidenceService {
       decisionTrace: nextDecisionTrace,
     });
   }
+
+  attachRuntimeArtifactsToProofBundle(
+    bundle: ProofBundleManifest,
+    input: {
+      artifacts: Array<Pick<ArtifactRecord, "id" | "kind">>;
+      changeSummary: string | null;
+      riskSummary: string | null;
+      rollbackSummary: string | null;
+      task: MissionTaskRecord;
+      terminalTaskStatus: MissionTaskStatus;
+      verificationSummary: string | null;
+    },
+  ): ProofBundleManifest {
+    const nextArtifactIds = Array.from(
+      new Set([...bundle.artifactIds, ...input.artifacts.map((artifact) => artifact.id)]),
+    );
+    const nextDecisionTrace = appendUniqueDecisionTrace(
+      bundle.decisionTrace,
+      [
+        `Executor task ${input.task.sequence} terminalized as ${input.terminalTaskStatus} with runtime evidence placeholders.`,
+        ...input.artifacts.map(
+          (artifact) =>
+            `Executor task ${input.task.sequence} produced ${artifact.kind} artifact ${artifact.id}.`,
+        ),
+      ],
+    );
+
+    return ProofBundleManifestSchema.parse({
+      ...bundle,
+      artifactIds: nextArtifactIds,
+      changeSummary: input.changeSummary?.trim() || bundle.changeSummary,
+      decisionTrace: nextDecisionTrace,
+      riskSummary: input.riskSummary?.trim() || bundle.riskSummary,
+      rollbackSummary: input.rollbackSummary?.trim() || bundle.rollbackSummary,
+      status: input.artifacts.length > 0 ? "ready" : bundle.status,
+      verificationSummary:
+        input.verificationSummary?.trim() || bundle.verificationSummary,
+    });
+  }
 }
 
-function extractSection(text: string, heading: string) {
-  const escapedHeading = escapeRegExp(heading);
-  const match = text.match(
-    new RegExp(
-      `(?:^|\\n)##\\s*${escapedHeading}\\s*\\n([\\s\\S]*?)(?=\\n##\\s|$)`,
-      "i",
-    ),
+function appendUniqueDecisionTrace(existing: string[], lines: string[]) {
+  return lines.reduce(
+    (trace, line) => (trace.includes(line) ? trace : [...trace, line]),
+    existing,
   );
-
-  return match?.[1]?.trim() || null;
-}
-
-function stripMarkdownPrefix(value: string) {
-  return value.replace(/^[-*]\s+/, "").trim();
-}
-
-function truncate(value: string, maxLength: number) {
-  return value.length <= maxLength
-    ? value
-    : `${value.slice(0, maxLength - 3).trimEnd()}...`;
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

@@ -1,0 +1,110 @@
+[
+  {
+    "id": "planner-passkeys-readonly",
+    "notes": "Planner should stay read-only while preserving the existing email-login path and evidence expectations.",
+    "context": {
+      "mission": {
+        "objective": "Implement passkeys for sign-in without breaking the existing email-login fallback.",
+        "type": "build",
+        "acceptance": [
+          "preserve the existing email-login fallback",
+          "scope the work to apps/web and docs",
+          "describe validation and evidence expectations"
+        ],
+        "constraints": {
+          "mustNot": [
+            "mutate files",
+            "change auth provider contracts",
+            "request approvals for mutation"
+          ],
+          "allowedPaths": ["apps/web", "docs"],
+          "targetBranch": "feat/passkeys"
+        },
+        "evidenceRequirements": ["test report", "risk note", "rollback note"]
+      },
+      "task": {
+        "role": "planner",
+        "sequence": 0
+      },
+      "workflowPolicy": {
+        "path": "WORKFLOW.md",
+        "excerpt": "Keep routes thin. Do not auto-merge. Evidence must call out risk and rollback notes.",
+        "truncated": false
+      },
+      "workspace": {
+        "repo": "/workspace/pocket-cto",
+        "rootPath": "/workspace/pocket-cto.workspaces/mission-passkeys/0-planner",
+        "branchName": "mission/passkeys"
+      }
+    },
+    "expectations": {
+      "requiredSections": [
+        "Objective understanding",
+        "Relevant context",
+        "Risks and unknowns",
+        "Proposed steps",
+        "Validation plan",
+        "Handoff notes"
+      ],
+      "mustMention": ["email login", "apps/web", "docs", "validation"],
+      "forbiddenPhrases": ["apply patch", "npm install", "request approval"],
+      "evidenceSignals": ["test report", "risk", "rollback"],
+      "actionabilitySignals": ["apps/web", "docs", "handoff", "step"]
+    },
+    "dryRunOutput": "## Objective understanding\nPreserve the existing email-login fallback while planning passkey work scoped to apps/web and docs.\n\n## Relevant context\nThe request narrows scope to apps/web and docs only, and the workflow policy expects explicit risk and rollback notes.\n\n## Risks and unknowns\nBrowser support and copy changes could weaken the fallback path if the plan ignores current sign-in behavior.\n\n## Proposed steps\n1. Inspect the current sign-in flow and identify where passkeys can be introduced without changing auth provider contracts.\n2. Plan the UI and docs updates inside apps/web and docs only.\n3. Capture the evidence and validation expectations before handing work to the executor.\n\n## Validation plan\nList the regression checks for email login, require a test report, and note the rollback path if the passkey UX regresses.\n\n## Handoff notes\nCall out the fallback dependency, the required risk note, and the operator-facing rollback note."
+  },
+  {
+    "id": "planner-approval-interrupt-hardening",
+    "notes": "Planner should propose a contained control-plane investigation without mutating files or widening into GitHub integration.",
+    "context": {
+      "mission": {
+        "objective": "Harden approval interrupt recovery so executor tasks do not strand after a live-turn interruption.",
+        "type": "build",
+        "acceptance": [
+          "identify the control-plane modules involved",
+          "keep scope to apps/control-plane and docs",
+          "describe replay and evidence implications"
+        ],
+        "constraints": {
+          "mustNot": [
+            "mutate files",
+            "touch GitHub integration",
+            "request runtime approvals"
+          ],
+          "allowedPaths": ["apps/control-plane", "docs"],
+          "targetBranch": "feat/approval-recovery"
+        },
+        "evidenceRequirements": ["replay trace", "risk note"]
+      },
+      "task": {
+        "role": "planner",
+        "sequence": 0
+      },
+      "workflowPolicy": {
+        "path": "WORKFLOW.md",
+        "excerpt": "Replay events are mandatory. Preserve modular boundaries and keep routes thin.",
+        "truncated": false
+      },
+      "workspace": {
+        "repo": "/workspace/pocket-cto",
+        "rootPath": "/workspace/pocket-cto.workspaces/mission-approval/0-planner",
+        "branchName": "mission/approval-recovery"
+      }
+    },
+    "expectations": {
+      "requiredSections": [
+        "Objective understanding",
+        "Relevant context",
+        "Risks and unknowns",
+        "Proposed steps",
+        "Validation plan",
+        "Handoff notes"
+      ],
+      "mustMention": ["apps/control-plane", "replay", "evidence", "risk"],
+      "forbiddenPhrases": ["apply patch", "gh pr", "request approval"],
+      "evidenceSignals": ["replay", "evidence", "risk"],
+      "actionabilitySignals": ["apps/control-plane", "step", "handoff"]
+    },
+    "dryRunOutput": "## Objective understanding\nPlan a scoped control-plane hardening pass so approval interrupts stop stranding executor tasks.\n\n## Relevant context\nThe work belongs in apps/control-plane and needs to preserve replay and evidence guarantees without widening into GitHub integration.\n\n## Risks and unknowns\nInterrupt timing, live-session ownership, and replay ordering can still produce hidden edge cases if the plan skips failure paths.\n\n## Proposed steps\n1. Review the approval, orchestrator, and runtime-codex modules that own live turn state.\n2. Map the replay events and evidence outputs that must stay truthful when an interrupt lands.\n3. Define a narrow implementation sequence limited to apps/control-plane and the matching docs.\n\n## Validation plan\nRequire a replay trace for the interrupted path, verify the task terminal state, and document the expected evidence updates.\n\n## Handoff notes\nKeep the slice inside apps/control-plane, preserve modular boundaries, and make the risk note visible to the operator."
+  }
+]

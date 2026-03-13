@@ -235,10 +235,18 @@ The resulting executor prompt tells Codex:
 - do not run installs, generators, migrations, package-manager commands, or formatters
 - return a concise final report with intended change, files changed, validations run, remaining risks, and operator handoff
 
-Pocket CTO now includes approval persistence for live runtime requests, but it still stops short of richer runtime artifact capture.
+Pocket CTO now includes approval persistence for live runtime requests and the first narrow runtime artifact placeholders.
 
 - M1.6 adds approval persistence plus live-turn interrupts
-- M1.7 will add richer runtime-to-evidence artifact plumbing
+- M1.7 adds `diff_summary`, `test_report`, and failure-oriented `log_excerpt` placeholders sourced from local validation plus concise runtime output
+- `pr_link` remains deferred until M2 GitHub App integration
+
+When an executor turn terminalizes, Pocket CTO still keeps replay structural, but it now persists richer evidence through the control-plane evidence boundary:
+
+- successful executor turns persist `diff_summary` and `test_report` artifacts
+- terminalized executor failures still persist a useful `log_excerpt` artifact when there is meaningful runtime or validation output to show
+- each persisted artifact appends its own `artifact.created` replay event
+- the proof-bundle manifest is updated in place with the new artifact ids plus more truthful summary fields
 
 ## Approval and interrupt lifecycle
 

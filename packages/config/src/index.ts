@@ -2,10 +2,26 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 
-export const EnvSchema = z.object({
+const SharedEnvFields = {
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MISSION_COMPILER_MODEL: z.string().default("gpt-5-mini"),
+  OPENAI_SUMMARY_MODEL: z.string().default("gpt-5-mini"),
+  OPENAI_REASONING_MODEL: z.string().default("gpt-5"),
+  OPENAI_EVALS_ENABLED: z.coerce.boolean().default(false),
+  OPENAI_EVAL_MODEL: z.string().default("gpt-5-mini"),
+  OPENAI_EVAL_GRADER_MODEL: z.string().default("gpt-5-mini"),
+  OPENAI_EVAL_REFERENCE_MODEL: z.string().default("gpt-5-codex"),
+} satisfies Record<string, z.ZodTypeAny>;
+
+export const EvalEnvSchema = z.object({
+  ...SharedEnvFields,
+});
+
+export const EnvSchema = z.object({
+  ...SharedEnvFields,
   CONTROL_PLANE_PORT: z.coerce.number().int().positive().default(4000),
   WEB_PORT: z.coerce.number().int().positive().default(3000),
   PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
@@ -18,10 +34,6 @@ export const EnvSchema = z.object({
   ARTIFACT_S3_ACCESS_KEY: z.string().min(1),
   ARTIFACT_S3_SECRET_KEY: z.string().min(1),
   ARTIFACT_S3_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
-  OPENAI_API_KEY: z.string().optional(),
-  OPENAI_MISSION_COMPILER_MODEL: z.string().default("gpt-5-mini"),
-  OPENAI_SUMMARY_MODEL: z.string().default("gpt-5-mini"),
-  OPENAI_REASONING_MODEL: z.string().default("gpt-5"),
   CODEX_APP_SERVER_COMMAND: z.string().default("codex"),
   CODEX_APP_SERVER_ARGS: z.string().default("app-server"),
   CODEX_DEFAULT_MODEL: z.string().default("gpt-5.2-codex"),
@@ -45,13 +57,24 @@ export const EnvSchema = z.object({
 });
 
 export type Env = z.infer<typeof EnvSchema>;
+export type EvalEnv = z.infer<typeof EvalEnvSchema>;
 
 export function loadEnv(raw: NodeJS.ProcessEnv = process.env): Env {
-  if (raw === process.env) {
-    loadNearestEnvFile();
+  ensureNearestEnvFileLoaded(raw);
+  return EnvSchema.parse(raw);
+}
+
+export function loadEvalEnv(raw: NodeJS.ProcessEnv = process.env): EvalEnv {
+  ensureNearestEnvFileLoaded(raw);
+  return EvalEnvSchema.parse(raw);
+}
+
+function ensureNearestEnvFileLoaded(raw: NodeJS.ProcessEnv) {
+  if (raw !== process.env) {
+    return;
   }
 
-  return EnvSchema.parse(raw);
+  loadNearestEnvFile();
 }
 
 function loadNearestEnvFile() {

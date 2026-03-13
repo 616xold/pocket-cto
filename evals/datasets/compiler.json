@@ -1,0 +1,85 @@
+[
+  {
+    "id": "compiler-passkeys-build-spec",
+    "notes": "Compiler benchmark should capture scope, evidence, and safety constraints for a build mission.",
+    "inputText": "Implement passkeys for sign-in without breaking the existing email-login fallback. Keep scope to apps/web and docs. I need test evidence and a rollback note. Do not change auth provider contracts or deploy anything.",
+    "expectations": {
+      "expectedType": "build",
+      "expectedRepos": ["web"],
+      "expectedAllowedPaths": ["apps/web", "docs"],
+      "expectedMustNot": ["change auth provider contracts", "deploy"],
+      "requiredDeliverables": ["plan", "proof_bundle", "approval_card"],
+      "requiredEvidenceRequirements": ["test report", "rollback note"],
+      "requiredAcceptancePhrases": ["email-login fallback", "apps/web", "docs"]
+    },
+    "dryRunOutput": {
+      "type": "build",
+      "title": "Implement passkeys without breaking email login",
+      "objective": "Implement passkeys for sign-in while preserving the existing email-login fallback.",
+      "repos": ["web"],
+      "constraints": {
+        "mustNot": [
+          "change auth provider contracts",
+          "deploy the change"
+        ],
+        "allowedPaths": ["apps/web", "docs"],
+        "targetBranch": "feat/passkeys"
+      },
+      "acceptance": [
+        "preserve the existing email-login fallback",
+        "keep the code and docs changes inside apps/web and docs",
+        "attach test report evidence and a rollback note"
+      ],
+      "riskBudget": {
+        "sandboxMode": "patch-only",
+        "maxWallClockMinutes": 90,
+        "maxCostUsd": 12,
+        "allowNetwork": false,
+        "requiresHumanApprovalFor": ["merge"]
+      },
+      "deliverables": ["plan", "proof_bundle", "approval_card"],
+      "evidenceRequirements": ["test report", "rollback note"]
+    }
+  },
+  {
+    "id": "compiler-approval-recovery-discovery-spec",
+    "notes": "Compiler benchmark should show a discovery-style mission instead of flattening every request into a build mission.",
+    "inputText": "Investigate why approval interrupts can strand executor tasks after a live turn stops mid-flight. Start with replay and runtime-codex evidence, keep it inside apps/control-plane, and do not merge or deploy anything yet.",
+    "expectations": {
+      "expectedType": "discovery",
+      "expectedRepos": ["control-plane"],
+      "expectedAllowedPaths": ["apps/control-plane"],
+      "expectedMustNot": ["merge", "deploy"],
+      "requiredDeliverables": ["plan", "proof_bundle"],
+      "requiredEvidenceRequirements": ["replay trace"],
+      "requiredAcceptancePhrases": ["replay", "runtime-codex", "stranding conditions"]
+    },
+    "dryRunOutput": {
+      "type": "discovery",
+      "title": "Investigate approval interrupt stranding in the control plane",
+      "objective": "Investigate why approval interrupts can strand executor tasks after a live turn stops mid-flight.",
+      "repos": ["control-plane"],
+      "constraints": {
+        "mustNot": [
+          "merge any change",
+          "deploy the result"
+        ],
+        "allowedPaths": ["apps/control-plane"]
+      },
+      "acceptance": [
+        "identify replay evidence for the interrupted path",
+        "map the runtime-codex and approval modules involved",
+        "summarize likely stranding conditions and next steps"
+      ],
+      "riskBudget": {
+        "sandboxMode": "read-only",
+        "maxWallClockMinutes": 45,
+        "maxCostUsd": 8,
+        "allowNetwork": false,
+        "requiresHumanApprovalFor": ["merge"]
+      },
+      "deliverables": ["plan", "proof_bundle"],
+      "evidenceRequirements": ["replay trace"]
+    }
+  }
+]

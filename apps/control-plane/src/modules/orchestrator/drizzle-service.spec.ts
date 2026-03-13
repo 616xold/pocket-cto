@@ -985,6 +985,16 @@ describe("OrchestratorWorker (DB-backed)", () => {
     const detail = await executorHarness.missionService.getMissionDetail(
       created.mission.id,
     );
+    const missionArtifacts = await getArtifactsForMission(created.mission.id);
+    const diffSummaryArtifact = missionArtifacts.find(
+      (artifact) => artifact.kind === "diff_summary",
+    );
+    const testReportArtifact = missionArtifacts.find(
+      (artifact) => artifact.kind === "test_report",
+    );
+    const replayEvents = await executorHarness.replayService.getMissionEvents(
+      created.mission.id,
+    );
     const executorWorkspace = await getWorkspaceByTaskId(created.tasks[1]!.id);
 
     expect(detail.tasks[1]).toMatchObject({
@@ -993,6 +1003,84 @@ describe("OrchestratorWorker (DB-backed)", () => {
       summary: expect.stringContaining("Validation passed"),
     });
     expect(planArtifact?.id).toBeDefined();
+    expect(diffSummaryArtifact).toBeDefined();
+    expect(testReportArtifact).toBeDefined();
+    expect(readArtifactMetadata(diffSummaryArtifact?.metadata)).toMatchObject({
+      changedPaths: ["README.md"],
+      diffCheckPassed: true,
+      source: "executor_validation",
+      threadId: "thread_executor_1",
+      turnId: "turn_executor_1",
+      validationStatus: "passed",
+    });
+    expect(readArtifactMetadata(testReportArtifact?.metadata)).toMatchObject({
+      diffCheckPassed: true,
+      source: "executor_validation",
+      threadId: "thread_executor_1",
+      turnId: "turn_executor_1",
+      validationStatus: "passed",
+    });
+    expect(detail.proofBundle).toMatchObject({
+      status: "ready",
+    });
+    expect(detail.proofBundle.artifactIds).toEqual(
+      expect.arrayContaining([
+        planArtifact!.id,
+        diffSummaryArtifact!.id,
+        testReportArtifact!.id,
+      ]),
+    );
+    expect(detail.proofBundle.changeSummary).toContain("README.md");
+    expect(detail.proofBundle.verificationSummary).toContain(
+      "Local executor validation passed",
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: created.tasks[1]!.id,
+        type: "artifact.created",
+        payload: {
+          artifactId: diffSummaryArtifact!.id,
+          kind: "diff_summary",
+        },
+      }),
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: created.tasks[1]!.id,
+        type: "artifact.created",
+        payload: {
+          artifactId: testReportArtifact!.id,
+          kind: "test_report",
+        },
+      }),
+    );
+    const executorCompletedEvent = getRequiredReplayEvent(
+      replayEvents,
+      (event) =>
+        event.taskId === created.tasks[1]!.id &&
+        event.type === "task.status_changed" &&
+        readArtifactMetadata(event.payload).reason === "runtime_turn_completed",
+    );
+    const diffArtifactCreatedEvent = getRequiredReplayEvent(
+      replayEvents,
+      (event) =>
+        event.taskId === created.tasks[1]!.id &&
+        event.type === "artifact.created" &&
+        readArtifactMetadata(event.payload).kind === "diff_summary",
+    );
+    const testArtifactCreatedEvent = getRequiredReplayEvent(
+      replayEvents,
+      (event) =>
+        event.taskId === created.tasks[1]!.id &&
+        event.type === "artifact.created" &&
+        readArtifactMetadata(event.payload).kind === "test_report",
+    );
+    expect(executorCompletedEvent.sequence).toBeLessThan(
+      diffArtifactCreatedEvent.sequence,
+    );
+    expect(diffArtifactCreatedEvent.sequence).toBeLessThan(
+      testArtifactCreatedEvent.sequence,
+    );
     expect(await readFile(join(executorWorkspace!.rootPath, "README.md"), "utf8")).toContain(
       "executor change",
     );
@@ -1273,6 +1361,16 @@ describe("OrchestratorWorker (DB-backed)", () => {
     const detail = await executorHarness.missionService.getMissionDetail(
       created.mission.id,
     );
+    const missionArtifacts = await getArtifactsForMission(created.mission.id);
+    const diffSummaryArtifact = missionArtifacts.find(
+      (artifact) => artifact.kind === "diff_summary",
+    );
+    const testReportArtifact = missionArtifacts.find(
+      (artifact) => artifact.kind === "test_report",
+    );
+    const logExcerptArtifact = missionArtifacts.find(
+      (artifact) => artifact.kind === "log_excerpt",
+    );
     const replayEvents = await executorHarness.replayService.getMissionEvents(
       created.mission.id,
     );
@@ -1283,6 +1381,29 @@ describe("OrchestratorWorker (DB-backed)", () => {
       codexTurnId: null,
       status: "failed",
     });
+    expect(diffSummaryArtifact).toBeUndefined();
+    expect(testReportArtifact).toBeDefined();
+    expect(logExcerptArtifact).toBeDefined();
+    expect(readArtifactMetadata(testReportArtifact?.metadata)).toMatchObject({
+      failureCode: "no_changes",
+      source: "executor_validation",
+      validationStatus: "failed",
+    });
+    expect(readArtifactMetadata(logExcerptArtifact?.metadata)).toMatchObject({
+      source: "runtime_executor_output",
+      terminalTaskStatus: "failed",
+      validationStatus: "failed",
+    });
+    expect(detail.proofBundle).toMatchObject({
+      status: "ready",
+    });
+    expect(detail.proofBundle.artifactIds).toEqual(
+      expect.arrayContaining([testReportArtifact!.id, logExcerptArtifact!.id]),
+    );
+    expect(detail.proofBundle.verificationSummary).toContain(
+      "Local executor validation failed",
+    );
+    expect(detail.proofBundle.rollbackSummary).toContain("Safe fallback");
     expect(replayEvents).toContainEqual(
       expect.objectContaining({
         taskId: created.tasks[1]!.id,
@@ -1293,6 +1414,53 @@ describe("OrchestratorWorker (DB-backed)", () => {
           to: "failed",
         }),
       }),
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: created.tasks[1]!.id,
+        type: "artifact.created",
+        payload: {
+          artifactId: testReportArtifact!.id,
+          kind: "test_report",
+        },
+      }),
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: created.tasks[1]!.id,
+        type: "artifact.created",
+        payload: {
+          artifactId: logExcerptArtifact!.id,
+          kind: "log_excerpt",
+        },
+      }),
+    );
+    const executorFailedEvent = getRequiredReplayEvent(
+      replayEvents,
+      (event) =>
+        event.taskId === created.tasks[1]!.id &&
+        event.type === "task.status_changed" &&
+        readArtifactMetadata(event.payload).reason === "executor_no_changes",
+    );
+    const testArtifactCreatedEvent = getRequiredReplayEvent(
+      replayEvents,
+      (event) =>
+        event.taskId === created.tasks[1]!.id &&
+        event.type === "artifact.created" &&
+        readArtifactMetadata(event.payload).kind === "test_report",
+    );
+    const logArtifactCreatedEvent = getRequiredReplayEvent(
+      replayEvents,
+      (event) =>
+        event.taskId === created.tasks[1]!.id &&
+        event.type === "artifact.created" &&
+        readArtifactMetadata(event.payload).kind === "log_excerpt",
+    );
+    expect(executorFailedEvent.sequence).toBeLessThan(
+      testArtifactCreatedEvent.sequence,
+    );
+    expect(testArtifactCreatedEvent.sequence).toBeLessThan(
+      logArtifactCreatedEvent.sequence,
     );
     expect(executorWorkspace).toMatchObject({
       isActive: false,
@@ -2110,6 +2278,13 @@ async function getPlanArtifact(missionId: string) {
     .limit(1);
 
   return artifact ?? null;
+}
+
+async function getArtifactsForMission(missionId: string) {
+  return db
+    .select()
+    .from(artifacts)
+    .where(eq(artifacts.missionId, missionId));
 }
 
 async function countWorkspaces() {

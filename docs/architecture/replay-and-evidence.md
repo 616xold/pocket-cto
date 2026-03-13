@@ -20,6 +20,14 @@ During M0, the placeholder proof bundle is persisted explicitly as an
 The manifest JSON lives under `artifacts.metadata.manifest` so the evidence
 ledger can expose the placeholder before real bundle assembly exists.
 
+During M1.7, Pocket CTO starts enriching that placeholder manifest in place.
+Executor completion can now attach `diff_summary`, `test_report`, and `log_excerpt`
+artifact ids, promote the manifest `status` from `placeholder` to `ready` once
+runtime evidence exists, and fill `changeSummary`, `verificationSummary`,
+`riskSummary`, and `rollbackSummary` conservatively from local validation and
+compact runtime output. `pr_link` remains explicitly deferred until M2 GitHub
+App integration lands.
+
 ## Replay event philosophy
 
 Pocket CTO is not full event sourcing in v1.
@@ -59,12 +67,22 @@ For M1.6 live approvals and interrupts, the replay narrative now also includes:
 
 This keeps approval trace and operator interrupt intent durable in replay instead of hiding them inside worker memory.
 
+For M1.7 runtime evidence mapping, replay remains compact and artifact-first:
+
+1. `runtime.turn_completed`
+2. terminal `task.status_changed`
+3. one `artifact.created` per persisted runtime artifact placeholder
+4. proof-bundle manifest enrichment in place without separate verbose replay
+
+This keeps replay reconstructable without storing token-by-token runtime text.
+
 ## Required artifact classes
 
 - plan
 - pull request link
 - diff summary
 - test report
+- log excerpt
 - screenshot
 - benchmark or metrics delta
 - rollback note

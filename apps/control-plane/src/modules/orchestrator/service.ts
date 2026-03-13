@@ -71,6 +71,7 @@ export class OrchestratorService {
     evidenceService: Pick<
       EvidenceService,
       | "attachPlannerArtifactToProofBundle"
+      | "attachRuntimeArtifactsToProofBundle"
       | "buildPlannerArtifact"
       | "buildPlannerTaskSummary"
     >,

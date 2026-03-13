@@ -23,6 +23,7 @@
 tmp/
 temp/
 artifacts-local/
+evals/results/
 playwright-report/
 test-results/
 *.pid

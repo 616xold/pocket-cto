@@ -20,6 +20,11 @@ import {
   type PreparedPlannerTurnEvidence,
 } from "../evidence/planner-output";
 import {
+  persistExecutorRuntimeEvidence,
+  prepareExecutorRuntimeEvidence,
+  type PreparedRuntimeArtifactEvidence,
+} from "../evidence/runtime-artifacts";
+import {
   buildRuntimeStartedMissionStatusChangedPayload,
 } from "../missions/events";
 import type { ExecutorPlannerArtifactRecord } from "../missions/planner-artifact";
@@ -71,6 +76,7 @@ export type ExecuteClaimedTaskTurnResult = {
 type TurnCompletionOutcome = {
   nextStatus: MissionTaskStatus;
   preparedPlannerEvidence: PreparedPlannerTurnEvidence | null;
+  preparedRuntimeEvidence: PreparedRuntimeArtifactEvidence | null;
   reason: TaskStatusChangeReason;
   summary: string | null;
 };
@@ -106,6 +112,7 @@ export class OrchestratorRuntimePhase {
     private readonly evidenceService: Pick<
       EvidenceService,
       | "attachPlannerArtifactToProofBundle"
+      | "attachRuntimeArtifactsToProofBundle"
       | "buildPlannerArtifact"
       | "buildPlannerTaskSummary"
     >,
@@ -516,6 +523,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "cancelled",
         preparedPlannerEvidence: null,
+        preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnInterrupted,
         summary: null,
       };
@@ -525,6 +533,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnFailed,
         summary: null,
       };
@@ -541,6 +550,7 @@ export class OrchestratorRuntimePhase {
     return {
       nextStatus: "succeeded",
       preparedPlannerEvidence: null,
+      preparedRuntimeEvidence: null,
       reason: taskStatusChangeReasons.runtimeTurnCompleted,
       summary: null,
     };
@@ -548,6 +558,7 @@ export class OrchestratorRuntimePhase {
 
   private async resolveExecutorTurnCompletionOutcome(input: {
     mission: MissionRecord;
+    proofBundle: ProofBundleManifest | null;
     task: MissionTaskRecord;
     turn: RuntimeCodexRunTurnResult;
     workspaceRoot: string;
@@ -562,10 +573,20 @@ export class OrchestratorRuntimePhase {
         turn: input.turn,
         validation,
       });
+      const terminalTaskStatus = validation.status === "passed" ? "succeeded" : "failed";
 
       return {
-        nextStatus: validation.status === "passed" ? "succeeded" : "failed",
+        nextStatus: terminalTaskStatus,
         preparedPlannerEvidence: null,
+        preparedRuntimeEvidence: prepareExecutorRuntimeEvidence({
+          mission: input.mission,
+          proofBundle: input.proofBundle,
+          task: input.task,
+          terminalSummary: summary,
+          terminalTaskStatus,
+          turn: input.turn,
+          validation,
+        }),
         reason:
           validation.status === "passed"
             ? taskStatusChangeReasons.runtimeTurnCompleted
@@ -575,11 +596,22 @@ export class OrchestratorRuntimePhase {
         summary,
       };
     } catch (error) {
+      const summary = buildExecutorTerminalizationFailureSummary(error);
+
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedRuntimeEvidence: prepareExecutorRuntimeEvidence({
+          mission: input.mission,
+          proofBundle: input.proofBundle,
+          task: input.task,
+          terminalSummary: summary,
+          terminalTaskStatus: "failed",
+          turn: input.turn,
+          validation: null,
+        }),
         reason: taskStatusChangeReasons.executorValidationFailed,
-        summary: buildExecutorTerminalizationFailureSummary(error),
+        summary,
       };
     }
   }
@@ -604,6 +636,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "succeeded",
         preparedPlannerEvidence,
+        preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnCompleted,
         summary: preparedPlannerEvidence?.summary ?? null,
       };
@@ -611,6 +644,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.plannerEvidenceFailed,
         summary: buildPlannerEvidenceFailureSummary(error),
       };
@@ -681,6 +715,19 @@ export class OrchestratorRuntimePhase {
         });
       }
 
+      if (completionOutcome.preparedRuntimeEvidence) {
+        await persistExecutorRuntimeEvidence({
+          deps: {
+            evidenceService: this.evidenceService,
+            missionRepository: this.missionRepository,
+            replayService: this.replayService,
+          },
+          preparedEvidence: completionOutcome.preparedRuntimeEvidence,
+          session,
+          task: finalizedTask,
+        });
+      }
+
       await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
 
       return finalizedTask;
@@ -697,6 +744,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "cancelled",
         preparedPlannerEvidence: null,
+        preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnInterrupted,
         summary: input.completionOutcome.summary,
       };
@@ -706,6 +754,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnFailed,
         summary: input.completionOutcome.summary,
       };
@@ -719,6 +768,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedRuntimeEvidence: null,
         reason: plannerEvidenceFailed
           ? taskStatusChangeReasons.plannerEvidenceFailed
           : taskStatusChangeReasons.runtimeTurnFailed,
@@ -733,6 +783,7 @@ export class OrchestratorRuntimePhase {
         return {
           nextStatus: "failed",
           preparedPlannerEvidence: null,
+          preparedRuntimeEvidence: null,
           reason: taskStatusChangeReasons.executorNoChanges,
           summary: input.completionOutcome.summary,
         };
@@ -741,6 +792,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.executorValidationFailed,
         summary: buildExecutorTerminalizationFailureSummary(input.error),
       };
@@ -749,6 +801,7 @@ export class OrchestratorRuntimePhase {
     return {
       nextStatus: "failed",
       preparedPlannerEvidence: null,
+      preparedRuntimeEvidence: null,
       reason: taskStatusChangeReasons.runtimeTurnFailed,
       summary: input.completionOutcome.summary,
     };
