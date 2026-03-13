@@ -257,15 +257,16 @@ When the operator accepts or accepts-for-session:
 
 1. the approval row updates to `approved`
 2. replay appends `approval.resolved`
-3. the task transitions `awaiting_approval -> running` with `reason = "approval_resolved"`
-4. the mission transitions back to `running` when no pending approvals remain
-5. the same live app-server session receives the approval response and continues the turn honestly
+3. Pocket CTO delivers the approval response back to the waiting live app-server session
+4. only after that live handoff succeeds does the task transition `awaiting_approval -> running` with `reason = "approval_resolved"`
+5. the mission transitions back to `running` when no pending approvals remain
+6. if the live handoff fails, Pocket CTO leaves the task out of `running`, records `payload.liveContinuation.status = "delivery_failed"` on the approval row, and returns an explicit error instead of pretending continuity exists
 
 When the operator declines or cancels:
 
 1. the approval row updates to `declined` or `cancelled`
 2. replay appends `approval.resolved`
-3. Pocket CTO returns the decline or cancel decision to the live runtime session
+3. Pocket CTO attempts to return the decline or cancel decision to the live runtime session and records a durable continuation-failure marker if that handoff is already gone
 4. the later terminal task outcome is whatever the runtime actually reports; Pocket CTO does not fabricate success
 
 Interrupts use the same live-session seam:

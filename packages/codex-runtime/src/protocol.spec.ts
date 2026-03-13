@@ -1,5 +1,6 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
@@ -301,6 +302,7 @@ describe("codex runtime protocol", () => {
     const approvalCwd = await mkdtemp(
       `${tmpdir()}/pocket-cto-codex-runtime-approval-`,
     );
+    let approvalReadme = "";
     const client = new CodexAppServerClient({
       command: process.execPath,
       args: [fixturePath, "--mode", "file-change-approval"],
@@ -387,6 +389,7 @@ describe("codex runtime protocol", () => {
       });
 
       await delay(80);
+      approvalReadme = await readFile(join(approvalCwd, "README.md"), "utf8");
     } finally {
       await client.stop();
       unsubscribe();
@@ -432,6 +435,7 @@ describe("codex runtime protocol", () => {
         }),
       }),
     );
+    expect(approvalReadme).toContain("executor change via approval fixture");
   });
 
   it("surfaces resume-gap failures and still allows direct turn/start when the runtime supports it", async () => {

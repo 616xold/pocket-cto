@@ -13,6 +13,7 @@ let sawDirectTurnMissing = false;
 let sawResumeGap = false;
 let threadStartCount = 0;
 const loadedThreadIds = new Set();
+const threadCwds = new Map();
 let pendingServerRequest = null;
 
 const readlineInterface = readline.createInterface({
@@ -86,6 +87,7 @@ readlineInterface.on("line", (line) => {
       replacement: sawResumeGap || sawDirectTurnMissing,
     });
     loadedThreadIds.add(activeThreadId);
+    threadCwds.set(activeThreadId, cwd);
 
     const thread = buildThread(activeThreadId, cwd);
 
@@ -140,6 +142,7 @@ readlineInterface.on("line", (line) => {
     const thread = buildThread(resumedThreadId, cwd);
     activeThreadId = resumedThreadId;
     loadedThreadIds.add(resumedThreadId);
+    threadCwds.set(resumedThreadId, cwd);
 
     write({
       id: message.id,
@@ -196,7 +199,10 @@ readlineInterface.on("line", (line) => {
     const lifecycle = buildLifecycle(mode);
     const turnApprovalPolicy = message.params?.approvalPolicy ?? "untrusted";
     const turnSandboxPolicy = message.params?.sandboxPolicy ?? null;
-    const turnCwd = message.params?.cwd ?? process.cwd();
+    const turnCwd =
+      message.params?.cwd ??
+      threadCwds.get(targetThreadId) ??
+      process.cwd();
     activeTurn = {
       cwd: turnCwd,
       threadId: targetThreadId,

@@ -40,6 +40,9 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 - [x] (2026-03-12T16:32Z) Added `pnpm ci:repro:ref` plus `tools/ci-repro-ref.mjs` and `tools/ci-repro-shared.mjs` so any clean ref can be reproduced with the same workflow env contract and optional repeated `integration-db` runs.
 - [x] (2026-03-12T16:33Z) Reproduced `pnpm ci:integration-db` from clean temp worktrees 5 times against `origin/main` and once against `HEAD`, with every run passing install, DB prep, dual migrations, tests, and the clean-tree check.
 - [x] (2026-03-12T16:34Z) Re-ran `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, and `pnpm test` on the live branch, then re-ran `pnpm ci:static` and `pnpm ci:integration-db` against a baseline snapshot so both entrypoints stayed green relative to the current dirty M1.5 worktree.
+- [x] (2026-03-13T19:15Z) Re-fetched `origin/main`, confirmed `gh` is unavailable in this environment, and reproduced the merged M1.6 failure from clean refs: `pnpm ci:repro:ref --ref origin/main --step integration-db --repeat 10` failed 10/10 times and `pnpm ci:repro:ref --ref HEAD --step integration-db --repeat 5` failed 5/5 times at the same `pnpm ci:integration-db` clean-tree step.
+- [x] (2026-03-13T19:15Z) Narrowed the deterministic failure to the fake Codex approval fixture mutating tracked `packages/codex-runtime/README.md` because `turn/start` fell back to `process.cwd()` instead of the thread `cwd` when approval tests omitted `cwd`, then fixed the fixture and added a protocol-spec assertion that the approval side effect lands in the temporary approval directory.
+- [x] (2026-03-13T19:15Z) Updated `tools/ci-repro-ref.mjs` so repeated clean-ref runs continue after failures and report a full summary, removed a stray root `.DS_Store`, and revalidated the patched current snapshot with `pnpm ci:repro:current`, which now passes install, `pnpm ci:static`, and `pnpm ci:integration-db` from a clean temp worktree.
 
 ## Surprises & Discoveries
 
@@ -82,8 +85,11 @@ The user-visible proof is operational rather than product-facing: the CI workflo
 - Observation: The latest merged `origin/main` commit and the current branch head are content-identical.
   Evidence: `git rev-parse origin/main^{tree} HEAD^{tree}` returned the same tree hash `1234a3d66a258689e97cf93bb5692714fa83cf2a`.
 
-- Observation: The reported `integration-db` failure on main is not reproducible from clean temp worktrees in this environment.
-  Evidence: `pnpm ci:repro:ref --ref origin/main --step integration-db --repeat 5` passed all five iterations, and `pnpm ci:repro:ref --ref HEAD --step integration-db` also passed with the same workflow env contract.
+- Observation: The merged M1.6 `integration-db` failure is deterministic from clean refs, and it is a clean-tree failure rather than a Postgres or assertion failure.
+  Evidence: `pnpm ci:repro:ref --ref origin/main --step integration-db --repeat 10` failed 10/10 times and `pnpm ci:repro:ref --ref HEAD --step integration-db --repeat 5` failed 5/5 times, each after tests completed successfully but `pnpm run ci:clean-tree` reported a tracked change to `packages/codex-runtime/README.md`.
+
+- Observation: The dirty tracked file comes from the fake Codex approval fixture using the wrong fallback `cwd`.
+  Evidence: The failing temp worktree diff showed duplicated `executor change via approval fixture` lines in `packages/codex-runtime/README.md`, and `packages/testkit/src/runtime/fake-codex-app-server.mjs` appended that marker to `join(pendingServerRequest.cwd, "README.md")` while `turn/start` defaulted `cwd` to `process.cwd()` instead of the thread `cwd`.
 
 ## Decision Log
 
@@ -147,6 +153,14 @@ The user-visible proof is operational rather than product-facing: the CI workflo
   Rationale: The repo now needs two distinct reproduction modes: dirty-snapshot overlay reproduction for local branch work and clean-ref reproduction for merged commits or merge targets. A checked-in helper keeps both paths on the same workflow env contract and makes flake checks repeatable.
   Date/Author: 2026-03-12 / Codex
 
+- Decision: Let `tools/ci-repro-ref.mjs` continue across repeated failures and print a per-iteration summary instead of aborting on the first red run.
+  Rationale: The March 13 diagnosis needed to distinguish deterministic merged failures from flakes, and continuing across repeats is the smallest checked-in change that makes that evidence visible without ad hoc shell loops.
+  Date/Author: 2026-03-13 / Codex
+
+- Decision: Fix the fake Codex approval fixture to inherit the thread `cwd` when `turn/start` omits it, and assert the temp approval directory receives the README side effect.
+  Rationale: The real red `integration-db` path came from test-fixture `cwd` drift, not from CI, Postgres, or product runtime logic. Correcting the fallback and codifying the expectation in `packages/codex-runtime/src/protocol.spec.ts` removes the deterministic clean-tree mutation without weakening the guardrails.
+  Date/Author: 2026-03-13 / Codex
+
 ## Context and Orientation
 
 This slice belongs to roadmap milestone `M0.1 repo bootstrap and dev infrastructure`.
@@ -199,6 +213,9 @@ The continuation edit surface for the March 10 diagnosis and hardening pass is:
 - `docs/ops/local-dev.md`
 - `tools/ci-check-clean-tree.mjs`
 - `tools/ci-repro-current-worktree.mjs`
+- `tools/ci-repro-ref.mjs`
+- `tools/ci-repro-shared.mjs`
+- `packages/codex-runtime/src/protocol.spec.ts`
 - `packages/testkit/src/runtime/fake-codex-app-server.mjs`
 
 Implementation should avoid widening into application modules unless a tiny test harness or config adjustment is necessary for hermetic CI.

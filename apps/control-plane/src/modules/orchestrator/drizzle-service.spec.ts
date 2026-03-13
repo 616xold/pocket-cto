@@ -1,11 +1,10 @@
-import { setTimeout as delay } from "node:timers/promises";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, count, eq } from "drizzle-orm";
 import { approvals, artifacts, missions, workspaces } from "@pocket-cto/db";
-import type { MissionRecord } from "@pocket-cto/domain";
+import type { MissionRecord, ReplayEvent } from "@pocket-cto/domain";
 import { DrizzleApprovalRepository } from "../approvals/drizzle-repository";
 import { ApprovalService } from "../approvals/service";
 import {
@@ -13,6 +12,7 @@ import {
   createTestDb,
   resetTestDatabase,
 } from "../../test/database";
+import { waitForValue } from "../../test/wait-for";
 import { EvidenceService } from "../evidence/service";
 import { StubMissionCompiler } from "../missions/compiler";
 import { DrizzleMissionRepository } from "../missions/drizzle-repository";
@@ -270,10 +270,6 @@ describe("OrchestratorWorker (DB-backed)", () => {
       pollIntervalMs: 1,
       runOnce: true,
     });
-    let executorTickSettled = false;
-    void executorTick.then(() => {
-      executorTickSettled = true;
-    });
 
     const pendingApproval = await waitForPendingApproval(executorTask.id);
     const awaitingDetail = await waitForTaskStatus(
@@ -338,19 +334,6 @@ describe("OrchestratorWorker (DB-backed)", () => {
       resolvedBy: "operator",
     });
 
-    await delay(1);
-
-    const resumedDetail = await missionService.getMissionDetail(created.mission.id);
-    const resumedExecutorTask = resumedDetail.tasks.find(
-      (task) => task.id === executorTask.id,
-    );
-    expect(executorTickSettled).toBe(false);
-    expect(resumedDetail.mission.status).toBe("running");
-    expect(resumedExecutorTask).toMatchObject({
-      id: executorTask.id,
-      status: "running",
-    });
-
     const completedTick = await executorTick;
     expect(completedTick).toMatchObject({
       kind: "turn_completed",
@@ -399,6 +382,35 @@ describe("OrchestratorWorker (DB-backed)", () => {
         },
       }),
     );
+    const approvalResolvedEvent = getRequiredReplayEvent(
+      finalReplay,
+      (event) =>
+        event.type === "approval.resolved" &&
+        readArtifactMetadata(event.payload).decision === "accept",
+    );
+    const taskResumedEvent = getRequiredReplayEvent(
+      finalReplay,
+      (event) =>
+        event.type === "task.status_changed" &&
+        readArtifactMetadata(event.payload).reason === "approval_resolved",
+    );
+    const missionResumedEvent = getRequiredReplayEvent(
+      finalReplay,
+      (event) =>
+        event.type === "mission.status_changed" &&
+        readArtifactMetadata(event.payload).reason === "approval_resolved",
+    );
+    const resumedTurnItem = getRequiredReplayEvent(
+      finalReplay,
+      (event) =>
+        event.type === "runtime.item_started" &&
+        event.sequence > taskResumedEvent.sequence,
+    );
+
+    expect(approvalResolvedEvent.sequence).toBeLessThan(taskResumedEvent.sequence);
+    expect(approvalResolvedEvent.sequence).toBeLessThan(missionResumedEvent.sequence);
+    expect(taskResumedEvent.sequence).toBeLessThan(resumedTurnItem.sequence);
+    expect(missionResumedEvent.sequence).toBeLessThan(resumedTurnItem.sequence);
   });
 
   it("persists declined approvals and lets the live turn finish with a truthful failed outcome", async () => {
@@ -2138,20 +2150,39 @@ async function getApprovalById(approvalId: string) {
 }
 
 async function waitForPendingApproval(taskId: string) {
-  return waitFor(async () => {
-    const [approval] = await db
-      .select()
-      .from(approvals)
-      .where(and(eq(approvals.taskId, taskId), eq(approvals.status, "pending")))
-      .limit(1);
+  return waitForValue({
+    description: `task ${taskId} to persist a pending approval`,
+    inspect: async () => {
+      const rows = await db
+        .select({
+          id: approvals.id,
+          status: approvals.status,
+          taskId: approvals.taskId,
+          updatedAt: approvals.updatedAt,
+        })
+        .from(approvals)
+        .where(eq(approvals.taskId, taskId));
 
-    return approval
-      ? {
-          ...approval,
-          createdAt: approval.createdAt.toISOString(),
-          updatedAt: approval.updatedAt.toISOString(),
-        }
-      : null;
+      return rows.map((approval) => ({
+        ...approval,
+        updatedAt: approval.updatedAt.toISOString(),
+      }));
+    },
+    read: async () => {
+      const [approval] = await db
+        .select()
+        .from(approvals)
+        .where(and(eq(approvals.taskId, taskId), eq(approvals.status, "pending")))
+        .limit(1);
+
+      return approval
+        ? {
+            ...approval,
+            createdAt: approval.createdAt.toISOString(),
+            updatedAt: approval.updatedAt.toISOString(),
+          }
+        : null;
+    },
   });
 }
 
@@ -2161,35 +2192,37 @@ async function waitForTaskStatus(
   taskId: string,
   status: string,
 ) {
-  return waitFor(async () => {
-    const detail = await missionService.getMissionDetail(missionId);
-    const task = detail.tasks.find((candidate) => candidate.id === taskId);
+  return waitForValue({
+    description: `task ${taskId} to reach status ${status}`,
+    inspect: async () => {
+      const detail = await missionService.getMissionDetail(missionId);
+      const task = detail.tasks.find((candidate) => candidate.id === taskId);
 
-    return task?.status === status ? detail : null;
+      return {
+        missionStatus: detail.mission.status,
+        taskStatus: task?.status ?? null,
+      };
+    },
+    read: async () => {
+      const detail = await missionService.getMissionDetail(missionId);
+      const task = detail.tasks.find((candidate) => candidate.id === taskId);
+
+      return task?.status === status ? detail : null;
+    },
   });
 }
 
-async function waitFor<T>(
-  reader: () => Promise<T | null>,
-  options?: {
-    attempts?: number;
-    delayMs?: number;
-  },
+function getRequiredReplayEvent(
+  events: ReplayEvent[],
+  predicate: (event: ReplayEvent) => boolean,
 ) {
-  const attempts = options?.attempts ?? 100;
-  const delayMs = options?.delayMs ?? 10;
+  const event = events.find(predicate);
 
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const value = await reader();
-
-    if (value !== null) {
-      return value;
-    }
-
-    await delay(delayMs);
+  if (!event) {
+    throw new Error("Expected replay event was not found");
   }
 
-  throw new Error("Timed out waiting for expected value");
+  return event;
 }
 
 function readArtifactMetadata(metadata: unknown) {

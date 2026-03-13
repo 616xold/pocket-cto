@@ -26,6 +26,9 @@ It does not add GitHub integration, richer artifact plumbing beyond approval per
 - [x] (2026-03-12T22:18Z) Added a real approvals bounded context plus a single-process in-memory live session registry, wired approval-aware task or mission state transitions and replay, and exposed resolve or interrupt operations on the worker command surface that owns the live runtime session.
 - [x] (2026-03-12T22:26Z) Extended the fake app-server fixture, added protocol-level and DB-backed tests for approval acceptance, approval decline, and interrupt terminalization, and fixed the observed turn-start versus approval-request race by serializing server-request handling behind earlier turn lifecycle persistence.
 - [x] (2026-03-12T22:31Z) Updated the ops docs and approvals README, generated additive replay migration `packages/db/drizzle/0005_cynical_human_robot.sql`, ran the required validation commands, ran one manual file-change approval acceptance plus one manual interrupt acceptance with the fake fixture, and recorded the resulting evidence below.
+- [x] (2026-03-13T19:00Z) Hardened approval resolution so accepted decisions only move task or mission state back to `running` after the live app-server response handoff succeeds, and added a durable `payload.liveContinuation.status = "delivery_failed"` marker when that handoff is already gone.
+- [x] (2026-03-13T19:00Z) Hardened approval cancellation and interrupt error reporting around the same live-session seam, then replaced the DB-backed approval polling helpers with a shared 5-second wait helper that reports the last observed state on timeout.
+- [x] (2026-03-13T19:00Z) Added a focused approval-service durability spec for live-handoff failure and re-ran the DB-backed approval or interrupt suite against the hardened behavior before the full validation pass.
 
 ## Surprises & Discoveries
 
@@ -58,6 +61,12 @@ It does not add GitHub integration, richer artifact plumbing beyond approval per
 
 - Observation: The fake app-server fixture must respect turn approval policy and sandbox posture or it will ask planners for mutation approvals that Pocket CTO should never see in M1.6.
   Evidence: the first file-change approval spec stalled on the planner task until the fixture was changed to emit approval requests only for writable, non-`never` turns and to apply a small real workspace edit on accepted file-change approvals so executor validation can pass honestly.
+
+- Observation: `ApprovalService.resolveApproval()` still committed `approval.resolved` and the accepted `awaiting_approval -> running` state transition before the live registry handoff was attempted, so a lost live session could leave durable state looking resumed when nothing had actually resumed.
+  Evidence: the pre-hardening flow in `apps/control-plane/src/modules/approvals/service.ts` updated the approval row and resumed mission or task state inside the transaction, then called `liveSessionRegistry.resolveApproval(...)` afterward.
+
+- Observation: the DB-backed approval or interrupt specs still depended on a 1-second total polling window and one raw `delay(1)` check, which is enough to reintroduce flakes under slower CI scheduling.
+  Evidence: `apps/control-plane/src/modules/orchestrator/drizzle-service.spec.ts` used `waitFor()` with `100 * 10ms` defaults plus a direct `await delay(1)` after approval resolution before this hardening pass.
 
 ## Decision Log
 
@@ -96,6 +105,14 @@ It does not add GitHub integration, richer artifact plumbing beyond approval per
 - Decision: Serialize inbound server-request handling behind already-queued turn lifecycle notifications before persisting the approval request.
   Rationale: this preserves the intended event order so `turn/started` persistence lands before `approval.requested`, making `running -> awaiting_approval` explicit and replayable instead of racing against the task-start transaction.
   Date/Author: 2026-03-12 / Codex
+
+- Decision: Defer the accepted `awaiting_approval -> running` transition until after the live approval response is actually handed back to the waiting app-server session, and record `payload.liveContinuation.status = "delivery_failed"` when that handoff is already gone.
+  Rationale: this keeps durable state from silently claiming that work resumed before the live handoff succeeded, while staying honest about the M1.6 single-process limitation instead of pretending restart-safe continuity exists.
+  Date/Author: 2026-03-13 / Codex
+
+- Decision: Keep the DB-backed approval and interrupt specs on polling, but move them to a shared helper with a 5-second timeout, 25ms interval, and last-observation timeout diagnostics instead of ad hoc 1-second loops and blind sleeps.
+  Rationale: the fake runtime and DB-backed worker flow are already integration-heavy enough that a deterministic internal signal would widen the seam more than needed for this hardening pass; a safer shared wait helper narrows the timing surface without hiding failures.
+  Date/Author: 2026-03-13 / Codex
 
 ## Context and Orientation
 
@@ -307,11 +324,15 @@ Validation results captured after implementation:
 - `pnpm --filter @pocket-cto/codex-runtime typecheck`
   Result: passed.
 - `pnpm --filter @pocket-cto/control-plane test`
-  Result: passed with 15 files and 55 tests after the approval-race and test-database migration fixes.
+  Result: passed with 16 files and 56 tests after the approval-resolution durability and DB-backed wait-helper hardening.
 - `pnpm --filter @pocket-cto/control-plane typecheck`
   Result: passed.
 - `pnpm --filter @pocket-cto/control-plane lint`
   Result: passed.
+- `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/orchestrator/drizzle-service.spec.ts --repeat 5`
+  Result: the installed Vitest version rejected `--repeat` as an unknown option, so the same DB-backed spec was re-run five times through a small local Node loop instead.
+- repeated `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/orchestrator/drizzle-service.spec.ts`
+  Result: passed 5 out of 5 consecutive runs, including the approval acceptance, decline, and interrupt paths that had been timing-sensitive.
 
 Manual acceptance evidence captured with the fake app-server fixture and no real `codex` binary:
 
@@ -352,6 +373,8 @@ M1.6 now finishes with truthful durable approval persistence, explicit `awaiting
 `@pocket-cto/codex-runtime` now accepts inbound server-initiated approval requests, typed file-change and command-execution approval responses, and `serverRequest/resolved` notifications while keeping low-level JSON-RPC mechanics inside the package boundary.
 The control plane now persists runtime approvals, appends `approval.requested` and `approval.resolved`, resolves or cancels live approvals through a single-process session registry, and records operator interrupt intent through `runtime.turn_interrupt_requested`.
 Planner turns remain `approvalPolicy = "never"`, while executor mutation turns now use an explicit policy resolver that returns `on-request`.
+The durability hardening pass also means accepted approvals do not move task or mission state back to `running` until the live response handoff succeeds, and a lost live handoff now leaves an explicit `payload.liveContinuation.status = "delivery_failed"` marker instead of a silent false-positive resume.
+The DB-backed approval or interrupt coverage now uses one shared 5-second wait helper with last-observation timeout reporting, and the full DB-heavy spec stayed green across five consecutive reruns.
 
 The known intentional limitation for the end of this slice is single-process approval continuity.
 If the worker restarts mid-approval, the approval row and replay should still explain what happened, but the live turn cannot yet be resumed automatically.
