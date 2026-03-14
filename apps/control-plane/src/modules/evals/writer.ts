@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import { getEvalResultsDirectory } from "./paths";
 import type { EvalResultRecord } from "./types";
 
@@ -53,32 +53,5 @@ export function createPromptRecord(input: {
     source: input.source,
     text: input.text,
     version: input.version,
-  };
-}
-
-export function summarizeResults(input: {
-  outputPath: string;
-  records: EvalResultRecord[];
-  runLabel: string;
-}) {
-  const samples = input.records.length;
-  const averageOverallScore =
-    samples === 0
-      ? 0
-      : Math.round(
-          (input.records.reduce(
-            (sum, record) => sum + record.combined.overallScore,
-            0,
-          ) /
-            samples) *
-            10,
-        ) / 10;
-
-  return {
-    averageOverallScore,
-    outputFileName: basename(input.outputPath),
-    outputPath: input.outputPath,
-    runLabel: input.runLabel,
-    samples,
   };
 }

@@ -2,8 +2,13 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { buildApp } from "./app";
 import { createInMemoryContainer } from "./bootstrap";
+import type { AppContainer } from "./lib/types";
+import { ApprovalNotFoundError, ApprovalNotPendingError } from "./modules/approvals/errors";
+import { RuntimeActiveTurnNotFoundError } from "./modules/runtime-codex/errors";
 
 const unknownMissionId = "11111111-1111-4111-8111-111111111111";
+const unknownApprovalId = "22222222-2222-4222-8222-222222222222";
+const unknownTaskId = "33333333-3333-4333-8333-333333333333";
 
 describe("control-plane app", () => {
   const apps: FastifyInstance[] = [];
@@ -82,7 +87,7 @@ describe("control-plane app", () => {
     });
   });
 
-  it("GET /missions/:missionId returns mission metadata, ordered tasks, and the proof bundle placeholder", async () => {
+  it("GET /missions/:missionId returns mission metadata, approvals, artifacts, and the proof bundle placeholder", async () => {
     const app = await createTestApp(apps);
     const created = await createMission(app);
 
@@ -105,6 +110,271 @@ describe("control-plane app", () => {
       proofBundle: {
         missionId: created.mission.id,
         status: "placeholder",
+      },
+      approvals: [],
+      artifacts: [
+        {
+          kind: "proof_bundle_manifest",
+        },
+      ],
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+    });
+  });
+
+  it("GET /missions/:missionId returns summary-shaped approvals and artifacts in the mission detail read model", async () => {
+    const app = await createStubApp(apps, {
+      missionService: {
+        async createFromText() {
+          throw new Error("create should not be called");
+        },
+        async getMissionDetail() {
+          return {
+            mission: {
+              createdAt: "2026-03-14T10:00:00.000Z",
+              createdBy: "operator",
+              id: unknownMissionId,
+              objective: "Ship passkeys without breaking email login.",
+              primaryRepo: "web",
+              sourceKind: "manual_text",
+              sourceRef: null,
+              spec: {
+                acceptance: ["Ship passkeys without breaking email login."],
+                constraints: {
+                  allowedPaths: [],
+                  mustNot: [],
+                },
+                deliverables: [
+                  "Updated mission detail route with approvals and artifacts.",
+                ],
+                evidenceRequirements: ["approval ledger", "artifact ledger"],
+                objective: "Ship passkeys without breaking email login.",
+                repos: ["web"],
+                riskBudget: {
+                  allowNetwork: false,
+                  maxCostUsd: 5,
+                  maxWallClockMinutes: 30,
+                  requiresHumanApprovalFor: [],
+                  sandboxMode: "patch-only",
+                },
+                title: "Implement passkeys for sign-in",
+                type: "build",
+              },
+              status: "running",
+              title: "Implement passkeys for sign-in",
+              type: "build",
+              updatedAt: "2026-03-14T10:05:00.000Z",
+            },
+            tasks: [
+              {
+                attemptCount: 1,
+                codexThreadId: "thread_live_1",
+                codexTurnId: "turn_live_1",
+                createdAt: "2026-03-14T10:00:00.000Z",
+                dependsOnTaskId: null,
+                id: unknownTaskId,
+                missionId: unknownMissionId,
+                role: "executor",
+                sequence: 1,
+                status: "running",
+                summary: "Applying runtime diff summary placeholders",
+                updatedAt: "2026-03-14T10:05:00.000Z",
+                workspaceId: null,
+              },
+            ],
+            proofBundle: {
+              artifactIds: [
+                "66666666-6666-4666-8666-666666666666",
+                "77777777-7777-4777-8777-777777777777",
+              ],
+              changeSummary: "Updated the mission detail read model for approvals and artifacts.",
+              decisionTrace: [
+                "Executor task 1 produced diff_summary artifact 77777777-7777-4777-8777-777777777777.",
+              ],
+              missionId: unknownMissionId,
+              objective: "Ship passkeys without breaking email login.",
+              replayEventCount: 12,
+              riskSummary: "Action controls still require embedded-worker mode.",
+              rollbackSummary: "Disable the action panel and fall back to the API route surface.",
+              status: "ready",
+              verificationSummary: "Route and web render tests cover the new read model.",
+            },
+            approvals: [
+              {
+                createdAt: "2026-03-14T10:01:00.000Z",
+                id: "44444444-4444-4444-8444-444444444444",
+                kind: "file_change",
+                rationale: null,
+                requestedBy: "system",
+                resolvedBy: null,
+                status: "pending",
+                updatedAt: "2026-03-14T10:01:00.000Z",
+              },
+            ],
+            artifacts: [
+              {
+                createdAt: "2026-03-14T10:00:00.000Z",
+                id: "66666666-6666-4666-8666-666666666666",
+                kind: "proof_bundle_manifest",
+                summary: "Proof bundle ready with 2 linked artifacts.",
+                taskId: null,
+                uri: "pocket-cto://missions/11111111-1111-4111-8111-111111111111/proof-bundle-manifest",
+              },
+              {
+                createdAt: "2026-03-14T10:04:00.000Z",
+                id: "77777777-7777-4777-8777-777777777777",
+                kind: "diff_summary",
+                summary: "Workspace changes touched apps/web and apps/control-plane.",
+                taskId: unknownTaskId,
+                uri: "pocket-cto://missions/11111111-1111-4111-8111-111111111111/tasks/33333333-3333-4333-8333-333333333333/diff-summary",
+              },
+            ],
+            liveControl: {
+              enabled: false,
+              limitation: "single_process_only",
+              mode: "api_only",
+            },
+          };
+        },
+      },
+      operatorControl: {
+        approvalService: {
+          async listMissionApprovals() {
+            return [];
+          },
+          async resolveApproval() {
+            throw new Error("resolve should not be called");
+          },
+        },
+        liveControl: {
+          enabled: true,
+          limitation: "single_process_only",
+          mode: "embedded_worker",
+        },
+        runtimeControlService: {
+          async interruptActiveTurn() {
+            throw new Error("interrupt should not be called");
+          },
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/missions/${unknownMissionId}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      mission: {
+        createdAt: "2026-03-14T10:00:00.000Z",
+        createdBy: "operator",
+        id: unknownMissionId,
+        objective: "Ship passkeys without breaking email login.",
+        primaryRepo: "web",
+        sourceKind: "manual_text",
+        sourceRef: null,
+        spec: {
+          acceptance: ["Ship passkeys without breaking email login."],
+          constraints: {
+            allowedPaths: [],
+            mustNot: [],
+          },
+          deliverables: [
+            "Updated mission detail route with approvals and artifacts.",
+          ],
+          evidenceRequirements: ["approval ledger", "artifact ledger"],
+          objective: "Ship passkeys without breaking email login.",
+          repos: ["web"],
+          riskBudget: {
+            allowNetwork: false,
+            maxCostUsd: 5,
+            maxWallClockMinutes: 30,
+            requiresHumanApprovalFor: [],
+            sandboxMode: "patch-only",
+          },
+          title: "Implement passkeys for sign-in",
+          type: "build",
+        },
+        status: "running",
+        title: "Implement passkeys for sign-in",
+        type: "build",
+        updatedAt: "2026-03-14T10:05:00.000Z",
+      },
+      tasks: [
+        {
+          attemptCount: 1,
+          codexThreadId: "thread_live_1",
+          codexTurnId: "turn_live_1",
+          createdAt: "2026-03-14T10:00:00.000Z",
+          dependsOnTaskId: null,
+          id: unknownTaskId,
+          missionId: unknownMissionId,
+          role: "executor",
+          sequence: 1,
+          status: "running",
+          summary: "Applying runtime diff summary placeholders",
+          updatedAt: "2026-03-14T10:05:00.000Z",
+          workspaceId: null,
+        },
+      ],
+      proofBundle: {
+        artifactIds: [
+          "66666666-6666-4666-8666-666666666666",
+          "77777777-7777-4777-8777-777777777777",
+        ],
+        changeSummary:
+          "Updated the mission detail read model for approvals and artifacts.",
+        decisionTrace: [
+          "Executor task 1 produced diff_summary artifact 77777777-7777-4777-8777-777777777777.",
+        ],
+        missionId: unknownMissionId,
+        objective: "Ship passkeys without breaking email login.",
+        replayEventCount: 12,
+        riskSummary: "Action controls still require embedded-worker mode.",
+        rollbackSummary:
+          "Disable the action panel and fall back to the API route surface.",
+        status: "ready",
+        verificationSummary:
+          "Route and web render tests cover the new read model.",
+      },
+      approvals: [
+        {
+          createdAt: "2026-03-14T10:01:00.000Z",
+          id: "44444444-4444-4444-8444-444444444444",
+          kind: "file_change",
+          rationale: null,
+          requestedBy: "system",
+          resolvedBy: null,
+          status: "pending",
+          updatedAt: "2026-03-14T10:01:00.000Z",
+        },
+      ],
+      artifacts: [
+        {
+          createdAt: "2026-03-14T10:00:00.000Z",
+          id: "66666666-6666-4666-8666-666666666666",
+          kind: "proof_bundle_manifest",
+          summary: "Proof bundle ready with 2 linked artifacts.",
+          taskId: null,
+          uri: "pocket-cto://missions/11111111-1111-4111-8111-111111111111/proof-bundle-manifest",
+        },
+        {
+          createdAt: "2026-03-14T10:04:00.000Z",
+          id: "77777777-7777-4777-8777-777777777777",
+          kind: "diff_summary",
+          summary: "Workspace changes touched apps/web and apps/control-plane.",
+          taskId: unknownTaskId,
+          uri: "pocket-cto://missions/11111111-1111-4111-8111-111111111111/tasks/33333333-3333-4333-8333-333333333333/diff-summary",
+        },
+      ],
+      liveControl: {
+        enabled: true,
+        limitation: "single_process_only",
+        mode: "embedded_worker",
       },
     });
   });
@@ -215,11 +485,403 @@ describe("control-plane app", () => {
       },
     });
   });
+
+  it("GET /missions/:missionId/approvals lists approvals and reports that API-only mode cannot control live turns", async () => {
+    const app = await createStubApp(apps, {
+      operatorControl: {
+        approvalService: {
+          async listMissionApprovals() {
+            return [
+              {
+                createdAt: "2026-03-14T10:00:00.000Z",
+                id: "44444444-4444-4444-8444-444444444444",
+                kind: "file_change",
+                missionId: unknownMissionId,
+                payload: {
+                  requestId: "approval_file_change_1",
+                  requestMethod: "item/fileChange/requestApproval",
+                },
+                rationale: null,
+                requestedBy: "system",
+                resolvedBy: null,
+                status: "pending",
+                taskId: unknownTaskId,
+                updatedAt: "2026-03-14T10:00:00.000Z",
+              },
+            ];
+          },
+          async resolveApproval() {
+            throw new Error("resolve should not be called");
+          },
+        },
+        liveControl: {
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        },
+        runtimeControlService: {
+          async interruptActiveTurn() {
+            throw new Error("interrupt should not be called");
+          },
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/missions/${unknownMissionId}/approvals`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      approvals: [
+        {
+          createdAt: "2026-03-14T10:00:00.000Z",
+          id: "44444444-4444-4444-8444-444444444444",
+          kind: "file_change",
+          missionId: unknownMissionId,
+          payload: {
+            requestId: "approval_file_change_1",
+            requestMethod: "item/fileChange/requestApproval",
+          },
+          rationale: null,
+          requestedBy: "system",
+          resolvedBy: null,
+          status: "pending",
+          taskId: unknownTaskId,
+          updatedAt: "2026-03-14T10:00:00.000Z",
+        },
+      ],
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+    });
+  });
+
+  it("POST /approvals/:approvalId/resolve returns 501 when live control is unavailable in this process", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/approvals/${unknownApprovalId}/resolve`,
+      payload: {
+        decision: "accept",
+        resolvedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(501);
+    expect(response.json()).toEqual({
+      error: {
+        code: "live_control_unavailable",
+        message:
+          "Live approval and interrupt control is unavailable in this process",
+      },
+    });
+  });
+
+  it("POST /approvals/:approvalId/resolve uses the embedded control surface when live control is enabled", async () => {
+    const app = await createStubApp(apps, {
+      operatorControl: {
+        approvalService: {
+          async listMissionApprovals() {
+            return [];
+          },
+          async resolveApproval(input) {
+            return {
+              createdAt: "2026-03-14T10:00:00.000Z",
+              id: input.approvalId,
+              kind: "file_change",
+              missionId: unknownMissionId,
+              payload: {
+                resolution: {
+                  decision: input.decision,
+                },
+              },
+              rationale: input.rationale ?? null,
+              requestedBy: "system",
+              resolvedBy: input.resolvedBy,
+              status: "approved",
+              taskId: unknownTaskId,
+              updatedAt: "2026-03-14T10:05:00.000Z",
+            };
+          },
+        },
+        liveControl: {
+          enabled: true,
+          limitation: "single_process_only",
+          mode: "embedded_worker",
+        },
+        runtimeControlService: {
+          async interruptActiveTurn() {
+            throw new Error("interrupt should not be called");
+          },
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/approvals/${unknownApprovalId}/resolve`,
+      payload: {
+        decision: "accept",
+        rationale: "Looks safe",
+        resolvedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      approval: {
+        createdAt: "2026-03-14T10:00:00.000Z",
+        id: unknownApprovalId,
+        kind: "file_change",
+        missionId: unknownMissionId,
+        payload: {
+          resolution: {
+            decision: "accept",
+          },
+        },
+        rationale: "Looks safe",
+        requestedBy: "system",
+        resolvedBy: "operator",
+        status: "approved",
+        taskId: unknownTaskId,
+        updatedAt: "2026-03-14T10:05:00.000Z",
+      },
+      liveControl: {
+        enabled: true,
+        limitation: "single_process_only",
+        mode: "embedded_worker",
+      },
+    });
+  });
+
+  it("POST /approvals/:approvalId/resolve returns 404 when the approval does not exist", async () => {
+    const app = await createStubApp(apps, {
+      operatorControl: {
+        approvalService: {
+          async listMissionApprovals() {
+            return [];
+          },
+          async resolveApproval() {
+            throw new ApprovalNotFoundError(unknownApprovalId);
+          },
+        },
+        liveControl: {
+          enabled: true,
+          limitation: "single_process_only",
+          mode: "embedded_worker",
+        },
+        runtimeControlService: {
+          async interruptActiveTurn() {
+            throw new Error("interrupt should not be called");
+          },
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/approvals/${unknownApprovalId}/resolve`,
+      payload: {
+        decision: "accept",
+        resolvedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      error: {
+        code: "approval_not_found",
+        message: "Approval not found",
+      },
+    });
+  });
+
+  it("POST /approvals/:approvalId/resolve returns 409 when the approval is no longer pending", async () => {
+    const app = await createStubApp(apps, {
+      operatorControl: {
+        approvalService: {
+          async listMissionApprovals() {
+            return [];
+          },
+          async resolveApproval() {
+            throw new ApprovalNotPendingError(unknownApprovalId, "approved");
+          },
+        },
+        liveControl: {
+          enabled: true,
+          limitation: "single_process_only",
+          mode: "embedded_worker",
+        },
+        runtimeControlService: {
+          async interruptActiveTurn() {
+            throw new Error("interrupt should not be called");
+          },
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/approvals/${unknownApprovalId}/resolve`,
+      payload: {
+        decision: "accept",
+        resolvedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      error: {
+        code: "approval_conflict",
+        message: `Approval ${unknownApprovalId} is already approved`,
+      },
+    });
+  });
+
+  it("POST /tasks/:taskId/interrupt returns 501 when live control is unavailable in this process", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/tasks/${unknownTaskId}/interrupt`,
+      payload: {
+        requestedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(501);
+    expect(response.json()).toEqual({
+      error: {
+        code: "live_control_unavailable",
+        message:
+          "Live approval and interrupt control is unavailable in this process",
+      },
+    });
+  });
+
+  it("POST /tasks/:taskId/interrupt uses the embedded control surface when live control is enabled", async () => {
+    const app = await createStubApp(apps, {
+      operatorControl: {
+        approvalService: {
+          async listMissionApprovals() {
+            return [];
+          },
+          async resolveApproval() {
+            throw new Error("resolve should not be called");
+          },
+        },
+        liveControl: {
+          enabled: true,
+          limitation: "single_process_only",
+          mode: "embedded_worker",
+        },
+        runtimeControlService: {
+          async interruptActiveTurn(input) {
+            return {
+              cancelledApprovals: [],
+              taskId: input.taskId,
+              threadId: "thread_fake_123",
+              turnId: "turn_fake_123",
+            };
+          },
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/tasks/${unknownTaskId}/interrupt`,
+      payload: {
+        rationale: "Stop this turn",
+        requestedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      interrupt: {
+        cancelledApprovals: [],
+        taskId: unknownTaskId,
+        threadId: "thread_fake_123",
+        turnId: "turn_fake_123",
+      },
+      liveControl: {
+        enabled: true,
+        limitation: "single_process_only",
+        mode: "embedded_worker",
+      },
+    });
+  });
+
+  it("POST /tasks/:taskId/interrupt returns 409 when the task has no active live turn", async () => {
+    const app = await createStubApp(apps, {
+      operatorControl: {
+        approvalService: {
+          async listMissionApprovals() {
+            return [];
+          },
+          async resolveApproval() {
+            throw new Error("resolve should not be called");
+          },
+        },
+        liveControl: {
+          enabled: true,
+          limitation: "single_process_only",
+          mode: "embedded_worker",
+        },
+        runtimeControlService: {
+          async interruptActiveTurn() {
+            throw new RuntimeActiveTurnNotFoundError(unknownTaskId);
+          },
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/tasks/${unknownTaskId}/interrupt`,
+      payload: {
+        requestedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      error: {
+        code: "task_conflict",
+        message: `Task ${unknownTaskId} has no active live turn to interrupt`,
+      },
+    });
+  });
 });
 
 async function createTestApp(apps: FastifyInstance[]) {
   const app = await buildApp({
     container: createInMemoryContainer(),
+  });
+  apps.push(app);
+  return app;
+}
+
+async function createStubApp(
+  apps: FastifyInstance[],
+  overrides: Partial<AppContainer>,
+) {
+  const base = createInMemoryContainer();
+  const app = await buildApp({
+    container: {
+      ...base,
+      ...overrides,
+      operatorControl: {
+        ...base.operatorControl,
+        ...overrides.operatorControl,
+      },
+    },
   });
   apps.push(app);
   return app;

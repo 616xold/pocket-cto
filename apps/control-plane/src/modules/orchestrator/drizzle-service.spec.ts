@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 import { and, count, eq } from "drizzle-orm";
 import { approvals, artifacts, missions, workspaces } from "@pocket-cto/db";
 import type { MissionRecord, ReplayEvent } from "@pocket-cto/domain";
+import { buildApp } from "../../app";
 import { DrizzleApprovalRepository } from "../approvals/drizzle-repository";
 import { ApprovalService } from "../approvals/service";
 import {
@@ -413,6 +414,99 @@ describe("OrchestratorWorker (DB-backed)", () => {
     expect(missionResumedEvent.sequence).toBeLessThan(resumedTurnItem.sequence);
   });
 
+  it("lists pending approvals and resolves them through the embedded HTTP control surface", async () => {
+    const harness = await createHarness({
+      fixtureOptions: {
+        mode: "file-change-approval",
+      },
+    });
+    cleanups.push(harness.cleanup);
+    const app = await buildApp({
+      container: harness.appContainer,
+    });
+    cleanups.push(async () => {
+      await app.close();
+    });
+    const { missionService, worker } = harness;
+    const created = await missionService.createFromText({
+      text: "Resolve a persisted approval through the embedded HTTP control path",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const executorTask = created.tasks[1]!;
+
+    await worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const executorTick = worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const pendingApproval = await waitForPendingApproval(executorTask.id);
+    const beforeResolve = await waitForTaskStatus(
+      missionService,
+      created.mission.id,
+      executorTask.id,
+      "awaiting_approval",
+    );
+    const listResponse = await app.inject({
+      method: "GET",
+      url: `/missions/${created.mission.id}/approvals`,
+    });
+
+    expect(listResponse.statusCode).toBe(200);
+    expect(listResponse.json()).toMatchObject({
+      approvals: [
+        expect.objectContaining({
+          id: pendingApproval.id,
+          kind: "file_change",
+          status: "pending",
+        }),
+      ],
+      liveControl: {
+        enabled: true,
+        limitation: "single_process_only" as const,
+        mode: "embedded_worker" as const,
+      },
+    });
+    expect(beforeResolve.mission.status).toBe("awaiting_approval");
+
+    const resolveResponse = await app.inject({
+      method: "POST",
+      url: `/approvals/${pendingApproval.id}/resolve`,
+      payload: {
+        decision: "accept",
+        rationale: "Approve through HTTP",
+        resolvedBy: "operator",
+      },
+    });
+
+    expect(resolveResponse.statusCode).toBe(200);
+    expect(resolveResponse.json()).toMatchObject({
+      approval: {
+        id: pendingApproval.id,
+        status: "approved",
+      },
+    });
+
+    const completedTick = await executorTick;
+    expect(completedTick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: executorTask.id,
+        status: "succeeded",
+      },
+      turn: {
+        status: "completed",
+      },
+    });
+  });
+
   it("persists declined approvals and lets the live turn finish with a truthful failed outcome", async () => {
     const harness = await createHarness({
       fixtureOptions: {
@@ -570,6 +664,77 @@ describe("OrchestratorWorker (DB-backed)", () => {
         },
       }),
     );
+  });
+
+  it("interrupts an active turn through the embedded HTTP control surface", async () => {
+    const harness = await createHarness({
+      fixtureOptions: {
+        mode: "interruptible-turn",
+      },
+    });
+    cleanups.push(harness.cleanup);
+    const app = await buildApp({
+      container: harness.appContainer,
+    });
+    cleanups.push(async () => {
+      await app.close();
+    });
+    const { missionService, worker } = harness;
+    const created = await missionService.createFromText({
+      text: "Interrupt the active task through the HTTP control path",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const plannerTask = created.tasks[0]!;
+
+    const plannerTick = worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    await waitForTaskStatus(
+      missionService,
+      created.mission.id,
+      plannerTask.id,
+      "running",
+    );
+
+    const interruptResponse = await app.inject({
+      method: "POST",
+      url: `/tasks/${plannerTask.id}/interrupt`,
+      payload: {
+        rationale: "Stop through HTTP",
+        requestedBy: "operator",
+      },
+    });
+
+    expect(interruptResponse.statusCode).toBe(200);
+    expect(interruptResponse.json()).toMatchObject({
+      interrupt: {
+        cancelledApprovals: [],
+        taskId: plannerTask.id,
+        threadId: "thread_fake_123",
+        turnId: "turn_fake_123",
+      },
+      liveControl: {
+        enabled: true,
+        limitation: "single_process_only" as const,
+        mode: "embedded_worker" as const,
+      },
+    });
+
+    const completedTick = await plannerTick;
+    expect(completedTick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        id: plannerTask.id,
+        status: "cancelled",
+      },
+      turn: {
+        status: "interrupted",
+      },
+    });
   });
 
   it("persists a planner plan artifact, updates task summary, and appends replay for it", async () => {
@@ -1976,6 +2141,19 @@ async function createHarness(options?: {
   );
 
   return {
+    appContainer: {
+      missionService,
+      operatorControl: {
+        approvalService,
+        liveControl: {
+          enabled: true,
+          limitation: "single_process_only" as const,
+          mode: "embedded_worker" as const,
+        },
+        runtimeControlService,
+      },
+      replayService,
+    },
     async cleanup() {
       await workspaceRoot?.cleanup();
       await sourceRepo?.cleanup();

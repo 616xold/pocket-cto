@@ -15,6 +15,7 @@ import type {
   RuntimeApprovalRequestMethod,
 } from "@pocket-cto/domain";
 import type { PersistenceSession } from "../../lib/persistence";
+import { MissionNotFoundError } from "../../lib/http-errors";
 import {
   buildApprovalRequestedMissionStatusChangedPayload,
   buildApprovalResolvedMissionStatusChangedPayload,
@@ -32,10 +33,16 @@ import {
   buildApprovalResolvedPayload,
 } from "./events";
 import {
+  ApprovalContinuationLostError,
+  ApprovalNotFoundError,
+  ApprovalNotPendingError,
+} from "./errors";
+import {
   readRuntimeApprovalPayload,
   withApprovalContinuationFailurePayload,
 } from "./payload";
 import type { ApprovalRepository } from "./repository";
+import { UnsupportedPermissionsApprovalError } from "../runtime-codex/errors";
 
 export type ResolveApprovalInput = {
   approvalId: string;
@@ -122,6 +129,11 @@ export class ApprovalService {
     }) as Promise<CommandExecutionRequestApprovalResponse>;
   }
 
+  async listMissionApprovals(missionId: string) {
+    await this.getRequiredMission(missionId);
+    return this.approvalRepository.listApprovalsByMissionId(missionId);
+  }
+
   async resolveApproval(input: ResolveApprovalInput) {
     const resolution = await this.missionRepository.transaction(
       async (session) => {
@@ -129,12 +141,7 @@ export class ApprovalService {
         const approvalContext = readRuntimeApprovalPayload(approval);
 
         if (approval.status !== "pending") {
-          return {
-            approval,
-            approvalContext,
-            shouldAttemptLiveDelivery: false,
-            shouldResumeTaskAndMission: false,
-          };
+          throw new ApprovalNotPendingError(approval.id, approval.status);
         }
 
         const nextStatus = mapDecisionToApprovalStatus(input.decision);
@@ -204,12 +211,13 @@ export class ApprovalService {
     });
 
     if (!liveDelivery.delivered) {
-      await this.recordLiveContinuationFailure({
+      const strandedApproval = await this.recordLiveContinuationFailure({
         approvalId: resolution.approval.id,
         errorMessage: liveDelivery.error.message,
       });
 
-      throw new Error(
+      throw new ApprovalContinuationLostError(
+        strandedApproval,
         `Approval ${resolution.approval.id} was durably resolved as ${resolution.approval.status}, but the live runtime continuation could not be resumed: ${liveDelivery.error.message}`,
       );
     }
@@ -528,7 +536,7 @@ export class ApprovalService {
     );
 
     if (!approval) {
-      throw new Error(`Approval ${approvalId} was not found`);
+      throw new ApprovalNotFoundError(approvalId);
     }
 
     return approval;
@@ -544,7 +552,7 @@ export class ApprovalService {
     );
 
     if (!mission) {
-      throw new Error(`Mission ${missionId} was not found`);
+      throw new MissionNotFoundError(missionId);
     }
 
     return mission;
@@ -595,20 +603,18 @@ function buildRuntimeApprovalResponse(
   requestMethod: RuntimeApprovalRequestMethod,
   decision: ApprovalDecision,
 ): RuntimeCodexApprovalResponse["response"] {
-  switch (requestMethod) {
-    case "item/fileChange/requestApproval":
-      return {
-        decision: mapDecisionToRuntimeDecision(decision),
+    switch (requestMethod) {
+      case "item/fileChange/requestApproval":
+        return {
+          decision: mapDecisionToRuntimeDecision(decision),
       };
     case "item/commandExecution/requestApproval":
       return {
         decision: mapDecisionToRuntimeDecision(decision),
       };
-    case "item/permissions/requestApproval":
-      throw new Error(
-        "Permissions approval responses are not yet wired into Pocket CTO M1.6",
-      );
-  }
+      case "item/permissions/requestApproval":
+        throw new UnsupportedPermissionsApprovalError();
+    }
 }
 
 function mapDecisionToRuntimeDecision(decision: ApprovalDecision) {

@@ -22,9 +22,18 @@ async function main(argv = process.argv.slice(2)) {
   process.on("SIGTERM", handleSignal);
 
   try {
-    const { worker } = await createWorkerContainer();
+    const container = await createWorkerContainer();
+    log.info(
+      {
+        controlMode: container.liveControl.mode,
+        event: "worker.startup",
+        pollIntervalMs: env.WORKER_POLL_INTERVAL_MS,
+        runOnce,
+      },
+      "Standalone worker started",
+    );
 
-    await worker.run({
+    await container.worker.run({
       log,
       pollIntervalMs: env.WORKER_POLL_INTERVAL_MS,
       runOnce,

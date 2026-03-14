@@ -1,3 +1,5 @@
+import React from "react";
+
 type StatusPillProps = {
   label: string;
   tone?: "default" | "good" | "warn";

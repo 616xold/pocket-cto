@@ -62,6 +62,7 @@ export async function gradeWithModel(input: {
     model: input.graderModel,
     notes: parsed.notes,
     overallScore: roundOneDecimal(parsed.overallScore),
+    provider: response.provider,
     scores: normalizeScores(parsed.scores),
     verdict: parsed.verdict,
   };
@@ -78,6 +79,7 @@ export function buildDryRunModelAssessment(
       "Dry-run mode reused the rule-based assessment instead of calling a grader model.",
     ],
     overallScore: roundOneDecimal(overallScore),
+    provider: null,
     scores: normalizeScores(ruleAssessment.scores),
     verdict: overallScore >= 4 ? "strong" : overallScore >= 2.5 ? "mixed" : "weak",
   };

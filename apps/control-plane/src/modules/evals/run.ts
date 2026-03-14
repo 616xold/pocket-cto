@@ -21,20 +21,33 @@ import {
   buildExecutorPromptEnvelope,
   buildPlannerPromptEnvelope,
 } from "./prompt-sources";
+import {
+  buildEvalRecordProvenance,
+  loadEvalRepoProvenance,
+  type EvalRepoProvenance,
+} from "./provenance";
 import { evaluateCompilerOutput, evaluateTextOutput } from "./rules";
 import { parseEvalCliArgs, expandEvalTargets } from "./args";
 import { assertLiveEvalEnabled, resolveEvalRunConfig } from "./config";
 import type { EvalResultRecord } from "./types";
-import { createPromptRecord, summarizeResults, writeEvalResults } from "./writer";
+import { buildEvalRunSummary } from "./summary";
+import { createPromptRecord, writeEvalResults } from "./writer";
 
 export async function runEvalCommand(
   argv: string[],
   options?: {
     env?: EvalEnv;
     outputDirectory?: string;
+    requireLive?: boolean;
+    repoProvenance?: EvalRepoProvenance;
   },
 ) {
   const args = parseEvalCliArgs(argv);
+  if (options?.requireLive && args.dryRun) {
+    throw new Error(
+      "Smoke evals require a real live OpenAI call. Remove --dry-run and enable OPENAI_EVALS_ENABLED=true.",
+    );
+  }
   const env = options?.env ?? loadEvalEnv();
   const config = resolveEvalRunConfig({
     args,
@@ -53,6 +66,8 @@ export async function runEvalCommand(
   const client = config.dryRun
     ? null
     : new OpenAIResponsesClient(config.apiKey as string);
+  const repoProvenance =
+    options?.repoProvenance ?? (await loadEvalRepoProvenance());
   const records: EvalResultRecord[] = [];
 
   for (const target of targets) {
@@ -66,6 +81,7 @@ export async function runEvalCommand(
             client,
             config,
             item,
+            repoProvenance,
             rubric,
             startedAt,
           }),
@@ -85,6 +101,7 @@ export async function runEvalCommand(
             client,
             config,
             item,
+            repoProvenance,
             rubric,
             startedAt,
           }),
@@ -103,6 +120,7 @@ export async function runEvalCommand(
           client,
           config,
           item,
+          repoProvenance,
           rubric,
           startedAt,
         }),
@@ -119,7 +137,10 @@ export async function runEvalCommand(
   });
 
   return {
-    ...summarizeResults({
+    ...buildEvalRunSummary({
+      candidateModel: config.candidateModel,
+      graderModel: config.graderModel,
+      mode: config.dryRun ? "dry-run" : "live",
       outputPath,
       records,
       runLabel: args.target,
@@ -132,6 +153,7 @@ async function runPlannerItem(input: {
   client: OpenAIResponsesClient | null;
   config: ReturnType<typeof resolveEvalRunConfig>;
   item: PlannerEvalDatasetItem;
+  repoProvenance: EvalRepoProvenance;
   rubric: Awaited<ReturnType<typeof loadEvalRubric>>;
   startedAt: string;
 }): Promise<EvalResultRecord> {
@@ -191,6 +213,11 @@ async function runPlannerItem(input: {
     mode: input.config.dryRun ? "dry-run" : "live",
     notes: mergeNotes(rule.notes, grader.notes, input.item.notes),
     prompt,
+    provenance: buildEvalRecordProvenance({
+      datasetName: "planner",
+      promptVersion: prompt.version,
+      repo: input.repoProvenance,
+    }),
     reference,
     referenceModel:
       input.config.useReference && reference
@@ -209,6 +236,7 @@ async function runExecutorItem(input: {
   client: OpenAIResponsesClient | null;
   config: ReturnType<typeof resolveEvalRunConfig>;
   item: ExecutorEvalDatasetItem;
+  repoProvenance: EvalRepoProvenance;
   rubric: Awaited<ReturnType<typeof loadEvalRubric>>;
   startedAt: string;
 }): Promise<EvalResultRecord> {
@@ -268,6 +296,11 @@ async function runExecutorItem(input: {
     mode: input.config.dryRun ? "dry-run" : "live",
     notes: mergeNotes(rule.notes, grader.notes, input.item.notes),
     prompt,
+    provenance: buildEvalRecordProvenance({
+      datasetName: "executor",
+      promptVersion: prompt.version,
+      repo: input.repoProvenance,
+    }),
     reference,
     referenceModel:
       input.config.useReference && reference
@@ -286,6 +319,7 @@ async function runCompilerItem(input: {
   client: OpenAIResponsesClient | null;
   config: ReturnType<typeof resolveEvalRunConfig>;
   item: CompilerEvalDatasetItem;
+  repoProvenance: EvalRepoProvenance;
   rubric: Awaited<ReturnType<typeof loadEvalRubric>>;
   startedAt: string;
 }): Promise<EvalResultRecord> {
@@ -350,6 +384,11 @@ async function runCompilerItem(input: {
     mode: input.config.dryRun ? "dry-run" : "live",
     notes: mergeNotes(rule.notes, grader.notes, input.item.notes),
     prompt,
+    provenance: buildEvalRecordProvenance({
+      datasetName: "compiler",
+      promptVersion: prompt.version,
+      repo: input.repoProvenance,
+    }),
     reference,
     referenceModel:
       input.config.useReference && reference
@@ -367,6 +406,7 @@ async function runCompilerItem(input: {
 function buildDryRunCandidate(text: string, output: unknown = text) {
   return {
     output,
+    provider: null,
     text,
   };
 }
@@ -433,6 +473,7 @@ async function runOptionalReference(input: {
 function buildResultRecord(input: {
   candidate: {
     output: unknown;
+    provider: Awaited<ReturnType<typeof runLiveCandidate>>["provider"] | null;
     text: string;
   };
   candidateModel: string;
@@ -442,8 +483,10 @@ function buildResultRecord(input: {
   mode: "dry-run" | "live";
   notes: string[];
   prompt: ReturnType<typeof createPromptRecord>;
+  provenance: ReturnType<typeof buildEvalRecordProvenance>;
   reference: {
     output: unknown;
+    provider: Awaited<ReturnType<typeof runLiveCandidate>>["provider"] | null;
     text: string;
   } | null;
   referenceModel: string | null;
@@ -458,6 +501,7 @@ function buildResultRecord(input: {
     candidate: {
       model: input.candidateModel,
       output: input.candidate.output,
+      provider: input.candidate.provider,
       text: input.candidate.text,
     },
     combined: input.combined,
@@ -467,10 +511,12 @@ function buildResultRecord(input: {
     mode: input.mode,
     notes: input.notes,
     prompt: input.prompt,
+    provenance: input.provenance,
     reference: input.reference
       ? {
           model: input.referenceModel ?? "unknown-reference-model",
           output: input.reference.output,
+          provider: input.reference.provider,
           text: input.reference.text,
         }
       : null,

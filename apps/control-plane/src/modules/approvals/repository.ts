@@ -38,6 +38,11 @@ export interface ApprovalRepository {
     session?: PersistenceSession,
   ): Promise<number>;
 
+  listApprovalsByMissionId(
+    missionId: string,
+    session?: PersistenceSession,
+  ): Promise<ApprovalRecord[]>;
+
   listPendingApprovalsByTaskId(
     taskId: string,
     session?: PersistenceSession,
@@ -81,6 +86,12 @@ export class InMemoryApprovalRepository implements ApprovalRepository {
       (approval) =>
         approval.missionId === missionId && approval.status === "pending",
     ).length;
+  }
+
+  async listApprovalsByMissionId(missionId: string) {
+    return [...this.approvals.values()]
+      .filter((approval) => approval.missionId === missionId)
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
   }
 
   async listPendingApprovalsByTaskId(taskId: string) {

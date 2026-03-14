@@ -146,6 +146,11 @@ export interface MissionRepository extends TransactionalRepository {
     session?: PersistenceSession,
   ): Promise<ProofBundleManifest | null>;
 
+  listArtifactsByMissionId(
+    missionId: string,
+    session?: PersistenceSession,
+  ): Promise<ArtifactRecord[]>;
+
   saveProofBundle(
     bundle: ProofBundleManifest,
     session?: PersistenceSession,
@@ -432,6 +437,16 @@ export class InMemoryMissionRepository implements MissionRepository {
     missionId: string,
   ): Promise<ProofBundleManifest | null> {
     return this.proofBundles.get(missionId)?.bundle ?? null;
+  }
+
+  async listArtifactsByMissionId(missionId: string): Promise<ArtifactRecord[]> {
+    return this.artifactLedger
+      .filter((artifact) => artifact.missionId === missionId)
+      .sort(
+        (left, right) =>
+          left.createdAt.localeCompare(right.createdAt) ||
+          left.id.localeCompare(right.id),
+      );
   }
 
   async saveProofBundle(bundle: ProofBundleManifest): Promise<ArtifactRecord> {

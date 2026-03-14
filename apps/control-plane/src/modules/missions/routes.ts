@@ -1,10 +1,13 @@
 import type { FastifyInstance } from "fastify";
-import type { MissionService } from "./service";
+import type { MissionServicePort, OperatorControlAvailability } from "../../lib/types";
 import { createMissionFromTextSchema, missionIdParamsSchema } from "./schema";
 
 export async function registerMissionRoutes(
   app: FastifyInstance,
-  deps: { missionService: MissionService },
+  deps: {
+    liveControl: OperatorControlAvailability;
+    missionService: MissionServicePort;
+  },
 ) {
   app.post("/missions/text", async (request, reply) => {
     const body = createMissionFromTextSchema.parse(request.body);
@@ -15,6 +18,9 @@ export async function registerMissionRoutes(
 
   app.get("/missions/:missionId", async (request) => {
     const params = missionIdParamsSchema.parse(request.params);
-    return deps.missionService.getMissionDetail(params.missionId);
+    return {
+      ...(await deps.missionService.getMissionDetail(params.missionId)),
+      liveControl: deps.liveControl,
+    };
   });
 }

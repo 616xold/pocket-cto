@@ -1,7 +1,14 @@
-import { loadEnv } from "@pocket-cto/config";
-import { createDb } from "@pocket-cto/db";
-import type { AppContainer, WorkerContainer } from "./lib/types";
+import { loadEnv, type Env } from "@pocket-cto/config";
+import { createDb, type Db } from "@pocket-cto/db";
+import type {
+  AppContainer,
+  EmbeddedWorkerContainer,
+  OperatorControlAvailability,
+  ServerContainer,
+  WorkerContainer,
+} from "./lib/types";
 import { DrizzleApprovalRepository } from "./modules/approvals/drizzle-repository";
+import { InMemoryApprovalRepository } from "./modules/approvals/repository";
 import { ApprovalService } from "./modules/approvals/service";
 import { EvidenceService } from "./modules/evidence/service";
 import { StubMissionCompiler } from "./modules/missions/compiler";
@@ -34,104 +41,115 @@ import {
   LocalWorkspaceValidationGitClient,
 } from "./modules/validation";
 
+type KernelMode = "api_only" | "embedded_worker" | "standalone_worker";
+type ServerControlMode = Extract<KernelMode, "api_only" | "embedded_worker">;
+type ServerContainerFactories = {
+  createApiOnlyContainer: () => Promise<AppContainer>;
+  createEmbeddedWorkerContainer: () => Promise<EmbeddedWorkerContainer>;
+};
+
+type SharedKernel = {
+  approvalService: ApprovalService;
+  missionService: MissionService;
+  missionRepository: ConstructorParameters<typeof MissionService>[1];
+  replayService: ReplayService;
+  runtimeControlService: RuntimeControlService;
+  liveSessionRegistry: InMemoryRuntimeSessionRegistry;
+  worker: OrchestratorWorker | null;
+};
+
+export function resolveServerControlMode(
+  env: Pick<Env, "CONTROL_PLANE_EMBEDDED_WORKER">,
+): ServerControlMode {
+  return env.CONTROL_PLANE_EMBEDDED_WORKER ? "embedded_worker" : "api_only";
+}
+
+export async function createServerContainer(input?: {
+  env?: Pick<Env, "CONTROL_PLANE_EMBEDDED_WORKER">;
+  factories?: Partial<ServerContainerFactories>;
+}): Promise<ServerContainer> {
+  const mode = resolveServerControlMode(input?.env ?? loadEnv());
+  const createApiOnlyContainer =
+    input?.factories?.createApiOnlyContainer ?? createContainer;
+  const createEmbeddedWorkerContainer =
+    input?.factories?.createEmbeddedWorkerContainer ??
+    createEmbeddedWorkerContainerFactory;
+
+  return mode === "embedded_worker"
+    ? await createEmbeddedWorkerContainer()
+    : await createApiOnlyContainer();
+}
+
 export async function createContainer(): Promise<AppContainer> {
   const env = loadEnv();
   const db = createDb(env.DATABASE_URL);
-
-  return buildAppContainer({
-    missionRepository: new DrizzleMissionRepository(db),
-    replayRepository: new DrizzleReplayRepository(db),
+  const kernel = await buildDrizzleKernel({
+    db,
+    env,
+    mode: "api_only",
   });
+
+  return toAppContainer(kernel, {
+    enabled: false,
+    limitation: "single_process_only",
+    mode: "api_only",
+  });
+}
+
+export async function createEmbeddedWorkerContainer(): Promise<EmbeddedWorkerContainer> {
+  const env = loadEnv();
+  const db = createDb(env.DATABASE_URL);
+  const kernel = await buildDrizzleKernel({
+    db,
+    env,
+    mode: "embedded_worker",
+  });
+
+  return {
+    ...toAppContainer(kernel, {
+      enabled: true,
+      limitation: "single_process_only",
+      mode: "embedded_worker",
+    }),
+    worker: getRequiredWorker(kernel),
+  };
+}
+
+async function createEmbeddedWorkerContainerFactory() {
+  return createEmbeddedWorkerContainer();
 }
 
 export async function createWorkerContainer(): Promise<WorkerContainer> {
   const env = loadEnv();
   const db = createDb(env.DATABASE_URL);
-  const missionRepository = new DrizzleMissionRepository(db);
-  const approvalRepository = new DrizzleApprovalRepository(db);
-  const replayRepository = new DrizzleReplayRepository(db);
-  const workspaceRepository = new DrizzleWorkspaceRepository(db);
-  const replayService = new ReplayService(replayRepository, missionRepository);
-  const evidenceService = new EvidenceService();
-  const liveSessionRegistry = new InMemoryRuntimeSessionRegistry();
-  const gitManager = new LocalWorkspaceGitManager();
-  const workspaceService = new WorkspaceService(
-    workspaceRepository,
-    gitManager,
-    await resolveWorkspaceServiceConfig({
-      env,
-      gitManager,
-      processCwd: process.cwd(),
-    }),
-  );
-
-  const runtimeCodexService = new CodexRuntimeService(
-    new RuntimeCodexAdapter(resolveCodexRuntimeClientOptions(env)),
-    resolveCodexThreadDefaults(env, process.cwd()),
-    liveSessionRegistry,
-  );
-  const validationService = new LocalExecutorValidationService(
-    new LocalWorkspaceValidationGitClient(),
-  );
-  const approvalService = new ApprovalService(
-    approvalRepository,
-    missionRepository,
-    replayService,
-    liveSessionRegistry,
-  );
-  const runtimeControlService = new RuntimeControlService(
-    missionRepository,
-    replayService,
-    approvalService,
-    liveSessionRegistry,
-  );
+  const kernel = await buildDrizzleKernel({
+    db,
+    env,
+    mode: "standalone_worker",
+  });
 
   return {
-    worker: new OrchestratorWorker(
-      new OrchestratorService(
-        missionRepository,
-        replayService,
-        approvalService,
-        runtimeCodexService,
-        evidenceService,
-        workspaceService,
-        validationService,
-      ),
-      {
-        approvalService,
-        runtimeControlService,
-      },
-    ),
+    liveControl: {
+      enabled: true,
+      limitation: "single_process_only",
+      mode: "standalone_worker",
+    },
+    worker: getRequiredWorker(kernel),
   };
 }
 
 export function createInMemoryContainer(): AppContainer {
-  return buildAppContainer({
+  const kernel = buildSharedKernel({
+    approvalRepository: new InMemoryApprovalRepository(),
     missionRepository: new InMemoryMissionRepository(),
     replayRepository: new InMemoryReplayRepository(),
   });
-}
 
-function buildAppContainer(deps: {
-  missionRepository: ConstructorParameters<typeof MissionService>[1];
-  replayRepository: ConstructorParameters<typeof ReplayService>[0];
-}) {
-  const replayService = new ReplayService(
-    deps.replayRepository,
-    deps.missionRepository,
-  );
-  const evidenceService = new EvidenceService();
-  const missionCompiler = new StubMissionCompiler();
-
-  return {
-    missionService: new MissionService(
-      missionCompiler,
-      deps.missionRepository,
-      replayService,
-      evidenceService,
-    ),
-    replayService,
-  };
+  return toAppContainer(kernel, {
+    enabled: false,
+    limitation: "single_process_only",
+    mode: "api_only",
+  });
 }
 
 export function createInMemoryWorkspaceService() {
@@ -147,4 +165,135 @@ export function createInMemoryWorkspaceService() {
       workspaceRoot: buildDefaultWorkspaceRoot(process.cwd()),
     },
   );
+}
+
+async function buildDrizzleKernel(input: {
+  db: Db;
+  env: Env;
+  mode: KernelMode;
+}) {
+  const kernel = buildSharedKernel({
+    approvalRepository: new DrizzleApprovalRepository(input.db),
+    missionRepository: new DrizzleMissionRepository(input.db),
+    replayRepository: new DrizzleReplayRepository(input.db),
+  });
+
+  if (input.mode === "api_only") {
+    return kernel;
+  }
+
+  return {
+    ...kernel,
+    worker: await buildWorker({
+      env: input.env,
+      kernel,
+      workspaceRepository: new DrizzleWorkspaceRepository(input.db),
+    }),
+  } satisfies SharedKernel;
+}
+
+function buildSharedKernel(input: {
+  approvalRepository: ConstructorParameters<typeof ApprovalService>[0];
+  missionRepository: ConstructorParameters<typeof MissionService>[1];
+  replayRepository: ConstructorParameters<typeof ReplayService>[0];
+}): SharedKernel {
+  const replayService = new ReplayService(
+    input.replayRepository,
+    input.missionRepository,
+  );
+  const liveSessionRegistry = new InMemoryRuntimeSessionRegistry();
+  const approvalService = new ApprovalService(
+    input.approvalRepository,
+    input.missionRepository,
+    replayService,
+    liveSessionRegistry,
+  );
+  const runtimeControlService = new RuntimeControlService(
+    input.missionRepository,
+    replayService,
+    approvalService,
+    liveSessionRegistry,
+  );
+  const evidenceService = new EvidenceService();
+  const missionService = new MissionService(
+    new StubMissionCompiler(),
+    input.missionRepository,
+    replayService,
+    evidenceService,
+    {
+      approvalReader: approvalService,
+    },
+  );
+
+  return {
+    approvalService,
+    liveSessionRegistry,
+    missionService,
+    missionRepository: input.missionRepository,
+    replayService,
+    runtimeControlService,
+    worker: null,
+  };
+}
+
+async function buildWorker(input: {
+  env: Env;
+  kernel: SharedKernel;
+  workspaceRepository: DrizzleWorkspaceRepository;
+}) {
+  const gitManager = new LocalWorkspaceGitManager();
+  const workspaceService = new WorkspaceService(
+    input.workspaceRepository,
+    gitManager,
+    await resolveWorkspaceServiceConfig({
+      env: input.env,
+      gitManager,
+      processCwd: process.cwd(),
+    }),
+  );
+  const runtimeCodexService = new CodexRuntimeService(
+    new RuntimeCodexAdapter(resolveCodexRuntimeClientOptions(input.env)),
+    resolveCodexThreadDefaults(input.env, process.cwd()),
+    input.kernel.liveSessionRegistry,
+  );
+  const validationService = new LocalExecutorValidationService(
+    new LocalWorkspaceValidationGitClient(),
+  );
+  const orchestratorService = new OrchestratorService(
+    input.kernel.missionRepository,
+    input.kernel.replayService,
+    input.kernel.approvalService,
+    runtimeCodexService,
+    new EvidenceService(),
+    workspaceService,
+    validationService,
+  );
+
+  return new OrchestratorWorker(orchestratorService, {
+    approvalService: input.kernel.approvalService,
+    runtimeControlService: input.kernel.runtimeControlService,
+  });
+}
+
+function toAppContainer(
+  kernel: SharedKernel,
+  liveControl: OperatorControlAvailability,
+): AppContainer {
+  return {
+    missionService: kernel.missionService,
+    operatorControl: {
+      approvalService: kernel.approvalService,
+      liveControl,
+      runtimeControlService: kernel.runtimeControlService,
+    },
+    replayService: kernel.replayService,
+  };
+}
+
+function getRequiredWorker(kernel: SharedKernel) {
+  if (!kernel.worker) {
+    throw new Error("Worker was not configured for this container");
+  }
+
+  return kernel.worker;
 }

@@ -1,3 +1,5 @@
+import type { EvalProviderMetadata, EvalProviderUsage } from "./types";
+
 type ResponseFormat =
   | {
       kind: "json_schema";
@@ -17,9 +19,10 @@ export class OpenAIResponsesClient {
     prompt: string;
   }): Promise<{
     output: unknown;
+    provider: EvalProviderMetadata;
     text: string;
   }> {
-    const payload = await this.request({
+    const { payload, requestId } = await this.request({
       input: input.prompt,
       model: input.model,
       store: false,
@@ -43,15 +46,23 @@ export class OpenAIResponsesClient {
       throw new Error("OpenAI response did not include any text output.");
     }
 
+    const provider = buildProviderMetadata({
+      payload,
+      requestId,
+      requestedModel: input.model,
+    });
+
     if (input.format.kind === "json_schema") {
       return {
         output: extractJsonOutput(payload, text),
+        provider,
         text,
       };
     }
 
     return {
       output: text,
+      provider,
       text,
     };
   }
@@ -70,7 +81,10 @@ export class OpenAIResponsesClient {
       throw new Error(await formatOpenAIError(response));
     }
 
-    return (await response.json()) as Record<string, unknown>;
+    return {
+      payload: (await response.json()) as Record<string, unknown>,
+      requestId: response.headers.get("x-request-id"),
+    };
   }
 }
 
@@ -173,4 +187,49 @@ function findJsonBlock(payload: Record<string, unknown>) {
   }
 
   return null;
+}
+
+function buildProviderMetadata(input: {
+  payload: Record<string, unknown>;
+  requestId: string | null;
+  requestedModel: string;
+}): EvalProviderMetadata {
+  return {
+    provider: "openai-responses",
+    requestId: input.requestId,
+    requestedModel: input.requestedModel,
+    resolvedModel:
+      typeof input.payload.model === "string" ? input.payload.model : null,
+    responseId: typeof input.payload.id === "string" ? input.payload.id : null,
+    usage: extractUsage(input.payload.usage),
+  };
+}
+
+function extractUsage(rawUsage: unknown): EvalProviderUsage | null {
+  if (!rawUsage || typeof rawUsage !== "object") {
+    return null;
+  }
+
+  const usage = rawUsage as Record<string, unknown>;
+  const inputTokens = asOptionalNumber(usage.input_tokens);
+  const outputTokens = asOptionalNumber(usage.output_tokens);
+  const totalTokens = asOptionalNumber(usage.total_tokens);
+
+  if (
+    inputTokens === null &&
+    outputTokens === null &&
+    totalTokens === null
+  ) {
+    return null;
+  }
+
+  return {
+    inputTokens,
+    outputTokens,
+    totalTokens,
+  };
+}
+
+function asOptionalNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

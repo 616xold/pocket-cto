@@ -17,8 +17,55 @@ pnpm install
 pnpm db:generate
 pnpm db:migrate
 pnpm dev
-pnpm dev:worker   # optional until runtime execution work lands
 ```
+
+## Control-plane modes
+
+API-only mode keeps the current default behavior and is the safest day-to-day path when you only need the API plus web:
+
+```bash
+pnpm dev
+```
+
+If you only want the API server without the web app in API-only mode:
+
+```bash
+pnpm dev:control-plane
+```
+
+Embedded worker mode co-locates the worker inside the control-plane server process so the HTTP approval-resolution and task-interrupt routes can reach the live in-memory session registry:
+
+```bash
+pnpm dev:embedded
+```
+
+If you only want the control-plane package entrypoint in embedded mode:
+
+```bash
+pnpm --filter @pocket-cto/control-plane dev:embedded
+```
+
+Standalone worker mode keeps the API server and worker split across processes:
+
+```bash
+pnpm dev:control-plane
+pnpm dev:worker
+```
+
+In embedded mode, do not also start `pnpm dev:worker` for the same repo and database unless you are explicitly testing the single-process limitation.
+
+## Operator action feedback
+
+The web mission detail now surfaces approval-resolution and task-interrupt feedback inline.
+Successful actions revalidate the mission detail page after the route returns.
+Normal route failures stay visible in the page instead of surfacing as raw thrown errors, including:
+
+- `501 live_control_unavailable` when the server is not running in embedded-worker mode
+- `409 approval_conflict` when an approval is no longer pending
+- `409 task_conflict` when the active live turn is already gone or the interrupt cannot be delivered
+
+The local operator label used for those actions is explicit instead of hardcoded.
+Set `POCKET_CTO_WEB_OPERATOR_NAME` in your local `.env` if you want approval and interrupt records to show a different operator name than the default `Local web operator`.
 
 ## CI environment
 
@@ -49,6 +96,16 @@ Required env for live evals:
 Checked-in datasets live under `evals/datasets/`.
 The grading rubric lives under `evals/rubrics/quality-rubric.md`.
 Timestamped result files are written to the gitignored `evals/results/` directory as JSONL.
+This harness calls the OpenAI Responses API directly.
+It does not create a hosted OpenAI Evals run, so you should expect local JSONL artifacts and CLI output here rather than a hosted Evals dashboard entry.
+
+Check the local eval configuration before spending tokens:
+
+```bash
+pnpm eval:doctor
+```
+
+`pnpm eval:doctor` prints whether `OPENAI_API_KEY` is present, where it came from when that can be detected (`shell env`, `loaded .env`, or `unknown`), whether `OPENAI_EVALS_ENABLED` is true, the candidate or grader or reference models, the effective live-vs-dry-run mode, and the results directory.
 
 Run the lane manually from the repo root:
 
@@ -76,6 +133,25 @@ OPENAI_EVALS_ENABLED=true pnpm eval:planner -- --limit 1 --with-reference
 
 If either the key or opt-in flag is missing, the live eval scripts fail fast with a clear message.
 Use `--dry-run` when you want to exercise dataset loading, prompt generation, grading flow, and result writing without paid calls.
+
+To intentionally prove the live path with one seeded planner sample:
+
+```bash
+OPENAI_EVALS_ENABLED=true pnpm eval:smoke:planner
+OPENAI_EVALS_ENABLED=true pnpm eval:smoke:executor
+```
+
+The smoke commands refuse to proceed if they would become a dry run.
+On success each one writes a results file under `evals/results/` and prints a compact summary with the mode, dataset, prompt version, git provenance, output path, response ids, and token usage when the API returns that metadata.
+
+To compare two saved runs locally:
+
+```bash
+pnpm eval:compare -- --a evals/results/<older>.jsonl --b evals/results/<newer>.jsonl
+```
+
+That helper answers the practical prompt-iteration questions:
+did the overall score go up or down, which dimensions moved, and which candidate or grader models produced the two runs.
 
 ## Git and repo hygiene
 
@@ -137,9 +213,11 @@ That means:
 
 - durable approval rows and replay survive worker restarts
 - live turn continuation does not survive worker restarts
-- approval resolution and interrupt operations must reach the same worker process that owns the active turn
+- approval resolution and interrupt operations must reach the same process that owns the active turn
+- the HTTP control surface works only when the control-plane server runs with `CONTROL_PLANE_EMBEDDED_WORKER=true`, which `pnpm dev:embedded` sets for you locally
 - accepted approvals only move task or mission state back to `running` after the live response handoff succeeds
 - if a durable approval resolution outlives its live session, Pocket CTO records `payload.liveContinuation.status = "delivery_failed"` on that approval row instead of faking a resumed turn
+- the web action panel now explains those live-control limitations inline and keeps the last success or failure message visible after a submit
 
 If the worker restarts while a task is awaiting approval, the durable audit trail remains intact, but Pocket CTO cannot honestly resume that already-live turn.
 
@@ -148,6 +226,7 @@ If the worker restarts while a task is awaiting approval, the durable audit trai
 ```bash
 pnpm dev:control-plane
 pnpm dev:web
+pnpm dev:embedded
 pnpm dev:worker
 ```
 
@@ -249,9 +328,34 @@ Expected response shape:
   "proofBundle": {
     "missionId": "<mission-uuid>",
     "status": "placeholder"
+  },
+  "approvals": [],
+  "artifacts": [
+    {
+      "id": "<artifact-uuid>",
+      "kind": "proof_bundle_manifest",
+      "taskId": null,
+      "uri": "pocket-cto://missions/<mission-uuid>/proof-bundle-manifest",
+      "createdAt": "<timestamp>",
+      "summary": "Proof bundle placeholder manifest persisted."
+    }
+  ],
+  "liveControl": {
+    "enabled": false,
+    "limitation": "single_process_only",
+    "mode": "api_only"
   }
 }
 ```
+
+The richer mission-detail read model is now the preferred operator fetch.
+It includes:
+
+- `approvals`: summary-shaped approval rows in oldest-first order
+- `artifacts`: summary-shaped artifact ledger entries in oldest-first order by `createdAt`
+- `liveControl`: whether the current control-plane process can resolve approvals or interrupt active turns directly
+
+`GET /missions/:missionId/approvals` still exists for the narrow approval ledger surface, but the web mission detail page now reads approvals and artifacts from `GET /missions/:missionId` so the operator view stays coherent.
 
 Fetch the replay events:
 

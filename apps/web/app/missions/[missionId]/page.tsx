@@ -1,4 +1,6 @@
+import type { MissionDetailView } from "@pocket-cto/domain";
 import { notFound } from "next/navigation";
+import { MissionActions } from "./mission-actions";
 import { MissionCard } from "../../../components/mission-card";
 import { getMissionDetail } from "../../../lib/api";
 
@@ -12,31 +14,23 @@ export default async function MissionPage({ params }: MissionPageProps) {
 
   if (!mission) {
     if (missionId === "demo-mission") {
+      const demoMission = buildDemoMissionDetail();
+
       return (
         <main className="shell">
           <MissionCard
-            mission={{
-              id: "demo-mission",
-              type: "build",
-              status: "planned",
-              title: "Implement passkeys for sign-in",
-              objective: "Ship passkeys without breaking email login.",
-              createdAt: new Date().toISOString(),
-              primaryRepo: "web",
-            }}
-            tasks={[
-              { id: "t1", role: "planner", status: "pending" },
-              { id: "t2", role: "executor", status: "pending" },
-            ]}
-            proofBundle={{
-              status: "placeholder",
-              objective: "Ship passkeys without breaking email login.",
-              changeSummary: "",
-              verificationSummary: "",
-              riskSummary: "",
-              rollbackSummary: "",
-              decisionTrace: [],
-            }}
+            approvals={demoMission.approvals}
+            artifacts={demoMission.artifacts}
+            liveControl={demoMission.liveControl}
+            mission={demoMission.mission}
+            proofBundle={demoMission.proofBundle}
+            tasks={demoMission.tasks}
+          />
+          <MissionActions
+            approvals={demoMission.approvals}
+            liveControl={demoMission.liveControl}
+            mission={demoMission.mission}
+            tasks={demoMission.tasks}
           />
         </main>
       );
@@ -48,30 +42,112 @@ export default async function MissionPage({ params }: MissionPageProps) {
   return (
     <main className="shell">
       <MissionCard
-        mission={{
-          id: mission.mission.id,
-          type: mission.mission.type,
-          status: mission.mission.status,
-          title: mission.mission.title,
-          objective: mission.mission.objective,
-          createdAt: mission.mission.createdAt,
-          primaryRepo: mission.mission.primaryRepo,
-        }}
-        tasks={mission.tasks.map((task) => ({
-          id: task.id,
-          role: task.role,
-          status: task.status,
-        }))}
-        proofBundle={{
-          status: mission.proofBundle.status,
-          objective: mission.proofBundle.objective,
-          changeSummary: mission.proofBundle.changeSummary,
-          verificationSummary: mission.proofBundle.verificationSummary,
-          riskSummary: mission.proofBundle.riskSummary,
-          rollbackSummary: mission.proofBundle.rollbackSummary,
-          decisionTrace: mission.proofBundle.decisionTrace,
-        }}
+        approvals={mission.approvals}
+        artifacts={mission.artifacts}
+        liveControl={mission.liveControl}
+        mission={mission.mission}
+        proofBundle={mission.proofBundle}
+        tasks={mission.tasks}
+      />
+      <MissionActions
+        approvals={mission.approvals}
+        liveControl={mission.liveControl}
+        mission={mission.mission}
+        tasks={mission.tasks}
       />
     </main>
   );
+}
+
+function buildDemoMissionDetail(): MissionDetailView {
+  const now = new Date().toISOString();
+
+  return {
+    mission: {
+      id: "00000000-0000-4000-8000-000000000001",
+      type: "build",
+      status: "planned",
+      title: "Implement passkeys for sign-in",
+      objective: "Ship passkeys without breaking email login.",
+      sourceKind: "manual_text",
+      sourceRef: null,
+      createdBy: "demo-operator",
+      primaryRepo: "web",
+      spec: {
+        acceptance: ["Ship passkeys without breaking email login."],
+        constraints: {
+          allowedPaths: [],
+          mustNot: [],
+        },
+        deliverables: [
+          "Updated mission detail route with approvals and artifacts.",
+        ],
+        evidenceRequirements: ["approval ledger", "artifact ledger"],
+        objective: "Ship passkeys without breaking email login.",
+        repos: ["web"],
+        riskBudget: {
+          allowNetwork: false,
+          maxCostUsd: 5,
+          maxWallClockMinutes: 30,
+          requiresHumanApprovalFor: [],
+          sandboxMode: "patch-only",
+        },
+        title: "Implement passkeys for sign-in",
+        type: "build",
+      },
+      createdAt: now,
+      updatedAt: now,
+    },
+    tasks: [
+      {
+        id: "00000000-0000-4000-8000-000000000011",
+        missionId: "00000000-0000-4000-8000-000000000001",
+        role: "planner",
+        sequence: 0,
+        status: "pending",
+        attemptCount: 0,
+        codexThreadId: null,
+        codexTurnId: null,
+        workspaceId: null,
+        dependsOnTaskId: null,
+        summary: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000012",
+        missionId: "00000000-0000-4000-8000-000000000001",
+        role: "executor",
+        sequence: 1,
+        status: "pending",
+        attemptCount: 0,
+        codexThreadId: null,
+        codexTurnId: null,
+        workspaceId: null,
+        dependsOnTaskId: "00000000-0000-4000-8000-000000000011",
+        summary: null,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
+    proofBundle: {
+      missionId: "00000000-0000-4000-8000-000000000001",
+      objective: "Ship passkeys without breaking email login.",
+      changeSummary: "",
+      verificationSummary: "",
+      riskSummary: "",
+      rollbackSummary: "",
+      decisionTrace: [],
+      artifactIds: [],
+      replayEventCount: 0,
+      status: "placeholder",
+    },
+    approvals: [],
+    artifacts: [],
+    liveControl: {
+      enabled: false,
+      limitation: "single_process_only",
+      mode: "api_only",
+    },
+  };
 }

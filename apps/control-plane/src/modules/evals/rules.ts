@@ -10,7 +10,7 @@ export function evaluateTextOutput(input: {
   output: string;
 }): RuleAssessment {
   const rawOutput = input.output.replace(/\r\n/g, "\n").trim();
-  const normalizedOutput = normalize(rawOutput);
+  const normalizedOutput = normalizePhrase(rawOutput);
 
   if (!rawOutput) {
     return {
@@ -280,17 +280,17 @@ function hasMarkdownSection(output: string, section: string) {
 }
 
 function includesNormalized(output: string, phrase: string) {
-  return normalize(output).includes(normalize(phrase));
+  return normalizePhrase(output).includes(normalizePhrase(phrase));
 }
 
 function includesValue(values: string[], expected: string) {
-  const normalized = normalize(expected);
-  return values.some((value) => normalize(value) === normalized);
+  const normalized = normalizeValue(expected);
+  return values.some((value) => normalizeValue(value) === normalized);
 }
 
 function arrayContainsPhrase(values: string[], expected: string) {
-  const normalized = normalize(expected);
-  return values.some((value) => normalize(value).includes(normalized));
+  const normalized = normalizePhrase(expected);
+  return values.some((value) => normalizePhrase(value).includes(normalized));
 }
 
 function average(values: number[]) {
@@ -311,8 +311,16 @@ function toFivePointScale(value: number) {
   return roundOneDecimal(Math.max(0, Math.min(1, value)) * 5);
 }
 
-function normalize(value: string) {
+function normalizeValue(value: string) {
   return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function normalizePhrase(value: string) {
+  return normalizeValue(
+    value
+      .replace(/[\u2010-\u2015]/g, "-")
+      .replace(/\b([a-z0-9]+)\s*-\s*([a-z0-9]+)\b/gi, "$1 $2"),
+  );
 }
 
 function roundOneDecimal(value: number) {

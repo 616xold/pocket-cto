@@ -456,6 +456,20 @@ export class DrizzleMissionRepository implements MissionRepository {
     return readProofBundleManifest(artifact.metadata);
   }
 
+  async listArtifactsByMissionId(
+    missionId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(artifacts)
+      .where(eq(artifacts.missionId, missionId))
+      .orderBy(asc(artifacts.createdAt), asc(artifacts.id));
+
+    return rows.map(mapArtifactRow);
+  }
+
   async saveProofBundle(
     bundle: ProofBundleManifest,
     session?: PersistenceSession,

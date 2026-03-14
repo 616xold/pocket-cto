@@ -1,11 +1,12 @@
 import type {
+  ApprovalRecord,
   CreateMissionFromTextInput,
-  MissionRecord,
+  MissionDetailView,
   MissionTaskRecord,
-  ProofBundleManifest,
 } from "@pocket-cto/domain";
 import { CreateMissionFromTextInputSchema } from "@pocket-cto/domain";
 import { MissionNotFoundError } from "../../lib/http-errors";
+import { buildMissionDetailView } from "./detail-view";
 import { buildInitialTaskRolesForMission } from "../orchestrator/task-state-machine";
 import type { EvidenceService } from "../evidence/service";
 import type { ReplayService } from "../replay/service";
@@ -13,11 +14,7 @@ import type { MissionCompiler } from "./compiler";
 import { buildQueuedMissionStatusChangedPayload } from "./events";
 import type { MissionRepository } from "./repository";
 
-export type MissionDetail = {
-  mission: MissionRecord;
-  tasks: MissionTaskRecord[];
-  proofBundle: ProofBundleManifest;
-};
+export type MissionDetail = MissionDetailView;
 
 export class MissionService {
   constructor(
@@ -25,6 +22,11 @@ export class MissionService {
     private readonly repository: MissionRepository,
     private readonly replayService: ReplayService,
     private readonly evidenceService: EvidenceService,
+    private readonly readModelDeps: {
+      approvalReader?: {
+        listMissionApprovals(missionId: string): Promise<ApprovalRecord[]>;
+      };
+    } = {},
   ) {}
 
   async createFromText(rawInput: CreateMissionFromTextInput) {
@@ -152,16 +154,26 @@ export class MissionService {
       throw new MissionNotFoundError(missionId);
     }
 
-    const [tasks, proofBundle] = await Promise.all([
+    const [tasks, proofBundle, artifacts, approvals] = await Promise.all([
       this.repository.getTasksByMissionId(missionId),
       this.repository.getProofBundleByMissionId(missionId),
+      this.repository.listArtifactsByMissionId(missionId),
+      this.readModelDeps.approvalReader?.listMissionApprovals(missionId) ??
+        Promise.resolve([]),
     ]);
 
-    return {
+    return buildMissionDetailView({
+      approvals,
+      artifacts,
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
       mission,
-      tasks,
       proofBundle:
         proofBundle ?? this.evidenceService.createPlaceholder(mission),
-    };
+      tasks,
+    });
   }
 }

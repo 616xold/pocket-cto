@@ -1,5 +1,14 @@
-import { MissionRecordSchema, MissionTaskRecordSchema, ProofBundleManifestSchema } from "@pocket-cto/domain";
+import {
+  ApprovalRecordSchema,
+  MissionDetailViewSchema,
+  OperatorControlAvailabilitySchema,
+} from "@pocket-cto/domain";
+import type { ApprovalDecision } from "@pocket-cto/domain";
 import { z } from "zod";
+import {
+  controlPlaneActionErrorResponseSchema,
+  type ControlPlaneMutationResult,
+} from "./operator-actions";
 
 const healthSchema = z.object({
   ok: z.boolean(),
@@ -8,12 +17,31 @@ const healthSchema = z.object({
 });
 type ControlPlaneHealth = z.output<typeof healthSchema>;
 
-const missionDetailSchema = z.object({
-  mission: MissionRecordSchema,
-  tasks: z.array(MissionTaskRecordSchema),
-  proofBundle: ProofBundleManifestSchema,
-});
+const missionDetailSchema = MissionDetailViewSchema;
 type MissionDetail = z.output<typeof missionDetailSchema>;
+
+const liveControlSchema = OperatorControlAvailabilitySchema;
+
+const missionApprovalsSchema = z.object({
+  approvals: z.array(ApprovalRecordSchema),
+  liveControl: liveControlSchema,
+});
+type MissionApprovals = z.output<typeof missionApprovalsSchema>;
+
+const resolveApprovalResponseSchema = z.object({
+  approval: ApprovalRecordSchema,
+  liveControl: liveControlSchema,
+});
+
+const interruptTaskResponseSchema = z.object({
+  interrupt: z.object({
+    cancelledApprovals: z.array(ApprovalRecordSchema).default([]),
+    taskId: z.string().uuid(),
+    threadId: z.string(),
+    turnId: z.string(),
+  }),
+  liveControl: liveControlSchema,
+});
 
 const controlPlaneUrl =
   process.env.NEXT_PUBLIC_CONTROL_PLANE_URL ??
@@ -40,6 +68,59 @@ async function fetchJson<TSchema extends z.ZodTypeAny>(
   }
 }
 
+async function postJson<TSchema extends z.ZodTypeAny>(
+  input: string,
+  body: unknown,
+  schema: TSchema,
+): Promise<ControlPlaneMutationResult<z.output<TSchema>>> {
+  let response: Response;
+
+  try {
+    response = await fetch(`${controlPlaneUrl}${input}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch {
+    return {
+      ok: false,
+      errorCode: "request_failed",
+      message: "Control-plane request failed",
+    };
+  }
+
+  if (!response.ok) {
+    const errorJson = await readJson(response);
+    const parsedError =
+      controlPlaneActionErrorResponseSchema.safeParse(errorJson);
+
+    if (parsedError.success) {
+      return {
+        ok: false,
+        statusCode: response.status,
+        errorCode: parsedError.data.error.code,
+        message: parsedError.data.error.message,
+      };
+    }
+
+    return {
+      ok: false,
+      statusCode: response.status,
+      errorCode: "request_failed",
+      message: `Control-plane request failed (${response.status})`,
+    };
+  }
+
+  return {
+    ok: true,
+    statusCode: response.status,
+    data: schema.parse(await response.json()),
+  };
+}
+
 export async function getControlPlaneHealth(): Promise<ControlPlaneHealth> {
   return (await fetchJson("/health", healthSchema)) ?? {
     ok: false,
@@ -52,4 +133,50 @@ export async function getMissionDetail(
   missionId: string,
 ): Promise<MissionDetail | null> {
   return fetchJson(`/missions/${missionId}`, missionDetailSchema);
+}
+
+export async function getMissionApprovals(
+  missionId: string,
+): Promise<MissionApprovals | null> {
+  return fetchJson(`/missions/${missionId}/approvals`, missionApprovalsSchema);
+}
+
+export async function resolveMissionApproval(input: {
+  approvalId: string;
+  decision: ApprovalDecision;
+  rationale?: string | null;
+  resolvedBy: string;
+}) {
+  return postJson(
+    `/approvals/${input.approvalId}/resolve`,
+    {
+      decision: input.decision,
+      rationale: input.rationale ?? undefined,
+      resolvedBy: input.resolvedBy,
+    },
+    resolveApprovalResponseSchema,
+  );
+}
+
+export async function interruptMissionTask(input: {
+  rationale?: string | null;
+  requestedBy: string;
+  taskId: string;
+}) {
+  return postJson(
+    `/tasks/${input.taskId}/interrupt`,
+    {
+      rationale: input.rationale ?? undefined,
+      requestedBy: input.requestedBy,
+    },
+    interruptTaskResponseSchema,
+  );
+}
+
+async function readJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
 }

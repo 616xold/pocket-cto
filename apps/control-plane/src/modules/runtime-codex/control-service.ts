@@ -4,6 +4,11 @@ import type { ReplayService } from "../replay/service";
 import { buildRuntimeTurnInterruptRequestedPayload } from "./events";
 import type { InMemoryRuntimeSessionRegistry } from "./live-session-registry";
 import type { ApprovalService } from "../approvals/service";
+import {
+  RuntimeActiveTurnNotFoundError,
+  RuntimeInterruptDeliveryError,
+  RuntimeTaskNotFoundError,
+} from "./errors";
 
 export type InterruptActiveTurnInput = {
   rationale?: string | null;
@@ -38,13 +43,13 @@ export class RuntimeControlService {
     const task = await this.missionRepository.getTaskById(input.taskId);
 
     if (!task) {
-      throw new Error(`Task ${input.taskId} was not found`);
+      throw new RuntimeTaskNotFoundError(input.taskId);
     }
 
     const activeTurn = this.liveSessionRegistry.getActiveTurn(input.taskId);
 
     if (!activeTurn) {
-      throw new Error(`Task ${input.taskId} has no active live turn to interrupt`);
+      throw new RuntimeActiveTurnNotFoundError(input.taskId);
     }
 
     const cancelledApprovals =
@@ -72,7 +77,8 @@ export class RuntimeControlService {
     try {
       await this.liveSessionRegistry.interruptTask(input.taskId);
     } catch (error) {
-      throw new Error(
+      throw new RuntimeInterruptDeliveryError(
+        task.id,
         `Interrupt intent for task ${task.id} was durably recorded, but the live turn could not be interrupted: ${asError(error, "Interrupt failed").message}`,
       );
     }

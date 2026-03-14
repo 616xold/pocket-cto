@@ -15,6 +15,9 @@ The user-visible change is concrete. A successful executor task should now leave
 - [x] (2026-03-13T19:54Z) Wired executor completion handling to prepare and persist runtime artifact placeholders, append one `artifact.created` replay event per saved artifact, and enrich the existing proof-bundle manifest in place while leaving the planner plan-artifact flow intact.
 - [x] (2026-03-13T19:54Z) Extended DB-backed orchestrator coverage so executor success now proves persisted `diff_summary` plus `test_report`, terminalized no-change failure proves persisted `test_report` plus `log_excerpt`, replay ordering around `artifact.created` is asserted, proof-bundle artifact ids are checked, and planner artifact behavior remains covered by the existing planner-path tests.
 - [x] (2026-03-13T19:54Z) Ran the required validation commands, completed one manual planner-plus-executor acceptance with a stub runtime against a temp git repo, and captured the resulting artifact ids, kinds, proof-bundle linkage, and replay sequence below.
+- [x] (2026-03-14T01:22Z) Extended the operator-facing mission-detail read model to include approval summaries, artifact summaries, and live-control availability in one `GET /missions/:missionId` response so the web detail page can reflect the persisted M1.6 and M1.7 backend state without a second approval-only fetch.
+- [x] (2026-03-14T01:27Z) Updated the web mission detail surface to render approvals, artifact ledger entries, proof-bundle state, and minimal live-control actions in a mobile-safe layout, removed the stale mission-spine placeholder copy, and added focused route, parser, render, and control-request tests.
+- [x] (2026-03-14T02:18Z) Polished the web operator action UX so approval resolution and interrupt actions now return structured result objects, preserve `409` and `501` route semantics as user-facing inline feedback, show pending text during submission, and use an explicit local operator label instead of the hidden `web-operator` constant.
 
 ## Surprises & Discoveries
 
@@ -51,6 +54,22 @@ The user-visible change is concrete. A successful executor task should now leave
 - Decision: persist `log_excerpt` only for non-success executor terminalizations in M1.7, while successful executor turns persist `diff_summary` plus `test_report`.
   Rationale: the prompt required at least those artifact kinds and explicitly called out failure-oriented excerpts. Restricting `log_excerpt` to non-success paths keeps the success artifact set legible and avoids duplicating the final executor report unnecessarily.
   Date/Author: 2026-03-13 / Codex
+
+- Decision: extend the existing `GET /missions/:missionId` read model instead of introducing a separate aggregation route for approvals and artifacts.
+  Rationale: a single mission-detail fetch keeps the web operator surface simple, keeps routes thin, and makes approval and artifact evidence feel like part of the same mission narrative instead of parallel side channels.
+  Date/Author: 2026-03-14 / Codex
+
+- Decision: expose approvals oldest-first and artifacts oldest-first by `createdAt`, with response bodies reduced to summary-shaped read models instead of raw approval and artifact rows.
+  Rationale: oldest-first ordering aligns the operator ledger with replay and proof-bundle narrative flow, while the smaller response shape keeps the UI legible and avoids leaking irrelevant persistence details.
+  Date/Author: 2026-03-14 / Codex
+
+- Decision: keep operator-action UX semantics inside the web layer by converting control-plane mutation failures into typed server-action results, while leaving control-plane route status codes and error codes unchanged.
+  Rationale: the backend already reports the right operator-facing failure classes (`live_control_unavailable`, approval conflict, task conflict). Preserving that route contract and mapping it into inline page feedback avoids widening scope into API redesign while removing the old generic thrown-error UX.
+  Date/Author: 2026-03-14 / Codex
+
+- Decision: replace the buried `web-operator` constant with a visible local operator label backed by `POCKET_CTO_WEB_OPERATOR_NAME`, defaulting to `Local web operator`.
+  Rationale: M1 still runs locally, so a small env-backed strategy is enough for the MVP. Making the operator label explicit in both UI copy and action payloads is more honest than keeping a hidden hardcoded identity.
+  Date/Author: 2026-03-14 / Codex
 
 ## Context and Orientation
 
@@ -168,6 +187,11 @@ Validation results captured after implementation:
 - `pnpm --filter @pocket-cto/control-plane test` passed with 59 tests.
 - `pnpm --filter @pocket-cto/control-plane typecheck` passed.
 - `pnpm --filter @pocket-cto/control-plane lint` passed.
+- `pnpm --filter @pocket-cto/web test -- --run lib/api.spec.ts 'app/missions/[missionId]/actions.spec.ts' 'app/missions/[missionId]/action-feedback.spec.tsx'` passed and proved structured success plus failure results, inline feedback strings, and the removal of the old generic route-failure throw path for normal operator-action failures.
+- `pnpm --filter @pocket-cto/web test` passed with 12 tests.
+- `pnpm --filter @pocket-cto/web typecheck` passed.
+- `pnpm --filter @pocket-cto/web lint` passed.
+- A stale control-plane mission-detail spec expectation around artifact ordering was narrowed to the actual created-at contract, then `pnpm --filter @pocket-cto/control-plane test` was rerun and passed with 80 tests.
 
 Manual acceptance captured after implementation with a stub runtime against a temp git repo:
 
@@ -210,6 +234,13 @@ External and runtime dependencies for this slice remain unchanged:
 M1.7 now produces real runtime evidence placeholders instead of stopping at executor task summaries.
 Successful executor turns persist `diff_summary` and `test_report` artifacts derived from local validation and compact runtime output, while terminalized executor failures can still persist a reviewable `log_excerpt` plus validation evidence.
 Each persisted artifact appends its own `artifact.created` replay event, and the existing proof-bundle manifest is enriched in place with new artifact ids, more truthful summary fields, and a `ready` status once runtime evidence exists.
+
+The operator read model now reflects that persisted evidence directly.
+`GET /missions/:missionId` includes approval summaries, artifact ledger summaries, and live-control availability, and the web mission detail page renders those sections instead of relying on the old mission-spine placeholder copy.
+Minimal approval-resolution and task-interrupt controls are now wired only when the embedded-worker live-control surface is available; otherwise the UI stays explicit about that limitation instead of silently hiding it.
+
+The operator action UX is now explicit enough for local MVP use.
+Approval-resolution and interrupt submissions return typed success or failure results instead of generic thrown route errors, the mission detail page shows inline feedback for success, already-resolved conflicts, missing active live turns, and embedded-worker unavailability, and the operator identity used for those actions is now a visible local configuration point rather than a hidden constant.
 
 The planner path stayed intact.
 Planner turns still persist the existing `plan` artifact through `planner-output.ts`, and the new runtime-artifact flow only attaches to executor terminalization.

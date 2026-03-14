@@ -214,6 +214,7 @@ dd {
 .task-row {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 16px;
   padding: 10px 0;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -222,6 +223,60 @@ dd {
 .task-row:first-child {
   border-top: 0;
   padding-top: 0;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.action-button {
+  appearance: none;
+  border: 1px solid rgba(126, 231, 181, 0.32);
+  background: rgba(126, 231, 181, 0.08);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.action-button.secondary {
+  border-color: rgba(255, 209, 132, 0.28);
+  background: rgba(255, 209, 132, 0.08);
+}
+
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.action-cluster {
+  display: grid;
+  gap: 10px;
+  width: min(100%, 340px);
+}
+
+.action-feedback {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.action-feedback.success {
+  border-color: rgba(126, 231, 181, 0.32);
+  background: rgba(126, 231, 181, 0.08);
+  color: var(--good);
+}
+
+.action-feedback.error {
+  border-color: rgba(255, 209, 132, 0.3);
+  background: rgba(255, 209, 132, 0.08);
+  color: var(--warn);
 }
 
 @media (max-width: 720px) {
@@ -238,5 +293,13 @@ dd {
   .mission-header,
   .task-row {
     flex-direction: column;
+  }
+
+  .button-row {
+    width: 100%;
+  }
+
+  .action-cluster {
+    width: 100%;
   }
 }

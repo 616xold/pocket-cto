@@ -28,6 +28,13 @@ runtime evidence exists, and fill `changeSummary`, `verificationSummary`,
 compact runtime output. `pr_link` remains explicitly deferred until M2 GitHub
 App integration lands.
 
+The operator mission-detail read model now exposes that persisted evidence
+directly. `GET /missions/:missionId` includes approval summaries and artifact
+summaries alongside the proof bundle so the web surface can show the durable
+evidence ledger without replaying raw rows client-side. Approvals are shown
+oldest-first for decision-trace readability, and artifacts are shown
+oldest-first by `createdAt` so the ledger lines up with replay order.
+
 ## Replay event philosophy
 
 Pocket CTO is not full event sourcing in v1.

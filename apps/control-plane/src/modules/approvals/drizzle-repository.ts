@@ -1,4 +1,4 @@
-import { and, count, eq } from "drizzle-orm";
+import { and, asc, count, eq } from "drizzle-orm";
 import { approvals, type Db } from "@pocket-cto/db";
 import type { ApprovalRecord } from "@pocket-cto/domain";
 import {
@@ -60,6 +60,20 @@ export class DrizzleApprovalRepository implements ApprovalRepository {
       );
 
     return result?.count ?? 0;
+  }
+
+  async listApprovalsByMissionId(
+    missionId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(approvals)
+      .where(eq(approvals.missionId, missionId))
+      .orderBy(asc(approvals.createdAt), asc(approvals.id));
+
+    return rows.map(mapApprovalRow);
   }
 
   async listPendingApprovalsByTaskId(

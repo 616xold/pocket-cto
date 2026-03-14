@@ -18,6 +18,35 @@ export type EvalPromptRecord = {
   version: string;
 };
 
+export type EvalRecordProvenance = {
+  branchName: string | null;
+  datasetName: string;
+  gitSha: string | null;
+  promptVersion: string;
+};
+
+export type EvalProviderUsage = {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+};
+
+export type EvalProviderMetadata = {
+  provider: "openai-responses";
+  requestId: string | null;
+  requestedModel: string;
+  resolvedModel: string | null;
+  responseId: string | null;
+  usage: EvalProviderUsage | null;
+};
+
+export type EvalOutputRecord = {
+  model: string;
+  output: unknown;
+  provider: EvalProviderMetadata | null;
+  text: string;
+};
+
 export type RuleAssessment = {
   checks: {
     passed: number;
@@ -31,6 +60,7 @@ export type ModelAssessment = {
   model: string | null;
   notes: string[];
   overallScore: number;
+  provider: EvalProviderMetadata | null;
   scores: DimensionScores;
   verdict: "strong" | "mixed" | "weak";
 };
@@ -41,11 +71,7 @@ export type CombinedAssessment = {
 };
 
 export type EvalResultRecord = {
-  candidate: {
-    model: string;
-    output: unknown;
-    text: string;
-  };
+  candidate: EvalOutputRecord;
   combined: CombinedAssessment;
   completedAt: string;
   grader: ModelAssessment;
@@ -53,11 +79,8 @@ export type EvalResultRecord = {
   mode: EvalMode;
   notes: string[];
   prompt: EvalPromptRecord;
-  reference: {
-    model: string;
-    output: unknown;
-    text: string;
-  } | null;
+  provenance: EvalRecordProvenance;
+  reference: EvalOutputRecord | null;
   rubric: {
     path: string;
     sha256: string;
@@ -66,4 +89,36 @@ export type EvalResultRecord = {
   startedAt: string;
   target: "planner" | "executor" | "compiler";
   timestamp: string;
+};
+
+export type EvalProviderCallSummary = {
+  calls: number;
+  responseIds: string[];
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  } | null;
+};
+
+export type EvalRunSummary = {
+  averageOverallScore: number;
+  candidateModel: string;
+  graderModel: string;
+  provenance: {
+    branchName: string | null;
+    datasetNames: string[];
+    gitSha: string | null;
+    promptVersions: string[];
+  };
+  live: {
+    candidate: EvalProviderCallSummary;
+    grader: EvalProviderCallSummary;
+    reference: EvalProviderCallSummary;
+  };
+  mode: EvalMode;
+  outputFileName: string;
+  outputPath: string;
+  runLabel: string;
+  samples: number;
 };

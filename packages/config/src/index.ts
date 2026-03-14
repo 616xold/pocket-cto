@@ -26,6 +26,7 @@ export const EnvSchema = z.object({
   WEB_PORT: z.coerce.number().int().positive().default(3000),
   PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   CONTROL_PLANE_URL: z.string().url().default("http://localhost:4000"),
+  CONTROL_PLANE_EMBEDDED_WORKER: z.coerce.boolean().default(false),
   DATABASE_URL: z.string().min(1),
   TEST_DATABASE_URL: z.string().min(1).optional(),
   ARTIFACT_S3_ENDPOINT: z.string().min(1),

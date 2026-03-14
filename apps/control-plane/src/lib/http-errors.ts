@@ -1,10 +1,25 @@
 import type { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
+import {
+  ApprovalContinuationLostError,
+  ApprovalNotFoundError,
+  ApprovalNotPendingError,
+} from "../modules/approvals/errors";
+import {
+  RuntimeActiveTurnNotFoundError,
+  RuntimeInterruptDeliveryError,
+  RuntimeTaskNotFoundError,
+} from "../modules/runtime-codex/errors";
 
 export type ApiErrorCode =
   | "invalid_request"
+  | "approval_conflict"
+  | "approval_not_found"
+  | "live_control_unavailable"
   | "mission_not_found"
-  | "internal_error";
+  | "internal_error"
+  | "task_conflict"
+  | "task_not_found";
 
 export type ApiErrorDetail = {
   path: string;
@@ -51,6 +66,19 @@ export class MissionNotFoundError extends AppHttpError {
     });
     this.name = "MissionNotFoundError";
     this.missionId = missionId;
+  }
+}
+
+export class LiveControlUnavailableError extends AppHttpError {
+  constructor() {
+    super(501, {
+      error: {
+        code: "live_control_unavailable",
+        message:
+          "Live approval and interrupt control is unavailable in this process",
+      },
+    });
+    this.name = "LiveControlUnavailableError";
   }
 }
 
@@ -112,6 +140,60 @@ function mapHttpError(error: unknown): ErrorMapping {
               message: error.message,
             },
           ],
+        },
+      },
+    };
+  }
+
+  if (error instanceof ApprovalNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        error: {
+          code: "approval_not_found",
+          message: "Approval not found",
+        },
+      },
+    };
+  }
+
+  if (
+    error instanceof ApprovalNotPendingError ||
+    error instanceof ApprovalContinuationLostError
+  ) {
+    return {
+      statusCode: 409,
+      body: {
+        error: {
+          code: "approval_conflict",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof RuntimeTaskNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        error: {
+          code: "task_not_found",
+          message: "Task not found",
+        },
+      },
+    };
+  }
+
+  if (
+    error instanceof RuntimeActiveTurnNotFoundError ||
+    error instanceof RuntimeInterruptDeliveryError
+  ) {
+    return {
+      statusCode: 409,
+      body: {
+        error: {
+          code: "task_conflict",
+          message: error.message,
         },
       },
     };

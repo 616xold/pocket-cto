@@ -46,6 +46,7 @@ import {
   buildRuntimeTurnCompletedPayload,
   buildRuntimeTurnStartedPayload,
 } from "../runtime-codex/events";
+import { UnsupportedPermissionsApprovalError } from "../runtime-codex/errors";
 import {
   loadPlannerPromptContext,
   type PlannerPromptContext,
@@ -217,6 +218,9 @@ export class OrchestratorRuntimePhase {
             taskId,
             ...event,
           }),
+        onPermissionsApprovalRequest: () => {
+          throw new UnsupportedPermissionsApprovalError();
+        },
       },
     );
     const completionOutcome = await this.resolveTurnCompletionOutcome({
