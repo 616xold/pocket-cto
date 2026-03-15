@@ -26,6 +26,9 @@ export async function resetTestDatabase() {
 
   await db.execute(sql`
     TRUNCATE TABLE
+      github_webhook_deliveries,
+      repositories,
+      github_installations,
       replay_events,
       outbox_events,
       approvals,

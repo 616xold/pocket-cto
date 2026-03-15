@@ -3,9 +3,9 @@ import { registerHttpErrorHandler } from "./lib/http-errors";
 import { createLogger } from "./lib/logger";
 import { registerHealthRoutes } from "./modules/health/routes";
 import { registerGitHubAppRoutes } from "./modules/github-app/routes";
+import { registerGitHubWebhookRoutes } from "./modules/github-app/webhook-routes";
 import { registerMissionRoutes } from "./modules/missions/routes";
 import { registerReplayRoutes } from "./modules/replay/routes";
-import { registerGitHubWebhookRoutes } from "./modules/github/webhook-routes";
 import { registerApprovalRoutes } from "./modules/approvals/routes";
 import { createServerContainer } from "./bootstrap";
 import type { AppContainer } from "./lib/types";
@@ -22,6 +22,9 @@ export async function buildApp(options?: { container?: AppContainer }) {
   await registerGitHubAppRoutes(app, {
     githubAppService: container.githubAppService,
   });
+  await registerGitHubWebhookRoutes(app, {
+    githubWebhookService: container.githubWebhookService,
+  });
   await registerMissionRoutes(app, {
     liveControl: container.operatorControl.liveControl,
     missionService: container.missionService,
@@ -35,7 +38,6 @@ export async function buildApp(options?: { container?: AppContainer }) {
   await registerRuntimeControlRoutes(app, {
     operatorControl: container.operatorControl,
   });
-  await registerGitHubWebhookRoutes(app);
 
   return app;
 }

@@ -12,6 +12,10 @@ const GitHubAppRequiredEnvSchema = z.object({
   GITHUB_CLIENT_SECRET: z.string().trim().min(1).optional(),
 });
 
+const GitHubWebhookRequiredEnvSchema = z.object({
+  GITHUB_WEBHOOK_SECRET: z.string().trim().min(1),
+});
+
 export const GITHUB_API_BASE_URL = "https://api.github.com";
 
 export type GitHubAppConfig = {
@@ -32,6 +36,20 @@ export type GitHubAppConfigResolution =
       missing: Array<"GITHUB_APP_ID" | "GITHUB_APP_PRIVATE_KEY_BASE64">;
     };
 
+export type GitHubWebhookConfig = {
+  secret: string;
+};
+
+export type GitHubWebhookConfigResolution =
+  | {
+      status: "configured";
+      config: GitHubWebhookConfig;
+    }
+  | {
+      status: "unconfigured";
+      missing: ["GITHUB_WEBHOOK_SECRET"];
+    };
+
 type GitHubAppEnv = Pick<
   Env,
   | "GITHUB_APP_ID"
@@ -39,6 +57,8 @@ type GitHubAppEnv = Pick<
   | "GITHUB_CLIENT_ID"
   | "GITHUB_CLIENT_SECRET"
 >;
+
+type GitHubWebhookEnv = Pick<Env, "GITHUB_WEBHOOK_SECRET">;
 
 export function resolveGitHubAppConfig(
   env: GitHubAppEnv,
@@ -86,6 +106,41 @@ export function resolveGitHubAppConfig(
     if (error instanceof z.ZodError) {
       throw new GitHubAppConfigurationError(
         "Invalid GitHub App configuration",
+        error.issues[0]?.message ?? null,
+      );
+    }
+
+    throw error;
+  }
+}
+
+export function resolveGitHubWebhookConfig(
+  env: GitHubWebhookEnv,
+): GitHubWebhookConfigResolution {
+  const normalized = normalizeOptional(env.GITHUB_WEBHOOK_SECRET);
+
+  if (!normalized) {
+    return {
+      status: "unconfigured",
+      missing: ["GITHUB_WEBHOOK_SECRET"],
+    };
+  }
+
+  try {
+    const parsed = GitHubWebhookRequiredEnvSchema.parse({
+      GITHUB_WEBHOOK_SECRET: normalized,
+    });
+
+    return {
+      status: "configured",
+      config: {
+        secret: parsed.GITHUB_WEBHOOK_SECRET,
+      },
+    };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new GitHubAppConfigurationError(
+        "Invalid GitHub webhook configuration",
         error.issues[0]?.message ?? null,
       );
     }

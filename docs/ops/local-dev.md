@@ -648,10 +648,10 @@ pnpm --filter @pocket-cto/control-plane test
 The worker and API entrypoints live in the same `apps/control-plane` package but run as separate scripts.
 That keeps the repo simple while preserving process boundaries.
 
-## GitHub App setup (M2.1)
+## GitHub App and webhook setup (M2.1 / M2.2)
 
-Pocket CTO now has a narrow M2.1 GitHub App auth surface for installation sync.
-This slice uses GitHub App auth only.
+Pocket CTO now has a real GitHub App auth surface plus webhook ingress.
+This path stays GitHub App-only.
 Do not use PATs or `gh` CLI shortcuts for the control-plane integration path.
 
 Required now for live installation sync:
@@ -659,9 +659,12 @@ Required now for live installation sync:
 - `GITHUB_APP_ID`
 - `GITHUB_APP_PRIVATE_KEY_BASE64`
 
-Optional for later slices:
+Required now for live webhook ingress:
 
 - `GITHUB_WEBHOOK_SECRET`
+
+Optional for later slices:
+
 - `GITHUB_CLIENT_ID`
 - `GITHUB_CLIENT_SECRET`
 
@@ -670,28 +673,105 @@ Local setup steps:
 1. Create or reuse a GitHub App and install it on the target owner or repository.
 2. Copy the app id into `GITHUB_APP_ID`.
 3. Base64-encode the downloaded private-key PEM into one line and copy it into `GITHUB_APP_PRIVATE_KEY_BASE64`.
+4. Choose a webhook secret in the GitHub App settings and copy the same value into `GITHUB_WEBHOOK_SECRET`.
 
-On macOS that looks like:
+On macOS the private-key step looks like:
 
 ```bash
 base64 -i path/to/pocket-cto.private-key.pem | tr -d '\n'
 ```
 
-Current M2.1 permission and event expectations are intentionally narrow:
+Current M2.2 permission and event expectations remain intentionally narrow:
 
-- repository permission expected now: `Metadata` read-only
-- webhook ingestion: not implemented yet, so `GITHUB_WEBHOOK_SECRET` stays optional in this slice
-- webhook events documented for later milestones are still future-facing and not consumed by code yet
+- repository permission expected now: `Metadata` read-only for the installation-sync slice
+- webhook events currently consumed in code: `installation`, `installation_repositories`, `issues`, `issue_comment`
+- `issues` and `issue_comment` are durably accepted as ingress envelopes only; they do not create missions yet
+- branch, PR, and issue-to-mission intake work are still future milestones
 
-Once the control-plane API is running, the debug surface is:
+Once the control-plane API is running, the current GitHub debug and ingress surface is:
 
 ```bash
 curl -i http://localhost:4000/github/installations
 curl -i -X POST http://localhost:4000/github/installations/sync
 ```
 
-When the GitHub App env is configured, the sync route fetches current installations from GitHub and upserts them into Postgres.
-When the env is missing, both routes return a machine-readable `github_app_not_configured` error instead of silently falling back to PATs.
+```text
+POST /github/webhooks
+```
+
+When the GitHub App auth env is configured, the sync route fetches current installations from GitHub and upserts them into Postgres.
+When those env vars are missing, the sync routes return a machine-readable `github_app_not_configured` error instead of silently falling back to PATs.
+When `GITHUB_WEBHOOK_SECRET` is missing, `POST /github/webhooks` returns `github_webhook_not_configured`.
+
+### Required webhook headers
+
+Pocket CTO expects GitHub-style JSON webhook requests with these headers:
+
+- `Content-Type: application/json`
+- `X-GitHub-Delivery`
+- `X-GitHub-Event`
+- `X-Hub-Signature-256`
+
+Missing `X-GitHub-Delivery`, `X-GitHub-Event`, or `X-Hub-Signature-256` returns a machine-readable `400`.
+An invalid signature returns a machine-readable `401`.
+
+### Local tunnel workflow
+
+1. Start the API with `pnpm dev:control-plane` or the full stack with `pnpm dev`.
+2. Start a public tunnel to `http://localhost:4000`.
+3. Point the GitHub App webhook URL at `<public-url>/github/webhooks`.
+4. Trigger an `installation`, `installation_repositories`, `issues`, or `issue_comment` event from GitHub.
+5. Watch the delivery result in the GitHub App deliveries UI and the local control-plane logs.
+
+Examples:
+
+```bash
+ngrok http 4000
+```
+
+```bash
+cloudflared tunnel --url http://localhost:4000
+```
+
+### Local signed curl workflow
+
+When you want to test the route without a public tunnel, sign the exact JSON body with the webhook secret and send it locally:
+
+```bash
+BODY='{
+  "action":"created",
+  "installation":{
+    "id":12345,
+    "app_id":98765,
+    "target_id":6161234,
+    "target_type":"Organization",
+    "account":{"id":6161234,"login":"616xold","type":"Organization"},
+    "suspended_at":null,
+    "permissions":{"metadata":"read"}
+  }
+}'
+
+SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$GITHUB_WEBHOOK_SECRET" -hex | sed 's/^.* //')
+
+curl -i http://localhost:4000/github/webhooks \
+  -H 'content-type: application/json' \
+  -H 'x-github-delivery: local-delivery-1' \
+  -H 'x-github-event: installation' \
+  -H "x-hub-signature-256: sha256=$SIG" \
+  --data-binary "$BODY"
+```
+
+### Safe retry and redelivery
+
+Webhook deliveries are keyed durably by `X-GitHub-Delivery`.
+Pocket CTO records the first successfully processed delivery and will not repeat side effects for the same delivery id.
+
+For safe retries:
+
+- in GitHub's deliveries UI, use the built-in redelivery action when you want GitHub to resend the same delivery payload and delivery id
+- in local curl tests, resend the exact same body with the exact same `x-github-delivery` value to exercise the duplicate path
+- a duplicate delivery returns success with `duplicate: true` instead of replaying installation or repository updates
+- if you need a brand new delivery for testing, change `x-github-delivery` to a new value
 
 ## Environment variables
 

@@ -1,5 +1,21 @@
-import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createdAt, id, updatedAt } from "./shared";
+
+export const githubWebhookOutcomeEnum = pgEnum("github_webhook_outcome", [
+  "installation_state_updated",
+  "installation_repositories_updated",
+  "issue_envelope_recorded",
+  "issue_comment_envelope_recorded",
+  "ignored_event",
+]);
 
 export const githubInstallations = pgTable(
   "github_installations",
@@ -30,9 +46,35 @@ export const repositories = pgTable("repositories", {
     () => githubInstallations.id,
     { onDelete: "cascade" },
   ),
+  githubRepositoryId: text("github_repository_id"),
   fullName: text("full_name").notNull(),
   defaultBranch: text("default_branch").notNull().default("main"),
   language: text("language"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
-});
+}, (table) => ({
+  githubRepositoryIdUnique: uniqueIndex(
+    "repositories_github_repository_id_key",
+  ).on(table.githubRepositoryId),
+}));
+
+export const githubWebhookDeliveries = pgTable(
+  "github_webhook_deliveries",
+  {
+    id: id(),
+    deliveryId: text("delivery_id").notNull(),
+    eventName: text("event_name").notNull(),
+    action: text("action"),
+    installationId: text("installation_id"),
+    outcome: githubWebhookOutcomeEnum("outcome"),
+    payload: jsonb("payload").notNull().default({}),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    deliveryIdUnique: uniqueIndex(
+      "github_webhook_deliveries_delivery_id_key",
+    ).on(table.deliveryId),
+  }),
+);

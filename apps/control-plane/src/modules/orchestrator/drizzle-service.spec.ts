@@ -2154,6 +2154,19 @@ async function createHarness(options?: {
           };
         },
       },
+      githubWebhookService: {
+        async ingest() {
+          return {
+            accepted: true as const,
+            duplicate: false,
+            deliveryId: "delivery-test",
+            eventName: "installation",
+            action: "created",
+            handledAs: "installation_state_updated" as const,
+            persistedAt: "2026-03-15T00:00:00.000Z",
+          };
+        },
+      },
       missionService,
       operatorControl: {
         approvalService,

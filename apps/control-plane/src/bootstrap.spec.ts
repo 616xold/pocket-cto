@@ -82,6 +82,19 @@ function createAppContainer(
         };
       },
     } as AppContainer["githubAppService"],
+    githubWebhookService: {
+      async ingest() {
+        return {
+          accepted: true,
+          duplicate: false,
+          deliveryId: "delivery-test",
+          eventName: "installation",
+          action: "created",
+          handledAs: "installation_state_updated",
+          persistedAt: "2026-03-15T00:00:00.000Z",
+        };
+      },
+    } as AppContainer["githubWebhookService"],
     missionService: {
       async createFromText() {
         throw new Error("createFromText should not be called in this test");

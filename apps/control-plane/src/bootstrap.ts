@@ -12,7 +12,10 @@ import { InMemoryApprovalRepository } from "./modules/approvals/repository";
 import { ApprovalService } from "./modules/approvals/service";
 import { EvidenceService } from "./modules/evidence/service";
 import { GitHubAppAuth } from "./modules/github-app/auth";
-import { resolveGitHubAppConfig } from "./modules/github-app/config";
+import {
+  resolveGitHubAppConfig,
+  resolveGitHubWebhookConfig,
+} from "./modules/github-app/config";
 import { DrizzleGitHubAppRepository } from "./modules/github-app/drizzle-repository";
 import { GitHubAppClient } from "./modules/github-app/client";
 import {
@@ -21,6 +24,12 @@ import {
 } from "./modules/github-app/repository";
 import { GitHubAppService } from "./modules/github-app/service";
 import { InMemoryInstallationTokenCache } from "./modules/github-app/token-cache";
+import { DrizzleGitHubWebhookRepository } from "./modules/github-app/webhook-drizzle-repository";
+import {
+  InMemoryGitHubWebhookRepository,
+  type GitHubWebhookRepository,
+} from "./modules/github-app/webhook-repository";
+import { GitHubWebhookService } from "./modules/github-app/webhook-service";
 import { StubMissionCompiler } from "./modules/missions/compiler";
 import { DrizzleMissionRepository } from "./modules/missions/drizzle-repository";
 import { InMemoryMissionRepository } from "./modules/missions/repository";
@@ -61,6 +70,7 @@ type ServerContainerFactories = {
 type SharedKernel = {
   approvalService: ApprovalService;
   githubAppService: GitHubAppService;
+  githubWebhookService: GitHubWebhookService;
   missionService: MissionService;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
   replayService: ReplayService;
@@ -154,6 +164,7 @@ export function createInMemoryContainer(): AppContainer {
     approvalRepository: new InMemoryApprovalRepository(),
     env: {},
     githubAppRepository: new InMemoryGitHubAppRepository(),
+    githubWebhookRepository: new InMemoryGitHubWebhookRepository(),
     missionRepository: new InMemoryMissionRepository(),
     replayRepository: new InMemoryReplayRepository(),
   });
@@ -189,6 +200,7 @@ async function buildDrizzleKernel(input: {
     approvalRepository: new DrizzleApprovalRepository(input.db),
     env: input.env,
     githubAppRepository: new DrizzleGitHubAppRepository(input.db),
+    githubWebhookRepository: new DrizzleGitHubWebhookRepository(input.db),
     missionRepository: new DrizzleMissionRepository(input.db),
     replayRepository: new DrizzleReplayRepository(input.db),
   });
@@ -216,9 +228,11 @@ function buildSharedKernel(input: {
       | "GITHUB_APP_PRIVATE_KEY_BASE64"
       | "GITHUB_CLIENT_ID"
       | "GITHUB_CLIENT_SECRET"
+      | "GITHUB_WEBHOOK_SECRET"
     >
   >;
   githubAppRepository: GitHubAppRepository;
+  githubWebhookRepository: GitHubWebhookRepository;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
   replayRepository: ConstructorParameters<typeof ReplayService>[0];
 }): SharedKernel {
@@ -227,6 +241,9 @@ function buildSharedKernel(input: {
     GITHUB_APP_PRIVATE_KEY_BASE64: input.env.GITHUB_APP_PRIVATE_KEY_BASE64,
     GITHUB_CLIENT_ID: input.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: input.env.GITHUB_CLIENT_SECRET,
+  });
+  const githubWebhookConfig = resolveGitHubWebhookConfig({
+    GITHUB_WEBHOOK_SECRET: input.env.GITHUB_WEBHOOK_SECRET,
   });
   const replayService = new ReplayService(
     input.replayRepository,
@@ -240,6 +257,11 @@ function buildSharedKernel(input: {
     config: githubAppConfig,
     repository: input.githubAppRepository,
     tokenCache: new InMemoryInstallationTokenCache(),
+  });
+  const githubWebhookService = new GitHubWebhookService({
+    config: githubWebhookConfig,
+    githubAppService,
+    repository: input.githubWebhookRepository,
   });
   const liveSessionRegistry = new InMemoryRuntimeSessionRegistry();
   const approvalService = new ApprovalService(
@@ -268,6 +290,7 @@ function buildSharedKernel(input: {
   return {
     approvalService,
     githubAppService,
+    githubWebhookService,
     liveSessionRegistry,
     missionService,
     missionRepository: input.missionRepository,
@@ -322,6 +345,7 @@ function toAppContainer(
 ): AppContainer {
   return {
     githubAppService: kernel.githubAppService,
+    githubWebhookService: kernel.githubWebhookService,
     missionService: kernel.missionService,
     operatorControl: {
       approvalService: kernel.approvalService,

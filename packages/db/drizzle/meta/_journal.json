@@ -50,6 +50,20 @@
       "when": 1773536943464,
       "tag": "0006_naive_jimmy_woo",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773538792606,
+      "tag": "0007_smiling_ezekiel",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773538932280,
+      "tag": "0008_glossy_ken_ellis",
+      "breakpoints": true
     }
   ]
 }

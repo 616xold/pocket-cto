@@ -1,28 +1,21 @@
+import type { PersistenceSession } from "../../lib/persistence";
 import type { GitHubAppConfigResolution } from "./config";
 import { GitHubAppNotConfiguredError } from "./errors";
 import type { GitHubAppRepository } from "./repository";
 import { InMemoryInstallationTokenCache } from "./token-cache";
 import type {
   GitHubInstallationAccessToken,
+  GitHubInstallationSnapshot,
+  GitHubRepositorySnapshot,
   PersistedGitHubInstallation,
+  PersistedGitHubRepository,
 } from "./types";
 
 type GitHubAppClientPort = {
   createInstallationAccessToken(
     installationId: string,
   ): Promise<GitHubInstallationAccessToken>;
-  listInstallations(): Promise<
-    Array<{
-      installationId: string;
-      appId: string;
-      accountLogin: string;
-      accountType: string;
-      targetType: string | null;
-      targetId: string | null;
-      suspendedAt: string | null;
-      permissions: Record<string, string>;
-    }>
-  >;
+  listInstallations(): Promise<GitHubInstallationSnapshot[]>;
 };
 
 export type SyncGitHubInstallationsResult = {
@@ -48,9 +41,72 @@ export class GitHubAppService {
     this.tokenCache = input.tokenCache ?? new InMemoryInstallationTokenCache();
   }
 
+  async applyInstallationEvent(
+    input: {
+      action: string;
+      installation: GitHubInstallationSnapshot;
+    },
+    session?: PersistenceSession,
+  ) {
+    if (input.action === "deleted") {
+      await this.input.repository.deleteInstallation(
+        input.installation.installationId,
+        session,
+      );
+      return;
+    }
+
+    await this.input.repository.upsertInstallation(input.installation, session);
+  }
+
+  async applyInstallationRepositoriesEvent(
+    input: {
+      action: string;
+      installation: GitHubInstallationSnapshot;
+      repositoriesAdded: GitHubRepositorySnapshot[];
+      repositoriesRemoved: string[];
+    },
+    session?: PersistenceSession,
+  ) {
+    await this.input.repository.upsertInstallation(input.installation, session);
+
+    if (input.repositoriesAdded.length > 0) {
+      await this.input.repository.upsertInstallationRepositories(
+        {
+          installationId: input.installation.installationId,
+          repositories: input.repositoriesAdded,
+        },
+        session,
+      );
+    }
+
+    if (input.repositoriesRemoved.length > 0) {
+      await this.input.repository.removeInstallationRepositories(
+        {
+          installationId: input.installation.installationId,
+          githubRepositoryIds: input.repositoriesRemoved,
+        },
+        session,
+      );
+    }
+  }
+
+  async getInstallationAccessToken(installationId: string) {
+    this.requireConfigured();
+    const client = this.requireClient();
+
+    return this.tokenCache.getOrCreate(installationId, async () =>
+      client.createInstallationAccessToken(installationId),
+    );
+  }
+
   async listInstallations() {
     this.requireConfigured();
     return this.input.repository.listInstallations();
+  }
+
+  async listRepositories(): Promise<PersistedGitHubRepository[]> {
+    return this.input.repository.listRepositories();
   }
 
   async syncInstallations(): Promise<SyncGitHubInstallationsResult> {
@@ -76,15 +132,6 @@ export class GitHubAppService {
       syncedAt,
       syncedCount: installations.length,
     };
-  }
-
-  async getInstallationAccessToken(installationId: string) {
-    this.requireConfigured();
-    const client = this.requireClient();
-
-    return this.tokenCache.getOrCreate(installationId, async () =>
-      client.createInstallationAccessToken(installationId),
-    );
   }
 
   private requireClient() {

@@ -30,3 +30,45 @@ export class GitHubAppRequestError extends Error {
     this.name = "GitHubAppRequestError";
   }
 }
+
+export class GitHubWebhookNotConfiguredError extends Error {
+  constructor(readonly missing: string[]) {
+    super("GitHub webhook ingress is not configured");
+    this.name = "GitHubWebhookNotConfiguredError";
+  }
+}
+
+export class GitHubWebhookMissingSignatureError extends Error {
+  constructor() {
+    super("GitHub webhook signature header is missing");
+    this.name = "GitHubWebhookMissingSignatureError";
+  }
+}
+
+export class GitHubWebhookBadSignatureError extends Error {
+  constructor() {
+    super("GitHub webhook signature is invalid");
+    this.name = "GitHubWebhookBadSignatureError";
+  }
+}
+
+export class GitHubWebhookMissingDeliveryIdError extends Error {
+  constructor() {
+    super("GitHub delivery id header is missing");
+    this.name = "GitHubWebhookMissingDeliveryIdError";
+  }
+}
+
+export class GitHubWebhookMissingEventNameError extends Error {
+  constructor() {
+    super("GitHub event name header is missing");
+    this.name = "GitHubWebhookMissingEventNameError";
+  }
+}
+
+export class GitHubWebhookPayloadParseError extends Error {
+  constructor() {
+    super("GitHub webhook payload must be valid JSON");
+    this.name = "GitHubWebhookPayloadParseError";
+  }
+}

@@ -9,6 +9,12 @@ import {
   GitHubAppConfigurationError,
   GitHubAppNotConfiguredError,
   GitHubAppRequestError,
+  GitHubWebhookBadSignatureError,
+  GitHubWebhookMissingDeliveryIdError,
+  GitHubWebhookMissingEventNameError,
+  GitHubWebhookMissingSignatureError,
+  GitHubWebhookNotConfiguredError,
+  GitHubWebhookPayloadParseError,
 } from "../modules/github-app/errors";
 import {
   RuntimeActiveTurnNotFoundError,
@@ -23,6 +29,11 @@ export type ApiErrorCode =
   | "github_app_invalid_configuration"
   | "github_app_not_configured"
   | "github_app_request_failed"
+  | "github_webhook_bad_signature"
+  | "github_webhook_missing_delivery_id"
+  | "github_webhook_missing_event_name"
+  | "github_webhook_missing_signature"
+  | "github_webhook_not_configured"
   | "live_control_unavailable"
   | "mission_not_found"
   | "internal_error"
@@ -218,6 +229,88 @@ function mapHttpError(error: unknown): ErrorMapping {
           details: [
             {
               path: "github",
+              message: error.message,
+            },
+          ],
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubWebhookNotConfiguredError) {
+    return {
+      statusCode: 503,
+      body: {
+        error: {
+          code: "github_webhook_not_configured",
+          message: error.message,
+          details: error.missing.map((variableName) => ({
+            path: variableName,
+            message: "Missing required GitHub webhook env var",
+          })),
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubWebhookMissingSignatureError) {
+    return {
+      statusCode: 400,
+      body: {
+        error: {
+          code: "github_webhook_missing_signature",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubWebhookBadSignatureError) {
+    return {
+      statusCode: 401,
+      body: {
+        error: {
+          code: "github_webhook_bad_signature",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubWebhookMissingDeliveryIdError) {
+    return {
+      statusCode: 400,
+      body: {
+        error: {
+          code: "github_webhook_missing_delivery_id",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubWebhookMissingEventNameError) {
+    return {
+      statusCode: 400,
+      body: {
+        error: {
+          code: "github_webhook_missing_event_name",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubWebhookPayloadParseError) {
+    return {
+      statusCode: 400,
+      body: {
+        error: {
+          code: "invalid_request",
+          message: "Invalid request",
+          details: [
+            {
+              path: "body",
               message: error.message,
             },
           ],

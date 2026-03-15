@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { loadEnv } from "@pocket-cto/config";
 import { createRawEnv } from "../../test/env";
-import { resolveGitHubAppConfig } from "./config";
+import {
+  resolveGitHubAppConfig,
+  resolveGitHubWebhookConfig,
+} from "./config";
 import { GitHubAppConfigurationError } from "./errors";
 
 describe("resolveGitHubAppConfig", () => {
@@ -53,5 +56,33 @@ describe("resolveGitHubAppConfig", () => {
         ),
       ),
     ).toThrow(GitHubAppConfigurationError);
+  });
+});
+
+describe("resolveGitHubWebhookConfig", () => {
+  it("reports a missing webhook secret when env is unset", () => {
+    const resolution = resolveGitHubWebhookConfig(loadEnv(createRawEnv()));
+
+    expect(resolution).toEqual({
+      status: "unconfigured",
+      missing: ["GITHUB_WEBHOOK_SECRET"],
+    });
+  });
+
+  it("returns a configured webhook shape when the secret is present", () => {
+    const resolution = resolveGitHubWebhookConfig(
+      loadEnv(
+        createRawEnv({
+          GITHUB_WEBHOOK_SECRET: "webhook-secret",
+        }),
+      ),
+    );
+
+    expect(resolution).toEqual({
+      status: "configured",
+      config: {
+        secret: "webhook-secret",
+      },
+    });
   });
 });

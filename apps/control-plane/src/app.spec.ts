@@ -1052,6 +1052,8 @@ async function createStubApp(
       ...base,
       ...overrides,
       githubAppService: overrides.githubAppService ?? base.githubAppService,
+      githubWebhookService:
+        overrides.githubWebhookService ?? base.githubWebhookService,
       operatorControl: {
         ...base.operatorControl,
         ...overrides.operatorControl,
