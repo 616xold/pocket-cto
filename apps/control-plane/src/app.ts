@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import { registerHttpErrorHandler } from "./lib/http-errors";
 import { createLogger } from "./lib/logger";
 import { registerHealthRoutes } from "./modules/health/routes";
+import { registerGitHubAppRoutes } from "./modules/github-app/routes";
 import { registerMissionRoutes } from "./modules/missions/routes";
 import { registerReplayRoutes } from "./modules/replay/routes";
 import { registerGitHubWebhookRoutes } from "./modules/github/webhook-routes";
@@ -18,6 +19,9 @@ export async function buildApp(options?: { container?: AppContainer }) {
   registerHttpErrorHandler(app);
 
   await registerHealthRoutes(app);
+  await registerGitHubAppRoutes(app, {
+    githubAppService: container.githubAppService,
+  });
   await registerMissionRoutes(app, {
     liveControl: container.operatorControl.liveControl,
     missionService: container.missionService,

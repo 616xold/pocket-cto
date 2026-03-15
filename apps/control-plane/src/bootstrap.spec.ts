@@ -70,6 +70,18 @@ function createAppContainer(
   mode: AppContainer["operatorControl"]["liveControl"]["mode"],
 ): AppContainer {
   return {
+    githubAppService: {
+      async listInstallations() {
+        return [];
+      },
+      async syncInstallations() {
+        return {
+          installations: [],
+          syncedAt: "2026-03-15T00:00:00.000Z",
+          syncedCount: 0,
+        };
+      },
+    } as AppContainer["githubAppService"],
     missionService: {
       async createFromText() {
         throw new Error("createFromText should not be called in this test");

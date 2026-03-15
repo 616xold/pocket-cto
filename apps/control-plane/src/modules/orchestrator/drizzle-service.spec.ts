@@ -2142,6 +2142,18 @@ async function createHarness(options?: {
 
   return {
     appContainer: {
+      githubAppService: {
+        async listInstallations() {
+          return [];
+        },
+        async syncInstallations() {
+          return {
+            installations: [],
+            syncedAt: "2026-03-15T00:00:00.000Z",
+            syncedCount: 0,
+          };
+        },
+      },
       missionService,
       operatorControl: {
         approvalService,

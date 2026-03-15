@@ -11,6 +11,16 @@ import { DrizzleApprovalRepository } from "./modules/approvals/drizzle-repositor
 import { InMemoryApprovalRepository } from "./modules/approvals/repository";
 import { ApprovalService } from "./modules/approvals/service";
 import { EvidenceService } from "./modules/evidence/service";
+import { GitHubAppAuth } from "./modules/github-app/auth";
+import { resolveGitHubAppConfig } from "./modules/github-app/config";
+import { DrizzleGitHubAppRepository } from "./modules/github-app/drizzle-repository";
+import { GitHubAppClient } from "./modules/github-app/client";
+import {
+  InMemoryGitHubAppRepository,
+  type GitHubAppRepository,
+} from "./modules/github-app/repository";
+import { GitHubAppService } from "./modules/github-app/service";
+import { InMemoryInstallationTokenCache } from "./modules/github-app/token-cache";
 import { StubMissionCompiler } from "./modules/missions/compiler";
 import { DrizzleMissionRepository } from "./modules/missions/drizzle-repository";
 import { InMemoryMissionRepository } from "./modules/missions/repository";
@@ -50,6 +60,7 @@ type ServerContainerFactories = {
 
 type SharedKernel = {
   approvalService: ApprovalService;
+  githubAppService: GitHubAppService;
   missionService: MissionService;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
   replayService: ReplayService;
@@ -141,6 +152,8 @@ export async function createWorkerContainer(): Promise<WorkerContainer> {
 export function createInMemoryContainer(): AppContainer {
   const kernel = buildSharedKernel({
     approvalRepository: new InMemoryApprovalRepository(),
+    env: {},
+    githubAppRepository: new InMemoryGitHubAppRepository(),
     missionRepository: new InMemoryMissionRepository(),
     replayRepository: new InMemoryReplayRepository(),
   });
@@ -174,6 +187,8 @@ async function buildDrizzleKernel(input: {
 }) {
   const kernel = buildSharedKernel({
     approvalRepository: new DrizzleApprovalRepository(input.db),
+    env: input.env,
+    githubAppRepository: new DrizzleGitHubAppRepository(input.db),
     missionRepository: new DrizzleMissionRepository(input.db),
     replayRepository: new DrizzleReplayRepository(input.db),
   });
@@ -194,13 +209,38 @@ async function buildDrizzleKernel(input: {
 
 function buildSharedKernel(input: {
   approvalRepository: ConstructorParameters<typeof ApprovalService>[0];
+  env: Partial<
+    Pick<
+      Env,
+      | "GITHUB_APP_ID"
+      | "GITHUB_APP_PRIVATE_KEY_BASE64"
+      | "GITHUB_CLIENT_ID"
+      | "GITHUB_CLIENT_SECRET"
+    >
+  >;
+  githubAppRepository: GitHubAppRepository;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
   replayRepository: ConstructorParameters<typeof ReplayService>[0];
 }): SharedKernel {
+  const githubAppConfig = resolveGitHubAppConfig({
+    GITHUB_APP_ID: input.env.GITHUB_APP_ID,
+    GITHUB_APP_PRIVATE_KEY_BASE64: input.env.GITHUB_APP_PRIVATE_KEY_BASE64,
+    GITHUB_CLIENT_ID: input.env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: input.env.GITHUB_CLIENT_SECRET,
+  });
   const replayService = new ReplayService(
     input.replayRepository,
     input.missionRepository,
   );
+  const githubAppService = new GitHubAppService({
+    client:
+      githubAppConfig.status === "configured"
+        ? new GitHubAppClient(new GitHubAppAuth(githubAppConfig.config))
+        : null,
+    config: githubAppConfig,
+    repository: input.githubAppRepository,
+    tokenCache: new InMemoryInstallationTokenCache(),
+  });
   const liveSessionRegistry = new InMemoryRuntimeSessionRegistry();
   const approvalService = new ApprovalService(
     input.approvalRepository,
@@ -227,6 +267,7 @@ function buildSharedKernel(input: {
 
   return {
     approvalService,
+    githubAppService,
     liveSessionRegistry,
     missionService,
     missionRepository: input.missionRepository,
@@ -280,6 +321,7 @@ function toAppContainer(
   liveControl: OperatorControlAvailability,
 ): AppContainer {
   return {
+    githubAppService: kernel.githubAppService,
     missionService: kernel.missionService,
     operatorControl: {
       approvalService: kernel.approvalService,
