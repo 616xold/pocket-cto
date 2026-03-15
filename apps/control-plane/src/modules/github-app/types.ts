@@ -51,6 +51,12 @@ export const GitHubInstallationAccessTokenApiSchema = z.object({
   permissions: GitHubPermissionsSchema,
 });
 
+export const GitHubPullRequestApiSchema = z.object({
+  number: z.number().int().positive(),
+  html_url: z.string().url(),
+  draft: z.boolean(),
+});
+
 export const GitHubInstallationSnapshotSchema = z.object({
   installationId: z.string().min(1),
   appId: z.string().min(1),
@@ -116,11 +122,31 @@ export const PersistedGitHubRepositorySchema =
     updatedAt: z.string().datetime({ offset: true }),
   });
 
+export const WritableGitHubRepositoryTargetSchema = z.object({
+  installation: PersistedGitHubInstallationSchema,
+  repository: PersistedGitHubRepositorySchema,
+});
+
 export const GitHubInstallationAccessTokenSchema = z.object({
   installationId: z.string().min(1),
   token: z.string().min(1),
   expiresAt: z.string().datetime({ offset: true }),
   permissions: GitHubPermissionsSchema,
+});
+
+export const PublishedGitHubPullRequestSchema = z.object({
+  baseBranch: z.string().min(1),
+  branchName: z.string().min(1),
+  commitMessage: z.string().min(1),
+  commitSha: z.string().min(1),
+  draft: z.boolean(),
+  headBranch: z.string().min(1),
+  prBody: z.string().min(1),
+  prNumber: z.number().int().positive(),
+  prTitle: z.string().min(1),
+  prUrl: z.string().url(),
+  publishedAt: z.string().datetime({ offset: true }),
+  repoFullName: z.string().min(1),
 });
 
 export type GitHubInstallationApi = z.infer<typeof GitHubInstallationApiSchema>;
@@ -131,6 +157,7 @@ export type GitHubInstallationRepositoriesApi = z.infer<
 export type GitHubInstallationAccessTokenApi = z.infer<
   typeof GitHubInstallationAccessTokenApiSchema
 >;
+export type GitHubPullRequestApi = z.infer<typeof GitHubPullRequestApiSchema>;
 export type GitHubInstallationSnapshot = z.infer<
   typeof GitHubInstallationSnapshotSchema
 >;
@@ -152,8 +179,14 @@ export type PersistedGitHubInstallation = z.infer<
 export type PersistedGitHubRepository = z.infer<
   typeof PersistedGitHubRepositorySchema
 >;
+export type WritableGitHubRepositoryTarget = z.infer<
+  typeof WritableGitHubRepositoryTargetSchema
+>;
 export type GitHubInstallationAccessToken = z.infer<
   typeof GitHubInstallationAccessTokenSchema
+>;
+export type PublishedGitHubPullRequest = z.infer<
+  typeof PublishedGitHubPullRequestSchema
 >;
 
 export function mapGitHubInstallationApiToSnapshot(

@@ -22,6 +22,8 @@ import {
   InMemoryGitHubAppRepository,
   type GitHubAppRepository,
 } from "./modules/github-app/repository";
+import { LocalGitHubWriteClient } from "./modules/github-app/git-write-client";
+import { GitHubPublishService } from "./modules/github-app/publish-service";
 import { GitHubAppService } from "./modules/github-app/service";
 import { InMemoryInstallationTokenCache } from "./modules/github-app/token-cache";
 import { DrizzleGitHubWebhookRepository } from "./modules/github-app/webhook-drizzle-repository";
@@ -249,11 +251,12 @@ function buildSharedKernel(input: {
     input.replayRepository,
     input.missionRepository,
   );
+  const githubAppClient =
+    githubAppConfig.status === "configured"
+      ? new GitHubAppClient(new GitHubAppAuth(githubAppConfig.config))
+      : null;
   const githubAppService = new GitHubAppService({
-    client:
-      githubAppConfig.status === "configured"
-        ? new GitHubAppClient(new GitHubAppAuth(githubAppConfig.config))
-        : null,
+    client: githubAppClient,
     config: githubAppConfig,
     repository: input.githubAppRepository,
     tokenCache: new InMemoryInstallationTokenCache(),
@@ -323,6 +326,20 @@ async function buildWorker(input: {
   const validationService = new LocalExecutorValidationService(
     new LocalWorkspaceValidationGitClient(),
   );
+  const githubAppConfig = resolveGitHubAppConfig({
+    GITHUB_APP_ID: input.env.GITHUB_APP_ID,
+    GITHUB_APP_PRIVATE_KEY_BASE64: input.env.GITHUB_APP_PRIVATE_KEY_BASE64,
+    GITHUB_CLIENT_ID: input.env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: input.env.GITHUB_CLIENT_SECRET,
+  });
+  const githubPublishService = new GitHubPublishService({
+    apiClient:
+      githubAppConfig.status === "configured"
+        ? new GitHubAppClient(new GitHubAppAuth(githubAppConfig.config))
+        : null,
+    gitClient: new LocalGitHubWriteClient(),
+    targetResolver: input.kernel.githubAppService,
+  });
   const orchestratorService = new OrchestratorService(
     input.kernel.missionRepository,
     input.kernel.replayService,
@@ -331,6 +348,7 @@ async function buildWorker(input: {
     new EvidenceService(),
     workspaceService,
     validationService,
+    githubPublishService,
   );
 
   return new OrchestratorWorker(orchestratorService, {

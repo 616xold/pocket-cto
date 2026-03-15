@@ -5,6 +5,11 @@ export const GitHubInstallationParamsSchema = z.object({
   installationId: z.string().min(1),
 });
 
+export const GitHubRepositoryParamsSchema = z.object({
+  owner: z.string().min(1),
+  repo: z.string().min(1),
+});
+
 export const syncGitHubInstallationsBodySchema = z.object({}).passthrough();
 export const syncGitHubRepositoriesBodySchema = z.object({}).passthrough();
 
@@ -26,6 +31,18 @@ export const GitHubRepositorySummarySchema = z.object({
   updatedAt: z.string().datetime({ offset: true }),
 });
 
+export const GitHubRepositoryWriteReadinessFailureCodeSchema = z.enum([
+  "inactive",
+  "archived",
+  "disabled",
+  "installation_unavailable",
+]);
+
+export const GitHubRepositoryWriteReadinessSchema = z.object({
+  ready: z.boolean(),
+  failureCode: GitHubRepositoryWriteReadinessFailureCodeSchema.nullable(),
+});
+
 export const listGitHubInstallationsResponseSchema = z.object({
   installations: z.array(PersistedGitHubInstallationSchema),
 });
@@ -38,6 +55,11 @@ export const syncGitHubInstallationsResponseSchema = z.object({
 
 export const listGitHubRepositoriesResponseSchema = z.object({
   repositories: z.array(GitHubRepositorySummarySchema),
+});
+
+export const getGitHubRepositoryResponseSchema = z.object({
+  repository: GitHubRepositorySummarySchema,
+  writeReadiness: GitHubRepositoryWriteReadinessSchema,
 });
 
 export const listGitHubInstallationRepositoriesResponseSchema = z.object({
@@ -63,6 +85,15 @@ export const syncGitHubRepositoriesResponseSchema = z.object({
 export type GitHubRepositorySummary = z.infer<
   typeof GitHubRepositorySummarySchema
 >;
+export type GitHubRepositoryWriteReadinessFailureCode = z.infer<
+  typeof GitHubRepositoryWriteReadinessFailureCodeSchema
+>;
+export type GitHubRepositoryWriteReadiness = z.infer<
+  typeof GitHubRepositoryWriteReadinessSchema
+>;
+export type GitHubRepositoryDetailResult = z.infer<
+  typeof getGitHubRepositoryResponseSchema
+>;
 export type GitHubRepositoryListResult = z.infer<
   typeof listGitHubRepositoriesResponseSchema
 >;
@@ -78,4 +109,8 @@ export type SyncGitHubRepositoriesResult = z.infer<
 
 export function parseGitHubInstallationParams(params: unknown) {
   return GitHubInstallationParamsSchema.parse(params);
+}
+
+export function parseGitHubRepositoryParams(params: unknown) {
+  return GitHubRepositoryParamsSchema.parse(params);
 }

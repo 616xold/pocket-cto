@@ -7,7 +7,9 @@ import {
   type GitHubInstallationAccessToken,
   GitHubInstallationRepositoriesApiSchema,
   type GitHubInstallationSnapshot,
+  GitHubPullRequestApiSchema,
   type GitHubRepositorySnapshot,
+  type GitHubPullRequestApi,
   mapGitHubInstallationApiToSnapshot,
   mapGitHubRepositoryApiToSnapshot,
 } from "./types";
@@ -107,6 +109,60 @@ export class GitHubAppClient {
     }
   }
 
+  async branchExists(
+    installationAccessToken: string,
+    repoFullName: string,
+    branchName: string,
+  ): Promise<boolean> {
+    try {
+      await this.requestJson(
+        "GET",
+        `/repos/${encodeGitHubRepoPath(repoFullName)}/branches/${encodeURIComponent(branchName)}`,
+        {
+          authorization: `Bearer ${installationAccessToken}`,
+        },
+      );
+      return true;
+    } catch (error) {
+      if (
+        error instanceof GitHubAppRequestError &&
+        error.statusCode === 404
+      ) {
+        return false;
+      }
+
+      throw error;
+    }
+  }
+
+  async createDraftPullRequest(
+    installationAccessToken: string,
+    repoFullName: string,
+    input: {
+      baseBranch: string;
+      body: string;
+      headBranch: string;
+      title: string;
+    },
+  ): Promise<GitHubPullRequestApi> {
+    const payload = await this.requestJson(
+      "POST",
+      `/repos/${encodeGitHubRepoPath(repoFullName)}/pulls`,
+      {
+        authorization: `Bearer ${installationAccessToken}`,
+        body: {
+          base: input.baseBranch,
+          body: input.body,
+          draft: true,
+          head: input.headBranch,
+          title: input.title,
+        },
+      },
+    );
+
+    return GitHubPullRequestApiSchema.parse(payload);
+  }
+
   private async requestJson(
     method: "GET" | "POST",
     path: string,
@@ -144,6 +200,13 @@ export class GitHubAppClient {
 
     return payload;
   }
+}
+
+function encodeGitHubRepoPath(fullName: string) {
+  return fullName
+    .split("/")
+    .map((segment) => encodeURIComponent(segment))
+    .join("/");
 }
 
 async function parseResponseBody(response: Response) {

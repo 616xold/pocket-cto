@@ -1,6 +1,9 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { execFile as execFileCallback } from "node:child_process";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { and, count, eq } from "drizzle-orm";
 import { approvals, artifacts, missions, workspaces } from "@pocket-cto/db";
@@ -15,6 +18,12 @@ import {
 } from "../../test/database";
 import { waitForValue } from "../../test/wait-for";
 import { EvidenceService } from "../evidence/service";
+import { GitHubAppService } from "../github-app/service";
+import { InMemoryInstallationTokenCache } from "../github-app/token-cache";
+import { DrizzleGitHubAppRepository } from "../github-app/drizzle-repository";
+import { LocalGitHubWriteClient } from "../github-app/git-write-client";
+import type { GitHubPublishService } from "../github-app/publish-service";
+import { GitHubPublishService as RealGitHubPublishService } from "../github-app/publish-service";
 import { StubMissionCompiler } from "../missions/compiler";
 import { DrizzleMissionRepository } from "../missions/drizzle-repository";
 import type { CreateArtifactInput } from "../missions/repository";
@@ -51,6 +60,7 @@ import { OrchestratorWorker } from "./worker";
 
 const db = createTestDb();
 const cleanups: Array<() => Promise<void>> = [];
+const execFile = promisify(execFileCallback);
 const fixturePath = fileURLToPath(
   new URL(
     "../../../../../packages/testkit/src/runtime/fake-codex-app-server.mjs",
@@ -1251,6 +1261,138 @@ describe("OrchestratorWorker (DB-backed)", () => {
     );
   });
 
+  it("publishes a successful executor run to a draft PR and persists the pr_link artifact", async () => {
+    const sourceRepo = await createTempGitRepo();
+    const workspaceRoot = await createTempWorkspaceRoot();
+    const remote = await createTempBareRemote();
+    cleanups.push(sourceRepo.cleanup, workspaceRoot.cleanup, remote.cleanup);
+
+    const draftPullRequest = vi.fn().mockResolvedValue({
+      draft: true,
+      html_url: "https://github.com/616xold/pocket-cto/pull/77",
+      number: 77,
+    });
+    const publishService = await createRealGitHubPublishService({
+      createDraftPullRequest: draftPullRequest,
+      remoteUrl: remote.remoteUrl,
+    });
+    const plannerHarness = await createHarness({
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+    const created = await plannerHarness.missionService.createFromText({
+      text: "Publish a README change through the GitHub App flow",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+
+    await setMissionAllowedPaths(created.mission.id, created.mission.spec, [
+      "README.md",
+    ]);
+    await setMissionPrimaryRepo(created.mission.id, created.mission.spec, "616xold/pocket-cto");
+    await seedWritableRepository("616xold/pocket-cto");
+
+    await plannerHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    const executorHarness = await createHarness({
+      githubPublishService: publishService,
+      runtimeCodexService: createFileWritingRuntimeService({
+        finalReportText: [
+          "## Intended change",
+          "Apply the planner handoff to README and prepare it for operator review.",
+          "",
+          "## Files changed",
+          "- README.md",
+          "",
+          "## Validations run",
+          "- git diff --check",
+          "",
+          "## Remaining risks",
+          "- review the published draft PR before merge",
+          "",
+          "## Operator handoff",
+          "- ready for draft PR review",
+        ].join("\n"),
+        writes: [
+          {
+            path: "README.md",
+            text: "temp repo\nexecutor change\n",
+          },
+        ],
+      }),
+      sourceRepoRoot: sourceRepo.repoRoot,
+      workspaceRoot: workspaceRoot.workspaceRoot,
+    });
+
+    const tick = await executorHarness.worker.run({
+      log: silentLog(),
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "turn_completed",
+      task: {
+        role: "executor",
+        status: "succeeded",
+      },
+    });
+
+    const detail = await executorHarness.missionService.getMissionDetail(
+      created.mission.id,
+    );
+    const missionArtifacts = await getArtifactsForMission(created.mission.id);
+    const prLinkArtifact = missionArtifacts.find(
+      (artifact) => artifact.kind === "pr_link",
+    );
+    const replayEvents = await executorHarness.replayService.getMissionEvents(
+      created.mission.id,
+    );
+    const branchName = `pocket-cto/${created.mission.id}/1-executor`;
+
+    expect(prLinkArtifact).toBeDefined();
+    expect(readArtifactMetadata(prLinkArtifact?.metadata)).toMatchObject({
+      baseBranch: "main",
+      branchName,
+      draft: true,
+      headBranch: branchName,
+      prNumber: 77,
+      prUrl: "https://github.com/616xold/pocket-cto/pull/77",
+      repoFullName: "616xold/pocket-cto",
+      source: "github_app_publish",
+    });
+    expect(detail.proofBundle.artifactIds).toContain(prLinkArtifact!.id);
+    expect(detail.proofBundle.decisionTrace).toContain(
+      `Executor task 1 opened draft PR #77 for 616xold/pocket-cto from branch ${branchName}.`,
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: created.tasks[1]!.id,
+        type: "artifact.created",
+        payload: {
+          artifactId: prLinkArtifact!.id,
+          kind: "pr_link",
+        },
+      }),
+    );
+    expect(await remoteBranchExists(remote.remoteUrl, branchName)).toBe(true);
+    expect(
+      await readRemoteBranchSubject(remote.remoteUrl, branchName),
+    ).toBe(`pocket-cto: mission ${created.mission.id} task 1-executor`);
+    expect(draftPullRequest).toHaveBeenCalledWith(
+      "installation-token-123",
+      "616xold/pocket-cto",
+      expect.objectContaining({
+        baseBranch: "main",
+        headBranch: branchName,
+      }),
+    );
+  });
+
   it("classifies missing planner artifacts as controlled task failures", async () => {
     const harness = await createHarness();
     cleanups.push(harness.cleanup);
@@ -2044,6 +2186,10 @@ async function createHarness(options?: {
     threadId?: string;
   };
   missionRepository?: DrizzleMissionRepository;
+  githubPublishService?: Pick<
+    GitHubPublishService,
+    "publishValidatedExecutorWorkspace"
+  >;
   runtimeCodexService?: Pick<CodexRuntimeService, "runTurn">;
   sourceRepoRoot?: string;
   validationService?: Pick<
@@ -2132,6 +2278,26 @@ async function createHarness(options?: {
     workspaceService,
     options?.validationService ??
       new LocalExecutorValidationService(new LocalWorkspaceValidationGitClient()),
+    options?.githubPublishService ?? {
+      async publishValidatedExecutorWorkspace(input) {
+        return {
+          baseBranch: "main",
+          branchName:
+            input.workspace.branchName ?? "pocket-cto/mission-123/1-executor",
+          commitMessage: `pocket-cto: mission ${input.mission.id} task ${input.task.sequence}-${input.task.role}`,
+          commitSha: "0123456789abcdef0123456789abcdef01234567",
+          draft: true,
+          headBranch:
+            input.workspace.branchName ?? "pocket-cto/mission-123/1-executor",
+          prBody: "stub pull request body",
+          prNumber: 42,
+          prTitle: `Pocket CTO: ${input.mission.title}`,
+          prUrl: "https://github.com/616xold/pocket-cto/pull/42",
+          publishedAt: "2026-03-15T00:00:00.000Z",
+          repoFullName: input.mission.primaryRepo ?? "616xold/pocket-cto",
+        };
+      },
+    },
   );
   const runtimeControlService = new RuntimeControlService(
     missionRepository,
@@ -2143,6 +2309,31 @@ async function createHarness(options?: {
   return {
     appContainer: {
       githubAppService: {
+        async getRepository() {
+          return {
+            repository: {
+              id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+              installationId: "12345",
+              githubRepositoryId: "100",
+              fullName: "616xold/pocket-cto",
+              ownerLogin: "616xold",
+              name: "pocket-cto",
+              defaultBranch: "main",
+              visibility: "private" as const,
+              archived: false,
+              disabled: false,
+              isActive: true,
+              language: "TypeScript",
+              lastSyncedAt: "2026-03-15T00:00:00.000Z",
+              removedFromInstallationAt: null,
+              updatedAt: "2026-03-15T00:00:00.000Z",
+            },
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          };
+        },
         async listInstallationRepositories() {
           return {
             installation: {
@@ -2170,6 +2361,45 @@ async function createHarness(options?: {
         async listRepositories() {
           return {
             repositories: [],
+          };
+        },
+        async resolveWritableRepository() {
+          return {
+            installation: {
+              id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              installationId: "12345",
+              appId: "98765",
+              accountLogin: "616xold",
+              accountType: "Organization",
+              targetType: "Organization",
+              targetId: "6161234",
+              suspendedAt: null,
+              permissions: {
+                metadata: "read",
+              },
+              lastSyncedAt: "2026-03-15T00:00:00.000Z",
+              createdAt: "2026-03-15T00:00:00.000Z",
+              updatedAt: "2026-03-15T00:00:00.000Z",
+            },
+            repository: {
+              id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+              installationId: "12345",
+              installationRefId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              githubRepositoryId: "100",
+              fullName: "616xold/pocket-cto",
+              ownerLogin: "616xold",
+              name: "pocket-cto",
+              defaultBranch: "main",
+              isPrivate: true,
+              archived: false,
+              disabled: false,
+              isActive: true,
+              lastSyncedAt: "2026-03-15T00:00:00.000Z",
+              removedFromInstallationAt: null,
+              language: "TypeScript",
+              createdAt: "2026-03-15T00:00:00.000Z",
+              updatedAt: "2026-03-15T00:00:00.000Z",
+            },
           };
         },
         async syncInstallationRepositories() {
@@ -2708,6 +2938,151 @@ async function setMissionAllowedPaths(
       updatedAt: new Date(),
     })
     .where(eq(missions.id, missionId));
+}
+
+async function setMissionPrimaryRepo(
+  missionId: string,
+  spec: MissionRecord["spec"],
+  primaryRepo: string,
+) {
+  await db
+    .update(missions)
+    .set({
+      primaryRepo,
+      spec: {
+        ...spec,
+        repos: [primaryRepo],
+      },
+      updatedAt: new Date(),
+    })
+    .where(eq(missions.id, missionId));
+}
+
+async function seedWritableRepository(fullName: string) {
+  const repository = new DrizzleGitHubAppRepository(db);
+  const [ownerLogin, name] = fullName.split("/");
+
+  await repository.upsertInstallation({
+    installationId: "12345",
+    appId: "98765",
+    accountLogin: ownerLogin ?? "616xold",
+    accountType: "Organization",
+    targetType: "Organization",
+    targetId: "6161234",
+    suspendedAt: null,
+    permissions: {
+      contents: "write",
+      metadata: "read",
+      pull_requests: "write",
+    },
+  });
+  await repository.upsertInstallationRepositories({
+    installationId: "12345",
+    lastSyncedAt: "2026-03-15T00:00:00.000Z",
+    repositories: [
+      {
+        githubRepositoryId: "100",
+        fullName,
+        ownerLogin: ownerLogin ?? "616xold",
+        name: name ?? "pocket-cto",
+        defaultBranch: "main",
+        isPrivate: true,
+        archived: false,
+        disabled: false,
+        language: "TypeScript",
+      },
+    ],
+  });
+}
+
+async function createRealGitHubPublishService(input: {
+  createDraftPullRequest: ReturnType<typeof vi.fn>;
+  remoteUrl: string;
+}) {
+  const repository = new DrizzleGitHubAppRepository(db);
+  const githubAppService = new GitHubAppService({
+    client: {
+      createInstallationAccessToken: vi.fn().mockResolvedValue({
+        expiresAt: "2026-03-16T00:00:00.000Z",
+        installationId: "12345",
+        permissions: {
+          contents: "write",
+          metadata: "read",
+          pull_requests: "write",
+        },
+        token: "installation-token-123",
+      }),
+      listInstallationRepositories: vi.fn(),
+      listInstallations: vi.fn(),
+    },
+    config: {
+      status: "configured",
+      config: {
+        apiBaseUrl: "https://api.github.com",
+        appId: "98765",
+        clientId: null,
+        clientSecret: null,
+        privateKeyBase64: Buffer.from("unused").toString("base64"),
+      },
+    },
+    repository,
+    tokenCache: new InMemoryInstallationTokenCache(),
+  });
+
+  return new RealGitHubPublishService({
+    apiClient: {
+      branchExists: vi.fn().mockResolvedValue(false),
+      createDraftPullRequest: input.createDraftPullRequest,
+    },
+    gitClient: new LocalGitHubWriteClient(),
+    remoteUrlFactory: () => input.remoteUrl,
+    targetResolver: githubAppService,
+  });
+}
+
+async function createTempBareRemote() {
+  const remoteRoot = await mkdtemp(join(tmpdir(), "pocket-cto-remote-"));
+  await execFile("git", ["init", "--bare", "-q", remoteRoot]);
+
+  return {
+    async cleanup() {
+      await rm(remoteRoot, {
+        force: true,
+        recursive: true,
+      });
+    },
+    remoteUrl: await realpath(remoteRoot),
+  };
+}
+
+async function remoteBranchExists(remoteUrl: string, branchName: string) {
+  try {
+    await execFile("git", [
+      "--git-dir",
+      remoteUrl,
+      "show-ref",
+      "--verify",
+      "--quiet",
+      `refs/heads/${branchName}`,
+    ]);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readRemoteBranchSubject(remoteUrl: string, branchName: string) {
+  const result = await execFile("git", [
+    "--git-dir",
+    remoteUrl,
+    "log",
+    "-1",
+    "--format=%s",
+    branchName,
+  ]);
+
+  return result.stdout.trim();
 }
 
 function buildExpectedPlanOnlyText() {

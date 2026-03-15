@@ -22,6 +22,11 @@ export interface GitHubAppRepository extends TransactionalRepository {
     session?: PersistenceSession,
   ): Promise<PersistedGitHubInstallation | null>;
 
+  getRepositoryByFullName(
+    fullName: string,
+    session?: PersistenceSession,
+  ): Promise<PersistedGitHubRepository | null>;
+
   listInstallations(
     session?: PersistenceSession,
   ): Promise<PersistedGitHubInstallation[]>;
@@ -96,6 +101,19 @@ export class InMemoryGitHubAppRepository implements GitHubAppRepository {
     _session?: PersistenceSession,
   ) {
     return this.installations.get(installationId) ?? null;
+  }
+
+  async getRepositoryByFullName(
+    fullName: string,
+    _session?: PersistenceSession,
+  ) {
+    for (const repository of this.repositories.values()) {
+      if (repository.fullName === fullName) {
+        return repository;
+      }
+    }
+
+    return null;
   }
 
   async listInstallations(_session?: PersistenceSession) {

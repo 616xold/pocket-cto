@@ -19,6 +19,7 @@ It does not implement issue-to-mission intake, branch creation, pull request cre
 - [x] (2026-03-15T17:15Z) Implemented the repository-registry service path: installation-token-backed `GET /installation/repositories` sync for one installation or all persisted installations, inactive reconciliation for missing repositories, installation deletion that preserves repository rows as inactive, and shared webhook/manual use of the same upsert plus mark-inactive repository methods.
 - [x] (2026-03-15T17:15Z) Added focused tests for one-install sync, sync-all, honest inactive reconciliation, webhook convergence, and the new repository routes; ran the focused GitHub suite after migrating both dev and test databases, and it passed with 46 tests across `service.spec.ts`, `webhook-service.spec.ts`, `webhook-routes.spec.ts`, and `app.spec.ts`.
 - [x] (2026-03-15T17:18Z) Updated `docs/ops/local-dev.md` with the new repository-registry routes and inactive-state semantics, added a short README discoverability note, ran the full required validation commands successfully, and completed one live sync against the configured `616xold` GitHub App installation.
+- [x] (2026-03-15T20:03Z) Added a narrow write-target resolution boundary on top of the durable repository registry: repository lookup by `fullName`, deterministic `resolveWritableRepository(fullName)` service behavior, explicit typed repo-state errors, the thin `GET /github/repositories/:owner/:repo` read route, focused service and route tests, and updated local-dev guidance for write readiness.
 
 ## Surprises & Discoveries
 
@@ -36,6 +37,9 @@ It does not implement issue-to-mission intake, branch creation, pull request cre
 
 - Observation: the generated Drizzle migration needed a manual backfill step before adding `NOT NULL` constraints for `installation_id`, `owner_login`, and `name`.
   Evidence: `packages/db/drizzle/0009_noisy_slipstream.sql` initially added those columns directly as required, which would fail on any existing repository rows until the migration was amended to populate them from `github_installations` and `full_name`.
+
+- Observation: deleting an installation now leaves repository rows both inactive and installationless, so the write-target resolver needs an explicit precedence rule instead of blindly reporting the first falsy flag.
+  Evidence: the new `resolveWritableRepository` test initially surfaced `GitHubRepositoryInactiveError` for a deleted-installation row until the resolver was updated to surface `installation_unavailable` before the generic inactive state when no persisted installation remains.
 
 ## Decision Log
 
@@ -57,6 +61,18 @@ It does not implement issue-to-mission intake, branch creation, pull request cre
 
 - Decision: preserve repository rows when an installation is deleted by storing the external `installationId` directly on the registry row, switching the foreign key to `ON DELETE SET NULL`, and marking those rows inactive instead of cascading deletes.
   Rationale: the repository registry should stay durable and truthful even when installation state changes, and a cascade delete would erase the very history this slice is meant to preserve.
+  Date/Author: 2026-03-15 / Codex
+
+- Decision: keep the M2.4 write-target policy inside the existing GitHub App bounded context as a single resolver keyed by repository `fullName`.
+  Rationale: branch or pull-request flows will need one deterministic installation-backed target, and centralizing that policy avoids duplicating active or inactive, archive, disabled, and installation-link checks across later write surfaces.
+  Date/Author: 2026-03-15 / Codex
+
+- Decision: expose one optional summary route at `GET /github/repositories/:owner/:repo`, but keep actual write-target enforcement in `resolveWritableRepository(fullName)`.
+  Rationale: operators and local developers still need to inspect readiness without triggering write-oriented errors, while later M2.4 write flows need a stricter boundary that throws typed failures.
+  Date/Author: 2026-03-15 / Codex
+
+- Decision: give `installation_unavailable` precedence over the generic inactive state when the persisted installation row is gone.
+  Rationale: installation deletion already marks repository rows inactive, but M2.4 needs to know specifically when installation-token minting is impossible rather than receiving a less precise inactive error.
   Date/Author: 2026-03-15 / Codex
 
 ## Context and Orientation
@@ -251,6 +267,21 @@ Final validation results:
 - `pnpm --filter @pocket-cto/web typecheck`
   Result: passed.
 
+Write-target boundary validation added after the main M2.3 slice:
+
+- `pnpm db:generate`
+  Result: passed with `No schema changes, nothing to migrate`.
+- `pnpm db:migrate`
+  Result: passed.
+- `pnpm --filter @pocket-cto/control-plane test`
+  Result: passed with 31 test files and 131 tests after adding the resolver and optional single-repository route coverage.
+- `pnpm --filter @pocket-cto/control-plane typecheck`
+  Result: passed.
+- `pnpm --filter @pocket-cto/control-plane lint`
+  Result: passed.
+- `pnpm --filter @pocket-cto/web typecheck`
+  Result: passed.
+
 Live GitHub App evidence:
 
 - Environment detection:
@@ -301,10 +332,11 @@ The existing `repositories` table is the single durable registry, manual repo sy
 The new operator-facing debug surface is still intentionally narrow:
 
 - `GET /github/repositories`
+- `GET /github/repositories/:owner/:repo`
 - `GET /github/installations/:installationId/repositories`
 - `POST /github/repositories/sync`
 - `POST /github/installations/:installationId/repositories/sync`
 
 This slice does not create missions from GitHub issues, create branches, or create pull requests.
 Those remain for later GitHub milestones.
-With installation state, webhook ingress, and repository registry now all durable and inspectable, the next GitHub slice can start on branch or PR artifact work without needing to revisit the M2.3 foundation first.
+With installation state, webhook ingress, repository registry sync, and write-readiness resolution now all durable and inspectable, the next GitHub slice can start on branch or PR artifact work without having to reinvent repo-selection logic first.

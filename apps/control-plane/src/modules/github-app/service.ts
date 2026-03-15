@@ -3,16 +3,24 @@ import type { GitHubAppConfigResolution } from "./config";
 import {
   GitHubAppNotConfiguredError,
   GitHubInstallationNotFoundError,
+  GitHubRepositoryArchivedError,
+  GitHubRepositoryDisabledError,
+  GitHubRepositoryInactiveError,
+  GitHubRepositoryInstallationUnavailableError,
+  GitHubRepositoryNotFoundError,
 } from "./errors";
 import {
+  buildGitHubRepositoryDetailResult,
   buildInstallationRepositorySyncResult,
   toGitHubRepositorySummary,
 } from "./formatter";
 import type { GitHubAppRepository } from "./repository";
 import type {
+  GitHubRepositoryDetailResult,
   GitHubInstallationRepositoryListResult,
   GitHubInstallationRepositorySyncResult,
   GitHubRepositoryListResult,
+  GitHubRepositoryWriteReadinessFailureCode,
   SyncGitHubRepositoriesResult,
 } from "./schema";
 import { InMemoryInstallationTokenCache } from "./token-cache";
@@ -21,6 +29,8 @@ import type {
   GitHubInstallationSnapshot,
   GitHubRepositorySnapshot,
   PersistedGitHubInstallation,
+  PersistedGitHubRepository,
+  WritableGitHubRepositoryTarget,
 } from "./types";
 
 type GitHubAppClientPort = {
@@ -135,6 +145,19 @@ export class GitHubAppService {
     };
   }
 
+  async getRepository(fullName: string): Promise<GitHubRepositoryDetailResult> {
+    this.requireConfigured();
+    const repository = await this.requirePersistedRepository(fullName);
+    const installation = await this.input.repository.getInstallationByInstallationId(
+      repository.installationId,
+    );
+
+    return buildGitHubRepositoryDetailResult({
+      repository,
+      failureCode: getRepositoryWriteReadinessFailure(repository, installation),
+    });
+  }
+
   async listInstallationRepositories(
     installationId: string,
   ): Promise<GitHubInstallationRepositoryListResult> {
@@ -225,6 +248,44 @@ export class GitHubAppService {
     };
   }
 
+  async resolveWritableRepository(
+    fullName: string,
+  ): Promise<WritableGitHubRepositoryTarget> {
+    this.requireConfigured();
+    const repository = await this.requirePersistedRepository(fullName);
+    const installation = await this.input.repository.getInstallationByInstallationId(
+      repository.installationId,
+    );
+    const failureCode = getRepositoryWriteReadinessFailure(
+      repository,
+      installation,
+    );
+
+    if (failureCode === "inactive") {
+      throw new GitHubRepositoryInactiveError(fullName);
+    }
+
+    if (failureCode === "archived") {
+      throw new GitHubRepositoryArchivedError(fullName);
+    }
+
+    if (failureCode === "disabled") {
+      throw new GitHubRepositoryDisabledError(fullName);
+    }
+
+    if (failureCode === "installation_unavailable" || !installation) {
+      throw new GitHubRepositoryInstallationUnavailableError(
+        fullName,
+        repository.installationId,
+      );
+    }
+
+    return {
+      installation,
+      repository,
+    };
+  }
+
   private async buildInstallationRepositorySyncResult(
     installation: PersistedGitHubInstallation,
     installationId: string,
@@ -302,6 +363,16 @@ export class GitHubAppService {
     return installation;
   }
 
+  private async requirePersistedRepository(fullName: string) {
+    const repository = await this.input.repository.getRepositoryByFullName(fullName);
+
+    if (!repository) {
+      throw new GitHubRepositoryNotFoundError(fullName);
+    }
+
+    return repository;
+  }
+
   private requireClient() {
     if (!this.input.client) {
       throw new GitHubAppNotConfiguredError(
@@ -321,4 +392,27 @@ export class GitHubAppService {
 
     return this.input.config.config;
   }
+}
+
+function getRepositoryWriteReadinessFailure(
+  repository: PersistedGitHubRepository,
+  installation: PersistedGitHubInstallation | null,
+): GitHubRepositoryWriteReadinessFailureCode | null {
+  if (repository.archived === true) {
+    return "archived";
+  }
+
+  if (repository.disabled === true) {
+    return "disabled";
+  }
+
+  if (!repository.installationId || !installation) {
+    return "installation_unavailable";
+  }
+
+  if (!repository.isActive) {
+    return "inactive";
+  }
+
+  return null;
 }

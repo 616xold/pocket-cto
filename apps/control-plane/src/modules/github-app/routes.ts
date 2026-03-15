@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type { GitHubAppServicePort } from "../../lib/types";
 import {
   parseGitHubInstallationParams,
+  parseGitHubRepositoryParams,
   syncGitHubInstallationsBodySchema,
   syncGitHubRepositoriesBodySchema,
 } from "./schema";
@@ -25,6 +26,11 @@ export async function registerGitHubAppRoutes(
 
   app.get("/github/repositories", async () => {
     return deps.githubAppService.listRepositories();
+  });
+
+  app.get("/github/repositories/:owner/:repo", async (request) => {
+    const params = parseGitHubRepositoryParams(request.params);
+    return deps.githubAppService.getRepository(`${params.owner}/${params.repo}`);
   });
 
   app.get("/github/installations/:installationId/repositories", async (request) => {

@@ -9,6 +9,7 @@ export const taskStatusChangeReasons = {
   approvalResolved: "approval_resolved",
   executorMissingPlannerArtifact: "executor_missing_planner_artifact",
   executorNoChanges: "executor_no_changes",
+  executorPublishFailed: "executor_publish_failed",
   executorValidationFailed: "executor_validation_failed",
   plannerEvidenceFailed: "planner_evidence_failed",
   runtimeTurnCompleted: "runtime_turn_completed",

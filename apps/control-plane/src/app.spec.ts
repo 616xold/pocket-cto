@@ -4,7 +4,10 @@ import { buildApp } from "./app";
 import { createInMemoryContainer } from "./bootstrap";
 import type { AppContainer } from "./lib/types";
 import { ApprovalNotFoundError, ApprovalNotPendingError } from "./modules/approvals/errors";
-import { GitHubInstallationNotFoundError } from "./modules/github-app/errors";
+import {
+  GitHubInstallationNotFoundError,
+  GitHubRepositoryNotFoundError,
+} from "./modules/github-app/errors";
 import { RuntimeActiveTurnNotFoundError } from "./modules/runtime-codex/errors";
 
 const unknownMissionId = "11111111-1111-4111-8111-111111111111";
@@ -676,6 +679,91 @@ describe("control-plane app", () => {
           updatedAt: "2026-03-15T10:00:00.000Z",
         },
       ],
+    });
+  });
+
+  it("GET /github/repositories/:owner/:repo returns one repository with write readiness", async () => {
+    const app = await createStubApp(apps, {
+      githubAppService: {
+        async getRepository() {
+          return {
+            repository: {
+              id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+              installationId: "12345",
+              githubRepositoryId: "100",
+              fullName: "616xold/pocket-cto",
+              ownerLogin: "616xold",
+              name: "pocket-cto",
+              defaultBranch: "main",
+              visibility: "private",
+              archived: true,
+              disabled: false,
+              isActive: true,
+              language: "TypeScript",
+              lastSyncedAt: "2026-03-15T10:00:00.000Z",
+              removedFromInstallationAt: null,
+              updatedAt: "2026-03-15T10:00:00.000Z",
+            },
+            writeReadiness: {
+              ready: false,
+              failureCode: "archived",
+            },
+          };
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/repositories/616xold/pocket-cto",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      repository: {
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        installationId: "12345",
+        githubRepositoryId: "100",
+        fullName: "616xold/pocket-cto",
+        ownerLogin: "616xold",
+        name: "pocket-cto",
+        defaultBranch: "main",
+        visibility: "private",
+        archived: true,
+        disabled: false,
+        isActive: true,
+        language: "TypeScript",
+        lastSyncedAt: "2026-03-15T10:00:00.000Z",
+        removedFromInstallationAt: null,
+        updatedAt: "2026-03-15T10:00:00.000Z",
+      },
+      writeReadiness: {
+        ready: false,
+        failureCode: "archived",
+      },
+    });
+  });
+
+  it("GET /github/repositories/:owner/:repo returns 404 for an unknown repository", async () => {
+    const app = await createStubApp(apps, {
+      githubAppService: {
+        async getRepository() {
+          throw new GitHubRepositoryNotFoundError("616xold/missing");
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/repositories/616xold/missing",
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      error: {
+        code: "github_repository_not_found",
+        message: "GitHub repository not found",
+      },
     });
   });
 

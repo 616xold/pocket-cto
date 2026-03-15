@@ -11,9 +11,11 @@ export type OperatorControlAvailability = DomainOperatorControlAvailability;
 
 export type GitHubAppServicePort = Pick<
   GitHubAppService,
+  | "getRepository"
   | "listInstallations"
   | "listInstallationRepositories"
   | "listRepositories"
+  | "resolveWritableRepository"
   | "syncInstallationRepositories"
   | "syncInstallations"
   | "syncRepositories"

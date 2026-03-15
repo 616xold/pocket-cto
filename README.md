@@ -90,7 +90,7 @@ This repo is structured to help Codex implement the system modularly and milesto
 - A GitHub App if you want to exercise M2.1 installation sync or M2.2 webhook ingress locally
 - Codex app or Codex CLI installed locally
 
-M2.3 also adds a durable repository-registry debug surface under `/github/repositories` plus installation-scoped repo sync routes; see [docs/ops/local-dev.md](docs/ops/local-dev.md) for the exact curl flows.
+M2.4 now extends that GitHub slice: when a mission resolves to a synced writable repository row, successful executor runs can publish a deterministic branch, open a draft PR through the GitHub App installation, and persist a durable `pr_link` artifact. See [docs/ops/local-dev.md](docs/ops/local-dev.md) for the current permission and smoke-test details.
 
 ### Bootstrap
 

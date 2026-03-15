@@ -7,7 +7,13 @@ import {
 } from "../../test/database";
 import type { GitHubAppConfigResolution } from "./config";
 import { DrizzleGitHubAppRepository } from "./drizzle-repository";
-import { GitHubAppNotConfiguredError } from "./errors";
+import {
+  GitHubAppNotConfiguredError,
+  GitHubRepositoryArchivedError,
+  GitHubRepositoryDisabledError,
+  GitHubRepositoryInactiveError,
+  GitHubRepositoryInstallationUnavailableError,
+} from "./errors";
 import { GitHubAppService } from "./service";
 import { InMemoryInstallationTokenCache } from "./token-cache";
 
@@ -275,6 +281,109 @@ describe("GitHubAppService", () => {
       service.syncInstallationRepositories("12345"),
     ).rejects.toBeInstanceOf(GitHubAppNotConfiguredError);
   });
+
+  it("resolves an active repository into one writable target", async () => {
+    await repository.upsertInstallation(createInstallationSnapshot());
+    await repository.upsertInstallationRepositories({
+      installationId: "12345",
+      lastSyncedAt: "2026-03-15T10:00:00.000Z",
+      repositories: [createRepositorySnapshot()],
+    });
+
+    const service = new GitHubAppService({
+      client: {
+        createInstallationAccessToken: vi.fn(),
+        listInstallationRepositories: vi.fn(),
+        listInstallations: vi.fn(),
+      },
+      config: createConfiguredGitHubAppConfig(),
+      repository,
+      tokenCache: new InMemoryInstallationTokenCache(),
+    });
+
+    await expect(
+      service.resolveWritableRepository("616xold/pocket-cto"),
+    ).resolves.toMatchObject({
+      installation: expect.objectContaining({
+        installationId: "12345",
+      }),
+      repository: expect.objectContaining({
+        fullName: "616xold/pocket-cto",
+        isActive: true,
+      }),
+    });
+  });
+
+  it("fails explicitly when a repository is inactive", async () => {
+    await repository.upsertInstallation(createInstallationSnapshot());
+    await repository.upsertInstallationRepositories({
+      installationId: "12345",
+      repositories: [createRepositorySnapshot()],
+    });
+    await repository.markInstallationRepositoriesInactive({
+      installationId: "12345",
+      markedInactiveAt: "2026-03-15T10:05:00.000Z",
+      lastSyncedAt: "2026-03-15T10:05:00.000Z",
+      githubRepositoryIds: ["100"],
+    });
+
+    const service = createRepositoryResolutionService(repository);
+
+    await expect(
+      service.resolveWritableRepository("616xold/pocket-cto"),
+    ).rejects.toBeInstanceOf(GitHubRepositoryInactiveError);
+  });
+
+  it("fails explicitly when a repository is archived", async () => {
+    await repository.upsertInstallation(createInstallationSnapshot());
+    await repository.upsertInstallationRepositories({
+      installationId: "12345",
+      repositories: [
+        createRepositorySnapshot({
+          archived: true,
+        }),
+      ],
+    });
+
+    const service = createRepositoryResolutionService(repository);
+
+    await expect(
+      service.resolveWritableRepository("616xold/pocket-cto"),
+    ).rejects.toBeInstanceOf(GitHubRepositoryArchivedError);
+  });
+
+  it("fails explicitly when a repository is disabled", async () => {
+    await repository.upsertInstallation(createInstallationSnapshot());
+    await repository.upsertInstallationRepositories({
+      installationId: "12345",
+      repositories: [
+        createRepositorySnapshot({
+          disabled: true,
+        }),
+      ],
+    });
+
+    const service = createRepositoryResolutionService(repository);
+
+    await expect(
+      service.resolveWritableRepository("616xold/pocket-cto"),
+    ).rejects.toBeInstanceOf(GitHubRepositoryDisabledError);
+  });
+
+  it("fails explicitly when repository installation linkage is unavailable", async () => {
+    await repository.upsertInstallation(createInstallationSnapshot());
+    await repository.upsertInstallationRepositories({
+      installationId: "12345",
+      repositories: [createRepositorySnapshot()],
+    });
+    await repository.deleteInstallation("12345");
+
+    const service = createRepositoryResolutionService(repository);
+
+    await expect(
+      service.resolveWritableRepository("616xold/pocket-cto"),
+    ).rejects.toBeInstanceOf(GitHubRepositoryInstallationUnavailableError);
+  });
 });
 
 function createConfiguredGitHubAppConfig(): GitHubAppConfigResolution {
@@ -301,6 +410,19 @@ function createInstallationAccessToken(installationId: string) {
       metadata: "read",
     },
   };
+}
+
+function createRepositoryResolutionService(repository: DrizzleGitHubAppRepository) {
+  return new GitHubAppService({
+    client: {
+      createInstallationAccessToken: vi.fn(),
+      listInstallationRepositories: vi.fn(),
+      listInstallations: vi.fn(),
+    },
+    config: createConfiguredGitHubAppConfig(),
+    repository,
+    tokenCache: new InMemoryInstallationTokenCache(),
+  });
 }
 
 function createInstallationSnapshot(

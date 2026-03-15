@@ -169,6 +169,80 @@ export class EvidenceService {
         input.verificationSummary?.trim() || bundle.verificationSummary,
     });
   }
+
+  buildPullRequestArtifact(input: {
+    mission: MissionRecord;
+    pr: {
+      baseBranch: string;
+      branchName: string;
+      commitMessage: string;
+      commitSha: string;
+      draft: boolean;
+      headBranch: string;
+      prBody: string;
+      prNumber: number;
+      prTitle: string;
+      prUrl: string;
+      publishedAt: string;
+      repoFullName: string;
+    };
+    task: MissionTaskRecord;
+  }): EvidenceArtifactDraft {
+    return {
+      missionId: input.mission.id,
+      taskId: input.task.id,
+      kind: "pr_link",
+      uri: input.pr.prUrl,
+      mimeType: "application/json",
+      sha256: null,
+      metadata: {
+        baseBranch: input.pr.baseBranch,
+        body: input.pr.prBody,
+        branchName: input.pr.branchName,
+        commitMessage: input.pr.commitMessage,
+        commitSha: input.pr.commitSha,
+        draft: input.pr.draft,
+        headBranch: input.pr.headBranch,
+        prNumber: input.pr.prNumber,
+        prTitle: input.pr.prTitle,
+        prUrl: input.pr.prUrl,
+        publishedAt: input.pr.publishedAt,
+        repoFullName: input.pr.repoFullName,
+        source: "github_app_publish",
+        summary: buildPullRequestArtifactSummary(input.pr),
+        taskRole: input.task.role,
+      },
+    };
+  }
+
+  attachPullRequestArtifactToProofBundle(
+    bundle: ProofBundleManifest,
+    input: {
+      artifactId: string;
+      pr: {
+        branchName: string;
+        draft: boolean;
+        prNumber: number;
+        repoFullName: string;
+      };
+      task: MissionTaskRecord;
+    },
+  ): ProofBundleManifest {
+    const nextArtifactIds = Array.from(
+      new Set([...bundle.artifactIds, input.artifactId]),
+    );
+    const draftPrefix = input.pr.draft ? "draft " : "";
+    const decisionTraceLine = `Executor task ${input.task.sequence} opened ${draftPrefix}PR #${input.pr.prNumber} for ${input.pr.repoFullName} from branch ${input.pr.branchName}.`;
+    const nextDecisionTrace = bundle.decisionTrace.includes(decisionTraceLine)
+      ? bundle.decisionTrace
+      : [...bundle.decisionTrace, decisionTraceLine];
+
+    return ProofBundleManifestSchema.parse({
+      ...bundle,
+      artifactIds: nextArtifactIds,
+      decisionTrace: nextDecisionTrace,
+    });
+  }
 }
 
 function appendUniqueDecisionTrace(existing: string[], lines: string[]) {
@@ -176,4 +250,15 @@ function appendUniqueDecisionTrace(existing: string[], lines: string[]) {
     (trace, line) => (trace.includes(line) ? trace : [...trace, line]),
     existing,
   );
+}
+
+function buildPullRequestArtifactSummary(input: {
+  baseBranch: string;
+  draft: boolean;
+  headBranch: string;
+  prNumber: number;
+  repoFullName: string;
+}) {
+  const draftPrefix = input.draft ? "Draft PR" : "PR";
+  return `${draftPrefix} #${input.prNumber} opened for ${input.repoFullName} from ${input.headBranch} into ${input.baseBranch}.`;
 }

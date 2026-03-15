@@ -62,6 +62,7 @@ export const TaskStatusChangeReasonSchema = z.enum([
   "executor_missing_planner_artifact",
   "executor_no_changes",
   "executor_validation_failed",
+  "executor_publish_failed",
 ]);
 
 export const TaskStatusChangedPayloadSchema = z.object({

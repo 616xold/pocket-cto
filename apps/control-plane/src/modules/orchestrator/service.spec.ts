@@ -360,6 +360,24 @@ function createHarness(options?: {
     evidenceService,
     workspaceService,
     options?.validationService ?? createValidationService(),
+    {
+      async publishValidatedExecutorWorkspace() {
+        return {
+          baseBranch: "main",
+          branchName: "pocket-cto/mission-123/1-executor",
+          commitMessage: "pocket-cto: mission mission-123 task 1-executor",
+          commitSha: "0123456789abcdef0123456789abcdef01234567",
+          draft: true,
+          headBranch: "pocket-cto/mission-123/1-executor",
+          prBody: "stub pull request body",
+          prNumber: 42,
+          prTitle: "Pocket CTO: stub PR",
+          prUrl: "https://github.com/616xold/pocket-cto/pull/42",
+          publishedAt: "2026-03-15T00:00:00.000Z",
+          repoFullName: "616xold/pocket-cto",
+        };
+      },
+    },
   );
   const runtimeControlService = new RuntimeControlService(
     missionRepository,

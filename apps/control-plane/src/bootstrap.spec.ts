@@ -71,6 +71,31 @@ function createAppContainer(
 ): AppContainer {
   return {
     githubAppService: {
+      async getRepository() {
+        return {
+          repository: {
+            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            installationId: "12345",
+            githubRepositoryId: "100",
+            fullName: "616xold/pocket-cto",
+            ownerLogin: "616xold",
+            name: "pocket-cto",
+            defaultBranch: "main",
+            visibility: "private" as const,
+            archived: false,
+            disabled: false,
+            isActive: true,
+            language: "TypeScript",
+            lastSyncedAt: "2026-03-15T00:00:00.000Z",
+            removedFromInstallationAt: null,
+            updatedAt: "2026-03-15T00:00:00.000Z",
+          },
+          writeReadiness: {
+            ready: true,
+            failureCode: null,
+          },
+        };
+      },
       async listInstallationRepositories() {
         return {
           installation: {
@@ -98,6 +123,45 @@ function createAppContainer(
       async listRepositories() {
         return {
           repositories: [],
+        };
+      },
+      async resolveWritableRepository() {
+        return {
+          installation: {
+            id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            installationId: "12345",
+            appId: "98765",
+            accountLogin: "616xold",
+            accountType: "Organization",
+            targetType: "Organization",
+            targetId: "6161234",
+            suspendedAt: null,
+            permissions: {
+              metadata: "read",
+            },
+            lastSyncedAt: "2026-03-15T00:00:00.000Z",
+            createdAt: "2026-03-15T00:00:00.000Z",
+            updatedAt: "2026-03-15T00:00:00.000Z",
+          },
+          repository: {
+            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            installationId: "12345",
+            installationRefId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            githubRepositoryId: "100",
+            fullName: "616xold/pocket-cto",
+            ownerLogin: "616xold",
+            name: "pocket-cto",
+            defaultBranch: "main",
+            isPrivate: true,
+            archived: false,
+            disabled: false,
+            isActive: true,
+            lastSyncedAt: "2026-03-15T00:00:00.000Z",
+            removedFromInstallationAt: null,
+            language: "TypeScript",
+            createdAt: "2026-03-15T00:00:00.000Z",
+            updatedAt: "2026-03-15T00:00:00.000Z",
+          },
         };
       },
       async syncInstallationRepositories() {

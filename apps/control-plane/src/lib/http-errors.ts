@@ -10,6 +10,11 @@ import {
   GitHubInstallationNotFoundError,
   GitHubAppNotConfiguredError,
   GitHubAppRequestError,
+  GitHubRepositoryArchivedError,
+  GitHubRepositoryDisabledError,
+  GitHubRepositoryInactiveError,
+  GitHubRepositoryInstallationUnavailableError,
+  GitHubRepositoryNotFoundError,
   GitHubWebhookBadSignatureError,
   GitHubWebhookDeliveryNotFoundError,
   GitHubWebhookMissingDeliveryIdError,
@@ -32,6 +37,11 @@ export type ApiErrorCode =
   | "github_app_not_configured"
   | "github_app_request_failed"
   | "github_installation_not_found"
+  | "github_repository_archived"
+  | "github_repository_disabled"
+  | "github_repository_inactive"
+  | "github_repository_installation_unavailable"
+  | "github_repository_not_found"
   | "github_webhook_bad_signature"
   | "github_webhook_delivery_not_found"
   | "github_webhook_missing_delivery_id"
@@ -247,6 +257,66 @@ function mapHttpError(error: unknown): ErrorMapping {
       body: {
         error: {
           code: "github_installation_not_found",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubRepositoryNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        error: {
+          code: "github_repository_not_found",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubRepositoryInactiveError) {
+    return {
+      statusCode: 409,
+      body: {
+        error: {
+          code: "github_repository_inactive",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubRepositoryArchivedError) {
+    return {
+      statusCode: 409,
+      body: {
+        error: {
+          code: "github_repository_archived",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubRepositoryDisabledError) {
+    return {
+      statusCode: 409,
+      body: {
+        error: {
+          code: "github_repository_disabled",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubRepositoryInstallationUnavailableError) {
+    return {
+      statusCode: 409,
+      body: {
+        error: {
+          code: "github_repository_installation_unavailable",
           message: error.message,
         },
       },

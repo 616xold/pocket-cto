@@ -528,8 +528,18 @@ pocket-cto://missions/<mission-id>/tasks/<task-id>/test-report
 pocket-cto://missions/<mission-id>/tasks/<task-id>/log-excerpt
 ```
 
-`pr_link` is still intentionally absent in local development until M2 GitHub
-App work lands.
+M2.4 now adds a real GitHub publish path for successful executor runs.
+When GitHub App env is configured and the mission resolves to an active synced
+repository row, Pocket CTO can now:
+
+- commit validated executor changes locally on the deterministic task branch
+- push that branch through the GitHub App installation token
+- open a draft pull request against the repository registry `defaultBranch`
+- persist `artifacts.kind = 'pr_link'` and append one more `artifact.created` replay entry
+
+The `pr_link` artifact stores the draft PR URL as its `uri` and keeps additive
+metadata such as `repoFullName`, `branchName`, `prNumber`, `baseBranch`,
+`headBranch`, `draft`, and `publishedAt`.
 
 For a long-running local worker loop instead of a single tick:
 
@@ -681,12 +691,15 @@ On macOS the private-key step looks like:
 base64 -i path/to/pocket-cto.private-key.pem | tr -d '\n'
 ```
 
-Current M2.2 permission and event expectations remain intentionally narrow:
+Current M2.4 permission and event expectations are:
 
-- repository permission expected now: `Metadata` read-only for the installation-sync slice
+- repository permissions expected now:
+  `Metadata` read-only
+  `Contents` write
+  `Pull requests` write
 - webhook events currently consumed in code: `installation`, `installation_repositories`, `issues`, `issue_comment`
 - `issues` and `issue_comment` are durably accepted as ingress envelopes only; they do not create missions yet
-- branch, PR, and issue-to-mission intake work are still future milestones
+- issue-to-mission intake is still a future milestone
 
 Once the control-plane API is running, the current GitHub debug and ingress surface is:
 
@@ -694,6 +707,7 @@ Once the control-plane API is running, the current GitHub debug and ingress surf
 curl -i http://localhost:4000/github/installations
 curl -i -X POST http://localhost:4000/github/installations/sync
 curl -i http://localhost:4000/github/repositories
+curl -i http://localhost:4000/github/repositories/616xold/pocket-cto
 curl -i http://localhost:4000/github/installations/12345/repositories
 curl -i -X POST http://localhost:4000/github/repositories/sync
 curl -i -X POST http://localhost:4000/github/installations/12345/repositories/sync
@@ -705,6 +719,7 @@ curl -i http://localhost:4000/github/webhooks/deliveries/local-delivery-1
 GET /github/installations
 POST /github/installations/sync
 GET /github/repositories
+GET /github/repositories/:owner/:repo
 GET /github/installations/:installationId/repositories
 POST /github/repositories/sync
 POST /github/installations/:installationId/repositories/sync
@@ -725,6 +740,7 @@ The M2.3 repository registry is intentionally one small, durable read surface.
 Use it to inspect which repositories Pocket CTO currently believes each installation can see:
 
 - `GET /github/repositories`
+- `GET /github/repositories/:owner/:repo`
 - `GET /github/installations/:installationId/repositories`
 
 Use the sync routes when you want to reconcile that registry against GitHub:
@@ -751,6 +767,7 @@ Examples:
 
 ```bash
 curl -i http://localhost:4000/github/repositories
+curl -i http://localhost:4000/github/repositories/616xold/pocket-cto
 curl -i http://localhost:4000/github/installations/12345/repositories
 curl -i -X POST http://localhost:4000/github/repositories/sync
 curl -i -X POST http://localhost:4000/github/installations/12345/repositories/sync
@@ -761,6 +778,55 @@ Registry state semantics stay explicit:
 - `isActive = true` means the latest manual sync or `installation_repositories` webhook still sees that repository for the installation.
 - `isActive = false` means the latest reconciliation no longer sees the repository for that installation, but Pocket CTO keeps the row for auditability and can reactivate it later if GitHub shows it again.
 - `removedFromInstallationAt` records when Pocket CTO most recently marked the repository inactive.
+
+Write-readiness is intentionally narrower than simple visibility:
+
+- `GET /github/repositories/:owner/:repo` returns one repository summary plus a `writeReadiness` object.
+- `writeReadiness.ready = true` means Pocket CTO can deterministically use that repository as a future GitHub App write target.
+- `writeReadiness.failureCode = inactive` means the registry row exists but the latest reconciliation no longer sees it for the installation.
+- `writeReadiness.failureCode = archived` means GitHub still reports the repository as archived.
+- `writeReadiness.failureCode = disabled` means GitHub still reports the repository as disabled.
+- `writeReadiness.failureCode = installation_unavailable` means the repository row exists, but Pocket CTO no longer has a persisted installation record it can use for installation-token minting.
+
+### Branch and draft PR publish
+
+Executor publish now happens after local validation, not inside the model turn.
+The current M2.4 write path is:
+
+1. resolve one writable repository from mission context and the durable repository registry
+2. keep the existing deterministic task branch `pocket-cto/<missionId>/<task.sequence>-<task.role>`
+3. fail explicitly if that remote branch already exists
+4. commit validated worktree changes locally
+5. push with `git` over HTTPS using a process-local auth header derived from the installation token
+6. create a draft PR against `defaultBranch`
+7. persist a `pr_link` artifact and link it into the proof bundle
+
+Local smoke coverage for this slice is the DB-backed orchestrator spec:
+
+```bash
+pnpm --filter @pocket-cto/control-plane exec vitest run \
+  src/modules/orchestrator/drizzle-service.spec.ts \
+  -t "publishes a successful executor run to a draft PR and persists the pr_link artifact"
+```
+
+That smoke uses a temp local git repo, a temp local worktree root, a temp bare
+remote for the branch push, and mocked GitHub API calls for branch preflight and
+draft PR creation.
+
+If live GitHub App env is present and you want a manual smoke instead of the
+mocked test path, make sure all of these are true first:
+
+- `POST /github/installations/sync` has persisted the installation
+- `POST /github/repositories/sync` has persisted the target repository row
+- the mission `primaryRepo` matches that synced repository full name
+- the repository `writeReadiness.ready` is `true`
+
+Expected live result for a successful executor publish:
+
+- one new remote branch with the deterministic task branch name
+- one new draft PR against the registry `defaultBranch`
+- one persisted `pr_link` artifact
+- one extra `artifact.created` replay event for that PR artifact
 
 ### Required webhook headers
 

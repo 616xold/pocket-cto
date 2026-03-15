@@ -11,7 +11,13 @@ import {
   buildExecutorTerminalizationFailureSummary,
   buildMissingPlannerArtifactSummary,
 } from "../evidence/executor-output";
+import {
+  persistPullRequestLinkEvidence,
+  preparePullRequestLinkEvidence,
+  type PreparedPullRequestLinkEvidence,
+} from "../evidence/pull-request-link";
 import type { EvidenceService } from "../evidence/service";
+import type { GitHubPublishService } from "../github-app/publish-service";
 import type { ApprovalService } from "../approvals/service";
 import {
   buildPlannerEvidenceFailureSummary,
@@ -77,6 +83,7 @@ export type ExecuteClaimedTaskTurnResult = {
 type TurnCompletionOutcome = {
   nextStatus: MissionTaskStatus;
   preparedPlannerEvidence: PreparedPlannerTurnEvidence | null;
+  preparedPullRequestEvidence: PreparedPullRequestLinkEvidence | null;
   preparedRuntimeEvidence: PreparedRuntimeArtifactEvidence | null;
   reason: TaskStatusChangeReason;
   summary: string | null;
@@ -112,9 +119,11 @@ export class OrchestratorRuntimePhase {
     private readonly runtimeCodexService: Pick<CodexRuntimeService, "runTurn">,
     private readonly evidenceService: Pick<
       EvidenceService,
+      | "attachPullRequestArtifactToProofBundle"
       | "attachPlannerArtifactToProofBundle"
       | "attachRuntimeArtifactsToProofBundle"
       | "buildPlannerArtifact"
+      | "buildPullRequestArtifact"
       | "buildPlannerTaskSummary"
     >,
     private readonly workspaceService: Pick<
@@ -124,6 +133,10 @@ export class OrchestratorRuntimePhase {
     private readonly validationService: Pick<
       ExecutorValidationService,
       "validateExecutorTurn"
+    >,
+    private readonly githubPublishService: Pick<
+      GitHubPublishService,
+      "publishValidatedExecutorWorkspace"
     >,
   ) {}
 
@@ -229,7 +242,7 @@ export class OrchestratorRuntimePhase {
       proofBundle,
       task,
       turn,
-      workspaceRoot: workspace.rootPath,
+      workspace,
     });
 
     const updatedTask = await this.handleTurnCompleted(
@@ -521,12 +534,13 @@ export class OrchestratorRuntimePhase {
     proofBundle: ProofBundleManifest | null;
     task: MissionTaskRecord;
     turn: RuntimeCodexRunTurnResult;
-    workspaceRoot: string;
+    workspace: WorkspaceRecord;
   }): Promise<TurnCompletionOutcome> {
     if (input.turn.status === "interrupted") {
       return {
         nextStatus: "cancelled",
         preparedPlannerEvidence: null,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnInterrupted,
         summary: null,
@@ -537,6 +551,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnFailed,
         summary: null,
@@ -554,6 +569,7 @@ export class OrchestratorRuntimePhase {
     return {
       nextStatus: "succeeded",
       preparedPlannerEvidence: null,
+      preparedPullRequestEvidence: null,
       preparedRuntimeEvidence: null,
       reason: taskStatusChangeReasons.runtimeTurnCompleted,
       summary: null,
@@ -565,39 +581,91 @@ export class OrchestratorRuntimePhase {
     proofBundle: ProofBundleManifest | null;
     task: MissionTaskRecord;
     turn: RuntimeCodexRunTurnResult;
-    workspaceRoot: string;
+    workspace: WorkspaceRecord;
   }): Promise<TurnCompletionOutcome> {
     try {
       const validation = await this.validationService.validateExecutorTurn({
         mission: input.mission,
         task: input.task,
-        workspaceRoot: input.workspaceRoot,
+        workspaceRoot: input.workspace.rootPath,
       });
-      const summary = buildExecutorTaskSummary({
+      const validationSummary = buildExecutorTaskSummary({
         turn: input.turn,
         validation,
       });
       const terminalTaskStatus = validation.status === "passed" ? "succeeded" : "failed";
 
+      if (validation.status === "passed") {
+        try {
+          const publishedPullRequest =
+            await this.githubPublishService.publishValidatedExecutorWorkspace({
+              executorSummary: validationSummary,
+              mission: input.mission,
+              task: input.task,
+              workspace: input.workspace,
+            });
+
+          return {
+            nextStatus: terminalTaskStatus,
+            preparedPlannerEvidence: null,
+            preparedPullRequestEvidence: preparePullRequestLinkEvidence({
+              evidenceService: this.evidenceService,
+              mission: input.mission,
+              publishedPullRequest,
+              task: input.task,
+            }),
+            preparedRuntimeEvidence: prepareExecutorRuntimeEvidence({
+              mission: input.mission,
+              proofBundle: input.proofBundle,
+              task: input.task,
+              terminalSummary: validationSummary,
+              terminalTaskStatus,
+              turn: input.turn,
+              validation,
+            }),
+            reason: taskStatusChangeReasons.runtimeTurnCompleted,
+            summary: validationSummary,
+          };
+        } catch (error) {
+          const publishFailureSummary = buildExecutorPublishFailureSummary(error);
+
+          return {
+            nextStatus: "failed",
+            preparedPlannerEvidence: null,
+            preparedPullRequestEvidence: null,
+            preparedRuntimeEvidence: prepareExecutorRuntimeEvidence({
+              mission: input.mission,
+              proofBundle: input.proofBundle,
+              task: input.task,
+              terminalSummary: publishFailureSummary,
+              terminalTaskStatus: "failed",
+              turn: input.turn,
+              validation,
+            }),
+            reason: taskStatusChangeReasons.executorPublishFailed,
+            summary: publishFailureSummary,
+          };
+        }
+      }
+
       return {
         nextStatus: terminalTaskStatus,
         preparedPlannerEvidence: null,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: prepareExecutorRuntimeEvidence({
           mission: input.mission,
           proofBundle: input.proofBundle,
           task: input.task,
-          terminalSummary: summary,
+          terminalSummary: validationSummary,
           terminalTaskStatus,
           turn: input.turn,
           validation,
         }),
         reason:
-          validation.status === "passed"
-            ? taskStatusChangeReasons.runtimeTurnCompleted
-            : validation.failureCode === "no_changes"
-              ? taskStatusChangeReasons.executorNoChanges
-              : taskStatusChangeReasons.executorValidationFailed,
-        summary,
+          validation.failureCode === "no_changes"
+            ? taskStatusChangeReasons.executorNoChanges
+            : taskStatusChangeReasons.executorValidationFailed,
+        summary: validationSummary,
       };
     } catch (error) {
       const summary = buildExecutorTerminalizationFailureSummary(error);
@@ -605,6 +673,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: prepareExecutorRuntimeEvidence({
           mission: input.mission,
           proofBundle: input.proofBundle,
@@ -640,6 +709,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "succeeded",
         preparedPlannerEvidence,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnCompleted,
         summary: preparedPlannerEvidence?.summary ?? null,
@@ -648,6 +718,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.plannerEvidenceFailed,
         summary: buildPlannerEvidenceFailureSummary(error),
@@ -732,6 +803,26 @@ export class OrchestratorRuntimePhase {
         });
       }
 
+      if (completionOutcome.preparedPullRequestEvidence) {
+        const currentProofBundle =
+          await this.missionRepository.getProofBundleByMissionId(
+            task.missionId,
+            session,
+          );
+
+        await persistPullRequestLinkEvidence({
+          deps: {
+            evidenceService: this.evidenceService,
+            missionRepository: this.missionRepository,
+            replayService: this.replayService,
+          },
+          preparedEvidence: completionOutcome.preparedPullRequestEvidence,
+          proofBundle: currentProofBundle,
+          session,
+          task: finalizedTask,
+        });
+      }
+
       await this.workspaceService.releaseTaskWorkspaceLease(taskId, session);
 
       return finalizedTask;
@@ -748,6 +839,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "cancelled",
         preparedPlannerEvidence: null,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnInterrupted,
         summary: input.completionOutcome.summary,
@@ -758,6 +850,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: null,
         reason: taskStatusChangeReasons.runtimeTurnFailed,
         summary: input.completionOutcome.summary,
@@ -772,6 +865,7 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: null,
         reason: plannerEvidenceFailed
           ? taskStatusChangeReasons.plannerEvidenceFailed
@@ -787,6 +881,7 @@ export class OrchestratorRuntimePhase {
         return {
           nextStatus: "failed",
           preparedPlannerEvidence: null,
+          preparedPullRequestEvidence: null,
           preparedRuntimeEvidence: null,
           reason: taskStatusChangeReasons.executorNoChanges,
           summary: input.completionOutcome.summary,
@@ -796,8 +891,13 @@ export class OrchestratorRuntimePhase {
       return {
         nextStatus: "failed",
         preparedPlannerEvidence: null,
+        preparedPullRequestEvidence: null,
         preparedRuntimeEvidence: null,
-        reason: taskStatusChangeReasons.executorValidationFailed,
+        reason:
+          input.completionOutcome.reason ===
+          taskStatusChangeReasons.executorPublishFailed
+            ? taskStatusChangeReasons.executorPublishFailed
+            : taskStatusChangeReasons.executorValidationFailed,
         summary: buildExecutorTerminalizationFailureSummary(input.error),
       };
     }
@@ -805,6 +905,7 @@ export class OrchestratorRuntimePhase {
     return {
       nextStatus: "failed",
       preparedPlannerEvidence: null,
+      preparedPullRequestEvidence: null,
       preparedRuntimeEvidence: null,
       reason: taskStatusChangeReasons.runtimeTurnFailed,
       summary: input.completionOutcome.summary,
@@ -975,6 +1076,16 @@ export class OrchestratorRuntimePhase {
       return failedTask;
     });
   }
+}
+
+function buildExecutorPublishFailureSummary(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  const summary =
+    `Executor completed validated workspace changes, but GitHub publish failed: ${message}.`;
+
+  return summary.length <= 240
+    ? summary
+    : `${summary.slice(0, 237).trimEnd()}...`;
 }
 
 function isTerminalTaskStatus(status: MissionTaskStatus) {
