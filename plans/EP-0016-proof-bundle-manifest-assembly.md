@@ -26,7 +26,7 @@ It does not implement issue intake, approval-card formatting, or larger M2.7 UI 
 - [x] (2026-03-15T22:24Z) Wired proof-bundle refresh through the intended milestone boundaries: planner evidence persistence, executor evidence persistence, PR-link persistence, and approval resolution or approval cancellation paths that change operator posture.
 - [x] (2026-03-15T22:24Z) Updated the mission-detail read model and narrow web proof-bundle section so operators can see readiness, completeness, repo and branch and PR metadata, approval posture, replay counts, timestamps, and concise decision-oriented summaries without a broader UI redesign.
 - [x] (2026-03-15T22:24Z) Added focused tests for ready, incomplete, and failed assembly paths plus richer mission-detail rendering, updated the affected DB-backed orchestrator expectations, refreshed replay and local-dev docs, and ran the required validation matrix successfully.
-- [ ] (2026-03-16T00:00Z) Localize the remaining M2.5 static-surface red from repo repro, apply the smallest correctness-preserving fix only if the localized failure is still real, rerun the static matrix, and record whether any remaining red is product drift or clean-tree gating.
+- [x] (2026-03-16T00:22Z) Localized the remaining M2.5 static-surface red to committed-ref drift in `packages/testkit/src/fixtures.ts`, confirmed the live-checkout `ci:static` failure was temporarily amplified by dirty-worktree clean-tree gating, committed the narrow fixture/spec fix plus matching plan notes, and reran the full static matrix successfully including `pnpm ci:static` and `pnpm ci:repro:ref --ref HEAD --step static --repeat 5`.
 
 ## Surprises & Discoveries
 
@@ -44,6 +44,9 @@ It does not implement issue intake, approval-card formatting, or larger M2.7 UI 
 
 - Observation: the current repo-level static red localizes to a shared testkit placeholder fixture that lagged the richer M2.5 `ProofBundleManifest` contract; the live checkout also fails the clean-tree gate because that narrow fixture/spec fix is already present as uncommitted changes.
   Evidence: `pnpm ci:static` on 2026-03-16 failed at `ci:clean-tree`, while the dirty diff in `packages/testkit/src/fixtures.ts` and `packages/testkit/src/fixtures.spec.ts` updates `proofBundlePlaceholderFixture(...)` and its regression spec to the current manifest shape described in `packages/domain/src/proof-bundle.ts`.
+
+- Observation: once the shared `packages/testkit` placeholder and its regression spec were committed, the M2.5 static surface went fully green without any proof-bundle assembly or GitHub-path logic changes.
+  Evidence: `pnpm ci:static` passed in the live checkout and `pnpm ci:repro:ref --ref HEAD --step static --repeat 5` succeeded against commit `fd66bbbcaa7bd4c6e6e48266bed060bba256bc3d`.
 
 ## Decision Log
 
@@ -246,6 +249,22 @@ Validation results:
   passed, with no additional schema changes after the replay enum migration
 - `pnpm db:migrate`
   passed
+- `pnpm --filter @pocket-cto/control-plane test`
+  passed before and after the narrow testkit fixture fix
+- `pnpm --filter @pocket-cto/control-plane typecheck`
+  passed before and after the narrow testkit fixture fix
+- `pnpm --filter @pocket-cto/control-plane lint`
+  passed before and after the narrow testkit fixture fix
+- `pnpm --filter @pocket-cto/web test`
+  passed before and after the narrow testkit fixture fix
+- `pnpm --filter @pocket-cto/web typecheck`
+  passed before and after the narrow testkit fixture fix
+- `pnpm --filter @pocket-cto/web lint`
+  passed before and after the narrow testkit fixture fix
+- `pnpm ci:static`
+  initially failed in the dirty live checkout at `ci:clean-tree`, then passed after the committed narrow fix restored both the `packages/testkit` contract and a clean worktree
+- `pnpm ci:repro:ref --ref HEAD --step static --repeat 5`
+  initially failed 5/5 on pre-fix `HEAD` inside `pnpm typecheck:packages` because `packages/testkit/src/fixtures.ts` still returned the pre-M2.5 placeholder shape, then passed 5/5 after the narrow fixture/spec commit
 - `pnpm run db:migrate:ci`
   passed for both `pocket_cto` and `pocket_cto_test`
 - `pnpm --filter @pocket-cto/control-plane test`
