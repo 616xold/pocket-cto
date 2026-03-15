@@ -87,7 +87,7 @@ This repo is structured to help Codex implement the system modularly and milesto
 - Node 22+
 - pnpm 10+
 - Docker Desktop or compatible container runtime
-- A GitHub App for later milestones
+- A GitHub App if you want to exercise M2.1 installation sync locally
 - Codex app or Codex CLI installed locally
 
 ### Bootstrap
@@ -101,6 +101,8 @@ pnpm db:migrate
 pnpm dev
 pnpm dev:worker   # in a second terminal once task execution work begins
 ```
+
+For the M2.1 GitHub App setup, use the local-dev guide in `docs/ops/local-dev.md`.
 
 ### Quality gates
 

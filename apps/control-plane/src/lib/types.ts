@@ -1,11 +1,17 @@
 import type { OperatorControlAvailability as DomainOperatorControlAvailability } from "@pocket-cto/domain";
 import type { ApprovalService } from "../modules/approvals/service";
+import type { GitHubAppService } from "../modules/github-app/service";
 import type { MissionService } from "../modules/missions/service";
 import type { OrchestratorWorker } from "../modules/orchestrator/worker";
 import type { ReplayService } from "../modules/replay/service";
 import type { RuntimeControlService } from "../modules/runtime-codex/control-service";
 
 export type OperatorControlAvailability = DomainOperatorControlAvailability;
+
+export type GitHubAppServicePort = Pick<
+  GitHubAppService,
+  "listInstallations" | "syncInstallations"
+>;
 
 export type MissionServicePort = Pick<
   MissionService,
@@ -15,6 +21,7 @@ export type MissionServicePort = Pick<
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;
 
 export type AppContainer = {
+  githubAppService: GitHubAppServicePort;
   missionService: MissionServicePort;
   operatorControl: {
     approvalService: Pick<

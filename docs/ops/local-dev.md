@@ -648,6 +648,51 @@ pnpm --filter @pocket-cto/control-plane test
 The worker and API entrypoints live in the same `apps/control-plane` package but run as separate scripts.
 That keeps the repo simple while preserving process boundaries.
 
+## GitHub App setup (M2.1)
+
+Pocket CTO now has a narrow M2.1 GitHub App auth surface for installation sync.
+This slice uses GitHub App auth only.
+Do not use PATs or `gh` CLI shortcuts for the control-plane integration path.
+
+Required now for live installation sync:
+
+- `GITHUB_APP_ID`
+- `GITHUB_APP_PRIVATE_KEY_BASE64`
+
+Optional for later slices:
+
+- `GITHUB_WEBHOOK_SECRET`
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
+
+Local setup steps:
+
+1. Create or reuse a GitHub App and install it on the target owner or repository.
+2. Copy the app id into `GITHUB_APP_ID`.
+3. Base64-encode the downloaded private-key PEM into one line and copy it into `GITHUB_APP_PRIVATE_KEY_BASE64`.
+
+On macOS that looks like:
+
+```bash
+base64 -i path/to/pocket-cto.private-key.pem | tr -d '\n'
+```
+
+Current M2.1 permission and event expectations are intentionally narrow:
+
+- repository permission expected now: `Metadata` read-only
+- webhook ingestion: not implemented yet, so `GITHUB_WEBHOOK_SECRET` stays optional in this slice
+- webhook events documented for later milestones are still future-facing and not consumed by code yet
+
+Once the control-plane API is running, the debug surface is:
+
+```bash
+curl -i http://localhost:4000/github/installations
+curl -i -X POST http://localhost:4000/github/installations/sync
+```
+
+When the GitHub App env is configured, the sync route fetches current installations from GitHub and upserts them into Postgres.
+When the env is missing, both routes return a machine-readable `github_app_not_configured` error instead of silently falling back to PATs.
+
 ## Environment variables
 
 Document any new env var in `.env.example` immediately after adding it.

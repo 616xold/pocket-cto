@@ -6,6 +6,11 @@ import {
   ApprovalNotPendingError,
 } from "../modules/approvals/errors";
 import {
+  GitHubAppConfigurationError,
+  GitHubAppNotConfiguredError,
+  GitHubAppRequestError,
+} from "../modules/github-app/errors";
+import {
   RuntimeActiveTurnNotFoundError,
   RuntimeInterruptDeliveryError,
   RuntimeTaskNotFoundError,
@@ -15,6 +20,9 @@ export type ApiErrorCode =
   | "invalid_request"
   | "approval_conflict"
   | "approval_not_found"
+  | "github_app_invalid_configuration"
+  | "github_app_not_configured"
+  | "github_app_request_failed"
   | "live_control_unavailable"
   | "mission_not_found"
   | "internal_error"
@@ -167,6 +175,52 @@ function mapHttpError(error: unknown): ErrorMapping {
         error: {
           code: "approval_conflict",
           message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubAppNotConfiguredError) {
+    return {
+      statusCode: 503,
+      body: {
+        error: {
+          code: "github_app_not_configured",
+          message: error.message,
+          details: error.missing.map((variableName) => ({
+            path: variableName,
+            message: "Missing required GitHub App env var",
+          })),
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubAppConfigurationError) {
+    return {
+      statusCode: 500,
+      body: {
+        error: {
+          code: "github_app_invalid_configuration",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubAppRequestError) {
+    return {
+      statusCode: 502,
+      body: {
+        error: {
+          code: "github_app_request_failed",
+          message: "GitHub App request failed",
+          details: [
+            {
+              path: "github",
+              message: error.message,
+            },
+          ],
         },
       },
     };

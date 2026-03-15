@@ -419,6 +419,180 @@ describe("control-plane app", () => {
     });
   });
 
+  it("GET /github/installations returns 503 when the GitHub App is unconfigured", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/installations",
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toEqual({
+      error: {
+        code: "github_app_not_configured",
+        message: "GitHub App credentials are not configured",
+        details: [
+          {
+            path: "GITHUB_APP_ID",
+            message: "Missing required GitHub App env var",
+          },
+          {
+            path: "GITHUB_APP_PRIVATE_KEY_BASE64",
+            message: "Missing required GitHub App env var",
+          },
+        ],
+      },
+    });
+  });
+
+  it("GET /github/installations returns persisted installation summaries when configured", async () => {
+    const app = await createStubApp(apps, {
+      githubAppService: {
+        async listInstallations() {
+          return [
+            {
+              id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              installationId: "12345",
+              appId: "98765",
+              accountLogin: "616xold",
+              accountType: "Organization",
+              targetType: "Organization",
+              targetId: "6161234",
+              suspendedAt: null,
+              permissions: {
+                metadata: "read",
+              },
+              lastSyncedAt: "2026-03-15T10:00:00.000Z",
+              createdAt: "2026-03-15T10:00:00.000Z",
+              updatedAt: "2026-03-15T10:00:00.000Z",
+            },
+          ];
+        },
+        async syncInstallations() {
+          throw new Error("sync should not be called");
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/installations",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      installations: [
+        {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          installationId: "12345",
+          appId: "98765",
+          accountLogin: "616xold",
+          accountType: "Organization",
+          targetType: "Organization",
+          targetId: "6161234",
+          suspendedAt: null,
+          permissions: {
+            metadata: "read",
+          },
+          lastSyncedAt: "2026-03-15T10:00:00.000Z",
+          createdAt: "2026-03-15T10:00:00.000Z",
+          updatedAt: "2026-03-15T10:00:00.000Z",
+        },
+      ],
+    });
+  });
+
+  it("POST /github/installations/sync returns 503 when the GitHub App is unconfigured", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/github/installations/sync",
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toEqual({
+      error: {
+        code: "github_app_not_configured",
+        message: "GitHub App credentials are not configured",
+        details: [
+          {
+            path: "GITHUB_APP_ID",
+            message: "Missing required GitHub App env var",
+          },
+          {
+            path: "GITHUB_APP_PRIVATE_KEY_BASE64",
+            message: "Missing required GitHub App env var",
+          },
+        ],
+      },
+    });
+  });
+
+  it("POST /github/installations/sync delegates to the GitHub App service when configured", async () => {
+    const app = await createStubApp(apps, {
+      githubAppService: {
+        async listInstallations() {
+          return [];
+        },
+        async syncInstallations() {
+          return {
+            installations: [
+              {
+                id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                installationId: "12345",
+                appId: "98765",
+                accountLogin: "616xold",
+                accountType: "Organization",
+                targetType: "Organization",
+                targetId: "6161234",
+                suspendedAt: null,
+                permissions: {
+                  metadata: "read",
+                },
+                lastSyncedAt: "2026-03-15T10:00:00.000Z",
+                createdAt: "2026-03-15T10:00:00.000Z",
+                updatedAt: "2026-03-15T10:00:00.000Z",
+              },
+            ],
+            syncedAt: "2026-03-15T10:00:00.000Z",
+            syncedCount: 1,
+          };
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/github/installations/sync",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      installations: [
+        {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          installationId: "12345",
+          appId: "98765",
+          accountLogin: "616xold",
+          accountType: "Organization",
+          targetType: "Organization",
+          targetId: "6161234",
+          suspendedAt: null,
+          permissions: {
+            metadata: "read",
+          },
+          lastSyncedAt: "2026-03-15T10:00:00.000Z",
+          createdAt: "2026-03-15T10:00:00.000Z",
+          updatedAt: "2026-03-15T10:00:00.000Z",
+        },
+      ],
+      syncedAt: "2026-03-15T10:00:00.000Z",
+      syncedCount: 1,
+    });
+  });
+
   it("GET /missions/:missionId/events returns ordered replay events", async () => {
     const app = await createTestApp(apps);
     const created = await createMission(app);
@@ -877,6 +1051,7 @@ async function createStubApp(
     container: {
       ...base,
       ...overrides,
+      githubAppService: overrides.githubAppService ?? base.githubAppService,
       operatorControl: {
         ...base.operatorControl,
         ...overrides.operatorControl,
