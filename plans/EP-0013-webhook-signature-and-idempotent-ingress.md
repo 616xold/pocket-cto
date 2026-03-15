@@ -6,6 +6,7 @@ This ExecPlan is a living document. Keep `Progress`, `Surprises & Discoveries`, 
 
 After this slice, Pocket CTO can accept real GitHub App webhook deliveries through `POST /github/webhooks`, verify that each delivery was actually signed by the configured GitHub App webhook secret, persist the ingress envelope durably, and update installation plus repository linkage state without using PATs or pretending that issue intake is already mission compilation.
 The operator-visible proof remains intentionally backend-first and narrow: webhook deliveries get an honest ingress response, duplicate deliveries do not repeat side effects, installation events update persisted GitHub App state, and `issues` plus `issue_comment` deliveries are durably recorded as accepted ingress envelopes while explicitly stopping short of mission creation.
+This slice now also includes a small read-only debug surface so developers can inspect persisted deliveries and their `handledAs` outcome without issuing direct database queries.
 
 This plan covers roadmap submilestone `M2.2 webhook ingestion`.
 It depends on the M2.1 GitHub App auth and installation persistence foundation from `plans/EP-0012-github-app-auth-and-installation-persistence.md`.
@@ -19,6 +20,8 @@ It does not implement issue-to-mission intake, repository registry sync beyond i
 - [x] (2026-03-15T01:56Z) Extended `packages/db/src/schema/integrations.ts`, generated additive migrations `packages/db/drizzle/0007_smiling_ezekiel.sql` and `packages/db/drizzle/0008_glossy_ken_ellis.sql`, rebuilt `@pocket-cto/db`, and migrated both the development and test databases so the new delivery ledger and repository external-id column exist before DB-backed specs run.
 - [x] (2026-03-15T02:02Z) Added focused tests for route-level signature and header handling, duplicate-delivery idempotency, installation-state updates, installation-repository linkage updates, and durable issue-envelope acceptance without mission creation, then updated local docs plus README discoverability notes.
 - [x] (2026-03-15T02:03Z) Ran the required validation commands successfully: `pnpm db:generate`, `pnpm db:migrate`, `pnpm --filter @pocket-cto/control-plane test`, `pnpm --filter @pocket-cto/control-plane typecheck`, `pnpm --filter @pocket-cto/control-plane lint`, and `pnpm --filter @pocket-cto/web typecheck`.
+- [x] (2026-03-15T16:56Z) Added a small read-only webhook-delivery observability surface on top of the existing ledger: summary-shaped service methods, thin `GET /github/webhooks/deliveries` plus `GET /github/webhooks/deliveries/:deliveryId` routes with optional `eventName`, `handledAs`, and `installationId` filters, focused route tests, and local-dev documentation for inspecting issue and issue-comment envelopes without SQL.
+- [x] (2026-03-15T16:59Z) Reran the required validation gates after the observability slice landed; the control-plane suite passed with 31 files and 116 tests, typecheck passed, lint passed, and the web app typecheck passed.
 
 ## Surprises & Discoveries
 
@@ -45,6 +48,9 @@ It does not implement issue-to-mission intake, repository registry sync beyond i
 
 - Observation: no public webhook URL was available in the local environment during this slice.
   Evidence: `.env` still points `PUBLIC_APP_URL=http://localhost:3000` and `CONTROL_PLANE_URL=http://localhost:4000`, with no checked-in tunnel or public callback URL configured.
+
+- Observation: the existing `github_webhook_deliveries` table already carries enough context for a useful debug surface, so the observability slice did not need any schema or migration changes.
+  Evidence: each row already stores `delivery_id`, `event_name`, `action`, `installation_id`, finalized `outcome`, the full payload JSON, and duplicate-safe timestamps in `packages/db/src/schema/integrations.ts`.
 
 ## Decision Log
 
@@ -80,6 +86,10 @@ It does not implement issue-to-mission intake, repository registry sync beyond i
   Rationale: M2.2 still needs narrow explicit handling for the four scoped events, but recording other signed deliveries as ignored is more truthful and safer than rejecting them after signature verification.
   Date/Author: 2026-03-15 / Codex
 
+- Decision: add a small read-only delivery debug surface at `GET /github/webhooks/deliveries` and `GET /github/webhooks/deliveries/:deliveryId`, and keep it summary-shaped with optional `eventName`, `handledAs`, and `installationId` filters.
+  Rationale: M2.3 needs a developer-friendly way to inspect persisted webhook envelopes and their handling outcome, but returning the raw stored payload by default would widen the surface more than this milestone needs.
+  Date/Author: 2026-03-15 / Codex
+
 ## Context and Orientation
 
 Pocket CTO already has a working GitHub App auth and installation-sync bounded context under `apps/control-plane/src/modules/github-app/`.
@@ -105,6 +115,7 @@ The relevant control-plane integration points are:
 - `apps/control-plane/src/app.ts` for route registration
 - `apps/control-plane/src/lib/types.ts` for container-facing service ports
 - `apps/control-plane/src/lib/http-errors.ts` for typed API error mapping
+- `docs/ops/local-dev.md` for local ingress, retry, and delivery-inspection guidance
 
 The intended edit surface for this slice is:
 
@@ -159,7 +170,7 @@ After that, wire the new webhook service into `bootstrap.ts` and `app.ts`, add t
 
 Finally, add focused tests and docs.
 The tests should cover valid versus invalid signatures, duplicate delivery handling, DB-backed installation and repository updates from webhook payloads, and durable acceptance of `issues` and `issue_comment` without mission creation.
-The docs should describe required headers, local webhook-testing workflow, and the safe redelivery story.
+The docs should describe required headers, local webhook-testing workflow, the safe redelivery story, and the small read-only delivery-inspection routes.
 
 ## Concrete Steps
 
@@ -199,6 +210,8 @@ Success for M2.2 is demonstrated when all of the following are true:
 7. `issues` and `issue_comment` deliveries are durably accepted as ingress envelopes but do not create missions.
 8. The route implementation remains thin and testable, with signature verification and business behavior outside the route file.
 9. The local-dev docs explain the required headers, a local tunnel or webhook testing path, and how to retry a delivery safely.
+10. `GET /github/webhooks/deliveries` returns compact persisted-delivery summaries without exposing the full raw payload by default.
+11. `GET /github/webhooks/deliveries/:deliveryId` can inspect `issues` and `issue_comment` ingress envelopes without querying the database manually.
 
 Useful manual acceptance after implementation should look like:
 
@@ -264,12 +277,20 @@ Validation results captured after implementation:
   Result: passed.
 - `pnpm --filter @pocket-cto/web typecheck`
   Result: passed.
+- `pnpm --filter @pocket-cto/control-plane test`
+  Result after the observability slice: passed with 31 test files and 116 tests.
+- `pnpm --filter @pocket-cto/control-plane typecheck`
+  Result after the observability slice: passed.
+- `pnpm --filter @pocket-cto/control-plane lint`
+  Result after the observability slice: passed.
+- `pnpm --filter @pocket-cto/web typecheck`
+  Result after the observability slice: passed.
 
 Focused webhook evidence captured during implementation:
 
 - Route-level webhook ingress:
   `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/github-app/webhook-routes.spec.ts`
-  Result: passed 7 tests covering valid signature acceptance, invalid signature rejection, missing-header errors, duplicate redelivery semantics, and the unconfigured-secret path.
+  Result: initially passed 7 ingress tests, then passed 11 route tests after the observability slice expanded the same spec to cover delivery listing, single-delivery inspection, not-found handling, and filter behavior.
 - DB-backed webhook effects:
   `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/github-app/webhook-service.spec.ts`
   Result: passed 4 tests covering duplicate-delivery idempotency, installation-state updates, installation-repository linkage updates, and issue-envelope persistence without mission creation.
@@ -292,9 +313,10 @@ Important interfaces expected by the end of this slice:
 
 - a webhook signature verifier that accepts raw bytes plus header value and returns a typed verification result
 - a webhook repository that durably records deliveries keyed by delivery id
-- a webhook service that accepts the envelope, enforces idempotency, and dispatches narrow event handlers
+- a webhook service that accepts the envelope, enforces idempotency, dispatches narrow event handlers, and returns compact delivery summaries for debug routes
 - expanded GitHub App repository and service methods for applying installation snapshots and repository-linkage updates from webhook events
 - typed API errors for missing delivery id, missing event name, missing signature, and bad signature
+- a typed not-found API error for unknown delivery ids on the read-only debug surface
 
 Expected environment and ops dependencies after this slice:
 
@@ -308,6 +330,7 @@ Pocket CTO now has a truthful webhook ingress slice for M2.2.
 `POST /github/webhooks` verifies the raw-body HMAC with `GITHUB_WEBHOOK_SECRET`, requires the key GitHub headers, and returns machine-readable request errors for missing or invalid signature requirements.
 The first valid delivery persists into the new `github_webhook_deliveries` ledger and can update installation or repository state through the existing GitHub App bounded context.
 Repeating the same delivery id returns success with `duplicate: true` and does not repeat side effects.
+Developers can also inspect that ledger honestly through `GET /github/webhooks/deliveries` and `GET /github/webhooks/deliveries/:deliveryId`, which return compact summaries with `handledAs`, duplicate-safe timestamps, and a small payload preview instead of the full raw payload.
 
 This slice also leaves M2.3 cleanly staged instead of half-started.
 `installation` and `installation_repositories` are fully handled.

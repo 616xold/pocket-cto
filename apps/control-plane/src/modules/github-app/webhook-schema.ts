@@ -5,6 +5,8 @@ import {
   GitHubWebhookMissingSignatureError,
 } from "./errors";
 import {
+  GitHubWebhookDeliveryListQuerySchema,
+  GitHubWebhookDeliveryParamsSchema,
   GitHubWebhookHeaderEnvelopeSchema,
   GitHubWebhookIngressResultSchema,
 } from "./webhook-types";
@@ -32,6 +34,14 @@ export function parseGitHubWebhookHeaders(
     eventName,
     signature,
   });
+}
+
+export function parseGitHubWebhookDeliveryListQuery(query: unknown) {
+  return GitHubWebhookDeliveryListQuerySchema.parse(query);
+}
+
+export function parseGitHubWebhookDeliveryParams(params: unknown) {
+  return GitHubWebhookDeliveryParamsSchema.parse(params);
 }
 
 function getRequiredHeader(

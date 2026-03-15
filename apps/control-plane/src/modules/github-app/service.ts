@@ -1,20 +1,35 @@
 import type { PersistenceSession } from "../../lib/persistence";
 import type { GitHubAppConfigResolution } from "./config";
-import { GitHubAppNotConfiguredError } from "./errors";
+import {
+  GitHubAppNotConfiguredError,
+  GitHubInstallationNotFoundError,
+} from "./errors";
+import {
+  buildInstallationRepositorySyncResult,
+  toGitHubRepositorySummary,
+} from "./formatter";
 import type { GitHubAppRepository } from "./repository";
+import type {
+  GitHubInstallationRepositoryListResult,
+  GitHubInstallationRepositorySyncResult,
+  GitHubRepositoryListResult,
+  SyncGitHubRepositoriesResult,
+} from "./schema";
 import { InMemoryInstallationTokenCache } from "./token-cache";
 import type {
   GitHubInstallationAccessToken,
   GitHubInstallationSnapshot,
   GitHubRepositorySnapshot,
   PersistedGitHubInstallation,
-  PersistedGitHubRepository,
 } from "./types";
 
 type GitHubAppClientPort = {
   createInstallationAccessToken(
     installationId: string,
   ): Promise<GitHubInstallationAccessToken>;
+  listInstallationRepositories(
+    installationAccessToken: string,
+  ): Promise<GitHubRepositorySnapshot[]>;
   listInstallations(): Promise<GitHubInstallationSnapshot[]>;
 };
 
@@ -68,12 +83,15 @@ export class GitHubAppService {
     },
     session?: PersistenceSession,
   ) {
+    const syncedAt = this.now().toISOString();
+
     await this.input.repository.upsertInstallation(input.installation, session);
 
     if (input.repositoriesAdded.length > 0) {
       await this.input.repository.upsertInstallationRepositories(
         {
           installationId: input.installation.installationId,
+          lastSyncedAt: syncedAt,
           repositories: input.repositoriesAdded,
         },
         session,
@@ -81,9 +99,11 @@ export class GitHubAppService {
     }
 
     if (input.repositoriesRemoved.length > 0) {
-      await this.input.repository.removeInstallationRepositories(
+      await this.input.repository.markInstallationRepositoriesInactive(
         {
           installationId: input.installation.installationId,
+          markedInactiveAt: syncedAt,
+          lastSyncedAt: syncedAt,
           githubRepositoryIds: input.repositoriesRemoved,
         },
         session,
@@ -105,8 +125,29 @@ export class GitHubAppService {
     return this.input.repository.listInstallations();
   }
 
-  async listRepositories(): Promise<PersistedGitHubRepository[]> {
-    return this.input.repository.listRepositories();
+  async listRepositories(): Promise<GitHubRepositoryListResult> {
+    this.requireConfigured();
+
+    return {
+      repositories: (await this.input.repository.listRepositories()).map(
+        toGitHubRepositorySummary,
+      ),
+    };
+  }
+
+  async listInstallationRepositories(
+    installationId: string,
+  ): Promise<GitHubInstallationRepositoryListResult> {
+    this.requireConfigured();
+    const installation = await this.requirePersistedInstallation(installationId);
+    const repositories = await this.input.repository.listRepositoriesByInstallation(
+      installationId,
+    );
+
+    return {
+      installation,
+      repositories: repositories.map(toGitHubRepositorySummary),
+    };
   }
 
   async syncInstallations(): Promise<SyncGitHubInstallationsResult> {
@@ -132,6 +173,133 @@ export class GitHubAppService {
       syncedAt,
       syncedCount: installations.length,
     };
+  }
+
+  async syncInstallationRepositories(
+    installationId: string,
+  ): Promise<GitHubInstallationRepositorySyncResult> {
+    this.requireConfigured();
+    const installation = await this.requirePersistedInstallation(installationId);
+    const client = this.requireClient();
+    const syncedAt = this.now().toISOString();
+    const accessToken = await this.getInstallationAccessToken(installationId);
+    const repositories = await client.listInstallationRepositories(accessToken.token);
+
+    await this.input.repository.transaction(async (session) => {
+      await this.reconcileFullInstallationRepositorySync(
+        installationId,
+        repositories,
+        syncedAt,
+        session,
+      );
+    });
+
+    return this.buildInstallationRepositorySyncResult(
+      installation,
+      installationId,
+      repositories.length,
+      syncedAt,
+    );
+  }
+
+  async syncRepositories(): Promise<SyncGitHubRepositoriesResult> {
+    this.requireConfigured();
+    const installations = await this.input.repository.listInstallations();
+    const syncedAt = this.now().toISOString();
+    const results: GitHubInstallationRepositorySyncResult[] = [];
+
+    for (const installation of installations) {
+      results.push(
+        await this.syncInstallationRepositories(installation.installationId),
+      );
+    }
+
+    return {
+      installations: results,
+      syncedAt,
+      syncedInstallationCount: results.length,
+      syncedRepositoryCount: results.reduce(
+        (total, installation) => total + installation.syncedRepositoryCount,
+        0,
+      ),
+    };
+  }
+
+  private async buildInstallationRepositorySyncResult(
+    installation: PersistedGitHubInstallation,
+    installationId: string,
+    syncedRepositoryCount: number,
+    syncedAt: string,
+  ): Promise<GitHubInstallationRepositorySyncResult> {
+    const repositories = await this.input.repository.listRepositoriesByInstallation(
+      installationId,
+    );
+
+    return buildInstallationRepositorySyncResult({
+      installation,
+      repositories,
+      syncedAt,
+      syncedRepositoryCount,
+    });
+  }
+
+  private async reconcileFullInstallationRepositorySync(
+    installationId: string,
+    repositories: GitHubRepositorySnapshot[],
+    syncedAt: string,
+    session: PersistenceSession,
+  ) {
+    if (repositories.length > 0) {
+      await this.input.repository.upsertInstallationRepositories(
+        {
+          installationId,
+          lastSyncedAt: syncedAt,
+          repositories,
+        },
+        session,
+      );
+    }
+
+    const existingRepositories =
+      await this.input.repository.listRepositoriesByInstallation(
+        installationId,
+        session,
+      );
+    const syncedRepositoryIds = new Set(
+      repositories.map((repository) => repository.githubRepositoryId),
+    );
+    const missingRepositoryIds = existingRepositories
+      .filter(
+        (repository) =>
+          repository.isActive &&
+          !syncedRepositoryIds.has(repository.githubRepositoryId),
+      )
+      .map((repository) => repository.githubRepositoryId);
+
+    if (missingRepositoryIds.length === 0) {
+      return;
+    }
+
+    await this.input.repository.markInstallationRepositoriesInactive(
+      {
+        installationId,
+        markedInactiveAt: syncedAt,
+        lastSyncedAt: syncedAt,
+        githubRepositoryIds: missingRepositoryIds,
+      },
+      session,
+    );
+  }
+
+  private async requirePersistedInstallation(installationId: string) {
+    const installation =
+      await this.input.repository.getInstallationByInstallationId(installationId);
+
+    if (!installation) {
+      throw new GitHubInstallationNotFoundError(installationId);
+    }
+
+    return installation;
   }
 
   private requireClient() {

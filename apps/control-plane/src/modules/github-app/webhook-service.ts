@@ -2,17 +2,19 @@ import type { PersistenceSession } from "../../lib/persistence";
 import type { GitHubWebhookConfigResolution } from "./config";
 import {
   GitHubWebhookBadSignatureError,
+  GitHubWebhookDeliveryNotFoundError,
   GitHubWebhookNotConfiguredError,
   GitHubWebhookPayloadParseError,
 } from "./errors";
-import type {
-  GitHubInstallationApi,
-  GitHubRepositoryApi,
-} from "./types";
+import { mapGitHubInstallationApiToSnapshot, mapGitHubRepositoryApiToSnapshot } from "./types";
 import { GitHubWebhookPayloadSchema } from "./webhook-types";
 import { verifyGitHubWebhookSignature } from "./webhook-signature";
 import type { GitHubWebhookRepository } from "./webhook-repository";
 import {
+  GitHubWebhookDeliveryListResultSchema,
+  GitHubWebhookDeliveryResultSchema,
+  GitHubWebhookDeliverySummarySchema,
+  type GitHubWebhookDeliveryListQuery,
   GitHubWebhookIngressResultSchema,
   GitHubWebhookInstallationPayloadSchema,
   GitHubWebhookInstallationRepositoriesPayloadSchema,
@@ -94,6 +96,31 @@ export class GitHubWebhookService {
     });
   }
 
+  async listDeliveries(filters: GitHubWebhookDeliveryListQuery = {}) {
+    const deliveries = await this.input.repository.listDeliveries({
+      ...filters,
+      limit: 50,
+    });
+
+    return GitHubWebhookDeliveryListResultSchema.parse({
+      deliveries: deliveries.map(toDeliverySummary),
+    });
+  }
+
+  async getDelivery(deliveryId: string) {
+    const delivery = await this.input.repository.getDeliveryByDeliveryId(
+      deliveryId,
+    );
+
+    if (!delivery) {
+      throw new GitHubWebhookDeliveryNotFoundError(deliveryId);
+    }
+
+    return GitHubWebhookDeliveryResultSchema.parse({
+      delivery: toDeliverySummary(delivery),
+    });
+  }
+
   private async handleEvent(
     eventName: string,
     payload: Record<string, unknown>,
@@ -106,7 +133,9 @@ export class GitHubWebhookService {
         await this.input.githubAppService.applyInstallationEvent(
           {
             action: parsed.action,
-            installation: mapInstallation(parsed.installation),
+            installation: mapGitHubInstallationApiToSnapshot(
+              parsed.installation,
+            ),
           },
           session,
         );
@@ -120,8 +149,12 @@ export class GitHubWebhookService {
         await this.input.githubAppService.applyInstallationRepositoriesEvent(
           {
             action: parsed.action,
-            installation: mapInstallation(parsed.installation),
-            repositoriesAdded: parsed.repositories_added.map(mapRepository),
+            installation: mapGitHubInstallationApiToSnapshot(
+              parsed.installation,
+            ),
+            repositoriesAdded: parsed.repositories_added.map(
+              mapGitHubRepositoryApiToSnapshot,
+            ),
             repositoriesRemoved: parsed.repositories_removed.map(
               (repository) => repository.id,
             ),
@@ -185,28 +218,6 @@ function extractInstallationId(payload: Record<string, unknown>) {
   return null;
 }
 
-function mapInstallation(installation: GitHubInstallationApi) {
-  return {
-    installationId: installation.id,
-    appId: installation.app_id,
-    accountLogin: installation.account.login,
-    accountType: installation.account.type,
-    targetType: installation.target_type ?? installation.account.type ?? null,
-    targetId: installation.target_id ?? installation.account.id ?? null,
-    suspendedAt: installation.suspended_at ?? null,
-    permissions: installation.permissions,
-  };
-}
-
-function mapRepository(repository: GitHubRepositoryApi) {
-  return {
-    githubRepositoryId: repository.id,
-    fullName: repository.full_name,
-    defaultBranch: repository.default_branch ?? "main",
-    language: repository.language ?? null,
-  };
-}
-
 function toIngressResult(
   delivery: PersistedGitHubWebhookDelivery,
   duplicate: boolean,
@@ -226,4 +237,101 @@ function toIngressResult(
     handledAs: delivery.outcome,
     persistedAt: delivery.processedAt,
   });
+}
+
+function toDeliverySummary(delivery: PersistedGitHubWebhookDelivery) {
+  return GitHubWebhookDeliverySummarySchema.parse({
+    deliveryId: delivery.deliveryId,
+    eventName: delivery.eventName,
+    action: delivery.action,
+    installationId: delivery.installationId,
+    handledAs: delivery.outcome,
+    receivedAt: delivery.createdAt,
+    persistedAt: delivery.processedAt,
+    payloadPreview: buildPayloadPreview(delivery),
+  });
+}
+
+function buildPayloadPreview(delivery: PersistedGitHubWebhookDelivery) {
+  switch (delivery.eventName) {
+    case "installation":
+      return summarizeInstallationPayload(delivery.payload);
+    case "installation_repositories":
+      return summarizeInstallationRepositoriesPayload(delivery.payload);
+    case "issues":
+      return summarizeIssuePayload(delivery.payload);
+    case "issue_comment":
+      return summarizeIssueCommentPayload(delivery.payload);
+    default:
+      return summarizeGenericPayload(delivery.payload);
+  }
+}
+
+function summarizeInstallationPayload(payload: Record<string, unknown>) {
+  const parsed = GitHubWebhookInstallationPayloadSchema.safeParse(payload);
+  if (!parsed.success) {
+    return summarizeGenericPayload(payload);
+  }
+
+  return {
+    accountLogin: parsed.data.installation.account.login,
+    accountType: parsed.data.installation.account.type,
+    targetType:
+      parsed.data.installation.target_type ??
+      parsed.data.installation.account.type,
+  };
+}
+
+function summarizeInstallationRepositoriesPayload(
+  payload: Record<string, unknown>,
+) {
+  const parsed =
+    GitHubWebhookInstallationRepositoriesPayloadSchema.safeParse(payload);
+  if (!parsed.success) {
+    return summarizeGenericPayload(payload);
+  }
+
+  return {
+    accountLogin: parsed.data.installation.account.login,
+    addedCount: parsed.data.repositories_added.length,
+    removedCount: parsed.data.repositories_removed.length,
+    addedRepositoryNames: parsed.data.repositories_added
+      .map((repository) => repository.full_name)
+      .slice(0, 5),
+    removedRepositoryNames: parsed.data.repositories_removed
+      .map((repository) => repository.full_name)
+      .slice(0, 5),
+  };
+}
+
+function summarizeIssuePayload(payload: Record<string, unknown>) {
+  const parsed = GitHubWebhookIssuesPayloadSchema.safeParse(payload);
+  if (!parsed.success) {
+    return summarizeGenericPayload(payload);
+  }
+
+  return {
+    repositoryFullName: parsed.data.repository.full_name,
+    issueId: String(parsed.data.issue.id),
+    issueNumber: parsed.data.issue.number,
+  };
+}
+
+function summarizeIssueCommentPayload(payload: Record<string, unknown>) {
+  const parsed = GitHubWebhookIssueCommentPayloadSchema.safeParse(payload);
+  if (!parsed.success) {
+    return summarizeGenericPayload(payload);
+  }
+
+  return {
+    repositoryFullName: parsed.data.repository.full_name,
+    issueNumber: parsed.data.issue.number,
+    commentId: String(parsed.data.comment.id),
+  };
+}
+
+function summarizeGenericPayload(payload: Record<string, unknown>) {
+  return {
+    topLevelKeys: Object.keys(payload).sort().slice(0, 8),
+  };
 }

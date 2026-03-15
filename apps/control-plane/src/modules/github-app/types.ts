@@ -24,11 +24,25 @@ export const GitHubInstallationApiSchema = z.object({
   permissions: GitHubPermissionsSchema,
 });
 
+export const GitHubRepositoryOwnerApiSchema = z.object({
+  login: z.string().min(1),
+});
+
 export const GitHubRepositoryApiSchema = z.object({
   id: GitHubIdSchema,
   full_name: z.string().min(1),
+  name: z.string().min(1),
+  owner: GitHubRepositoryOwnerApiSchema,
   default_branch: z.string().min(1).optional(),
+  private: z.boolean(),
+  archived: z.boolean(),
+  disabled: z.boolean(),
   language: z.string().nullable().optional(),
+});
+
+export const GitHubInstallationRepositoriesApiSchema = z.object({
+  repositories: z.array(GitHubRepositoryApiSchema),
+  total_count: z.number().int().nonnegative().optional(),
 });
 
 export const GitHubInstallationAccessTokenApiSchema = z.object({
@@ -51,7 +65,12 @@ export const GitHubInstallationSnapshotSchema = z.object({
 export const GitHubRepositorySnapshotSchema = z.object({
   githubRepositoryId: z.string().min(1),
   fullName: z.string().min(1),
+  ownerLogin: z.string().min(1),
+  name: z.string().min(1),
   defaultBranch: z.string().min(1),
+  isPrivate: z.boolean(),
+  archived: z.boolean(),
+  disabled: z.boolean(),
   language: z.string().nullable(),
 });
 
@@ -62,11 +81,14 @@ export const GitHubInstallationUpsertSchema =
 
 export const GitHubInstallationRepositoriesUpdateSchema = z.object({
   installationId: z.string().min(1),
+  lastSyncedAt: z.string().datetime({ offset: true }).optional(),
   repositories: z.array(GitHubRepositorySnapshotSchema),
 });
 
-export const GitHubInstallationRepositoriesRemoveSchema = z.object({
+export const GitHubInstallationRepositoriesMarkInactiveSchema = z.object({
   installationId: z.string().min(1),
+  markedInactiveAt: z.string().datetime({ offset: true }),
+  lastSyncedAt: z.string().datetime({ offset: true }).optional(),
   githubRepositoryIds: z.array(z.string().min(1)),
 });
 
@@ -82,7 +104,14 @@ export const PersistedGitHubInstallationSchema =
 export const PersistedGitHubRepositorySchema =
   GitHubRepositorySnapshotSchema.extend({
     id: z.string().uuid(),
+    installationId: z.string().min(1),
     installationRefId: z.string().uuid().nullable(),
+    isPrivate: z.boolean().nullable(),
+    archived: z.boolean().nullable(),
+    disabled: z.boolean().nullable(),
+    isActive: z.boolean(),
+    lastSyncedAt: z.string().datetime({ offset: true }).nullable(),
+    removedFromInstallationAt: z.string().datetime({ offset: true }).nullable(),
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
   });
@@ -96,6 +125,9 @@ export const GitHubInstallationAccessTokenSchema = z.object({
 
 export type GitHubInstallationApi = z.infer<typeof GitHubInstallationApiSchema>;
 export type GitHubRepositoryApi = z.infer<typeof GitHubRepositoryApiSchema>;
+export type GitHubInstallationRepositoriesApi = z.infer<
+  typeof GitHubInstallationRepositoriesApiSchema
+>;
 export type GitHubInstallationAccessTokenApi = z.infer<
   typeof GitHubInstallationAccessTokenApiSchema
 >;
@@ -111,8 +143,8 @@ export type GitHubInstallationUpsert = z.infer<
 export type GitHubInstallationRepositoriesUpdate = z.infer<
   typeof GitHubInstallationRepositoriesUpdateSchema
 >;
-export type GitHubInstallationRepositoriesRemove = z.infer<
-  typeof GitHubInstallationRepositoriesRemoveSchema
+export type GitHubInstallationRepositoriesMarkInactive = z.infer<
+  typeof GitHubInstallationRepositoriesMarkInactiveSchema
 >;
 export type PersistedGitHubInstallation = z.infer<
   typeof PersistedGitHubInstallationSchema
@@ -123,3 +155,34 @@ export type PersistedGitHubRepository = z.infer<
 export type GitHubInstallationAccessToken = z.infer<
   typeof GitHubInstallationAccessTokenSchema
 >;
+
+export function mapGitHubInstallationApiToSnapshot(
+  installation: GitHubInstallationApi,
+): GitHubInstallationSnapshot {
+  return {
+    installationId: installation.id,
+    appId: installation.app_id,
+    accountLogin: installation.account.login,
+    accountType: installation.account.type,
+    targetType: installation.target_type ?? installation.account.type ?? null,
+    targetId: installation.target_id ?? installation.account.id ?? null,
+    suspendedAt: installation.suspended_at ?? null,
+    permissions: installation.permissions,
+  };
+}
+
+export function mapGitHubRepositoryApiToSnapshot(
+  repository: GitHubRepositoryApi,
+): GitHubRepositorySnapshot {
+  return {
+    githubRepositoryId: repository.id,
+    fullName: repository.full_name,
+    ownerLogin: repository.owner.login,
+    name: repository.name,
+    defaultBranch: repository.default_branch ?? "main",
+    isPrivate: repository.private,
+    archived: repository.archived,
+    disabled: repository.disabled,
+    language: repository.language ?? null,
+  };
+}

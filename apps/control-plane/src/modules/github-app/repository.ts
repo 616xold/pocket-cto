@@ -4,7 +4,7 @@ import {
   type TransactionalRepository,
 } from "../../lib/persistence";
 import type {
-  GitHubInstallationRepositoriesRemove,
+  GitHubInstallationRepositoriesMarkInactive,
   GitHubInstallationRepositoriesUpdate,
   GitHubInstallationUpsert,
   PersistedGitHubInstallation,
@@ -17,6 +17,11 @@ export interface GitHubAppRepository extends TransactionalRepository {
     session?: PersistenceSession,
   ): Promise<void>;
 
+  getInstallationByInstallationId(
+    installationId: string,
+    session?: PersistenceSession,
+  ): Promise<PersistedGitHubInstallation | null>;
+
   listInstallations(
     session?: PersistenceSession,
   ): Promise<PersistedGitHubInstallation[]>;
@@ -25,8 +30,13 @@ export interface GitHubAppRepository extends TransactionalRepository {
     session?: PersistenceSession,
   ): Promise<PersistedGitHubRepository[]>;
 
-  removeInstallationRepositories(
-    input: GitHubInstallationRepositoriesRemove,
+  listRepositoriesByInstallation(
+    installationId: string,
+    session?: PersistenceSession,
+  ): Promise<PersistedGitHubRepository[]>;
+
+  markInstallationRepositoriesInactive(
+    input: GitHubInstallationRepositoriesMarkInactive,
     session?: PersistenceSession,
   ): Promise<void>;
 
@@ -51,23 +61,44 @@ export class InMemoryGitHubAppRepository implements GitHubAppRepository {
     return operation(createMemorySession());
   }
 
-  async deleteInstallation(installationId: string) {
+  async deleteInstallation(
+    installationId: string,
+    _session?: PersistenceSession,
+  ) {
     const installation = this.installations.get(installationId);
 
     if (!installation) {
       return;
     }
 
-    this.installations.delete(installationId);
+    const now = new Date().toISOString();
 
     for (const [githubRepositoryId, repository] of this.repositories.entries()) {
-      if (repository.installationRefId === installation.id) {
-        this.repositories.delete(githubRepositoryId);
+      if (repository.installationId !== installationId) {
+        continue;
       }
+
+      this.repositories.set(githubRepositoryId, {
+        ...repository,
+        installationRefId: null,
+        isActive: false,
+        lastSyncedAt: now,
+        removedFromInstallationAt: now,
+        updatedAt: now,
+      });
     }
+
+    this.installations.delete(installationId);
   }
 
-  async listInstallations() {
+  async getInstallationByInstallationId(
+    installationId: string,
+    _session?: PersistenceSession,
+  ) {
+    return this.installations.get(installationId) ?? null;
+  }
+
+  async listInstallations(_session?: PersistenceSession) {
     return [...this.installations.values()].sort((left, right) => {
       return (
         left.accountLogin.localeCompare(right.accountLogin) ||
@@ -76,13 +107,25 @@ export class InMemoryGitHubAppRepository implements GitHubAppRepository {
     });
   }
 
-  async listRepositories() {
-    return [...this.repositories.values()].sort((left, right) => {
-      return left.fullName.localeCompare(right.fullName);
-    });
+  async listRepositories(_session?: PersistenceSession) {
+    return sortRepositories([...this.repositories.values()]);
   }
 
-  async removeInstallationRepositories(input: GitHubInstallationRepositoriesRemove) {
+  async listRepositoriesByInstallation(
+    installationId: string,
+    _session?: PersistenceSession,
+  ) {
+    return sortRepositories(
+      [...this.repositories.values()].filter(
+        (repository) => repository.installationId === installationId,
+      ),
+    );
+  }
+
+  async markInstallationRepositoriesInactive(
+    input: GitHubInstallationRepositoriesMarkInactive,
+    _session?: PersistenceSession,
+  ) {
     for (const githubRepositoryId of input.githubRepositoryIds) {
       const repository = this.repositories.get(githubRepositoryId);
 
@@ -90,18 +133,24 @@ export class InMemoryGitHubAppRepository implements GitHubAppRepository {
         continue;
       }
 
-      const installation = [...this.installations.values()].find(
-        (candidate) => candidate.id === repository.installationRefId,
-      );
-      if (!installation || installation.installationId !== input.installationId) {
+      if (repository.installationId !== input.installationId) {
         continue;
       }
 
-      this.repositories.delete(githubRepositoryId);
+      this.repositories.set(githubRepositoryId, {
+        ...repository,
+        isActive: false,
+        lastSyncedAt: input.lastSyncedAt ?? repository.lastSyncedAt,
+        removedFromInstallationAt: input.markedInactiveAt,
+        updatedAt: input.markedInactiveAt,
+      });
     }
   }
 
-  async upsertInstallation(installation: GitHubInstallationUpsert) {
+  async upsertInstallation(
+    installation: GitHubInstallationUpsert,
+    _session?: PersistenceSession,
+  ) {
     const existing = this.installations.get(installation.installationId);
     const now = new Date().toISOString();
     const nextRecord: PersistedGitHubInstallation = {
@@ -124,7 +173,10 @@ export class InMemoryGitHubAppRepository implements GitHubAppRepository {
     return nextRecord;
   }
 
-  async upsertInstallationRepositories(input: GitHubInstallationRepositoriesUpdate) {
+  async upsertInstallationRepositories(
+    input: GitHubInstallationRepositoriesUpdate,
+    _session?: PersistenceSession,
+  ) {
     const installation = this.installations.get(input.installationId);
 
     if (!installation) {
@@ -140,10 +192,19 @@ export class InMemoryGitHubAppRepository implements GitHubAppRepository {
       const now = new Date().toISOString();
       const nextRecord: PersistedGitHubRepository = {
         id: existing?.id ?? crypto.randomUUID(),
+        installationId: input.installationId,
         installationRefId: installation.id,
         githubRepositoryId: repository.githubRepositoryId,
         fullName: repository.fullName,
+        ownerLogin: repository.ownerLogin,
+        name: repository.name,
         defaultBranch: repository.defaultBranch,
+        isPrivate: repository.isPrivate,
+        archived: repository.archived,
+        disabled: repository.disabled,
+        isActive: true,
+        lastSyncedAt: input.lastSyncedAt ?? existing?.lastSyncedAt ?? null,
+        removedFromInstallationAt: null,
         language: repository.language,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
@@ -155,4 +216,14 @@ export class InMemoryGitHubAppRepository implements GitHubAppRepository {
 
     return upsertedRepositories;
   }
+}
+
+function sortRepositories(repositories: PersistedGitHubRepository[]) {
+  return repositories.sort((left, right) => {
+    if (left.isActive !== right.isActive) {
+      return left.isActive ? -1 : 1;
+    }
+
+    return left.fullName.localeCompare(right.fullName);
+  });
 }

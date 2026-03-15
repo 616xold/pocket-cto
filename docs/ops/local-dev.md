@@ -693,15 +693,74 @@ Once the control-plane API is running, the current GitHub debug and ingress surf
 ```bash
 curl -i http://localhost:4000/github/installations
 curl -i -X POST http://localhost:4000/github/installations/sync
+curl -i http://localhost:4000/github/repositories
+curl -i http://localhost:4000/github/installations/12345/repositories
+curl -i -X POST http://localhost:4000/github/repositories/sync
+curl -i -X POST http://localhost:4000/github/installations/12345/repositories/sync
+curl -i http://localhost:4000/github/webhooks/deliveries
+curl -i http://localhost:4000/github/webhooks/deliveries/local-delivery-1
 ```
 
 ```text
+GET /github/installations
+POST /github/installations/sync
+GET /github/repositories
+GET /github/installations/:installationId/repositories
+POST /github/repositories/sync
+POST /github/installations/:installationId/repositories/sync
 POST /github/webhooks
+GET /github/webhooks/deliveries
+GET /github/webhooks/deliveries/:deliveryId
 ```
 
-When the GitHub App auth env is configured, the sync route fetches current installations from GitHub and upserts them into Postgres.
+When the GitHub App auth env is configured, the installation sync route fetches current installations from GitHub and upserts them into Postgres.
+The repository sync routes mint installation access tokens through the same GitHub App cache and call GitHub `GET /installation/repositories` to reconcile the durable repository registry.
 When those env vars are missing, the sync routes return a machine-readable `github_app_not_configured` error instead of silently falling back to PATs.
+When the installation id in an installation-scoped repository route is unknown, the route returns `github_installation_not_found`.
 When `GITHUB_WEBHOOK_SECRET` is missing, `POST /github/webhooks` returns `github_webhook_not_configured`.
+
+### Repository registry routes
+
+The M2.3 repository registry is intentionally one small, durable read surface.
+Use it to inspect which repositories Pocket CTO currently believes each installation can see:
+
+- `GET /github/repositories`
+- `GET /github/installations/:installationId/repositories`
+
+Use the sync routes when you want to reconcile that registry against GitHub:
+
+- `POST /github/repositories/sync`
+- `POST /github/installations/:installationId/repositories/sync`
+
+Repository summaries include:
+
+- `installationId`
+- `githubRepositoryId`
+- `fullName`
+- `ownerLogin`
+- `name`
+- `defaultBranch`
+- `visibility`
+- `archived`
+- `disabled`
+- `isActive`
+- `lastSyncedAt`
+- `removedFromInstallationAt`
+
+Examples:
+
+```bash
+curl -i http://localhost:4000/github/repositories
+curl -i http://localhost:4000/github/installations/12345/repositories
+curl -i -X POST http://localhost:4000/github/repositories/sync
+curl -i -X POST http://localhost:4000/github/installations/12345/repositories/sync
+```
+
+Registry state semantics stay explicit:
+
+- `isActive = true` means the latest manual sync or `installation_repositories` webhook still sees that repository for the installation.
+- `isActive = false` means the latest reconciliation no longer sees the repository for that installation, but Pocket CTO keeps the row for auditability and can reactivate it later if GitHub shows it again.
+- `removedFromInstallationAt` records when Pocket CTO most recently marked the repository inactive.
 
 ### Required webhook headers
 
@@ -714,6 +773,41 @@ Pocket CTO expects GitHub-style JSON webhook requests with these headers:
 
 Missing `X-GitHub-Delivery`, `X-GitHub-Event`, or `X-Hub-Signature-256` returns a machine-readable `400`.
 An invalid signature returns a machine-readable `401`.
+
+### Read-only delivery debug routes
+
+Persisted webhook deliveries are now inspectable without querying Postgres manually.
+The read surface stays compact and summary-shaped:
+
+- `GET /github/webhooks/deliveries`
+- `GET /github/webhooks/deliveries/:deliveryId`
+
+Optional query filters on the list route:
+
+- `eventName`
+- `handledAs`
+- `installationId`
+
+Each delivery summary includes:
+
+- `deliveryId`
+- `eventName`
+- `action`
+- `installationId`
+- `handledAs`
+- `receivedAt`
+- `persistedAt`
+- `payloadPreview`
+
+These routes are read-only and do not return the full raw payload by default.
+That keeps the debug surface small while still making `issues` and `issue_comment` envelopes inspectable during local development.
+
+Examples:
+
+```bash
+curl -i 'http://localhost:4000/github/webhooks/deliveries?eventName=issues&handledAs=issue_envelope_recorded'
+curl -i http://localhost:4000/github/webhooks/deliveries/local-delivery-1
+```
 
 ### Local tunnel workflow
 
@@ -771,6 +865,7 @@ For safe retries:
 - in GitHub's deliveries UI, use the built-in redelivery action when you want GitHub to resend the same delivery payload and delivery id
 - in local curl tests, resend the exact same body with the exact same `x-github-delivery` value to exercise the duplicate path
 - a duplicate delivery returns success with `duplicate: true` instead of replaying installation or repository updates
+- the debug routes make it easy to confirm the stored `handledAs`, `receivedAt`, `persistedAt`, and `payloadPreview` values after the first delivery and after any redelivery
 - if you need a brand new delivery for testing, change `x-github-delivery` to a new value
 
 ## Environment variables

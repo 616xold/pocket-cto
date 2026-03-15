@@ -160,19 +160,30 @@ describe("GitHubWebhookService", () => {
       .orderBy(repositories.fullName);
 
     expect(installationRows).toHaveLength(1);
-    expect(repositoryRows).toHaveLength(2);
+    expect(repositoryRows).toHaveLength(3);
     expect(repositoryRows.map((row) => row.githubRepositoryId)).toEqual([
+      "100",
       "101",
       "102",
     ]);
     expect(repositoryRows.map((row) => row.fullName)).toEqual([
+      "616xold/pocket-cto",
       "616xold/pocket-cto-web",
       "616xold/pocket-cto-worker",
     ]);
-    expect(repositoryRows.map((row) => row.installationRefId)).toEqual([
-      installationRows[0]?.id,
-      installationRows[0]?.id,
+    expect(repositoryRows.map((row) => row.installationId)).toEqual([
+      "12345",
+      "12345",
+      "12345",
     ]);
+    expect(repositoryRows.map((row) => row.isActive)).toEqual([
+      false,
+      true,
+      true,
+    ]);
+    expect(repositoryRows[0]?.removedFromInstallationAt?.toISOString()).toBe(
+      "2026-03-15T10:00:00.000Z",
+    );
   });
 
   it("durably accepts issues and issue_comment envelopes without creating missions", async () => {
@@ -259,6 +270,7 @@ function createWebhookService() {
         status: "unconfigured",
         missing: ["GITHUB_APP_ID", "GITHUB_APP_PRIVATE_KEY_BASE64"],
       },
+      now: () => new Date("2026-03-15T10:00:00.000Z"),
       repository: githubAppRepository,
       tokenCache: new InMemoryInstallationTokenCache(),
     }),
@@ -348,10 +360,21 @@ function createInstallationRepositoriesPayload(
 }
 
 function createRepository(overrides: Partial<Record<string, unknown>>) {
+  const fullName =
+    typeof overrides.full_name === "string" ? overrides.full_name : "616xold/pocket-cto";
+  const [ownerLogin = "616xold", name = "pocket-cto"] = fullName.split("/");
+
   return {
     id: 100,
-    full_name: "616xold/pocket-cto",
+    full_name: fullName,
+    name,
+    owner: {
+      login: ownerLogin,
+    },
     default_branch: "main",
+    private: false,
+    archived: false,
+    disabled: false,
     language: "TypeScript",
     ...overrides,
   };

@@ -31,6 +31,13 @@ export class GitHubAppRequestError extends Error {
   }
 }
 
+export class GitHubInstallationNotFoundError extends Error {
+  constructor(readonly installationId: string) {
+    super("GitHub installation not found");
+    this.name = "GitHubInstallationNotFoundError";
+  }
+}
+
 export class GitHubWebhookNotConfiguredError extends Error {
   constructor(readonly missing: string[]) {
     super("GitHub webhook ingress is not configured");
@@ -70,5 +77,12 @@ export class GitHubWebhookPayloadParseError extends Error {
   constructor() {
     super("GitHub webhook payload must be valid JSON");
     this.name = "GitHubWebhookPayloadParseError";
+  }
+}
+
+export class GitHubWebhookDeliveryNotFoundError extends Error {
+  constructor(readonly deliveryId: string) {
+    super("GitHub webhook delivery not found");
+    this.name = "GitHubWebhookDeliveryNotFoundError";
   }
 }

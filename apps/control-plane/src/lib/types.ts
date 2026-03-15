@@ -11,10 +11,18 @@ export type OperatorControlAvailability = DomainOperatorControlAvailability;
 
 export type GitHubAppServicePort = Pick<
   GitHubAppService,
-  "listInstallations" | "syncInstallations"
+  | "listInstallations"
+  | "listInstallationRepositories"
+  | "listRepositories"
+  | "syncInstallationRepositories"
+  | "syncInstallations"
+  | "syncRepositories"
 >;
 
-export type GitHubWebhookServicePort = Pick<GitHubWebhookService, "ingest">;
+export type GitHubWebhookServicePort = Pick<
+  GitHubWebhookService,
+  "getDelivery" | "ingest" | "listDeliveries"
+>;
 
 export type MissionServicePort = Pick<
   MissionService,

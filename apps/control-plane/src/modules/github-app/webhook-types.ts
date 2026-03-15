@@ -82,6 +82,44 @@ export const GitHubWebhookIngressResultSchema = z.object({
   persistedAt: z.string().datetime({ offset: true }),
 });
 
+const GitHubWebhookPayloadPreviewValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.null(),
+  z.array(z.string()),
+  z.array(z.number()),
+]);
+
+export const GitHubWebhookDeliveryListQuerySchema = z.object({
+  eventName: z.string().min(1).optional(),
+  handledAs: GitHubWebhookOutcomeSchema.optional(),
+  installationId: z.string().min(1).optional(),
+});
+
+export const GitHubWebhookDeliveryParamsSchema = z.object({
+  deliveryId: z.string().min(1),
+});
+
+export const GitHubWebhookDeliverySummarySchema = z.object({
+  deliveryId: z.string().min(1),
+  eventName: z.string().min(1),
+  action: z.string().min(1).nullable(),
+  installationId: z.string().min(1).nullable(),
+  handledAs: GitHubWebhookOutcomeSchema.nullable(),
+  receivedAt: z.string().datetime({ offset: true }),
+  persistedAt: z.string().datetime({ offset: true }).nullable(),
+  payloadPreview: z.record(z.string(), GitHubWebhookPayloadPreviewValueSchema),
+});
+
+export const GitHubWebhookDeliveryListResultSchema = z.object({
+  deliveries: z.array(GitHubWebhookDeliverySummarySchema),
+});
+
+export const GitHubWebhookDeliveryResultSchema = z.object({
+  delivery: GitHubWebhookDeliverySummarySchema,
+});
+
 export const GitHubWebhookHeaderEnvelopeSchema = z.object({
   deliveryId: z.string().min(1),
   eventName: z.string().min(1),
@@ -116,6 +154,25 @@ export type PersistedGitHubWebhookDelivery = z.infer<
 export type GitHubWebhookIngressResult = z.infer<
   typeof GitHubWebhookIngressResultSchema
 >;
+export type GitHubWebhookDeliveryListQuery = z.infer<
+  typeof GitHubWebhookDeliveryListQuerySchema
+>;
+export type GitHubWebhookDeliveryLookupFilters =
+  GitHubWebhookDeliveryListQuery & {
+    limit?: number;
+  };
+export type GitHubWebhookDeliverySummary = z.infer<
+  typeof GitHubWebhookDeliverySummarySchema
+>;
+export type GitHubWebhookDeliveryListResult = z.infer<
+  typeof GitHubWebhookDeliveryListResultSchema
+>;
+export type GitHubWebhookDeliveryResult = z.infer<
+  typeof GitHubWebhookDeliveryResultSchema
+>;
 export type GitHubWebhookHeaderEnvelope = z.infer<
   typeof GitHubWebhookHeaderEnvelopeSchema
+>;
+export type GitHubWebhookDeliveryParams = z.infer<
+  typeof GitHubWebhookDeliveryParamsSchema
 >;

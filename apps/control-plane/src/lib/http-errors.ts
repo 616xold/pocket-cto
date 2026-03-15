@@ -7,9 +7,11 @@ import {
 } from "../modules/approvals/errors";
 import {
   GitHubAppConfigurationError,
+  GitHubInstallationNotFoundError,
   GitHubAppNotConfiguredError,
   GitHubAppRequestError,
   GitHubWebhookBadSignatureError,
+  GitHubWebhookDeliveryNotFoundError,
   GitHubWebhookMissingDeliveryIdError,
   GitHubWebhookMissingEventNameError,
   GitHubWebhookMissingSignatureError,
@@ -29,7 +31,9 @@ export type ApiErrorCode =
   | "github_app_invalid_configuration"
   | "github_app_not_configured"
   | "github_app_request_failed"
+  | "github_installation_not_found"
   | "github_webhook_bad_signature"
+  | "github_webhook_delivery_not_found"
   | "github_webhook_missing_delivery_id"
   | "github_webhook_missing_event_name"
   | "github_webhook_missing_signature"
@@ -237,6 +241,18 @@ function mapHttpError(error: unknown): ErrorMapping {
     };
   }
 
+  if (error instanceof GitHubInstallationNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        error: {
+          code: "github_installation_not_found",
+          message: error.message,
+        },
+      },
+    };
+  }
+
   if (error instanceof GitHubWebhookNotConfiguredError) {
     return {
       statusCode: 503,
@@ -271,6 +287,18 @@ function mapHttpError(error: unknown): ErrorMapping {
       body: {
         error: {
           code: "github_webhook_bad_signature",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubWebhookDeliveryNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        error: {
+          code: "github_webhook_delivery_not_found",
           message: error.message,
         },
       },

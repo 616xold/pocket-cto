@@ -1,7 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import type { GitHubWebhookServicePort } from "../../lib/types";
 import { GitHubWebhookPayloadParseError } from "./errors";
-import { parseGitHubWebhookHeaders } from "./webhook-schema";
+import {
+  parseGitHubWebhookDeliveryListQuery,
+  parseGitHubWebhookDeliveryParams,
+  parseGitHubWebhookHeaders,
+} from "./webhook-schema";
 
 const JSON_CONTENT_TYPE = /^application\/json\b/u;
 
@@ -31,6 +35,16 @@ export async function registerGitHubWebhookRoutes(
 
       reply.code(result.duplicate ? 200 : 202);
       return result;
+    });
+
+    instance.get("/github/webhooks/deliveries", async (request) => {
+      const filters = parseGitHubWebhookDeliveryListQuery(request.query);
+      return deps.githubWebhookService.listDeliveries(filters);
+    });
+
+    instance.get("/github/webhooks/deliveries/:deliveryId", async (request) => {
+      const params = parseGitHubWebhookDeliveryParams(request.params);
+      return deps.githubWebhookService.getDelivery(params.deliveryId);
     });
   });
 }

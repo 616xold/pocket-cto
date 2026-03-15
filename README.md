@@ -90,6 +90,8 @@ This repo is structured to help Codex implement the system modularly and milesto
 - A GitHub App if you want to exercise M2.1 installation sync or M2.2 webhook ingress locally
 - Codex app or Codex CLI installed locally
 
+M2.3 also adds a durable repository-registry debug surface under `/github/repositories` plus installation-scoped repo sync routes; see [docs/ops/local-dev.md](docs/ops/local-dev.md) for the exact curl flows.
+
 ### Bootstrap
 
 ```bash

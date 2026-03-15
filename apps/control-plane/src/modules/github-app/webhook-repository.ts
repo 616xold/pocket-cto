@@ -5,6 +5,7 @@ import {
 } from "../../lib/persistence";
 import type {
   GitHubWebhookDeliveryInsert,
+  GitHubWebhookDeliveryLookupFilters,
   GitHubWebhookOutcome,
   PersistedGitHubWebhookDelivery,
 } from "./webhook-types";
@@ -38,6 +39,11 @@ export interface GitHubWebhookRepository extends TransactionalRepository {
     deliveryId: string,
     session?: PersistenceSession,
   ): Promise<PersistedGitHubWebhookDelivery | null>;
+
+  listDeliveries(
+    filters?: GitHubWebhookDeliveryLookupFilters,
+    session?: PersistenceSession,
+  ): Promise<PersistedGitHubWebhookDelivery[]>;
 }
 
 export class InMemoryGitHubWebhookRepository
@@ -110,5 +116,39 @@ export class InMemoryGitHubWebhookRepository
 
   async getDeliveryByDeliveryId(deliveryId: string) {
     return this.deliveries.get(deliveryId) ?? null;
+  }
+
+  async listDeliveries(filters: GitHubWebhookDeliveryLookupFilters = {}) {
+    const filtered = Array.from(this.deliveries.values())
+      .filter((delivery) => {
+        if (filters.eventName && delivery.eventName !== filters.eventName) {
+          return false;
+        }
+
+        if (filters.handledAs && delivery.outcome !== filters.handledAs) {
+          return false;
+        }
+
+        if (
+          filters.installationId &&
+          delivery.installationId !== filters.installationId
+        ) {
+          return false;
+        }
+
+        return true;
+      })
+      .sort((left, right) => {
+        const byCreatedAt =
+          Date.parse(right.createdAt) - Date.parse(left.createdAt);
+
+        if (byCreatedAt !== 0) {
+          return byCreatedAt;
+        }
+
+        return right.deliveryId.localeCompare(left.deliveryId);
+      });
+
+    return filtered.slice(0, filters.limit ?? filtered.length);
   }
 }

@@ -71,8 +71,58 @@ function createAppContainer(
 ): AppContainer {
   return {
     githubAppService: {
+      async listInstallationRepositories() {
+        return {
+          installation: {
+            id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            installationId: "12345",
+            appId: "98765",
+            accountLogin: "616xold",
+            accountType: "Organization",
+            targetType: "Organization",
+            targetId: "6161234",
+            suspendedAt: null,
+            permissions: {
+              metadata: "read",
+            },
+            lastSyncedAt: "2026-03-15T00:00:00.000Z",
+            createdAt: "2026-03-15T00:00:00.000Z",
+            updatedAt: "2026-03-15T00:00:00.000Z",
+          },
+          repositories: [],
+        };
+      },
       async listInstallations() {
         return [];
+      },
+      async listRepositories() {
+        return {
+          repositories: [],
+        };
+      },
+      async syncInstallationRepositories() {
+        return {
+          installation: {
+            id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            installationId: "12345",
+            appId: "98765",
+            accountLogin: "616xold",
+            accountType: "Organization",
+            targetType: "Organization",
+            targetId: "6161234",
+            suspendedAt: null,
+            permissions: {
+              metadata: "read",
+            },
+            lastSyncedAt: "2026-03-15T00:00:00.000Z",
+            createdAt: "2026-03-15T00:00:00.000Z",
+            updatedAt: "2026-03-15T00:00:00.000Z",
+          },
+          syncedAt: "2026-03-15T00:00:00.000Z",
+          syncedRepositoryCount: 0,
+          activeRepositoryCount: 0,
+          inactiveRepositoryCount: 0,
+        };
       },
       async syncInstallations() {
         return {
@@ -81,8 +131,34 @@ function createAppContainer(
           syncedCount: 0,
         };
       },
+      async syncRepositories() {
+        return {
+          installations: [],
+          syncedAt: "2026-03-15T00:00:00.000Z",
+          syncedInstallationCount: 0,
+          syncedRepositoryCount: 0,
+        };
+      },
     } as AppContainer["githubAppService"],
     githubWebhookService: {
+      async getDelivery() {
+        return {
+          delivery: {
+            deliveryId: "delivery-test",
+            eventName: "installation",
+            action: "created",
+            installationId: "12345",
+            handledAs: "installation_state_updated" as const,
+            receivedAt: "2026-03-15T00:00:00.000Z",
+            persistedAt: "2026-03-15T00:00:00.000Z",
+            payloadPreview: {
+              accountLogin: "616xold",
+              accountType: "Organization",
+              targetType: "Organization",
+            },
+          },
+        };
+      },
       async ingest() {
         return {
           accepted: true,
@@ -92,6 +168,11 @@ function createAppContainer(
           action: "created",
           handledAs: "installation_state_updated",
           persistedAt: "2026-03-15T00:00:00.000Z",
+        };
+      },
+      async listDeliveries() {
+        return {
+          deliveries: [],
         };
       },
     } as AppContainer["githubWebhookService"],

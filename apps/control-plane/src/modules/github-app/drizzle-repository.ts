@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import {
   githubInstallations,
   repositories,
@@ -11,7 +11,7 @@ import {
   type PersistenceSession,
 } from "../../lib/persistence";
 import type {
-  GitHubInstallationRepositoriesRemove,
+  GitHubInstallationRepositoriesMarkInactive,
   GitHubInstallationRepositoriesUpdate,
   GitHubInstallationUpsert,
   PersistedGitHubInstallation,
@@ -35,10 +35,36 @@ export class DrizzleGitHubAppRepository implements GitHubAppRepository {
     session?: PersistenceSession,
   ) {
     const executor = this.getExecutor(session);
+    const installationRow = await this.getInstallationRow(installationId, session);
+
+    if (!installationRow) {
+      return;
+    }
+
+    const now = new Date();
+
+    await executor
+      .update(repositories)
+      .set({
+        installationRefId: null,
+        isActive: false,
+        lastSyncedAt: now,
+        removedFromInstallationAt: now,
+        updatedAt: now,
+      })
+      .where(eq(repositories.installationId, installationId));
 
     await executor
       .delete(githubInstallations)
-      .where(eq(githubInstallations.installationId, installationId));
+      .where(eq(githubInstallations.id, installationRow.id));
+  }
+
+  async getInstallationByInstallationId(
+    installationId: string,
+    session?: PersistenceSession,
+  ) {
+    const row = await this.getInstallationRow(installationId, session);
+    return row ? mapGitHubInstallationRow(row) : null;
   }
 
   async listInstallations(session?: PersistenceSession) {
@@ -59,13 +85,27 @@ export class DrizzleGitHubAppRepository implements GitHubAppRepository {
     const rows = await executor
       .select()
       .from(repositories)
-      .orderBy(asc(repositories.fullName));
+      .orderBy(desc(repositories.isActive), asc(repositories.fullName));
 
     return rows.map(mapRepositoryRow);
   }
 
-  async removeInstallationRepositories(
-    input: GitHubInstallationRepositoriesRemove,
+  async listRepositoriesByInstallation(
+    installationId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(repositories)
+      .where(eq(repositories.installationId, installationId))
+      .orderBy(desc(repositories.isActive), asc(repositories.fullName));
+
+    return rows.map(mapRepositoryRow);
+  }
+
+  async markInstallationRepositoriesInactive(
+    input: GitHubInstallationRepositoriesMarkInactive,
     session?: PersistenceSession,
   ) {
     if (input.githubRepositoryIds.length === 0) {
@@ -73,20 +113,20 @@ export class DrizzleGitHubAppRepository implements GitHubAppRepository {
     }
 
     const executor = this.getExecutor(session);
-    const installationRow = await this.getInstallationRow(
-      input.installationId,
-      session,
-    );
-
-    if (!installationRow) {
-      return;
-    }
 
     await executor
-      .delete(repositories)
+      .update(repositories)
+      .set({
+        isActive: false,
+        lastSyncedAt: input.lastSyncedAt
+          ? new Date(input.lastSyncedAt)
+          : new Date(input.markedInactiveAt),
+        removedFromInstallationAt: new Date(input.markedInactiveAt),
+        updatedAt: new Date(input.markedInactiveAt),
+      })
       .where(
         and(
-          eq(repositories.installationRefId, installationRow.id),
+          eq(repositories.installationId, input.installationId),
           inArray(repositories.githubRepositoryId, input.githubRepositoryIds),
         ),
       );
@@ -173,9 +213,20 @@ export class DrizzleGitHubAppRepository implements GitHubAppRepository {
           const [row] = await executor
             .update(repositories)
             .set({
+              installationId: input.installationId,
               installationRefId: installationRow.id,
               fullName: repository.fullName,
+              ownerLogin: repository.ownerLogin,
+              name: repository.name,
               defaultBranch: repository.defaultBranch,
+              isPrivate: repository.isPrivate,
+              archived: repository.archived,
+              disabled: repository.disabled,
+              isActive: true,
+              lastSyncedAt: input.lastSyncedAt
+                ? new Date(input.lastSyncedAt)
+                : existing.lastSyncedAt,
+              removedFromInstallationAt: null,
               language: repository.language,
               updatedAt: new Date(),
             })
@@ -188,10 +239,21 @@ export class DrizzleGitHubAppRepository implements GitHubAppRepository {
         const [row] = await executor
           .insert(repositories)
           .values({
+            installationId: input.installationId,
             installationRefId: installationRow.id,
             githubRepositoryId: repository.githubRepositoryId,
             fullName: repository.fullName,
+            ownerLogin: repository.ownerLogin,
+            name: repository.name,
             defaultBranch: repository.defaultBranch,
+            isPrivate: repository.isPrivate,
+            archived: repository.archived,
+            disabled: repository.disabled,
+            isActive: true,
+            lastSyncedAt: input.lastSyncedAt
+              ? new Date(input.lastSyncedAt)
+              : null,
+            removedFromInstallationAt: null,
             language: repository.language,
           })
           .returning();
@@ -200,7 +262,7 @@ export class DrizzleGitHubAppRepository implements GitHubAppRepository {
       }),
     );
 
-    return rows.sort((left, right) => left.fullName.localeCompare(right.fullName));
+    return rows.sort(compareRepositories);
   }
 
   private getExecutor(session?: PersistenceSession) {
@@ -250,10 +312,19 @@ function mapRepositoryRow(
 
   return {
     id: row.id,
+    installationId: row.installationId,
     installationRefId: row.installationRefId,
     githubRepositoryId: row.githubRepositoryId,
     fullName: row.fullName,
+    ownerLogin: row.ownerLogin,
+    name: row.name,
     defaultBranch: row.defaultBranch,
+    isPrivate: row.isPrivate,
+    archived: row.archived,
+    disabled: row.disabled,
+    isActive: row.isActive,
+    lastSyncedAt: row.lastSyncedAt?.toISOString() ?? null,
+    removedFromInstallationAt: row.removedFromInstallationAt?.toISOString() ?? null,
     language: row.language ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -278,4 +349,15 @@ function getRequiredRow<T>(row: T | undefined) {
   }
 
   return row;
+}
+
+function compareRepositories(
+  left: PersistedGitHubRepository,
+  right: PersistedGitHubRepository,
+) {
+  if (left.isActive !== right.isActive) {
+    return left.isActive ? -1 : 1;
+  }
+
+  return left.fullName.localeCompare(right.fullName);
 }

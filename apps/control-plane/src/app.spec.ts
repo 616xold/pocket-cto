@@ -4,6 +4,7 @@ import { buildApp } from "./app";
 import { createInMemoryContainer } from "./bootstrap";
 import type { AppContainer } from "./lib/types";
 import { ApprovalNotFoundError, ApprovalNotPendingError } from "./modules/approvals/errors";
+import { GitHubInstallationNotFoundError } from "./modules/github-app/errors";
 import { RuntimeActiveTurnNotFoundError } from "./modules/runtime-codex/errors";
 
 const unknownMissionId = "11111111-1111-4111-8111-111111111111";
@@ -593,6 +594,291 @@ describe("control-plane app", () => {
     });
   });
 
+  it("GET /github/repositories returns 503 when the GitHub App is unconfigured", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/repositories",
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toEqual({
+      error: {
+        code: "github_app_not_configured",
+        message: "GitHub App credentials are not configured",
+        details: [
+          {
+            path: "GITHUB_APP_ID",
+            message: "Missing required GitHub App env var",
+          },
+          {
+            path: "GITHUB_APP_PRIVATE_KEY_BASE64",
+            message: "Missing required GitHub App env var",
+          },
+        ],
+      },
+    });
+  });
+
+  it("GET /github/repositories returns repository summaries when configured", async () => {
+    const app = await createStubApp(apps, {
+      githubAppService: {
+        async listRepositories() {
+          return {
+            repositories: [
+              {
+                id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                installationId: "12345",
+                githubRepositoryId: "100",
+                fullName: "616xold/pocket-cto",
+                ownerLogin: "616xold",
+                name: "pocket-cto",
+                defaultBranch: "main",
+                visibility: "private",
+                archived: false,
+                disabled: false,
+                isActive: true,
+                language: "TypeScript",
+                lastSyncedAt: "2026-03-15T10:00:00.000Z",
+                removedFromInstallationAt: null,
+                updatedAt: "2026-03-15T10:00:00.000Z",
+              },
+            ],
+          };
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/repositories",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      repositories: [
+        {
+          id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          installationId: "12345",
+          githubRepositoryId: "100",
+          fullName: "616xold/pocket-cto",
+          ownerLogin: "616xold",
+          name: "pocket-cto",
+          defaultBranch: "main",
+          visibility: "private",
+          archived: false,
+          disabled: false,
+          isActive: true,
+          language: "TypeScript",
+          lastSyncedAt: "2026-03-15T10:00:00.000Z",
+          removedFromInstallationAt: null,
+          updatedAt: "2026-03-15T10:00:00.000Z",
+        },
+      ],
+    });
+  });
+
+  it("GET /github/installations/:installationId/repositories returns 404 for an unknown installation", async () => {
+    const app = await createStubApp(apps, {
+      githubAppService: {
+        async listInstallationRepositories() {
+          throw new GitHubInstallationNotFoundError("99999");
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/installations/99999/repositories",
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      error: {
+        code: "github_installation_not_found",
+        message: "GitHub installation not found",
+      },
+    });
+  });
+
+  it("GET /github/installations/:installationId/repositories returns installation-scoped repository summaries", async () => {
+    const app = await createStubApp(apps, {
+      githubAppService: {
+        async listInstallationRepositories() {
+          return {
+            installation: {
+              id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              installationId: "12345",
+              appId: "98765",
+              accountLogin: "616xold",
+              accountType: "Organization",
+              targetType: "Organization",
+              targetId: "6161234",
+              suspendedAt: null,
+              permissions: {
+                metadata: "read",
+              },
+              lastSyncedAt: "2026-03-15T10:00:00.000Z",
+              createdAt: "2026-03-15T10:00:00.000Z",
+              updatedAt: "2026-03-15T10:00:00.000Z",
+            },
+            repositories: [
+              {
+                id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                installationId: "12345",
+                githubRepositoryId: "100",
+                fullName: "616xold/pocket-cto",
+                ownerLogin: "616xold",
+                name: "pocket-cto",
+                defaultBranch: "main",
+                visibility: "private",
+                archived: false,
+                disabled: false,
+                isActive: true,
+                language: "TypeScript",
+                lastSyncedAt: "2026-03-15T10:00:00.000Z",
+                removedFromInstallationAt: null,
+                updatedAt: "2026-03-15T10:00:00.000Z",
+              },
+            ],
+          };
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/installations/12345/repositories",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      installation: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        installationId: "12345",
+        appId: "98765",
+        accountLogin: "616xold",
+        accountType: "Organization",
+        targetType: "Organization",
+        targetId: "6161234",
+        suspendedAt: null,
+        permissions: {
+          metadata: "read",
+        },
+        lastSyncedAt: "2026-03-15T10:00:00.000Z",
+        createdAt: "2026-03-15T10:00:00.000Z",
+        updatedAt: "2026-03-15T10:00:00.000Z",
+      },
+      repositories: [
+        {
+          id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          installationId: "12345",
+          githubRepositoryId: "100",
+          fullName: "616xold/pocket-cto",
+          ownerLogin: "616xold",
+          name: "pocket-cto",
+          defaultBranch: "main",
+          visibility: "private",
+          archived: false,
+          disabled: false,
+          isActive: true,
+          language: "TypeScript",
+          lastSyncedAt: "2026-03-15T10:00:00.000Z",
+          removedFromInstallationAt: null,
+          updatedAt: "2026-03-15T10:00:00.000Z",
+        },
+      ],
+    });
+  });
+
+  it("POST /github/repositories/sync returns 503 when the GitHub App is unconfigured", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/github/repositories/sync",
+    });
+
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toEqual({
+      error: {
+        code: "github_app_not_configured",
+        message: "GitHub App credentials are not configured",
+        details: [
+          {
+            path: "GITHUB_APP_ID",
+            message: "Missing required GitHub App env var",
+          },
+          {
+            path: "GITHUB_APP_PRIVATE_KEY_BASE64",
+            message: "Missing required GitHub App env var",
+          },
+        ],
+      },
+    });
+  });
+
+  it("POST /github/installations/:installationId/repositories/sync delegates to the GitHub App service when configured", async () => {
+    const app = await createStubApp(apps, {
+      githubAppService: {
+        async syncInstallationRepositories() {
+          return {
+            installation: {
+              id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+              installationId: "12345",
+              appId: "98765",
+              accountLogin: "616xold",
+              accountType: "Organization",
+              targetType: "Organization",
+              targetId: "6161234",
+              suspendedAt: null,
+              permissions: {
+                metadata: "read",
+              },
+              lastSyncedAt: "2026-03-15T09:00:00.000Z",
+              createdAt: "2026-03-15T09:00:00.000Z",
+              updatedAt: "2026-03-15T09:00:00.000Z",
+            },
+            syncedAt: "2026-03-15T10:00:00.000Z",
+            syncedRepositoryCount: 1,
+            activeRepositoryCount: 1,
+            inactiveRepositoryCount: 0,
+          };
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/github/installations/12345/repositories/sync",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      installation: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        installationId: "12345",
+        appId: "98765",
+        accountLogin: "616xold",
+        accountType: "Organization",
+        targetType: "Organization",
+        targetId: "6161234",
+        suspendedAt: null,
+        permissions: {
+          metadata: "read",
+        },
+        lastSyncedAt: "2026-03-15T09:00:00.000Z",
+        createdAt: "2026-03-15T09:00:00.000Z",
+        updatedAt: "2026-03-15T09:00:00.000Z",
+      },
+      syncedAt: "2026-03-15T10:00:00.000Z",
+      syncedRepositoryCount: 1,
+      activeRepositoryCount: 1,
+      inactiveRepositoryCount: 0,
+    });
+  });
+
   it("GET /missions/:missionId/events returns ordered replay events", async () => {
     const app = await createTestApp(apps);
     const created = await createMission(app);
@@ -1044,19 +1330,39 @@ async function createTestApp(apps: FastifyInstance[]) {
 
 async function createStubApp(
   apps: FastifyInstance[],
-  overrides: Partial<AppContainer>,
+  overrides: {
+    githubAppService?: Partial<AppContainer["githubAppService"]>;
+    githubWebhookService?: Partial<AppContainer["githubWebhookService"]>;
+    missionService?: Partial<AppContainer["missionService"]>;
+    operatorControl?: Partial<AppContainer["operatorControl"]>;
+    replayService?: Partial<AppContainer["replayService"]>;
+  },
 ) {
   const base = createInMemoryContainer();
   const app = await buildApp({
     container: {
       ...base,
       ...overrides,
-      githubAppService: overrides.githubAppService ?? base.githubAppService,
+      githubAppService: {
+        ...base.githubAppService,
+        ...overrides.githubAppService,
+      },
       githubWebhookService:
-        overrides.githubWebhookService ?? base.githubWebhookService,
+        {
+          ...base.githubWebhookService,
+          ...overrides.githubWebhookService,
+        },
+      missionService: {
+        ...base.missionService,
+        ...overrides.missionService,
+      },
       operatorControl: {
         ...base.operatorControl,
         ...overrides.operatorControl,
+      },
+      replayService: {
+        ...base.replayService,
+        ...overrides.replayService,
       },
     },
   });

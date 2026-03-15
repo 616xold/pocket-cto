@@ -4,9 +4,12 @@ import { GitHubAppRequestError } from "./errors";
 import {
   GitHubInstallationAccessTokenApiSchema,
   GitHubInstallationApiSchema,
-  type GitHubInstallationApi,
   type GitHubInstallationAccessToken,
+  GitHubInstallationRepositoriesApiSchema,
   type GitHubInstallationSnapshot,
+  type GitHubRepositorySnapshot,
+  mapGitHubInstallationApiToSnapshot,
+  mapGitHubRepositoryApiToSnapshot,
 } from "./types";
 
 type GitHubFetch = typeof fetch;
@@ -14,6 +17,7 @@ type GitHubFetch = typeof fetch;
 const GITHUB_ACCEPT_HEADER = "application/vnd.github+json";
 const GITHUB_API_VERSION = "2022-11-28";
 const INSTALLATIONS_PAGE_SIZE = 100;
+const INSTALLATION_REPOSITORIES_PAGE_SIZE = 100;
 
 export class GitHubAppClient {
   private readonly apiBaseUrl: string;
@@ -38,10 +42,13 @@ export class GitHubAppClient {
       const payload = await this.requestJson(
         "GET",
         `/app/installations?per_page=${INSTALLATIONS_PAGE_SIZE}&page=${page}`,
+        {
+          authorization: this.auth.createAppAuthorizationHeader(),
+        },
       );
       const parsed = GitHubInstallationApiSchema.array().parse(payload);
 
-      installations.push(...parsed.map(mapGitHubInstallation));
+      installations.push(...parsed.map(mapGitHubInstallationApiToSnapshot));
 
       if (parsed.length < INSTALLATIONS_PAGE_SIZE) {
         return installations;
@@ -57,7 +64,10 @@ export class GitHubAppClient {
     const payload = await this.requestJson(
       "POST",
       `/app/installations/${encodeURIComponent(installationId)}/access_tokens`,
-      {},
+      {
+        authorization: this.auth.createAppAuthorizationHeader(),
+        body: {},
+      },
     );
     const parsed = GitHubInstallationAccessTokenApiSchema.parse(payload);
 
@@ -69,10 +79,41 @@ export class GitHubAppClient {
     };
   }
 
+  async listInstallationRepositories(
+    installationAccessToken: string,
+  ): Promise<GitHubRepositorySnapshot[]> {
+    const repositories: GitHubRepositorySnapshot[] = [];
+    let page = 1;
+
+    while (true) {
+      const payload = await this.requestJson(
+        "GET",
+        `/installation/repositories?per_page=${INSTALLATION_REPOSITORIES_PAGE_SIZE}&page=${page}`,
+        {
+          authorization: `Bearer ${installationAccessToken}`,
+        },
+      );
+      const parsed = GitHubInstallationRepositoriesApiSchema.parse(payload);
+
+      repositories.push(
+        ...parsed.repositories.map(mapGitHubRepositoryApiToSnapshot),
+      );
+
+      if (parsed.repositories.length < INSTALLATION_REPOSITORIES_PAGE_SIZE) {
+        return repositories;
+      }
+
+      page += 1;
+    }
+  }
+
   private async requestJson(
     method: "GET" | "POST",
     path: string,
-    body?: Record<string, unknown>,
+    options: {
+      authorization: string;
+      body?: Record<string, unknown>;
+    },
   ) {
     const url = new URL(path, this.apiBaseUrl).toString();
 
@@ -82,12 +123,12 @@ export class GitHubAppClient {
         method,
         headers: {
           Accept: GITHUB_ACCEPT_HEADER,
-          Authorization: this.auth.createAppAuthorizationHeader(),
+          Authorization: options.authorization,
           "Content-Type": "application/json",
           "User-Agent": "pocket-cto-control-plane",
           "X-GitHub-Api-Version": GITHUB_API_VERSION,
         },
-        body: body ? JSON.stringify(body) : undefined,
+        body: options.body ? JSON.stringify(options.body) : undefined,
       });
     } catch (error) {
       throw new GitHubAppRequestError(method, url, 0, {
@@ -117,19 +158,4 @@ async function parseResponseBody(response: Response) {
   } catch {
     return rawBody;
   }
-}
-
-function mapGitHubInstallation(
-  installation: GitHubInstallationApi,
-): GitHubInstallationSnapshot {
-  return {
-    installationId: installation.id,
-    appId: installation.app_id,
-    accountLogin: installation.account.login,
-    accountType: installation.account.type,
-    targetType: installation.target_type ?? installation.account.type ?? null,
-    targetId: installation.target_id ?? installation.account.id ?? null,
-    suspendedAt: installation.suspended_at ?? null,
-    permissions: installation.permissions,
-  };
 }

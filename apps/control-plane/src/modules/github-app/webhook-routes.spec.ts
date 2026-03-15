@@ -250,7 +250,240 @@ describe("GitHub webhook routes", () => {
       },
     });
   });
+
+  it("lists compact delivery summaries for persisted issue envelopes", async () => {
+    const app = await createWebhookApp(apps, {
+      secret: webhookSecret,
+    });
+
+    await postSignedDelivery(app, {
+      deliveryId: "delivery-issue",
+      eventName: "issues",
+      payload: createIssuePayload(),
+    });
+    await postSignedDelivery(app, {
+      deliveryId: "delivery-comment",
+      eventName: "issue_comment",
+      payload: createIssueCommentPayload(),
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/webhooks/deliveries",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      deliveries: expect.arrayContaining([
+        expect.objectContaining({
+          deliveryId: "delivery-issue",
+          eventName: "issues",
+          action: "opened",
+          installationId: "12345",
+          handledAs: "issue_envelope_recorded",
+          persistedAt: "2026-03-15T10:00:00.000Z",
+          payloadPreview: {
+            repositoryFullName: "616xold/pocket-cto",
+            issueId: "700",
+            issueNumber: 42,
+          },
+        }),
+        expect.objectContaining({
+          deliveryId: "delivery-comment",
+          eventName: "issue_comment",
+          action: "created",
+          installationId: "12345",
+          handledAs: "issue_comment_envelope_recorded",
+          persistedAt: "2026-03-15T10:00:00.000Z",
+          payloadPreview: {
+            repositoryFullName: "616xold/pocket-cto",
+            issueNumber: 42,
+            commentId: "900",
+          },
+        }),
+      ]),
+    });
+  });
+
+  it("returns a single compact delivery summary by delivery id", async () => {
+    const app = await createWebhookApp(apps, {
+      secret: webhookSecret,
+    });
+
+    await postSignedDelivery(app, {
+      deliveryId: "delivery-detail",
+      eventName: "issue_comment",
+      payload: createIssueCommentPayload(),
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/webhooks/deliveries/delivery-detail",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      delivery: expect.objectContaining({
+        deliveryId: "delivery-detail",
+        eventName: "issue_comment",
+        action: "created",
+        installationId: "12345",
+        handledAs: "issue_comment_envelope_recorded",
+        persistedAt: "2026-03-15T10:00:00.000Z",
+        payloadPreview: {
+          repositoryFullName: "616xold/pocket-cto",
+          issueNumber: 42,
+          commentId: "900",
+        },
+      }),
+    });
+  });
+
+  it("returns 404 when a delivery id is not found", async () => {
+    const app = await createWebhookApp(apps, {
+      secret: webhookSecret,
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/webhooks/deliveries/missing-delivery",
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      error: {
+        code: "github_webhook_delivery_not_found",
+        message: "GitHub webhook delivery not found",
+      },
+    });
+  });
+
+  it("filters delivery summaries by event, handledAs outcome, and installation id", async () => {
+    const app = await createWebhookApp(apps, {
+      secret: webhookSecret,
+    });
+
+    await postSignedDelivery(app, {
+      deliveryId: "delivery-installation",
+      eventName: "installation",
+      payload: basePayload,
+    });
+    await postSignedDelivery(app, {
+      deliveryId: "delivery-issue-filtered",
+      eventName: "issues",
+      payload: createIssuePayload(),
+    });
+    await postSignedDelivery(app, {
+      deliveryId: "delivery-issue-other-installation",
+      eventName: "issues",
+      payload: createIssuePayload({
+        installation: {
+          id: 99999,
+        },
+      }),
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/webhooks/deliveries?eventName=issues&handledAs=issue_envelope_recorded&installationId=12345",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      deliveries: [
+        expect.objectContaining({
+          deliveryId: "delivery-issue-filtered",
+          eventName: "issues",
+          handledAs: "issue_envelope_recorded",
+          installationId: "12345",
+        }),
+      ],
+    });
+  });
 });
+
+async function postSignedDelivery(
+  app: FastifyInstance,
+  input: {
+    deliveryId: string;
+    eventName: string;
+    payload: Record<string, unknown>;
+  },
+) {
+  const rawBody = Buffer.from(JSON.stringify(input.payload));
+
+  const response = await app.inject({
+    method: "POST",
+    url: "/github/webhooks",
+    headers: {
+      "content-type": "application/json",
+      "x-github-delivery": input.deliveryId,
+      "x-github-event": input.eventName,
+      "x-hub-signature-256": createGitHubWebhookSignature(
+        webhookSecret,
+        rawBody,
+      ),
+    },
+    payload: rawBody,
+  });
+
+  expect(response.statusCode).toBe(202);
+}
+
+function createIssuePayload(
+  overrides: Partial<Record<string, unknown>> = {},
+) {
+  return {
+    action: "opened",
+    installation: {
+      id: 12345,
+      ...(overrides.installation as Record<string, unknown> | undefined),
+    },
+    repository: createRepository(),
+    issue: {
+      id: 700,
+      number: 42,
+      ...(overrides.issue as Record<string, unknown> | undefined),
+    },
+    ...overrides,
+  };
+}
+
+function createIssueCommentPayload(
+  overrides: Partial<Record<string, unknown>> = {},
+) {
+  return {
+    ...createIssuePayload(overrides),
+    action: "created",
+    comment: {
+      id: 900,
+      ...(overrides.comment as Record<string, unknown> | undefined),
+    },
+  };
+}
+
+function createRepository(
+  overrides: Partial<Record<string, unknown>> = {},
+) {
+  const fullName =
+    typeof overrides.full_name === "string" ? overrides.full_name : "616xold/pocket-cto";
+  const [ownerLogin = "616xold", name = "pocket-cto"] = fullName.split("/");
+
+  return {
+    id: 100,
+    full_name: fullName,
+    name,
+    owner: {
+      login: ownerLogin,
+    },
+    default_branch: "main",
+    private: false,
+    archived: false,
+    disabled: false,
+    language: "TypeScript",
+    ...overrides,
+  };
+}
 
 async function createWebhookApp(
   apps: FastifyInstance[],

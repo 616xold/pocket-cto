@@ -1,6 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import type { GitHubAppServicePort } from "../../lib/types";
-import { syncGitHubInstallationsBodySchema } from "./schema";
+import {
+  parseGitHubInstallationParams,
+  syncGitHubInstallationsBodySchema,
+  syncGitHubRepositoriesBodySchema,
+} from "./schema";
 
 export async function registerGitHubAppRoutes(
   app: FastifyInstance,
@@ -18,4 +22,31 @@ export async function registerGitHubAppRoutes(
     syncGitHubInstallationsBodySchema.parse(request.body ?? {});
     return deps.githubAppService.syncInstallations();
   });
+
+  app.get("/github/repositories", async () => {
+    return deps.githubAppService.listRepositories();
+  });
+
+  app.get("/github/installations/:installationId/repositories", async (request) => {
+    const params = parseGitHubInstallationParams(request.params);
+    return deps.githubAppService.listInstallationRepositories(
+      params.installationId,
+    );
+  });
+
+  app.post("/github/repositories/sync", async (request) => {
+    syncGitHubRepositoriesBodySchema.parse(request.body ?? {});
+    return deps.githubAppService.syncRepositories();
+  });
+
+  app.post(
+    "/github/installations/:installationId/repositories/sync",
+    async (request) => {
+      syncGitHubRepositoriesBodySchema.parse(request.body ?? {});
+      const params = parseGitHubInstallationParams(request.params);
+      return deps.githubAppService.syncInstallationRepositories(
+        params.installationId,
+      );
+    },
+  );
 }

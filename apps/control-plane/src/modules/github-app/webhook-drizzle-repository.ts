@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import {
   githubWebhookDeliveries,
   type Db,
@@ -11,6 +11,7 @@ import {
 } from "../../lib/persistence";
 import type {
   GitHubWebhookDeliveryInsert,
+  GitHubWebhookDeliveryLookupFilters,
   GitHubWebhookOutcome,
   PersistedGitHubWebhookDelivery,
 } from "./webhook-types";
@@ -104,6 +105,35 @@ export class DrizzleGitHubWebhookRepository implements GitHubWebhookRepository {
       .limit(1);
 
     return row ? mapDeliveryRow(row) : null;
+  }
+
+  async listDeliveries(
+    filters: GitHubWebhookDeliveryLookupFilters = {},
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const where = and(
+      filters.eventName
+        ? eq(githubWebhookDeliveries.eventName, filters.eventName)
+        : undefined,
+      filters.handledAs
+        ? eq(githubWebhookDeliveries.outcome, filters.handledAs)
+        : undefined,
+      filters.installationId
+        ? eq(githubWebhookDeliveries.installationId, filters.installationId)
+        : undefined,
+    );
+    const rows = await executor
+      .select()
+      .from(githubWebhookDeliveries)
+      .where(where)
+      .orderBy(
+        desc(githubWebhookDeliveries.createdAt),
+        desc(githubWebhookDeliveries.deliveryId),
+      )
+      .limit(filters.limit ?? 50);
+
+    return rows.map(mapDeliveryRow);
   }
 
   private getExecutor(session?: PersistenceSession) {
