@@ -208,4 +208,91 @@ describe("MissionCard", () => {
       "No approval trace yet. This is expected during the mission-spine milestone.",
     );
   });
+
+  it("uses neutral proof-bundle fallback copy instead of pending-publication wording", () => {
+    const html = renderToStaticMarkup(
+      <MissionCard
+        approvalCards={[]}
+        artifacts={[]}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          createdAt: "2026-03-16T10:00:00.000Z",
+          createdBy: "operator",
+          id: "11111111-1111-4111-8111-111111111111",
+          objective: "Ship a truthful failed proof bundle.",
+          primaryRepo: null,
+          sourceKind: "manual_text",
+          sourceRef: null,
+          spec: {
+            acceptance: ["Ship a truthful failed proof bundle."],
+            constraints: {
+              allowedPaths: [],
+              mustNot: [],
+            },
+            deliverables: ["Proof bundle wording review."],
+            evidenceRequirements: ["proof bundle"],
+            objective: "Ship a truthful failed proof bundle.",
+            repos: [],
+            riskBudget: {
+              allowNetwork: false,
+              maxCostUsd: 5,
+              maxWallClockMinutes: 30,
+              requiresHumanApprovalFor: [],
+              sandboxMode: "patch-only",
+            },
+            title: "Truthful failed proof bundle",
+            type: "build",
+          },
+          status: "failed",
+          title: "Truthful failed proof bundle",
+          type: "build",
+          updatedAt: "2026-03-16T10:05:00.000Z",
+        }}
+        proofBundle={{
+          artifactIds: [],
+          artifacts: [],
+          branchName: null,
+          changeSummary: "",
+          decisionTrace: [],
+          evidenceCompleteness: {
+            status: "partial",
+            expectedArtifactKinds: ["plan", "diff_summary", "test_report", "pr_link"],
+            presentArtifactKinds: ["test_report"],
+            missingArtifactKinds: ["plan", "diff_summary", "pr_link"],
+            notes: ["GitHub pull request evidence is missing."],
+          },
+          latestApproval: null,
+          missionId: "11111111-1111-4111-8111-111111111111",
+          missionTitle: "Truthful failed proof bundle",
+          objective: "Ship a truthful failed proof bundle.",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          replayEventCount: 12,
+          riskSummary: "",
+          rollbackSummary: "",
+          status: "failed",
+          targetRepoFullName: null,
+          timestamps: {
+            missionCreatedAt: "2026-03-16T10:00:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: "2026-03-16T10:04:00.000Z",
+            latestPullRequestAt: null,
+            latestApprovalAt: null,
+            latestArtifactAt: "2026-03-16T10:04:00.000Z",
+          },
+          validationSummary: "",
+          verificationSummary: "",
+        }}
+        tasks={[]}
+      />,
+    );
+
+    expect(html).toContain("Not recorded yet.");
+    expect(html).not.toContain("Pending PR publication.");
+    expect(html).not.toContain("Pending repo resolution.");
+  });
 });

@@ -660,7 +660,7 @@ Expected new tail event:
 }
 ```
 
-## Executor Evidence Placeholder Note
+## Executor Evidence and Proof-Bundle Note
 
 After M1.7, a successful executor worker tick now persists more than replay and
 `mission_tasks.summary`:
@@ -683,7 +683,7 @@ pocket-cto://missions/<mission-id>/tasks/<task-id>/test-report
 pocket-cto://missions/<mission-id>/tasks/<task-id>/log-excerpt
 ```
 
-M2.4 now adds a real GitHub publish path for successful executor runs.
+Current GitHub publish and proof-bundle completion behavior for successful executor runs is:
 When GitHub App env is configured and the mission resolves to an active synced
 repository row, Pocket CTO can now:
 
@@ -849,15 +849,16 @@ On macOS the private-key step looks like:
 base64 -i path/to/pocket-cto.private-key.pem | tr -d '\n'
 ```
 
-Current M2.4 permission and event expectations are:
+Current M2 GitHub permission and event expectations are:
 
 - repository permissions expected now:
   `Metadata` read-only
   `Contents` write
   `Pull requests` write
 - webhook events currently consumed in code: `installation`, `installation_repositories`, `issues`, `issue_comment`
-- `issues` and `issue_comment` are durably accepted as ingress envelopes only; they do not create missions yet
-- issue-to-mission intake is still a future milestone
+- `issues` deliveries are durably accepted as ingress envelopes and can now be listed through `GET /github/intake/issues`
+- `POST /github/intake/issues/:deliveryId/create-mission` can turn one persisted `issues` delivery into an idempotently bound build mission
+- `issue_comment` deliveries remain durable comment-activity envelopes only; they do not create missions in the current M2 slice
 
 Once the control-plane API is running, the current GitHub debug and ingress surface is:
 
@@ -949,7 +950,7 @@ Write-readiness is intentionally narrower than simple visibility:
 ### Branch and draft PR publish
 
 Executor publish now happens after local validation, not inside the model turn.
-The current M2.4 write path is:
+The current GitHub publish path is:
 
 1. normalize one repository target from mission context and the durable repository registry
 2. keep the existing deterministic task branch `pocket-cto/<missionId>/<task.sequence>-<task.role>`

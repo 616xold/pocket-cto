@@ -134,11 +134,11 @@ export function MissionCard({
           </div>
           <div>
             <dt>Target repo</dt>
-            <dd>{proofBundle.targetRepoFullName ?? "Pending repo resolution."}</dd>
+            <dd>{proofBundle.targetRepoFullName ?? "Not recorded yet."}</dd>
           </div>
           <div>
             <dt>Branch</dt>
-            <dd>{proofBundle.branchName ?? "Pending branch publication."}</dd>
+            <dd>{proofBundle.branchName ?? "Not recorded yet."}</dd>
           </div>
           <div>
             <dt>Pull request</dt>
@@ -148,7 +148,7 @@ export function MissionCard({
                   #{proofBundle.pullRequestNumber}
                 </a>
               ) : (
-                "Pending PR publication."
+                "Not recorded yet."
               )}
             </dd>
           </div>
@@ -166,23 +166,23 @@ export function MissionCard({
           </div>
           <div>
             <dt>Change summary</dt>
-            <dd>{proofBundle.changeSummary || "Pending evidence generation."}</dd>
+            <dd>{proofBundle.changeSummary || "Not recorded yet."}</dd>
           </div>
           <div>
             <dt>Validation</dt>
-            <dd>{proofBundle.validationSummary || "Pending validation evidence."}</dd>
+            <dd>{proofBundle.validationSummary || "Not recorded yet."}</dd>
           </div>
           <div>
             <dt>Verification</dt>
-            <dd>{proofBundle.verificationSummary || "Pending validation."}</dd>
+            <dd>{proofBundle.verificationSummary || "Not recorded yet."}</dd>
           </div>
           <div>
             <dt>Risk</dt>
-            <dd>{proofBundle.riskSummary || "Pending risk summary."}</dd>
+            <dd>{proofBundle.riskSummary || "Not recorded yet."}</dd>
           </div>
           <div>
             <dt>Rollback</dt>
-            <dd>{proofBundle.rollbackSummary || "Pending rollback note."}</dd>
+            <dd>{proofBundle.rollbackSummary || "Not recorded yet."}</dd>
           </div>
         </div>
 
@@ -205,18 +205,15 @@ export function MissionCard({
             <li>Mission created: {proofBundle.timestamps.missionCreatedAt}</li>
             <li>
               Planner evidence:{" "}
-              {proofBundle.timestamps.latestPlannerEvidenceAt ??
-                "Pending planner evidence."}
+              {proofBundle.timestamps.latestPlannerEvidenceAt ?? "Not recorded yet."}
             </li>
             <li>
               Executor evidence:{" "}
-              {proofBundle.timestamps.latestExecutorEvidenceAt ??
-                "Pending executor evidence."}
+              {proofBundle.timestamps.latestExecutorEvidenceAt ?? "Not recorded yet."}
             </li>
             <li>
               Pull request:{" "}
-              {proofBundle.timestamps.latestPullRequestAt ??
-                "Pending PR publication."}
+              {proofBundle.timestamps.latestPullRequestAt ?? "Not recorded yet."}
             </li>
             <li>
               Latest approval:{" "}

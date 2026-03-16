@@ -27,6 +27,7 @@ It does not implement issue intake, approval-card formatting, or larger M2.7 UI 
 - [x] (2026-03-15T22:24Z) Updated the mission-detail read model and narrow web proof-bundle section so operators can see readiness, completeness, repo and branch and PR metadata, approval posture, replay counts, timestamps, and concise decision-oriented summaries without a broader UI redesign.
 - [x] (2026-03-15T22:24Z) Added focused tests for ready, incomplete, and failed assembly paths plus richer mission-detail rendering, updated the affected DB-backed orchestrator expectations, refreshed replay and local-dev docs, and ran the required validation matrix successfully.
 - [x] (2026-03-16T00:22Z) Localized the remaining M2.5 static-surface red to committed-ref drift in `packages/testkit/src/fixtures.ts`, confirmed the live-checkout `ci:static` failure was temporarily amplified by dirty-worktree clean-tree gating, committed the narrow fixture/spec fix plus matching plan notes, and reran the full static matrix successfully including `pnpm ci:static` and `pnpm ci:repro:ref --ref HEAD --step static --repeat 5`.
+- [x] (2026-03-16T10:30Z) Ran a narrow M2.5 reality-sync pass: reconciled stale M2-pre-PR wording in runtime and local-ops docs, aligned replay-and-evidence wording with the shipped manifest contract, tightened misleading proof-bundle fallback copy in the mission card, and reran the full repo validation matrix plus `pnpm ci:repro:current` successfully without changing proof-bundle or GitHub behavior.
 
 ## Surprises & Discoveries
 
@@ -48,6 +49,9 @@ It does not implement issue intake, approval-card formatting, or larger M2.7 UI 
 - Observation: once the shared `packages/testkit` placeholder and its regression spec were committed, the M2.5 static surface went fully green without any proof-bundle assembly or GitHub-path logic changes.
   Evidence: `pnpm ci:static` passed in the live checkout and `pnpm ci:repro:ref --ref HEAD --step static --repeat 5` succeeded against commit `fd66bbbcaa7bd4c6e6e48266bed060bba256bc3d`.
 
+- Observation: some operator docs and helper copy still reflected the pre-M2.4 or pre-M2.5 story even though the shipped code already persists `pr_link`, assembles final proof-bundle manifests, and supports issue-to-mission intake.
+  Evidence: `docs/ops/codex-app-server.md` still said `pr_link` was deferred, `docs/ops/local-dev.md` still described `issues` deliveries as ingress-only with issue intake deferred, and `apps/web/components/mission-card.tsx` still used several "Pending ..." fallbacks even for failed proof bundles.
+
 ## Decision Log
 
 - Decision: assemble the proof bundle from persisted mission, task, artifact, approval, and replay state instead of mutating the manifest field-by-field in orchestrator code.
@@ -68,6 +72,10 @@ It does not implement issue intake, approval-card formatting, or larger M2.7 UI 
 
 - Decision: treat the remaining M2.5 static issue as a narrow testkit contract-drift fix unless the validation rerun proves a real product bug.
   Rationale: the proof-bundle assembly modules, status rules, and operator read model are already aligned; broadening logic would add risk without addressing the localized repro.
+  Date/Author: 2026-03-16 / Codex
+
+- Decision: keep the M2.5 reality-sync pass focused on stale documentation and operator-facing wording only, with no manifest, replay, schema, or GitHub behavior changes unless validation proves a real mismatch.
+  Rationale: the product behavior is already present and tested; the remaining gap is trustworthiness of the docs and small operator-copy affordances.
   Date/Author: 2026-03-16 / Codex
 
 ## Context and Orientation
@@ -279,6 +287,18 @@ Validation results:
   passed
 - `pnpm --filter @pocket-cto/web lint`
   passed
+- `pnpm repo:hygiene`
+  passed during the narrow M2.5 reality-sync pass
+- `pnpm lint`
+  passed during the narrow M2.5 reality-sync pass
+- `pnpm typecheck`
+  passed during the narrow M2.5 reality-sync pass
+- `pnpm build`
+  passed during the narrow M2.5 reality-sync pass
+- `pnpm test`
+  passed during the narrow M2.5 reality-sync pass
+- `pnpm ci:repro:current`
+  passed from a fresh temporary worktree snapshot of `0fc4fdd4741333e6ff642a1fe39c352bffe11cb3`, including `pnpm ci:static`, `pnpm ci:integration-db`, and clean-tree verification
 
 Live GitHub smoke note:
 

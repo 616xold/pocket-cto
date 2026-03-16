@@ -241,18 +241,22 @@ The resulting executor prompt tells Codex:
 - do not run installs, generators, migrations, package-manager commands, or formatters
 - return a concise final report with intended change, files changed, validations run, remaining risks, and operator handoff
 
-Pocket CTO now includes approval persistence for live runtime requests and the first narrow runtime artifact placeholders.
+Pocket CTO now includes approval persistence for live runtime requests, runtime evidence artifacts, GitHub PR evidence, and final proof-bundle assembly.
 
 - M1.6 adds approval persistence plus live-turn interrupts
 - M1.7 adds `diff_summary`, `test_report`, and failure-oriented `log_excerpt` placeholders sourced from local validation plus concise runtime output
-- `pr_link` remains deferred until M2 GitHub App integration
+- M2.4 adds durable `pr_link` artifacts after successful GitHub App publish
+- M2.5 re-assembles the `proof_bundle_manifest` into truthful `placeholder`, `incomplete`, `ready`, or `failed` operator-facing evidence
 
 When an executor turn terminalizes, Pocket CTO still keeps replay structural, but it now persists richer evidence through the control-plane evidence boundary:
 
 - successful executor turns persist `diff_summary` and `test_report` artifacts
 - terminalized executor failures still persist a useful `log_excerpt` artifact when there is meaningful runtime or validation output to show
+- successful GitHub publish persists a `pr_link` artifact with repo, branch, and PR metadata
 - each persisted artifact appends its own `artifact.created` replay event
-- the proof-bundle manifest is updated in place with the new artifact ids plus more truthful summary fields
+- the proof-bundle manifest refreshes after planner evidence, executor evidence, PR-link persistence, and approval resolution
+- replay appends `proof_bundle.refreshed` when a material manifest refresh changes operator posture
+- the manifest only becomes `ready` after `plan`, `diff_summary`, `test_report`, and `pr_link` all exist for a successful publish path
 
 ## Approval and interrupt lifecycle
 
