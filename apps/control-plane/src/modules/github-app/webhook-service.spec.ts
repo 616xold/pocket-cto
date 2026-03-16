@@ -192,45 +192,12 @@ describe("GitHubWebhookService", () => {
     const issueResult = await ingest(service, {
       deliveryId: "delivery-issue",
       eventName: "issues",
-      payload: {
-        action: "opened",
-        installation: {
-          id: 12345,
-        },
-        repository: createRepository({
-          id: 100,
-          full_name: "616xold/pocket-cto",
-          default_branch: "main",
-          language: "TypeScript",
-        }),
-        issue: {
-          id: 700,
-          number: 42,
-        },
-      },
+      payload: createIssuePayload(),
     });
     const commentResult = await ingest(service, {
       deliveryId: "delivery-issue-comment",
       eventName: "issue_comment",
-      payload: {
-        action: "created",
-        installation: {
-          id: 12345,
-        },
-        repository: createRepository({
-          id: 100,
-          full_name: "616xold/pocket-cto",
-          default_branch: "main",
-          language: "TypeScript",
-        }),
-        issue: {
-          id: 700,
-          number: 42,
-        },
-        comment: {
-          id: 900,
-        },
-      },
+      payload: createIssueCommentPayload(),
     });
 
     const deliveryRows = await db
@@ -356,6 +323,75 @@ function createInstallationRepositoriesPayload(
     repositories_added: [],
     repositories_removed: [],
     ...overrides,
+  };
+}
+
+function createIssuePayload(
+  overrides: Partial<Record<string, unknown>> = {},
+) {
+  const issueOverrides =
+    overrides.issue &&
+    typeof overrides.issue === "object" &&
+    !Array.isArray(overrides.issue)
+      ? overrides.issue
+      : {};
+  const repositoryOverrides =
+    overrides.repository &&
+    typeof overrides.repository === "object" &&
+    !Array.isArray(overrides.repository)
+      ? overrides.repository
+      : {};
+  const { issue: _issue, repository: _repository, ...rest } = overrides;
+
+  return {
+    action: "opened",
+    installation: {
+      id: 12345,
+    },
+    sender: {
+      login: "octo-operator",
+    },
+    repository: createRepository({
+      id: 100,
+      full_name: "616xold/pocket-cto",
+      default_branch: "main",
+      language: "TypeScript",
+      ...repositoryOverrides,
+    }),
+    issue: {
+      id: 700,
+      node_id: "I_kwDOIssue700",
+      number: 42,
+      title: "Ship GitHub issue intake",
+      body: "Turn the stored issue envelope into a mission.",
+      state: "open",
+      html_url: "https://github.com/616xold/pocket-cto/issues/42",
+      comments: 0,
+      ...issueOverrides,
+    },
+    ...rest,
+  };
+}
+
+function createIssueCommentPayload(
+  overrides: Partial<Record<string, unknown>> = {},
+) {
+  const commentOverrides =
+    overrides.comment &&
+    typeof overrides.comment === "object" &&
+    !Array.isArray(overrides.comment)
+      ? overrides.comment
+      : {};
+  const { comment: _comment, ...rest } = overrides;
+
+  return {
+    ...createIssuePayload(rest),
+    action: "created",
+    comment: {
+      id: 900,
+      node_id: "IC_kwDOComment900",
+      ...commentOverrides,
+    },
   };
 }
 

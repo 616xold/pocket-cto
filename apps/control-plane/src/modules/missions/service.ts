@@ -5,6 +5,7 @@ import type {
   MissionListItem,
   MissionListView,
   MissionRecord,
+  MissionSpec,
   MissionSourceKind,
   MissionStatus,
   MissionTaskRecord,
@@ -15,8 +16,9 @@ import { MissionNotFoundError } from "../../lib/http-errors";
 import { buildMissionDetailView } from "./detail-view";
 import { buildInitialTaskRolesForMission } from "../orchestrator/task-state-machine";
 import type { EvidenceService } from "../evidence/service";
+import type { PersistenceSession } from "../../lib/persistence";
 import type { ReplayService } from "../replay/service";
-import type { MissionCompiler } from "./compiler";
+import type { MissionCompilationResult, MissionCompiler } from "./compiler";
 import { buildQueuedMissionStatusChangedPayload } from "./events";
 import type { MissionRepository } from "./repository";
 
@@ -44,118 +46,58 @@ export class MissionService {
     const compilation = await this.compiler.compileFromText({
       text: input.text,
     });
-    const roles = buildInitialTaskRolesForMission(compilation.spec);
+    return this.createFromCompilation(
+      {
+        compilation,
+        createdBy: input.requestedBy,
+        primaryRepo: compilation.spec.repos[0] ?? null,
+        rawText: input.text,
+        sourceKind: input.sourceKind,
+        sourceRef: input.sourceRef ?? null,
+        spec: compilation.spec,
+      },
+      undefined,
+    );
+  }
 
-    return this.repository.transaction(async (session) => {
-      const mission = await this.repository.createMission(
-        {
-          type: compilation.spec.type,
-          title: compilation.spec.title,
-          objective: compilation.spec.objective,
-          sourceKind: input.sourceKind,
-          sourceRef: input.sourceRef ?? null,
-          createdBy: input.requestedBy,
-          primaryRepo: compilation.spec.repos[0] ?? null,
-          spec: compilation.spec,
-        },
-        session,
-      );
-
-      await this.repository.addMissionInput(
-        {
-          missionId: mission.id,
-          rawText: input.text,
-          compilerName: compilation.compilerName,
-          compilerVersion: compilation.compilerVersion,
-          compilerConfidence: compilation.confidence,
-          compilerOutput: compilation.spec as unknown as Record<
-            string,
-            unknown
-          >,
-        },
-        session,
-      );
-
-      await this.replayService.append(
-        {
-          missionId: mission.id,
-          type: "mission.created",
-          payload: { title: mission.title, type: mission.type },
-        },
-        session,
-      );
-
-      const tasks: MissionTaskRecord[] = [];
-
-      for (const [sequence, role] of roles.entries()) {
-        const dependsOnTaskId =
-          sequence === 0 ? null : (tasks[sequence - 1]?.id ?? null);
-        const task = await this.repository.createTask(
-          {
-            missionId: mission.id,
-            role,
-            sequence,
-            status: "pending",
-            dependsOnTaskId,
-          },
-          session,
-        );
-
-        tasks.push(task);
-
-        await this.replayService.append(
-          {
-            missionId: mission.id,
-            taskId: task.id,
-            type: "task.created",
-            payload: { role: task.role, sequence: task.sequence },
-          },
-          session,
-        );
-      }
-
-      const queuedMission = await this.repository.updateMissionStatus(
-        mission.id,
-        "queued",
-        session,
-      );
-
-      await this.replayService.append(
-        {
-          missionId: mission.id,
-          type: "mission.status_changed",
-          payload: buildQueuedMissionStatusChangedPayload(
-            mission.status,
-            queuedMission.status,
-          ),
-        },
-        session,
-      );
-
-      const proofBundle = this.evidenceService.createPlaceholder(queuedMission);
-      const proofBundleArtifact = await this.repository.saveProofBundle(
-        proofBundle,
-        session,
-      );
-
-      await this.replayService.append(
-        {
-          missionId: mission.id,
-          type: "artifact.created",
-          payload: {
-            artifactId: proofBundleArtifact.id,
-            kind: proofBundleArtifact.kind,
-          },
-        },
-        session,
-      );
-
-      return {
-        mission: queuedMission,
-        tasks,
-        proofBundle,
-      };
+  async createFromGitHubIssue(
+    input: {
+      issueBody?: string | null;
+      issueTitle: string;
+      primaryRepo: string;
+      requestedBy: string;
+      sourceRef: string;
+    },
+    options?: {
+      session?: PersistenceSession;
+    },
+  ) {
+    const compilerText = buildGitHubIssueCompilerText(
+      input.issueTitle,
+      input.issueBody,
+    );
+    const compilation = await this.compiler.compileFromText({
+      text: compilerText,
     });
+    const spec = buildGitHubIssueMissionSpec({
+      compilerSpec: compilation.spec,
+      issueBody: input.issueBody,
+      issueTitle: input.issueTitle,
+      primaryRepo: input.primaryRepo,
+    });
+
+    return this.createFromCompilation(
+      {
+        compilation,
+        createdBy: input.requestedBy,
+        primaryRepo: input.primaryRepo,
+        rawText: compilerText,
+        sourceKind: "github_issue",
+        sourceRef: input.sourceRef,
+        spec,
+      },
+      options?.session,
+    );
   }
 
   async getMissionDetail(missionId: string) {
@@ -222,6 +164,134 @@ export class MissionService {
       filters,
       missions: summaries,
     };
+  }
+
+  private async createFromCompilation(
+    input: {
+      compilation: MissionCompilationResult;
+      createdBy: string;
+      primaryRepo: string | null;
+      rawText: string;
+      sourceKind: MissionSourceKind;
+      sourceRef: string | null;
+      spec: MissionSpec;
+    },
+    session?: PersistenceSession,
+  ) {
+    const createMission = async (activeSession: PersistenceSession) => {
+      const roles = buildInitialTaskRolesForMission(input.spec);
+      const mission = await this.repository.createMission(
+        {
+          type: input.spec.type,
+          title: input.spec.title,
+          objective: input.spec.objective,
+          sourceKind: input.sourceKind,
+          sourceRef: input.sourceRef,
+          createdBy: input.createdBy,
+          primaryRepo: input.primaryRepo,
+          spec: input.spec,
+        },
+        activeSession,
+      );
+
+      await this.repository.addMissionInput(
+        {
+          missionId: mission.id,
+          rawText: input.rawText,
+          compilerName: input.compilation.compilerName,
+          compilerVersion: input.compilation.compilerVersion,
+          compilerConfidence: input.compilation.confidence,
+          compilerOutput: input.spec as unknown as Record<string, unknown>,
+        },
+        activeSession,
+      );
+
+      await this.replayService.append(
+        {
+          missionId: mission.id,
+          type: "mission.created",
+          payload: { title: mission.title, type: mission.type },
+        },
+        activeSession,
+      );
+
+      const tasks: MissionTaskRecord[] = [];
+
+      for (const [sequence, role] of roles.entries()) {
+        const dependsOnTaskId =
+          sequence === 0 ? null : (tasks[sequence - 1]?.id ?? null);
+        const task = await this.repository.createTask(
+          {
+            missionId: mission.id,
+            role,
+            sequence,
+            status: "pending",
+            dependsOnTaskId,
+          },
+          activeSession,
+        );
+
+        tasks.push(task);
+
+        await this.replayService.append(
+          {
+            missionId: mission.id,
+            taskId: task.id,
+            type: "task.created",
+            payload: { role: task.role, sequence: task.sequence },
+          },
+          activeSession,
+        );
+      }
+
+      const queuedMission = await this.repository.updateMissionStatus(
+        mission.id,
+        "queued",
+        activeSession,
+      );
+
+      await this.replayService.append(
+        {
+          missionId: mission.id,
+          type: "mission.status_changed",
+          payload: buildQueuedMissionStatusChangedPayload(
+            mission.status,
+            queuedMission.status,
+          ),
+        },
+        activeSession,
+      );
+
+      const proofBundle = this.evidenceService.createPlaceholder(queuedMission);
+      const proofBundleArtifact = await this.repository.saveProofBundle(
+        proofBundle,
+        activeSession,
+      );
+
+      await this.replayService.append(
+        {
+          missionId: mission.id,
+          type: "artifact.created",
+          payload: {
+            artifactId: proofBundleArtifact.id,
+            kind: proofBundleArtifact.kind,
+          },
+        },
+        activeSession,
+      );
+
+      return {
+        mission: queuedMission,
+        tasks,
+        proofBundle,
+      };
+    };
+
+    if (session) {
+      return createMission(session);
+    }
+
+    return this.repository.transaction(createMission);
   }
 }
 
@@ -324,4 +394,44 @@ function buildObjectiveExcerpt(objective: string) {
   return `${objective
     .slice(0, MAX_OBJECTIVE_EXCERPT_LENGTH - 3)
     .trimEnd()}...`;
+}
+
+function buildGitHubIssueCompilerText(
+  issueTitle: string,
+  issueBody: string | null | undefined,
+) {
+  const normalizedTitle = issueTitle.trim();
+  const normalizedBody = issueBody?.trim() ?? "";
+
+  return normalizedBody.length > 0
+    ? `${normalizedTitle}\n\n${normalizedBody}`
+    : normalizedTitle;
+}
+
+function buildGitHubIssueMissionSpec(input: {
+  compilerSpec: MissionSpec;
+  issueBody: string | null | undefined;
+  issueTitle: string;
+  primaryRepo: string;
+}): MissionSpec {
+  const objective = buildGitHubIssueObjective(input.issueTitle, input.issueBody);
+
+  return {
+    ...input.compilerSpec,
+    objective,
+    repos: [input.primaryRepo],
+    title: input.issueTitle.trim(),
+  };
+}
+
+function buildGitHubIssueObjective(
+  issueTitle: string,
+  issueBody: string | null | undefined,
+) {
+  const normalizedTitle = issueTitle.trim();
+  const normalizedBody = issueBody?.trim() ?? "";
+
+  return normalizedBody.length > 0
+    ? `${normalizedTitle}\n\n${normalizedBody}`
+    : normalizedTitle;
 }

@@ -314,6 +314,9 @@ function summarizeIssuePayload(payload: Record<string, unknown>) {
     repositoryFullName: parsed.data.repository.full_name,
     issueId: String(parsed.data.issue.id),
     issueNumber: parsed.data.issue.number,
+    issueState: parsed.data.issue.state,
+    issueTitle: parsed.data.issue.title,
+    senderLogin: parsed.data.sender?.login ?? null,
   };
 }
 
@@ -327,6 +330,8 @@ function summarizeIssueCommentPayload(payload: Record<string, unknown>) {
     repositoryFullName: parsed.data.repository.full_name,
     issueNumber: parsed.data.issue.number,
     commentId: String(parsed.data.comment.id),
+    issueState: parsed.data.issue.state,
+    senderLogin: parsed.data.sender?.login ?? null,
   };
 }
 

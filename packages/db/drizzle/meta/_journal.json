@@ -78,6 +78,13 @@
       "when": 1773613039644,
       "tag": "0010_chief_prodigy",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1773626549389,
+      "tag": "0011_colorful_joshua_kane",
+      "breakpoints": true
     }
   ]
 }

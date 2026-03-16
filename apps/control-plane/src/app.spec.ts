@@ -7,6 +7,7 @@ import type { AppContainer } from "./lib/types";
 import { ApprovalNotFoundError, ApprovalNotPendingError } from "./modules/approvals/errors";
 import {
   GitHubInstallationNotFoundError,
+  GitHubIssueIntakeNonIssueDeliveryError,
   GitHubRepositoryNotFoundError,
 } from "./modules/github-app/errors";
 import { RuntimeActiveTurnNotFoundError } from "./modules/runtime-codex/errors";
@@ -819,6 +820,87 @@ describe("control-plane app", () => {
     });
   });
 
+  it("GET /github/intake/issues returns summary-shaped issue intake items", async () => {
+    const app = await createStubApp(apps, {
+      githubIssueIntakeService: {
+        async listIssues() {
+          return {
+            issues: [
+              {
+                deliveryId: "delivery-issue-42",
+                repoFullName: "acme/web",
+                issueNumber: 42,
+                issueTitle: "Ship issue intake",
+                issueState: "open",
+                senderLogin: "octo-operator",
+                sourceRef: "https://github.com/acme/web/issues/42",
+                receivedAt: "2026-03-16T01:55:00.000Z",
+                commentCount: 2,
+                hasCommentActivity: true,
+                isBound: true,
+                boundMissionId: unknownMissionId,
+                boundMissionStatus: "queued",
+              },
+            ],
+          };
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/github/intake/issues",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      issues: [
+        {
+          deliveryId: "delivery-issue-42",
+          repoFullName: "acme/web",
+          issueNumber: 42,
+          issueTitle: "Ship issue intake",
+          issueState: "open",
+          senderLogin: "octo-operator",
+          sourceRef: "https://github.com/acme/web/issues/42",
+          receivedAt: "2026-03-16T01:55:00.000Z",
+          commentCount: 2,
+          hasCommentActivity: true,
+          isBound: true,
+          boundMissionId: unknownMissionId,
+          boundMissionStatus: "queued",
+        },
+      ],
+    });
+  });
+
+  it("POST /github/intake/issues/:deliveryId/create-mission returns an explicit conflict for non-issue deliveries", async () => {
+    const app = await createStubApp(apps, {
+      githubIssueIntakeService: {
+        async createMissionFromDelivery(deliveryId: string) {
+          throw new GitHubIssueIntakeNonIssueDeliveryError(
+            deliveryId,
+            "issue_comment",
+            "issue_comment_envelope_recorded",
+          );
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/github/intake/issues/delivery-comment/create-mission",
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      error: {
+        code: "github_issue_intake_non_issue_delivery",
+        message: "GitHub delivery is not a persisted issues envelope",
+      },
+    });
+  });
+
   it("GET /github/repositories returns repository summaries when configured", async () => {
     const app = await createStubApp(apps, {
       githubAppService: {
@@ -1615,6 +1697,7 @@ async function createStubApp(
   apps: FastifyInstance[],
   overrides: {
     githubAppService?: Partial<AppContainer["githubAppService"]>;
+    githubIssueIntakeService?: Partial<AppContainer["githubIssueIntakeService"]>;
     githubWebhookService?: Partial<AppContainer["githubWebhookService"]>;
     missionService?: Partial<AppContainer["missionService"]>;
     operatorControl?: Partial<AppContainer["operatorControl"]>;
@@ -1629,6 +1712,10 @@ async function createStubApp(
       githubAppService: {
         ...base.githubAppService,
         ...overrides.githubAppService,
+      },
+      githubIssueIntakeService: {
+        ...base.githubIssueIntakeService,
+        ...overrides.githubIssueIntakeService,
       },
       githubWebhookService:
         {

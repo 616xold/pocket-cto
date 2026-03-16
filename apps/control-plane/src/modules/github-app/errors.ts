@@ -220,3 +220,14 @@ export class GitHubWebhookDeliveryNotFoundError extends Error {
     this.name = "GitHubWebhookDeliveryNotFoundError";
   }
 }
+
+export class GitHubIssueIntakeNonIssueDeliveryError extends Error {
+  constructor(
+    readonly deliveryId: string,
+    readonly eventName: string,
+    readonly handledAs: string | null,
+  ) {
+    super("GitHub delivery is not a persisted issues envelope");
+    this.name = "GitHubIssueIntakeNonIssueDeliveryError";
+  }
+}

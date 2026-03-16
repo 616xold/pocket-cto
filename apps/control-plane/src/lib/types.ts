@@ -1,6 +1,7 @@
 import type { OperatorControlAvailability as DomainOperatorControlAvailability } from "@pocket-cto/domain";
 import type { ApprovalService } from "../modules/approvals/service";
 import type { GitHubAppService } from "../modules/github-app/service";
+import type { GitHubIssueIntakeService } from "../modules/github-app/issue-intake-service";
 import type { GitHubWebhookService } from "../modules/github-app/webhook-service";
 import type { MissionService } from "../modules/missions/service";
 import type { OrchestratorWorker } from "../modules/orchestrator/worker";
@@ -26,6 +27,11 @@ export type GitHubWebhookServicePort = Pick<
   "getDelivery" | "ingest" | "listDeliveries"
 >;
 
+export type GitHubIssueIntakeServicePort = Pick<
+  GitHubIssueIntakeService,
+  "createMissionFromDelivery" | "listIssues"
+>;
+
 export type MissionServicePort = Pick<
   MissionService,
   "createFromText" | "getMissionDetail" | "listMissions"
@@ -35,6 +41,7 @@ export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;
 
 export type AppContainer = {
   githubAppService: GitHubAppServicePort;
+  githubIssueIntakeService: GitHubIssueIntakeServicePort;
   githubWebhookService: GitHubWebhookServicePort;
   missionService: MissionServicePort;
   operatorControl: {

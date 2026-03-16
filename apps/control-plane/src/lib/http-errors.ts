@@ -15,6 +15,7 @@ import {
   GitHubRepositoryInactiveError,
   GitHubRepositoryInstallationUnavailableError,
   GitHubRepositoryNotFoundError,
+  GitHubIssueIntakeNonIssueDeliveryError,
   GitHubWebhookBadSignatureError,
   GitHubWebhookDeliveryNotFoundError,
   GitHubWebhookMissingDeliveryIdError,
@@ -37,6 +38,7 @@ export type ApiErrorCode =
   | "github_app_not_configured"
   | "github_app_request_failed"
   | "github_installation_not_found"
+  | "github_issue_intake_non_issue_delivery"
   | "github_repository_archived"
   | "github_repository_disabled"
   | "github_repository_inactive"
@@ -257,6 +259,18 @@ function mapHttpError(error: unknown): ErrorMapping {
       body: {
         error: {
           code: "github_installation_not_found",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof GitHubIssueIntakeNonIssueDeliveryError) {
+    return {
+      statusCode: 409,
+      body: {
+        error: {
+          code: "github_issue_intake_non_issue_delivery",
           message: error.message,
         },
       },

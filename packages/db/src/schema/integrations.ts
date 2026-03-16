@@ -1,5 +1,6 @@
 import {
   boolean,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -8,7 +9,9 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createdAt, id, updatedAt } from "./shared";
+import { missions } from "./missions";
 
 export const githubWebhookOutcomeEnum = pgEnum("github_webhook_outcome", [
   "installation_state_updated",
@@ -88,5 +91,35 @@ export const githubWebhookDeliveries = pgTable(
     deliveryIdUnique: uniqueIndex(
       "github_webhook_deliveries_delivery_id_key",
     ).on(table.deliveryId),
+  }),
+);
+
+export const githubIssueMissionBindings = pgTable(
+  "github_issue_mission_bindings",
+  {
+    id: id(),
+    repoFullName: text("repo_full_name").notNull(),
+    issueNumber: integer("issue_number").notNull(),
+    issueId: text("issue_id").notNull(),
+    issueNodeId: text("issue_node_id"),
+    missionId: uuid("mission_id").references(() => missions.id, {
+      onDelete: "set null",
+    }),
+    latestSourceDeliveryId: text("latest_source_delivery_id").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    issueIdUnique: uniqueIndex("github_issue_mission_bindings_issue_id_key").on(
+      table.issueId,
+    ),
+    repoIssueUnique: uniqueIndex(
+      "github_issue_mission_bindings_repo_issue_key",
+    ).on(table.repoFullName, table.issueNumber),
+    missionIdUnique: uniqueIndex(
+      "github_issue_mission_bindings_mission_id_key",
+    )
+      .on(table.missionId)
+      .where(sql`${table.missionId} is not null`),
   }),
 );

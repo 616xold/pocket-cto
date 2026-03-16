@@ -1,12 +1,18 @@
 import Link from "next/link";
+import { GitHubIssueIntakeList } from "../components/github-issue-intake-list";
 import { MissionIntakeForm } from "../components/mission-intake-form";
 import { MissionList } from "../components/mission-list";
-import { getControlPlaneHealth, getMissionList } from "../lib/api";
+import {
+  getControlPlaneHealth,
+  getGitHubIssueIntakeList,
+  getMissionList,
+} from "../lib/api";
 
 export default async function HomePage() {
-  const [health, missionList] = await Promise.all([
+  const [health, missionList, issueIntake] = await Promise.all([
     getControlPlaneHealth(),
     getMissionList({ limit: 6 }),
+    getGitHubIssueIntakeList(),
   ]);
 
   return (
@@ -64,6 +70,31 @@ export default async function HomePage() {
             </p>
           )}
         </article>
+      </section>
+
+      <section className="card">
+        <div className="section-head">
+          <div>
+            <p className="kicker">GitHub issue intake</p>
+            <h2>Persisted issue envelopes</h2>
+          </div>
+          <Link href={{ pathname: "/missions" }} className="button outline">
+            Open full intake
+          </Link>
+        </div>
+
+        {issueIntake ? (
+          <GitHubIssueIntakeList
+            emptyHeading="No GitHub issues have been ingested yet"
+            emptyMessage="Deliver one GitHub issues webhook and it will show up here as an actionable intake card."
+            issues={issueIntake.issues.slice(0, 3)}
+          />
+        ) : (
+          <p className="muted">
+            The control plane is not reachable yet, so GitHub issue intake
+            cards could not be loaded.
+          </p>
+        )}
       </section>
 
       <section className="card">

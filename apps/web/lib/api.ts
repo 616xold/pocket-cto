@@ -1,5 +1,7 @@
 import {
   ApprovalRecordSchema,
+  GitHubIssueIntakeListViewSchema,
+  GitHubIssueMissionCreateResultSchema,
   MissionDetailViewSchema,
   MissionListViewSchema,
   MissionRecordSchema,
@@ -28,6 +30,14 @@ type MissionDetail = z.output<typeof missionDetailSchema>;
 
 const missionListSchema = MissionListViewSchema;
 type MissionList = z.output<typeof missionListSchema>;
+
+const githubIssueIntakeListSchema = GitHubIssueIntakeListViewSchema;
+type GitHubIssueIntakeList = z.output<typeof githubIssueIntakeListSchema>;
+
+const githubIssueMissionCreateResultSchema = GitHubIssueMissionCreateResultSchema;
+type GitHubIssueMissionCreateResult = z.output<
+  typeof githubIssueMissionCreateResultSchema
+>;
 
 const liveControlSchema = OperatorControlAvailabilitySchema;
 
@@ -186,6 +196,10 @@ export async function getMissionList(input?: {
   return fetchJson(`/missions${suffix}`, missionListSchema);
 }
 
+export async function getGitHubIssueIntakeList(): Promise<GitHubIssueIntakeList | null> {
+  return fetchJson("/github/intake/issues", githubIssueIntakeListSchema);
+}
+
 export async function getMissionApprovals(
   missionId: string,
 ): Promise<MissionApprovals | null> {
@@ -207,6 +221,16 @@ export async function createMissionFromText(input: {
       text: input.text,
     },
     createMissionFromTextResponseSchema,
+  );
+}
+
+export async function createMissionFromGitHubIssueDelivery(input: {
+  deliveryId: string;
+}): Promise<GitHubIssueMissionCreateResult> {
+  return postJsonStrict(
+    `/github/intake/issues/${encodeURIComponent(input.deliveryId)}/create-mission`,
+    {},
+    githubIssueMissionCreateResultSchema,
   );
 }
 

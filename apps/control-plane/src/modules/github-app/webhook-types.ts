@@ -34,9 +34,20 @@ export const GitHubWebhookIssuesPayloadSchema = z.object({
     id: GitHubIdSchema,
   }),
   repository: GitHubRepositoryApiSchema,
+  sender: z
+    .object({
+      login: z.string().min(1),
+    })
+    .optional(),
   issue: z.object({
     id: GitHubIdSchema,
+    node_id: z.string().min(1).optional(),
     number: z.number().int().nonnegative(),
+    title: z.string().min(1),
+    body: z.string().nullable().optional(),
+    state: z.string().min(1),
+    html_url: z.string().url().optional(),
+    comments: z.number().int().nonnegative().optional(),
   }),
 });
 
@@ -46,12 +57,24 @@ export const GitHubWebhookIssueCommentPayloadSchema = z.object({
     id: GitHubIdSchema,
   }),
   repository: GitHubRepositoryApiSchema,
+  sender: z
+    .object({
+      login: z.string().min(1),
+    })
+    .optional(),
   issue: z.object({
     id: GitHubIdSchema,
+    node_id: z.string().min(1).optional(),
     number: z.number().int().nonnegative(),
+    title: z.string().min(1),
+    body: z.string().nullable().optional(),
+    state: z.string().min(1),
+    html_url: z.string().url().optional(),
+    comments: z.number().int().nonnegative().optional(),
   }),
   comment: z.object({
     id: GitHubIdSchema,
+    node_id: z.string().min(1).optional(),
   }),
 });
 

@@ -194,6 +194,17 @@ dt {
   background: rgba(15, 22, 42, 0.88);
 }
 
+.issue-intake-card {
+  padding: 20px;
+  border: 1px solid rgba(126, 231, 181, 0.16);
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 27, 24, 0.82),
+    rgba(13, 22, 38, 0.92)
+  );
+}
+
 .mission-summary-copy {
   margin-bottom: 12px;
   color: var(--text);
@@ -336,6 +347,10 @@ dd {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.inline-action-form {
+  display: inline-flex;
 }
 
 .action-button {

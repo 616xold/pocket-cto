@@ -122,6 +122,66 @@ describe("web api module", () => {
     );
   });
 
+  it("parses the GitHub issue intake route", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      async json() {
+        return buildGitHubIssueIntakePayload();
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const intake = await mod.getGitHubIssueIntakeList();
+
+    expect(intake).not.toBeNull();
+    expect(intake?.issues).toHaveLength(2);
+    expect(intake?.issues[0]).toMatchObject({
+      deliveryId: "delivery-issue-42",
+      repoFullName: "acme/web",
+      issueNumber: 42,
+      issueTitle: "Ship issue intake",
+      hasCommentActivity: true,
+      isBound: false,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/github/intake/issues`,
+      {
+        cache: "no-store",
+      },
+    );
+  });
+
+  it("posts the GitHub issue mission-create route correctly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        return buildGitHubIssueMissionCreatePayload();
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const created = await mod.createMissionFromGitHubIssueDelivery({
+      deliveryId: "delivery-issue-42",
+    });
+
+    expect(created.outcome).toBe("created");
+    expect(created.mission.id).toBe(missionId);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/github/intake/issues/delivery-issue-42/create-mission`,
+      {
+        body: JSON.stringify({}),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+  });
+
   it("forms approval-resolution and task-interrupt requests correctly", async () => {
     const fetchMock = vi
       .fn()
@@ -552,5 +612,90 @@ function buildMissionListPayload() {
         updatedAt: "2026-03-13T09:00:00.000Z",
       },
     ],
+  };
+}
+
+function buildGitHubIssueIntakePayload() {
+  return {
+    issues: [
+      {
+        deliveryId: "delivery-issue-42",
+        repoFullName: "acme/web",
+        issueNumber: 42,
+        issueTitle: "Ship issue intake",
+        issueState: "open",
+        senderLogin: "octo-operator",
+        sourceRef: "https://github.com/acme/web/issues/42",
+        receivedAt: "2026-03-16T01:55:00.000Z",
+        commentCount: 2,
+        hasCommentActivity: true,
+        isBound: false,
+        boundMissionId: null,
+        boundMissionStatus: null,
+      },
+      {
+        deliveryId: "delivery-issue-43",
+        repoFullName: "acme/ops",
+        issueNumber: 43,
+        issueTitle: "Already bound issue",
+        issueState: "open",
+        senderLogin: "octo-reviewer",
+        sourceRef: "https://github.com/acme/ops/issues/43",
+        receivedAt: "2026-03-16T01:50:00.000Z",
+        commentCount: 0,
+        hasCommentActivity: false,
+        isBound: true,
+        boundMissionId: missionId,
+        boundMissionStatus: "queued",
+      },
+    ],
+  };
+}
+
+function buildGitHubIssueMissionCreatePayload() {
+  return {
+    outcome: "created",
+    mission: {
+      createdAt: "2026-03-16T01:56:00.000Z",
+      createdBy: "octo-operator",
+      id: missionId,
+      objective: "Ship issue intake\n\nTurn the stored issue envelope into a mission.",
+      primaryRepo: "acme/web",
+      sourceKind: "github_issue",
+      sourceRef: "https://github.com/acme/web/issues/42",
+      spec: {
+        acceptance: ["produce a plan"],
+        constraints: {
+          allowedPaths: [],
+          mustNot: [],
+        },
+        deliverables: ["plan", "proof_bundle"],
+        evidenceRequirements: ["test report"],
+        objective: "Ship issue intake\n\nTurn the stored issue envelope into a mission.",
+        repos: ["acme/web"],
+        riskBudget: {
+          allowNetwork: false,
+          maxCostUsd: 10,
+          maxWallClockMinutes: 60,
+          requiresHumanApprovalFor: ["merge"],
+          sandboxMode: "patch-only",
+        },
+        title: "Ship issue intake",
+        type: "build",
+      },
+      status: "queued",
+      title: "Ship issue intake",
+      type: "build",
+      updatedAt: "2026-03-16T01:56:00.000Z",
+    },
+    binding: {
+      issueId: "700",
+      issueNodeId: "I_kwDOIssue700",
+      latestSourceDeliveryId: "delivery-issue-42",
+      missionId,
+      repoFullName: "acme/web",
+      issueNumber: 42,
+      sourceRef: "https://github.com/acme/web/issues/42",
+    },
   };
 }
