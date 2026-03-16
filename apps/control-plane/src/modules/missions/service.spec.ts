@@ -7,7 +7,9 @@ import { ReplayService } from "../replay/service";
 import { EvidenceService } from "../evidence/service";
 import { MissionService } from "./service";
 
-function createService(options?: { approvals?: ApprovalRecord[] }) {
+function createService(options?: {
+  listMissionApprovals?: (missionId: string) => Promise<ApprovalRecord[]>;
+}) {
   const repository = new InMemoryMissionRepository();
   const replayRepository = new InMemoryReplayRepository();
   const replayService = new ReplayService(replayRepository, repository);
@@ -24,8 +26,8 @@ function createService(options?: { approvals?: ApprovalRecord[] }) {
       evidenceService,
       {
         approvalReader: {
-          async listMissionApprovals() {
-            return options?.approvals ?? [];
+          async listMissionApprovals(missionId) {
+            return (await options?.listMissionApprovals?.(missionId)) ?? [];
           },
         },
       },
@@ -81,7 +83,9 @@ describe("MissionService", () => {
       updatedAt: "2026-03-14T10:00:00.000Z",
     };
     const { repository, service } = createService({
-      approvals: [approval],
+      async listMissionApprovals() {
+        return [approval];
+      },
     });
     const created = await service.createFromText({
       text: "Implement passkeys for sign-in",
@@ -149,5 +153,121 @@ describe("MissionService", () => {
       detail.artifacts.find((artifact) => artifact.kind === "diff_summary")
         ?.summary,
     ).toContain("README.md");
+  });
+
+  it("lists newest-first mission summaries and applies status, source-kind, and limit filters", async () => {
+    const approvalsByMissionId = new Map<string, ApprovalRecord[]>();
+    const { repository, service } = createService({
+      async listMissionApprovals(missionId) {
+        return approvalsByMissionId.get(missionId) ?? [];
+      },
+    });
+
+    const first = await service.createFromText({
+      text: "Ship the first mission",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const second = await service.createFromText({
+      text: "Sync the GitHub issue mission",
+      sourceKind: "github_issue",
+      requestedBy: "operator",
+      sourceRef: "https://github.com/acme/web/issues/19",
+    });
+
+    const firstExecutorTask = first.tasks.find((task) => task.role === "executor");
+
+    expect(firstExecutorTask).toBeDefined();
+
+    await repository.updateMissionStatus(first.mission.id, "succeeded");
+    await repository.updateTaskStatus(firstExecutorTask?.id ?? "", "succeeded");
+
+    const firstBundle = await repository.getProofBundleByMissionId(first.mission.id);
+    expect(firstBundle).not.toBeNull();
+
+    await repository.upsertProofBundle({
+      ...firstBundle!,
+      pullRequestNumber: 19,
+      pullRequestUrl: "https://github.com/acme/web/pull/19",
+      status: "ready",
+      timestamps: {
+        ...firstBundle!.timestamps,
+        latestPullRequestAt: "2026-03-16T01:03:00.000Z",
+      },
+    });
+
+    approvalsByMissionId.set(first.mission.id, [
+      {
+        createdAt: "2026-03-16T01:02:00.000Z",
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        kind: "command",
+        missionId: first.mission.id,
+        payload: {},
+        rationale: null,
+        requestedBy: "system",
+        resolvedBy: null,
+        status: "pending",
+        taskId: firstExecutorTask?.id ?? null,
+        updatedAt: "2026-03-16T01:02:00.000Z",
+      },
+    ]);
+
+    const unfiltered = await service.listMissions();
+
+    expect(unfiltered.filters).toEqual({
+      limit: 20,
+      sourceKind: null,
+      status: null,
+    });
+    expect(unfiltered.missions.map((mission) => mission.id)).toEqual([
+      second.mission.id,
+      first.mission.id,
+    ]);
+    expect(unfiltered.missions[0]).toMatchObject({
+      id: second.mission.id,
+      latestTask: {
+        role: "executor",
+        sequence: 1,
+        status: "pending",
+      },
+      proofBundleStatus: "placeholder",
+      sourceKind: "github_issue",
+    });
+    expect(unfiltered.missions[1]).toMatchObject({
+      id: first.mission.id,
+      latestTask: {
+        role: "executor",
+        sequence: 1,
+        status: "succeeded",
+      },
+      pendingApprovalCount: 1,
+      proofBundleStatus: "ready",
+      pullRequestNumber: 19,
+      pullRequestUrl: "https://github.com/acme/web/pull/19",
+      sourceKind: "manual_text",
+      status: "succeeded",
+    });
+
+    const filteredBySourceKind = await service.listMissions({
+      sourceKind: "github_issue",
+    });
+
+    expect(filteredBySourceKind.missions.map((mission) => mission.id)).toEqual([
+      second.mission.id,
+    ]);
+
+    const filteredByStatus = await service.listMissions({
+      limit: 1,
+      status: "succeeded",
+    });
+
+    expect(filteredByStatus.filters).toEqual({
+      limit: 1,
+      sourceKind: null,
+      status: "succeeded",
+    });
+    expect(filteredByStatus.missions.map((mission) => mission.id)).toEqual([
+      first.mission.id,
+    ]);
   });
 });

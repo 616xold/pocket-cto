@@ -92,6 +92,66 @@ describe("control-plane app", () => {
     });
   });
 
+  it("GET /missions returns newest-first mission summaries with the list contract", async () => {
+    const app = await createTestApp(apps);
+    const older = await createMission(app, {
+      text: "First mission summary",
+      requestedBy: "operator",
+    });
+    const newer = await createMission(app, {
+      requestedBy: "operator",
+      sourceKind: "github_issue",
+      sourceRef: "https://github.com/acme/web/issues/19",
+      text: "Second mission summary",
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/missions",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      filters: {
+        limit: 20,
+        sourceKind: null,
+        status: null,
+      },
+      missions: [
+        {
+          id: newer.mission.id,
+          latestTask: {
+            role: "executor",
+            sequence: 1,
+            status: "pending",
+          },
+          objectiveExcerpt: "Second mission summary",
+          pendingApprovalCount: 0,
+          proofBundleStatus: "placeholder",
+          sourceKind: "github_issue",
+          sourceRef: "https://github.com/acme/web/issues/19",
+          status: "queued",
+          title: "Second mission summary",
+        },
+        {
+          id: older.mission.id,
+          latestTask: {
+            role: "executor",
+            sequence: 1,
+            status: "pending",
+          },
+          objectiveExcerpt: "First mission summary",
+          pendingApprovalCount: 0,
+          proofBundleStatus: "placeholder",
+          sourceKind: "manual_text",
+          sourceRef: null,
+          status: "queued",
+          title: "First mission summary",
+        },
+      ],
+    });
+  });
+
   it("GET /missions/:missionId returns mission metadata, approvals, artifacts, and the proof bundle placeholder", async () => {
     const app = await createTestApp(apps);
     const created = await createMission(app);
@@ -1593,13 +1653,23 @@ async function createStubApp(
   return app;
 }
 
-async function createMission(app: FastifyInstance) {
+async function createMission(
+  app: FastifyInstance,
+  payload?: {
+    requestedBy?: string;
+    sourceKind?: string;
+    sourceRef?: string;
+    text?: string;
+  },
+) {
   const response = await app.inject({
     method: "POST",
     url: "/missions/text",
     payload: {
-      text: "Implement passkeys for sign-in",
-      requestedBy: "operator",
+      requestedBy: payload?.requestedBy ?? "operator",
+      sourceKind: payload?.sourceKind,
+      sourceRef: payload?.sourceRef,
+      text: payload?.text ?? "Implement passkeys for sign-in",
     },
   });
 

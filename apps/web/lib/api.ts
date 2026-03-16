@@ -1,9 +1,15 @@
 import {
   ApprovalRecordSchema,
   MissionDetailViewSchema,
+  MissionListViewSchema,
+  MissionRecordSchema,
+  MissionSourceKindSchema,
+  MissionStatusSchema,
+  MissionTaskRecordSchema,
   OperatorControlAvailabilitySchema,
+  ProofBundleManifestSchema,
 } from "@pocket-cto/domain";
-import type { ApprovalDecision } from "@pocket-cto/domain";
+import type { ApprovalDecision, MissionSourceKind, MissionStatus } from "@pocket-cto/domain";
 import { z } from "zod";
 import {
   controlPlaneActionErrorResponseSchema,
@@ -20,7 +26,16 @@ type ControlPlaneHealth = z.output<typeof healthSchema>;
 const missionDetailSchema = MissionDetailViewSchema;
 type MissionDetail = z.output<typeof missionDetailSchema>;
 
+const missionListSchema = MissionListViewSchema;
+type MissionList = z.output<typeof missionListSchema>;
+
 const liveControlSchema = OperatorControlAvailabilitySchema;
+
+const createMissionFromTextResponseSchema = z.object({
+  mission: MissionRecordSchema,
+  proofBundle: ProofBundleManifestSchema,
+  tasks: z.array(MissionTaskRecordSchema),
+});
 
 const missionApprovalsSchema = z.object({
   approvals: z.array(ApprovalRecordSchema),
@@ -148,10 +163,51 @@ export async function getMissionDetail(
   return fetchJson(`/missions/${missionId}`, missionDetailSchema);
 }
 
+export async function getMissionList(input?: {
+  limit?: number;
+  sourceKind?: MissionSourceKind;
+  status?: MissionStatus;
+}): Promise<MissionList | null> {
+  const search = new URLSearchParams();
+
+  if (typeof input?.limit === "number") {
+    search.set("limit", String(input.limit));
+  }
+
+  if (input?.status) {
+    search.set("status", MissionStatusSchema.parse(input.status));
+  }
+
+  if (input?.sourceKind) {
+    search.set("sourceKind", MissionSourceKindSchema.parse(input.sourceKind));
+  }
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : "";
+  return fetchJson(`/missions${suffix}`, missionListSchema);
+}
+
 export async function getMissionApprovals(
   missionId: string,
 ): Promise<MissionApprovals | null> {
   return fetchJson(`/missions/${missionId}/approvals`, missionApprovalsSchema);
+}
+
+export async function createMissionFromText(input: {
+  requestedBy: string;
+  sourceKind?: MissionSourceKind;
+  sourceRef?: string | null;
+  text: string;
+}) {
+  return postJsonStrict(
+    "/missions/text",
+    {
+      requestedBy: input.requestedBy,
+      sourceKind: input.sourceKind,
+      sourceRef: input.sourceRef ?? undefined,
+      text: input.text,
+    },
+    createMissionFromTextResponseSchema,
+  );
 }
 
 export async function resolveMissionApproval(input: {
@@ -192,4 +248,25 @@ async function readJson(response: Response): Promise<unknown> {
   } catch {
     return null;
   }
+}
+
+async function postJsonStrict<TSchema extends z.ZodTypeAny>(
+  input: string,
+  body: unknown,
+  schema: TSchema,
+): Promise<z.output<TSchema>> {
+  const response = await fetch(`${resolveControlPlaneUrl()}${input}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Control-plane request failed (${response.status})`);
+  }
+
+  return schema.parse(await response.json());
 }

@@ -247,6 +247,9 @@ function createAppContainer(
       async getMissionDetail() {
         throw new Error("getMissionDetail should not be called in this test");
       },
+      async listMissions() {
+        throw new Error("listMissions should not be called in this test");
+      },
     } as AppContainer["missionService"],
     operatorControl: {
       approvalService: {

@@ -28,7 +28,7 @@ export type GitHubWebhookServicePort = Pick<
 
 export type MissionServicePort = Pick<
   MissionService,
-  "createFromText" | "getMissionDetail"
+  "createFromText" | "getMissionDetail" | "listMissions"
 >;
 
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;

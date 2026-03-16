@@ -208,4 +208,60 @@ describe("DrizzleMissionRepository", () => {
       summary: "dependency planner summary",
     });
   });
+
+  it("lists newest-first missions and applies status and source-kind filters", async () => {
+    const missionSpec = buildMissionFixture();
+
+    const first = await repository.createMission({
+      type: missionSpec.type,
+      title: "First mission",
+      objective: "Ship the first mission",
+      sourceKind: "manual_text",
+      sourceRef: null,
+      createdBy: "operator",
+      primaryRepo: missionSpec.repos[0] ?? null,
+      spec: {
+        ...missionSpec,
+        objective: "Ship the first mission",
+        title: "First mission",
+      },
+    });
+
+    await repository.updateMissionStatus(first.id, "succeeded");
+
+    const second = await repository.createMission({
+      type: missionSpec.type,
+      title: "Second mission",
+      objective: "Ship the second mission",
+      sourceKind: "github_issue",
+      sourceRef: "https://github.com/acme/web/issues/19",
+      createdBy: "operator",
+      primaryRepo: missionSpec.repos[0] ?? null,
+      spec: {
+        ...missionSpec,
+        objective: "Ship the second mission",
+        title: "Second mission",
+      },
+    });
+
+    const listed = await repository.listMissions({ limit: 10 });
+
+    expect(listed.map((mission) => mission.id)).toEqual([second.id, first.id]);
+
+    const filteredByStatus = await repository.listMissions({
+      limit: 10,
+      status: "succeeded",
+    });
+
+    expect(filteredByStatus.map((mission) => mission.id)).toEqual([first.id]);
+
+    const filteredBySourceKind = await repository.listMissions({
+      limit: 10,
+      sourceKind: "github_issue",
+    });
+
+    expect(filteredBySourceKind.map((mission) => mission.id)).toEqual([
+      second.id,
+    ]);
+  });
 });

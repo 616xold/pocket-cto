@@ -1,6 +1,8 @@
 import type {
   ArtifactRecord,
   MissionRecord,
+  MissionSourceKind,
+  MissionStatus,
   MissionTaskRecord,
   ProofBundleManifest,
 } from "@pocket-cto/domain";
@@ -49,6 +51,12 @@ export type CreateArtifactInput = {
   sha256?: string | null;
   taskId?: string | null;
   uri: string;
+};
+
+export type ListMissionsInput = {
+  limit: number;
+  sourceKind?: MissionSourceKind;
+  status?: MissionStatus;
 };
 
 export interface MissionRepository extends TransactionalRepository {
@@ -135,6 +143,11 @@ export interface MissionRepository extends TransactionalRepository {
     missionId: string,
     session?: PersistenceSession,
   ): Promise<MissionRecord | null>;
+
+  listMissions(
+    input: ListMissionsInput,
+    session?: PersistenceSession,
+  ): Promise<MissionRecord[]>;
 
   getTasksByMissionId(
     missionId: string,
@@ -427,6 +440,19 @@ export class InMemoryMissionRepository implements MissionRepository {
 
   async getMissionById(missionId: string): Promise<MissionRecord | null> {
     return this.missions.get(missionId) ?? null;
+  }
+
+  async listMissions(input: ListMissionsInput): Promise<MissionRecord[]> {
+    return Array.from(this.missions.values())
+      .reverse()
+      .filter((mission) =>
+        input.status ? mission.status === input.status : true,
+      )
+      .filter((mission) =>
+        input.sourceKind ? mission.sourceKind === input.sourceKind : true,
+      )
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+      .slice(0, input.limit);
   }
 
   async getTasksByMissionId(missionId: string): Promise<MissionTaskRecord[]> {

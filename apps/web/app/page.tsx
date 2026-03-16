@@ -1,35 +1,43 @@
 import Link from "next/link";
-import { getControlPlaneHealth } from "../lib/api";
+import { MissionIntakeForm } from "../components/mission-intake-form";
+import { MissionList } from "../components/mission-list";
+import { getControlPlaneHealth, getMissionList } from "../lib/api";
 
 export default async function HomePage() {
-  const health = await getControlPlaneHealth();
+  const [health, missionList] = await Promise.all([
+    getControlPlaneHealth(),
+    getMissionList({ limit: 6 }),
+  ]);
 
   return (
     <main className="shell">
       <section className="hero">
         <p className="eyebrow">Pocket CTO</p>
-        <h1>Engineering mission control, built for the phone.</h1>
+        <h1>Operator home for evidence-native engineering missions.</h1>
         <p className="lede">
-          The goal is not another chat bot. The goal is a system that compiles
-          operator intent into typed missions, executes inside isolated
-          workspaces, and returns evidence you can approve from mobile.
+          Create a mission from text, scan recent work, and jump straight into
+          the evidence-heavy detail page from here. The home surface stays small
+          and summary-shaped so it works cleanly on mobile.
         </p>
-        <div className="actions">
-          <Link href="/missions/demo-mission" className="button primary">
-            Open mission detail shell
+        <div className="button-row" style={{ marginTop: 22 }}>
+          <Link href={{ pathname: "/missions" }} className="button primary">
+            Open mission list
+          </Link>
+          <Link href="/missions/demo-mission" className="button outline">
+            Open demo detail
           </Link>
         </div>
       </section>
 
       <section className="grid two-up">
         <article className="card">
-          <h2>Current starting point</h2>
-          <ul>
-            <li>M0 mission spine</li>
-            <li>GitHub-first architecture</li>
-            <li>Codex App Server runtime contract</li>
-            <li>Proof bundle as the trust layer</li>
-          </ul>
+          <h2>Start from text</h2>
+          <p className="muted">
+            This minimal intake calls the existing `POST /missions/text`
+            backend, preserves the current replay sequence, and redirects into
+            mission detail after creation.
+          </p>
+          <MissionIntakeForm />
         </article>
 
         <article className="card status-card">
@@ -59,12 +67,28 @@ export default async function HomePage() {
       </section>
 
       <section className="card">
-        <h2>V1 boundaries</h2>
-        <p className="muted">
-          Single operator. Single trust boundary. No deploy automation. No
-          automatic merges. PWA first. OpenClaw and multi-channel surfaces come
-          later.
-        </p>
+        <div className="section-head">
+          <div>
+            <p className="kicker">Recent missions</p>
+            <h2>Latest operator work</h2>
+          </div>
+          <Link href={{ pathname: "/missions" }} className="button outline">
+            View all
+          </Link>
+        </div>
+
+        {missionList ? (
+          <MissionList
+            emptyHeading="No missions yet"
+            emptyMessage="Create one from text to populate the operator home and the mission list."
+            missions={missionList.missions}
+          />
+        ) : (
+          <p className="muted">
+            The control plane is not reachable yet, so recent mission summaries
+            could not be loaded.
+          </p>
+        )}
       </section>
     </main>
   );

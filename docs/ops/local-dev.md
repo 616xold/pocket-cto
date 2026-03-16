@@ -54,6 +54,26 @@ pnpm dev:worker
 
 In embedded mode, do not also start `pnpm dev:worker` for the same repo and database unless you are explicitly testing the single-process limitation.
 
+## Web operator home and mission list
+
+Once `pnpm dev` or `pnpm dev:embedded` is running:
+
+- `http://localhost:3000/` is the operator home
+- `http://localhost:3000/missions` is the full mission list
+- `http://localhost:3000/missions/<mission-id>` remains the existing mission-detail drill-down
+
+The home and list surfaces now stay deliberately summary-shaped.
+They call the new `GET /missions` control-plane route for newest-first mission cards and expose one minimal text-intake box that reuses the existing `POST /missions/text` backend.
+Successful submits redirect directly into the created mission detail page.
+
+If you want to inspect the API route directly while developing the web surface:
+
+```bash
+curl 'http://localhost:4000/missions'
+curl 'http://localhost:4000/missions?limit=6'
+curl 'http://localhost:4000/missions?status=queued&sourceKind=manual_text'
+```
+
 ## Operator action feedback
 
 The web mission detail now surfaces approval-resolution and task-interrupt feedback inline.

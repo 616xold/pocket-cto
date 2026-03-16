@@ -22,6 +22,7 @@ import type {
   CreateArtifactInput,
   CreateMissionInput,
   CreateTaskInput,
+  ListMissionsInput,
   MissionRepository,
 } from "./repository";
 import {
@@ -419,6 +420,33 @@ export class DrizzleMissionRepository implements MissionRepository {
       .limit(1);
 
     return mission ? mapMissionRow(mission) : null;
+  }
+
+  async listMissions(
+    input: ListMissionsInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const filters = [];
+
+    if (input.status) {
+      filters.push(eq(missions.status, input.status));
+    }
+
+    if (input.sourceKind) {
+      filters.push(eq(missions.sourceKind, input.sourceKind));
+    }
+
+    const query = executor
+      .select()
+      .from(missions)
+      .orderBy(desc(missions.createdAt), desc(missions.id))
+      .limit(input.limit);
+
+    const rows =
+      filters.length > 0 ? await query.where(and(...filters)) : await query;
+
+    return rows.map(mapMissionRow);
   }
 
   async getTasksByMissionId(missionId: string, session?: PersistenceSession) {

@@ -78,6 +78,50 @@ describe("web api module", () => {
     );
   });
 
+  it("parses the mission-list route and forwards list filters", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      async json() {
+        return buildMissionListPayload();
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const list = await mod.getMissionList({
+      limit: 6,
+      sourceKind: "github_issue",
+      status: "queued",
+    });
+
+    expect(list).not.toBeNull();
+    expect(list?.filters).toEqual({
+      limit: 6,
+      sourceKind: "github_issue",
+      status: "queued",
+    });
+    expect(list?.missions.map((mission) => mission.id)).toEqual([
+      missionId,
+      "44444444-4444-4444-8444-444444444444",
+    ]);
+    expect(list?.missions[0]).toMatchObject({
+      latestTask: {
+        role: "executor",
+        sequence: 1,
+        status: "running",
+      },
+      pendingApprovalCount: 1,
+      proofBundleStatus: "incomplete",
+      pullRequestUrl: "https://github.com/acme/web/pull/19",
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/missions?limit=6&status=queued&sourceKind=github_issue`,
+      {
+        cache: "no-store",
+      },
+    );
+  });
+
   it("forms approval-resolution and task-interrupt requests correctly", async () => {
     const fetchMock = vi
       .fn()
@@ -458,5 +502,55 @@ function buildMissionDetailPayload() {
       limitation: "single_process_only",
       mode: "embedded_worker",
     },
+  };
+}
+
+function buildMissionListPayload() {
+  return {
+    filters: {
+      limit: 6,
+      sourceKind: "github_issue",
+      status: "queued",
+    },
+    missions: [
+      {
+        createdAt: "2026-03-14T10:00:00.000Z",
+        id: missionId,
+        latestTask: {
+          id: taskId,
+          role: "executor",
+          sequence: 1,
+          status: "running",
+          updatedAt: "2026-03-14T10:05:00.000Z",
+        },
+        objectiveExcerpt: "Ship passkeys without breaking email login.",
+        pendingApprovalCount: 1,
+        primaryRepo: "web",
+        proofBundleStatus: "incomplete",
+        pullRequestNumber: 19,
+        pullRequestUrl: "https://github.com/acme/web/pull/19",
+        sourceKind: "github_issue",
+        sourceRef: "https://github.com/acme/web/issues/19",
+        status: "queued",
+        title: "Implement passkeys for sign-in",
+        updatedAt: "2026-03-14T10:05:00.000Z",
+      },
+      {
+        createdAt: "2026-03-13T09:00:00.000Z",
+        id: "44444444-4444-4444-8444-444444444444",
+        latestTask: null,
+        objectiveExcerpt: "Draft the rollback notes for a staged release.",
+        pendingApprovalCount: 0,
+        primaryRepo: "ops",
+        proofBundleStatus: "placeholder",
+        pullRequestNumber: null,
+        pullRequestUrl: null,
+        sourceKind: "github_issue",
+        sourceRef: null,
+        status: "queued",
+        title: "Prepare rollback notes",
+        updatedAt: "2026-03-13T09:00:00.000Z",
+      },
+    ],
   };
 }

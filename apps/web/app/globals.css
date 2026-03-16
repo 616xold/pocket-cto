@@ -130,6 +130,12 @@ dt {
   color: #0d1530;
 }
 
+.button.outline {
+  border-color: rgba(127, 179, 255, 0.28);
+  background: rgba(127, 179, 255, 0.08);
+  color: var(--text);
+}
+
 .status-list {
   display: grid;
   gap: 14px;
@@ -145,11 +151,112 @@ dt {
   gap: 16px;
 }
 
+.mission-list {
+  display: grid;
+  gap: 16px;
+}
+
+.mission-list-empty {
+  padding: 8px 0;
+}
+
 .mission-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
+}
+
+.mission-summary-header,
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.section-head {
+  margin-bottom: 18px;
+}
+
+.card-title {
+  margin-bottom: 0;
+}
+
+.link-inline {
+  color: var(--text);
+}
+
+.mission-summary-card {
+  padding: 20px;
+  border: 1px solid rgba(127, 179, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(15, 22, 42, 0.88);
+}
+
+.mission-summary-copy {
+  margin-bottom: 12px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.mission-summary-inline {
+  margin-bottom: 12px;
+}
+
+.mission-summary-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.mission-summary-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.mission-summary-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.mission-intake-form {
+  display: grid;
+  gap: 12px;
+}
+
+.field-label {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.text-area {
+  width: 100%;
+  min-height: 136px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(127, 179, 255, 0.18);
+  background: rgba(8, 13, 27, 0.78);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.text-area::placeholder {
+  color: rgba(166, 176, 207, 0.72);
+}
+
+.text-area:focus {
+  outline: 2px solid rgba(127, 179, 255, 0.28);
+  outline-offset: 2px;
 }
 
 .stack {
@@ -291,6 +398,9 @@ dd {
   }
 
   .mission-header,
+  .mission-summary-footer,
+  .mission-summary-header,
+  .section-head,
   .task-row {
     flex-direction: column;
   }
