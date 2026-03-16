@@ -4,7 +4,8 @@ Pocket CTO should produce proof, not just status text.
 
 ## Proof bundle contract
 
-Every successful mission should emit a proof bundle manifest with at least:
+Every mission persists a `proof_bundle_manifest` artifact.
+Successful GitHub-aware missions should advance that manifest into a decision-ready package with at least:
 
 - objective contract
 - change summary
