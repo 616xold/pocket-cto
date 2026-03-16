@@ -11,6 +11,7 @@ import { registerApprovalRoutes } from "./modules/approvals/routes";
 import { createServerContainer } from "./bootstrap";
 import type { AppContainer } from "./lib/types";
 import { registerRuntimeControlRoutes } from "./modules/runtime-codex/routes";
+import { registerTwinRoutes } from "./modules/twin/routes";
 
 export async function buildApp(options?: { container?: AppContainer }) {
   const logger = createLogger();
@@ -28,6 +29,9 @@ export async function buildApp(options?: { container?: AppContainer }) {
   });
   await registerGitHubIssueIntakeRoutes(app, {
     githubIssueIntakeService: container.githubIssueIntakeService,
+  });
+  await registerTwinRoutes(app, {
+    twinService: container.twinService,
   });
   await registerMissionRoutes(app, {
     liveControl: container.operatorControl.liveControl,

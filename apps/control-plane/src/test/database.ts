@@ -26,6 +26,10 @@ export async function resetTestDatabase() {
 
   await db.execute(sql`
     TRUNCATE TABLE
+      twin_edges,
+      twin_entities,
+      twin_sync_runs,
+      github_issue_mission_bindings,
       github_webhook_deliveries,
       repositories,
       github_installations,

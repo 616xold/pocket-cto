@@ -1009,6 +1009,31 @@ Write-readiness is intentionally narrower than simple visibility:
 - `writeReadiness.failureCode = disabled` means GitHub still reports the repository as disabled.
 - `writeReadiness.failureCode = installation_unavailable` means the repository row exists, but Pocket CTO no longer has a persisted installation record it can use for installation-token minting.
 
+### Twin debug routes
+
+M3.1 adds the first repo-scoped engineering-twin debug surface on top of the durable repository registry.
+These routes only read stored twin state.
+They do not trigger extraction yet, and they do not answer blast-radius questions yet.
+
+Available routes:
+
+- `GET /twin/repositories/:owner/:repo/entities`
+- `GET /twin/repositories/:owner/:repo/edges`
+- `GET /twin/repositories/:owner/:repo/runs`
+
+Each route resolves `:owner/:repo` through the existing repository registry and returns repo context plus the stored twin rows for that repository.
+The `runs` route is newest-first by `startedAt`.
+If the repository does not exist in the registry, the route returns the existing `github_repository_not_found` error.
+If the repository exists but is inactive, archived, disabled, or installation-unavailable, the read response still shows the persisted repo summary and `writeReadiness` state so later M3 slices can inspect that posture honestly.
+
+Examples:
+
+```bash
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/entities
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/edges
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/runs
+```
+
 ### Branch and draft PR publish
 
 Executor publish now happens after local validation, not inside the model turn.
