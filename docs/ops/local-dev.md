@@ -91,6 +91,25 @@ The helper:
 - auto-accepts any live pending approval through the real approval route
 - prints a JSON ledger you can paste into an ExecPlan or compare against `docs/ops/m2-exit-report.md`
 
+## M2 exit closeout
+
+For this repository's single-operator v1, M2 closeout uses the real local embedded stack as the operational proxy when no staging surface exists in-repo.
+The cleanup helper inspects and optionally closes the seeded M2 exit PRs and deletes their seeded branches through the same GitHub App credentials used by the product.
+
+Check the current cleanup posture:
+
+```bash
+pnpm m2:exit-closeout -- --mode check
+```
+
+Apply the closeout cleanup:
+
+```bash
+pnpm m2:exit-closeout -- --mode apply
+```
+
+The helper prints a JSON summary with per-PR and per-branch outcomes plus any remaining manual cleanup items.
+
 ## Reproducible approval smoke
 
 If you need a truthful local proof of the approval routes and approval cards before a real Codex runtime reliably emits a live request, use the explicit fixture-backed smoke:

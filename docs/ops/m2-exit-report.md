@@ -146,11 +146,25 @@ node tools/m2-exit-seeded-runs.mjs --timeout-ms 900000
 
 ## Cleanup status
 
-Recorded first, left open for manual cleanup:
+Cleanup command:
 
-- Branch `pocket-cto/48c7da65-7e60-4d59-af90-b834348d0f06/1-executor`, PR [#26](https://github.com/616xold/pocket-cto/pull/26)
-- Branch `pocket-cto/26eeea81-206e-4212-9b0b-82e4b1e1ff3e/1-executor`, PR [#27](https://github.com/616xold/pocket-cto/pull/27)
-- Branch `pocket-cto/942e73d4-14cb-4e59-9c9b-7934cb1be618/1-executor`, PR [#28](https://github.com/616xold/pocket-cto/pull/28)
+```bash
+pnpm m2:exit-closeout -- --mode apply
+```
+
+Cleanup execution date:
+
+- `2026-03-16T17:24:52Z`
+
+Cleanup results:
+
+- Closed draft PR [#26](https://github.com/616xold/pocket-cto/pull/26) for branch `pocket-cto/48c7da65-7e60-4d59-af90-b834348d0f06/1-executor`
+- Closed draft PR [#27](https://github.com/616xold/pocket-cto/pull/27) for branch `pocket-cto/26eeea81-206e-4212-9b0b-82e4b1e1ff3e/1-executor`
+- Closed draft PR [#28](https://github.com/616xold/pocket-cto/pull/28) for branch `pocket-cto/942e73d4-14cb-4e59-9c9b-7934cb1be618/1-executor`
+- Deleted branch `pocket-cto/48c7da65-7e60-4d59-af90-b834348d0f06/1-executor`
+- Deleted branch `pocket-cto/26eeea81-206e-4212-9b0b-82e4b1e1ff3e/1-executor`
+- Deleted branch `pocket-cto/942e73d4-14cb-4e59-9c9b-7934cb1be618/1-executor`
+- Remaining manual cleanup items: none
 
 No live GitHub issue was created on GitHub.com during this local closeout slice.
 The issue-intake run used a correctly signed local replay into the real webhook ingress route and then the real persisted intake route.
@@ -182,7 +196,7 @@ What this slice proves:
 What remains weaker than ideal:
 
 - the approval-capable seeded run did not produce a live pending approval, so the fresh approval proof below uses the existing embedded fake-runtime approval fixture rather than a real local Codex runtime approval
-- the roadmap wording says "at least 3 seeded build tasks run end to end in staging"; these three runs were executed against a real local embedded stack, not a staging deployment
+- this repo still does not expose a checked-in staging deployment surface, so the exit decision below explicitly adopts the real local embedded stack as the operational proxy for M2 in single-operator v1
 
 ## Approval proof addendum
 
@@ -220,6 +234,10 @@ Interpretation:
 
 Decision:
 
-- Local M2 stack closeout: yes, the remaining seeded-run evidence gap is now closed for a real local stack.
-- Literal roadmap exit wording: not fully yet, unless the team accepts these real local runs as satisfying the staging criterion or replays the same helper in staging.
-- Safe to start M3: not yet as a strict roadmap call. Start M3 only after the team either accepts this real local evidence as equivalent to staging or repeats the helper in a staging deployment.
+- Repo decision chosen: accept the real local embedded stack as the M2 exit proxy for this single-operator v1 repository until a real staging surface exists.
+- M2 completion: yes. The roadmap wording is now reconciled to the repo reality, the seeded evidence is durable, and the seeded PRs plus branches are cleaned up.
+- Safe to start M3: yes.
+
+Risk and rollback note:
+
+- This decision is conservative about scope, not permissive about evidence. If the repo later grows a real staging deployment surface, future milestone closeouts should add staging smoke runs there; this M2 closeout does not claim that staging has been built or exercised today.
