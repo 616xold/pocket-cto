@@ -2543,6 +2543,34 @@ async function createHarness(options?: {
         async finishSyncRun() {
           throw new Error("Not implemented in orchestrator harness");
         },
+        async getRepositoryMetadataSummary() {
+          return {
+            repository: {
+              fullName: "616xold/pocket-cto",
+              installationId: "12345",
+              defaultBranch: "main",
+              archived: false,
+              disabled: false,
+              isActive: true,
+              writeReadiness: {
+                ready: true,
+                failureCode: null,
+              },
+            },
+            latestRun: null,
+            entityCount: 0,
+            edgeCount: 0,
+            entityCountsByKind: {},
+            edgeCountsByKind: {},
+            metadata: {
+              repository: null,
+              defaultBranch: null,
+              rootReadme: null,
+              manifests: [],
+              directories: [],
+            },
+          };
+        },
         async listRepositoryEdges() {
           return {
             repository: {
@@ -2608,6 +2636,40 @@ async function createHarness(options?: {
             stats: {},
             errorSummary: null,
             createdAt: "2026-03-15T00:00:00.000Z",
+          };
+        },
+        async syncRepositoryMetadata() {
+          return {
+            repository: {
+              fullName: "616xold/pocket-cto",
+              installationId: "12345",
+              defaultBranch: "main",
+              archived: false,
+              disabled: false,
+              isActive: true,
+              writeReadiness: {
+                ready: true,
+                failureCode: null,
+              },
+            },
+            syncRun: {
+              id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+              repoFullName: "616xold/pocket-cto",
+              extractor: "repository_metadata",
+              status: "succeeded" as const,
+              startedAt: "2026-03-15T00:00:00.000Z",
+              completedAt: "2026-03-15T00:01:00.000Z",
+              stats: {
+                entityCount: 0,
+                edgeCount: 0,
+              },
+              errorSummary: null,
+              createdAt: "2026-03-15T00:00:00.000Z",
+            },
+            entityCount: 0,
+            edgeCount: 0,
+            entityCountsByKind: {},
+            edgeCountsByKind: {},
           };
         },
         async upsertEdge() {

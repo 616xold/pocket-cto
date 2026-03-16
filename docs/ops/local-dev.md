@@ -1009,19 +1009,23 @@ Write-readiness is intentionally narrower than simple visibility:
 - `writeReadiness.failureCode = disabled` means GitHub still reports the repository as disabled.
 - `writeReadiness.failureCode = installation_unavailable` means the repository row exists, but Pocket CTO no longer has a persisted installation record it can use for installation-token minting.
 
-### Twin debug routes
+### Twin routes
 
-M3.1 adds the first repo-scoped engineering-twin debug surface on top of the durable repository registry.
-These routes only read stored twin state.
-They do not trigger extraction yet, and they do not answer blast-radius questions yet.
+M3.1 and M3.2 add the first repo-scoped engineering-twin debug and metadata-sync surface on top of the durable repository registry.
+The read routes return stored twin state.
+The metadata-sync route performs one deterministic local scan for the requested synced repository.
+These routes still do not extract CODEOWNERS, CI workflows, docs indexing, or blast-radius answers yet.
 
 Available routes:
 
+- `POST /twin/repositories/:owner/:repo/metadata-sync`
+- `GET /twin/repositories/:owner/:repo/summary`
 - `GET /twin/repositories/:owner/:repo/entities`
 - `GET /twin/repositories/:owner/:repo/edges`
 - `GET /twin/repositories/:owner/:repo/runs`
 
-Each route resolves `:owner/:repo` through the existing repository registry and returns repo context plus the stored twin rows for that repository.
+Each route resolves `:owner/:repo` through the existing repository registry.
+The read routes return repo context plus stored twin rows or summary state for that repository.
 The `runs` route is newest-first by `startedAt`.
 If the repository does not exist in the registry, the route returns the existing `github_repository_not_found` error.
 If the repository exists but is inactive, archived, disabled, or installation-unavailable, the read response still shows the persisted repo summary and `writeReadiness` state so later M3 slices can inspect that posture honestly.
@@ -1029,10 +1033,31 @@ If the repository exists but is inactive, archived, disabled, or installation-un
 Examples:
 
 ```bash
+curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/metadata-sync
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/summary
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/entities
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/edges
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/runs
 ```
+
+### Twin metadata sync
+
+The first M3.2 extractor is intentionally narrow and auditable.
+It persists:
+
+- one `repository` entity from the synced repository registry
+- one `default_branch` entity from the registry `defaultBranch`
+- one `root_readme` entity when a root README exists
+- one `package_manifest` entity per discovered `package.json`
+- one `workspace_directory` entity for major top-level groups among `apps`, `packages`, `docs`, `infra`, and `tools`
+
+The sync is local-checkout only in v1.
+Pocket CTO prefers `POCKET_CTO_SOURCE_REPO_ROOT` when it is set, resolves that path to a real git root, reads `remote.origin.url`, and requires that the local checkout resolve to the same synced `owner/repo`.
+If `POCKET_CTO_SOURCE_REPO_ROOT` is unset, Pocket CTO falls back to the current process repo root and applies the same remote check.
+If the requested synced repository is not available locally, the sync fails truthfully with `twin_source_unavailable` instead of scanning the wrong tree.
+
+The summary route is concise and operator-readable.
+It reports the stored repository metadata, default branch, root README stats when present, discovered manifests, workspace directories, latest sync-run state, and counts by entity or edge kind.
 
 ### Branch and draft PR publish
 

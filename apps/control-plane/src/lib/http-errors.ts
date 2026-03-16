@@ -29,6 +29,7 @@ import {
   RuntimeInterruptDeliveryError,
   RuntimeTaskNotFoundError,
 } from "../modules/runtime-codex/errors";
+import { TwinSourceUnavailableError } from "../modules/twin/errors";
 
 export type ApiErrorCode =
   | "invalid_request"
@@ -54,7 +55,8 @@ export type ApiErrorCode =
   | "mission_not_found"
   | "internal_error"
   | "task_conflict"
-  | "task_not_found";
+  | "task_not_found"
+  | "twin_source_unavailable";
 
 export type ApiErrorDetail = {
   path: string;
@@ -332,6 +334,40 @@ function mapHttpError(error: unknown): ErrorMapping {
         error: {
           code: "github_repository_installation_unavailable",
           message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof TwinSourceUnavailableError) {
+    return {
+      statusCode: 409,
+      body: {
+        error: {
+          code: "twin_source_unavailable",
+          message: "Twin source repository is unavailable",
+          details: [
+            {
+              path: "repoFullName",
+              message: `Requested repo: ${error.requestedRepoFullName}`,
+            },
+            {
+              path: "sourcePath",
+              message: `Checked source path: ${error.sourcePath}`,
+            },
+            {
+              path: "reason",
+              message: error.reason,
+            },
+            ...(error.actualRepoFullName
+              ? [
+                  {
+                    path: "actualRepoFullName",
+                    message: `Resolved local repo: ${error.actualRepoFullName}`,
+                  },
+                ]
+              : []),
+          ],
         },
       },
     };

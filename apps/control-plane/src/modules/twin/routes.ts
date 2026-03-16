@@ -8,6 +8,20 @@ export async function registerTwinRoutes(
     twinService: TwinServicePort;
   },
 ) {
+  app.post("/twin/repositories/:owner/:repo/metadata-sync", async (request) => {
+    const params = parseTwinRepositoryParams(request.params);
+    return deps.twinService.syncRepositoryMetadata(
+      `${params.owner}/${params.repo}`,
+    );
+  });
+
+  app.get("/twin/repositories/:owner/:repo/summary", async (request) => {
+    const params = parseTwinRepositoryParams(request.params);
+    return deps.twinService.getRepositoryMetadataSummary(
+      `${params.owner}/${params.repo}`,
+    );
+  });
+
   app.get("/twin/repositories/:owner/:repo/entities", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
     return deps.twinService.listRepositoryEntities(`${params.owner}/${params.repo}`);

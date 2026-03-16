@@ -69,11 +69,13 @@ import {
   LocalWorkspaceValidationGitClient,
 } from "./modules/validation";
 import { DrizzleTwinRepository } from "./modules/twin/drizzle-repository";
+import { LocalTwinRepositoryMetadataExtractor } from "./modules/twin/repository-metadata-extractor";
 import {
   InMemoryTwinRepository,
   type TwinRepository,
 } from "./modules/twin/repository";
 import { TwinService } from "./modules/twin/service";
+import { LocalTwinRepositorySourceResolver } from "./modules/twin/source-resolver";
 
 type KernelMode = "api_only" | "embedded_worker" | "standalone_worker";
 type ServerControlMode = Extract<KernelMode, "api_only" | "embedded_worker">;
@@ -253,6 +255,7 @@ function buildSharedKernel(input: {
       | "GITHUB_CLIENT_ID"
       | "GITHUB_CLIENT_SECRET"
       | "GITHUB_WEBHOOK_SECRET"
+      | "POCKET_CTO_SOURCE_REPO_ROOT"
     >
   >;
   githubAppRepository: GitHubAppRepository;
@@ -326,8 +329,13 @@ function buildSharedKernel(input: {
     webhookRepository: input.githubWebhookRepository,
   });
   const twinService = new TwinService({
+    metadataExtractor: new LocalTwinRepositoryMetadataExtractor(),
     repository: input.twinRepository,
     repositoryRegistry: githubAppService,
+    sourceResolver: new LocalTwinRepositorySourceResolver({
+      configuredSourceRepoRoot: input.env.POCKET_CTO_SOURCE_REPO_ROOT,
+      processCwd: process.cwd(),
+    }),
   });
 
   return {

@@ -1,6 +1,8 @@
 import type {
   TwinEdgeListView,
   TwinEntityListView,
+  TwinRepositoryMetadataSummary,
+  TwinRepositoryMetadataSyncResult,
   TwinSyncRunListView,
 } from "@pocket-cto/domain";
 import type { GitHubRepositoryDetailResult } from "../github-app/schema";
@@ -8,9 +10,13 @@ import type { TwinRepository } from "./repository";
 import {
   buildTwinEdgeListView,
   buildTwinEntityListView,
+  buildTwinRepositoryMetadataSummary,
   buildTwinSyncRunListView,
   toTwinRepositorySummary,
 } from "./formatter";
+import type { TwinRepositoryMetadataExtractor } from "./repository-metadata-extractor";
+import { syncRepositoryMetadata } from "./metadata-sync";
+import type { TwinRepositorySourceResolver } from "./source-resolver";
 import {
   TwinEdgeUpsertInputSchema,
   TwinEntityUpsertInputSchema,
@@ -35,8 +41,10 @@ export class TwinService {
 
   constructor(
     private readonly input: {
+      metadataExtractor: TwinRepositoryMetadataExtractor;
       repository: TwinRepository;
       repositoryRegistry: TwinRepositoryRegistryPort;
+      sourceResolver: TwinRepositorySourceResolver;
       now?: () => Date;
     },
   ) {
@@ -75,6 +83,24 @@ export class TwinService {
     });
   }
 
+  async getRepositoryMetadataSummary(
+    repoFullName: string,
+  ): Promise<TwinRepositoryMetadataSummary> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const [entities, edges, runs] = await Promise.all([
+      this.input.repository.listRepositoryEntities(repoFullName),
+      this.input.repository.listRepositoryEdges(repoFullName),
+      this.input.repository.listRepositoryRuns(repoFullName),
+    ]);
+
+    return buildTwinRepositoryMetadataSummary({
+      repository,
+      entities,
+      edges,
+      latestRun: runs[0] ?? null,
+    });
+  }
+
   async finishSyncRun(input: TwinSyncRunFinishInput): Promise<TwinSyncRunRecord> {
     const parsed = TwinSyncRunFinishInputSchema.parse(input);
 
@@ -90,6 +116,19 @@ export class TwinService {
         },
         session,
       );
+    });
+  }
+
+  async syncRepositoryMetadata(
+    repoFullName: string,
+  ): Promise<TwinRepositoryMetadataSyncResult> {
+    return syncRepositoryMetadata({
+      metadataExtractor: this.input.metadataExtractor,
+      now: this.now,
+      repoFullName,
+      repository: this.input.repository,
+      repositoryRegistry: this.input.repositoryRegistry,
+      sourceResolver: this.input.sourceResolver,
     });
   }
 

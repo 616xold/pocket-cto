@@ -88,6 +88,69 @@ export const TwinSyncRunListViewSchema = z.object({
   runs: z.array(TwinSyncRunSchema),
 });
 
+export const TwinKindCountMapSchema = z.record(
+  z.string(),
+  z.number().int().nonnegative(),
+);
+
+export const TwinRepositoryMetadataRepositorySchema = z.object({
+  fullName: z.string().min(1),
+  defaultBranch: z.string().min(1),
+  visibility: z.enum(["private", "public"]).nullable(),
+  archived: z.boolean().nullable(),
+  disabled: z.boolean().nullable(),
+  isActive: z.boolean(),
+});
+
+export const TwinRepositoryMetadataBranchSchema = z.object({
+  name: z.string().min(1),
+});
+
+export const TwinRepositoryMetadataReadmeSchema = z.object({
+  path: z.string().min(1),
+  sizeBytes: z.number().int().nonnegative(),
+  lineCount: z.number().int().nonnegative(),
+});
+
+export const TwinRepositoryMetadataManifestSchema = z.object({
+  path: z.string().min(1),
+  packageName: z.string().min(1).nullable(),
+  private: z.boolean().nullable(),
+  hasWorkspaces: z.boolean(),
+  scriptNames: z.array(z.string()),
+});
+
+export const TwinRepositoryMetadataDirectorySchema = z.object({
+  path: z.string().min(1),
+  label: z.string().min(1),
+  classification: z.string().min(1),
+});
+
+export const TwinRepositoryMetadataSummarySchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  latestRun: TwinSyncRunSchema.nullable(),
+  entityCount: z.number().int().nonnegative(),
+  edgeCount: z.number().int().nonnegative(),
+  entityCountsByKind: TwinKindCountMapSchema,
+  edgeCountsByKind: TwinKindCountMapSchema,
+  metadata: z.object({
+    repository: TwinRepositoryMetadataRepositorySchema.nullable(),
+    defaultBranch: TwinRepositoryMetadataBranchSchema.nullable(),
+    rootReadme: TwinRepositoryMetadataReadmeSchema.nullable(),
+    manifests: z.array(TwinRepositoryMetadataManifestSchema),
+    directories: z.array(TwinRepositoryMetadataDirectorySchema),
+  }),
+});
+
+export const TwinRepositoryMetadataSyncResultSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  syncRun: TwinSyncRunSchema,
+  entityCount: z.number().int().nonnegative(),
+  edgeCount: z.number().int().nonnegative(),
+  entityCountsByKind: TwinKindCountMapSchema,
+  edgeCountsByKind: TwinKindCountMapSchema,
+});
+
 export type TwinJsonObject = z.infer<typeof TwinJsonObjectSchema>;
 export type TwinRepositoryWriteReadinessFailureCode = z.infer<
   typeof TwinRepositoryWriteReadinessFailureCodeSchema
@@ -105,3 +168,25 @@ export type TwinEdge = z.infer<typeof TwinEdgeSchema>;
 export type TwinEntityListView = z.infer<typeof TwinEntityListViewSchema>;
 export type TwinEdgeListView = z.infer<typeof TwinEdgeListViewSchema>;
 export type TwinSyncRunListView = z.infer<typeof TwinSyncRunListViewSchema>;
+export type TwinKindCountMap = z.infer<typeof TwinKindCountMapSchema>;
+export type TwinRepositoryMetadataRepository = z.infer<
+  typeof TwinRepositoryMetadataRepositorySchema
+>;
+export type TwinRepositoryMetadataBranch = z.infer<
+  typeof TwinRepositoryMetadataBranchSchema
+>;
+export type TwinRepositoryMetadataReadme = z.infer<
+  typeof TwinRepositoryMetadataReadmeSchema
+>;
+export type TwinRepositoryMetadataManifest = z.infer<
+  typeof TwinRepositoryMetadataManifestSchema
+>;
+export type TwinRepositoryMetadataDirectory = z.infer<
+  typeof TwinRepositoryMetadataDirectorySchema
+>;
+export type TwinRepositoryMetadataSummary = z.infer<
+  typeof TwinRepositoryMetadataSummarySchema
+>;
+export type TwinRepositoryMetadataSyncResult = z.infer<
+  typeof TwinRepositoryMetadataSyncResultSchema
+>;

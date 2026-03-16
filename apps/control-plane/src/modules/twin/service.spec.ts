@@ -5,8 +5,10 @@ import {
   GitHubRepositoryInactiveError,
   GitHubRepositoryInstallationUnavailableError,
 } from "../github-app/errors";
+import { LocalTwinRepositoryMetadataExtractor } from "./repository-metadata-extractor";
 import { InMemoryTwinRepository } from "./repository";
 import { TwinService } from "./service";
+import { LocalTwinRepositorySourceResolver } from "./source-resolver";
 
 const repoFullName = "616xold/pocket-cto";
 const repositoryDetail = {
@@ -145,6 +147,7 @@ function createTwinService(overrides?: {
   resolveWritableRepository?: ReturnType<typeof vi.fn>;
 }) {
   return new TwinService({
+    metadataExtractor: new LocalTwinRepositoryMetadataExtractor(),
     repository: new InMemoryTwinRepository(),
     repositoryRegistry: {
       getRepository:
@@ -176,6 +179,10 @@ function createTwinService(overrides?: {
           };
         }),
     },
+    sourceResolver: new LocalTwinRepositorySourceResolver({
+      configuredSourceRepoRoot: null,
+      processCwd: process.cwd(),
+    }),
     now: () => new Date("2026-03-16T22:45:00.000Z"),
   });
 }
