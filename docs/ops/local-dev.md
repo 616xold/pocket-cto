@@ -54,6 +54,43 @@ pnpm dev:worker
 
 In embedded mode, do not also start `pnpm dev:worker` for the same repo and database unless you are explicitly testing the single-process limitation.
 
+## M2 exit seeded runs
+
+Use fresh dedicated databases and embedded-worker mode so the run set is isolated from day-to-day local missions and live approval continuity is available if the runtime asks for it:
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/pocket_cto_m2_exit_20260316_v3 \
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/pocket_cto_m2_exit_20260316_v3_test \
+node tools/ci-prepare-postgres.mjs
+
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/pocket_cto_m2_exit_20260316_v3 \
+TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/pocket_cto_m2_exit_20260316_v3_test \
+pnpm run db:migrate:ci
+
+env \
+  DATABASE_URL=postgres://postgres:postgres@localhost:5432/pocket_cto_m2_exit_20260316_v3 \
+  TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/pocket_cto_m2_exit_20260316_v3_test \
+  CONTROL_PLANE_EMBEDDED_WORKER=true \
+  WORKER_POLL_INTERVAL_MS=1000 \
+  WORKSPACE_ROOT=/tmp/pocket-cto-m2-target/workspaces \
+  POCKET_CTO_SOURCE_REPO_ROOT=/absolute/path/to/a-clean-clone \
+  pnpm --filter @pocket-cto/control-plane dev
+```
+
+Then, from another shell:
+
+```bash
+POCKET_CTO_SOURCE_REPO_ROOT=/absolute/path/to/a-clean-clone \
+pnpm m2:seeded-runs -- --timeout-ms 900000
+```
+
+The helper:
+
+- syncs GitHub installations and repositories through the real routes
+- runs one text mission, one GitHub issue-intake mission, and one approval-seeking text mission
+- auto-accepts any live pending approval through the real approval route
+- prints a JSON ledger you can paste into an ExecPlan or compare against `docs/ops/m2-exit-report.md`
+
 ## Web operator home and mission list
 
 Once `pnpm dev` or `pnpm dev:embedded` is running:

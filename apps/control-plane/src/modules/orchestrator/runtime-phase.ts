@@ -1,4 +1,5 @@
 import type {
+  MissionStatus,
   MissionRecord,
   MissionTaskRecord,
   MissionTaskStatus,
@@ -33,6 +34,7 @@ import {
 } from "../evidence/runtime-artifacts";
 import {
   buildRuntimeStartedMissionStatusChangedPayload,
+  buildTaskTerminalizedMissionStatusChangedPayload,
 } from "../missions/events";
 import type { ExecutorPlannerArtifactRecord } from "../missions/planner-artifact";
 import type { MissionRepository } from "../missions/repository";
@@ -730,6 +732,7 @@ export class OrchestratorRuntimePhase {
   ) {
     return this.missionRepository.transaction(async (session) => {
       const task = await this.getRequiredTask(taskId, session);
+      const mission = await this.getRequiredMission(task.missionId, session);
 
       this.assertTurnCompletionState(task, turn);
 
@@ -772,6 +775,12 @@ export class OrchestratorRuntimePhase {
         completionOutcome.reason,
         session,
       );
+
+      await this.persistMissionTerminalStatus({
+        mission,
+        session,
+        task: finalizedTask,
+      });
 
       if (completionOutcome.preparedPlannerEvidence) {
         await persistPlannerTurnEvidence({
@@ -944,6 +953,40 @@ export class OrchestratorRuntimePhase {
     );
   }
 
+  private async persistMissionTerminalStatus(input: {
+    mission: MissionRecord;
+    session: PersistenceSession;
+    task: MissionTaskRecord;
+  }) {
+    const nextMissionStatus = resolveMissionTerminalStatus({
+      currentMissionStatus: input.mission.status,
+      taskRole: input.task.role,
+      taskStatus: input.task.status,
+    });
+
+    if (!nextMissionStatus || nextMissionStatus === input.mission.status) {
+      return;
+    }
+
+    const terminalMission = await this.missionRepository.updateMissionStatus(
+      input.mission.id,
+      nextMissionStatus,
+      input.session,
+    );
+
+    await this.replayService.append(
+      {
+        missionId: input.mission.id,
+        type: "mission.status_changed",
+        payload: buildTaskTerminalizedMissionStatusChangedPayload(
+          input.mission.status,
+          terminalMission.status,
+        ),
+      },
+      input.session,
+    );
+  }
+
   private async getRequiredMission(
     missionId: string,
     session?: PersistenceSession,
@@ -1067,6 +1110,26 @@ export class OrchestratorRuntimePhase {
       return failedTask;
     });
   }
+}
+
+function resolveMissionTerminalStatus(input: {
+  currentMissionStatus: MissionStatus;
+  taskRole: MissionTaskRecord["role"];
+  taskStatus: MissionTaskStatus;
+}) {
+  if (input.taskStatus === "failed") {
+    return "failed" as const;
+  }
+
+  if (input.taskStatus === "cancelled") {
+    return "cancelled" as const;
+  }
+
+  if (input.taskRole === "executor" && input.taskStatus === "succeeded") {
+    return "succeeded" as const;
+  }
+
+  return null;
 }
 
 function buildExecutorPublishFailureSummary(error: unknown) {

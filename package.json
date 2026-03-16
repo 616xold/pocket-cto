@@ -28,6 +28,7 @@
     "eval:smoke:executor": "pnpm --filter @pocket-cto/control-plane eval:smoke:executor",
     "repo:hygiene": "node tools/repo-hygiene-check.mjs",
     "lint": "turbo run lint",
+    "m2:seeded-runs": "node tools/m2-exit-seeded-runs.mjs",
     "typecheck:packages": "node tools/typecheck-packages.mjs",
     "typecheck": "pnpm typecheck:packages && turbo run typecheck",
     "test": "turbo run test",

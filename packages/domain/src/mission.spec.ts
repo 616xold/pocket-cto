@@ -4,9 +4,11 @@ import { CreateMissionFromTextInputSchema, MissionSpecSchema } from "./mission";
 describe("Mission domain schemas", () => {
   it("parses mission text input", () => {
     const parsed = CreateMissionFromTextInputSchema.parse({
+      primaryRepo: "acme/web",
       text: "Implement passkeys for sign-in",
     });
 
+    expect(parsed.primaryRepo).toBe("acme/web");
     expect(parsed.sourceKind).toBe("manual_text");
   });
 

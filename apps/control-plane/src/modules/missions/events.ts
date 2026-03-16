@@ -4,6 +4,7 @@ export const missionStatusChangeReasons = {
   approvalRequested: "approval_requested",
   approvalResolved: "approval_resolved",
   runtimeTurnStarted: "runtime_turn_started",
+  taskTerminalized: "task_terminalized",
   tasksMaterialized: "tasks_materialized",
 } as const;
 
@@ -54,5 +55,16 @@ export function buildApprovalResolvedMissionStatusChangedPayload(
     from,
     to,
     reason: missionStatusChangeReasons.approvalResolved,
+  };
+}
+
+export function buildTaskTerminalizedMissionStatusChangedPayload(
+  from: MissionStatus,
+  to: MissionStatus,
+): MissionStatusChangedPayload {
+  return {
+    from,
+    to,
+    reason: missionStatusChangeReasons.taskTerminalized,
   };
 }

@@ -30,6 +30,7 @@ describe("control-plane app", () => {
       method: "POST",
       url: "/missions/text",
       payload: {
+        primaryRepo: "acme/web",
         text: "Implement passkeys for sign-in",
         requestedBy: "operator",
       },
@@ -44,6 +45,10 @@ describe("control-plane app", () => {
         objective: "Implement passkeys for sign-in",
         sourceKind: "manual_text",
         createdBy: "operator",
+        primaryRepo: "acme/web",
+        spec: {
+          repos: ["acme/web"],
+        },
       },
       tasks: [
         { role: "planner", sequence: 0, status: "pending" },

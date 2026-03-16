@@ -46,15 +46,24 @@ export class MissionService {
     const compilation = await this.compiler.compileFromText({
       text: input.text,
     });
+    const primaryRepo = normalizeOptionalString(input.primaryRepo);
+    const spec =
+      primaryRepo === null
+        ? compilation.spec
+        : {
+            ...compilation.spec,
+            repos: [primaryRepo],
+          };
+
     return this.createFromCompilation(
       {
         compilation,
         createdBy: input.requestedBy,
-        primaryRepo: compilation.spec.repos[0] ?? null,
+        primaryRepo: primaryRepo ?? spec.repos[0] ?? null,
         rawText: input.text,
         sourceKind: input.sourceKind,
         sourceRef: input.sourceRef ?? null,
-        spec: compilation.spec,
+        spec,
       },
       undefined,
     );
@@ -353,6 +362,11 @@ function summarizeMission(input: {
       proofBundle: input.proofBundle,
     }),
   };
+}
+
+function normalizeOptionalString(value: string | null | undefined) {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
 }
 
 function readLatestTask(tasks: MissionTaskRecord[]) {

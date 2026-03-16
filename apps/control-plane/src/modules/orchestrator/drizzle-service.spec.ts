@@ -1185,6 +1185,7 @@ describe("OrchestratorWorker (DB-backed)", () => {
       status: "succeeded",
       summary: expect.stringContaining("Validation passed"),
     });
+    expect(detail.mission.status).toBe("succeeded");
     expect(planArtifact?.id).toBeDefined();
     expect(diffSummaryArtifact).toBeDefined();
     expect(testReportArtifact).toBeDefined();
@@ -1216,6 +1217,17 @@ describe("OrchestratorWorker (DB-backed)", () => {
     expect(detail.proofBundle.changeSummary).toContain("README.md");
     expect(detail.proofBundle.verificationSummary).toContain(
       "Local executor validation passed",
+    );
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: null,
+        type: "mission.status_changed",
+        payload: {
+          from: "running",
+          reason: "task_terminalized",
+          to: "succeeded",
+        },
+      }),
     );
     expect(replayEvents).toContainEqual(
       expect.objectContaining({
@@ -1362,6 +1374,7 @@ describe("OrchestratorWorker (DB-backed)", () => {
     );
     const branchName = `pocket-cto/${created.mission.id}/1-executor`;
 
+    expect(detail.mission.status).toBe("succeeded");
     expect(prLinkArtifact).toBeDefined();
     expect(readArtifactMetadata(prLinkArtifact?.metadata)).toMatchObject({
       baseBranch: "main",
@@ -1696,6 +1709,7 @@ describe("OrchestratorWorker (DB-backed)", () => {
       codexTurnId: null,
       status: "failed",
     });
+    expect(detail.mission.status).toBe("failed");
     expect(diffSummaryArtifact).toBeUndefined();
     expect(testReportArtifact).toBeDefined();
     expect(logExcerptArtifact).toBeDefined();
@@ -1719,6 +1733,17 @@ describe("OrchestratorWorker (DB-backed)", () => {
       "Local executor validation failed",
     );
     expect(detail.proofBundle.rollbackSummary).toContain("Safe fallback");
+    expect(replayEvents).toContainEqual(
+      expect.objectContaining({
+        taskId: null,
+        type: "mission.status_changed",
+        payload: {
+          from: "running",
+          reason: "task_terminalized",
+          to: "failed",
+        },
+      }),
+    );
     expect(replayEvents).toContainEqual(
       expect.objectContaining({
         taskId: created.tasks[1]!.id,

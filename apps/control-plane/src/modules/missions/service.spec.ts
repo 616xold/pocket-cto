@@ -66,6 +66,20 @@ describe("MissionService", () => {
     });
   });
 
+  it("overrides the stub repo target when text intake specifies a primary repo", async () => {
+    const { service } = createService();
+
+    const created = await service.createFromText({
+      primaryRepo: "acme/web",
+      requestedBy: "operator",
+      sourceKind: "manual_text",
+      text: "Implement passkeys for sign-in",
+    });
+
+    expect(created.mission.primaryRepo).toBe("acme/web");
+    expect(created.mission.spec.repos).toEqual(["acme/web"]);
+  });
+
   it("creates a GitHub issue mission with truthful source and repo overrides", async () => {
     const { service } = createService();
 

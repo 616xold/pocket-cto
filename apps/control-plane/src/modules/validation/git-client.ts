@@ -101,7 +101,7 @@ export class LocalWorkspaceValidationGitClient
             },
           );
         } catch (error) {
-          const output = formatExecError(error);
+          const output = readExecStreams(error);
 
           if (output) {
             outputs.push(output);
@@ -127,6 +127,15 @@ function normalizeRelativePath(path: string) {
 }
 
 function formatExecError(error: unknown) {
+  const output = readExecStreams(error);
+  if (output) {
+    return output;
+  }
+
+  return String(error);
+}
+
+function readExecStreams(error: unknown) {
   if (typeof error === "object" && error !== null) {
     const stdout =
       "stdout" in error && typeof error.stdout === "string"
@@ -137,10 +146,10 @@ function formatExecError(error: unknown) {
         ? error.stderr.trim()
         : "";
 
-    return [stdout, stderr].filter(Boolean).join("\n") || String(error);
+    return [stdout, stderr].filter(Boolean).join("\n") || null;
   }
 
-  return String(error);
+  return null;
 }
 
 function mergeDiffCheckResults(

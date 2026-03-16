@@ -42,6 +42,7 @@ export const MissionStatusChangeReasonSchema = z.enum([
   "approval_requested",
   "approval_resolved",
   "runtime_turn_started",
+  "task_terminalized",
 ]);
 
 export const MissionStatusChangedPayloadSchema = z.object({

@@ -71,6 +71,7 @@ export type RiskBudget = z.infer<typeof RiskBudgetSchema>;
 export type MissionSpec = z.infer<typeof MissionSpecSchema>;
 
 export const CreateMissionFromTextInputSchema = z.object({
+  primaryRepo: z.string().min(1).optional(),
   text: z.string().min(1),
   sourceKind: MissionSourceKindSchema.default("manual_text"),
   sourceRef: z.string().optional(),
