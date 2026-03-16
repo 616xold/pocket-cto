@@ -80,7 +80,7 @@ Exit criteria:
 - a GitHub issue or text request can create a build mission
 - successful missions attach a PR link and proof bundle manifest
 - mission detail page shows evidence and approval trace
-- at least 3 seeded build tasks run end to end in staging
+- at least 3 seeded build tasks run end to end against the real single-operator M2 stack, using staging when it exists and otherwise the real local embedded stack with live GitHub App and Codex evidence
 
 ### M3 - Engineering twin v1
 

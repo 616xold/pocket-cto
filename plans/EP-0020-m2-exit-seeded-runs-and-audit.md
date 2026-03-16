@@ -17,6 +17,9 @@ The operator-visible result is one in-repo M2 exit report plus a reproducible he
 - [x] 2026-03-16T03:55:29Z Added the small text-intake repo-target override and mission terminalization fixes that the seeded runs exposed, reran the live stack against fresh dedicated databases, and captured three successful end-to-end seeded runs with real draft PRs, ready proof bundles, and durable mission-detail evidence in `docs/ops/m2-exit-report.md`.
 - [x] 2026-03-16T03:55:29Z Updated `docs/ops/local-dev.md` with a reproducible "M2 exit seeded runs" section using the helper plus fresh dedicated databases and embedded-worker mode.
 - [x] 2026-03-16T04:01:40Z Ran the required validation matrix: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current` all passed. `pnpm build` and the fresh-worktree `ci:repro:current` build reproduced existing Next.js warnings about `typedRoutes`, missing build cache, and the Next ESLint plugin, but no validation command failed.
+- [x] 2026-03-16T17:33:00Z Reopened EP-0020 for milestone closeout, re-read the roadmap plus M2 evidence docs, reran the requested cleanup inspections, and confirmed through the GitHub App installation token that seeded draft PRs `#26`, `#27`, and `#28` plus their task branches are still live on `616xold/pocket-cto`.
+- [x] 2026-03-16T17:24:52Z Added the narrow GitHub App closeout helper `tools/m2-exit-closeout.mjs`, ran it first in `check` mode and then in `apply` mode, and closed draft PRs `#26`, `#27`, and `#28` plus deleted their seeded branches with no remaining manual cleanup items.
+- [x] 2026-03-16T17:35:00Z Reconciled the roadmap, local-dev guide, exit report, and this ExecPlan around one explicit repo decision: because this single-operator v1 repo has no checked-in staging deployment surface, real local embedded-stack seeded runs with live GitHub App and Codex evidence are accepted as the M2 exit proxy. M2 is therefore complete and M3 is now safe to start.
 
 ## Surprises & Discoveries
 
@@ -36,6 +39,8 @@ The operator-visible result is one in-repo M2 exit report plus a reproducible he
   Evidence: the early seeded reruns showed executor failure evidence and a failed proof bundle while `GET /missions/:missionId` still returned `mission.status = running`; after mission terminalization was wired into orchestrator completion, the final reruns returned truthful terminal mission status.
 - Observation: The approval-seeking seeded mission succeeded end to end without ever emitting a live pending approval.
   Evidence: the helper polled `GET /missions/:missionId/approvals` and recorded `approvalRequired: false`, while the final mission still produced a ready proof bundle and draft PR.
+- Observation: the repository does not currently expose a checked-in staging deployment surface; the remaining ambiguity is policy wording, not missing runtime proof.
+  Evidence: the requested `rg -n "staging|manual cleanup|PR #26|PR #27|PR #28|safe to start M3|draft PR|cleanup" plans docs README.md tools` inspection only surfaced roadmap/report wording and closeout notes, while the live GitHub inspection confirmed the seeded artifacts still exist as open draft PRs and branches.
 
 ## Decision Log
 
@@ -62,6 +67,12 @@ The operator-visible result is one in-repo M2 exit report plus a reproducible he
   Date/Author: 2026-03-16 / Codex
 - Decision: Keep the approval-seeking seeded mission in the run set even though the live runtime never requested approval.
   Rationale: The prompt and helper preserved the approval-capable path and would have resolved a live pending approval through the real route. Recording that no approval was requested is more honest than forcing a fake approval or quietly swapping the run label after execution.
+  Date/Author: 2026-03-16 / Codex
+- Decision: Keep the final operational closeout narrow: GitHub App-based cleanup, docs, and one explicit milestone decision only.
+  Rationale: The remaining gap is administrative. A tiny cleanup helper and plain docs are safer than broadening product code at the end of M2.
+  Date/Author: 2026-03-16 / Codex
+- Decision: Accept the real local embedded stack as the M2 exit proxy for this repo until a real staging surface exists.
+  Rationale: The roadmap wording was the only blocker left, and the repo has durable proof from real local runs with live GitHub App publish, proof-bundle assembly, replay evidence, and approval-route coverage but no checked-in staging deployment target to exercise instead.
   Date/Author: 2026-03-16 / Codex
 
 ## Context and Orientation
@@ -225,4 +236,4 @@ Three seeded missions now ran end to end against the real local embedded M2 stac
 - GitHub issue-intake mission `26eeea81-206e-4212-9b0b-82e4b1e1ff3e` opened draft PR `#27` and proved repeated create-mission is idempotent
 - approval-seeking text mission `942e73d4-14cb-4e59-9c9b-7934cb1be618` opened draft PR `#28`, but it completed without requiring a live approval
 
-The validation matrix is now green, including a clean `pnpm ci:repro:current` run from a fresh temp worktree. The strongest residual caveat is not product correctness but roadmap wording: the code, seeded runs, report, and replay evidence show the M2 stack works end to end locally, but `plans/ROADMAP.md` still says the three seeded runs should happen "in staging". Unless the team explicitly accepts equivalent real local-stack evidence, that final wording gap should be resolved before declaring M2 fully complete and starting M3.
+The validation matrix is green, the seeded PRs and branches are cleaned up, and the roadmap wording now matches the repo reality. This repo does not currently ship a separate staging surface, so the final closeout decision is explicit: real local embedded-stack seeded runs with live GitHub App and Codex evidence are the operational proxy for M2 in single-operator v1. M2 is complete and it is safe to start M3.
