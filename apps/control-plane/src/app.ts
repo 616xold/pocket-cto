@@ -3,6 +3,7 @@ import { registerHttpErrorHandler } from "./lib/http-errors";
 import { createLogger } from "./lib/logger";
 import { registerHealthRoutes } from "./modules/health/routes";
 import { registerGitHubAppRoutes } from "./modules/github-app/routes";
+import { registerGitHubIssueIntakeRoutes } from "./modules/github-app/issue-intake-routes";
 import { registerGitHubWebhookRoutes } from "./modules/github-app/webhook-routes";
 import { registerMissionRoutes } from "./modules/missions/routes";
 import { registerReplayRoutes } from "./modules/replay/routes";
@@ -24,6 +25,9 @@ export async function buildApp(options?: { container?: AppContainer }) {
   });
   await registerGitHubWebhookRoutes(app, {
     githubWebhookService: container.githubWebhookService,
+  });
+  await registerGitHubIssueIntakeRoutes(app, {
+    githubIssueIntakeService: container.githubIssueIntakeService,
   });
   await registerMissionRoutes(app, {
     liveControl: container.operatorControl.liveControl,

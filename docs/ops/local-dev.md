@@ -65,6 +65,7 @@ Once `pnpm dev` or `pnpm dev:embedded` is running:
 The home and list surfaces now stay deliberately summary-shaped.
 They call the new `GET /missions` control-plane route for newest-first mission cards and expose one minimal text-intake box that reuses the existing `POST /missions/text` backend.
 Successful submits redirect directly into the created mission detail page.
+They also expose a small GitHub issue intake section that reads the latest actionable persisted GitHub issue envelopes and lets you create one build mission per GitHub issue identity.
 
 If you want to inspect the API route directly while developing the web surface:
 
@@ -73,6 +74,34 @@ curl 'http://localhost:4000/missions'
 curl 'http://localhost:4000/missions?limit=6'
 curl 'http://localhost:4000/missions?status=queued&sourceKind=manual_text'
 ```
+
+## GitHub issue intake
+
+When live `issues` and `issue_comment` webhook deliveries have already been persisted through `POST /github/webhooks`, the control plane now exposes a truthful issue-intake read model without reprocessing ingress:
+
+```bash
+curl 'http://localhost:4000/github/intake/issues'
+```
+
+Each issue summary item includes the persisted issue delivery id, repository full name, issue number and title, current issue state, sender login when present, and whether the issue is already bound to a mission.
+If related `issue_comment` envelopes were stored, the summary also reports comment presence and the latest honest comment count when that value exists on the issue payload.
+
+To create a build mission from one persisted GitHub issue delivery:
+
+```bash
+curl -i -X POST \
+  'http://localhost:4000/github/intake/issues/<delivery-id>/create-mission'
+```
+
+Behavior notes:
+
+- the route only accepts persisted `issues` deliveries and rejects `issue_comment` deliveries explicitly
+- repeated creates for the same GitHub issue are idempotent and return the already-bound mission instead of creating a duplicate
+- the resulting mission keeps `sourceKind=github_issue`, a truthful issue `sourceRef`, and the real GitHub repository full name as its repo target context
+
+The web operator home at `http://localhost:3000/` and the full mission list at `http://localhost:3000/missions` both surface the same intake cards.
+Unbound issues show a create action.
+Bound issues show the existing mission link and status instead.
 
 ## Operator action feedback
 

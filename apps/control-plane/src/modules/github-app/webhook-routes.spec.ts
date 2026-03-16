@@ -286,6 +286,9 @@ describe("GitHub webhook routes", () => {
             repositoryFullName: "616xold/pocket-cto",
             issueId: "700",
             issueNumber: 42,
+            issueState: "open",
+            issueTitle: "Ship GitHub issue intake",
+            senderLogin: "octo-operator",
           },
         }),
         expect.objectContaining({
@@ -299,6 +302,8 @@ describe("GitHub webhook routes", () => {
             repositoryFullName: "616xold/pocket-cto",
             issueNumber: 42,
             commentId: "900",
+            issueState: "open",
+            senderLogin: "octo-operator",
           },
         }),
       ]),
@@ -334,6 +339,8 @@ describe("GitHub webhook routes", () => {
           repositoryFullName: "616xold/pocket-cto",
           issueNumber: 42,
           commentId: "900",
+          issueState: "open",
+          senderLogin: "octo-operator",
         },
       }),
     });
@@ -433,19 +440,50 @@ async function postSignedDelivery(
 function createIssuePayload(
   overrides: Partial<Record<string, unknown>> = {},
 ) {
+  const repositoryOverrides =
+    overrides.repository &&
+    typeof overrides.repository === "object" &&
+    !Array.isArray(overrides.repository)
+      ? overrides.repository
+      : {};
+  const issueOverrides =
+    overrides.issue &&
+    typeof overrides.issue === "object" &&
+    !Array.isArray(overrides.issue)
+      ? overrides.issue
+      : {};
+  const senderOverrides =
+    overrides.sender &&
+    typeof overrides.sender === "object" &&
+    !Array.isArray(overrides.sender)
+      ? overrides.sender
+      : {};
+  const { repository: _repository, issue: _issue, sender: _sender, ...rest } =
+    overrides;
+
   return {
     action: "opened",
     installation: {
       id: 12345,
       ...(overrides.installation as Record<string, unknown> | undefined),
     },
-    repository: createRepository(),
+    repository: createRepository(repositoryOverrides),
+    sender: {
+      login: "octo-operator",
+      ...senderOverrides,
+    },
     issue: {
       id: 700,
+      node_id: "I_kwDOIssue700",
       number: 42,
-      ...(overrides.issue as Record<string, unknown> | undefined),
+      title: "Ship GitHub issue intake",
+      body: "Turn the stored issue envelope into a mission.",
+      state: "open",
+      html_url: "https://github.com/616xold/pocket-cto/issues/42",
+      comments: 0,
+      ...issueOverrides,
     },
-    ...overrides,
+    ...rest,
   };
 }
 

@@ -1,11 +1,15 @@
 import React from "react";
 import Link from "next/link";
+import { GitHubIssueIntakeList } from "../../components/github-issue-intake-list";
 import { MissionIntakeForm } from "../../components/mission-intake-form";
 import { MissionList } from "../../components/mission-list";
-import { getMissionList } from "../../lib/api";
+import { getGitHubIssueIntakeList, getMissionList } from "../../lib/api";
 
 export default async function MissionsPage() {
-  const missionList = await getMissionList({ limit: 20 });
+  const [missionList, issueIntake] = await Promise.all([
+    getMissionList({ limit: 20 }),
+    getGitHubIssueIntakeList(),
+  ]);
 
   return (
     <main className="shell">
@@ -43,6 +47,31 @@ export default async function MissionsPage() {
             <li>Mission detail stays the evidence-heavy drill-down</li>
           </ul>
         </article>
+      </section>
+
+      <section className="card" id="github-issue-intake">
+        <div className="section-head">
+          <div>
+            <p className="kicker">GitHub issue intake</p>
+            <h2>Persisted issue envelopes</h2>
+          </div>
+          <p className="muted">
+            Latest stored `issues` deliveries, one card per issue identity.
+          </p>
+        </div>
+
+        {issueIntake ? (
+          <GitHubIssueIntakeList
+            emptyHeading="No GitHub issues are waiting in intake"
+            emptyMessage="Once a signed GitHub issues delivery lands, you can create a build mission from it here."
+            issues={issueIntake.issues}
+          />
+        ) : (
+          <p className="muted">
+            The control plane is not reachable yet, so GitHub issue intake
+            could not be loaded.
+          </p>
+        )}
       </section>
 
       <section className="card">

@@ -19,6 +19,12 @@ import {
 } from "./modules/github-app/config";
 import { DrizzleGitHubAppRepository } from "./modules/github-app/drizzle-repository";
 import { GitHubAppClient } from "./modules/github-app/client";
+import { DrizzleGitHubIssueIntakeRepository } from "./modules/github-app/issue-intake-drizzle-repository";
+import {
+  InMemoryGitHubIssueIntakeRepository,
+  type GitHubIssueIntakeRepository,
+} from "./modules/github-app/issue-intake-repository";
+import { GitHubIssueIntakeService } from "./modules/github-app/issue-intake-service";
 import {
   InMemoryGitHubAppRepository,
   type GitHubAppRepository,
@@ -73,6 +79,7 @@ type ServerContainerFactories = {
 type SharedKernel = {
   approvalService: ApprovalService;
   githubAppService: GitHubAppService;
+  githubIssueIntakeService: GitHubIssueIntakeService;
   githubWebhookService: GitHubWebhookService;
   missionService: MissionService;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
@@ -168,6 +175,7 @@ export function createInMemoryContainer(): AppContainer {
     approvalRepository: new InMemoryApprovalRepository(),
     env: {},
     githubAppRepository: new InMemoryGitHubAppRepository(),
+    githubIssueIntakeRepository: new InMemoryGitHubIssueIntakeRepository(),
     githubWebhookRepository: new InMemoryGitHubWebhookRepository(),
     missionRepository: new InMemoryMissionRepository(),
     replayRepository: new InMemoryReplayRepository(),
@@ -204,6 +212,9 @@ async function buildDrizzleKernel(input: {
     approvalRepository: new DrizzleApprovalRepository(input.db),
     env: input.env,
     githubAppRepository: new DrizzleGitHubAppRepository(input.db),
+    githubIssueIntakeRepository: new DrizzleGitHubIssueIntakeRepository(
+      input.db,
+    ),
     githubWebhookRepository: new DrizzleGitHubWebhookRepository(input.db),
     missionRepository: new DrizzleMissionRepository(input.db),
     replayRepository: new DrizzleReplayRepository(input.db),
@@ -236,6 +247,7 @@ function buildSharedKernel(input: {
     >
   >;
   githubAppRepository: GitHubAppRepository;
+  githubIssueIntakeRepository: GitHubIssueIntakeRepository;
   githubWebhookRepository: GitHubWebhookRepository;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
   replayRepository: ConstructorParameters<typeof ReplayService>[0];
@@ -297,10 +309,17 @@ function buildSharedKernel(input: {
       approvalReader: approvalService,
     },
   );
+  const githubIssueIntakeService = new GitHubIssueIntakeService({
+    bindingRepository: input.githubIssueIntakeRepository,
+    missionRepository: input.missionRepository,
+    missionService,
+    webhookRepository: input.githubWebhookRepository,
+  });
 
   return {
     approvalService,
     githubAppService,
+    githubIssueIntakeService,
     githubWebhookService,
     liveSessionRegistry,
     missionService,
@@ -373,6 +392,7 @@ function toAppContainer(
 ): AppContainer {
   return {
     githubAppService: kernel.githubAppService,
+    githubIssueIntakeService: kernel.githubIssueIntakeService,
     githubWebhookService: kernel.githubWebhookService,
     missionService: kernel.missionService,
     operatorControl: {

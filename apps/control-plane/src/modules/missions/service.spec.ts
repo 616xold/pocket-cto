@@ -66,6 +66,29 @@ describe("MissionService", () => {
     });
   });
 
+  it("creates a GitHub issue mission with truthful source and repo overrides", async () => {
+    const { service } = createService();
+
+    const created = await service.createFromGitHubIssue({
+      issueTitle: "Ship issue intake",
+      issueBody: "Turn the stored issue envelope into a build mission.",
+      primaryRepo: "acme/web",
+      requestedBy: "octo-operator",
+      sourceRef: "https://github.com/acme/web/issues/42",
+    });
+
+    expect(created.mission.sourceKind).toBe("github_issue");
+    expect(created.mission.sourceRef).toBe(
+      "https://github.com/acme/web/issues/42",
+    );
+    expect(created.mission.primaryRepo).toBe("acme/web");
+    expect(created.mission.spec.repos).toEqual(["acme/web"]);
+    expect(created.mission.title).toBe("Ship issue intake");
+    expect(created.mission.objective).toContain(
+      "Turn the stored issue envelope into a build mission.",
+    );
+  });
+
   it("returns summary-shaped approvals, approval cards, and artifacts in mission detail", async () => {
     const approval: ApprovalRecord = {
       createdAt: "2026-03-14T10:00:00.000Z",

@@ -204,6 +204,18 @@ function createAppContainer(
         };
       },
     } as AppContainer["githubAppService"],
+    githubIssueIntakeService: {
+      async createMissionFromDelivery() {
+        throw new Error(
+          "createMissionFromDelivery should not be called in this test",
+        );
+      },
+      async listIssues() {
+        return {
+          issues: [],
+        };
+      },
+    } as AppContainer["githubIssueIntakeService"],
     githubWebhookService: {
       async getDelivery() {
         return {

@@ -2493,6 +2493,16 @@ async function createHarness(options?: {
           };
         },
       },
+      githubIssueIntakeService: {
+        async createMissionFromDelivery() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async listIssues() {
+          return {
+            issues: [],
+          };
+        },
+      },
       missionService,
       operatorControl: {
         approvalService,

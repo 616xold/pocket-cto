@@ -3,14 +3,36 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const getMissionList = vi.fn();
+const getGitHubIssueIntakeList = vi.fn();
 
 vi.mock("../../lib/api", () => ({
+  getGitHubIssueIntakeList,
   getMissionList,
 }));
 
 vi.mock("../../components/mission-intake-form", () => ({
   MissionIntakeForm() {
     return <div>mission-intake-form</div>;
+  },
+}));
+
+vi.mock("../../components/github-issue-intake-list", () => ({
+  GitHubIssueIntakeList(props: {
+    issues: Array<{
+      issueTitle: string;
+      isBound: boolean;
+    }>;
+  }) {
+    return (
+      <div>
+        {props.issues.map((issue) => (
+          <article key={issue.issueTitle}>
+            <span>{issue.issueTitle}</span>
+            <span>{issue.isBound ? "Open mission" : "Create mission"}</span>
+          </article>
+        ))}
+      </div>
+    );
   },
 }));
 
@@ -67,13 +89,36 @@ describe("MissionsPage", () => {
         },
       ],
     });
+    getGitHubIssueIntakeList.mockResolvedValue({
+      issues: [
+        {
+          deliveryId: "delivery-issue-42",
+          repoFullName: "acme/web",
+          issueNumber: 42,
+          issueTitle: "Ship issue intake",
+          issueState: "open",
+          senderLogin: "octo-operator",
+          sourceRef: "https://github.com/acme/web/issues/42",
+          receivedAt: "2026-03-16T01:55:00.000Z",
+          commentCount: 2,
+          hasCommentActivity: true,
+          isBound: false,
+          boundMissionId: null,
+          boundMissionStatus: null,
+        },
+      ],
+    });
 
     const mod = await import("./page");
     const html = renderToStaticMarkup(await mod.default());
 
     expect(getMissionList).toHaveBeenCalledWith({ limit: 20 });
+    expect(getGitHubIssueIntakeList).toHaveBeenCalledOnce();
     expect(html).toContain("Implement passkeys for sign-in");
     expect(html).toContain("Prepare rollback notes");
+    expect(html).toContain("GitHub issue intake");
+    expect(html).toContain("Ship issue intake");
+    expect(html).toContain("Create mission");
     expect(html).toContain("Open mission");
     expect(html).toContain("PR #19");
   });

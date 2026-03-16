@@ -91,6 +91,7 @@ This repo is structured to help Codex implement the system modularly and milesto
 - Codex app or Codex CLI installed locally
 
 M2.4 now extends that GitHub slice: when a mission resolves to a synced writable repository row, successful executor runs can publish a deterministic branch, open a draft PR through the GitHub App installation, and persist a durable `pr_link` artifact. Mission repo targeting is now narrow but friendlier: Pocket CTO can normalize an exact `owner/repo`, a unique synced short repo name, or the single active synced repo in one-repo local setups. See [docs/ops/local-dev.md](docs/ops/local-dev.md) for the current permission and smoke-test details.
+M2.7 now adds a truthful GitHub issue-intake seam on top of persisted webhook envelopes: `GET /github/intake/issues` lists actionable stored issue deliveries, and `POST /github/intake/issues/:deliveryId/create-mission` turns one persisted GitHub issue into an idempotently bound build mission without using issue comments as mission creators.
 
 ### Bootstrap
 
@@ -107,6 +108,7 @@ pnpm dev:worker   # in a second terminal once task execution work begins
 For the local GitHub App and webhook setup, use the local-dev guide in `docs/ops/local-dev.md`.
 M2.2 now expects `GITHUB_WEBHOOK_SECRET` for live `POST /github/webhooks` ingress.
 With `pnpm dev` running, `http://localhost:3000/` is now the operator home and `http://localhost:3000/missions` is the newest-first mission list; the text-intake box on those surfaces reuses `POST /missions/text` and redirects into mission detail.
+Those same surfaces now include a small GitHub issue intake section when persisted issue envelopes exist locally.
 
 ### Quality gates
 
