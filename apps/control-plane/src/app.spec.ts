@@ -1707,6 +1707,7 @@ async function createStubApp(
     missionService?: Partial<AppContainer["missionService"]>;
     operatorControl?: Partial<AppContainer["operatorControl"]>;
     replayService?: Partial<AppContainer["replayService"]>;
+    twinService?: Partial<AppContainer["twinService"]>;
   },
 ) {
   const base = createInMemoryContainer();
@@ -1738,6 +1739,10 @@ async function createStubApp(
       replayService: {
         ...base.replayService,
         ...overrides.replayService,
+      },
+      twinService: {
+        ...base.twinService,
+        ...overrides.twinService,
       },
     },
   });

@@ -290,6 +290,84 @@ function createAppContainer(
         return [];
       },
     } as AppContainer["replayService"],
+    twinService: {
+      async finishSyncRun() {
+        throw new Error("finishSyncRun should not be called in this test");
+      },
+      async listRepositoryEdges() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          edgeCount: 0,
+          edges: [],
+        };
+      },
+      async listRepositoryEntities() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          entityCount: 0,
+          entities: [],
+        };
+      },
+      async listRepositoryRuns() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          runCount: 0,
+          runs: [],
+        };
+      },
+      async startSyncRun() {
+        return {
+          id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          repoFullName: "616xold/pocket-cto",
+          extractor: "synthetic",
+          status: "running",
+          startedAt: "2026-03-15T00:00:00.000Z",
+          completedAt: null,
+          stats: {},
+          errorSummary: null,
+          createdAt: "2026-03-15T00:00:00.000Z",
+        };
+      },
+      async upsertEdge() {
+        throw new Error("upsertEdge should not be called in this test");
+      },
+      async upsertEntity() {
+        throw new Error("upsertEntity should not be called in this test");
+      },
+    } as AppContainer["twinService"],
   };
 }
 

@@ -68,6 +68,12 @@ import {
   LocalExecutorValidationService,
   LocalWorkspaceValidationGitClient,
 } from "./modules/validation";
+import { DrizzleTwinRepository } from "./modules/twin/drizzle-repository";
+import {
+  InMemoryTwinRepository,
+  type TwinRepository,
+} from "./modules/twin/repository";
+import { TwinService } from "./modules/twin/service";
 
 type KernelMode = "api_only" | "embedded_worker" | "standalone_worker";
 type ServerControlMode = Extract<KernelMode, "api_only" | "embedded_worker">;
@@ -86,6 +92,7 @@ type SharedKernel = {
   proofBundleAssembly: ProofBundleAssemblyService;
   replayService: ReplayService;
   runtimeControlService: RuntimeControlService;
+  twinService: TwinService;
   liveSessionRegistry: InMemoryRuntimeSessionRegistry;
   worker: OrchestratorWorker | null;
 };
@@ -179,6 +186,7 @@ export function createInMemoryContainer(): AppContainer {
     githubWebhookRepository: new InMemoryGitHubWebhookRepository(),
     missionRepository: new InMemoryMissionRepository(),
     replayRepository: new InMemoryReplayRepository(),
+    twinRepository: new InMemoryTwinRepository(),
   });
 
   return toAppContainer(kernel, {
@@ -218,6 +226,7 @@ async function buildDrizzleKernel(input: {
     githubWebhookRepository: new DrizzleGitHubWebhookRepository(input.db),
     missionRepository: new DrizzleMissionRepository(input.db),
     replayRepository: new DrizzleReplayRepository(input.db),
+    twinRepository: new DrizzleTwinRepository(input.db),
   });
 
   if (input.mode === "api_only") {
@@ -251,6 +260,7 @@ function buildSharedKernel(input: {
   githubWebhookRepository: GitHubWebhookRepository;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
   replayRepository: ConstructorParameters<typeof ReplayService>[0];
+  twinRepository: TwinRepository;
 }): SharedKernel {
   const githubAppConfig = resolveGitHubAppConfig({
     GITHUB_APP_ID: input.env.GITHUB_APP_ID,
@@ -315,6 +325,10 @@ function buildSharedKernel(input: {
     missionService,
     webhookRepository: input.githubWebhookRepository,
   });
+  const twinService = new TwinService({
+    repository: input.twinRepository,
+    repositoryRegistry: githubAppService,
+  });
 
   return {
     approvalService,
@@ -327,6 +341,7 @@ function buildSharedKernel(input: {
     proofBundleAssembly,
     replayService,
     runtimeControlService,
+    twinService,
     worker: null,
   };
 }
@@ -401,6 +416,7 @@ function toAppContainer(
       runtimeControlService: kernel.runtimeControlService,
     },
     replayService: kernel.replayService,
+    twinService: kernel.twinService,
   };
 }
 

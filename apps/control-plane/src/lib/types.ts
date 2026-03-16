@@ -7,6 +7,7 @@ import type { MissionService } from "../modules/missions/service";
 import type { OrchestratorWorker } from "../modules/orchestrator/worker";
 import type { ReplayService } from "../modules/replay/service";
 import type { RuntimeControlService } from "../modules/runtime-codex/control-service";
+import type { TwinService } from "../modules/twin/service";
 
 export type OperatorControlAvailability = DomainOperatorControlAvailability;
 
@@ -39,6 +40,17 @@ export type MissionServicePort = Pick<
 
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;
 
+export type TwinServicePort = Pick<
+  TwinService,
+  | "finishSyncRun"
+  | "listRepositoryEdges"
+  | "listRepositoryEntities"
+  | "listRepositoryRuns"
+  | "startSyncRun"
+  | "upsertEdge"
+  | "upsertEntity"
+>;
+
 export type AppContainer = {
   githubAppService: GitHubAppServicePort;
   githubIssueIntakeService: GitHubIssueIntakeServicePort;
@@ -56,6 +68,7 @@ export type AppContainer = {
     >;
   };
   replayService: ReplayServicePort;
+  twinService: TwinServicePort;
 };
 
 export type EmbeddedWorkerContainer = AppContainer & {
