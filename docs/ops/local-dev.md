@@ -99,6 +99,41 @@ Behavior notes:
 - repeated creates for the same GitHub issue are idempotent and return the already-bound mission instead of creating a duplicate
 - the resulting mission keeps `sourceKind=github_issue`, a truthful issue `sourceRef`, and the real GitHub repository full name as its repo target context
 
+### Reproducible issue-intake smoke
+
+Prefer a real persisted GitHub delivery first:
+
+```bash
+curl -i 'http://localhost:4000/github/webhooks/deliveries?eventName=issues&handledAs=issue_envelope_recorded'
+```
+
+If that already returns an `issues` delivery, use its `deliveryId` with the intake routes above.
+
+If no persisted live delivery exists yet, run the smallest honest fallback:
+
+```bash
+pnpm smoke:github-issue-intake:local
+```
+
+This helper is intentionally labeled as a `local_signed_ingress_replay`.
+It posts one correctly signed GitHub-style `issues` payload into the existing `POST /github/webhooks` route, then verifies all of the M2.7 proof points:
+
+- the issue appears in `GET /github/intake/issues`
+- create-mission works for that delivery
+- a repeated create returns the same mission id
+- the mission appears in `GET /missions?sourceKind=github_issue`
+- the mission detail page at `/missions/<mission-id>` loads successfully
+- `sourceKind`, `sourceRef`, `primaryRepo`, and `spec.repos` stay truthful
+
+By default the helper uses the single active synced repository from `GET /github/repositories`.
+If you have multiple active repos, choose the truthful target explicitly:
+
+```bash
+pnpm smoke:github-issue-intake:local -- --repo-full-name owner/repo
+```
+
+The helper prints a JSON summary with the replay mode, delivery id, issue number, repo full name, source ref, and mission id so you can paste the exact evidence into an ExecPlan or demo notes without re-querying the database.
+
 The web operator home at `http://localhost:3000/` and the full mission list at `http://localhost:3000/missions` both surface the same intake cards.
 Unbound issues show a create action.
 Bound issues show the existing mission link and status instead.

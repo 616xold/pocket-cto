@@ -18,6 +18,10 @@ It does not widen into M3 twin work, redesign webhook ingress, redesign the comp
 - [x] (2026-03-16T02:06Z) Implemented the additive persistence, backend intake service, routes, web cards, and focused tests for GitHub issue intake. The slice now exposes `GET /github/intake/issues`, `POST /github/intake/issues/:deliveryId/create-mission`, a durable `github_issue_mission_bindings` table, and a mission-service issue creation path that preserves truthful GitHub source and repo context.
 - [x] (2026-03-16T02:11Z) Updated `docs/ops/local-dev.md` plus one short README note so operators can inspect persisted issue intake and create missions from stored GitHub issue deliveries.
 - [x] (2026-03-16T02:15Z) Ran the required validation matrix end to end: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current`.
+- [x] (2026-03-16T03:11Z) Confirmed the operational proof gap honestly before this turn's edits: live GitHub App env plus webhook secret are configured locally, but the primary development database still had zero persisted `issues` deliveries, so there was nothing truthful to reuse for a GitHub-hosted smoke.
+- [x] (2026-03-16T03:11Z) Added one small dev-only helper, `tools/github-issue-intake-local-smoke.mjs`, plus a `package.json` script and local-dev/README discoverability notes, so operators can create one correctly signed local `issues` replay through the existing `/github/webhooks` route without widening the product surface.
+- [x] (2026-03-16T03:11Z) Ran the new `pnpm smoke:github-issue-intake:local` flow end to end against the running control-plane and web app. The helper persisted a new issue delivery, proved idempotent create-mission behavior, confirmed mission list presence, and verified that the mission detail page loaded with truthful GitHub source and repo context.
+- [x] (2026-03-16T03:11Z) Reran the full required validation matrix after the helper and docs landed: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current` all passed again.
 
 ## Surprises & Discoveries
 
@@ -39,6 +43,9 @@ It does not widen into M3 twin work, redesign webhook ingress, redesign the comp
 - Observation: the workspace has GitHub App and webhook env keys present locally, but the primary development database currently has no persisted `issues` deliveries to use for a live smoke.
   Evidence: `.env` contains non-empty `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY_BASE64`, `GITHUB_WEBHOOK_SECRET`, and `DATABASE_URL`, while a direct DB query against `github_webhook_deliveries` for `event_name = 'issues'` returned an empty result set.
 
+- Observation: the local repo registry already contained exactly one active synced repository, `616xold/pocket-cto`, even though the git remote for this checkout is `616xold/pocket-cto-starter`.
+  Evidence: `GET /github/repositories` returned one active repository row with `fullName = 616xold/pocket-cto`, while `git remote get-url origin` returned `git@github.com:616xold/pocket-cto-starter.git`.
+
 ## Decision Log
 
 - Decision: keep issue intake inside the existing GitHub App bounded context with separate intake-specific route, repository, schema, and service files.
@@ -59,6 +66,10 @@ It does not widen into M3 twin work, redesign webhook ingress, redesign the comp
 
 - Decision: do not add new replay event types for issue intake itself.
   Rationale: the mission creation path already emits the required mission and task lifecycle replay, while the new intake list route is read-only and issue comments remain envelopes only.
+  Date/Author: 2026-03-16 / Codex
+
+- Decision: close the remaining proof gap with one dev-only local signed ingress helper instead of changing webhook ingress or widening issue-intake product behavior.
+  Rationale: no persisted live GitHub `issues` delivery existed locally, but the existing `/github/webhooks` signature path was already truthful and stable. A tiny helper plus runbook keeps the proof reproducible without pretending a GitHub-hosted delivery happened when it did not.
   Date/Author: 2026-03-16 / Codex
 
 ## Context and Orientation
@@ -91,6 +102,8 @@ The intended edit surface for this slice is:
 - `plans/EP-0019-github-issue-intake-to-build-mission.md`
 - `README.md`
 - `docs/ops/local-dev.md`
+- `package.json`
+- `tools/github-issue-intake-local-smoke.mjs`
 - `packages/domain/src/github-issue-intake.ts`
 - `packages/domain/src/index.ts`
 - `packages/db/src/schema/integrations.ts`
@@ -249,36 +262,37 @@ Validation results and live-smoke notes will be appended here as implementation 
 
 Validation results:
 
-- `pnpm db:generate`: passed; after the initial generation of `packages/db/drizzle/0011_colorful_joshua_kane.sql`, reruns reported `No schema changes, nothing to migrate`.
+- `pnpm db:generate`: passed and still reported `No schema changes, nothing to migrate`.
 - `pnpm db:migrate`: passed.
-- `pnpm run db:migrate:ci`: passed when run sequentially; an earlier parallel attempt was discarded after it raced on database creation.
+- `pnpm run db:migrate:ci`: passed.
 - `pnpm repo:hygiene`: passed.
-- `pnpm lint`: passed after removing one unused import from `apps/control-plane/src/modules/github-app/issue-intake-service.spec.ts`.
-- `pnpm typecheck`: passed after tightening one fixture helper return type, making the already-bound mission path explicit, and adding the new intake service stub to the orchestrator harness app container.
-- `pnpm build`: passed. Existing Next.js warnings about `typedRoutes`, build cache, and the ESLint plugin remain unrelated to this slice.
+- `pnpm lint`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm build`: passed. Existing Next.js warnings about `typedRoutes`, missing build cache, and the ESLint plugin remain unrelated to this slice.
 - `pnpm test`: passed with all packages green, including `36` control-plane files and `170` control-plane tests.
-- `pnpm ci:repro:current`: passed from a clean temporary worktree and confirmed both static and integration-db CI paths.
+- `pnpm ci:repro:current`: passed from a clean temporary worktree and confirmed both static and integration-db CI paths on the current uncommitted snapshot.
 
 Live smoke status:
 
-- Not run. The workspace has local GitHub App and webhook env configured, but the primary development database did not contain any persisted `issues` deliveries to bind, so there was no truthful live delivery to exercise.
-
-## Outcomes & Retrospective
-
-This slice now closes the M2.7 issue-intake seam without widening the milestone.
-Persisted GitHub `issues` envelopes can be listed, inspected for comment activity, and turned into one build mission per GitHub issue identity.
-Repeated creates converge on the same mission through the durable binding reservation instead of duplicating work.
-
-The implementation stayed inside the existing boundaries:
-
-- `packages/domain` owns the shared issue-intake contracts
-- `packages/db` owns the additive issue-binding schema
-- the GitHub App bounded context owns intake listing and delivery-to-mission orchestration
-- the mission bounded context still owns mission creation, replay emission, and proof-bundle placeholder evidence
-- the web surfaces stayed summary-shaped and mobile-safe instead of becoming a second operator console
-
-The remaining gap for a future slice is not correctness here, but upstream data availability.
-To demonstrate the live path end to end, the local environment still needs at least one real persisted GitHub `issues` webhook delivery in the primary development database.
+- No GitHub-hosted `issues` delivery was available locally at the start of this turn, so the smoke strategy changed honestly from "reuse a live persisted delivery" to `local_signed_ingress_replay`.
+- Added `pnpm smoke:github-issue-intake:local`, which posts one correctly signed `issues` payload into the existing `POST /github/webhooks` route and then verifies the full M2.7 flow against the running control-plane and web app.
+- Exact smoke identifiers from this run:
+  - delivery id: `local-issue-intake-smoke-20260316030911408`
+  - issue id: `1773630551409`
+  - issue number: `911408`
+  - repo full name: `616xold/pocket-cto`
+  - source ref: `https://github.com/616xold/pocket-cto/issues/911408`
+  - mission id: `1ca2a5d9-efd9-42bd-a108-db5151cdb7e7`
+- Verified proof points from this run:
+  - `POST /github/webhooks` returned `202` with `handledAs = issue_envelope_recorded`
+  - `GET /github/intake/issues` returned the persisted delivery with `isBound = true`, `boundMissionId = 1ca2a5d9-efd9-42bd-a108-db5151cdb7e7`, and `boundMissionStatus = queued`
+  - the first `POST /github/intake/issues/:deliveryId/create-mission` returned `201` with `outcome = created`
+  - the repeated create returned `200` with `outcome = already_bound` and the same mission id
+  - `GET /missions?sourceKind=github_issue` returned the mission with `sourceKind = github_issue`, `sourceRef = https://github.com/616xold/pocket-cto/issues/911408`, and `primaryRepo = 616xold/pocket-cto`
+  - `GET /missions/1ca2a5d9-efd9-42bd-a108-db5151cdb7e7` returned `primaryRepo = 616xold/pocket-cto` and `spec.repos = ["616xold/pocket-cto"]`
+  - `GET http://localhost:3000/missions/1ca2a5d9-efd9-42bd-a108-db5151cdb7e7` returned `200 OK` and rendered the mission id plus title
+- The issue body from the replay carried through into the mission objective, so the operator evidence still preserves the requested objective instead of replacing it with a synthetic placeholder.
+- Replay and evidence stayed truthful because mission creation still used the standard mission spine and therefore emitted the existing `mission.created`, `task.created`, `mission.status_changed`, and placeholder `artifact.created` sequence rather than a special-case issue path.
 
 ## Interfaces and Dependencies
 
@@ -298,9 +312,30 @@ New or changed dependencies expected in this slice:
 
 - one new shared domain contract for GitHub issue intake summaries and create results
 - one new additive DB table under `packages/db/src/schema/integrations.ts`
+- one new dev-only helper script under `tools/` plus a `package.json` smoke alias
 - no new environment variables
 - no new GitHub App permissions or webhook event subscriptions
 
 ## Outcomes & Retrospective
 
-This section will be updated after implementation with the exact shipped behavior, remaining gaps if any, the validation matrix results, and whether M2 as a whole now meets its exit criteria.
+This slice now closes the M2.7 issue-intake seam and the remaining operational proof gap without widening the milestone.
+Persisted GitHub `issues` envelopes can be listed, inspected for comment activity, and turned into one build mission per GitHub issue identity, and the same end-to-end path is now reproducible locally even when no GitHub-hosted issue delivery has been captured yet.
+
+The implementation stayed inside the existing boundaries:
+
+- `packages/domain` still owns the shared issue-intake contracts
+- `packages/db` still owns the additive issue-binding schema
+- the GitHub App bounded context still owns intake listing and delivery-to-mission orchestration
+- the mission bounded context still owns mission creation, replay emission, and proof-bundle placeholder evidence
+- the new helper lives in `tools/` and uses existing HTTP surfaces instead of adding product-only behavior
+
+For M2 exit, this is now operationally strong enough in local development because:
+
+- the live ingress path remains the real signed `/github/webhooks` route
+- the fallback smoke is clearly labeled as `local_signed_ingress_replay`, not as a live GitHub-hosted delivery
+- the proof bundle is decision-ready enough for a human to inspect the request objective, repo context, source ref, mission id, and idempotent binding behavior without rereading the whole thread
+
+Remaining risk and rollback notes:
+
+- it is still worth capturing one true GitHub-hosted `issues` delivery later for demo completeness, but that is no longer a blocker for reproducible local proof
+- rollback for this turn is narrow: revert `tools/github-issue-intake-local-smoke.mjs`, the `package.json` alias, the local-dev and README notes, and this ExecPlan evidence update together

@@ -109,6 +109,7 @@ For the local GitHub App and webhook setup, use the local-dev guide in `docs/ops
 M2.2 now expects `GITHUB_WEBHOOK_SECRET` for live `POST /github/webhooks` ingress.
 With `pnpm dev` running, `http://localhost:3000/` is now the operator home and `http://localhost:3000/missions` is the newest-first mission list; the text-intake box on those surfaces reuses `POST /missions/text` and redirects into mission detail.
 Those same surfaces now include a small GitHub issue intake section when persisted issue envelopes exist locally.
+If no live `issues` delivery is stored yet, you can run a truthful local signed ingress replay with `pnpm smoke:github-issue-intake:local` after `pnpm dev`; see [docs/ops/local-dev.md](docs/ops/local-dev.md).
 
 ### Quality gates
 
