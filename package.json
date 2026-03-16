@@ -36,7 +36,8 @@
     "db:prepare:ci": "pnpm --filter @pocket-cto/db exec node ../../tools/ci-prepare-postgres.mjs",
     "db:migrate": "pnpm --filter @pocket-cto/db db:migrate",
     "compose:up": "docker compose up -d",
-    "compose:down": "docker compose down -v"
+    "compose:down": "docker compose down -v",
+    "smoke:github-issue-intake:local": "node tools/github-issue-intake-local-smoke.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
