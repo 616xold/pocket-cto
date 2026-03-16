@@ -19,6 +19,9 @@ It will not redesign approval persistence, widen into issue intake, or pull the 
 - [x] (2026-03-16T00:14Z) Updated the web mission detail and operator action surfaces to render compact approval cards and pending approval titles or summaries while preserving the existing resolve and interrupt controls.
 - [x] (2026-03-16T00:14Z) Added focused formatter, mission-detail, API-shape, and web rendering tests that cover file-change, command, network-escalation, fallback kinds, and pending versus resolved card differences.
 - [x] (2026-03-16T00:14Z) Updated the local-dev and replay or evidence docs, rebuilt `@pocket-cto/domain` so referenced app-package typechecks picked up the new contract, ran the requested validation matrix, and completed one manual mission-detail fetch-plus-render check.
+- [x] (2026-03-16T17:06Z) Re-opened EP-0017 for the M2.6 operational proof gap, re-read the required local-dev, M2 exit, runtime-control, and approval-card files, and reran the required inspections `rg -n "approval.requested|approval.resolved|awaiting_approval|approvalCards|resolveApproval|interrupt|liveControl|Approval required: \`false\`" apps docs plans tools`, `git status --short`, and `git diff --name-only HEAD`.
+- [x] (2026-03-16T17:06Z) Added a narrow reproducible approval smoke helper at `tools/m2-approval-proof-smoke.ts` plus the root script `pnpm m2:approval-smoke`, using the existing `file-change-approval` fake runtime fixture behind a temporary embedded control-plane app and real localhost HTTP routes.
+- [x] (2026-03-16T17:06Z) Captured fresh local proof in `docs/ops/local-dev.md` and `docs/ops/m2-exit-report.md` showing `awaiting_approval`, one persisted approval row, pending and resolved `approvalCards`, `POST /approvals/:approvalId/resolve`, and replay evidence for `approval.requested` plus `approval.resolved`.
 
 ## Surprises & Discoveries
 
@@ -33,6 +36,9 @@ It will not redesign approval persistence, widen into issue intake, or pull the 
 
 - Observation: the app-package `tsc` runs consume the referenced `packages/domain` project outputs, so changing the domain contract required a local `pnpm --filter @pocket-cto/domain build` before the control-plane and web typechecks could see `approvalCards`.
   Evidence: the first requested `pnpm --filter @pocket-cto/control-plane typecheck` and `pnpm --filter @pocket-cto/web typecheck` runs failed with missing `MissionApprovalCard` or `approvalCards` contract errors until the domain build refreshed the referenced declarations.
+
+- Observation: the real local seeded approval run is still not a reliable way to force an approval request on demand, even though the approval-capable stack and route surface already work.
+  Evidence: `docs/ops/m2-exit-report.md` truthfully recorded `Approval required: false` for the approval-seeking seeded run, while the dedicated smoke immediately reproduced a pending approval only when the runtime was pointed at the existing `file-change-approval` fixture.
 
 ## Decision Log
 
@@ -50,6 +56,10 @@ It will not redesign approval persistence, widen into issue intake, or pull the 
 
 - Decision: treat unsupported or sparse approval kinds explicitly in the formatter instead of inventing missing detail.
   Rationale: approval cards are part of the evidence surface, so “unknown approval” is safer than implied precision when persisted data is limited.
+  Date/Author: 2026-03-16 / Codex
+
+- Decision: close the operational proof gap with an explicit fixture-backed local smoke instead of claiming the seeded live runtime path is reliable enough today.
+  Rationale: the repository already has a truthful fake-runtime approval fixture that exercises the same approval persistence, read-model, replay, and HTTP resolution paths; using it openly is safer than overstating the current live-runtime behavior.
   Date/Author: 2026-03-16 / Codex
 
 ## Context and Orientation
@@ -85,6 +95,9 @@ This slice should not change:
 - replay event types
 - GitHub App permissions, token handling, or webhook semantics
 - live-control route behavior
+
+The follow-up proof helper for this slice intentionally keeps those boundaries intact.
+It packages existing behavior into a reproducible local smoke rather than redesigning persistence, changing routes, or widening into M3.
 
 ## Plan of Work
 
@@ -204,6 +217,23 @@ Manual mission-detail fetch and render check:
 - Sample resolved card summary: `Approved by Alicia at 2026-03-16T12:03:00.000Z. Rationale: Local validation should run before publishing.`
 - Operator action controls still work: yes; the manual fetch showed the pending approval state the forms key off of, and the existing action-path tests stayed green in `apps/web/app/missions/[missionId]/actions.spec.ts`, `apps/web/app/missions/[missionId]/action-feedback.spec.tsx`, and `apps/web/lib/api.spec.ts`.
 
+Operational proof addendum:
+
+- Smoke command: `pnpm m2:approval-smoke`
+- Smoke mode: `embedded_fake_runtime_approval_replay`
+- Result: passed
+- Mission id: `f6d5cd62-890d-4db2-a04f-d4efc98c5800`
+- Approval id: `fe91022c-ad34-4e88-ac87-61deac594c06`
+- Executor task id: `af4570b5-b871-4767-bc6a-27ed5714f186`
+- Mission status before resolution: `awaiting_approval`
+- Persisted approval rows before resolution: `1`
+- Pending card summary: `Allow file edits under .../f6d5cd62-890d-4db2-a04f-d4efc98c5800/1-executor/src. Why it matters: Requesting extra write access for the planned file edits.`
+- Resolve route: `POST /approvals/fe91022c-ad34-4e88-ac87-61deac594c06/resolve` returned `200`
+- Final mission status: `succeeded`
+- Final executor task status: `succeeded`
+- Resolved card summary: `Approved by m2-approval-proof-smoke at 2026-03-16T17:06:12.434Z. Rationale: Fixture-backed local approval proof accepted through HTTP.`
+- Replay evidence: `GET /missions/f6d5cd62-890d-4db2-a04f-d4efc98c5800/events` included both `approval.requested` and `approval.resolved`
+
 ## Interfaces and Dependencies
 
 Important existing types and modules for this slice:
@@ -219,12 +249,17 @@ Important existing types and modules for this slice:
 No new environment variables are expected.
 No new GitHub App permissions or webhook expectations are expected.
 Approval cards will reuse existing repo or PR context already surfaced through the proof bundle rather than depending on new GitHub reads.
+The local approval smoke helper adds one new operator command but does not add new runtime config or GitHub App scope.
 
 ## Outcomes & Retrospective
 
 M2.6 now ships approval cards as an additive mission-detail read-model feature instead of a UI-only rewrite.
 The control plane keeps the durable `approvals` summary array, adds reusable `approvalCards`, and formats those cards from persisted approval rows plus task and proof-bundle context.
 The web mission detail and action panel now consume the formatted cards directly, so operators see concise titles, summaries, action hints, and resolved rationale without losing the existing resolve or interrupt workflow.
+
+The slice now also has a truthful reproducible local proof path.
+Because the real seeded runtime path still does not reliably emit a live approval on demand, the checked-in smoke deliberately uses the existing fake-runtime approval fixture while still driving the real control-plane HTTP routes, persisted approval rows, approval cards, and replay events.
+That keeps the evidence bundle honest and gives operators a stable approval smoke they can rerun before wider UI or M3 work.
 
 The shipped card strategy is intentionally compact and honest:
 known kinds get specific copy for file edits, commands, and network escalation; pending cards tell the operator what to review; resolved cards surface the outcome and rationale; unsupported kinds admit that the formatter has only limited detail.

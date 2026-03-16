@@ -91,6 +91,31 @@ The helper:
 - auto-accepts any live pending approval through the real approval route
 - prints a JSON ledger you can paste into an ExecPlan or compare against `docs/ops/m2-exit-report.md`
 
+## Reproducible approval smoke
+
+If you need a truthful local proof of the approval routes and approval cards before a real Codex runtime reliably emits a live request, use the explicit fixture-backed smoke:
+
+```bash
+pnpm run db:migrate:ci
+pnpm m2:approval-smoke
+```
+
+This helper is intentionally honest about its mode.
+It boots a temporary embedded control-plane app against `TEST_DATABASE_URL`, points the runtime at the existing `file-change-approval` fake app-server fixture, and then drives the real HTTP surface over localhost.
+
+What it proves:
+
+- `POST /missions/text` creates a mission whose executor turn reaches `awaiting_approval`
+- `GET /missions/:missionId` shows a pending `approvalCards` entry
+- `GET /missions/:missionId/approvals` shows at least one persisted pending approval row
+- `POST /approvals/:approvalId/resolve` returns success and resumes the live turn
+- the mission truthfully terminalizes after resolution
+- `GET /missions/:missionId` then shows the resolved approval card state
+- `GET /missions/:missionId/events` includes both `approval.requested` and `approval.resolved`
+
+The helper prints a JSON summary with the proof mode, mission id, approval id, task id, pending card summary, resolved card summary, and replay-event evidence.
+Treat that output as `embedded_fake_runtime_approval_replay`, not as a live real-runtime approval.
+
 ## Web operator home and mission list
 
 Once `pnpm dev` or `pnpm dev:embedded` is running:

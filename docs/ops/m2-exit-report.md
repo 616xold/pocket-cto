@@ -177,11 +177,46 @@ What this slice proves:
 - signed GitHub issue ingress plus create-mission intake can create a build mission end to end in the real local M2 stack
 - successful missions attach real `pr_link` artifacts and ready proof bundles
 - mission detail exposes truthful mission, task, artifact, proof-bundle, and replay posture for all three seeded runs
+- a separate reproducible local approval smoke now proves the approval HTTP control path, persisted approval rows, `approvalCards`, and replay events through the existing embedded control-plane API
 
 What remains weaker than ideal:
 
-- the approval-capable seeded run did not produce a live pending approval, so this report does not add fresh runtime approval evidence
+- the approval-capable seeded run did not produce a live pending approval, so the fresh approval proof below uses the existing embedded fake-runtime approval fixture rather than a real local Codex runtime approval
 - the roadmap wording says "at least 3 seeded build tasks run end to end in staging"; these three runs were executed against a real local embedded stack, not a staging deployment
+
+## Approval proof addendum
+
+Date: 2026-03-16
+
+Mode:
+
+- `embedded_fake_runtime_approval_replay`
+
+Command:
+
+```bash
+pnpm m2:approval-smoke
+```
+
+Observed result:
+
+- Mission id: `f6d5cd62-890d-4db2-a04f-d4efc98c5800`
+- Approval id: `fe91022c-ad34-4e88-ac87-61deac594c06`
+- Executor task id: `af4570b5-b871-4767-bc6a-27ed5714f186`
+- Mission status before resolution: `awaiting_approval`
+- Persisted pending approval rows before resolution: `1`
+- Pending card summary: `Allow file edits under .../f6d5cd62-890d-4db2-a04f-d4efc98c5800/1-executor/src. Why it matters: Requesting extra write access for the planned file edits.`
+- Resolve route: `POST /approvals/fe91022c-ad34-4e88-ac87-61deac594c06/resolve` returned `200`
+- Final mission status: `succeeded`
+- Final executor task status: `succeeded`
+- Resolved card summary: `Approved by m2-approval-proof-smoke at 2026-03-16T17:06:12.434Z. Rationale: Fixture-backed local approval proof accepted through HTTP.`
+- Replay evidence: `approval.requested` present and `approval.resolved` present in `GET /missions/f6d5cd62-890d-4db2-a04f-d4efc98c5800/events`
+
+Interpretation:
+
+- This closes the operational proof gap for the approval-control surface locally.
+- It does not claim a real local runtime emitted the approval.
+- The proof is intentionally fixture-backed, but it still exercises the real control-plane HTTP routes and durable read models end to end.
 
 Decision:
 

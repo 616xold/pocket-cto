@@ -29,6 +29,7 @@
     "repo:hygiene": "node tools/repo-hygiene-check.mjs",
     "lint": "turbo run lint",
     "m2:seeded-runs": "node tools/m2-exit-seeded-runs.mjs",
+    "m2:approval-smoke": "tsx tools/m2-approval-proof-smoke.ts",
     "typecheck:packages": "node tools/typecheck-packages.mjs",
     "typecheck": "pnpm typecheck:packages && turbo run typecheck",
     "test": "turbo run test",
