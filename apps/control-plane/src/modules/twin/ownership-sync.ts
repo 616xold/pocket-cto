@@ -12,10 +12,15 @@ import {
 import {
   buildTwinRepositoryOwnershipSyncResult,
 } from "./ownership-formatter";
+import {
+  matchOwnershipTargets,
+  type MatchableOwnershipRule,
+} from "./ownership-matcher";
 import type { TwinRepository } from "./repository";
 import type { TwinRepositorySourceResolver } from "./source-resolver";
 import type { TwinEdgeRecord, TwinEntityRecord, TwinSyncRunRecord } from "./types";
 import { toTwinRepositorySummary } from "./formatter";
+import { readOwnershipTargets } from "./ownership-targets";
 
 type TwinRepositoryRegistryPort = {
   getRepository(fullName: string): Promise<GitHubRepositoryDetailResult>;
@@ -41,9 +46,13 @@ type OwnershipEdgeDraft = {
 
 type OwnershipSnapshot = {
   codeownersFilePath: string | null;
+  directoryTargetCount: number;
   edges: OwnershipEdgeDraft[];
   entities: OwnershipEntityDraft[];
+  manifestTargetCount: number;
   ownerCount: number;
+  ownedDirectoryCount: number;
+  ownedManifestCount: number;
   ruleCount: number;
 };
 
@@ -59,6 +68,8 @@ export const ownershipTwinEdgeKinds = [
   "repository_has_codeowners",
   "codeowners_file_defines_rule",
   "rule_assigns_owner",
+  "rule_owns_directory",
+  "rule_owns_manifest",
 ] as const;
 
 export async function syncRepositoryOwnership(input: {
@@ -71,16 +82,21 @@ export async function syncRepositoryOwnership(input: {
   const detail = await input.repositoryRegistry.getRepository(input.repoFullName);
   const run = await startOwnershipRun(input);
   let snapshot: OwnershipSnapshot | null = null;
+  const existingEntities = await input.repository.listRepositoryEntities(
+    input.repoFullName,
+  );
 
   try {
     const source = await input.sourceResolver.resolveRepositorySource(
       input.repoFullName,
     );
     snapshot = await extractOwnershipSnapshot({
+      ownershipTargets: readOwnershipTargets(existingEntities),
       repoRoot: source.repoRoot,
       repository: detail.repository,
     });
     const persisted = await persistOwnershipSnapshot({
+      existingEntities,
       observedAt: run.startedAt,
       repoFullName: input.repoFullName,
       repository: input.repository,
@@ -125,17 +141,23 @@ export async function syncRepositoryOwnership(input: {
 }
 
 async function extractOwnershipSnapshot(input: {
+  ownershipTargets: ReturnType<typeof readOwnershipTargets>;
   repoRoot: string;
   repository: GitHubRepositorySummary;
 }): Promise<OwnershipSnapshot> {
+  const targetCounts = summarizeOwnershipTargets(input.ownershipTargets);
   const discovered = await discoverCodeownersFile(input.repoRoot);
 
   if (!discovered) {
     return {
       codeownersFilePath: null,
+      directoryTargetCount: targetCounts.directoryCount,
       edges: [],
       entities: [],
+      manifestTargetCount: targetCounts.manifestCount,
       ownerCount: 0,
+      ownedDirectoryCount: 0,
+      ownedManifestCount: 0,
       ruleCount: 0,
     };
   }
@@ -144,10 +166,21 @@ async function extractOwnershipSnapshot(input: {
     content: discovered.content,
     sourceFilePath: discovered.path,
   });
+  const matchableRules = parsed.rules.map((rule) =>
+    buildMatchableOwnershipRule(discovered.path, rule),
+  );
+  const effectiveMatches = matchOwnershipTargets({
+    rules: matchableRules,
+    targets: input.ownershipTargets,
+  });
 
   return {
     codeownersFilePath: discovered.path,
-    edges: buildOwnershipEdges(discovered.path, parsed.rules),
+    directoryTargetCount: targetCounts.directoryCount,
+    edges: [
+      ...buildOwnershipEdges(discovered.path, parsed.rules),
+      ...buildEffectiveOwnershipEdges(effectiveMatches),
+    ],
     entities: [
       buildRepositoryEntityDraft(input.repository),
       {
@@ -169,7 +202,14 @@ async function extractOwnershipSnapshot(input: {
       ...parsed.rules.map((rule) => buildOwnershipRuleEntityDraft(discovered.path, rule)),
       ...parsed.owners.map(buildOwnerPrincipalEntityDraft),
     ],
+    manifestTargetCount: targetCounts.manifestCount,
     ownerCount: parsed.owners.length,
+    ownedDirectoryCount: effectiveMatches.filter(
+      (match) => match.targetKind === "workspace_directory",
+    ).length,
+    ownedManifestCount: effectiveMatches.filter(
+      (match) => match.targetKind === "package_manifest",
+    ).length,
     ruleCount: parsed.rules.length,
   };
 }
@@ -216,6 +256,27 @@ function buildOwnershipEdges(
   ];
 }
 
+function buildEffectiveOwnershipEdges(matches: ReturnType<typeof matchOwnershipTargets>) {
+  return matches.map<OwnershipEdgeDraft>((match) => ({
+    fromKind: "ownership_rule",
+    fromStableKey: match.ruleStableKey,
+    kind:
+      match.targetKind === "workspace_directory"
+        ? "rule_owns_directory"
+        : "rule_owns_manifest",
+    payload: {
+      sourceFilePath: match.sourceFilePath,
+      ordinal: match.ordinal,
+      rawPattern: match.rawPattern,
+      normalizedOwners: match.normalizedOwners,
+      targetPath: match.targetPath,
+      targetKind: match.targetKind,
+    },
+    toKind: match.targetKind,
+    toStableKey: match.targetStableKey,
+  }));
+}
+
 function buildOwnershipRuleEntityDraft(
   codeownersPath: string,
   rule: ParsedCodeownersRule,
@@ -257,6 +318,20 @@ function buildOwnershipRuleStableKey(codeownersPath: string, ordinal: number) {
   return `${codeownersPath}#${ordinal.toString().padStart(4, "0")}`;
 }
 
+function buildMatchableOwnershipRule(
+  codeownersPath: string,
+  rule: ParsedCodeownersRule,
+): MatchableOwnershipRule {
+  return {
+    stableKey: buildOwnershipRuleStableKey(codeownersPath, rule.ordinal),
+    sourceFilePath: rule.sourceFilePath,
+    ordinal: rule.ordinal,
+    rawPattern: rule.rawPattern,
+    normalizedOwners: rule.normalizedOwners,
+    patternShape: rule.patternShape,
+  };
+}
+
 function buildRepositoryEntityDraft(
   repository: GitHubRepositorySummary,
 ): OwnershipEntityDraft {
@@ -294,6 +369,7 @@ async function finishOwnershipRun(input: {
 }
 
 async function persistOwnershipSnapshot(input: {
+  existingEntities: TwinEntityRecord[];
   observedAt: string;
   repoFullName: string;
   repository: TwinRepository;
@@ -304,6 +380,16 @@ async function persistOwnershipSnapshot(input: {
     const entityIdByKey = new Map<string, string>();
     const entities: TwinEntityRecord[] = [];
     const edges: TwinEdgeRecord[] = [];
+
+    for (const entity of input.existingEntities) {
+      entityIdByKey.set(
+        buildEntityLookupKey({
+          kind: entity.kind,
+          stableKey: entity.stableKey,
+        }),
+        entity.id,
+      );
+    }
 
     for (const entityDraft of input.snapshot.entities) {
       const entity = await input.repository.upsertEntity(
@@ -387,6 +473,27 @@ function buildOwnershipSyncStats(
     codeownersFileCount: snapshot?.codeownersFilePath ? 1 : 0,
     ruleCount: snapshot?.ruleCount ?? 0,
     ownerCount: snapshot?.ownerCount ?? 0,
+    directoryTargetCount: snapshot?.directoryTargetCount ?? 0,
+    manifestTargetCount: snapshot?.manifestTargetCount ?? 0,
+    ownedDirectoryCount: snapshot?.ownedDirectoryCount ?? 0,
+    ownedManifestCount: snapshot?.ownedManifestCount ?? 0,
+    unownedDirectoryCount:
+      (snapshot?.directoryTargetCount ?? 0) - (snapshot?.ownedDirectoryCount ?? 0),
+    unownedManifestCount:
+      (snapshot?.manifestTargetCount ?? 0) - (snapshot?.ownedManifestCount ?? 0),
+  };
+}
+
+function summarizeOwnershipTargets(
+  ownershipTargets: ReturnType<typeof readOwnershipTargets>,
+) {
+  return {
+    directoryCount: ownershipTargets.filter(
+      (target) => target.kind === "workspace_directory",
+    ).length,
+    manifestCount: ownershipTargets.filter(
+      (target) => target.kind === "package_manifest",
+    ).length,
   };
 }
 

@@ -5,6 +5,7 @@ import type {
   TwinRepositoryMetadataSummary,
   TwinRepositoryMetadataSyncResult,
   TwinRepositoryOwnershipRulesView,
+  TwinRepositoryOwnershipSummary,
   TwinRepositoryOwnershipSyncResult,
   TwinSyncRunListView,
 } from "@pocket-cto/domain";
@@ -23,11 +24,14 @@ import {
 } from "./ownership-formatter";
 import {
   ownershipExtractorName,
+  ownershipTwinEdgeKinds,
   syncRepositoryOwnership,
 } from "./ownership-sync";
+import { buildTwinRepositoryOwnershipSummary } from "./ownership-summary-formatter";
 import type { TwinRepositoryMetadataExtractor } from "./repository-metadata-extractor";
 import { syncRepositoryMetadata } from "./metadata-sync";
 import type { TwinRepositorySourceResolver } from "./source-resolver";
+import { readOwnershipTargets } from "./ownership-targets";
 import {
   TwinEdgeUpsertInputSchema,
   TwinEntityUpsertInputSchema,
@@ -139,6 +143,24 @@ export class TwinService {
       codeownersFileEntity: snapshot.codeownersFileEntity,
       ownerEntities: snapshot.ownerEntities,
       ruleEntities: snapshot.ruleEntities,
+    });
+  }
+
+  async getRepositoryOwnershipSummary(
+    repoFullName: string,
+  ): Promise<TwinRepositoryOwnershipSummary> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const snapshot = await this.getOwnershipReadSnapshot(repoFullName);
+
+    return buildTwinRepositoryOwnershipSummary({
+      repository,
+      latestRun: snapshot.latestRun,
+      ownershipState: snapshot.ownershipState,
+      codeownersFileEntity: snapshot.codeownersFileEntity,
+      ownerEntities: snapshot.ownerEntities,
+      ruleEntities: snapshot.ruleEntities,
+      effectiveOwnershipEdges: snapshot.effectiveOwnershipEdges,
+      targetEntities: snapshot.targetEntities,
     });
   }
 
@@ -272,17 +294,31 @@ export class TwinService {
     const latestRun = ownershipRuns[0] ?? null;
     const latestSucceededRun =
       ownershipRuns.find((candidate) => candidate.status === "succeeded") ?? null;
+    const targetEntities = readOwnershipTargets(entities);
 
-    if (
-      !latestSucceededRun ||
-      readNonNegativeInteger(latestSucceededRun.stats, "codeownersFileCount") === 0
-    ) {
+    if (!latestSucceededRun) {
       return {
         latestRun,
+        ownershipState: "not_synced" as const,
         codeownersFileEntity: null,
+        effectiveOwnershipEdges: [],
         ownerEntities: [],
         ruleEntities: [],
         ruleAssignOwnerEdges: [],
+        targetEntities,
+      };
+    }
+
+    if (readNonNegativeInteger(latestSucceededRun.stats, "codeownersFileCount") === 0) {
+      return {
+        latestRun,
+        ownershipState: "no_codeowners_file" as const,
+        codeownersFileEntity: null,
+        effectiveOwnershipEdges: [],
+        ownerEntities: [],
+        ruleEntities: [],
+        ruleAssignOwnerEdges: [],
+        targetEntities,
       };
     }
 
@@ -295,9 +331,17 @@ export class TwinService {
 
     return {
       latestRun,
+      ownershipState: "effective_ownership_available" as const,
       codeownersFileEntity:
         snapshotEntities.find((candidate) => candidate.kind === "codeowners_file") ??
         null,
+      effectiveOwnershipEdges: snapshotEdges.filter((candidate) =>
+        ownershipTwinEdgeKinds.includes(
+          candidate.kind as (typeof ownershipTwinEdgeKinds)[number],
+        ) &&
+        (candidate.kind === "rule_owns_directory" ||
+          candidate.kind === "rule_owns_manifest"),
+      ),
       ownerEntities: snapshotEntities.filter(
         (candidate) => candidate.kind === "owner_principal",
       ),
@@ -307,6 +351,7 @@ export class TwinService {
       ruleAssignOwnerEdges: snapshotEdges.filter(
         (candidate) => candidate.kind === "rule_assigns_owner",
       ),
+      targetEntities,
     };
   }
 

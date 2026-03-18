@@ -1105,7 +1105,7 @@ EP-0022 records the latest successful live proof details for `616xold/pocket-cto
 
 ### Twin ownership sync
 
-The first M3.3A ownership extractor is also intentionally narrow and auditable.
+The M3.3 ownership extractor stays intentionally narrow and auditable.
 It discovers at most one effective `CODEOWNERS` file using GitHub precedence:
 
 - `.github/CODEOWNERS`
@@ -1125,9 +1125,24 @@ The ownership read routes are stored views, not live rescans:
 
 - `GET /twin/repositories/:owner/:repo/ownership-rules` returns the chosen file plus parsed rule summaries
 - `GET /twin/repositories/:owner/:repo/owners` returns normalized owner principals plus assigned-rule counts
+- `GET /twin/repositories/:owner/:repo/ownership-summary` returns the stored effective ownership summary for the current twin metadata targets
 
 The parser ignores blank lines and lines that start with `#`.
-It normalizes owner handles deterministically and does not yet attempt effective ownership over arbitrary files, manifests, or directories.
+It normalizes owner handles deterministically.
+
+The current effective-ownership slice matches only the stored `workspace_directory` and `package_manifest` entities from the twin metadata spine.
+It uses CODEOWNERS file order with last-match-wins semantics, persists `rule_owns_directory` and `rule_owns_manifest` edges, and keeps unmatched targets explicitly unowned.
+
+The ownership summary route is operator-readable.
+It reports:
+
+- `ownershipState` as `not_synced`, `no_codeowners_file`, or `effective_ownership_available`
+- the chosen `codeownersFile` path or `null`
+- counts for rules, owners, directories, manifests, owned targets, and unowned targets
+- owned directories and manifests with effective owners plus the winning rule
+- unowned directories and manifests when no rule matched
+
+The current slice still does not widen into arbitrary file ownership graphs, CI workflow ownership, docs indexing, or blast-radius answers.
 
 ### Branch and draft PR publish
 

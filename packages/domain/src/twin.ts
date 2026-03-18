@@ -220,6 +220,52 @@ export const TwinRepositoryOwnersViewSchema = z.object({
   owners: z.array(TwinOwnerPrincipalSchema),
 });
 
+export const TwinOwnershipSummaryStateSchema = z.enum([
+  "not_synced",
+  "no_codeowners_file",
+  "effective_ownership_available",
+]);
+
+export const TwinOwnershipAppliedRuleSchema = z.object({
+  sourceFilePath: z.string().min(1),
+  ordinal: z.number().int().positive(),
+  rawPattern: z.string().min(1),
+  patternShape: TwinOwnershipPatternShapeSchema,
+});
+
+export const TwinOwnedDirectorySchema = TwinRepositoryMetadataDirectorySchema.extend({
+  effectiveOwners: z.array(z.string().min(1)),
+  appliedRule: TwinOwnershipAppliedRuleSchema,
+});
+
+export const TwinOwnedManifestSchema = TwinRepositoryMetadataManifestSchema.extend({
+  effectiveOwners: z.array(z.string().min(1)),
+  appliedRule: TwinOwnershipAppliedRuleSchema,
+});
+
+export const TwinRepositoryOwnershipSummaryCountsSchema = z.object({
+  ruleCount: z.number().int().nonnegative(),
+  ownerCount: z.number().int().nonnegative(),
+  directoryCount: z.number().int().nonnegative(),
+  manifestCount: z.number().int().nonnegative(),
+  ownedDirectoryCount: z.number().int().nonnegative(),
+  ownedManifestCount: z.number().int().nonnegative(),
+  unownedDirectoryCount: z.number().int().nonnegative(),
+  unownedManifestCount: z.number().int().nonnegative(),
+});
+
+export const TwinRepositoryOwnershipSummarySchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  latestRun: TwinSyncRunSchema.nullable(),
+  ownershipState: TwinOwnershipSummaryStateSchema,
+  codeownersFile: TwinCodeownersFileSchema.nullable(),
+  counts: TwinRepositoryOwnershipSummaryCountsSchema,
+  ownedDirectories: z.array(TwinOwnedDirectorySchema),
+  ownedManifests: z.array(TwinOwnedManifestSchema),
+  unownedDirectories: z.array(TwinRepositoryMetadataDirectorySchema),
+  unownedManifests: z.array(TwinRepositoryMetadataManifestSchema),
+});
+
 export const TwinRepositoryOwnershipSyncResultSchema = z.object({
   repository: TwinRepositorySummarySchema,
   syncRun: TwinSyncRunSchema,
@@ -277,6 +323,20 @@ export type TwinOwnerPrincipalKind = z.infer<
 export type TwinCodeownersFile = z.infer<typeof TwinCodeownersFileSchema>;
 export type TwinOwnershipRule = z.infer<typeof TwinOwnershipRuleSchema>;
 export type TwinOwnerPrincipal = z.infer<typeof TwinOwnerPrincipalSchema>;
+export type TwinOwnershipSummaryState = z.infer<
+  typeof TwinOwnershipSummaryStateSchema
+>;
+export type TwinOwnershipAppliedRule = z.infer<
+  typeof TwinOwnershipAppliedRuleSchema
+>;
+export type TwinOwnedDirectory = z.infer<typeof TwinOwnedDirectorySchema>;
+export type TwinOwnedManifest = z.infer<typeof TwinOwnedManifestSchema>;
+export type TwinRepositoryOwnershipSummaryCounts = z.infer<
+  typeof TwinRepositoryOwnershipSummaryCountsSchema
+>;
+export type TwinRepositoryOwnershipSummary = z.infer<
+  typeof TwinRepositoryOwnershipSummarySchema
+>;
 export type TwinRepositoryMetadataSummary = z.infer<
   typeof TwinRepositoryMetadataSummarySchema
 >;

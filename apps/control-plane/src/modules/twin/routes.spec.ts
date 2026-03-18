@@ -236,6 +236,78 @@ describe("twin routes", () => {
     });
   });
 
+  it("returns a concise stored ownership summary for manifests and directories", async () => {
+    const sourceRepo = await createEffectiveOwnershipSourceRepo(repoFullName);
+    cleanups.push(sourceRepo.cleanup);
+    const ownershipService = createTwinService({
+      configuredSourceRepoRoot: sourceRepo.repoRoot,
+    });
+    const app = await createTwinApp(apps, ownershipService);
+
+    const metadataSyncResponse = await app.inject({
+      method: "POST",
+      url: "/twin/repositories/616xold/pocket-cto/metadata-sync",
+    });
+    const ownershipSyncResponse = await app.inject({
+      method: "POST",
+      url: "/twin/repositories/616xold/pocket-cto/ownership-sync",
+    });
+    const summaryResponse = await app.inject({
+      method: "GET",
+      url: "/twin/repositories/616xold/pocket-cto/ownership-summary",
+    });
+
+    expect(metadataSyncResponse.statusCode).toBe(200);
+    expect(ownershipSyncResponse.statusCode).toBe(200);
+    expect(summaryResponse.statusCode).toBe(200);
+    expect(summaryResponse.json()).toMatchObject({
+      repository: {
+        fullName: repoFullName,
+      },
+      ownershipState: "effective_ownership_available",
+      codeownersFile: {
+        path: ".github/CODEOWNERS",
+      },
+      counts: {
+        directoryCount: 2,
+        manifestCount: 2,
+        ownedDirectoryCount: 1,
+        ownedManifestCount: 1,
+        unownedDirectoryCount: 1,
+        unownedManifestCount: 1,
+      },
+      ownedDirectories: [
+        {
+          path: "apps",
+          effectiveOwners: ["@apps-team"],
+          appliedRule: {
+            rawPattern: "apps/",
+          },
+        },
+      ],
+      ownedManifests: [
+        {
+          path: "apps/web/package.json",
+          effectiveOwners: ["@web-team"],
+          appliedRule: {
+            rawPattern: "apps/web/package.json",
+          },
+        },
+      ],
+      unownedDirectories: [
+        {
+          path: "docs",
+        },
+      ],
+      unownedManifests: [
+        {
+          path: "package.json",
+          packageName: "pocket-cto",
+        },
+      ],
+    });
+  });
+
   it("returns the existing repository-not-found error when the registry has no matching repo", async () => {
     const notFoundService = createTwinService({
       getRepository: vi.fn(async (_fullName: string) => {
@@ -427,6 +499,68 @@ async function createOwnershipSourceRepo(fullName: string) {
     writeFile(
       join(sourceRepo.repoRoot, ".github", "CODEOWNERS"),
       ["# Ownership", "* @Platform", "docs/ @Platform @Runtime/Team"].join("\n"),
+      "utf8",
+    ),
+  ]);
+
+  return sourceRepo;
+}
+
+async function createEffectiveOwnershipSourceRepo(fullName: string) {
+  const sourceRepo = await createTempGitRepo();
+
+  await execFile(
+    "git",
+    ["remote", "add", "origin", `https://github.com/${fullName}.git`],
+    {
+      cwd: sourceRepo.repoRoot,
+    },
+  );
+  await Promise.all([
+    mkdir(join(sourceRepo.repoRoot, ".github"), {
+      recursive: true,
+    }),
+    mkdir(join(sourceRepo.repoRoot, "apps", "web"), {
+      recursive: true,
+    }),
+    mkdir(join(sourceRepo.repoRoot, "docs"), {
+      recursive: true,
+    }),
+  ]);
+  await Promise.all([
+    writeFile(
+      join(sourceRepo.repoRoot, ".github", "CODEOWNERS"),
+      ["apps/ @Apps-Team", "apps/web/package.json @Web-Team"].join("\n"),
+      "utf8",
+    ),
+    writeFile(
+      join(sourceRepo.repoRoot, "package.json"),
+      JSON.stringify(
+        {
+          name: "pocket-cto",
+          private: true,
+          scripts: {
+            test: "vitest run",
+          },
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    ),
+    writeFile(
+      join(sourceRepo.repoRoot, "apps", "web", "package.json"),
+      JSON.stringify(
+        {
+          name: "web-app",
+          private: true,
+          scripts: {
+            dev: "next dev",
+          },
+        },
+        null,
+        2,
+      ),
       "utf8",
     ),
   ]);

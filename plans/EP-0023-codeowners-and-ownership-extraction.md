@@ -4,7 +4,7 @@ This ExecPlan is a living document. Keep `Progress`, `Surprises & Discoveries`, 
 
 ## Purpose / Big Picture
 
-After this slice, Pocket CTO can inspect one synced repository, discover the effective `CODEOWNERS` file using GitHub precedence, parse durable ownership rules deterministically, and persist those facts into the repo-scoped twin without pretending effective blast-radius ownership already exists.
+After this slice, Pocket CTO can inspect one synced repository, discover the effective `CODEOWNERS` file using GitHub precedence, parse durable ownership rules deterministically, persist those facts into the repo-scoped twin, and compute effective ownership over the already stored `workspace_directory` and `package_manifest` twin entities without pretending arbitrary file-graph blast-radius ownership already exists.
 Operators will be able to trigger a repo-scoped ownership sync, inspect the resulting sync run, and read concise stored ownership data through thin routes without rescanning the repository on every request.
 
 This plan covers roadmap submilestone `M3.3 CODEOWNERS and ownership extraction`.
@@ -18,6 +18,10 @@ It intentionally stops before directory or manifest ownership resolution, CI wor
 - [x] (2026-03-18T04:14:50Z) Implemented the M3.3A ownership slice inside the twin bounded context: added CODEOWNERS discovery and parser helpers, added a dedicated ownership-sync path, persisted `codeowners_file`, `ownership_rule`, and `owner_principal` entities plus the required ownership edges, and exposed thin `ownership-sync`, `ownership-rules`, and `owners` routes.
 - [x] (2026-03-18T04:14:50Z) Added focused tests for discovery precedence, comment and blank filtering, owner normalization and deduplication, rerun idempotence, truthful zero-file sync success, route-level ownership reads, and the legacy enum bridge for `owner_principal`.
 - [x] (2026-03-18T04:14:50Z) Updated `docs/ops/local-dev.md`, ran the full required validation matrix successfully, and confirmed that live GitHub App smoke could not be run on this machine because the required GitHub env vars were unset.
+- [x] (2026-03-18T23:04:30Z) Re-read the requested files for the M3.3B slice, ran the required inspections `rg -n "ownership_rule|owner_principal|package_manifest|workspace_directory|repository_contains_manifest|repository_contains_directory|CODEOWNERS" apps packages docs plans`, `git status --short`, and `git diff --name-only HEAD`, and captured the pre-coding M3.3B effective-ownership gap note in-thread.
+- [x] (2026-03-18T23:04:30Z) Implemented effective ownership over stored `workspace_directory` and `package_manifest` entities: added deterministic CODEOWNERS target matching with last-match-wins semantics, persisted `rule_owns_directory` and `rule_owns_manifest` edges, and exposed a thin `ownership-summary` route plus domain read model.
+- [x] (2026-03-18T23:04:30Z) Added focused tests for last-match-wins matching, expected directory or manifest owners, unmatched targets, rerun idempotence for effective ownership edges, truthful `no_codeowners_file` summaries, and the stored summary route surface.
+- [x] (2026-03-18T23:08:00Z) Re-ran the full required validation matrix for the completed M3.3 slice, updated `docs/ops/local-dev.md` and this ExecPlan for the ownership summary surface, and confirmed again that live GitHub App smoke could not run because the required env vars were unset in the current shell.
 
 ## Surprises & Discoveries
 
@@ -35,6 +39,9 @@ It intentionally stops before directory or manifest ownership resolution, CI wor
 
 - Observation: ownership reads need to distinguish “latest run failed” from “latest successful snapshot is empty because no CODEOWNERS file exists”.
   Evidence: the new ownership routes derive their stored view from the latest successful ownership run, but explicitly return an empty snapshot when that latest successful run recorded `codeownersFileCount = 0`, so older ownership rows do not masquerade as current truth.
+
+- Observation: effective ownership can stay additive if the summary route reads from the latest successful ownership snapshot while still using the current repo-scoped metadata target entities.
+  Evidence: `workspace_directory` and `package_manifest` entities already have stable repo-scoped ids and paths from M3.2, so M3.3B only needed new rule-to-target edges and a read model that treats unmatched current targets as explicitly unowned when a successful ownership snapshot exists.
 
 ## Decision Log
 
@@ -60,6 +67,18 @@ It intentionally stops before directory or manifest ownership resolution, CI wor
 
 - Decision: build the ownership read routes from the latest successful ownership run rather than all stored ownership rows.
   Rationale: the twin tables are additive and do not prune older ownership facts in this slice. Filtering by the latest successful ownership run keeps the read routes truthful on reruns, including the important case where the newest successful sync found no CODEOWNERS file.
+  Date/Author: 2026-03-18 / Codex
+
+- Decision: compute effective ownership only for stored `workspace_directory` and `package_manifest` entities, and only from their persisted `path` fields.
+  Rationale: the prompt explicitly narrows M3.3B to existing metadata entities and says not to widen into arbitrary file graphs, docs indexing, CI workflows, or blast-radius behavior.
+  Date/Author: 2026-03-18 / Codex
+
+- Decision: apply deterministic CODEOWNERS last-match-wins semantics and persist only the winning effective rule-to-target edge per stored target.
+  Rationale: operators need a durable, rerunnable read model. Persisting only `rule_owns_directory` and `rule_owns_manifest` for the winning rule keeps the stored graph concise while preserving owner details through the already persisted rule payload and `rule_assigns_owner` facts.
+  Date/Author: 2026-03-18 / Codex
+
+- Decision: expose `ownership-summary` with explicit `not_synced`, `no_codeowners_file`, and `effective_ownership_available` states.
+  Rationale: the prompt requires the summary to say explicitly when no CODEOWNERS file exists, and operators also need honesty when ownership sync has not succeeded yet.
   Date/Author: 2026-03-18 / Codex
 
 ## Context and Orientation
@@ -239,30 +258,28 @@ Validation results:
 - `pnpm db:migrate` passed.
 - `pnpm run db:migrate:ci` passed.
 - `pnpm repo:hygiene` passed.
-- `pnpm lint` passed after one small parser wildcard-check cleanup.
+- `pnpm lint` passed.
 - `pnpm typecheck` passed.
-- `pnpm build` passed.
-- `pnpm test` passed with all workspace packages green, including `apps/control-plane` `44` files and `197` tests.
+- `pnpm build` passed. The existing Next.js `typedRoutes` and ESLint-plugin warnings in `apps/web` remained warnings only and did not block the build.
+- `pnpm test` passed with all workspace packages green, including `apps/control-plane` `46` files and `202` tests.
 - `pnpm ci:repro:current` passed, including clean-tree verification in the temporary worktree.
 
 Exact changed files:
 
+- `apps/control-plane/src/bootstrap.spec.ts`
 - `apps/control-plane/src/lib/types.ts`
 - `apps/control-plane/src/modules/orchestrator/drizzle-service.spec.ts`
-- `apps/control-plane/src/modules/twin/codeowners-discovery.spec.ts`
-- `apps/control-plane/src/modules/twin/codeowners-discovery.ts`
-- `apps/control-plane/src/modules/twin/codeowners-parser.spec.ts`
-- `apps/control-plane/src/modules/twin/codeowners-parser.ts`
-- `apps/control-plane/src/modules/twin/drizzle-repository.spec.ts`
-- `apps/control-plane/src/modules/twin/drizzle-repository.ts`
+- `apps/control-plane/src/modules/twin/effective-ownership.spec.ts`
 - `apps/control-plane/src/modules/twin/ownership-formatter.ts`
-- `apps/control-plane/src/modules/twin/ownership-sync.spec.ts`
+- `apps/control-plane/src/modules/twin/ownership-matcher.spec.ts`
+- `apps/control-plane/src/modules/twin/ownership-matcher.ts`
+- `apps/control-plane/src/modules/twin/ownership-summary-formatter.ts`
 - `apps/control-plane/src/modules/twin/ownership-sync.ts`
+- `apps/control-plane/src/modules/twin/ownership-targets.ts`
 - `apps/control-plane/src/modules/twin/routes.spec.ts`
 - `apps/control-plane/src/modules/twin/routes.ts`
 - `apps/control-plane/src/modules/twin/schema.ts`
 - `apps/control-plane/src/modules/twin/service.ts`
-- `apps/control-plane/src/bootstrap.spec.ts`
 - `docs/ops/local-dev.md`
 - `packages/domain/src/twin.ts`
 - `plans/EP-0023-codeowners-and-ownership-extraction.md`
@@ -286,7 +303,7 @@ New or expanded interfaces expected by the end of this slice:
 
 - CODEOWNERS discovery and parser helpers inside the twin bounded context
 - an ownership sync method on `TwinService`
-- domain read-model contracts for ownership sync, ownership rules, and owner principals
+- domain read-model contracts for ownership sync, ownership rules, owner principals, and ownership summaries
 - thin twin ownership routes for sync and stored reads
 
 No new environment variables are expected.
@@ -294,21 +311,23 @@ No new GitHub App permissions or webhook subscriptions are expected.
 
 ## Outcomes & Retrospective
 
-M3.3A now ships a durable, repo-scoped CODEOWNERS ownership slice on top of the M3.1 and M3.2 twin spine.
+M3.3 now ships a durable, repo-scoped CODEOWNERS ownership slice on top of the M3.1 and M3.2 twin spine.
 Pocket CTO can:
 
 - discover the effective CODEOWNERS file by GitHub precedence
 - parse durable rule facts while ignoring blank and comment lines
 - normalize and deduplicate owner principals deterministically
 - persist file, rule, and owner entities plus ownership edges
-- expose thin ownership sync and ownership read routes
+- compute effective ownership over stored workspace directories and package manifests with last-match-wins semantics
+- expose thin ownership sync and ownership read routes, including an operator-readable ownership summary
 
-This slice intentionally does not compute effective ownership over manifests, directories, CI workflows, or blast-radius questions.
-Those behaviors remain clean follow-on work for M3.3B and later M3 slices.
+This slice intentionally does not widen into arbitrary file ownership graphs, CI workflows, docs indexing, or blast-radius questions.
+Those behaviors remain clean follow-on work for M3.4 and later roadmap slices.
 
-M3.3B can now start cleanly because the repo has:
+M3.4 can now start cleanly because the repo has:
 
 - deterministic CODEOWNERS discovery
 - durable persisted ownership rules and principals
+- durable effective ownership edges for directories and manifests
 - summary-shaped read routes for stored ownership facts
-- validation proof that the new slice is rerunnable and additive
+- validation proof that the new slice is rerunnable, deterministic, and additive

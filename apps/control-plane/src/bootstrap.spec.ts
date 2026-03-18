@@ -342,6 +342,39 @@ function createAppContainer(
           },
         };
       },
+      async getRepositoryOwnershipSummary() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          latestRun: null,
+          ownershipState: "not_synced" as const,
+          codeownersFile: null,
+          counts: {
+            ruleCount: 0,
+            ownerCount: 0,
+            directoryCount: 0,
+            manifestCount: 0,
+            ownedDirectoryCount: 0,
+            ownedManifestCount: 0,
+            unownedDirectoryCount: 0,
+            unownedManifestCount: 0,
+          },
+          ownedDirectories: [],
+          ownedManifests: [],
+          unownedDirectories: [],
+          unownedManifests: [],
+        };
+      },
       async getRepositoryOwnershipRules() {
         return {
           repository: {

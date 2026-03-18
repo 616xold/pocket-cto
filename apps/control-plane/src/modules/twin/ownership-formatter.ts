@@ -98,7 +98,9 @@ function buildKindCounts(items: Array<{ kind: string }>): TwinKindCountMap {
   return counts;
 }
 
-function readCodeownersFile(entity: TwinEntity | null): TwinCodeownersFile | null {
+export function readCodeownersFile(
+  entity: TwinEntity | null,
+): TwinCodeownersFile | null {
   if (!entity) {
     return null;
   }
@@ -131,7 +133,7 @@ function readOwnerPrincipal(
   };
 }
 
-function readOwnershipRule(entity: TwinEntity): TwinOwnershipRule {
+export function readOwnershipRule(entity: TwinEntity): TwinOwnershipRule {
   return {
     id: entity.id,
     sourceFilePath:

@@ -4,6 +4,7 @@ import {
   TwinEntityListViewSchema,
   TwinRepositoryOwnersViewSchema,
   TwinRepositoryOwnershipRulesViewSchema,
+  TwinRepositoryOwnershipSummarySchema,
   TwinSyncRunListViewSchema,
 } from "@pocket-cto/domain";
 
@@ -21,5 +22,6 @@ export {
   TwinEntityListViewSchema,
   TwinRepositoryOwnersViewSchema,
   TwinRepositoryOwnershipRulesViewSchema,
+  TwinRepositoryOwnershipSummarySchema,
   TwinSyncRunListViewSchema,
 };
