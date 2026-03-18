@@ -1059,6 +1059,27 @@ If the requested synced repository is not available locally, the sync fails trut
 The summary route is concise and operator-readable.
 It reports the stored repository metadata, default branch, root README stats when present, discovered manifests, workspace directories, latest sync-run state, and counts by entity or edge kind.
 
+Repeatable live smoke:
+
+```bash
+pnpm smoke:twin-metadata:live -- --source-repo-root /absolute/path/to/pocket-cto
+```
+
+The helper keeps the product surface unchanged.
+It syncs GitHub installations, syncs the repository registry, calls the existing twin metadata-sync route, fetches the existing summary route, and prints only safe fields:
+
+- repo full name
+- default branch
+- sync run id and status
+- entity counts by kind
+- edge counts by kind
+- root README path
+- manifest count
+- workspace-directory count
+
+Use a checkout of the real target repository, not `pocket-cto-starter`, so the source-verification contract stays truthful.
+EP-0022 records the latest successful live proof details for `616xold/pocket-cto`.
+
 ### Branch and draft PR publish
 
 Executor publish now happens after local validation, not inside the model turn.

@@ -12,6 +12,9 @@ It intentionally stops before CODEOWNERS extraction, CI workflow extraction, doc
 
 ## Progress
 
+- [x] (2026-03-18T03:14:50Z) Reopened EP-0022 to replace the stale failed live-smoke evidence with current proof, re-read the requested repo docs and twin or GitHub files, and reran the requested inspections `rg -n "metadata-sync|twin_source_unavailable|616xold/pocket-cto-starter|e9419f59|POCKET_CTO_SOURCE_REPO_ROOT|/twin/repositories" apps docs plans package.json`, `git status --short`, and `git diff --name-only HEAD`.
+- [x] (2026-03-18T03:17:00Z) Added `tools/twin-metadata-smoke.mjs` plus `pnpm smoke:twin-metadata:live`, keeping the product surface unchanged while providing a tiny repeatable helper that syncs installations, syncs repositories, calls the existing twin metadata routes, and prints only safe fields.
+- [x] (2026-03-18T03:23:00Z) Ran a fresh live metadata smoke against the real `616xold/pocket-cto` repo using an explicit local checkout path, updated `docs/ops/local-dev.md`, reran the full required validation matrix successfully, and replaced the stale failed-run evidence in this plan with the successful proof outcome.
 - [x] (2026-03-16T22:38:00Z) Read the required repo instructions, roadmap, M3.1 ExecPlan, architecture and ops docs, the requested twin or GitHub or workspace source files, and ran the required inspections `rg -n "package.json|README|docs/|CODEOWNERS|\\.github/workflows|defaultBranch|source repo root|POCKET_CTO_SOURCE_REPO_ROOT|repository registry|twin" apps packages docs plans tools`, `git status --short`, and `git diff --name-only HEAD`.
 - [x] (2026-03-16T22:43:00Z) Captured the M3.2 gap before coding: the twin bounded context already persists repo-scoped runs, entities, and edges through the repository registry, but there is still no extractor entrypoint, no typed local-source availability failure, no deterministic metadata scan, and no operator-readable repository summary surface.
 - [x] (2026-03-16T23:10:00Z) Implemented the repo-scoped extractor slice inside the twin bounded context: added a typed source-unavailable error, a local git-backed source resolver, a deterministic repository metadata extractor, `syncRepositoryMetadata(...)`, `getRepositoryMetadataSummary(...)`, thin sync and summary routes, and bootstrap plus port wiring that injects the extractor with the existing `POCKET_CTO_SOURCE_REPO_ROOT` contract.
@@ -32,6 +35,12 @@ It intentionally stops before CODEOWNERS extraction, CI workflow extraction, doc
 
 - Observation: no schema change is required for this slice because M3.1 already made `kind`, `stableKey`, JSON payloads, and sync-run stats open-ended enough for repository metadata extraction.
   Evidence: the new entity and edge kinds (`default_branch`, `root_readme`, `package_manifest`, `workspace_directory`, and the repository-metadata edge kinds) fit into the existing text `kind` columns and JSON payload contract in `packages/db/src/schema/twin.ts`.
+
+- Observation: the implementation is green, but the previously recorded live proof is stale because this machine still does not keep a persistent local checkout of `616xold/pocket-cto` in the usual home-directory repo locations.
+  Evidence: the reopened inspections found a clean worktree here, repeated references to the old failed run `e9419f59-6a90-4417-a0d2-10c28db70ac5` in this plan, and only `pocket-cto-starter` under the normal Desktop, Documents, and Downloads repo search paths.
+
+- Observation: the real `616xold/pocket-cto` repository is fetchable over HTTPS, so the missing proof is now a smoke-setup problem rather than a GitHub App or route-surface problem.
+  Evidence: `git ls-remote https://github.com/616xold/pocket-cto.git HEAD` returned `cbb63f3f0bebcbebcbb72b5469eab66e500dd3e5`.
 
 ## Decision Log
 
@@ -58,6 +67,10 @@ It intentionally stops before CODEOWNERS extraction, CI workflow extraction, doc
 - Decision: do not add replay events for this slice.
   Rationale: metadata sync changes twin state, not mission or task lifecycle state. The audit surface for this slice will be the persisted sync-run row, stable twin entities or edges, and the operator-readable summary route.
   Date/Author: 2026-03-16 / Codex
+
+- Decision: keep the product contract unchanged and add the repeatable smoke path under `tools/`, requiring an explicit local source checkout path for live proof runs instead of silently relying on the starter repo checkout.
+  Rationale: the stale proof problem is in evidence collection, not extractor design. A narrow helper plus explicit `POCKET_CTO_SOURCE_REPO_ROOT` handling avoids another misleading run while preserving the existing no-clone product behavior.
+  Date/Author: 2026-03-18 / Codex
 
 ## Context and Orientation
 
@@ -203,28 +216,14 @@ Validation results:
 - `pnpm build` passed.
 - `pnpm test` passed with all workspace packages green, including `apps/control-plane` `41` files and `190` tests.
 - `pnpm ci:repro:current` passed, including clean-tree verification in the temp worktree.
+- `pnpm smoke:twin-metadata:live -- --source-repo-root /tmp/pocket-cto-live-smoke-QU4uro` passed and produced the successful live proof captured below.
 
-Final changed files for this slice:
+Files changed during the 2026-03-18 live-proof refresh:
 
-- `apps/control-plane/src/bootstrap.spec.ts`
-- `apps/control-plane/src/bootstrap.ts`
-- `apps/control-plane/src/lib/http-errors.ts`
-- `apps/control-plane/src/lib/types.ts`
-- `apps/control-plane/src/modules/orchestrator/drizzle-service.spec.ts`
-- `apps/control-plane/src/modules/twin/errors.ts`
-- `apps/control-plane/src/modules/twin/formatter.ts`
-- `apps/control-plane/src/modules/twin/metadata-sync.spec.ts`
-- `apps/control-plane/src/modules/twin/metadata-sync.ts`
-- `apps/control-plane/src/modules/twin/repository-metadata-discovery.ts`
-- `apps/control-plane/src/modules/twin/repository-metadata-extractor.ts`
-- `apps/control-plane/src/modules/twin/routes.spec.ts`
-- `apps/control-plane/src/modules/twin/routes.ts`
-- `apps/control-plane/src/modules/twin/service.spec.ts`
-- `apps/control-plane/src/modules/twin/service.ts`
-- `apps/control-plane/src/modules/twin/source-resolver.ts`
 - `docs/ops/local-dev.md`
-- `packages/domain/src/twin.ts`
+- `package.json`
 - `plans/EP-0022-repository-metadata-extraction.md`
+- `tools/twin-metadata-smoke.mjs`
 
 Live GitHub-backed evidence:
 
@@ -232,10 +231,15 @@ Live GitHub-backed evidence:
 - `syncRepositories()` succeeded with `repositoriesSynced = 1`.
 - requested repository: `616xold/pocket-cto`
 - registry default branch after sync: `main`
-- metadata sync run id: `e9419f59-6a90-4417-a0d2-10c28db70ac5`
-- metadata sync status: `failed`
-- entity counts by kind after the failed live attempt: `{}`
-- truthful failure: `Twin source repository 616xold/pocket-cto-starter does not match requested 616xold/pocket-cto`
+- explicit smoke source repo root: `/tmp/pocket-cto-live-smoke-QU4uro`
+- metadata sync run id: `f5190a02-899e-4060-b2e0-3e6fdf73fab3`
+- metadata sync status: `succeeded`
+- entity counts by kind: `{"repository":1,"default_branch":1,"package_manifest":9,"workspace_directory":5,"root_readme":1}`
+- edge counts by kind: `{"repository_has_branch":1,"repository_contains_manifest":9,"repository_contains_directory":5,"repository_has_readme":1}`
+- root README path: `README.md`
+- manifest count: `9`
+- workspace-directory count: `5`
+- stale failed run `e9419f59-6a90-4417-a0d2-10c28db70ac5` is now superseded by this successful proof because the smoke used an explicit checkout of the real target repo instead of the starter repo.
 
 ## Interfaces and Dependencies
 
@@ -290,8 +294,8 @@ The final edge kinds persisted by this slice are:
 - `repository_has_readme`
 
 Validation completed successfully across the full requested matrix, and the clean-temp-worktree CI reproduction stayed green.
-The live GitHub-backed attempt also succeeded in syncing the registry and then failed truthfully at the metadata-sync step because this local checkout did not match the requested repo full name.
-That failure is valuable evidence for the new auditable source-verification rule rather than a hidden fallback.
+The reopened live smoke now succeeds end to end against `616xold/pocket-cto` through the existing routes, using an explicit local checkout path and the unchanged source-verification contract.
+M3.2 now has current proof of successful metadata extraction instead of only a truthful mismatch failure.
 
 Deferred work remains intentionally narrow:
 
