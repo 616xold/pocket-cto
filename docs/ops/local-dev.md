@@ -190,6 +190,23 @@ curl -i 'http://localhost:4000/github/webhooks/deliveries?eventName=issues&handl
 
 If that already returns an `issues` delivery, use its `deliveryId` with the intake routes above.
 
+Before attempting a live GitHub-hosted issue, run the ops-only doctor:
+
+```bash
+pnpm smoke:github-issue-intake:doctor
+```
+
+The doctor checks only safe, truthful prerequisites:
+
+- whether `GET /health` is reachable on the control plane
+- whether the required GitHub App env vars are present locally
+- whether `POST /github/installations/sync` and `POST /github/repositories/sync` succeed
+- whether the target installation reports `issues: write`
+- whether a local `ngrok` or `cloudflared` process appears to be running
+- whether recent persisted `issues` deliveries already exist
+
+If the doctor reports `liveSmokeReadiness.ready = false`, stop there and treat the reported blocker as the current local truth.
+
 If you want a real GitHub-hosted proof and your GitHub App webhook URL currently points at a live public tunnel for this local server:
 
 ```bash

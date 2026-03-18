@@ -205,6 +205,42 @@ Interpretation:
 - The blocker was not GitHub App permissioning and not the intake service itself
 - The remaining proof gap is live webhook routing from GitHub.com into the local control-plane server
 
+## Live webhook doctor follow-up
+
+Date:
+
+- `2026-03-18`
+
+Command:
+
+```bash
+pnpm smoke:github-issue-intake:doctor
+```
+
+Observed result:
+
+- `GET /health` on `http://localhost:4000` returned `200 OK`
+- Required GitHub App env presence checks were all `true`: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY_BASE64`, `GITHUB_WEBHOOK_SECRET`
+- `POST /github/installations/sync` returned `200 OK`
+- `POST /github/repositories/sync` returned `200 OK`
+- Target repo resolved cleanly to `616xold/pocket-cto`
+- Target installation remained `116452352` and still reported `issues: write`
+- Recent persisted `issues` deliveries existed locally, but the newest one was still the signed local replay delivery `local-issue-intake-smoke-20260316030911408`
+- No local `ngrok` or `cloudflared` process was running
+- `liveSmokeReadiness.ready` returned `false` with blocker `webhook_routing_missing`
+
+Final local decision:
+
+- No new live GitHub-hosted issue was created on `2026-03-18`
+- The existing `pnpm smoke:github-issue-intake:live` path was not rerun because the doctor showed the local webhook-routing prerequisite was still missing
+- The last real GitHub-hosted issue attempt therefore remains issue [#33](https://github.com/616xold/pocket-cto/issues/33), with persisted delivery id `none`, mission id `none`, and cleanup result `closed`
+
+Final interpretation:
+
+- The blocker is local webhook routing posture, not product logic
+- The issue-intake product seam remains proven through persisted deliveries and signed local replay
+- Until a public tunnel or equivalent live webhook route is running, M2 wording should not claim a fresh GitHub.com-hosted issue reached the local control plane
+
 ## Validation matrix
 
 | Command | Result | Notes |
@@ -216,8 +252,11 @@ Interpretation:
 | `pnpm lint` | passed | Workspace lint passed. |
 | `pnpm typecheck` | passed | Passed after the text-intake repo-target tests were updated for the new additive `primaryRepo` field. |
 | `pnpm build` | passed | Existing Next.js warnings remained about `typedRoutes`, missing build cache, and the Next ESLint plugin. |
-| `pnpm test` | passed | Workspace tests passed: 173 control-plane tests plus package and web suites. |
+| `pnpm test` | passed | Workspace tests passed on the latest rerun: 190 control-plane tests plus package and web suites. |
 | `pnpm ci:repro:current` | passed | Fresh temp-worktree reproduction succeeded end to end, including static checks, DB-backed tests, and clean-tree verification. |
+
+The same validation matrix was rerun on `2026-03-18` after the live-webhook doctor and final ops-doc updates.
+Every command stayed green.
 
 ## Exit assessment
 

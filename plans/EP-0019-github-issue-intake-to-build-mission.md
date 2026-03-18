@@ -25,6 +25,9 @@ It does not widen into M3 twin work, redesign webhook ingress, redesign the comp
 - [x] (2026-03-16T21:41Z) Reopened this ExecPlan narrowly for the remaining live-proof gap, kept the product surface unchanged, extracted reusable GitHub App token helpers into `tools/github-app-tooling.mjs`, and extended `tools/github-issue-intake-local-smoke.mjs` so the same helper can run either `local_signed_ingress_replay` or `live_github_hosted_issue`.
 - [x] (2026-03-16T21:44Z) Ran one truthful live smoke against `616xold/pocket-cto` via the existing GitHub App installation. The smoke created GitHub issue `#33` on GitHub.com and safely closed it afterward, but no persisted live `issues` delivery reached the local control plane within the timeout, so there is still no live webhook `deliveryId` or bound `missionId` to record from this attempt.
 - [x] (2026-03-16T21:55Z) Reran the full required validation matrix after the live-smoke helper, shared GitHub App tooling, and ops-report updates: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current` all passed on the current worktree.
+- [x] (2026-03-18T03:34Z) Added one ops-only doctor helper, `tools/github-webhook-live-doctor.mjs`, plus a matching package script and local-dev guidance so operators can distinguish missing webhook-routing posture from product regressions before attempting another live GitHub-hosted issue smoke.
+- [x] (2026-03-18T03:34Z) Ran the new `pnpm smoke:github-issue-intake:doctor` flow against a live local control plane. It confirmed healthy control-plane reachability, GitHub App env presence, successful installation and repository sync, `issues: write` on installation `116452352`, and one existing persisted signed replay delivery, but no running `ngrok` or `cloudflared` process. Based on that truthful blocker, the live GitHub-hosted smoke was not rerun on this date.
+- [x] (2026-03-18T03:37Z) Reran the full required validation matrix after the doctor helper and final docs updates: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current` all passed again on the current worktree.
 
 ## Surprises & Discoveries
 
@@ -55,6 +58,9 @@ It does not widen into M3 twin work, redesign webhook ingress, redesign the comp
 - Observation: the remaining live-proof blocker is webhook routing into the local control plane, not issue creation or cleanup.
   Evidence: the live smoke created GitHub issue `#33` and later closed it successfully, but `POST /github/webhooks` never appeared in the control-plane logs, `GET /github/webhooks/deliveries?eventName=issues...` never surfaced a new delivery, and `pgrep -fl 'ngrok|cloudflared'` returned no running tunnel process.
 
+- Observation: the final doctor pass makes the blocker classification explicit without needing another failed live issue attempt.
+  Evidence: `pnpm smoke:github-issue-intake:doctor` returned `liveSmokeReadiness.ready = false` with blocker `webhook_routing_missing` while also confirming `GET /health` `200 OK`, successful installation and repository sync, target repo `616xold/pocket-cto`, installation `116452352`, `issues: write`, and one existing persisted signed replay issue delivery.
+
 ## Decision Log
 
 - Decision: keep issue intake inside the existing GitHub App bounded context with separate intake-specific route, repository, schema, and service files.
@@ -84,6 +90,10 @@ It does not widen into M3 twin work, redesign webhook ingress, redesign the comp
 - Decision: keep the live-proof follow-up in tooling and ops reporting, and stop at the explicit webhook-routing blocker instead of widening the intake service or adding any PAT-based shortcut.
   Rationale: the live smoke proved GitHub App issue creation and cleanup are available, so the remaining gap is local ingress reachability; widening product code would hide the real blocker and violate the GitHub App-first rule.
   Date/Author: 2026-03-16 / Codex
+
+- Decision: add one tiny doctor path ahead of live smoke and treat a blocked doctor result as the stop condition for local proof attempts.
+  Rationale: a preflight check gives operators a clean answer about health, GitHub App sync, permission posture, and local tunnel reachability without creating another throwaway GitHub issue when the real blocker is already known.
+  Date/Author: 2026-03-18 / Codex
 
 ## Context and Orientation
 
@@ -198,6 +208,7 @@ Useful narrow commands during implementation:
     pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/github-app/issue-intake-service.spec.ts src/modules/missions/service.spec.ts src/app.spec.ts
     pnpm --filter @pocket-cto/web exec vitest run lib/api.spec.ts app/missions/actions.spec.ts app/missions/page.spec.tsx components/github-issue-intake-card.spec.tsx
     rg -n "issue-intake|create-mission|github/intake/issues|github_issue_mission_bindings" apps packages docs
+    pnpm smoke:github-issue-intake:doctor
     pnpm smoke:github-issue-intake:local
     pnpm smoke:github-issue-intake:live
 
@@ -287,6 +298,7 @@ Validation results:
 - `pnpm test`: passed with all packages green, including `37` control-plane files and `173` control-plane tests on the latest rerun.
 - `pnpm ci:repro:current`: passed from a clean temporary worktree and confirmed both static and integration-db CI paths on the current uncommitted snapshot.
 - The same validation matrix passed again after this turn's live-smoke tooling and ops-report updates. The latest rerun stayed green, with the same non-blocking Next.js build warnings and turbo `test` output warnings about missing `outputs` keys.
+- The same validation matrix passed again on `2026-03-18` after the doctor helper and final docs updates. The latest rerun stayed green, `pnpm test` now covered `41` control-plane files and `190` control-plane tests, and `pnpm ci:repro:current` again succeeded from a fresh temporary worktree.
 
 Live smoke status:
 
@@ -310,6 +322,7 @@ Live smoke status:
 - The issue body from the replay carried through into the mission objective, so the operator evidence still preserves the requested objective instead of replacing it with a synthetic placeholder.
 - Replay and evidence stayed truthful because mission creation still used the standard mission spine and therefore emitted the existing `mission.created`, `task.created`, `mission.status_changed`, and placeholder `artifact.created` sequence rather than a special-case issue path.
 - Added `pnpm smoke:github-issue-intake:live`, which uses GitHub App installation auth only, checks for `issues: write`, creates one short-lived GitHub-hosted issue in `616xold/pocket-cto`, waits for a persisted `issues` delivery, reuses the same intake routes if a delivery arrives, and then closes the issue for cleanup.
+- Added `pnpm smoke:github-issue-intake:doctor`, which checks safe local prerequisites for the live smoke without printing secrets: control-plane health, GitHub App env presence, installation and repository sync, target installation `issues: write`, local tunnel process posture, and recent persisted `issues` deliveries.
 - Exact live-smoke identifiers from the GitHub-hosted attempt:
   - installation id: `116452352`
   - repo full name: `616xold/pocket-cto`
@@ -325,6 +338,17 @@ Live smoke status:
   - cleanup succeeded and closed the short-lived issue safely
   - no new persisted `issues` delivery reached the local control plane within `120000ms`
   - the remaining live-proof gap is therefore local webhook routing, not product intake logic or missing issue-write permission
+- Exact doctor findings from the final local pass on `2026-03-18`:
+  - `GET /health` returned `200 OK`
+  - required GitHub App env presence checks all returned `true`
+  - installation sync and repository sync both returned `200 OK`
+  - the target installation remained `116452352` with `issues: write`
+  - one existing persisted `issues` delivery was visible locally and it was still the signed replay delivery `local-issue-intake-smoke-20260316030911408`
+  - no `ngrok` or `cloudflared` process was running
+  - `liveSmokeReadiness.ready` returned `false` with blocker `webhook_routing_missing`
+- Final local action from the doctor result:
+  - no new GitHub-hosted issue was created on `2026-03-18`
+  - the existing live smoke was not rerun because the doctor showed the missing prerequisite explicitly
 
 ## Interfaces and Dependencies
 
@@ -350,7 +374,7 @@ New or changed dependencies expected in this slice:
 
 ## Outcomes & Retrospective
 
-This slice closes the M2.7 product seam and adds a truthful live-proof helper without widening the milestone.
+This slice closes the M2.7 product seam and adds truthful local proof tooling without widening the milestone.
 Persisted GitHub `issues` envelopes can be listed, inspected for comment activity, and turned into one build mission per GitHub issue identity, and the same end-to-end path remains reproducible locally through signed ingress replay when no live GitHub delivery reaches the operator's machine.
 
 The implementation stayed inside the existing boundaries:
@@ -365,10 +389,11 @@ For M2 exit, the evidence is now split clearly between product proof and operati
 
 - the live ingress path remains the real signed `/github/webhooks` route
 - the fallback smoke is clearly labeled as `local_signed_ingress_replay`, not as a live GitHub-hosted delivery
+- the doctor makes the local stop condition explicit before another live issue is created
 - the live smoke is clearly labeled as `live_github_hosted_issue` and records the exact blocker when no delivery arrives
 - the proof bundle is decision-ready enough for a human to inspect the request objective, repo context, source ref, mission id, and idempotent binding behavior without rereading the whole thread
 
 Remaining risk and rollback notes:
 
 - one true GitHub-hosted `issues` delivery still needs a reachable webhook tunnel or equivalent ingress path before the local operator can claim full live proof
-- rollback for this turn is narrow: revert `tools/github-app-tooling.mjs`, the `tools/github-issue-intake-local-smoke.mjs` live-mode changes, the `package.json` alias, the ops-doc updates, and this ExecPlan evidence update together
+- rollback for this turn is narrow: revert `tools/github-webhook-live-doctor.mjs`, the `package.json` doctor alias, the local-dev and M2 exit report updates, and this ExecPlan evidence update together
