@@ -11,12 +11,18 @@ import type {
 } from "./repository-metadata-extractor";
 import type { TwinRepository } from "./repository";
 import type { TwinRepositorySourceResolver } from "./source-resolver";
-import type { TwinEdgeRecord, TwinEntityRecord, TwinSyncRunRecord } from "./types";
+import type {
+  TwinEdgeRecord,
+  TwinEntityRecord,
+  TwinSyncRunRecord,
+} from "./types";
 
 type TwinRepositoryRegistryPort = {
   getRepository(fullName: string): Promise<GitHubRepositoryDetailResult>;
   resolveWritableRepository(fullName: string): Promise<unknown>;
 };
+
+export const metadataExtractorName = "repository_metadata";
 
 export async function syncRepositoryMetadata(input: {
   metadataExtractor: TwinRepositoryMetadataExtractor;
@@ -26,7 +32,9 @@ export async function syncRepositoryMetadata(input: {
   repositoryRegistry: TwinRepositoryRegistryPort;
   sourceResolver: TwinRepositorySourceResolver;
 }): Promise<TwinRepositoryMetadataSyncResult> {
-  const detail = await input.repositoryRegistry.getRepository(input.repoFullName);
+  const detail = await input.repositoryRegistry.getRepository(
+    input.repoFullName,
+  );
   const run = await startRepositoryMetadataRun(input);
   let snapshot: RepositoryMetadataSnapshot | null = null;
 
@@ -51,7 +59,11 @@ export async function syncRepositoryMetadata(input: {
       repository: input.repository,
       run,
       status: "succeeded",
-      stats: buildSyncStats(snapshot, persisted.entities.length, persisted.edges.length),
+      stats: buildSyncStats(
+        snapshot,
+        persisted.entities.length,
+        persisted.edges.length,
+      ),
     });
 
     return buildTwinRepositoryMetadataSyncResult({
@@ -161,13 +173,15 @@ async function startRepositoryMetadataRun(input: {
 
   return input.repository.startSyncRun({
     repoFullName: input.repoFullName,
-    extractor: "repository_metadata",
+    extractor: metadataExtractorName,
     startedAt: input.now().toISOString(),
     stats: {},
   });
 }
 
-function buildEntityKey(input: Pick<RepositoryMetadataEntityDraft, "kind" | "stableKey">) {
+function buildEntityKey(
+  input: Pick<RepositoryMetadataEntityDraft, "kind" | "stableKey">,
+) {
   return `${input.kind}::${input.stableKey}`;
 }
 

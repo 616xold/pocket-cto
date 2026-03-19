@@ -1,14 +1,12 @@
 import type {
   TwinEdge,
   TwinEntity,
+  TwinFreshnessSummary,
   TwinRepositoryOwnershipSummary,
   TwinRepositorySummary,
   TwinSyncRun,
 } from "@pocket-cto/domain";
-import {
-  readCodeownersFile,
-  readOwnershipRule,
-} from "./ownership-formatter";
+import { readCodeownersFile, readOwnershipRule } from "./ownership-formatter";
 import {
   splitOwnershipTargets,
   type OwnershipDirectoryTarget,
@@ -24,6 +22,7 @@ type OwnershipSummaryState =
 export function buildTwinRepositoryOwnershipSummary(input: {
   codeownersFileEntity: TwinEntity | null;
   effectiveOwnershipEdges: TwinEdge[];
+  freshness: TwinFreshnessSummary;
   latestRun: TwinSyncRun | null;
   ownerEntities: TwinEntity[];
   ownershipState: OwnershipSummaryState;
@@ -37,6 +36,7 @@ export function buildTwinRepositoryOwnershipSummary(input: {
     return {
       repository: input.repository,
       latestRun: input.latestRun,
+      freshness: input.freshness,
       ownershipState: "not_synced",
       codeownersFile: null,
       counts: {
@@ -60,6 +60,7 @@ export function buildTwinRepositoryOwnershipSummary(input: {
     return {
       repository: input.repository,
       latestRun: input.latestRun,
+      freshness: input.freshness,
       ownershipState: "no_codeowners_file",
       codeownersFile: null,
       counts: {
@@ -86,10 +87,13 @@ export function buildTwinRepositoryOwnershipSummary(input: {
     input.effectiveOwnershipEdges,
     ruleById,
   );
-  const ownedDirectories: TwinRepositoryOwnershipSummary["ownedDirectories"] = [];
+  const ownedDirectories: TwinRepositoryOwnershipSummary["ownedDirectories"] =
+    [];
   const ownedManifests: TwinRepositoryOwnershipSummary["ownedManifests"] = [];
-  const unownedDirectories: TwinRepositoryOwnershipSummary["unownedDirectories"] = [];
-  const unownedManifests: TwinRepositoryOwnershipSummary["unownedManifests"] = [];
+  const unownedDirectories: TwinRepositoryOwnershipSummary["unownedDirectories"] =
+    [];
+  const unownedManifests: TwinRepositoryOwnershipSummary["unownedManifests"] =
+    [];
 
   for (const directory of targets.directories) {
     const rule = winningRuleByTargetId.get(directory.entityId);
@@ -116,6 +120,7 @@ export function buildTwinRepositoryOwnershipSummary(input: {
   return {
     repository: input.repository,
     latestRun: input.latestRun,
+    freshness: input.freshness,
     ownershipState: "effective_ownership_available",
     codeownersFile: readCodeownersFile(input.codeownersFileEntity),
     counts: {
@@ -139,7 +144,10 @@ function buildWinningRuleByTargetId(
   edges: TwinEdge[],
   ruleById: Map<string, ReturnType<typeof readOwnershipRule>>,
 ) {
-  const winningRuleByTargetId = new Map<string, ReturnType<typeof readOwnershipRule>>();
+  const winningRuleByTargetId = new Map<
+    string,
+    ReturnType<typeof readOwnershipRule>
+  >();
 
   for (const edge of edges) {
     const rule = ruleById.get(edge.fromEntityId);

@@ -1,11 +1,13 @@
 import { z } from "zod";
 import {
+  TwinRepositoryFreshnessViewSchema,
   TwinRepositoryCiSummarySchema,
   TwinRepositoryDocSectionsViewSchema,
   TwinRepositoryDocsSyncResultSchema,
   TwinRepositoryDocsViewSchema,
   TwinEdgeListViewSchema,
   TwinEntityListViewSchema,
+  TwinRepositoryMetadataSummarySchema,
   TwinRepositoryRunbooksSyncResultSchema,
   TwinRepositoryRunbooksViewSchema,
   TwinRepositoryOwnersViewSchema,
@@ -34,6 +36,8 @@ export {
   TwinRepositoryDocsViewSchema,
   TwinEdgeListViewSchema,
   TwinEntityListViewSchema,
+  TwinRepositoryFreshnessViewSchema,
+  TwinRepositoryMetadataSummarySchema,
   TwinRepositoryRunbooksSyncResultSchema,
   TwinRepositoryRunbooksViewSchema,
   TwinRepositoryOwnersViewSchema,

@@ -85,6 +85,11 @@ describe("runbook twin routes", () => {
       repository: {
         fullName: repoFullName,
       },
+      freshness: {
+        state: "fresh",
+        latestRunStatus: "succeeded",
+        staleAfterSeconds: 86_400,
+      },
       runbookState: "runbooks_available",
       counts: {
         runbookDocumentCount: 2,

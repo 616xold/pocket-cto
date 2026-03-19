@@ -46,6 +46,7 @@ export type TwinServicePort = Pick<
   | "getRepositoryCiSummary"
   | "getRepositoryDocSections"
   | "getRepositoryDocs"
+  | "getRepositoryFreshness"
   | "getRepositoryRunbooks"
   | "getRepositoryOwners"
   | "getRepositoryMetadataSummary"

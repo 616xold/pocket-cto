@@ -49,6 +49,13 @@ export async function registerTwinRoutes(
     );
   });
 
+  app.get("/twin/repositories/:owner/:repo/freshness", async (request) => {
+    const params = parseTwinRepositoryParams(request.params);
+    return deps.twinService.getRepositoryFreshness(
+      `${params.owner}/${params.repo}`,
+    );
+  });
+
   app.post(
     "/twin/repositories/:owner/:repo/ownership-sync",
     async (request) => {

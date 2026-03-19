@@ -1,4 +1,5 @@
 import type {
+  TwinRepositoryFreshnessView,
   TwinRepositoryCiSummary,
   TwinRepositoryDocSectionsView,
   TwinRepositoryDocsSyncResult,
@@ -25,6 +26,12 @@ import {
   buildTwinRepositoryDocsView,
 } from "./docs-formatter";
 import { docsExtractorName, syncRepositoryDocs } from "./docs-sync";
+import {
+  buildTwinFreshnessSummary,
+  buildTwinFreshnessSlice,
+  buildTwinFreshnessRollupForEntries,
+  buildTwinRepositoryFreshnessView,
+} from "./freshness";
 import type { TwinRepository } from "./repository";
 import {
   buildTwinEdgeListView,
@@ -44,7 +51,7 @@ import {
 } from "./ownership-sync";
 import { buildTwinRepositoryOwnershipSummary } from "./ownership-summary-formatter";
 import type { TwinRepositoryMetadataExtractor } from "./repository-metadata-extractor";
-import { syncRepositoryMetadata } from "./metadata-sync";
+import { metadataExtractorName, syncRepositoryMetadata } from "./metadata-sync";
 import type { TwinRepositorySourceResolver } from "./source-resolver";
 import { readOwnershipTargets } from "./ownership-targets";
 import { buildTwinRepositoryWorkflowsView } from "./workflow-formatter";
@@ -53,10 +60,7 @@ import {
   buildTwinRepositoryTestSuitesView,
 } from "./test-suite-formatter";
 import { buildTwinRepositoryRunbooksView } from "./runbook-formatter";
-import {
-  runbookExtractorName,
-  syncRepositoryRunbooks,
-} from "./runbook-sync";
+import { runbookExtractorName, syncRepositoryRunbooks } from "./runbook-sync";
 import {
   syncRepositoryTestSuites,
   testSuiteExtractorName,
@@ -82,6 +86,12 @@ import {
 type TwinRepositoryRegistryPort = {
   getRepository(fullName: string): Promise<GitHubRepositoryDetailResult>;
   resolveWritableRepository(fullName: string): Promise<unknown>;
+};
+
+type TwinRepositoryStoredState = {
+  edges: TwinEdgeRecord[];
+  entities: TwinEntityRecord[];
+  runs: TwinSyncRunRecord[];
 };
 
 export class TwinService {
@@ -132,21 +142,32 @@ export class TwinService {
     });
   }
 
+  async getRepositoryFreshness(
+    repoFullName: string,
+  ): Promise<TwinRepositoryFreshnessView> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const storedState = await this.loadRepositoryStoredState(repoFullName);
+
+    return buildTwinRepositoryFreshnessView({
+      repository,
+      slices: this.buildFreshnessSlices(storedState),
+    });
+  }
+
   async getRepositoryMetadataSummary(
     repoFullName: string,
   ): Promise<TwinRepositoryMetadataSummary> {
     const repository = await this.getRepositorySummary(repoFullName);
-    const [entities, edges, runs] = await Promise.all([
-      this.input.repository.listRepositoryEntities(repoFullName),
-      this.input.repository.listRepositoryEdges(repoFullName),
-      this.input.repository.listRepositoryRuns(repoFullName),
-    ]);
+    const storedState = await this.loadRepositoryStoredState(repoFullName);
+    const metadataSnapshot = this.buildMetadataReadSnapshot(storedState);
+    const freshnessSlices = this.buildFreshnessSlices(storedState);
 
     return buildTwinRepositoryMetadataSummary({
       repository,
-      entities,
-      edges,
-      latestRun: runs[0] ?? null,
+      entities: storedState.entities,
+      edges: storedState.edges,
+      latestRun: metadataSnapshot.latestRun,
+      freshness: buildTwinFreshnessSummary(freshnessSlices.metadata),
     });
   }
 
@@ -159,6 +180,21 @@ export class TwinService {
     return buildTwinRepositoryDocsView({
       repository,
       latestRun: snapshot.latestRun,
+      freshness: buildTwinFreshnessSummary(
+        buildTwinFreshnessSlice({
+          slice: "docs",
+          latestRun: snapshot.latestRun,
+          latestSuccessfulRun: snapshot.latestSuccessfulRun,
+          now: this.now(),
+          emptySnapshotReason:
+            snapshot.docsState === "no_docs"
+              ? {
+                  reasonCode: "no_docs",
+                  summaryFragment: "found no approved docs.",
+                }
+              : null,
+        }),
+      ),
       docsState: snapshot.docsState,
       docFileEntities: snapshot.docFileEntities,
       docSectionEntities: snapshot.docSectionEntities,
@@ -189,6 +225,21 @@ export class TwinService {
     return buildTwinRepositoryRunbooksView({
       repository,
       latestRun: snapshot.latestRun,
+      freshness: buildTwinFreshnessSummary(
+        buildTwinFreshnessSlice({
+          slice: "runbooks",
+          latestRun: snapshot.latestRun,
+          latestSuccessfulRun: snapshot.latestSuccessfulRun,
+          now: this.now(),
+          emptySnapshotReason:
+            snapshot.runbookState === "no_runbooks"
+              ? {
+                  reasonCode: "no_runbooks",
+                  summaryFragment: "found no classified runbooks.",
+                }
+              : null,
+        }),
+      ),
       runbookState: snapshot.runbookState,
       runbookDocumentEntities: snapshot.runbookDocumentEntities,
       runbookStepEntities: snapshot.runbookStepEntities,
@@ -242,11 +293,49 @@ export class TwinService {
       this.getWorkflowReadSnapshot(repoFullName),
       this.getTestSuiteReadSnapshot(repoFullName),
     ]);
+    const workflowFreshness = buildTwinFreshnessSlice({
+      slice: "workflows",
+      latestRun: workflowSnapshot.latestRun,
+      latestSuccessfulRun: workflowSnapshot.latestSuccessfulRun,
+      now: this.now(),
+      emptySnapshotReason:
+        workflowSnapshot.workflowState === "no_workflow_files"
+          ? {
+              reasonCode: "no_workflow_files",
+              summaryFragment: "found no workflow files.",
+            }
+          : null,
+    });
+    const testSuiteFreshness = buildTwinFreshnessSlice({
+      slice: "testSuites",
+      latestRun: testSuiteSnapshot.latestRun,
+      latestSuccessfulRun: testSuiteSnapshot.latestSuccessfulRun,
+      now: this.now(),
+      emptySnapshotReason:
+        testSuiteSnapshot.testSuiteState === "no_test_suites"
+          ? {
+              reasonCode: "no_test_suites",
+              summaryFragment: "found no stored test suites.",
+            }
+          : null,
+    });
 
     return buildTwinRepositoryCiSummary({
       repository,
       latestWorkflowRun: workflowSnapshot.latestRun,
       latestTestSuiteRun: testSuiteSnapshot.latestRun,
+      freshness: buildTwinFreshnessSummary(
+        buildTwinFreshnessRollupForEntries([
+          {
+            sliceName: "workflows",
+            slice: workflowFreshness,
+          },
+          {
+            sliceName: "testSuites",
+            slice: testSuiteFreshness,
+          },
+        ]),
+      ),
       workflowState: workflowSnapshot.workflowState,
       workflowFileCount: workflowSnapshot.fileEntities.length,
       workflowCount: workflowSnapshot.workflowEntities.length,
@@ -297,6 +386,21 @@ export class TwinService {
     return buildTwinRepositoryOwnershipSummary({
       repository,
       latestRun: snapshot.latestRun,
+      freshness: buildTwinFreshnessSummary(
+        buildTwinFreshnessSlice({
+          slice: "ownership",
+          latestRun: snapshot.latestRun,
+          latestSuccessfulRun: snapshot.latestSuccessfulRun,
+          now: this.now(),
+          emptySnapshotReason:
+            snapshot.ownershipState === "no_codeowners_file"
+              ? {
+                  reasonCode: "no_codeowners_file",
+                  summaryFragment: "found no CODEOWNERS file.",
+                }
+              : null,
+        }),
+      ),
       ownershipState: snapshot.ownershipState,
       codeownersFileEntity: snapshot.codeownersFileEntity,
       ownerEntities: snapshot.ownerEntities,
@@ -473,24 +577,139 @@ export class TwinService {
     );
   }
 
-  private async getOwnershipReadSnapshot(repoFullName: string) {
+  private async loadRepositoryStoredState(
+    repoFullName: string,
+  ): Promise<TwinRepositoryStoredState> {
     const [entities, edges, runs] = await Promise.all([
       this.input.repository.listRepositoryEntities(repoFullName),
       this.input.repository.listRepositoryEdges(repoFullName),
       this.input.repository.listRepositoryRuns(repoFullName),
     ]);
-    const ownershipRuns = runs.filter(
+
+    return {
+      edges,
+      entities,
+      runs,
+    };
+  }
+
+  private buildFreshnessSlices(storedState: TwinRepositoryStoredState) {
+    const now = this.now();
+    const metadataSnapshot = this.buildMetadataReadSnapshot(storedState);
+    const ownershipSnapshot = this.buildOwnershipReadSnapshot(storedState);
+    const workflowSnapshot = this.buildWorkflowReadSnapshot(storedState);
+    const testSuiteSnapshot = this.buildTestSuiteReadSnapshot(storedState);
+    const docsSnapshot = this.buildDocsReadSnapshot(storedState);
+    const runbookSnapshot = this.buildRunbookReadSnapshot(storedState);
+
+    return {
+      metadata: buildTwinFreshnessSlice({
+        slice: "metadata",
+        latestRun: metadataSnapshot.latestRun,
+        latestSuccessfulRun: metadataSnapshot.latestSuccessfulRun,
+        now,
+      }),
+      ownership: buildTwinFreshnessSlice({
+        slice: "ownership",
+        latestRun: ownershipSnapshot.latestRun,
+        latestSuccessfulRun: ownershipSnapshot.latestSuccessfulRun,
+        now,
+        emptySnapshotReason:
+          ownershipSnapshot.ownershipState === "no_codeowners_file"
+            ? {
+                reasonCode: "no_codeowners_file",
+                summaryFragment: "found no CODEOWNERS file.",
+              }
+            : null,
+      }),
+      workflows: buildTwinFreshnessSlice({
+        slice: "workflows",
+        latestRun: workflowSnapshot.latestRun,
+        latestSuccessfulRun: workflowSnapshot.latestSuccessfulRun,
+        now,
+        emptySnapshotReason:
+          workflowSnapshot.workflowState === "no_workflow_files"
+            ? {
+                reasonCode: "no_workflow_files",
+                summaryFragment: "found no workflow files.",
+              }
+            : null,
+      }),
+      testSuites: buildTwinFreshnessSlice({
+        slice: "testSuites",
+        latestRun: testSuiteSnapshot.latestRun,
+        latestSuccessfulRun: testSuiteSnapshot.latestSuccessfulRun,
+        now,
+        emptySnapshotReason:
+          testSuiteSnapshot.testSuiteState === "no_test_suites"
+            ? {
+                reasonCode: "no_test_suites",
+                summaryFragment: "found no stored test suites.",
+              }
+            : null,
+      }),
+      docs: buildTwinFreshnessSlice({
+        slice: "docs",
+        latestRun: docsSnapshot.latestRun,
+        latestSuccessfulRun: docsSnapshot.latestSuccessfulRun,
+        now,
+        emptySnapshotReason:
+          docsSnapshot.docsState === "no_docs"
+            ? {
+                reasonCode: "no_docs",
+                summaryFragment: "found no approved docs.",
+              }
+            : null,
+      }),
+      runbooks: buildTwinFreshnessSlice({
+        slice: "runbooks",
+        latestRun: runbookSnapshot.latestRun,
+        latestSuccessfulRun: runbookSnapshot.latestSuccessfulRun,
+        now,
+        emptySnapshotReason:
+          runbookSnapshot.runbookState === "no_runbooks"
+            ? {
+                reasonCode: "no_runbooks",
+                summaryFragment: "found no classified runbooks.",
+              }
+            : null,
+      }),
+    };
+  }
+
+  private buildMetadataReadSnapshot(storedState: TwinRepositoryStoredState) {
+    const metadataRuns = storedState.runs.filter(
+      (candidate) => candidate.extractor === metadataExtractorName,
+    );
+
+    return {
+      latestRun: metadataRuns[0] ?? null,
+      latestSuccessfulRun:
+        metadataRuns.find((candidate) => candidate.status === "succeeded") ??
+        null,
+    };
+  }
+
+  private async getOwnershipReadSnapshot(repoFullName: string) {
+    return this.buildOwnershipReadSnapshot(
+      await this.loadRepositoryStoredState(repoFullName),
+    );
+  }
+
+  private buildOwnershipReadSnapshot(storedState: TwinRepositoryStoredState) {
+    const ownershipRuns = storedState.runs.filter(
       (candidate) => candidate.extractor === ownershipExtractorName,
     );
     const latestRun = ownershipRuns[0] ?? null;
-    const latestSucceededRun =
+    const latestSuccessfulRun =
       ownershipRuns.find((candidate) => candidate.status === "succeeded") ??
       null;
-    const targetEntities = readOwnershipTargets(entities);
+    const targetEntities = readOwnershipTargets(storedState.entities);
 
-    if (!latestSucceededRun) {
+    if (!latestSuccessfulRun) {
       return {
         latestRun,
+        latestSuccessfulRun,
         ownershipState: "not_synced" as const,
         codeownersFileEntity: null,
         effectiveOwnershipEdges: [],
@@ -503,12 +722,13 @@ export class TwinService {
 
     if (
       readNonNegativeInteger(
-        latestSucceededRun.stats,
+        latestSuccessfulRun.stats,
         "codeownersFileCount",
       ) === 0
     ) {
       return {
         latestRun,
+        latestSuccessfulRun,
         ownershipState: "no_codeowners_file" as const,
         codeownersFileEntity: null,
         effectiveOwnershipEdges: [],
@@ -519,15 +739,16 @@ export class TwinService {
       };
     }
 
-    const snapshotEntities = entities.filter(
-      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    const snapshotEntities = storedState.entities.filter(
+      (candidate) => candidate.sourceRunId === latestSuccessfulRun.id,
     );
-    const snapshotEdges = edges.filter(
-      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    const snapshotEdges = storedState.edges.filter(
+      (candidate) => candidate.sourceRunId === latestSuccessfulRun.id,
     );
 
     return {
       latestRun,
+      latestSuccessfulRun,
       ownershipState: "effective_ownership_available" as const,
       codeownersFileEntity:
         snapshotEntities.find(
@@ -555,41 +776,48 @@ export class TwinService {
   }
 
   private async getDocsReadSnapshot(repoFullName: string) {
-    const [entities, runs] = await Promise.all([
-      this.input.repository.listRepositoryEntities(repoFullName),
-      this.input.repository.listRepositoryRuns(repoFullName),
-    ]);
-    const docsRuns = runs.filter(
+    return this.buildDocsReadSnapshot(
+      await this.loadRepositoryStoredState(repoFullName),
+    );
+  }
+
+  private buildDocsReadSnapshot(storedState: TwinRepositoryStoredState) {
+    const docsRuns = storedState.runs.filter(
       (candidate) => candidate.extractor === docsExtractorName,
     );
     const latestRun = docsRuns[0] ?? null;
-    const latestSucceededRun =
+    const latestSuccessfulRun =
       docsRuns.find((candidate) => candidate.status === "succeeded") ?? null;
 
-    if (!latestSucceededRun) {
+    if (!latestSuccessfulRun) {
       return {
         latestRun,
+        latestSuccessfulRun,
         docsState: "not_synced" as const,
         docFileEntities: [],
         docSectionEntities: [],
       };
     }
 
-    if (readNonNegativeInteger(latestSucceededRun.stats, "docFileCount") === 0) {
+    if (
+      readNonNegativeInteger(latestSuccessfulRun.stats, "docFileCount") === 0
+    ) {
       return {
         latestRun,
+        latestSuccessfulRun,
         docsState: "no_docs" as const,
         docFileEntities: [],
         docSectionEntities: [],
       };
     }
 
-    const snapshotEntities = entities.filter(
-      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    const snapshotEntities = storedState.entities.filter(
+      (candidate) => candidate.sourceRunId === latestSuccessfulRun.id,
     );
 
     return {
       latestRun,
+      latestSuccessfulRun,
       docsState: "docs_available" as const,
       docFileEntities: snapshotEntities.filter(
         (candidate) => candidate.kind === "doc_file",
@@ -601,20 +829,23 @@ export class TwinService {
   }
 
   private async getRunbookReadSnapshot(repoFullName: string) {
-    const [entities, runs] = await Promise.all([
-      this.input.repository.listRepositoryEntities(repoFullName),
-      this.input.repository.listRepositoryRuns(repoFullName),
-    ]);
-    const runbookRuns = runs.filter(
+    return this.buildRunbookReadSnapshot(
+      await this.loadRepositoryStoredState(repoFullName),
+    );
+  }
+
+  private buildRunbookReadSnapshot(storedState: TwinRepositoryStoredState) {
+    const runbookRuns = storedState.runs.filter(
       (candidate) => candidate.extractor === runbookExtractorName,
     );
     const latestRun = runbookRuns[0] ?? null;
-    const latestSucceededRun =
+    const latestSuccessfulRun =
       runbookRuns.find((candidate) => candidate.status === "succeeded") ?? null;
 
-    if (!latestSucceededRun) {
+    if (!latestSuccessfulRun) {
       return {
         latestRun,
+        latestSuccessfulRun,
         runbookState: "not_synced" as const,
         runbookDocumentEntities: [],
         runbookStepEntities: [],
@@ -622,23 +853,27 @@ export class TwinService {
     }
 
     if (
-      readNonNegativeInteger(latestSucceededRun.stats, "runbookDocumentCount") ===
-      0
+      readNonNegativeInteger(
+        latestSuccessfulRun.stats,
+        "runbookDocumentCount",
+      ) === 0
     ) {
       return {
         latestRun,
+        latestSuccessfulRun,
         runbookState: "no_runbooks" as const,
         runbookDocumentEntities: [],
         runbookStepEntities: [],
       };
     }
 
-    const snapshotEntities = entities.filter(
-      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    const snapshotEntities = storedState.entities.filter(
+      (candidate) => candidate.sourceRunId === latestSuccessfulRun.id,
     );
 
     return {
       latestRun,
+      latestSuccessfulRun,
       runbookState: "runbooks_available" as const,
       runbookDocumentEntities: snapshotEntities.filter(
         (candidate) => candidate.kind === "runbook_document",
@@ -650,22 +885,24 @@ export class TwinService {
   }
 
   private async getWorkflowReadSnapshot(repoFullName: string) {
-    const [entities, edges, runs] = await Promise.all([
-      this.input.repository.listRepositoryEntities(repoFullName),
-      this.input.repository.listRepositoryEdges(repoFullName),
-      this.input.repository.listRepositoryRuns(repoFullName),
-    ]);
-    const workflowRuns = runs.filter(
+    return this.buildWorkflowReadSnapshot(
+      await this.loadRepositoryStoredState(repoFullName),
+    );
+  }
+
+  private buildWorkflowReadSnapshot(storedState: TwinRepositoryStoredState) {
+    const workflowRuns = storedState.runs.filter(
       (candidate) => candidate.extractor === workflowExtractorName,
     );
     const latestRun = workflowRuns[0] ?? null;
-    const latestSucceededRun =
+    const latestSuccessfulRun =
       workflowRuns.find((candidate) => candidate.status === "succeeded") ??
       null;
 
-    if (!latestSucceededRun) {
+    if (!latestSuccessfulRun) {
       return {
         latestRun,
+        latestSuccessfulRun,
         workflowState: "not_synced" as const,
         fileEntities: [],
         workflowEntities: [],
@@ -676,11 +913,12 @@ export class TwinService {
     }
 
     if (
-      readNonNegativeInteger(latestSucceededRun.stats, "workflowFileCount") ===
+      readNonNegativeInteger(latestSuccessfulRun.stats, "workflowFileCount") ===
       0
     ) {
       return {
         latestRun,
+        latestSuccessfulRun,
         workflowState: "no_workflow_files" as const,
         fileEntities: [],
         workflowEntities: [],
@@ -690,15 +928,16 @@ export class TwinService {
       };
     }
 
-    const snapshotEntities = entities.filter(
-      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    const snapshotEntities = storedState.entities.filter(
+      (candidate) => candidate.sourceRunId === latestSuccessfulRun.id,
     );
-    const snapshotEdges = edges.filter(
-      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    const snapshotEdges = storedState.edges.filter(
+      (candidate) => candidate.sourceRunId === latestSuccessfulRun.id,
     );
 
     return {
       latestRun,
+      latestSuccessfulRun,
       workflowState: "workflows_available" as const,
       fileEntities: snapshotEntities.filter(
         (candidate) => candidate.kind === "ci_workflow_file",
@@ -719,22 +958,24 @@ export class TwinService {
   }
 
   private async getTestSuiteReadSnapshot(repoFullName: string) {
-    const [entities, edges, runs] = await Promise.all([
-      this.input.repository.listRepositoryEntities(repoFullName),
-      this.input.repository.listRepositoryEdges(repoFullName),
-      this.input.repository.listRepositoryRuns(repoFullName),
-    ]);
-    const testSuiteRuns = runs.filter(
+    return this.buildTestSuiteReadSnapshot(
+      await this.loadRepositoryStoredState(repoFullName),
+    );
+  }
+
+  private buildTestSuiteReadSnapshot(storedState: TwinRepositoryStoredState) {
+    const testSuiteRuns = storedState.runs.filter(
       (candidate) => candidate.extractor === testSuiteExtractorName,
     );
     const latestRun = testSuiteRuns[0] ?? null;
-    const latestSucceededRun =
+    const latestSuccessfulRun =
       testSuiteRuns.find((candidate) => candidate.status === "succeeded") ??
       null;
 
-    if (!latestSucceededRun) {
+    if (!latestSuccessfulRun) {
       return {
         latestRun,
+        latestSuccessfulRun,
         testSuiteState: "not_synced" as const,
         testSuiteEntities: [],
         jobSuiteEdges: [],
@@ -742,25 +983,27 @@ export class TwinService {
     }
 
     if (
-      readNonNegativeInteger(latestSucceededRun.stats, "testSuiteCount") === 0
+      readNonNegativeInteger(latestSuccessfulRun.stats, "testSuiteCount") === 0
     ) {
       return {
         latestRun,
+        latestSuccessfulRun,
         testSuiteState: "no_test_suites" as const,
         testSuiteEntities: [],
         jobSuiteEdges: [],
       };
     }
 
-    const snapshotEntities = entities.filter(
-      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    const snapshotEntities = storedState.entities.filter(
+      (candidate) => candidate.sourceRunId === latestSuccessfulRun.id,
     );
-    const snapshotEdges = edges.filter(
-      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    const snapshotEdges = storedState.edges.filter(
+      (candidate) => candidate.sourceRunId === latestSuccessfulRun.id,
     );
 
     return {
       latestRun,
+      latestSuccessfulRun,
       testSuiteState: "test_suites_available" as const,
       testSuiteEntities: snapshotEntities.filter(
         (candidate) => candidate.kind === "test_suite",

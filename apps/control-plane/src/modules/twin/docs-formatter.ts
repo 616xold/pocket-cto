@@ -3,6 +3,7 @@ import type {
   TwinDocSectionSummary,
   TwinEdge,
   TwinEntity,
+  TwinFreshnessSummary,
   TwinKindCountMap,
   TwinRepositoryDocSectionsView,
   TwinRepositoryDocsSyncResult,
@@ -38,6 +39,7 @@ export function buildTwinRepositoryDocsView(input: {
   docFileEntities: TwinEntity[];
   docSectionEntities: TwinEntity[];
   docsState: "docs_available" | "no_docs" | "not_synced";
+  freshness: TwinFreshnessSummary;
   latestRun: TwinSyncRun | null;
   repository: TwinRepositorySummary;
 }): TwinRepositoryDocsView {
@@ -45,6 +47,7 @@ export function buildTwinRepositoryDocsView(input: {
     return {
       repository: input.repository,
       latestRun: input.latestRun,
+      freshness: input.freshness,
       docsState: input.docsState,
       counts: {
         docFileCount: 0,
@@ -61,6 +64,7 @@ export function buildTwinRepositoryDocsView(input: {
   return {
     repository: input.repository,
     latestRun: input.latestRun,
+    freshness: input.freshness,
     docsState: "docs_available",
     counts: {
       docFileCount: docs.length,
@@ -157,10 +161,7 @@ function readHeadingLevel(payload: Record<string, unknown>, key: string) {
     : null;
 }
 
-function readNonNegativeInteger(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readNonNegativeInteger(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
   return Number.isInteger(value) && typeof value === "number" && value >= 0
     ? value
@@ -174,10 +175,7 @@ function readPositiveInteger(payload: Record<string, unknown>, key: string) {
     : null;
 }
 
-function readNullableDatetime(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readNullableDatetime(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
   return typeof value === "string" && value.length > 0 ? value : null;
 }

@@ -3,6 +3,7 @@ import type {
   TwinEdgeListView,
   TwinEntity,
   TwinEntityListView,
+  TwinFreshnessSummary,
   TwinKindCountMap,
   TwinRepositoryMetadataSummary,
   TwinRepositoryMetadataSyncResult,
@@ -62,12 +63,14 @@ export function buildTwinSyncRunListView(input: {
 export function buildTwinRepositoryMetadataSummary(input: {
   edges: TwinEdge[];
   entities: TwinEntity[];
+  freshness: TwinFreshnessSummary;
   latestRun: TwinSyncRun | null;
   repository: TwinRepositorySummary;
 }): TwinRepositoryMetadataSummary {
   return {
     repository: input.repository,
     latestRun: input.latestRun,
+    freshness: input.freshness,
     entityCount: input.entities.length,
     edgeCount: input.edges.length,
     entityCountsByKind: buildKindCounts(input.entities),
@@ -118,7 +121,9 @@ function readRepositoryMetadata(entities: TwinEntity[]) {
   return {
     fullName: readString(entity.payload, "fullName") ?? entity.title,
     defaultBranch:
-      readString(entity.payload, "defaultBranch") ?? entity.summary ?? "unknown",
+      readString(entity.payload, "defaultBranch") ??
+      entity.summary ??
+      "unknown",
     visibility: readVisibility(entity.payload.visibility),
     archived: readNullableBoolean(entity.payload, "archived"),
     disabled: readNullableBoolean(entity.payload, "disabled"),
@@ -179,51 +184,33 @@ function readDirectoryMetadata(entities: TwinEntity[]) {
     .sort((left, right) => left.path.localeCompare(right.path));
 }
 
-function readBoolean(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readBoolean(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
   return typeof value === "boolean" ? value : null;
 }
 
-function readNonNegativeInteger(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readNonNegativeInteger(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
   return Number.isInteger(value) && typeof value === "number" && value >= 0
     ? value
     : null;
 }
 
-function readNullableBoolean(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readNullableBoolean(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
   return typeof value === "boolean" ? value : null;
 }
 
-function readNullableString(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readNullableString(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function readString(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readString(payload: Record<string, unknown>, key: string) {
   return readNullableString(payload, key);
 }
 
-function readStringArray(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readStringArray(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
 
   if (!Array.isArray(value)) {
@@ -231,7 +218,9 @@ function readStringArray(
   }
 
   return value
-    .filter((item): item is string => typeof item === "string" && item.length > 0)
+    .filter(
+      (item): item is string => typeof item === "string" && item.length > 0,
+    )
     .sort((left, right) => left.localeCompare(right));
 }
 

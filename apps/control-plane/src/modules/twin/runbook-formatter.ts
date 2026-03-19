@@ -1,5 +1,6 @@
 import type {
   TwinEntity,
+  TwinFreshnessSummary,
   TwinKindCountMap,
   TwinRepositoryRunbooksSyncResult,
   TwinRepositoryRunbooksView,
@@ -36,6 +37,7 @@ export function buildTwinRepositoryRunbooksSyncResult(input: {
 }
 
 export function buildTwinRepositoryRunbooksView(input: {
+  freshness: TwinFreshnessSummary;
   latestRun: TwinSyncRun | null;
   repository: TwinRepositorySummary;
   runbookDocumentEntities: TwinEntity[];
@@ -46,6 +48,7 @@ export function buildTwinRepositoryRunbooksView(input: {
     return {
       repository: input.repository,
       latestRun: input.latestRun,
+      freshness: input.freshness,
       runbookState: input.runbookState,
       counts: {
         runbookDocumentCount: 0,
@@ -80,6 +83,7 @@ export function buildTwinRepositoryRunbooksView(input: {
   return {
     repository: input.repository,
     latestRun: input.latestRun,
+    freshness: input.freshness,
     runbookState: "runbooks_available",
     counts: {
       runbookDocumentCount: runbooks.length,
@@ -163,20 +167,14 @@ function readCommandFamily(
     : "other";
 }
 
-function readNonNegativeInteger(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readNonNegativeInteger(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
   return Number.isInteger(value) && typeof value === "number" && value >= 0
     ? value
     : null;
 }
 
-function readNullableDatetime(
-  payload: Record<string, unknown>,
-  key: string,
-) {
+function readNullableDatetime(payload: Record<string, unknown>, key: string) {
   const value = payload[key];
   return typeof value === "string" && value.length > 0 ? value : null;
 }

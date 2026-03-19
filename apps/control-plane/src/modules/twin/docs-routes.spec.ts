@@ -76,6 +76,11 @@ describe("docs twin routes", () => {
       repository: {
         fullName: repoFullName,
       },
+      freshness: {
+        state: "fresh",
+        latestRunStatus: "succeeded",
+        staleAfterSeconds: 86_400,
+      },
       docsState: "docs_available",
       counts: {
         docFileCount: 2,

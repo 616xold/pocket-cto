@@ -2644,6 +2644,16 @@ async function createHarness(options?: {
               },
             },
             latestRun: null,
+            freshness: {
+              state: "never_synced" as const,
+              scorePercent: 0,
+              latestRunStatus: null,
+              ageSeconds: null,
+              staleAfterSeconds: 86_400,
+              reasonCode: "not_synced",
+              reasonSummary:
+                "No successful runbooks sync has been recorded yet.",
+            },
             runbookState: "not_synced" as const,
             counts: {
               runbookDocumentCount: 0,
@@ -2668,12 +2678,151 @@ async function createHarness(options?: {
               },
             },
             latestRun: null,
+            freshness: {
+              state: "never_synced" as const,
+              scorePercent: 0,
+              latestRunStatus: null,
+              ageSeconds: null,
+              staleAfterSeconds: 86_400,
+              reasonCode: "not_synced",
+              reasonSummary: "No successful docs sync has been recorded yet.",
+            },
             docsState: "not_synced" as const,
             counts: {
               docFileCount: 0,
               docSectionCount: 0,
             },
             docs: [],
+          };
+        },
+        async getRepositoryFreshness() {
+          return {
+            repository: {
+              fullName: "616xold/pocket-cto",
+              installationId: "12345",
+              defaultBranch: "main",
+              archived: false,
+              disabled: false,
+              isActive: true,
+              writeReadiness: {
+                ready: true,
+                failureCode: null,
+              },
+            },
+            rollup: {
+              state: "never_synced" as const,
+              scorePercent: 0,
+              latestRunStatus: null,
+              ageSeconds: null,
+              staleAfterSeconds: 21_600,
+              reasonCode: "rollup_never_synced",
+              reasonSummary:
+                "No successful twin snapshot exists yet for: metadata, ownership, workflows, test suites, docs, runbooks.",
+              freshSliceCount: 0,
+              staleSliceCount: 0,
+              failedSliceCount: 0,
+              neverSyncedSliceCount: 6,
+              blockingSlices: [
+                "metadata",
+                "ownership",
+                "workflows",
+                "testSuites",
+                "docs",
+                "runbooks",
+              ] as Array<
+                | "metadata"
+                | "ownership"
+                | "workflows"
+                | "testSuites"
+                | "docs"
+                | "runbooks"
+              >,
+            },
+            slices: {
+              metadata: {
+                state: "never_synced" as const,
+                scorePercent: 0,
+                latestRunId: null,
+                latestRunStatus: null,
+                latestCompletedAt: null,
+                latestSuccessfulRunId: null,
+                latestSuccessfulCompletedAt: null,
+                ageSeconds: null,
+                staleAfterSeconds: 21_600,
+                reasonCode: "not_synced",
+                reasonSummary:
+                  "No successful repository metadata sync has been recorded yet.",
+              },
+              ownership: {
+                state: "never_synced" as const,
+                scorePercent: 0,
+                latestRunId: null,
+                latestRunStatus: null,
+                latestCompletedAt: null,
+                latestSuccessfulRunId: null,
+                latestSuccessfulCompletedAt: null,
+                ageSeconds: null,
+                staleAfterSeconds: 43_200,
+                reasonCode: "not_synced",
+                reasonSummary:
+                  "No successful ownership sync has been recorded yet.",
+              },
+              workflows: {
+                state: "never_synced" as const,
+                scorePercent: 0,
+                latestRunId: null,
+                latestRunStatus: null,
+                latestCompletedAt: null,
+                latestSuccessfulRunId: null,
+                latestSuccessfulCompletedAt: null,
+                ageSeconds: null,
+                staleAfterSeconds: 43_200,
+                reasonCode: "not_synced",
+                reasonSummary:
+                  "No successful workflows sync has been recorded yet.",
+              },
+              testSuites: {
+                state: "never_synced" as const,
+                scorePercent: 0,
+                latestRunId: null,
+                latestRunStatus: null,
+                latestCompletedAt: null,
+                latestSuccessfulRunId: null,
+                latestSuccessfulCompletedAt: null,
+                ageSeconds: null,
+                staleAfterSeconds: 43_200,
+                reasonCode: "not_synced",
+                reasonSummary:
+                  "No successful test suites sync has been recorded yet.",
+              },
+              docs: {
+                state: "never_synced" as const,
+                scorePercent: 0,
+                latestRunId: null,
+                latestRunStatus: null,
+                latestCompletedAt: null,
+                latestSuccessfulRunId: null,
+                latestSuccessfulCompletedAt: null,
+                ageSeconds: null,
+                staleAfterSeconds: 86_400,
+                reasonCode: "not_synced",
+                reasonSummary: "No successful docs sync has been recorded yet.",
+              },
+              runbooks: {
+                state: "never_synced" as const,
+                scorePercent: 0,
+                latestRunId: null,
+                latestRunStatus: null,
+                latestCompletedAt: null,
+                latestSuccessfulRunId: null,
+                latestSuccessfulCompletedAt: null,
+                ageSeconds: null,
+                staleAfterSeconds: 86_400,
+                reasonCode: "not_synced",
+                reasonSummary:
+                  "No successful runbooks sync has been recorded yet.",
+              },
+            },
           };
         },
         async getRepositoryOwners() {
@@ -2711,6 +2860,16 @@ async function createHarness(options?: {
               },
             },
             latestRun: null,
+            freshness: {
+              state: "never_synced" as const,
+              scorePercent: 0,
+              latestRunStatus: null,
+              ageSeconds: null,
+              staleAfterSeconds: 21_600,
+              reasonCode: "not_synced",
+              reasonSummary:
+                "No successful repository metadata sync has been recorded yet.",
+            },
             entityCount: 0,
             edgeCount: 0,
             entityCountsByKind: {},
@@ -2789,6 +2948,16 @@ async function createHarness(options?: {
             },
             latestWorkflowRun: null,
             latestTestSuiteRun: null,
+            freshness: {
+              state: "never_synced" as const,
+              scorePercent: 0,
+              latestRunStatus: null,
+              ageSeconds: null,
+              staleAfterSeconds: 43_200,
+              reasonCode: "rollup_never_synced",
+              reasonSummary:
+                "No successful twin snapshot exists yet for: workflows, test suites.",
+            },
             workflowState: "not_synced" as const,
             testSuiteState: "not_synced" as const,
             counts: {
@@ -2818,6 +2987,16 @@ async function createHarness(options?: {
               },
             },
             latestRun: null,
+            freshness: {
+              state: "never_synced" as const,
+              scorePercent: 0,
+              latestRunStatus: null,
+              ageSeconds: null,
+              staleAfterSeconds: 43_200,
+              reasonCode: "not_synced",
+              reasonSummary:
+                "No successful ownership sync has been recorded yet.",
+            },
             ownershipState: "not_synced" as const,
             codeownersFile: null,
             counts: {

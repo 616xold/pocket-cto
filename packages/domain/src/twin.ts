@@ -44,6 +44,57 @@ export const TwinSyncRunSchema = z.object({
   createdAt: z.string().datetime({ offset: true }),
 });
 
+export const TwinFreshnessStateSchema = z.enum([
+  "never_synced",
+  "fresh",
+  "stale",
+  "failed",
+]);
+
+export const TwinFreshnessSliceNameSchema = z.enum([
+  "metadata",
+  "ownership",
+  "workflows",
+  "testSuites",
+  "docs",
+  "runbooks",
+]);
+
+export const TwinFreshnessSummarySchema = z.object({
+  state: TwinFreshnessStateSchema,
+  scorePercent: z.number().int().min(0).max(100),
+  latestRunStatus: TwinSyncRunStatusSchema.nullable(),
+  ageSeconds: z.number().int().nonnegative().nullable(),
+  staleAfterSeconds: z.number().int().positive(),
+  reasonCode: z.string().min(1),
+  reasonSummary: z.string().min(1),
+});
+
+export const TwinFreshnessSliceSchema = TwinFreshnessSummarySchema.extend({
+  latestRunId: z.string().uuid().nullable(),
+  latestCompletedAt: z.string().datetime({ offset: true }).nullable(),
+  latestSuccessfulRunId: z.string().uuid().nullable(),
+  latestSuccessfulCompletedAt: z.string().datetime({ offset: true }).nullable(),
+});
+
+export const TwinFreshnessSlicesSchema = z.object({
+  metadata: TwinFreshnessSliceSchema,
+  ownership: TwinFreshnessSliceSchema,
+  workflows: TwinFreshnessSliceSchema,
+  testSuites: TwinFreshnessSliceSchema,
+  docs: TwinFreshnessSliceSchema,
+  runbooks: TwinFreshnessSliceSchema,
+});
+
+export const TwinRepositoryFreshnessRollupSchema =
+  TwinFreshnessSummarySchema.extend({
+    freshSliceCount: z.number().int().nonnegative(),
+    staleSliceCount: z.number().int().nonnegative(),
+    failedSliceCount: z.number().int().nonnegative(),
+    neverSyncedSliceCount: z.number().int().nonnegative(),
+    blockingSlices: z.array(TwinFreshnessSliceNameSchema),
+  });
+
 export const TwinEntitySchema = z.object({
   id: z.string().uuid(),
   repoFullName: z.string().min(1),
@@ -183,6 +234,7 @@ export const TwinOwnerPrincipalSchema = z.object({
 export const TwinRepositoryMetadataSummarySchema = z.object({
   repository: TwinRepositorySummarySchema,
   latestRun: TwinSyncRunSchema.nullable(),
+  freshness: TwinFreshnessSummarySchema,
   entityCount: z.number().int().nonnegative(),
   edgeCount: z.number().int().nonnegative(),
   entityCountsByKind: TwinKindCountMapSchema,
@@ -239,6 +291,7 @@ export const TwinRepositoryDocsCountsSchema = z.object({
 export const TwinRepositoryDocsViewSchema = z.object({
   repository: TwinRepositorySummarySchema,
   latestRun: TwinSyncRunSchema.nullable(),
+  freshness: TwinFreshnessSummarySchema,
   docsState: TwinDocsStateSchema,
   counts: TwinRepositoryDocsCountsSchema,
   docs: z.array(TwinDocFileSummarySchema),
@@ -316,6 +369,7 @@ export const TwinRepositoryRunbooksCountsSchema = z.object({
 export const TwinRepositoryRunbooksViewSchema = z.object({
   repository: TwinRepositorySummarySchema,
   latestRun: TwinSyncRunSchema.nullable(),
+  freshness: TwinFreshnessSummarySchema,
   runbookState: TwinRunbookStateSchema,
   counts: TwinRepositoryRunbooksCountsSchema,
   runbooks: z.array(TwinRunbookDocumentSummarySchema),
@@ -390,6 +444,7 @@ export const TwinRepositoryOwnershipSummaryCountsSchema = z.object({
 export const TwinRepositoryOwnershipSummarySchema = z.object({
   repository: TwinRepositorySummarySchema,
   latestRun: TwinSyncRunSchema.nullable(),
+  freshness: TwinFreshnessSummarySchema,
   ownershipState: TwinOwnershipSummaryStateSchema,
   codeownersFile: TwinCodeownersFileSchema.nullable(),
   counts: TwinRepositoryOwnershipSummaryCountsSchema,
@@ -565,11 +620,18 @@ export const TwinRepositoryCiSummarySchema = z.object({
   repository: TwinRepositorySummarySchema,
   latestWorkflowRun: TwinSyncRunSchema.nullable(),
   latestTestSuiteRun: TwinSyncRunSchema.nullable(),
+  freshness: TwinFreshnessSummarySchema,
   workflowState: TwinWorkflowStateSchema,
   testSuiteState: TwinTestSuiteStateSchema,
   counts: TwinRepositoryCiSummaryCountsSchema,
   testSuites: z.array(TwinTestSuiteSummarySchema),
   unmappedJobs: z.array(TwinCiUnmappedJobSchema),
+});
+
+export const TwinRepositoryFreshnessViewSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  rollup: TwinRepositoryFreshnessRollupSchema,
+  slices: TwinFreshnessSlicesSchema,
 });
 
 export const TwinRepositoryTestSuiteSyncResultSchema = z.object({
@@ -596,6 +658,16 @@ export type TwinRepositoryWriteReadiness = z.infer<
 export type TwinRepositorySummary = z.infer<typeof TwinRepositorySummarySchema>;
 export type TwinSyncRunStatus = z.infer<typeof TwinSyncRunStatusSchema>;
 export type TwinSyncRun = z.infer<typeof TwinSyncRunSchema>;
+export type TwinFreshnessState = z.infer<typeof TwinFreshnessStateSchema>;
+export type TwinFreshnessSliceName = z.infer<
+  typeof TwinFreshnessSliceNameSchema
+>;
+export type TwinFreshnessSummary = z.infer<typeof TwinFreshnessSummarySchema>;
+export type TwinFreshnessSlice = z.infer<typeof TwinFreshnessSliceSchema>;
+export type TwinFreshnessSlices = z.infer<typeof TwinFreshnessSlicesSchema>;
+export type TwinRepositoryFreshnessRollup = z.infer<
+  typeof TwinRepositoryFreshnessRollupSchema
+>;
 export type TwinEntity = z.infer<typeof TwinEntitySchema>;
 export type TwinEdge = z.infer<typeof TwinEdgeSchema>;
 export type TwinEntityListView = z.infer<typeof TwinEntityListViewSchema>;
@@ -744,6 +816,9 @@ export type TwinRepositoryCiSummaryCounts = z.infer<
 >;
 export type TwinRepositoryCiSummary = z.infer<
   typeof TwinRepositoryCiSummarySchema
+>;
+export type TwinRepositoryFreshnessView = z.infer<
+  typeof TwinRepositoryFreshnessViewSchema
 >;
 export type TwinRepositoryTestSuiteSyncResult = z.infer<
   typeof TwinRepositoryTestSuiteSyncResultSchema

@@ -141,6 +141,12 @@ describe("test suite twin routes", () => {
       repository: {
         fullName: repoFullName,
       },
+      freshness: {
+        state: "fresh",
+        latestRunStatus: "succeeded",
+        staleAfterSeconds: 43_200,
+        reasonCode: "rollup_fresh",
+      },
       workflowState: "workflows_available",
       testSuiteState: "test_suites_available",
       counts: {

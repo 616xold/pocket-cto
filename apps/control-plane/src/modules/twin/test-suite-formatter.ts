@@ -3,6 +3,7 @@ import type {
   TwinCiUnmappedJob,
   TwinEdge,
   TwinEntity,
+  TwinFreshnessSummary,
   TwinKindCountMap,
   TwinRepositoryCiSummary,
   TwinRepositorySummary,
@@ -73,6 +74,7 @@ export function buildTwinRepositoryTestSuitesView(input: {
 }
 
 export function buildTwinRepositoryCiSummary(input: {
+  freshness: TwinFreshnessSummary;
   jobEntities: TwinEntity[];
   jobSuiteEdges: TwinEdge[];
   latestTestSuiteRun: TwinSyncRun | null;
@@ -91,6 +93,7 @@ export function buildTwinRepositoryCiSummary(input: {
     repository: input.repository,
     latestWorkflowRun: input.latestWorkflowRun,
     latestTestSuiteRun: input.latestTestSuiteRun,
+    freshness: input.freshness,
     workflowState: input.workflowState,
     testSuiteState: input.testSuiteState,
     counts: {

@@ -1038,11 +1038,12 @@ Write-readiness is intentionally narrower than simple visibility:
 
 ### Twin routes
 
-M3.1, M3.2, M3.3, M3.4A, M3.4B, M3.5A, and M3.5B add the first repo-scoped engineering-twin debug, metadata-sync, docs-sync, runbooks-sync, ownership-sync, workflow-sync, and test-suite-sync surface on top of the durable repository registry.
+M3.1, M3.2, M3.3, M3.4A, M3.4B, M3.5A, M3.5B, and M3.6 add the first repo-scoped engineering-twin debug, metadata-sync, docs-sync, runbooks-sync, ownership-sync, workflow-sync, test-suite-sync, and freshness surface on top of the durable repository registry.
 The read routes return stored twin state.
 The metadata, docs, runbooks, workflow, and ownership sync routes perform deterministic local scans for the requested synced repository.
 The test-suite sync route is a stored-data pass over the latest successful manifest and workflow-job snapshots for that repository.
-These routes still do not compute freshness scoring or answer blast-radius questions yet.
+The dedicated freshness route computes deterministic freshness from existing sync runs plus the existing stored slice state; it does not trigger new scans or extraction passes.
+Blast-radius answers are still a later M3 slice.
 
 Available routes:
 
@@ -1058,6 +1059,7 @@ Available routes:
 - `GET /twin/repositories/:owner/:repo/workflows`
 - `GET /twin/repositories/:owner/:repo/test-suites`
 - `GET /twin/repositories/:owner/:repo/ci-summary`
+- `GET /twin/repositories/:owner/:repo/freshness`
 - `GET /twin/repositories/:owner/:repo/ownership-rules`
 - `GET /twin/repositories/:owner/:repo/owners`
 - `GET /twin/repositories/:owner/:repo/ownership-summary`
@@ -1087,6 +1089,7 @@ curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/runbooks
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/test-suites
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ci-summary
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/freshness
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-rules
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/owners
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-summary
@@ -1094,6 +1097,55 @@ curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/summary
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/entities
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/edges
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/runs
+```
+
+### Twin freshness
+
+`GET /twin/repositories/:owner/:repo/freshness` scores the currently stored twin for the requested repository across these slices:
+
+- `metadata`
+- `ownership`
+- `workflows`
+- `testSuites`
+- `docs`
+- `runbooks`
+
+The route uses the latest successful completed run age as the primary freshness signal, but it still makes the latest failed run explicit.
+It reads existing sync runs plus the existing stored slice summaries and does not trigger new extraction work.
+
+The explicit freshness state model is:
+
+- `never_synced`: no successful snapshot exists yet for that slice
+- `fresh`: the latest successful snapshot is within the configured freshness window
+- `stale`: the latest successful snapshot exists, but it is older than the configured freshness window
+- `failed`: the latest run failed, even if an older successful snapshot still exists
+
+Successful-but-empty snapshots stay visible through reason codes instead of a separate freshness state.
+Examples include `no_codeowners_file`, `no_workflow_files`, `no_test_suites`, `no_docs`, and `no_runbooks`.
+
+The current freshness windows are intentionally conservative:
+
+- `metadata`: 6 hours
+- `ownership`: 12 hours
+- `workflows`: 12 hours
+- `testSuites`: 12 hours
+- `docs`: 24 hours
+- `runbooks`: 24 hours
+
+The route returns one conservative repository rollup plus per-slice state, latest run status, latest successful age when available, stale-after threshold, and reason code or summary.
+
+The existing summary surfaces now also expose one concise `freshness` block:
+
+- `GET /twin/repositories/:owner/:repo/summary`
+- `GET /twin/repositories/:owner/:repo/ownership-summary`
+- `GET /twin/repositories/:owner/:repo/ci-summary`
+- `GET /twin/repositories/:owner/:repo/docs`
+- `GET /twin/repositories/:owner/:repo/runbooks`
+
+Example:
+
+```bash
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/freshness
 ```
 
 ### Twin metadata sync
@@ -1173,7 +1225,8 @@ curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/docs
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/doc-sections
 ```
 
-This slice still does not compute freshness scoring or blast-radius answers.
+The `docs` route now exposes one concise `freshness` block for the stored docs snapshot.
+Blast-radius answers are still out of scope for this slice.
 
 ### Twin runbooks sync
 
@@ -1327,7 +1380,7 @@ The workflow read route is a stored view, not a live rescan:
 - each stored workflow summary includes the source file path, workflow name plus deterministic fallback, normalized trigger summary, and compact job summaries
 - each job summary includes the job key, display name when present, normalized `runs-on`, normalized `needs`, permissions when present, and compact `run` or `uses` step entries
 
-This slice intentionally stops before docs indexing, freshness scoring, or blast-radius behavior.
+The workflow and test-suite routes still stop before blast-radius behavior, but `ci-summary` now exposes one concise `freshness` block for the combined workflow plus test-suite posture.
 
 ### Twin test-suite sync
 

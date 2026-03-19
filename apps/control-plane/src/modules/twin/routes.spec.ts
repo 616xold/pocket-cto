@@ -144,6 +144,11 @@ describe("twin routes", () => {
       latestRun: {
         status: "succeeded",
       },
+      freshness: {
+        state: "fresh",
+        latestRunStatus: "succeeded",
+        staleAfterSeconds: 21_600,
+      },
       metadata: {
         repository: {
           fullName: repoFullName,
@@ -264,6 +269,11 @@ describe("twin routes", () => {
       repository: {
         fullName: repoFullName,
       },
+      freshness: {
+        state: "fresh",
+        latestRunStatus: "succeeded",
+        staleAfterSeconds: 43_200,
+      },
       ownershipState: "effective_ownership_available",
       codeownersFile: {
         path: ".github/CODEOWNERS",
@@ -305,6 +315,66 @@ describe("twin routes", () => {
           packageName: "pocket-cto",
         },
       ],
+    });
+  });
+
+  it("returns conservative repository freshness with per-slice states", async () => {
+    const app = await createTwinApp(apps, service);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/twin/repositories/616xold/pocket-cto/freshness",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      repository: {
+        fullName: repoFullName,
+      },
+      rollup: {
+        state: "never_synced",
+        scorePercent: 0,
+        neverSyncedSliceCount: 5,
+        blockingSlices: [
+          "ownership",
+          "workflows",
+          "testSuites",
+          "docs",
+          "runbooks",
+        ],
+      },
+      slices: {
+        metadata: {
+          state: "fresh",
+          latestRunStatus: "succeeded",
+          staleAfterSeconds: 21_600,
+        },
+        ownership: {
+          state: "never_synced",
+          latestRunStatus: null,
+          staleAfterSeconds: 43_200,
+        },
+        workflows: {
+          state: "never_synced",
+          latestRunStatus: null,
+          staleAfterSeconds: 43_200,
+        },
+        testSuites: {
+          state: "never_synced",
+          latestRunStatus: null,
+          staleAfterSeconds: 43_200,
+        },
+        docs: {
+          state: "never_synced",
+          latestRunStatus: null,
+          staleAfterSeconds: 86_400,
+        },
+        runbooks: {
+          state: "never_synced",
+          latestRunStatus: null,
+          staleAfterSeconds: 86_400,
+        },
+      },
     });
   });
 
