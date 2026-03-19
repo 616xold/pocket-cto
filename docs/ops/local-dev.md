@@ -495,9 +495,19 @@ Expected response shape:
     "latestApproval": null,
     "evidenceCompleteness": {
       "status": "missing",
-      "expectedArtifactKinds": ["plan", "diff_summary", "test_report", "pr_link"],
+      "expectedArtifactKinds": [
+        "plan",
+        "diff_summary",
+        "test_report",
+        "pr_link"
+      ],
       "presentArtifactKinds": [],
-      "missingArtifactKinds": ["plan", "diff_summary", "test_report", "pr_link"],
+      "missingArtifactKinds": [
+        "plan",
+        "diff_summary",
+        "test_report",
+        "pr_link"
+      ],
       "notes": [
         "Planner evidence is missing.",
         "Change-summary evidence is missing.",
@@ -1028,15 +1038,17 @@ Write-readiness is intentionally narrower than simple visibility:
 
 ### Twin routes
 
-M3.1, M3.2, and M3.3 add the first repo-scoped engineering-twin debug, metadata-sync, and ownership-sync surface on top of the durable repository registry.
+M3.1, M3.2, M3.3, and M3.4A add the first repo-scoped engineering-twin debug, metadata-sync, ownership-sync, and workflow-sync surface on top of the durable repository registry.
 The read routes return stored twin state.
 The sync routes perform deterministic local scans for the requested synced repository.
-These routes still do not compute arbitrary file ownership graphs, extract CI workflows, index docs, or answer blast-radius questions yet.
+These routes still do not extract test suites, index docs, compute freshness scoring, or answer blast-radius questions yet.
 
 Available routes:
 
 - `POST /twin/repositories/:owner/:repo/metadata-sync`
+- `POST /twin/repositories/:owner/:repo/workflows-sync`
 - `POST /twin/repositories/:owner/:repo/ownership-sync`
+- `GET /twin/repositories/:owner/:repo/workflows`
 - `GET /twin/repositories/:owner/:repo/ownership-rules`
 - `GET /twin/repositories/:owner/:repo/owners`
 - `GET /twin/repositories/:owner/:repo/ownership-summary`
@@ -1055,7 +1067,9 @@ Examples:
 
 ```bash
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/metadata-sync
+curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-sync
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-rules
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/owners
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-summary
@@ -1167,6 +1181,29 @@ It reports:
 - unowned directories and manifests when no rule matched
 
 The current slice still does not widen into arbitrary file ownership graphs, CI workflow ownership, docs indexing, or blast-radius answers.
+
+### Twin workflow sync
+
+The M3.4A workflow extractor stays intentionally narrow and auditable.
+It discovers only `.yml` and `.yaml` files under `.github/workflows` for the truthful local checkout selected by the existing twin source resolver.
+
+When workflow files exist, the sync persists:
+
+- one `ci_workflow_file` entity per discovered workflow file
+- one `ci_workflow` entity per discovered workflow definition
+- one `ci_job` entity per top-level workflow job
+- `repository_has_ci_workflow_file`, `workflow_file_defines_workflow`, and `workflow_contains_job` edges
+
+When no workflow files exist, the sync still succeeds truthfully and finishes with zero workflow files, zero workflows, and zero jobs.
+
+The workflow read route is a stored view, not a live rescan:
+
+- `GET /twin/repositories/:owner/:repo/workflows` returns `workflowState` as `not_synced`, `no_workflow_files`, or `workflows_available`
+- the response includes counts for workflow files, workflows, and jobs
+- each stored workflow summary includes the source file path, workflow name plus deterministic fallback, normalized trigger summary, and compact job summaries
+- each job summary includes the job key, display name when present, normalized `runs-on`, normalized `needs`, permissions when present, and compact `run` or `uses` step entries
+
+This slice intentionally stops before test suite extraction, docs indexing, freshness scoring, or blast-radius behavior.
 
 ### Branch and draft PR publish
 

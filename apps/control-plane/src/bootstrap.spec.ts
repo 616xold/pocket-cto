@@ -23,9 +23,11 @@ describe("server control mode", () => {
   });
 
   it("selects the api-only container when embedded mode is disabled", async () => {
-    const createApiOnlyContainer = vi.fn(async () => createAppContainer("api_only"));
-    const createEmbeddedWorkerContainer = vi.fn(
-      async () => createEmbeddedAppContainer(),
+    const createApiOnlyContainer = vi.fn(async () =>
+      createAppContainer("api_only"),
+    );
+    const createEmbeddedWorkerContainer = vi.fn(async () =>
+      createEmbeddedAppContainer(),
     );
 
     const container = await createServerContainer({
@@ -44,9 +46,11 @@ describe("server control mode", () => {
   });
 
   it("selects the embedded worker container when embedded mode is enabled", async () => {
-    const createApiOnlyContainer = vi.fn(async () => createAppContainer("api_only"));
-    const createEmbeddedWorkerContainer = vi.fn(
-      async () => createEmbeddedAppContainer(),
+    const createApiOnlyContainer = vi.fn(async () =>
+      createAppContainer("api_only"),
+    );
+    const createEmbeddedWorkerContainer = vi.fn(async () =>
+      createEmbeddedAppContainer(),
     );
 
     const container = await createServerContainer({
@@ -342,6 +346,30 @@ function createAppContainer(
           },
         };
       },
+      async getRepositoryWorkflows() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          latestRun: null,
+          workflowState: "not_synced" as const,
+          counts: {
+            workflowFileCount: 0,
+            workflowCount: 0,
+            jobCount: 0,
+          },
+          workflows: [],
+        };
+      },
       async getRepositoryOwnershipSummary() {
         return {
           repository: {
@@ -491,6 +519,47 @@ function createAppContainer(
             errorSummary: null,
             createdAt: "2026-03-15T00:00:00.000Z",
           },
+          entityCount: 0,
+          edgeCount: 0,
+          entityCountsByKind: {},
+          edgeCountsByKind: {},
+        };
+      },
+      async syncRepositoryWorkflows() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          syncRun: {
+            id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            repoFullName: "616xold/pocket-cto",
+            extractor: "repository_workflows",
+            status: "succeeded",
+            startedAt: "2026-03-15T00:00:00.000Z",
+            completedAt: "2026-03-15T00:01:00.000Z",
+            stats: {
+              entityCount: 0,
+              edgeCount: 0,
+              workflowFileCount: 0,
+              workflowCount: 0,
+              jobCount: 0,
+            },
+            errorSummary: null,
+            createdAt: "2026-03-15T00:00:00.000Z",
+          },
+          workflowState: "no_workflow_files" as const,
+          workflowFileCount: 0,
+          workflowCount: 0,
+          jobCount: 0,
           entityCount: 0,
           edgeCount: 0,
           entityCountsByKind: {},

@@ -1,10 +1,25 @@
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { execFile as execFileCallback } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { and, count, eq } from "drizzle-orm";
 import { approvals, artifacts, missions, workspaces } from "@pocket-cto/db";
 import type { MissionRecord, ReplayEvent } from "@pocket-cto/domain";
@@ -89,7 +104,10 @@ describe("OrchestratorWorker (DB-backed)", () => {
     const turnStarted = createDeferred<void>();
     const releaseTurn = createDeferred<void>();
     const harness = await createHarness({
-      runtimeCodexService: createBlockedRuntimeService(turnStarted, releaseTurn),
+      runtimeCodexService: createBlockedRuntimeService(
+        turnStarted,
+        releaseTurn,
+      ),
     });
     cleanups.push(harness.cleanup);
     const { missionService, replayService, worker } = harness;
@@ -108,7 +126,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
 
     await turnStarted.promise;
 
-    const activeDetail = await missionService.getMissionDetail(created.mission.id);
+    const activeDetail = await missionService.getMissionDetail(
+      created.mission.id,
+    );
     const activeWorkspace = await getWorkspaceByTaskId(plannerTask.id);
     expect(activeDetail.mission.status).toBe("running");
     expect(activeDetail.tasks[0]).toMatchObject({
@@ -126,7 +146,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       taskId: plannerTask.id,
     });
 
-    const activeReplay = await replayService.getMissionEvents(created.mission.id);
+    const activeReplay = await replayService.getMissionEvents(
+      created.mission.id,
+    );
     expect(activeReplay.map((event) => event.type)).toEqual([
       "mission.created",
       "task.created",
@@ -207,7 +229,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       },
     });
 
-    const replayEvents = await replayService.getMissionEvents(created.mission.id);
+    const replayEvents = await replayService.getMissionEvents(
+      created.mission.id,
+    );
     const persistedWorkspace = await getWorkspaceByTaskId(plannerTask.id);
     expect(replayEvents.map((event) => event.type)).toEqual([
       "mission.created",
@@ -307,7 +331,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       turnId: "turn_fake_123",
     });
 
-    const awaitingReplay = await replayService.getMissionEvents(created.mission.id);
+    const awaitingReplay = await replayService.getMissionEvents(
+      created.mission.id,
+    );
     expect(awaitingReplay).toContainEqual(
       expect.objectContaining({
         type: "approval.requested",
@@ -365,7 +391,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       status: "approved",
     });
 
-    const finalReplay = await replayService.getMissionEvents(created.mission.id);
+    const finalReplay = await replayService.getMissionEvents(
+      created.mission.id,
+    );
     expect(finalReplay).toContainEqual(
       expect.objectContaining({
         type: "approval.resolved",
@@ -420,8 +448,12 @@ describe("OrchestratorWorker (DB-backed)", () => {
         event.sequence > taskResumedEvent.sequence,
     );
 
-    expect(approvalResolvedEvent.sequence).toBeLessThan(taskResumedEvent.sequence);
-    expect(approvalResolvedEvent.sequence).toBeLessThan(missionResumedEvent.sequence);
+    expect(approvalResolvedEvent.sequence).toBeLessThan(
+      taskResumedEvent.sequence,
+    );
+    expect(approvalResolvedEvent.sequence).toBeLessThan(
+      missionResumedEvent.sequence,
+    );
     expect(taskResumedEvent.sequence).toBeLessThan(resumedTurnItem.sequence);
     expect(missionResumedEvent.sequence).toBeLessThan(resumedTurnItem.sequence);
   });
@@ -785,7 +817,10 @@ describe("OrchestratorWorker (DB-backed)", () => {
       throw new Error("Expected a completed planner turn");
     }
     expect(
-      tick.turn.items.some((item: RuntimeCodexRunTurnResult["items"][number]) => item.itemType === "commandExecution"),
+      tick.turn.items.some(
+        (item: RuntimeCodexRunTurnResult["items"][number]) =>
+          item.itemType === "commandExecution",
+      ),
     ).toBe(false);
 
     const [planArtifact] = await db
@@ -799,7 +834,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       )
       .limit(1);
     const detail = await missionService.getMissionDetail(created.mission.id);
-    const replayEvents = await replayService.getMissionEvents(created.mission.id);
+    const replayEvents = await replayService.getMissionEvents(
+      created.mission.id,
+    );
 
     expect(planArtifact).toBeDefined();
     expect(planArtifact).toMatchObject({
@@ -833,7 +870,8 @@ describe("OrchestratorWorker (DB-backed)", () => {
     });
     expect(detail.tasks[0]).toMatchObject({
       id: plannerTask.id,
-      summary: "Plan the passkey work without changing files and preserve the existing email-login path.",
+      summary:
+        "Plan the passkey work without changing files and preserve the existing email-login path.",
     });
     expect(detail.proofBundle.artifactIds).toContain(planArtifact!.id);
     expect(detail.proofBundle.decisionTrace).toContain(
@@ -904,7 +942,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       )
       .limit(1);
     const detail = await missionService.getMissionDetail(created.mission.id);
-    const replayEvents = await replayService.getMissionEvents(created.mission.id);
+    const replayEvents = await replayService.getMissionEvents(
+      created.mission.id,
+    );
 
     expect(planArtifact).toBeDefined();
     expect(readArtifactMetadata(planArtifact!.metadata)).toMatchObject({
@@ -1276,9 +1316,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
     expect(diffArtifactCreatedEvent.sequence).toBeLessThan(
       testArtifactCreatedEvent.sequence,
     );
-    expect(await readFile(join(executorWorkspace!.rootPath, "README.md"), "utf8")).toContain(
-      "executor change",
-    );
+    expect(
+      await readFile(join(executorWorkspace!.rootPath, "README.md"), "utf8"),
+    ).toContain("executor change");
   });
 
   it("publishes a successful executor run to a draft PR and persists the pr_link artifact", async () => {
@@ -1309,7 +1349,11 @@ describe("OrchestratorWorker (DB-backed)", () => {
     await setMissionAllowedPaths(created.mission.id, created.mission.spec, [
       "README.md",
     ]);
-    await setMissionPrimaryRepo(created.mission.id, created.mission.spec, "pocket-cto");
+    await setMissionPrimaryRepo(
+      created.mission.id,
+      created.mission.spec,
+      "pocket-cto",
+    );
     await seedWritableRepository("616xold/pocket-cto");
 
     await plannerHarness.worker.run({
@@ -1401,9 +1445,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       }),
     );
     expect(await remoteBranchExists(remote.remoteUrl, branchName)).toBe(true);
-    expect(
-      await readRemoteBranchSubject(remote.remoteUrl, branchName),
-    ).toBe(`pocket-cto: mission ${created.mission.id} task 1-executor`);
+    expect(await readRemoteBranchSubject(remote.remoteUrl, branchName)).toBe(
+      `pocket-cto: mission ${created.mission.id} task 1-executor`,
+    );
     expect(draftPullRequest).toHaveBeenCalledWith(
       "installation-token-123",
       "616xold/pocket-cto",
@@ -1426,8 +1470,14 @@ describe("OrchestratorWorker (DB-backed)", () => {
     const plannerTask = created.tasks[0]!;
     const executorTask = created.tasks[1]!;
 
-    await harness.missionRepository.updateTaskStatus(plannerTask.id, "succeeded");
-    await harness.missionRepository.updateTaskStatus(executorTask.id, "claimed");
+    await harness.missionRepository.updateTaskStatus(
+      plannerTask.id,
+      "succeeded",
+    );
+    await harness.missionRepository.updateTaskStatus(
+      executorTask.id,
+      "claimed",
+    );
 
     const tick = await harness.worker.run({
       log,
@@ -1447,7 +1497,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       },
     });
 
-    const detail = await harness.missionService.getMissionDetail(created.mission.id);
+    const detail = await harness.missionService.getMissionDetail(
+      created.mission.id,
+    );
     const replayEvents = await harness.replayService.getMissionEvents(
       created.mission.id,
     );
@@ -1943,10 +1995,8 @@ describe("OrchestratorWorker (DB-backed)", () => {
       sourceRepoRoot: sourceRepo.repoRoot,
       workspaceRoot: workspaceRoot.workspaceRoot,
     });
-    const {
-      missionService: failureMissionService,
-      worker: failureWorker,
-    } = failureHarness;
+    const { missionService: failureMissionService, worker: failureWorker } =
+      failureHarness;
     const created = await failureMissionService.createFromText({
       text: "Retry the claimed task without duplicating the workspace",
       sourceKind: "manual_text",
@@ -2003,13 +2053,14 @@ describe("OrchestratorWorker (DB-backed)", () => {
 
   it("falls back to direct turn/start when thread/resume is unavailable for a pre-first-turn task", async () => {
     const harness = await createHarness({
-        fixtureOptions: {
-          mode: "resume-gap-direct-turn-success",
-          threadId: "thread_gap_1",
-        },
-      });
+      fixtureOptions: {
+        mode: "resume-gap-direct-turn-success",
+        threadId: "thread_gap_1",
+      },
+    });
     cleanups.push(harness.cleanup);
-    const { missionRepository, missionService, replayService, worker } = harness;
+    const { missionRepository, missionService, replayService, worker } =
+      harness;
     const recoverableMission = await missionService.createFromText({
       text: "Recover the stored thread without replacing it",
       sourceKind: "manual_text",
@@ -2023,7 +2074,10 @@ describe("OrchestratorWorker (DB-backed)", () => {
     const recoverableTask = recoverableMission.tasks[0]!;
 
     await missionRepository.updateTaskStatus(recoverableTask.id, "claimed");
-    await missionRepository.attachCodexThreadId(recoverableTask.id, "thread_gap_1");
+    await missionRepository.attachCodexThreadId(
+      recoverableTask.id,
+      "thread_gap_1",
+    );
 
     const tick = await worker.run({
       log: silentLog(),
@@ -2045,7 +2099,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       },
     });
 
-    const pendingDetail = await missionService.getMissionDetail(pendingMission.mission.id);
+    const pendingDetail = await missionService.getMissionDetail(
+      pendingMission.mission.id,
+    );
     expect(pendingDetail.tasks[0]).toMatchObject({
       status: "pending",
     });
@@ -2069,13 +2125,14 @@ describe("OrchestratorWorker (DB-backed)", () => {
 
   it("replaces the thread for the pre-first-turn gap only after resume and direct turn/start both fail", async () => {
     const harness = await createHarness({
-        fixtureOptions: {
-          mode: "resume-gap-direct-turn-failed",
-          threadId: "thread_gap_replace_1",
-        },
-      });
+      fixtureOptions: {
+        mode: "resume-gap-direct-turn-failed",
+        threadId: "thread_gap_replace_1",
+      },
+    });
     cleanups.push(harness.cleanup);
-    const { missionRepository, missionService, replayService, worker } = harness;
+    const { missionRepository, missionService, replayService, worker } =
+      harness;
     const recoverableMission = await missionService.createFromText({
       text: "Replace the unusable first-turn thread",
       sourceKind: "manual_text",
@@ -2114,7 +2171,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       },
     });
 
-    const pendingDetail = await missionService.getMissionDetail(pendingMission.mission.id);
+    const pendingDetail = await missionService.getMissionDetail(
+      pendingMission.mission.id,
+    );
     expect(pendingDetail.tasks[0]).toMatchObject({
       status: "pending",
     });
@@ -2144,13 +2203,14 @@ describe("OrchestratorWorker (DB-backed)", () => {
 
   it("does not replace the thread if the task has already emitted runtime.turn_started once", async () => {
     const harness = await createHarness({
-        fixtureOptions: {
-          mode: "resume-gap-direct-turn-failed",
-          threadId: "thread_do_not_replace_1",
-        },
-      });
+      fixtureOptions: {
+        mode: "resume-gap-direct-turn-failed",
+        threadId: "thread_do_not_replace_1",
+      },
+    });
     cleanups.push(harness.cleanup);
-    const { missionRepository, missionService, replayService, worker } = harness;
+    const { missionRepository, missionService, replayService, worker } =
+      harness;
     const mission = await missionService.createFromText({
       text: "Do not replace a post-turn task",
       sourceKind: "manual_text",
@@ -2159,7 +2219,10 @@ describe("OrchestratorWorker (DB-backed)", () => {
     const task = mission.tasks[0]!;
 
     await missionRepository.updateTaskStatus(task.id, "claimed");
-    await missionRepository.attachCodexThreadId(task.id, "thread_do_not_replace_1");
+    await missionRepository.attachCodexThreadId(
+      task.id,
+      "thread_do_not_replace_1",
+    );
     await replayService.append({
       missionId: mission.mission.id,
       taskId: task.id,
@@ -2195,7 +2258,9 @@ describe("OrchestratorWorker (DB-backed)", () => {
       status: "claimed",
     });
 
-    const replayEvents = await replayService.getMissionEvents(mission.mission.id);
+    const replayEvents = await replayService.getMissionEvents(
+      mission.mission.id,
+    );
     expect(replayEvents.map((event) => event.type)).not.toContain(
       "runtime.thread_replaced",
     );
@@ -2231,14 +2296,10 @@ async function createHarness(options?: {
   >;
   workspaceRoot?: string;
 }) {
-  const sourceRepo =
-    options?.sourceRepoRoot
-      ? null
-      : await createTempGitRepo();
-  const workspaceRoot =
-    options?.workspaceRoot
-      ? null
-      : await createTempWorkspaceRoot();
+  const sourceRepo = options?.sourceRepoRoot ? null : await createTempGitRepo();
+  const workspaceRoot = options?.workspaceRoot
+    ? null
+    : await createTempWorkspaceRoot();
   const sourceRepoRoot = options?.sourceRepoRoot ?? sourceRepo?.repoRoot;
   const resolvedWorkspaceRoot =
     options?.workspaceRoot ?? workspaceRoot?.workspaceRoot;
@@ -2316,7 +2377,9 @@ async function createHarness(options?: {
     new EvidenceService(),
     workspaceService,
     options?.validationService ??
-      new LocalExecutorValidationService(new LocalWorkspaceValidationGitClient()),
+      new LocalExecutorValidationService(
+        new LocalWorkspaceValidationGitClient(),
+      ),
     options?.githubPublishService ?? {
       async publishValidatedExecutorWorkspace(input) {
         return {
@@ -2591,6 +2654,30 @@ async function createHarness(options?: {
             },
           };
         },
+        async getRepositoryWorkflows() {
+          return {
+            repository: {
+              fullName: "616xold/pocket-cto",
+              installationId: "12345",
+              defaultBranch: "main",
+              archived: false,
+              disabled: false,
+              isActive: true,
+              writeReadiness: {
+                ready: true,
+                failureCode: null,
+              },
+            },
+            latestRun: null,
+            workflowState: "not_synced" as const,
+            counts: {
+              workflowFileCount: 0,
+              workflowCount: 0,
+              jobCount: 0,
+            },
+            workflows: [],
+          };
+        },
         async getRepositoryOwnershipSummary() {
           return {
             repository: {
@@ -2740,6 +2827,47 @@ async function createHarness(options?: {
               errorSummary: null,
               createdAt: "2026-03-15T00:00:00.000Z",
             },
+            entityCount: 0,
+            edgeCount: 0,
+            entityCountsByKind: {},
+            edgeCountsByKind: {},
+          };
+        },
+        async syncRepositoryWorkflows() {
+          return {
+            repository: {
+              fullName: "616xold/pocket-cto",
+              installationId: "12345",
+              defaultBranch: "main",
+              archived: false,
+              disabled: false,
+              isActive: true,
+              writeReadiness: {
+                ready: true,
+                failureCode: null,
+              },
+            },
+            syncRun: {
+              id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+              repoFullName: "616xold/pocket-cto",
+              extractor: "repository_workflows",
+              status: "succeeded" as const,
+              startedAt: "2026-03-15T00:00:00.000Z",
+              completedAt: "2026-03-15T00:01:00.000Z",
+              stats: {
+                entityCount: 0,
+                edgeCount: 0,
+                workflowFileCount: 0,
+                workflowCount: 0,
+                jobCount: 0,
+              },
+              errorSummary: null,
+              createdAt: "2026-03-15T00:00:00.000Z",
+            },
+            workflowState: "no_workflow_files" as const,
+            workflowFileCount: 0,
+            workflowCount: 0,
+            jobCount: 0,
             entityCount: 0,
             edgeCount: 0,
             entityCountsByKind: {},
@@ -3099,10 +3227,7 @@ async function getPlanArtifact(missionId: string) {
 }
 
 async function getArtifactsForMission(missionId: string) {
-  return db
-    .select()
-    .from(artifacts)
-    .where(eq(artifacts.missionId, missionId));
+  return db.select().from(artifacts).where(eq(artifacts.missionId, missionId));
 }
 
 async function countWorkspaces() {
@@ -3165,7 +3290,9 @@ async function waitForPendingApproval(taskId: string) {
       const [approval] = await db
         .select()
         .from(approvals)
-        .where(and(eq(approvals.taskId, taskId), eq(approvals.status, "pending")))
+        .where(
+          and(eq(approvals.taskId, taskId), eq(approvals.status, "pending")),
+        )
         .limit(1);
 
       return approval

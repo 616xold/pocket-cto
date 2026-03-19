@@ -5,6 +5,8 @@ import {
   TwinRepositoryOwnersViewSchema,
   TwinRepositoryOwnershipRulesViewSchema,
   TwinRepositoryOwnershipSummarySchema,
+  TwinRepositoryWorkflowSyncResultSchema,
+  TwinRepositoryWorkflowsViewSchema,
   TwinSyncRunListViewSchema,
 } from "@pocket-cto/domain";
 
@@ -23,5 +25,7 @@ export {
   TwinRepositoryOwnersViewSchema,
   TwinRepositoryOwnershipRulesViewSchema,
   TwinRepositoryOwnershipSummarySchema,
+  TwinRepositoryWorkflowSyncResultSchema,
+  TwinRepositoryWorkflowsViewSchema,
   TwinSyncRunListViewSchema,
 };

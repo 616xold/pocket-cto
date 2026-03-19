@@ -8,31 +8,59 @@ export async function registerTwinRoutes(
     twinService: TwinServicePort;
   },
 ) {
-  app.post("/twin/repositories/:owner/:repo/ownership-sync", async (request) => {
+  app.post(
+    "/twin/repositories/:owner/:repo/workflows-sync",
+    async (request) => {
+      const params = parseTwinRepositoryParams(request.params);
+      return deps.twinService.syncRepositoryWorkflows(
+        `${params.owner}/${params.repo}`,
+      );
+    },
+  );
+
+  app.get("/twin/repositories/:owner/:repo/workflows", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
-    return deps.twinService.syncRepositoryOwnership(
+    return deps.twinService.getRepositoryWorkflows(
       `${params.owner}/${params.repo}`,
     );
   });
 
-  app.get("/twin/repositories/:owner/:repo/ownership-rules", async (request) => {
-    const params = parseTwinRepositoryParams(request.params);
-    return deps.twinService.getRepositoryOwnershipRules(
-      `${params.owner}/${params.repo}`,
-    );
-  });
+  app.post(
+    "/twin/repositories/:owner/:repo/ownership-sync",
+    async (request) => {
+      const params = parseTwinRepositoryParams(request.params);
+      return deps.twinService.syncRepositoryOwnership(
+        `${params.owner}/${params.repo}`,
+      );
+    },
+  );
+
+  app.get(
+    "/twin/repositories/:owner/:repo/ownership-rules",
+    async (request) => {
+      const params = parseTwinRepositoryParams(request.params);
+      return deps.twinService.getRepositoryOwnershipRules(
+        `${params.owner}/${params.repo}`,
+      );
+    },
+  );
 
   app.get("/twin/repositories/:owner/:repo/owners", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
-    return deps.twinService.getRepositoryOwners(`${params.owner}/${params.repo}`);
-  });
-
-  app.get("/twin/repositories/:owner/:repo/ownership-summary", async (request) => {
-    const params = parseTwinRepositoryParams(request.params);
-    return deps.twinService.getRepositoryOwnershipSummary(
+    return deps.twinService.getRepositoryOwners(
       `${params.owner}/${params.repo}`,
     );
   });
+
+  app.get(
+    "/twin/repositories/:owner/:repo/ownership-summary",
+    async (request) => {
+      const params = parseTwinRepositoryParams(request.params);
+      return deps.twinService.getRepositoryOwnershipSummary(
+        `${params.owner}/${params.repo}`,
+      );
+    },
+  );
 
   app.post("/twin/repositories/:owner/:repo/metadata-sync", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
@@ -50,16 +78,22 @@ export async function registerTwinRoutes(
 
   app.get("/twin/repositories/:owner/:repo/entities", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
-    return deps.twinService.listRepositoryEntities(`${params.owner}/${params.repo}`);
+    return deps.twinService.listRepositoryEntities(
+      `${params.owner}/${params.repo}`,
+    );
   });
 
   app.get("/twin/repositories/:owner/:repo/edges", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
-    return deps.twinService.listRepositoryEdges(`${params.owner}/${params.repo}`);
+    return deps.twinService.listRepositoryEdges(
+      `${params.owner}/${params.repo}`,
+    );
   });
 
   app.get("/twin/repositories/:owner/:repo/runs", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
-    return deps.twinService.listRepositoryRuns(`${params.owner}/${params.repo}`);
+    return deps.twinService.listRepositoryRuns(
+      `${params.owner}/${params.repo}`,
+    );
   });
 }
