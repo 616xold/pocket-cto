@@ -9,8 +9,9 @@ Operators will be able to trigger repo-scoped workflow sync and test-suite sync 
 
 This plan covers roadmap submilestone `M3.4 CI workflow and test suite extraction`.
 Prompt A implemented `M3.4A CI workflow extraction`.
-The active prompt now implements `M3.4B durable test-suite extraction and CI linkage`.
-The current follow-up prompt closes the remaining `M3.4 live proof tooling` gap with a repeatable route-driven smoke helper, script alias, and doc refresh.
+One follow-up prompt implemented `M3.4B durable test-suite extraction and CI linkage`.
+Another follow-up prompt closed the remaining `M3.4 live proof tooling` gap with a repeatable route-driven smoke helper, script alias, and doc refresh.
+The current follow-up prompt closes the remaining `M3.4 unmapped-job explainability` gap with deterministic reason codes and concise reason summaries on stored unmapped CI jobs.
 It still explicitly stops before docs indexing, freshness scoring, blast-radius answers, or redesigning the existing metadata and ownership slices.
 
 ## Progress
@@ -29,6 +30,9 @@ It still explicitly stops before docs indexing, freshness scoring, blast-radius 
 - [x] (2026-03-19T03:12:00Z) Reran the full validation matrix successfully, completed the live GitHub App smoke for `616xold/pocket-cto`, and recorded the final M3.4B evidence plus changed-file set in this ExecPlan.
 - [x] (2026-03-19T03:20:00Z) Re-read the requested M3.4 proof files plus the named skills, ran the required inspections `rg -n "smoke:twin|workflows-sync|test-suites-sync|ci-summary|mappedJobCount|unmappedJobCount|workflow file count|test suite count" package.json docs plans apps`, `git status --short`, and `git diff --name-only HEAD`, confirmed the worktree was clean, and captured the required pre-coding M3.4 live proof tooling gap note in-thread.
 - [x] (2026-03-19T13:56:00Z) Added the repeatable route-driven `tools/twin-ci-smoke.mjs` helper plus `pnpm smoke:twin-ci:live`, refreshed the local-dev and ExecPlan wording so the conservative `mappedJobCount: 0` outcome is documented honestly, reran the full validation matrix, and captured the exact live smoke result from the packaged command.
+- [x] (2026-03-19T22:12:34Z) Re-read the requested M3.4 explainability files plus the named skills, ran the required inspections `rg -n "unmappedJobs|mappedJobCount|unmappedJobCount|test-suite|ci-summary|runCommands|scriptKey|matchedJobs" apps packages docs plans`, `git status --short`, and `git diff --name-only HEAD`, confirmed the worktree was clean, and captured the required pre-coding M3.4 unmapped-job explainability gap note in-thread.
+- [x] (2026-03-19T22:12:34Z) Implemented deterministic unmapped-job explainability without widening the matcher: added `reasonCode` and `reasonSummary` to the shared unmapped-job contract, classified unmapped jobs as `no_test_invocation`, `unsupported_invocation_shape`, `ambiguous_test_invocation`, or `test_invocation_without_known_suite`, and surfaced those fields through the stored `test-suites` and `ci-summary` routes while keeping mapped or unmapped counts unchanged.
+- [x] (2026-03-19T22:12:34Z) Reran the full required validation matrix successfully after one small matcher strictness fix, reran the checked-in M3.4 live smoke for `616xold/pocket-cto`, and recorded the new explicit unmapped-job reason breakdown from stored `ci-summary`.
 
 ## Surprises & Discoveries
 
@@ -55,6 +59,12 @@ It still explicitly stops before docs indexing, freshness scoring, blast-radius 
 
 - Observation: the current deterministic matcher can leave every live workflow job unmapped even when test-suite extraction succeeds.
   Evidence: `pnpm smoke:twin-ci:live -- --source-repo-root /var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T//pocket-cto-m34-proof-jxeb9Q` returned `testSuiteCount: 9`, `mappedJobCount: 0`, and `unmappedJobCount: 2` for `616xold/pocket-cto`.
+
+- Observation: the stored M3.4 read routes exposed explicit unmapped jobs, but they still did not explain why those jobs stayed unmapped.
+  Evidence: before this follow-up, `TwinCiUnmappedJobSchema` in `packages/domain/src/twin.ts` included only identity fields plus `runCommands`, and `test-suite-formatter.ts` echoed unmapped jobs without any reason code or operator-facing summary.
+
+- Observation: the live `616xold/pocket-cto` repo currently leaves both workflow jobs unmapped for a deterministic reason instead of an ambiguous one.
+  Evidence: after this follow-up, `GET /twin/repositories/616xold/pocket-cto/ci-summary` returned `mappedJobCount: 0`, `unmappedJobCount: 2`, and the reason breakdown `{ "no_test_invocation": 2 }` for jobs `integration-db` and `static`.
 
 ## Decision Log
 
@@ -92,6 +102,10 @@ It still explicitly stops before docs indexing, freshness scoring, blast-radius 
 
 - Decision: implement M3.4B as a separate `test-suites-sync` extractor that reads stored manifest and workflow-job entities instead of widening `workflows-sync`.
   Rationale: workflow discovery should stay local-checkout based while test-suite extraction should remain a stored-data pass over existing manifest and job rows.
+  Date/Author: 2026-03-19 / Codex
+
+- Decision: keep the current conservative matcher semantics unchanged and add unmapped-job explainability as a deterministic read-model concern plus matcher classification helper.
+  Rationale: this follow-up is about operator honesty, not higher recall. Reusing the existing matcher inputs keeps counts stable while letting stored `test-suites` and `ci-summary` surfaces distinguish no clear test invocation from unsupported, ambiguous, or unknown-suite invocation shapes.
   Date/Author: 2026-03-19 / Codex
 
 - Decision: derive test suites only from stored manifest script keys `test` and `test:*`, and match workflow jobs only when a `run` command clearly invokes one of those script keys through deterministic package-manager patterns.
@@ -160,25 +174,26 @@ No new GitHub App permissions or webhook subscriptions are expected.
 
 ## Plan of Work
 
-Keep the shipped M3.4 workflow and test-suite extractors intact and close only the remaining proof-refresh gap.
+Keep the shipped M3.4 workflow and test-suite extractors intact and close only the remaining unmapped-job explainability gap.
 
-Add one checked-in `tools/twin-ci-smoke.mjs` helper that:
+Add explicit unmapped-job reason semantics without widening matcher recall:
 
-- loads local env the same safe way as the other repo smoke tools
-- requires `--source-repo-root` or `POCKET_CTO_SOURCE_REPO_ROOT`
-- boots the control plane in-process and drives only the existing GitHub plus twin routes
-- prints only safe summary fields for the repo, sync runs, and CI counts
+- extend the shared unmapped-job contract with deterministic `reasonCode` and `reasonSummary` fields
+- classify unmapped jobs with a small fixed reason set
+- keep `mappedJobCount` and `unmappedJobCount` semantics unchanged
+- surface the new fields through the stored `test-suites` and `ci-summary` routes
+- refresh the local-dev guide and this ExecPlan so operators know `mappedJobCount` can still truthfully be `0`
 
-Wire that helper to one root `package.json` alias, update `docs/ops/local-dev.md` with the exact command, and refresh this ExecPlan so the latest live proof no longer depends on one-off `tsx --eval` notes.
+Expected file edits for this explainability follow-up are:
 
-Expected file edits for this proof-refresh follow-up are:
-
-- `package.json`
-- `tools/twin-ci-smoke.mjs`
+- `packages/domain/src/twin.ts`
+- `apps/control-plane/src/modules/twin/test-suite-matcher.ts`
+- `apps/control-plane/src/modules/twin/test-suite-formatter.ts`
+- focused twin matcher, sync, and route specs
 - `docs/ops/local-dev.md`
 - `plans/EP-0024-ci-workflow-and-test-suite-extraction.md`
 
-No schema or product-code changes are expected unless the packaged live smoke exposes a real bug.
+No schema redesign or matcher-loosening is expected.
 
 ## Concrete Steps
 
@@ -202,6 +217,7 @@ Useful narrow commands during implementation:
     pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/test-suite-sync.spec.ts src/modules/twin/test-suite-routes.spec.ts src/modules/twin/workflow-sync.spec.ts src/modules/twin/workflow-routes.spec.ts src/modules/twin/drizzle-repository.spec.ts
     rg -n "test_suite|ci_job_runs_test_suite|package_manifest_declares_test_suite|ci-summary|test-suites" apps/control-plane/src packages/domain/src docs/ops/local-dev.md
     pnpm smoke:twin-ci:live -- --source-repo-root /absolute/path/to/pocket-cto
+    pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/test-suite-matcher.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/test-suite-routes.spec.ts
 
 If live GitHub env is present after implementation:
 
@@ -239,6 +255,7 @@ Success for M3.4 is demonstrated when all of the following are true:
 20. The full validation matrix plus `pnpm ci:repro:current` passes after the slice lands.
 21. A repeatable route-driven M3.4 live smoke helper exists under `tools/`, has a root package alias, and calls only the existing GitHub plus twin routes.
 22. The docs and ExecPlan explicitly state that `mappedJobCount` may truthfully be `0` under the current conservative matcher.
+23. Explicit unmapped jobs now include deterministic `reasonCode` and `reasonSummary` fields in both `test-suites` and `ci-summary`.
 
 Human acceptance after implementation should look like:
 
@@ -291,16 +308,19 @@ Validation evidence:
 - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-discovery.spec.ts src/modules/twin/workflow-sync.spec.ts src/modules/twin/workflow-routes.spec.ts src/modules/twin/drizzle-repository.spec.ts` passed.
 - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/test-suite-sync.spec.ts src/modules/twin/test-suite-routes.spec.ts src/modules/twin/workflow-sync.spec.ts src/modules/twin/workflow-routes.spec.ts src/modules/twin/drizzle-repository.spec.ts` passed with 13 tests across 5 files.
 - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/test-suite-sync.spec.ts src/modules/twin/test-suite-routes.spec.ts src/modules/twin/workflow-sync.spec.ts src/modules/twin/workflow-routes.spec.ts src/modules/twin/drizzle-repository.spec.ts src/modules/twin/service.spec.ts src/modules/twin/routes.spec.ts src/modules/twin/metadata-sync.spec.ts` passed with 29 tests across 8 files after fixing the pre-existing `.github/CODEOWNERS` fixture race in `routes.spec.ts`.
+- `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/test-suite-matcher.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/test-suite-routes.spec.ts` passed with 7 tests across 3 files, covering deterministic `no_test_invocation`, `unsupported_invocation_shape`, `ambiguous_test_invocation`, and `test_invocation_without_known_suite` reasons plus route-level reason surfacing.
 - `pnpm db:generate` passed with no schema changes required.
 - `pnpm db:migrate` passed.
 - `pnpm run db:migrate:ci` passed.
 - `pnpm repo:hygiene` passed.
 - `pnpm lint` passed.
-- `pnpm typecheck` passed after extending the affected test doubles for the new twin service port methods.
+- `pnpm typecheck` passed after one small strictness fix in `test-suite-matcher.ts` (`suites[0]!` in the unique-suite branch) so the new invocation-resolution union stays explicit under `strict` mode.
 - `pnpm build` passed.
-- `pnpm test` passed with 51 control-plane test files and 213 tests green.
+- `pnpm test` passed with 60 control-plane test files and 227 tests green.
 - `pnpm ci:repro:current` passed, including the temp-worktree `ci:static`, DB prep and migration, integration test run, and clean-tree verification.
 - `pnpm smoke:twin-ci:live -- --source-repo-root /var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T//pocket-cto-m34-proof-jxeb9Q` passed and replaced the earlier one-off `tsx --eval` proof path with a checked-in route-driven helper.
+- `pnpm smoke:twin-ci:live -- --source-repo-root /var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T//pocket-cto-m34-reasons-15DzjG` passed after the explainability change and kept the live route-driven proof operator-safe.
+- `POCKET_CTO_SOURCE_REPO_ROOT=/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T//pocket-cto-m34-reasons-15DzjG pnpm exec tsx --eval '...'` succeeded and returned the stored unmapped reason breakdown `{ "no_test_invocation": 2 }` for `ci-summary`.
 
 Live smoke evidence:
 
@@ -314,12 +334,25 @@ Live smoke evidence:
 - `POST /twin/repositories/616xold/pocket-cto/test-suites-sync` succeeded with sync run `8e0af1ce-b60c-46c7-86ef-ed966e407c5f`, `testSuiteCount: 9`, `mappedJobCount: 0`, and `unmappedJobCount: 2`.
 - `GET /twin/repositories/616xold/pocket-cto/ci-summary` returned `workflowFileCount: 1`, `workflowCount: 1`, `jobCount: 2`, `testSuiteCount: 9`, `mappedJobCount: 0`, and `unmappedJobCount: 2`.
 - The live repo stayed honest: `mappedJobCount` was truthfully `0` because neither stored job `run` command clearly invoked one of the stored manifest `test` or `test:*` script keys through the deterministic matcher.
+- The latest explainability proof reused the same route path against `/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T//pocket-cto-m34-reasons-15DzjG` and produced workflow sync run `0943348d-e09f-4d32-950c-6ba52dfb9e0d`, test-suite sync run `e787bde1-3faf-4a47-a072-18eeccd90408`, `workflowFileCount: 1`, `workflowCount: 1`, `jobCount: 2`, `testSuiteCount: 9`, `mappedJobCount: 0`, and `unmappedJobCount: 2`.
+- The latest stored `ci-summary` reason breakdown for `616xold/pocket-cto` was `{ "no_test_invocation": 2 }`, with jobs `integration-db` and `static` each reporting `reasonSummary: "No run command clearly invokes a stored manifest test script."`
 
 Exact changed files in this proof-refresh follow-up:
 
 - `package.json`
 - `tools/twin-ci-smoke.mjs`
 - `docs/ops/local-dev.md`
+- `plans/EP-0024-ci-workflow-and-test-suite-extraction.md`
+
+Exact changed files in this explainability follow-up:
+
+- `apps/control-plane/src/modules/twin/test-suite-formatter.ts`
+- `apps/control-plane/src/modules/twin/test-suite-matcher.ts`
+- `apps/control-plane/src/modules/twin/test-suite-matcher.spec.ts`
+- `apps/control-plane/src/modules/twin/test-suite-routes.spec.ts`
+- `apps/control-plane/src/modules/twin/test-suite-sync.spec.ts`
+- `docs/ops/local-dev.md`
+- `packages/domain/src/twin.ts`
 - `plans/EP-0024-ci-workflow-and-test-suite-extraction.md`
 
 Replay and evidence implications:
@@ -352,6 +385,7 @@ If a YAML parser is added, it should be declared directly in `@pocket-cto/contro
 
 M3.4 is complete.
 Pocket CTO can now discover workflow files only under `.github/workflows`, parse deterministic workflow and job facts, persist `ci_workflow_file`, `ci_workflow`, and `ci_job` entities plus the required workflow edges, derive stored `test_suite` entities from manifest script keys `test` and `test:*`, persist honest `package_manifest_declares_test_suite` and `ci_job_runs_test_suite` edges, and expose stored `GET /twin/repositories/:owner/:repo/workflows`, `GET /twin/repositories/:owner/:repo/test-suites`, and `GET /twin/repositories/:owner/:repo/ci-summary` routes backed by the latest successful sync snapshots.
+Those stored M3.4 read routes now also explain every unmapped job deterministically with a small fixed reason-code set instead of leaving operators to infer why a job stayed unmapped.
 
 The slice stayed inside the existing twin architecture:
 
@@ -365,7 +399,7 @@ The slice stayed inside the existing twin architecture:
 Residual risks and follow-up notes:
 
 - Suite derivation is intentionally limited to stored manifest script keys because manifest payloads do not include script command bodies.
-- Job-to-suite linkage is intentionally conservative and currently recognizes only clear package-manager invocations, so some real CI jobs will remain explicitly unmapped until a future slice broadens the matcher with justified evidence.
+- Job-to-suite linkage is intentionally conservative and currently recognizes only clear package-manager invocations, so some real CI jobs will remain explicitly unmapped until a future slice broadens the matcher with justified evidence; the new reason fields improve operator trust, but they do not change recall.
 - Live workflow sync still depends on having a truthful local checkout of the requested synced repository; when the active workspace remote differs, operators must point `POCKET_CTO_SOURCE_REPO_ROOT` at the correct repo checkout.
 
 Rollback remains straightforward:
@@ -378,4 +412,4 @@ The slice is no longer relying on one-off `tsx --eval` snippets for its live evi
 
 Residual wording risk is low, but the M3.4 proof surface should be kept in sync if later slices broaden the matcher, add richer job-to-suite evidence, or change the required live target repository.
 
-M3.5 now has a fully current proof base to build on.
+M3.5 now has a fully current proof base to build on, and later operator-facing slices inherit a cleaner stored explanation surface for unmapped CI jobs.

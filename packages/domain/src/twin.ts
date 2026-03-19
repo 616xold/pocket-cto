@@ -516,8 +516,17 @@ export const TwinCiMatchedJobSchema = z.object({
   jobName: z.string().min(1).nullable(),
 });
 
+export const TwinCiUnmappedJobReasonCodeSchema = z.enum([
+  "no_test_invocation",
+  "unsupported_invocation_shape",
+  "ambiguous_test_invocation",
+  "test_invocation_without_known_suite",
+]);
+
 export const TwinCiUnmappedJobSchema = TwinCiMatchedJobSchema.extend({
   runCommands: z.array(z.string().min(1)),
+  reasonCode: TwinCiUnmappedJobReasonCodeSchema,
+  reasonSummary: z.string().min(1),
 });
 
 export const TwinTestSuiteSummarySchema = z.object({
@@ -642,9 +651,7 @@ export type TwinRepositoryMetadataSyncResult = z.infer<
 >;
 export type TwinDocsState = z.infer<typeof TwinDocsStateSchema>;
 export type TwinDocFileSummary = z.infer<typeof TwinDocFileSummarySchema>;
-export type TwinDocSectionSummary = z.infer<
-  typeof TwinDocSectionSummarySchema
->;
+export type TwinDocSectionSummary = z.infer<typeof TwinDocSectionSummarySchema>;
 export type TwinRepositoryDocsCounts = z.infer<
   typeof TwinRepositoryDocsCountsSchema
 >;
@@ -721,6 +728,9 @@ export type TwinRepositoryWorkflowSyncResult = z.infer<
 >;
 export type TwinTestSuiteState = z.infer<typeof TwinTestSuiteStateSchema>;
 export type TwinCiMatchedJob = z.infer<typeof TwinCiMatchedJobSchema>;
+export type TwinCiUnmappedJobReasonCode = z.infer<
+  typeof TwinCiUnmappedJobReasonCodeSchema
+>;
 export type TwinCiUnmappedJob = z.infer<typeof TwinCiUnmappedJobSchema>;
 export type TwinTestSuiteSummary = z.infer<typeof TwinTestSuiteSummarySchema>;
 export type TwinRepositoryTestSuitesCounts = z.infer<

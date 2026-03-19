@@ -12,6 +12,11 @@ import type {
   TwinTestSuiteSummary,
   TwinTestSuiteState,
 } from "@pocket-cto/domain";
+import {
+  explainUnmappedJobs,
+  type DerivedTestSuite,
+  type StoredWorkflowJobForTestSuites,
+} from "./test-suite-matcher";
 
 export function buildTwinRepositoryTestSuiteSyncResult(input: {
   edgeCount: number;
@@ -182,10 +187,36 @@ function projectCiLinkage(input: {
             );
           })
       : [];
+  const derivedSuites = [...suitesById.values()].map<DerivedTestSuite>(
+    (suite) => ({
+      manifestEntityId: suite.entityId,
+      manifestPath: suite.manifestPath,
+      manifestStableKey: suite.stableKey,
+      packageName: suite.packageName,
+      scriptKey: suite.scriptKey,
+      stableKey: suite.stableKey,
+    }),
+  );
   const unmappedJobs =
     input.workflowState === "workflows_available"
-      ? [...jobsById.values()]
-          .filter((job) => !mappedJobIds.has(job.entityId))
+      ? explainUnmappedJobs({
+          jobs: [...jobsById.values()]
+            .filter((job) => !mappedJobIds.has(job.entityId))
+            .map<StoredWorkflowJobForTestSuites>((job) => ({
+              entityId: job.entityId,
+              key: job.key,
+              name: job.name,
+              sourceFilePath: job.sourceFilePath,
+              stableKey: job.stableKey,
+              steps: job.steps.map((step) => ({
+                kind: step.kind,
+                name: step.name,
+                value: step.value,
+              })),
+              workflowStableKey: job.workflowStableKey,
+            })),
+          suites: derivedSuites,
+        })
           .map<TwinCiUnmappedJob>((job) => {
             const workflow = workflowByStableKey.get(job.workflowStableKey);
             return {
@@ -195,7 +226,12 @@ function projectCiLinkage(input: {
               workflowFilePath: job.sourceFilePath,
               jobKey: job.key,
               jobName: job.name,
-              runCommands: job.runCommands,
+              reasonCode: job.reasonCode,
+              reasonSummary: job.reasonSummary,
+              runCommands: job.steps
+                .filter((step) => step.kind === "run")
+                .map((step) => step.value)
+                .sort((left, right) => left.localeCompare(right)),
             };
           })
           .sort((left, right) => {
@@ -236,7 +272,7 @@ function readJobEntity(entity: TwinEntity) {
     entityId: entity.id,
     key: readString(entity.payload, "jobKey") ?? entity.title,
     name: readNullableString(entity.payload, "name"),
-    runCommands: readRunCommands(entity.payload.steps),
+    steps: readWorkflowSteps(entity.payload.steps),
     sourceFilePath:
       readString(entity.payload, "sourceFilePath") ?? entity.stableKey,
     stableKey: entity.stableKey,
@@ -256,7 +292,7 @@ function readTestSuiteEntity(entity: TwinEntity) {
   };
 }
 
-function readRunCommands(value: unknown) {
+function readWorkflowSteps(value: unknown) {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -265,12 +301,28 @@ function readRunCommands(value: unknown) {
     .map((step) => {
       const payload = asObject(step);
 
-      return payload.kind === "run" && typeof payload.value === "string"
-        ? payload.value.trim()
-        : null;
+      if (
+        (payload.kind !== "run" && payload.kind !== "uses") ||
+        typeof payload.value !== "string"
+      ) {
+        return null;
+      }
+
+      return {
+        kind: payload.kind,
+        name: readNullableString(payload, "name"),
+        value: payload.value.trim(),
+      };
     })
-    .filter((command): command is string => Boolean(command))
-    .sort((left, right) => left.localeCompare(right));
+    .filter(
+      (
+        step,
+      ): step is {
+        kind: "run" | "uses";
+        name: string | null;
+        value: string;
+      } => step !== null && step.value.length > 0,
+    );
 }
 
 function sortMatchedJobs(jobs: TwinCiMatchedJob[]) {

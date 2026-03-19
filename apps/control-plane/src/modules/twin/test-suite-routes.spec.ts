@@ -129,6 +129,9 @@ describe("test suite twin routes", () => {
       unmappedJobs: [
         {
           jobKey: "opaque",
+          reasonCode: "no_test_invocation",
+          reasonSummary:
+            "No run command clearly invokes a stored manifest test script.",
           runCommands: ["pnpm ci:integration-db"],
         },
       ],
@@ -161,6 +164,9 @@ describe("test suite twin routes", () => {
       unmappedJobs: [
         {
           jobKey: "opaque",
+          reasonCode: "no_test_invocation",
+          reasonSummary:
+            "No run command clearly invokes a stored manifest test script.",
         },
       ],
     });
