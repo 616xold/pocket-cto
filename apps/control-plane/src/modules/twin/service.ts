@@ -1,9 +1,12 @@
 import type {
+  TwinRepositoryCiSummary,
   TwinEdgeListView,
   TwinEntityListView,
   TwinRepositoryOwnersView,
   TwinRepositoryMetadataSummary,
   TwinRepositoryMetadataSyncResult,
+  TwinRepositoryTestSuiteSyncResult,
+  TwinRepositoryTestSuitesView,
   TwinRepositoryWorkflowSyncResult,
   TwinRepositoryWorkflowsView,
   TwinRepositoryOwnershipRulesView,
@@ -35,6 +38,14 @@ import { syncRepositoryMetadata } from "./metadata-sync";
 import type { TwinRepositorySourceResolver } from "./source-resolver";
 import { readOwnershipTargets } from "./ownership-targets";
 import { buildTwinRepositoryWorkflowsView } from "./workflow-formatter";
+import {
+  buildTwinRepositoryCiSummary,
+  buildTwinRepositoryTestSuitesView,
+} from "./test-suite-formatter";
+import {
+  syncRepositoryTestSuites,
+  testSuiteExtractorName,
+} from "./test-suite-sync";
 import {
   syncRepositoryWorkflows,
   workflowExtractorName,
@@ -142,6 +153,51 @@ export class TwinService {
     });
   }
 
+  async getRepositoryTestSuites(
+    repoFullName: string,
+  ): Promise<TwinRepositoryTestSuitesView> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const [workflowSnapshot, testSuiteSnapshot] = await Promise.all([
+      this.getWorkflowReadSnapshot(repoFullName),
+      this.getTestSuiteReadSnapshot(repoFullName),
+    ]);
+
+    return buildTwinRepositoryTestSuitesView({
+      repository,
+      latestRun: testSuiteSnapshot.latestRun,
+      testSuiteState: testSuiteSnapshot.testSuiteState,
+      testSuiteEntities: testSuiteSnapshot.testSuiteEntities,
+      workflowState: workflowSnapshot.workflowState,
+      workflowEntities: workflowSnapshot.workflowEntities,
+      jobEntities: workflowSnapshot.jobEntities,
+      jobSuiteEdges: testSuiteSnapshot.jobSuiteEdges,
+    });
+  }
+
+  async getRepositoryCiSummary(
+    repoFullName: string,
+  ): Promise<TwinRepositoryCiSummary> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const [workflowSnapshot, testSuiteSnapshot] = await Promise.all([
+      this.getWorkflowReadSnapshot(repoFullName),
+      this.getTestSuiteReadSnapshot(repoFullName),
+    ]);
+
+    return buildTwinRepositoryCiSummary({
+      repository,
+      latestWorkflowRun: workflowSnapshot.latestRun,
+      latestTestSuiteRun: testSuiteSnapshot.latestRun,
+      workflowState: workflowSnapshot.workflowState,
+      workflowFileCount: workflowSnapshot.fileEntities.length,
+      workflowCount: workflowSnapshot.workflowEntities.length,
+      workflowEntities: workflowSnapshot.workflowEntities,
+      jobEntities: workflowSnapshot.jobEntities,
+      testSuiteState: testSuiteSnapshot.testSuiteState,
+      testSuiteEntities: testSuiteSnapshot.testSuiteEntities,
+      jobSuiteEdges: testSuiteSnapshot.jobSuiteEdges,
+    });
+  }
+
   async getRepositoryOwners(
     repoFullName: string,
   ): Promise<TwinRepositoryOwnersView> {
@@ -232,6 +288,17 @@ export class TwinService {
       repository: this.input.repository,
       repositoryRegistry: this.input.repositoryRegistry,
       sourceResolver: this.input.sourceResolver,
+    });
+  }
+
+  async syncRepositoryTestSuites(
+    repoFullName: string,
+  ): Promise<TwinRepositoryTestSuiteSyncResult> {
+    return syncRepositoryTestSuites({
+      now: this.now,
+      repoFullName,
+      repository: this.input.repository,
+      repositoryRegistry: this.input.repositoryRegistry,
     });
   }
 
@@ -468,6 +535,59 @@ export class TwinService {
       ),
       workflowJobEdges: snapshotEdges.filter(
         (candidate) => candidate.kind === "workflow_contains_job",
+      ),
+    };
+  }
+
+  private async getTestSuiteReadSnapshot(repoFullName: string) {
+    const [entities, edges, runs] = await Promise.all([
+      this.input.repository.listRepositoryEntities(repoFullName),
+      this.input.repository.listRepositoryEdges(repoFullName),
+      this.input.repository.listRepositoryRuns(repoFullName),
+    ]);
+    const testSuiteRuns = runs.filter(
+      (candidate) => candidate.extractor === testSuiteExtractorName,
+    );
+    const latestRun = testSuiteRuns[0] ?? null;
+    const latestSucceededRun =
+      testSuiteRuns.find((candidate) => candidate.status === "succeeded") ??
+      null;
+
+    if (!latestSucceededRun) {
+      return {
+        latestRun,
+        testSuiteState: "not_synced" as const,
+        testSuiteEntities: [],
+        jobSuiteEdges: [],
+      };
+    }
+
+    if (
+      readNonNegativeInteger(latestSucceededRun.stats, "testSuiteCount") === 0
+    ) {
+      return {
+        latestRun,
+        testSuiteState: "no_test_suites" as const,
+        testSuiteEntities: [],
+        jobSuiteEdges: [],
+      };
+    }
+
+    const snapshotEntities = entities.filter(
+      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    );
+    const snapshotEdges = edges.filter(
+      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    );
+
+    return {
+      latestRun,
+      testSuiteState: "test_suites_available" as const,
+      testSuiteEntities: snapshotEntities.filter(
+        (candidate) => candidate.kind === "test_suite",
+      ),
+      jobSuiteEdges: snapshotEdges.filter(
+        (candidate) => candidate.kind === "ci_job_runs_test_suite",
       ),
     };
   }

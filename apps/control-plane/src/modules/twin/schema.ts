@@ -1,10 +1,13 @@
 import { z } from "zod";
 import {
+  TwinRepositoryCiSummarySchema,
   TwinEdgeListViewSchema,
   TwinEntityListViewSchema,
   TwinRepositoryOwnersViewSchema,
   TwinRepositoryOwnershipRulesViewSchema,
   TwinRepositoryOwnershipSummarySchema,
+  TwinRepositoryTestSuiteSyncResultSchema,
+  TwinRepositoryTestSuitesViewSchema,
   TwinRepositoryWorkflowSyncResultSchema,
   TwinRepositoryWorkflowsViewSchema,
   TwinSyncRunListViewSchema,
@@ -20,11 +23,14 @@ export function parseTwinRepositoryParams(params: unknown) {
 }
 
 export {
+  TwinRepositoryCiSummarySchema,
   TwinEdgeListViewSchema,
   TwinEntityListViewSchema,
   TwinRepositoryOwnersViewSchema,
   TwinRepositoryOwnershipRulesViewSchema,
   TwinRepositoryOwnershipSummarySchema,
+  TwinRepositoryTestSuiteSyncResultSchema,
+  TwinRepositoryTestSuitesViewSchema,
   TwinRepositoryWorkflowSyncResultSchema,
   TwinRepositoryWorkflowsViewSchema,
   TwinSyncRunListViewSchema,

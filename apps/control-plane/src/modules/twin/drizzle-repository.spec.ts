@@ -286,4 +286,34 @@ describe("DrizzleTwinRepository", () => {
       stableKey: ".github/workflows/ci.yml#job:test",
     });
   });
+
+  it("maps test_suite onto the legacy testSuite enum while preserving the generic kind", async () => {
+    const entity = await repository.upsertEntity({
+      repoFullName: "616xold/pocket-cto",
+      kind: "test_suite",
+      stableKey: "package.json#script:test",
+      title: "repo-root test",
+      payload: {
+        manifestPath: "package.json",
+        scriptKey: "test",
+      },
+      observedAt: "2026-03-19T03:20:00.000Z",
+    });
+
+    const [row] = await db
+      .select()
+      .from(twinEntities)
+      .where(eq(twinEntities.id, entity.id));
+
+    expect(entity).toMatchObject({
+      kind: "test_suite",
+      stableKey: "package.json#script:test",
+    });
+    expect(row).toMatchObject({
+      id: entity.id,
+      kind: "test_suite",
+      type: "testSuite",
+      stableKey: "package.json#script:test",
+    });
+  });
 });

@@ -1038,17 +1038,21 @@ Write-readiness is intentionally narrower than simple visibility:
 
 ### Twin routes
 
-M3.1, M3.2, M3.3, and M3.4A add the first repo-scoped engineering-twin debug, metadata-sync, ownership-sync, and workflow-sync surface on top of the durable repository registry.
+M3.1, M3.2, M3.3, M3.4A, and M3.4B add the first repo-scoped engineering-twin debug, metadata-sync, ownership-sync, workflow-sync, and test-suite-sync surface on top of the durable repository registry.
 The read routes return stored twin state.
-The sync routes perform deterministic local scans for the requested synced repository.
-These routes still do not extract test suites, index docs, compute freshness scoring, or answer blast-radius questions yet.
+The metadata, workflow, and ownership sync routes perform deterministic local scans for the requested synced repository.
+The test-suite sync route is a stored-data pass over the latest successful manifest and workflow-job snapshots for that repository.
+These routes still do not index docs, compute freshness scoring, or answer blast-radius questions yet.
 
 Available routes:
 
 - `POST /twin/repositories/:owner/:repo/metadata-sync`
 - `POST /twin/repositories/:owner/:repo/workflows-sync`
+- `POST /twin/repositories/:owner/:repo/test-suites-sync`
 - `POST /twin/repositories/:owner/:repo/ownership-sync`
 - `GET /twin/repositories/:owner/:repo/workflows`
+- `GET /twin/repositories/:owner/:repo/test-suites`
+- `GET /twin/repositories/:owner/:repo/ci-summary`
 - `GET /twin/repositories/:owner/:repo/ownership-rules`
 - `GET /twin/repositories/:owner/:repo/owners`
 - `GET /twin/repositories/:owner/:repo/ownership-summary`
@@ -1068,8 +1072,11 @@ Examples:
 ```bash
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/metadata-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows-sync
+curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/test-suites-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-sync
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/test-suites
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ci-summary
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-rules
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/owners
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-summary
@@ -1203,7 +1210,44 @@ The workflow read route is a stored view, not a live rescan:
 - each stored workflow summary includes the source file path, workflow name plus deterministic fallback, normalized trigger summary, and compact job summaries
 - each job summary includes the job key, display name when present, normalized `runs-on`, normalized `needs`, permissions when present, and compact `run` or `uses` step entries
 
-This slice intentionally stops before test suite extraction, docs indexing, freshness scoring, or blast-radius behavior.
+This slice intentionally stops before docs indexing, freshness scoring, or blast-radius behavior.
+
+### Twin test-suite sync
+
+The M3.4B test-suite extractor is intentionally conservative and works only from stored twin state.
+It reads the latest successful `package_manifest` snapshot from metadata sync and the latest successful workflow-job snapshot from workflow sync.
+It does not reopen `package.json` files during the extractor pass.
+
+It currently derives one `test_suite` entity for each stored manifest script key that is:
+
+- exactly `test`
+- prefixed `test:`
+
+When a workflow job step `run` command clearly invokes one of those stored suites through a deterministic package-manager pattern, the sync also persists:
+
+- `package_manifest_declares_test_suite`
+- `ci_job_runs_test_suite`
+
+If a job command does not clearly invoke a stored suite, Pocket CTO leaves that job unmapped and makes that explicit in the stored summary instead of guessing.
+
+The stored read routes are:
+
+- `GET /twin/repositories/:owner/:repo/test-suites`
+- `GET /twin/repositories/:owner/:repo/ci-summary`
+
+`GET /twin/repositories/:owner/:repo/test-suites` returns the latest test-suite sync state, suite count, mapped or unmapped job counts, stored suites, and explicit unmapped jobs when a workflow snapshot exists.
+
+`GET /twin/repositories/:owner/:repo/ci-summary` combines the latest stored workflow snapshot and the latest stored test-suite snapshot.
+It reports:
+
+- workflow file count
+- workflow count
+- job count
+- test suite count
+- mapped job count
+- unmapped job count
+- stored test suites with manifest path, script key, and matched jobs
+- explicit unmapped jobs with their run commands
 
 ### Branch and draft PR publish
 
