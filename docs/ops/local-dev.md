@@ -1212,6 +1212,37 @@ curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/runbo
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/runbooks
 ```
 
+Repeatable live smoke:
+
+```bash
+pnpm smoke:twin-docs-runbooks:live -- --source-repo-root /absolute/path/to/pocket-cto
+```
+
+The helper keeps the M3.5 proof route-driven and product-safe.
+It loads the local `.env`, requires an explicit source checkout path, boots the control plane in-process, then calls only the existing routes:
+
+- `POST /github/installations/sync`
+- `POST /github/repositories/sync`
+- `POST /twin/repositories/:owner/:repo/docs-sync`
+- `GET /twin/repositories/:owner/:repo/docs`
+- `GET /twin/repositories/:owner/:repo/doc-sections`
+- `POST /twin/repositories/:owner/:repo/runbooks-sync`
+- `GET /twin/repositories/:owner/:repo/runbooks`
+
+It prints only safe summary fields:
+
+- repo full name
+- docs sync run id
+- runbooks sync run id
+- doc file count
+- doc section count
+- runbook document count
+- runbook step count
+- command-family counts
+
+Use a checkout of the real target repository, not `pocket-cto-starter`, so the existing source-verification contract stays truthful.
+EP-0025 records the latest successful `616xold/pocket-cto` live smoke result.
+
 ### Twin ownership sync
 
 The M3.3 ownership extractor stays intentionally narrow and auditable.

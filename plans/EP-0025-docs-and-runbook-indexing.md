@@ -22,6 +22,9 @@ It still explicitly stops before freshness scoring, blast-radius answers, or red
 - [x] (2026-03-19T15:03:00Z) Read the new M3.5B prompt inputs, reused EP-0025 as the active ExecPlan, reran the required inspections `rg -n "docs-sync|doc_file|doc_section|runbook|smoke|validation|rollback|curl |pnpm |node |bash" apps packages docs README.md START_HERE.md WORKFLOW.md AGENTS.md`, `git status --short`, and `git diff --name-only HEAD`, and captured the required in-thread `M3.5B runbook indexing gap` note before editing.
 - [x] (2026-03-19T15:06:00Z) Implemented the M3.5B runbook slice inside the same twin bounded context: added conservative runbook classification, deterministic command extraction from fenced shell blocks and safe command-like bullets, durable `runbook_document` plus `runbook_step` persistence, a dedicated `runbooks-sync` path, a stored runbooks formatter, thin runbooks routes, shared domain contracts, and focused runbook specs.
 - [x] (2026-03-19T15:07:00Z) Ran the narrow runbook test ring successfully with `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/docs-parser.spec.ts src/modules/twin/runbook-classifier.spec.ts src/modules/twin/runbook-parser.spec.ts src/modules/twin/runbook-sync.spec.ts src/modules/twin/runbook-routes.spec.ts`.
+- [x] (2026-03-19T22:28:00Z) Read the M3.5 live-proof tooling refresh prompt inputs, reran the required inspections `rg -n "docs-sync|runbooks-sync|doc-sections|runbooks|smoke:twin|tsx --eval|live proof|runbookDocumentCount|runbookStepCount" package.json docs plans apps`, `git status --short`, and `git diff --name-only HEAD`, and captured the required in-thread `M3.5 live proof tooling gap` note before editing.
+- [x] (2026-03-19T22:34:00Z) Added the repeatable route-driven live smoke helper `tools/twin-docs-runbooks-smoke.mjs`, wired the root alias `smoke:twin-docs-runbooks:live`, kept the helper repo-scoped with an explicit source checkout requirement, and updated `docs/ops/local-dev.md` so M3.5 no longer depends on a one-off `tsx --eval` harness.
+- [x] (2026-03-19T22:40:00Z) Re-ran the full required validation matrix successfully and captured a fresh packaged live proof against `616xold/pocket-cto` through the new smoke helper, including current docs and runbooks sync run ids plus stored counts.
 
 ## Surprises & Discoveries
 
@@ -38,13 +41,19 @@ It still explicitly stops before freshness scoring, blast-radius answers, or red
   Evidence: `WORKFLOW.md` begins with a front-matter block before the first visible heading, and the new docs parser needed an explicit front-matter skip path to keep `doc_section` extraction truthful.
 
 - Observation: the real `616xold/pocket-cto` repository already yields a non-trivial docs surface under the approved discovery scope.
-  Evidence: the final live docs sync for `616xold/pocket-cto` completed successfully with `docFileCount: 20`, `docSectionCount: 192`, and sync run id `0aad9bf9-0816-480f-9220-6f2ebcb4c5c9`.
+  Evidence: the earlier ad hoc live docs sync for `616xold/pocket-cto` completed successfully with `docFileCount: 20`, `docSectionCount: 192`, and sync run id `0aad9bf9-0816-480f-9220-6f2ebcb4c5c9`, and the later packaged smoke refreshed that same proof to the current live counts.
 
 - Observation: the legacy Drizzle enum still has a `runbook` bucket, so `runbook_document` and `runbook_step` can map there without a schema migration while preserving the exact new `kind` strings in the additive twin columns.
   Evidence: `packages/db/src/schema/twin.ts` still exposes `twin_entity_type` with `runbook`, and `apps/control-plane/src/modules/twin/drizzle-repository.ts` now maps `runbook_document` plus `runbook_step` into that legacy bucket while persisting the exact `kind`.
 
 - Observation: deterministic runbook extraction needs to treat multiline env-prefixed shell commands as one operational step rather than splitting the prefix lines away from the executable command.
   Evidence: `docs/ops/local-dev.md` contains multiline `DATABASE_URL=... \` and `env \` command forms, and the new runbook parser had to skip leading env assignments and continuation markers before classifying the actual command family.
+
+- Observation: the existing twin smoke helpers already establish the right live-proof pattern for M3.5: in-process app boot, route-only calls, and a safe JSON summary.
+  Evidence: `tools/twin-metadata-smoke.mjs`, `tools/twin-ownership-smoke.mjs`, and `tools/twin-ci-smoke.mjs` all use `buildApp()` plus route injection instead of direct service calls, so the new M3.5 helper could follow the same pattern without widening product code.
+
+- Observation: the packaged live smoke now captures slightly higher docs and runbook counts than the earlier ad hoc proof, which means the real `616xold/pocket-cto` repo contents advanced between proofs and the stored counts should be refreshed to the latest live truth.
+  Evidence: the packaged live smoke completed on 2026-03-19 with `docSectionCount: 194` and `runbookStepCount: 344`, up from the earlier ad hoc proof values `192` and `337`.
 
 ## Decision Log
 
@@ -72,8 +81,8 @@ It still explicitly stops before freshness scoring, blast-radius answers, or red
   Rationale: the prompt explicitly forbids widening into runbook command extraction in this pass, so this slice should stop after durable docs discovery and heading indexing.
   Date/Author: 2026-03-19 / Codex
 
-- Decision: keep live proof as a route-driven temporary-checkout verification instead of adding a new checked-in smoke helper in this prompt.
-  Rationale: the prompt requires one real docs sync result but does not require a reusable smoke command, and the narrowest compliant change is to verify through the existing app surface without expanding product or tooling scope.
+- Decision: replace the earlier ad hoc M3.5 proof with a checked-in route-driven smoke helper plus a root alias.
+  Rationale: M3.5 was weaker than M3.2, M3.3, and M3.4 until its live proof became repeatable from one documented command. Reusing the existing smoke-helper pattern keeps the product surface unchanged while making the proof durable.
   Date/Author: 2026-03-19 / Codex
 
 - Decision: classify runbook documents only from the already-approved docs scope using the deterministic path or heading rules `docs/ops/**`, `WORKFLOW.md`, `START_HERE.md`, and `README.md` only when clearly operational headings are present.
@@ -86,6 +95,10 @@ It still explicitly stops before freshness scoring, blast-radius answers, or red
 
 - Decision: keep `runbooks-sync` independent from a prior `docs-sync` run even though the slice builds on the same discovery and parser modules.
   Rationale: the prompt says to classify from the discovered docs set, and a direct sync keeps runbook extraction deterministic and replayable even when docs have not been synced separately yet.
+  Date/Author: 2026-03-19 / Codex
+
+- Decision: silence the helper app logger during the packaged M3.5 smoke so stdout contains only the safe summary payload.
+  Rationale: the prompt requires operator-safe summary output. Lowering the injected app logger to `silent` inside the helper keeps the route-driven proof intact without changing product behavior or exposing extra request noise.
   Date/Author: 2026-03-19 / Codex
 
 ## Context and Orientation
@@ -143,6 +156,13 @@ The expected new or expanded M3.5B files are:
 - `packages/domain/src/twin.ts`
 - focused twin runbook specs under `apps/control-plane/src/modules/twin/`
 - `docs/ops/local-dev.md`
+
+The expected proof-refresh files for the final M3.5 closeout are:
+
+- `plans/EP-0025-docs-and-runbook-indexing.md`
+- `docs/ops/local-dev.md`
+- `package.json`
+- `tools/twin-docs-runbooks-smoke.mjs`
 
 This slice should preserve boundaries:
 
@@ -248,6 +268,7 @@ Human acceptance after implementation should look like:
     curl -i http://localhost:4000/twin/repositories/OWNER/REPO/doc-sections
     curl -i http://localhost:4000/twin/repositories/OWNER/REPO/runbooks
     curl -i http://localhost:4000/twin/repositories/OWNER/REPO/runs
+    pnpm smoke:twin-docs-runbooks:live -- --source-repo-root /absolute/path/to/clone
 
 For a synced repo with approved docs present, the docs sync route should return a completed run plus stored counts, the docs route should list stored doc files, and the doc-sections route should list stored headings with their source file and excerpt.
 For a synced repo with conservative runbook docs present, the runbooks sync route should return a completed run plus stored runbook-document and runbook-step counts, and the runbooks route should list stored documents plus grouped steps with command-family counts.
@@ -278,7 +299,14 @@ Required pre-coding gap note captured in-thread:
 3. Planned edits include EP-0025, new twin docs modules and tests, shared domain contracts, thin route wiring, and `docs/ops/local-dev.md`.
 4. The chosen strategy is deterministic approved-path discovery, line-based heading extraction, durable doc-file and doc-section persistence, and stored read routes based on the latest successful docs snapshot.
 
-Validation results, live smoke evidence, exact changed files, and final safe summary fields will be appended here as work proceeds.
+Required M3.5 live-proof tooling gap note captured in-thread:
+
+1. Docs and runbook indexing already prove deterministic discovery, durable docs and runbooks entities, rerunnable syncs, and stored read routes.
+2. The remaining gap was that M3.5 proof still depended on an ad hoc one-off command path rather than one checked-in smoke helper, one root alias, and one documented operator command.
+3. The proof refresh edits were limited to EP-0025, `docs/ops/local-dev.md`, `package.json`, and `tools/twin-docs-runbooks-smoke.mjs` unless a live smoke exposed a product bug.
+4. The chosen proof refresh strategy was to package the existing route-driven live proof into one reusable helper that loads env safely, requires an explicit source checkout, calls only the existing GitHub plus twin routes, and prints safe summary fields.
+
+Validation results, live smoke evidence, exact changed files, and final safe summary fields are recorded here.
 
 Validation results:
 
@@ -289,22 +317,23 @@ Validation results:
 - `pnpm lint` passed.
 - `pnpm typecheck` passed after updating the `TwinServicePort` test doubles in `bootstrap.spec.ts` and `drizzle-service.spec.ts` with the new docs methods.
 - `pnpm build` passed.
-- `pnpm test` passed with `55` control-plane files and `218` control-plane tests green.
 - `pnpm ci:repro:current` passed from a fresh temp worktree and finished with a clean-tree check.
 - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/docs-parser.spec.ts src/modules/twin/runbook-classifier.spec.ts src/modules/twin/runbook-parser.spec.ts src/modules/twin/runbook-sync.spec.ts src/modules/twin/runbook-routes.spec.ts` passed with `5` files and `6` tests green before the full matrix.
 - The M3.5B full validation matrix passed again after the runbook slice landed: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current`.
-- The repo-wide `pnpm test` pass finished with `59` control-plane files and `223` control-plane tests green.
+- The packaged proof-refresh validation matrix also passed: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current`.
+- The current repo-wide `pnpm test` pass finished with `60` control-plane files and `227` control-plane tests green.
+- `pnpm smoke:twin-docs-runbooks:live -- --source-repo-root /tmp/pocket-cto-m35-live-IGYxS6/repo` passed through the new packaged helper and printed only safe summary fields.
 
-Live proof result:
+Live proof result from the packaged helper:
 
 - repo full name: `616xold/pocket-cto`
+- docs sync run id: `2a4c0cc9-a5a0-4958-a529-c850d2e0559a`
+- runbooks sync run id: `96d95e86-66e6-4ac6-a1c0-cdb693843ac7`
 - doc file count: `20`
-- doc section count: `192`
-- docs sync run id: `0aad9bf9-0816-480f-9220-6f2ebcb4c5c9`
+- doc section count: `194`
 - runbook document count: `7`
-- runbook step count: `337`
-- top command family counts: `other=206`, `pnpm=71`, `curl=53`, `node=3`, `git=2`, `docker=2`
-- runbooks sync run id: `c464e226-dde5-4e13-a6b5-e39b2db1d0ed`
+- runbook step count: `344`
+- top command family counts: `other=208`, `pnpm=71`, `curl=58`, `node=3`, `git=2`, `docker=2`
 
 Exact changed files in this slice:
 
@@ -332,6 +361,8 @@ Exact changed files in this slice:
 - `apps/control-plane/src/modules/twin/drizzle-repository.ts`
 - `packages/domain/src/twin.ts`
 - `docs/ops/local-dev.md`
+- `package.json`
+- `tools/twin-docs-runbooks-smoke.mjs`
 - `apps/control-plane/src/bootstrap.spec.ts`
 - `apps/control-plane/src/modules/orchestrator/drizzle-service.spec.ts`
 
@@ -363,6 +394,7 @@ No new package dependency is expected unless heading extraction proves a standar
 
 M3.5 now ships a truthful repo-scoped docs and runbooks spine for the engineering twin.
 Pocket CTO can deterministically discover the approved documentation files for a synced repository, extract durable heading facts, conservatively classify runbook documents from that docs scope, persist `doc_file`, `doc_section`, `runbook_document`, and `runbook_step` entities with their required edges, and serve stored docs plus runbooks views through thin routes.
+The live proof is now packaged as `pnpm smoke:twin-docs-runbooks:live -- --source-repo-root /absolute/path/to/clone`, so the milestone no longer depends on ad hoc eval-style commands to reproduce the M3.5 route-driven path.
 
 The exact persisted entity kinds are `doc_file`, `doc_section`, `runbook_document`, and `runbook_step`, with the existing shared `repository` entity upserted as the stable edge source when needed.
 The exact persisted edge kinds are `repository_has_doc_file`, `doc_file_contains_section`, `repository_has_runbook_document`, and `runbook_document_contains_step`.
