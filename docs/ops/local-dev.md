@@ -1249,6 +1249,38 @@ It reports:
 - stored test suites with manifest path, script key, and matched jobs
 - explicit unmapped jobs with their run commands
 
+Repeatable live smoke:
+
+```bash
+pnpm smoke:twin-ci:live -- --source-repo-root /absolute/path/to/pocket-cto
+```
+
+The helper keeps the product surface unchanged.
+It loads local env the same way as the other repo smoke tools, requires an explicit real checkout of the requested repository, boots the control plane in-process, and drives only these existing routes:
+
+- `POST /github/installations/sync`
+- `POST /github/repositories/sync`
+- `POST /twin/repositories/:owner/:repo/metadata-sync`
+- `POST /twin/repositories/:owner/:repo/workflows-sync`
+- `POST /twin/repositories/:owner/:repo/test-suites-sync`
+- `GET /twin/repositories/:owner/:repo/ci-summary`
+
+It prints only safe summary fields:
+
+- repo full name
+- workflow sync run id
+- test-suite sync run id
+- workflow file count
+- workflow count
+- job count
+- test suite count
+- mapped job count
+- unmapped job count
+
+Use a checkout of the real target repository, not `pocket-cto-starter`, so the existing source-verification contract stays truthful.
+`mappedJobCount` may also truthfully be `0` under the current conservative matcher; when no job run command clearly invokes a stored manifest `test` or `test:*` script key through the deterministic package-manager patterns, the helper and `ci-summary` will keep those jobs explicitly unmapped.
+EP-0024 records the latest successful M3.4 live smoke result for `616xold/pocket-cto`.
+
 ### Branch and draft PR publish
 
 Executor publish now happens after local validation, not inside the model turn.
