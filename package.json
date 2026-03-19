@@ -43,7 +43,8 @@
     "smoke:github-issue-intake:doctor": "node tools/github-webhook-live-doctor.mjs",
     "smoke:github-issue-intake:local": "node tools/github-issue-intake-local-smoke.mjs",
     "smoke:github-issue-intake:live": "node tools/github-issue-intake-local-smoke.mjs --mode live_github_hosted_issue",
-    "smoke:twin-metadata:live": "tsx tools/twin-metadata-smoke.mjs"
+    "smoke:twin-metadata:live": "tsx tools/twin-metadata-smoke.mjs",
+    "smoke:twin-ownership:live": "tsx tools/twin-ownership-smoke.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

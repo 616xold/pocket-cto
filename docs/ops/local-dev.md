@@ -1028,10 +1028,10 @@ Write-readiness is intentionally narrower than simple visibility:
 
 ### Twin routes
 
-M3.1, M3.2, and M3.3A add the first repo-scoped engineering-twin debug, metadata-sync, and ownership-sync surface on top of the durable repository registry.
+M3.1, M3.2, and M3.3 add the first repo-scoped engineering-twin debug, metadata-sync, and ownership-sync surface on top of the durable repository registry.
 The read routes return stored twin state.
 The sync routes perform deterministic local scans for the requested synced repository.
-These routes still do not compute effective ownership over manifests or directories, extract CI workflows, index docs, or answer blast-radius questions yet.
+These routes still do not compute arbitrary file ownership graphs, extract CI workflows, index docs, or answer blast-radius questions yet.
 
 Available routes:
 
@@ -1039,6 +1039,7 @@ Available routes:
 - `POST /twin/repositories/:owner/:repo/ownership-sync`
 - `GET /twin/repositories/:owner/:repo/ownership-rules`
 - `GET /twin/repositories/:owner/:repo/owners`
+- `GET /twin/repositories/:owner/:repo/ownership-summary`
 - `GET /twin/repositories/:owner/:repo/summary`
 - `GET /twin/repositories/:owner/:repo/entities`
 - `GET /twin/repositories/:owner/:repo/edges`
@@ -1057,6 +1058,7 @@ curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/metad
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-sync
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-rules
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/owners
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-summary
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/summary
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/entities
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/edges
@@ -1126,6 +1128,28 @@ The ownership read routes are stored views, not live rescans:
 - `GET /twin/repositories/:owner/:repo/ownership-rules` returns the chosen file plus parsed rule summaries
 - `GET /twin/repositories/:owner/:repo/owners` returns normalized owner principals plus assigned-rule counts
 - `GET /twin/repositories/:owner/:repo/ownership-summary` returns the stored effective ownership summary for the current twin metadata targets
+
+Repeatable live smoke:
+
+```bash
+pnpm smoke:twin-ownership:live -- --source-repo-root /absolute/path/to/pocket-cto
+```
+
+The helper keeps the product surface unchanged.
+It syncs GitHub installations, syncs the repository registry, refreshes the existing twin metadata target set, calls the existing ownership-sync route, fetches the existing ownership-summary route, and prints only safe fields:
+
+- repo full name
+- chosen CODEOWNERS file path
+- ownership sync run id and status
+- ownership state
+- rule count
+- owner count
+- owned directory count
+- owned manifest count
+- unowned target count
+
+Use a checkout of the real target repository, not `pocket-cto-starter`, so the source-verification contract stays truthful.
+EP-0023 records the latest ownership smoke outcome for `616xold/pocket-cto`.
 
 The parser ignores blank lines and lines that start with `#`.
 It normalizes owner handles deterministically.

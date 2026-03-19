@@ -8,10 +8,14 @@ After this slice, Pocket CTO can inspect one synced repository, discover the eff
 Operators will be able to trigger a repo-scoped ownership sync, inspect the resulting sync run, and read concise stored ownership data through thin routes without rescanning the repository on every request.
 
 This plan covers roadmap submilestone `M3.3 CODEOWNERS and ownership extraction`.
-It intentionally stops before directory or manifest ownership resolution, CI workflow extraction, docs indexing, freshness scoring, blast-radius answers, or metadata extractor redesign.
+It intentionally stops before arbitrary file-graph ownership, CI workflow extraction, docs indexing, freshness scoring, blast-radius answers, or metadata extractor redesign.
 
 ## Progress
 
+- [x] (2026-03-19T01:36:00Z) Re-read the requested repo docs, roadmap, M3.2 and M3.3 files, the named skills, the requested twin or tooling files, and ran the required inspections `rg -n "M3.3A|ownership-summary|ownership-sync|smoke:twin-metadata:live|CODEOWNERS|owner_principal|rule_owns_" apps packages docs plans package.json`, `git status --short`, and `git diff --name-only HEAD`.
+- [x] (2026-03-19T01:36:00Z) Captured the pre-coding M3.3 live proof and docs gap in-thread, added the tiny route-driven `tools/twin-ownership-smoke.mjs` helper plus `pnpm smoke:twin-ownership:live`, and fixed the stale M3.3A or route wording in `docs/ops/local-dev.md`.
+- [x] (2026-03-19T01:36:00Z) Ran a successful live ownership smoke against the real `616xold/pocket-cto` repo using an explicit temporary checkout path, refreshed metadata targets before ownership sync, and replaced the stale “env absent” proof posture with current live evidence.
+- [x] (2026-03-19T01:36:00Z) Re-ran the full required validation matrix successfully after the proof refresh: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current`.
 - [x] (2026-03-18T04:00:39Z) Read the required repo docs, roadmap, M3.1 and M3.2 ExecPlans, the named skills, the requested twin or bootstrap files, and ran the required inspections `rg -n "CODEOWNERS|ownership|owner|workspace_directory|package_manifest|twin" apps packages docs plans`, `git status --short`, and `git diff --name-only HEAD`.
 - [x] (2026-03-18T04:00:39Z) Captured the pre-coding M3.3A gap note in-thread: the twin spine already provides repo-scoped runs, entity or edge upserts, source resolution, and metadata sync, but still lacks CODEOWNERS precedence discovery, deterministic parsing, durable ownership entities, and ownership read routes.
 - [x] (2026-03-18T04:00:39Z) Created EP-0023 before coding so the slice stays self-contained, additive, and resumable.
@@ -34,7 +38,7 @@ It intentionally stops before directory or manifest ownership resolution, CI wor
 - Observation: M3.2 summary routes are metadata-specific, so ownership needs its own narrow read models instead of overloading the existing repository summary response.
   Evidence: `apps/control-plane/src/modules/twin/formatter.ts` currently only derives repository, branch, README, manifest, and directory summaries from stored twin rows.
 
-- Observation: no database schema change was required for M3.3A.
+- Observation: no database schema change was required for M3.3.
   Evidence: `pnpm db:generate` completed with `No schema changes, nothing to migrate` because the existing repo-scoped twin tables already accept generic text `kind` values plus JSON payloads.
 
 - Observation: ownership reads need to distinguish “latest run failed” from “latest successful snapshot is empty because no CODEOWNERS file exists”.
@@ -42,6 +46,12 @@ It intentionally stops before directory or manifest ownership resolution, CI wor
 
 - Observation: effective ownership can stay additive if the summary route reads from the latest successful ownership snapshot while still using the current repo-scoped metadata target entities.
   Evidence: `workspace_directory` and `package_manifest` entities already have stable repo-scoped ids and paths from M3.2, so M3.3B only needed new rule-to-target edges and a read model that treats unmatched current targets as explicitly unowned when a successful ownership snapshot exists.
+
+- Observation: the local `.env` is sufficient for GitHub App-backed live twin smoke even when the current shell is missing exported variables, as long as the smoke helper loads it first and receives an explicit source repo root.
+  Evidence: `tools/m2-exit-utils.mjs` loaded `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY_BASE64`, and `GITHUB_WEBHOOK_SECRET` successfully, while `pnpm smoke:twin-ownership:live -- --source-repo-root /tmp/pocket-cto-ownership-smoke-6tbTqb` completed with synced installation and repository counts of `1`.
+
+- Observation: the current truth for `616xold/pocket-cto` is a successful ownership sync with no effective `CODEOWNERS` file, not a live-smoke failure.
+  Evidence: the refreshed live smoke returned `codeownersFilePath = null`, `ownershipState = no_codeowners_file`, `ruleCount = 0`, `ownerCount = 0`, `ownedDirectoryCount = 0`, `ownedManifestCount = 0`, and `unownedTargetCount = 14`, and a direct filesystem check of `/tmp/pocket-cto-ownership-smoke-6tbTqb` found no `CODEOWNERS` file.
 
 ## Decision Log
 
@@ -81,10 +91,14 @@ It intentionally stops before directory or manifest ownership resolution, CI wor
   Rationale: the prompt requires the summary to say explicitly when no CODEOWNERS file exists, and operators also need honesty when ownership sync has not succeeded yet.
   Date/Author: 2026-03-18 / Codex
 
+- Decision: keep the proof refresh route-driven and tooling-first by adding a tiny in-process ownership smoke helper that refreshes metadata targets before ownership sync.
+  Rationale: the prompt explicitly prefers tooling and docs over product code for this closeout, and ownership summary counts are only meaningful when the current twin metadata targets are refreshed in the same run.
+  Date/Author: 2026-03-19 / Codex
+
 ## Context and Orientation
 
-Pocket CTO exits M3.2 with a real repo-scoped twin bounded context under `apps/control-plane/src/modules/twin/`.
-That bounded context already owns:
+Pocket CTO exits M3.3 with a real repo-scoped twin bounded context under `apps/control-plane/src/modules/twin/`.
+That bounded context now owns:
 
 - registry-backed repository targeting via the existing GitHub App repository registry
 - truthful local source resolution through `source-resolver.ts`
@@ -92,16 +106,17 @@ That bounded context already owns:
 - idempotent entity upserts keyed by repo full name, kind, and stable key
 - idempotent edge upserts keyed by repo full name, kind, and endpoints
 - metadata sync plus summary and debug routes
+- ownership sync plus stored ownership rules, owners, and ownership-summary routes
 
-The missing M3.3A capability is a narrow but durable ownership slice.
-The new logic should:
+The remaining responsibility of this refreshed ExecPlan is proof and operator-doc currency, not new product behavior.
+The implemented M3.3 logic now:
 
 - inspect only the truthful local checkout returned by the existing source resolver
 - discover the effective `CODEOWNERS` file using GitHub precedence
 - parse durable ownership rules without attempting effective file matching
 - normalize owner principals deterministically
 - persist file, rule, and principal facts with stable keys
-- expose one sync route and two read routes for stored ownership data
+- expose one sync route and three read routes for stored ownership data, including effective ownership summary
 
 The most relevant existing files are:
 
@@ -140,7 +155,7 @@ Then, add a separate ownership-sync orchestrator that:
 - upserts `repository_has_codeowners`, `codeowners_file_defines_rule`, and `rule_assigns_owner` edges
 - finishes the sync run with truthful counts, including the zero-file path
 
-Finally, add thin routes for `POST /twin/repositories/:owner/:repo/ownership-sync`, `GET /twin/repositories/:owner/:repo/ownership-rules`, and `GET /twin/repositories/:owner/:repo/owners`, add focused tests, update `docs/ops/local-dev.md`, and run the required validation matrix plus the live smoke if the GitHub App env is available locally.
+Finally, add thin routes for `POST /twin/repositories/:owner/:repo/ownership-sync`, `GET /twin/repositories/:owner/:repo/ownership-rules`, `GET /twin/repositories/:owner/:repo/owners`, and `GET /twin/repositories/:owner/:repo/ownership-summary`, add focused tests, update `docs/ops/local-dev.md`, and keep a repeatable live smoke helper available when the GitHub App env is available locally.
 
 Expected file edits are:
 
@@ -160,6 +175,8 @@ Expected file edits are:
 - `apps/control-plane/src/modules/twin/*.spec.ts`
 - `packages/domain/src/twin.ts`
 - `docs/ops/local-dev.md`
+- `package.json`
+- `tools/twin-ownership-smoke.mjs`
 
 Schema changes are not expected unless implementation proves the current generic twin tables are insufficient.
 
@@ -189,16 +206,17 @@ If live GitHub env is present after implementation:
 
     curl -X POST http://localhost:4000/github/installations/sync
     curl -X POST http://localhost:4000/github/repositories/sync
+    curl -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/metadata-sync
     curl -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-sync
-    curl http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-rules
-    curl http://localhost:4000/twin/repositories/616xold/pocket-cto/owners
+    curl http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-summary
+    pnpm smoke:twin-ownership:live -- --source-repo-root /absolute/path/to/pocket-cto
 
-Record only the repo full name, chosen CODEOWNERS path, rule count, owner count, and sync run id.
+Record only the repo full name, chosen CODEOWNERS path or `null`, ownership state, rule count, owner count, owned target counts, unowned target count, and sync run id.
 Do not print secrets, tokens, or raw auth headers.
 
 ## Validation and Acceptance
 
-Success for M3.3A is demonstrated when all of the following are true:
+Success for M3.3 is demonstrated when all of the following are true:
 
 1. Ownership sync uses the existing repository registry and the existing twin source resolver; it does not clone repositories or invent a second source-selection path.
 2. CODEOWNERS discovery checks `.github/CODEOWNERS`, then `CODEOWNERS`, then `docs/CODEOWNERS`, and persists only the first existing match.
@@ -207,19 +225,23 @@ Success for M3.3A is demonstrated when all of the following are true:
 5. The sync persists `repository_has_codeowners`, `codeowners_file_defines_rule`, and `rule_assigns_owner` edges with repo-scoped idempotent upserts.
 6. Ownership rules ignore blank lines and comment lines.
 7. Owner handles are normalized and deduplicated deterministically across the effective CODEOWNERS file.
-8. Repeated ownership syncs converge on the same file, rule, and owner principal entity ids instead of duplicating them.
-9. `GET /twin/repositories/:owner/:repo/ownership-rules` returns a clean stored view of rules, including source path, ordinal, raw pattern, normalized owners, and lightweight pattern classification.
-10. `GET /twin/repositories/:owner/:repo/owners` returns a clean stored view of normalized owner principals.
-11. `docs/ops/local-dev.md` documents the new ownership-sync flow honestly and does not claim effective ownership over manifests, directories, CI, or blast-radius answers.
+8. Effective ownership uses last-match-wins semantics only over stored `workspace_directory` and `package_manifest` entity paths and persists only the winning `rule_owns_directory` or `rule_owns_manifest` edges.
+9. Repeated ownership syncs converge on the same file, rule, owner principal, and effective ownership edge ids instead of duplicating them.
+10. `GET /twin/repositories/:owner/:repo/ownership-rules` returns a clean stored view of rules, including source path, ordinal, raw pattern, normalized owners, and lightweight pattern classification.
+11. `GET /twin/repositories/:owner/:repo/owners` returns a clean stored view of normalized owner principals.
+12. `GET /twin/repositories/:owner/:repo/ownership-summary` returns a concise operator-readable summary with explicit `not_synced`, `no_codeowners_file`, or `effective_ownership_available` state plus owned and unowned metadata targets.
+13. `docs/ops/local-dev.md` documents the current M3.3 routes and the repeatable ownership smoke honestly, without claiming arbitrary file ownership graphs, CI, docs indexing, or blast-radius answers.
 
 Human acceptance after implementation should look like:
 
     curl -i -X POST http://localhost:4000/twin/repositories/OWNER/REPO/ownership-sync
     curl -i http://localhost:4000/twin/repositories/OWNER/REPO/ownership-rules
     curl -i http://localhost:4000/twin/repositories/OWNER/REPO/owners
+    curl -i http://localhost:4000/twin/repositories/OWNER/REPO/ownership-summary
+    pnpm smoke:twin-ownership:live -- --source-repo-root /absolute/path/to/OWNER-REPO-checkout
 
 For a synced repo with an effective `CODEOWNERS` file, the sync route should return a succeeded run plus non-zero rule and owner counts, and the read routes should return stored ownership data without rescanning the repository.
-For a synced repo without `CODEOWNERS`, the sync route should still succeed and the read routes should report empty ownership state truthfully.
+For a synced repo without `CODEOWNERS`, the sync route should still succeed and the summary should report `ownershipState = no_codeowners_file` plus explicitly unowned current metadata targets.
 
 ## Idempotence and Recovery
 
@@ -254,6 +276,7 @@ Validation results, live smoke notes, and exact changed files will be appended h
 
 Validation results:
 
+- Re-ran the full required matrix on 2026-03-19 after the proof-helper and docs refresh so the live evidence and the checked tree are aligned.
 - `pnpm db:generate` passed with `No schema changes, nothing to migrate`.
 - `pnpm db:migrate` passed.
 - `pnpm run db:migrate:ci` passed.
@@ -264,7 +287,14 @@ Validation results:
 - `pnpm test` passed with all workspace packages green, including `apps/control-plane` `46` files and `202` tests.
 - `pnpm ci:repro:current` passed, including clean-tree verification in the temporary worktree.
 
-Exact changed files:
+Files changed during the 2026-03-19 proof refresh:
+
+- `docs/ops/local-dev.md`
+- `package.json`
+- `plans/EP-0023-codeowners-and-ownership-extraction.md`
+- `tools/twin-ownership-smoke.mjs`
+
+Implementation files changed earlier in M3.3:
 
 - `apps/control-plane/src/bootstrap.spec.ts`
 - `apps/control-plane/src/lib/types.ts`
@@ -284,9 +314,24 @@ Exact changed files:
 - `packages/domain/src/twin.ts`
 - `plans/EP-0023-codeowners-and-ownership-extraction.md`
 
-Live GitHub env note:
+Live GitHub-backed evidence:
 
-- GitHub App smoke was not run because `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY_BASE64`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_WEBHOOK_SECRET`, and `POCKET_CTO_SOURCE_REPO_ROOT` were all unset in the current shell environment.
+- smoke command: `pnpm smoke:twin-ownership:live -- --source-repo-root /tmp/pocket-cto-ownership-smoke-6tbTqb`
+- `.env`-backed GitHub App credentials were present for the smoke helper even though the current shell itself did not export every GitHub variable.
+- requested repository: `616xold/pocket-cto`
+- explicit smoke source repo root: `/tmp/pocket-cto-ownership-smoke-6tbTqb`
+- `syncInstallations()` succeeded with `installationsSynced = 1`
+- `syncRepositories()` succeeded with `repositoriesSynced = 1`
+- ownership sync run id: `2b8ae7f8-1747-425e-b91e-bcdacc2c499e`
+- ownership sync status: `succeeded`
+- chosen CODEOWNERS path: `null`
+- ownership state: `no_codeowners_file`
+- rule count: `0`
+- owner count: `0`
+- owned directory count: `0`
+- owned manifest count: `0`
+- unowned target count: `14`
+- a direct filesystem check of the temporary checkout found no `CODEOWNERS` file, so the `null` path and empty ownership counts are the current truthful repo state, not a smoke failure.
 
 ## Interfaces and Dependencies
 
@@ -320,6 +365,7 @@ Pocket CTO can:
 - persist file, rule, and owner entities plus ownership edges
 - compute effective ownership over stored workspace directories and package manifests with last-match-wins semantics
 - expose thin ownership sync and ownership read routes, including an operator-readable ownership summary
+- refresh that proof through a repeatable route-driven live smoke helper without widening product code
 
 This slice intentionally does not widen into arbitrary file ownership graphs, CI workflows, docs indexing, or blast-radius questions.
 Those behaviors remain clean follow-on work for M3.4 and later roadmap slices.
@@ -331,3 +377,4 @@ M3.4 can now start cleanly because the repo has:
 - durable effective ownership edges for directories and manifests
 - summary-shaped read routes for stored ownership facts
 - validation proof that the new slice is rerunnable, deterministic, and additive
+- current live proof for `616xold/pocket-cto`, including the truthful `no_codeowners_file` case instead of a stale “env absent” placeholder
