@@ -127,7 +127,9 @@ export class DrizzleTwinRepository implements TwinRepository {
       .update(twinSyncRuns)
       .set({
         status: input.status,
-        completedAt: input.completedAt ? new Date(input.completedAt) : new Date(),
+        completedAt: input.completedAt
+          ? new Date(input.completedAt)
+          : new Date(),
         stats: input.stats ?? undefined,
         errorSummary: input.errorSummary ?? null,
       })
@@ -261,7 +263,9 @@ export class DrizzleTwinRepository implements TwinRepository {
   }
 }
 
-function mapTwinEntityRow(row: typeof twinEntities.$inferSelect): TwinEntityRecord {
+function mapTwinEntityRow(
+  row: typeof twinEntities.$inferSelect,
+): TwinEntityRecord {
   return {
     id: row.id,
     repoFullName: row.repoFullName,
@@ -330,7 +334,13 @@ function readJsonObject(value: unknown) {
   return value as Record<string, unknown>;
 }
 
-function toLegacyTwinEntityType(kind: string): (typeof legacyTwinEntityTypes)[number] {
+function toLegacyTwinEntityType(
+  kind: string,
+): (typeof legacyTwinEntityTypes)[number] {
+  if (kind === "ci_job") {
+    return "ciJob";
+  }
+
   if (kind === "owner_principal") {
     return "owner";
   }

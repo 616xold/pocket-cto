@@ -4,6 +4,8 @@ import type {
   TwinRepositoryOwnersView,
   TwinRepositoryMetadataSummary,
   TwinRepositoryMetadataSyncResult,
+  TwinRepositoryWorkflowSyncResult,
+  TwinRepositoryWorkflowsView,
   TwinRepositoryOwnershipRulesView,
   TwinRepositoryOwnershipSummary,
   TwinRepositoryOwnershipSyncResult,
@@ -32,6 +34,11 @@ import type { TwinRepositoryMetadataExtractor } from "./repository-metadata-extr
 import { syncRepositoryMetadata } from "./metadata-sync";
 import type { TwinRepositorySourceResolver } from "./source-resolver";
 import { readOwnershipTargets } from "./ownership-targets";
+import { buildTwinRepositoryWorkflowsView } from "./workflow-formatter";
+import {
+  syncRepositoryWorkflows,
+  workflowExtractorName,
+} from "./workflow-sync";
 import {
   TwinEdgeUpsertInputSchema,
   TwinEntityUpsertInputSchema,
@@ -80,7 +87,8 @@ export class TwinService {
     repoFullName: string,
   ): Promise<TwinEntityListView> {
     const repository = await this.getRepositorySummary(repoFullName);
-    const entities = await this.input.repository.listRepositoryEntities(repoFullName);
+    const entities =
+      await this.input.repository.listRepositoryEntities(repoFullName);
 
     return buildTwinEntityListView({
       repository,
@@ -113,6 +121,24 @@ export class TwinService {
       entities,
       edges,
       latestRun: runs[0] ?? null,
+    });
+  }
+
+  async getRepositoryWorkflows(
+    repoFullName: string,
+  ): Promise<TwinRepositoryWorkflowsView> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const snapshot = await this.getWorkflowReadSnapshot(repoFullName);
+
+    return buildTwinRepositoryWorkflowsView({
+      repository,
+      latestRun: snapshot.latestRun,
+      workflowState: snapshot.workflowState,
+      fileEntities: snapshot.fileEntities,
+      workflowEntities: snapshot.workflowEntities,
+      jobEntities: snapshot.jobEntities,
+      fileWorkflowEdges: snapshot.fileWorkflowEdges,
+      workflowJobEdges: snapshot.workflowJobEdges,
     });
   }
 
@@ -164,7 +190,9 @@ export class TwinService {
     });
   }
 
-  async finishSyncRun(input: TwinSyncRunFinishInput): Promise<TwinSyncRunRecord> {
+  async finishSyncRun(
+    input: TwinSyncRunFinishInput,
+  ): Promise<TwinSyncRunRecord> {
     const parsed = TwinSyncRunFinishInputSchema.parse(input);
 
     return this.input.repository.transaction(async (session) => {
@@ -187,6 +215,18 @@ export class TwinService {
   ): Promise<TwinRepositoryMetadataSyncResult> {
     return syncRepositoryMetadata({
       metadataExtractor: this.input.metadataExtractor,
+      now: this.now,
+      repoFullName,
+      repository: this.input.repository,
+      repositoryRegistry: this.input.repositoryRegistry,
+      sourceResolver: this.input.sourceResolver,
+    });
+  }
+
+  async syncRepositoryWorkflows(
+    repoFullName: string,
+  ): Promise<TwinRepositoryWorkflowSyncResult> {
+    return syncRepositoryWorkflows({
       now: this.now,
       repoFullName,
       repository: this.input.repository,
@@ -293,7 +333,8 @@ export class TwinService {
     );
     const latestRun = ownershipRuns[0] ?? null;
     const latestSucceededRun =
-      ownershipRuns.find((candidate) => candidate.status === "succeeded") ?? null;
+      ownershipRuns.find((candidate) => candidate.status === "succeeded") ??
+      null;
     const targetEntities = readOwnershipTargets(entities);
 
     if (!latestSucceededRun) {
@@ -309,7 +350,12 @@ export class TwinService {
       };
     }
 
-    if (readNonNegativeInteger(latestSucceededRun.stats, "codeownersFileCount") === 0) {
+    if (
+      readNonNegativeInteger(
+        latestSucceededRun.stats,
+        "codeownersFileCount",
+      ) === 0
+    ) {
       return {
         latestRun,
         ownershipState: "no_codeowners_file" as const,
@@ -333,14 +379,16 @@ export class TwinService {
       latestRun,
       ownershipState: "effective_ownership_available" as const,
       codeownersFileEntity:
-        snapshotEntities.find((candidate) => candidate.kind === "codeowners_file") ??
-        null,
-      effectiveOwnershipEdges: snapshotEdges.filter((candidate) =>
-        ownershipTwinEdgeKinds.includes(
-          candidate.kind as (typeof ownershipTwinEdgeKinds)[number],
-        ) &&
-        (candidate.kind === "rule_owns_directory" ||
-          candidate.kind === "rule_owns_manifest"),
+        snapshotEntities.find(
+          (candidate) => candidate.kind === "codeowners_file",
+        ) ?? null,
+      effectiveOwnershipEdges: snapshotEdges.filter(
+        (candidate) =>
+          ownershipTwinEdgeKinds.includes(
+            candidate.kind as (typeof ownershipTwinEdgeKinds)[number],
+          ) &&
+          (candidate.kind === "rule_owns_directory" ||
+            candidate.kind === "rule_owns_manifest"),
       ),
       ownerEntities: snapshotEntities.filter(
         (candidate) => candidate.kind === "owner_principal",
@@ -352,6 +400,75 @@ export class TwinService {
         (candidate) => candidate.kind === "rule_assigns_owner",
       ),
       targetEntities,
+    };
+  }
+
+  private async getWorkflowReadSnapshot(repoFullName: string) {
+    const [entities, edges, runs] = await Promise.all([
+      this.input.repository.listRepositoryEntities(repoFullName),
+      this.input.repository.listRepositoryEdges(repoFullName),
+      this.input.repository.listRepositoryRuns(repoFullName),
+    ]);
+    const workflowRuns = runs.filter(
+      (candidate) => candidate.extractor === workflowExtractorName,
+    );
+    const latestRun = workflowRuns[0] ?? null;
+    const latestSucceededRun =
+      workflowRuns.find((candidate) => candidate.status === "succeeded") ??
+      null;
+
+    if (!latestSucceededRun) {
+      return {
+        latestRun,
+        workflowState: "not_synced" as const,
+        fileEntities: [],
+        workflowEntities: [],
+        jobEntities: [],
+        fileWorkflowEdges: [],
+        workflowJobEdges: [],
+      };
+    }
+
+    if (
+      readNonNegativeInteger(latestSucceededRun.stats, "workflowFileCount") ===
+      0
+    ) {
+      return {
+        latestRun,
+        workflowState: "no_workflow_files" as const,
+        fileEntities: [],
+        workflowEntities: [],
+        jobEntities: [],
+        fileWorkflowEdges: [],
+        workflowJobEdges: [],
+      };
+    }
+
+    const snapshotEntities = entities.filter(
+      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    );
+    const snapshotEdges = edges.filter(
+      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    );
+
+    return {
+      latestRun,
+      workflowState: "workflows_available" as const,
+      fileEntities: snapshotEntities.filter(
+        (candidate) => candidate.kind === "ci_workflow_file",
+      ),
+      workflowEntities: snapshotEntities.filter(
+        (candidate) => candidate.kind === "ci_workflow",
+      ),
+      jobEntities: snapshotEntities.filter(
+        (candidate) => candidate.kind === "ci_job",
+      ),
+      fileWorkflowEdges: snapshotEdges.filter(
+        (candidate) => candidate.kind === "workflow_file_defines_workflow",
+      ),
+      workflowJobEdges: snapshotEdges.filter(
+        (candidate) => candidate.kind === "workflow_contains_job",
+      ),
     };
   }
 

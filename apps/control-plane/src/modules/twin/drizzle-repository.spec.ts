@@ -59,7 +59,8 @@ describe("DrizzleTwinRepository", () => {
       sourceRunId: run.id,
     });
 
-    const listed = await repository.listRepositoryEntities("616xold/pocket-cto");
+    const listed =
+      await repository.listRepositoryEntities("616xold/pocket-cto");
     const [row] = await db.select().from(twinEntities);
 
     expect(updated.id).toBe(created.id);
@@ -144,7 +145,8 @@ describe("DrizzleTwinRepository", () => {
       sourceRunId: run.id,
     });
 
-    const repoEdges = await repository.listRepositoryEdges("616xold/pocket-cto");
+    const repoEdges =
+      await repository.listRepositoryEdges("616xold/pocket-cto");
     const otherRepoEdges = await repository.listRepositoryEdges(
       "616xold/pocket-cto-web",
     );
@@ -253,6 +255,35 @@ describe("DrizzleTwinRepository", () => {
       kind: "owner_principal",
       type: "owner",
       stableKey: "@platform",
+    });
+  });
+
+  it("maps ci_job onto the legacy ciJob enum while preserving the generic kind", async () => {
+    const entity = await repository.upsertEntity({
+      repoFullName: "616xold/pocket-cto",
+      kind: "ci_job",
+      stableKey: ".github/workflows/ci.yml#job:test",
+      title: "test",
+      payload: {
+        jobKey: "test",
+      },
+      observedAt: "2026-03-19T02:20:00.000Z",
+    });
+
+    const [row] = await db
+      .select()
+      .from(twinEntities)
+      .where(eq(twinEntities.id, entity.id));
+
+    expect(entity).toMatchObject({
+      kind: "ci_job",
+      stableKey: ".github/workflows/ci.yml#job:test",
+    });
+    expect(row).toMatchObject({
+      id: entity.id,
+      kind: "ci_job",
+      type: "ciJob",
+      stableKey: ".github/workflows/ci.yml#job:test",
     });
   });
 });

@@ -1,6 +1,8 @@
 import { z } from "zod";
 
-export const TwinJsonObjectSchema = z.record(z.string(), z.unknown()).default({});
+export const TwinJsonObjectSchema = z
+  .record(z.string(), z.unknown())
+  .default({});
 
 export const TwinRepositoryWriteReadinessFailureCodeSchema = z.enum([
   "inactive",
@@ -233,15 +235,17 @@ export const TwinOwnershipAppliedRuleSchema = z.object({
   patternShape: TwinOwnershipPatternShapeSchema,
 });
 
-export const TwinOwnedDirectorySchema = TwinRepositoryMetadataDirectorySchema.extend({
-  effectiveOwners: z.array(z.string().min(1)),
-  appliedRule: TwinOwnershipAppliedRuleSchema,
-});
+export const TwinOwnedDirectorySchema =
+  TwinRepositoryMetadataDirectorySchema.extend({
+    effectiveOwners: z.array(z.string().min(1)),
+    appliedRule: TwinOwnershipAppliedRuleSchema,
+  });
 
-export const TwinOwnedManifestSchema = TwinRepositoryMetadataManifestSchema.extend({
-  effectiveOwners: z.array(z.string().min(1)),
-  appliedRule: TwinOwnershipAppliedRuleSchema,
-});
+export const TwinOwnedManifestSchema =
+  TwinRepositoryMetadataManifestSchema.extend({
+    effectiveOwners: z.array(z.string().min(1)),
+    appliedRule: TwinOwnershipAppliedRuleSchema,
+  });
 
 export const TwinRepositoryOwnershipSummaryCountsSchema = z.object({
   ruleCount: z.number().int().nonnegative(),
@@ -278,6 +282,96 @@ export const TwinRepositoryOwnershipSyncResultSchema = z.object({
   edgeCountsByKind: TwinKindCountMapSchema,
 });
 
+export const TwinWorkflowStateSchema = z.enum([
+  "not_synced",
+  "no_workflow_files",
+  "workflows_available",
+]);
+
+export const TwinWorkflowTriggerSummarySchema = z.object({
+  eventNames: z.array(z.string().min(1)),
+  hasSchedule: z.boolean(),
+  scheduleCount: z.number().int().nonnegative(),
+  hasWorkflowDispatch: z.boolean(),
+  hasWorkflowCall: z.boolean(),
+});
+
+export const TwinWorkflowRunsOnSchema = z.object({
+  labels: z.array(z.string().min(1)),
+  group: z.string().min(1).nullable(),
+});
+
+export const TwinWorkflowJobPermissionsSchema = z.object({
+  mode: z.string().min(1).nullable(),
+  scopes: z.record(z.string(), z.string().min(1)),
+});
+
+export const TwinWorkflowJobStepKindSchema = z.enum(["run", "uses"]);
+
+export const TwinWorkflowJobStepSchema = z.object({
+  kind: TwinWorkflowJobStepKindSchema,
+  value: z.string().min(1),
+  name: z.string().min(1).nullable(),
+});
+
+export const TwinWorkflowFileSummarySchema = z.object({
+  path: z.string().min(1),
+  sizeBytes: z.number().int().nonnegative(),
+  lineCount: z.number().int().nonnegative(),
+  modifiedAt: z.string().datetime({ offset: true }).nullable(),
+});
+
+export const TwinWorkflowSummarySchema = z.object({
+  stableKey: z.string().min(1),
+  sourceFilePath: z.string().min(1),
+  name: z.string().min(1).nullable(),
+  resolvedName: z.string().min(1),
+  triggerSummary: TwinWorkflowTriggerSummarySchema,
+});
+
+export const TwinWorkflowJobSummarySchema = z.object({
+  stableKey: z.string().min(1),
+  key: z.string().min(1),
+  name: z.string().min(1).nullable(),
+  runsOn: TwinWorkflowRunsOnSchema,
+  needs: z.array(z.string().min(1)),
+  permissions: TwinWorkflowJobPermissionsSchema.nullable(),
+  steps: z.array(TwinWorkflowJobStepSchema),
+});
+
+export const TwinRepositoryWorkflowEntrySchema = z.object({
+  file: TwinWorkflowFileSummarySchema,
+  workflow: TwinWorkflowSummarySchema,
+  jobs: z.array(TwinWorkflowJobSummarySchema),
+});
+
+export const TwinRepositoryWorkflowsCountsSchema = z.object({
+  workflowFileCount: z.number().int().nonnegative(),
+  workflowCount: z.number().int().nonnegative(),
+  jobCount: z.number().int().nonnegative(),
+});
+
+export const TwinRepositoryWorkflowsViewSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  latestRun: TwinSyncRunSchema.nullable(),
+  workflowState: TwinWorkflowStateSchema,
+  counts: TwinRepositoryWorkflowsCountsSchema,
+  workflows: z.array(TwinRepositoryWorkflowEntrySchema),
+});
+
+export const TwinRepositoryWorkflowSyncResultSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  syncRun: TwinSyncRunSchema,
+  workflowState: TwinWorkflowStateSchema,
+  workflowFileCount: z.number().int().nonnegative(),
+  workflowCount: z.number().int().nonnegative(),
+  jobCount: z.number().int().nonnegative(),
+  entityCount: z.number().int().nonnegative(),
+  edgeCount: z.number().int().nonnegative(),
+  entityCountsByKind: TwinKindCountMapSchema,
+  edgeCountsByKind: TwinKindCountMapSchema,
+});
+
 export type TwinJsonObject = z.infer<typeof TwinJsonObjectSchema>;
 export type TwinRepositoryWriteReadinessFailureCode = z.infer<
   typeof TwinRepositoryWriteReadinessFailureCodeSchema
@@ -285,9 +379,7 @@ export type TwinRepositoryWriteReadinessFailureCode = z.infer<
 export type TwinRepositoryWriteReadiness = z.infer<
   typeof TwinRepositoryWriteReadinessSchema
 >;
-export type TwinRepositorySummary = z.infer<
-  typeof TwinRepositorySummarySchema
->;
+export type TwinRepositorySummary = z.infer<typeof TwinRepositorySummarySchema>;
 export type TwinSyncRunStatus = z.infer<typeof TwinSyncRunStatusSchema>;
 export type TwinSyncRun = z.infer<typeof TwinSyncRunSchema>;
 export type TwinEntity = z.infer<typeof TwinEntitySchema>;
@@ -351,4 +443,35 @@ export type TwinRepositoryOwnersView = z.infer<
 >;
 export type TwinRepositoryOwnershipSyncResult = z.infer<
   typeof TwinRepositoryOwnershipSyncResultSchema
+>;
+export type TwinWorkflowState = z.infer<typeof TwinWorkflowStateSchema>;
+export type TwinWorkflowTriggerSummary = z.infer<
+  typeof TwinWorkflowTriggerSummarySchema
+>;
+export type TwinWorkflowRunsOn = z.infer<typeof TwinWorkflowRunsOnSchema>;
+export type TwinWorkflowJobPermissions = z.infer<
+  typeof TwinWorkflowJobPermissionsSchema
+>;
+export type TwinWorkflowJobStepKind = z.infer<
+  typeof TwinWorkflowJobStepKindSchema
+>;
+export type TwinWorkflowJobStep = z.infer<typeof TwinWorkflowJobStepSchema>;
+export type TwinWorkflowFileSummary = z.infer<
+  typeof TwinWorkflowFileSummarySchema
+>;
+export type TwinWorkflowSummary = z.infer<typeof TwinWorkflowSummarySchema>;
+export type TwinWorkflowJobSummary = z.infer<
+  typeof TwinWorkflowJobSummarySchema
+>;
+export type TwinRepositoryWorkflowEntry = z.infer<
+  typeof TwinRepositoryWorkflowEntrySchema
+>;
+export type TwinRepositoryWorkflowsCounts = z.infer<
+  typeof TwinRepositoryWorkflowsCountsSchema
+>;
+export type TwinRepositoryWorkflowsView = z.infer<
+  typeof TwinRepositoryWorkflowsViewSchema
+>;
+export type TwinRepositoryWorkflowSyncResult = z.infer<
+  typeof TwinRepositoryWorkflowSyncResultSchema
 >;

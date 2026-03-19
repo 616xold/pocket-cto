@@ -45,12 +45,14 @@ export type TwinServicePort = Pick<
   | "finishSyncRun"
   | "getRepositoryOwners"
   | "getRepositoryMetadataSummary"
+  | "getRepositoryWorkflows"
   | "getRepositoryOwnershipRules"
   | "getRepositoryOwnershipSummary"
   | "listRepositoryEdges"
   | "listRepositoryEntities"
   | "listRepositoryRuns"
   | "syncRepositoryMetadata"
+  | "syncRepositoryWorkflows"
   | "syncRepositoryOwnership"
   | "startSyncRun"
   | "upsertEdge"
@@ -68,10 +70,7 @@ export type AppContainer = {
       "listMissionApprovals" | "resolveApproval"
     >;
     liveControl: OperatorControlAvailability;
-    runtimeControlService: Pick<
-      RuntimeControlService,
-      "interruptActiveTurn"
-    >;
+    runtimeControlService: Pick<RuntimeControlService, "interruptActiveTurn">;
   };
   replayService: ReplayServicePort;
   twinService: TwinServicePort;
