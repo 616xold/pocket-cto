@@ -205,6 +205,65 @@ export const TwinRepositoryMetadataSyncResultSchema = z.object({
   edgeCountsByKind: TwinKindCountMapSchema,
 });
 
+export const TwinDocsStateSchema = z.enum([
+  "not_synced",
+  "no_docs",
+  "docs_available",
+]);
+
+export const TwinDocFileSummarySchema = z.object({
+  path: z.string().min(1),
+  title: z.string().min(1),
+  headingCount: z.number().int().nonnegative(),
+  lineCount: z.number().int().nonnegative(),
+  sizeBytes: z.number().int().nonnegative(),
+  modifiedAt: z.string().datetime({ offset: true }).nullable(),
+});
+
+export const TwinDocSectionSummarySchema = z.object({
+  stableKey: z.string().min(1),
+  sourceFilePath: z.string().min(1),
+  headingText: z.string().min(1),
+  headingLevel: z.number().int().min(1).max(6),
+  anchor: z.string().min(1),
+  headingPath: z.string().min(1),
+  ordinal: z.number().int().positive(),
+  excerpt: z.string().nullable(),
+});
+
+export const TwinRepositoryDocsCountsSchema = z.object({
+  docFileCount: z.number().int().nonnegative(),
+  docSectionCount: z.number().int().nonnegative(),
+});
+
+export const TwinRepositoryDocsViewSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  latestRun: TwinSyncRunSchema.nullable(),
+  docsState: TwinDocsStateSchema,
+  counts: TwinRepositoryDocsCountsSchema,
+  docs: z.array(TwinDocFileSummarySchema),
+});
+
+export const TwinRepositoryDocSectionsViewSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  latestRun: TwinSyncRunSchema.nullable(),
+  docsState: TwinDocsStateSchema,
+  counts: TwinRepositoryDocsCountsSchema,
+  sections: z.array(TwinDocSectionSummarySchema),
+});
+
+export const TwinRepositoryDocsSyncResultSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  syncRun: TwinSyncRunSchema,
+  docsState: TwinDocsStateSchema,
+  docFileCount: z.number().int().nonnegative(),
+  docSectionCount: z.number().int().nonnegative(),
+  entityCount: z.number().int().nonnegative(),
+  edgeCount: z.number().int().nonnegative(),
+  entityCountsByKind: TwinKindCountMapSchema,
+  edgeCountsByKind: TwinKindCountMapSchema,
+});
+
 export const TwinRepositoryOwnershipRulesViewSchema = z.object({
   repository: TwinRepositorySummarySchema,
   latestRun: TwinSyncRunSchema.nullable(),
@@ -510,6 +569,23 @@ export type TwinRepositoryMetadataSummary = z.infer<
 >;
 export type TwinRepositoryMetadataSyncResult = z.infer<
   typeof TwinRepositoryMetadataSyncResultSchema
+>;
+export type TwinDocsState = z.infer<typeof TwinDocsStateSchema>;
+export type TwinDocFileSummary = z.infer<typeof TwinDocFileSummarySchema>;
+export type TwinDocSectionSummary = z.infer<
+  typeof TwinDocSectionSummarySchema
+>;
+export type TwinRepositoryDocsCounts = z.infer<
+  typeof TwinRepositoryDocsCountsSchema
+>;
+export type TwinRepositoryDocsView = z.infer<
+  typeof TwinRepositoryDocsViewSchema
+>;
+export type TwinRepositoryDocSectionsView = z.infer<
+  typeof TwinRepositoryDocSectionsViewSchema
+>;
+export type TwinRepositoryDocsSyncResult = z.infer<
+  typeof TwinRepositoryDocsSyncResultSchema
 >;
 export type TwinRepositoryOwnershipRulesView = z.infer<
   typeof TwinRepositoryOwnershipRulesViewSchema

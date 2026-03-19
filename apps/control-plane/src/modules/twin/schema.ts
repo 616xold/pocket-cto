@@ -1,6 +1,9 @@
 import { z } from "zod";
 import {
   TwinRepositoryCiSummarySchema,
+  TwinRepositoryDocSectionsViewSchema,
+  TwinRepositoryDocsSyncResultSchema,
+  TwinRepositoryDocsViewSchema,
   TwinEdgeListViewSchema,
   TwinEntityListViewSchema,
   TwinRepositoryOwnersViewSchema,
@@ -24,6 +27,9 @@ export function parseTwinRepositoryParams(params: unknown) {
 
 export {
   TwinRepositoryCiSummarySchema,
+  TwinRepositoryDocSectionsViewSchema,
+  TwinRepositoryDocsSyncResultSchema,
+  TwinRepositoryDocsViewSchema,
   TwinEdgeListViewSchema,
   TwinEntityListViewSchema,
   TwinRepositoryOwnersViewSchema,

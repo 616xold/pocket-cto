@@ -44,6 +44,8 @@ export type TwinServicePort = Pick<
   TwinService,
   | "finishSyncRun"
   | "getRepositoryCiSummary"
+  | "getRepositoryDocSections"
+  | "getRepositoryDocs"
   | "getRepositoryOwners"
   | "getRepositoryMetadataSummary"
   | "getRepositoryTestSuites"
@@ -54,6 +56,7 @@ export type TwinServicePort = Pick<
   | "listRepositoryEntities"
   | "listRepositoryRuns"
   | "syncRepositoryMetadata"
+  | "syncRepositoryDocs"
   | "syncRepositoryTestSuites"
   | "syncRepositoryWorkflows"
   | "syncRepositoryOwnership"

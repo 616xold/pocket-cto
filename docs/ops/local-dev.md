@@ -1038,18 +1038,21 @@ Write-readiness is intentionally narrower than simple visibility:
 
 ### Twin routes
 
-M3.1, M3.2, M3.3, M3.4A, and M3.4B add the first repo-scoped engineering-twin debug, metadata-sync, ownership-sync, workflow-sync, and test-suite-sync surface on top of the durable repository registry.
+M3.1, M3.2, M3.3, M3.4A, M3.4B, and M3.5A add the first repo-scoped engineering-twin debug, metadata-sync, docs-sync, ownership-sync, workflow-sync, and test-suite-sync surface on top of the durable repository registry.
 The read routes return stored twin state.
-The metadata, workflow, and ownership sync routes perform deterministic local scans for the requested synced repository.
+The metadata, docs, workflow, and ownership sync routes perform deterministic local scans for the requested synced repository.
 The test-suite sync route is a stored-data pass over the latest successful manifest and workflow-job snapshots for that repository.
-These routes still do not index docs, compute freshness scoring, or answer blast-radius questions yet.
+These routes still do not extract runbook commands, compute freshness scoring, or answer blast-radius questions yet.
 
 Available routes:
 
 - `POST /twin/repositories/:owner/:repo/metadata-sync`
+- `POST /twin/repositories/:owner/:repo/docs-sync`
 - `POST /twin/repositories/:owner/:repo/workflows-sync`
 - `POST /twin/repositories/:owner/:repo/test-suites-sync`
 - `POST /twin/repositories/:owner/:repo/ownership-sync`
+- `GET /twin/repositories/:owner/:repo/docs`
+- `GET /twin/repositories/:owner/:repo/doc-sections`
 - `GET /twin/repositories/:owner/:repo/workflows`
 - `GET /twin/repositories/:owner/:repo/test-suites`
 - `GET /twin/repositories/:owner/:repo/ci-summary`
@@ -1071,9 +1074,12 @@ Examples:
 
 ```bash
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/metadata-sync
+curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/docs-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/test-suites-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-sync
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/docs
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/doc-sections
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/test-suites
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ci-summary
@@ -1125,6 +1131,45 @@ It syncs GitHub installations, syncs the repository registry, calls the existing
 
 Use a checkout of the real target repository, not `pocket-cto-starter`, so the source-verification contract stays truthful.
 EP-0022 records the latest successful live proof details for `616xold/pocket-cto`.
+
+### Twin docs sync
+
+The M3.5A docs extractor stays intentionally narrow and auditable.
+It discovers only:
+
+- root `README.md`
+- root `START_HERE.md`
+- root `WORKFLOW.md`
+- root `AGENTS.md`
+- `docs/**/*.md`
+
+It does not index `plans/**`, and it does not widen into runbook-command extraction in this slice.
+
+When approved docs exist, the sync persists:
+
+- one `doc_file` entity per discovered file
+- one `doc_section` entity per extracted Markdown heading
+- `repository_has_doc_file` and `doc_file_contains_section` edges
+
+When none of the approved docs exist, the sync still succeeds truthfully and finishes with zero doc files and zero doc sections.
+
+The docs read routes are stored views, not live rescans:
+
+- `GET /twin/repositories/:owner/:repo/docs` returns the latest stored doc-file view
+- `GET /twin/repositories/:owner/:repo/doc-sections` returns the latest stored section view
+
+The stored doc-file payload includes the relative path, title fallback, heading count, and cheap file stats.
+The stored section payload includes the source file path, heading text, heading level, normalized anchor-like id, heading path, ordinal, and a short excerpt.
+
+Example docs routes:
+
+```bash
+curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/docs-sync
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/docs
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/doc-sections
+```
+
+This slice still does not extract runbook commands, freshness scoring, or blast-radius answers.
 
 ### Twin ownership sync
 

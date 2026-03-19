@@ -2606,6 +2606,52 @@ async function createHarness(options?: {
         async finishSyncRun() {
           throw new Error("Not implemented in orchestrator harness");
         },
+        async getRepositoryDocSections() {
+          return {
+            repository: {
+              fullName: "616xold/pocket-cto",
+              installationId: "12345",
+              defaultBranch: "main",
+              archived: false,
+              disabled: false,
+              isActive: true,
+              writeReadiness: {
+                ready: true,
+                failureCode: null,
+              },
+            },
+            latestRun: null,
+            docsState: "not_synced" as const,
+            counts: {
+              docFileCount: 0,
+              docSectionCount: 0,
+            },
+            sections: [],
+          };
+        },
+        async getRepositoryDocs() {
+          return {
+            repository: {
+              fullName: "616xold/pocket-cto",
+              installationId: "12345",
+              defaultBranch: "main",
+              archived: false,
+              disabled: false,
+              isActive: true,
+              writeReadiness: {
+                ready: true,
+                failureCode: null,
+              },
+            },
+            latestRun: null,
+            docsState: "not_synced" as const,
+            counts: {
+              docFileCount: 0,
+              docSectionCount: 0,
+            },
+            docs: [],
+          };
+        },
         async getRepositoryOwners() {
           return {
             repository: {
@@ -2966,6 +3012,45 @@ async function createHarness(options?: {
             jobCount: 0,
             mappedJobCount: 0,
             unmappedJobCount: 0,
+            entityCount: 0,
+            edgeCount: 0,
+            entityCountsByKind: {},
+            edgeCountsByKind: {},
+          };
+        },
+        async syncRepositoryDocs() {
+          return {
+            repository: {
+              fullName: "616xold/pocket-cto",
+              installationId: "12345",
+              defaultBranch: "main",
+              archived: false,
+              disabled: false,
+              isActive: true,
+              writeReadiness: {
+                ready: true,
+                failureCode: null,
+              },
+            },
+            syncRun: {
+              id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+              repoFullName: "616xold/pocket-cto",
+              extractor: "repository_docs",
+              status: "succeeded" as const,
+              startedAt: "2026-03-15T00:00:00.000Z",
+              completedAt: "2026-03-15T00:01:00.000Z",
+              stats: {
+                entityCount: 0,
+                edgeCount: 0,
+                docFileCount: 0,
+                docSectionCount: 0,
+              },
+              errorSummary: null,
+              createdAt: "2026-03-15T00:00:00.000Z",
+            },
+            docsState: "no_docs" as const,
+            docFileCount: 0,
+            docSectionCount: 0,
             entityCount: 0,
             edgeCount: 0,
             entityCountsByKind: {},

@@ -1,5 +1,8 @@
 import type {
   TwinRepositoryCiSummary,
+  TwinRepositoryDocSectionsView,
+  TwinRepositoryDocsSyncResult,
+  TwinRepositoryDocsView,
   TwinEdgeListView,
   TwinEntityListView,
   TwinRepositoryOwnersView,
@@ -15,6 +18,11 @@ import type {
   TwinSyncRunListView,
 } from "@pocket-cto/domain";
 import type { GitHubRepositoryDetailResult } from "../github-app/schema";
+import {
+  buildTwinRepositoryDocSectionsView,
+  buildTwinRepositoryDocsView,
+} from "./docs-formatter";
+import { docsExtractorName, syncRepositoryDocs } from "./docs-sync";
 import type { TwinRepository } from "./repository";
 import {
   buildTwinEdgeListView,
@@ -132,6 +140,36 @@ export class TwinService {
       entities,
       edges,
       latestRun: runs[0] ?? null,
+    });
+  }
+
+  async getRepositoryDocs(
+    repoFullName: string,
+  ): Promise<TwinRepositoryDocsView> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const snapshot = await this.getDocsReadSnapshot(repoFullName);
+
+    return buildTwinRepositoryDocsView({
+      repository,
+      latestRun: snapshot.latestRun,
+      docsState: snapshot.docsState,
+      docFileEntities: snapshot.docFileEntities,
+      docSectionEntities: snapshot.docSectionEntities,
+    });
+  }
+
+  async getRepositoryDocSections(
+    repoFullName: string,
+  ): Promise<TwinRepositoryDocSectionsView> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const snapshot = await this.getDocsReadSnapshot(repoFullName);
+
+    return buildTwinRepositoryDocSectionsView({
+      repository,
+      latestRun: snapshot.latestRun,
+      docsState: snapshot.docsState,
+      docFileEntities: snapshot.docFileEntities,
+      docSectionEntities: snapshot.docSectionEntities,
     });
   }
 
@@ -271,6 +309,18 @@ export class TwinService {
   ): Promise<TwinRepositoryMetadataSyncResult> {
     return syncRepositoryMetadata({
       metadataExtractor: this.input.metadataExtractor,
+      now: this.now,
+      repoFullName,
+      repository: this.input.repository,
+      repositoryRegistry: this.input.repositoryRegistry,
+      sourceResolver: this.input.sourceResolver,
+    });
+  }
+
+  async syncRepositoryDocs(
+    repoFullName: string,
+  ): Promise<TwinRepositoryDocsSyncResult> {
+    return syncRepositoryDocs({
       now: this.now,
       repoFullName,
       repository: this.input.repository,
@@ -467,6 +517,52 @@ export class TwinService {
         (candidate) => candidate.kind === "rule_assigns_owner",
       ),
       targetEntities,
+    };
+  }
+
+  private async getDocsReadSnapshot(repoFullName: string) {
+    const [entities, runs] = await Promise.all([
+      this.input.repository.listRepositoryEntities(repoFullName),
+      this.input.repository.listRepositoryRuns(repoFullName),
+    ]);
+    const docsRuns = runs.filter(
+      (candidate) => candidate.extractor === docsExtractorName,
+    );
+    const latestRun = docsRuns[0] ?? null;
+    const latestSucceededRun =
+      docsRuns.find((candidate) => candidate.status === "succeeded") ?? null;
+
+    if (!latestSucceededRun) {
+      return {
+        latestRun,
+        docsState: "not_synced" as const,
+        docFileEntities: [],
+        docSectionEntities: [],
+      };
+    }
+
+    if (readNonNegativeInteger(latestSucceededRun.stats, "docFileCount") === 0) {
+      return {
+        latestRun,
+        docsState: "no_docs" as const,
+        docFileEntities: [],
+        docSectionEntities: [],
+      };
+    }
+
+    const snapshotEntities = entities.filter(
+      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    );
+
+    return {
+      latestRun,
+      docsState: "docs_available" as const,
+      docFileEntities: snapshotEntities.filter(
+        (candidate) => candidate.kind === "doc_file",
+      ),
+      docSectionEntities: snapshotEntities.filter(
+        (candidate) => candidate.kind === "doc_section",
+      ),
     };
   }
 
