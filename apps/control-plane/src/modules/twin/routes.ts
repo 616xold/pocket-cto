@@ -100,6 +100,13 @@ export async function registerTwinRoutes(
     );
   });
 
+  app.post("/twin/repositories/:owner/:repo/runbooks-sync", async (request) => {
+    const params = parseTwinRepositoryParams(request.params);
+    return deps.twinService.syncRepositoryRunbooks(
+      `${params.owner}/${params.repo}`,
+    );
+  });
+
   app.get("/twin/repositories/:owner/:repo/summary", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
     return deps.twinService.getRepositoryMetadataSummary(
@@ -115,6 +122,13 @@ export async function registerTwinRoutes(
   app.get("/twin/repositories/:owner/:repo/doc-sections", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
     return deps.twinService.getRepositoryDocSections(
+      `${params.owner}/${params.repo}`,
+    );
+  });
+
+  app.get("/twin/repositories/:owner/:repo/runbooks", async (request) => {
+    const params = parseTwinRepositoryParams(request.params);
+    return deps.twinService.getRepositoryRunbooks(
       `${params.owner}/${params.repo}`,
     );
   });

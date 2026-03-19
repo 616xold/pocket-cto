@@ -3,6 +3,8 @@ import type {
   TwinRepositoryDocSectionsView,
   TwinRepositoryDocsSyncResult,
   TwinRepositoryDocsView,
+  TwinRepositoryRunbooksSyncResult,
+  TwinRepositoryRunbooksView,
   TwinEdgeListView,
   TwinEntityListView,
   TwinRepositoryOwnersView,
@@ -50,6 +52,11 @@ import {
   buildTwinRepositoryCiSummary,
   buildTwinRepositoryTestSuitesView,
 } from "./test-suite-formatter";
+import { buildTwinRepositoryRunbooksView } from "./runbook-formatter";
+import {
+  runbookExtractorName,
+  syncRepositoryRunbooks,
+} from "./runbook-sync";
 import {
   syncRepositoryTestSuites,
   testSuiteExtractorName,
@@ -170,6 +177,21 @@ export class TwinService {
       docsState: snapshot.docsState,
       docFileEntities: snapshot.docFileEntities,
       docSectionEntities: snapshot.docSectionEntities,
+    });
+  }
+
+  async getRepositoryRunbooks(
+    repoFullName: string,
+  ): Promise<TwinRepositoryRunbooksView> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const snapshot = await this.getRunbookReadSnapshot(repoFullName);
+
+    return buildTwinRepositoryRunbooksView({
+      repository,
+      latestRun: snapshot.latestRun,
+      runbookState: snapshot.runbookState,
+      runbookDocumentEntities: snapshot.runbookDocumentEntities,
+      runbookStepEntities: snapshot.runbookStepEntities,
     });
   }
 
@@ -321,6 +343,18 @@ export class TwinService {
     repoFullName: string,
   ): Promise<TwinRepositoryDocsSyncResult> {
     return syncRepositoryDocs({
+      now: this.now,
+      repoFullName,
+      repository: this.input.repository,
+      repositoryRegistry: this.input.repositoryRegistry,
+      sourceResolver: this.input.sourceResolver,
+    });
+  }
+
+  async syncRepositoryRunbooks(
+    repoFullName: string,
+  ): Promise<TwinRepositoryRunbooksSyncResult> {
+    return syncRepositoryRunbooks({
       now: this.now,
       repoFullName,
       repository: this.input.repository,
@@ -562,6 +596,55 @@ export class TwinService {
       ),
       docSectionEntities: snapshotEntities.filter(
         (candidate) => candidate.kind === "doc_section",
+      ),
+    };
+  }
+
+  private async getRunbookReadSnapshot(repoFullName: string) {
+    const [entities, runs] = await Promise.all([
+      this.input.repository.listRepositoryEntities(repoFullName),
+      this.input.repository.listRepositoryRuns(repoFullName),
+    ]);
+    const runbookRuns = runs.filter(
+      (candidate) => candidate.extractor === runbookExtractorName,
+    );
+    const latestRun = runbookRuns[0] ?? null;
+    const latestSucceededRun =
+      runbookRuns.find((candidate) => candidate.status === "succeeded") ?? null;
+
+    if (!latestSucceededRun) {
+      return {
+        latestRun,
+        runbookState: "not_synced" as const,
+        runbookDocumentEntities: [],
+        runbookStepEntities: [],
+      };
+    }
+
+    if (
+      readNonNegativeInteger(latestSucceededRun.stats, "runbookDocumentCount") ===
+      0
+    ) {
+      return {
+        latestRun,
+        runbookState: "no_runbooks" as const,
+        runbookDocumentEntities: [],
+        runbookStepEntities: [],
+      };
+    }
+
+    const snapshotEntities = entities.filter(
+      (candidate) => candidate.sourceRunId === latestSucceededRun.id,
+    );
+
+    return {
+      latestRun,
+      runbookState: "runbooks_available" as const,
+      runbookDocumentEntities: snapshotEntities.filter(
+        (candidate) => candidate.kind === "runbook_document",
+      ),
+      runbookStepEntities: snapshotEntities.filter(
+        (candidate) => candidate.kind === "runbook_step",
       ),
     };
   }

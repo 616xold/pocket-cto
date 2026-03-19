@@ -4,6 +4,8 @@ import type { DiscoveredDocumentationFile } from "./docs-discovery";
 
 export type ParsedDocumentationSection = {
   anchor: string;
+  contentStartLineIndex: number;
+  endLineIndexExclusive: number;
   excerpt: string | null;
   headingLevel: number;
   headingPath: string;
@@ -61,6 +63,8 @@ export function parseDocumentationFile(
 
     return {
       anchor,
+      contentStartLineIndex: heading.index + heading.consumedLineCount,
+      endLineIndexExclusive: headingMatches[index + 1]?.index ?? lines.length,
       excerpt: buildSectionExcerpt(
         lines,
         heading.index + heading.consumedLineCount,

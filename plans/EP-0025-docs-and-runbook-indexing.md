@@ -1,14 +1,14 @@
-# EP-0025 - Index deterministic repository docs and stored doc sections in the repo-scoped twin
+# EP-0025 - Index deterministic repository docs, runbook documents, and stored operational steps in the repo-scoped twin
 
 This ExecPlan is a living document. Keep `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` current.
 
 ## Purpose / Big Picture
 
-After this slice, Pocket CTO can inspect one synced repository, discover the approved documentation files deterministically, extract durable heading facts, persist those facts into the repo-scoped twin, and return concise stored docs views through thin control-plane routes.
-Operators will be able to trigger a repo-scoped docs sync, inspect the resulting sync run, and read stored doc files plus sections without rescanning the repository on every GET.
+After this slice, Pocket CTO can inspect one synced repository, discover the approved documentation files deterministically, extract durable heading facts, classify a conservative operational runbook subset, persist those facts plus deterministic command steps into the repo-scoped twin, and return concise stored docs and runbook views through thin control-plane routes.
+Operators can trigger repo-scoped docs and runbooks syncs, inspect the resulting sync runs, and read stored doc files, doc sections, runbook documents, and runbook steps without rescanning the repository on every GET.
 
-This plan covers roadmap submilestone `M3.5 docs and runbook indexing`, but this prompt intentionally implements only the first half: durable docs discovery and heading extraction.
-It explicitly stops before runbook command extraction, freshness scoring, blast-radius answers, or redesigning the existing M3.2, M3.3, or M3.4 slices.
+This plan now covers the full roadmap submilestone `M3.5 docs and runbook indexing`.
+It still explicitly stops before freshness scoring, blast-radius answers, or redesigning the existing M3.2, M3.3, or M3.4 slices.
 
 ## Progress
 
@@ -19,6 +19,9 @@ It explicitly stops before runbook command extraction, freshness scoring, blast-
 - [x] (2026-03-19T14:24:06Z) Added focused coverage proving discovery scope, deterministic heading extraction, truthful zero-doc sync success, rerun idempotence, and stored docs route responses; the narrow docs test ring passed before the repo-wide validation matrix.
 - [x] (2026-03-19T14:24:06Z) Ran the full required validation matrix successfully: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current`.
 - [x] (2026-03-19T14:24:06Z) Confirmed live GitHub App env was present through the local `.env`, synced GitHub installations plus the repository registry, and completed one real docs sync for `616xold/pocket-cto` from a temporary local checkout so the existing source resolver stayed truthful without product-side clone fallback.
+- [x] (2026-03-19T15:03:00Z) Read the new M3.5B prompt inputs, reused EP-0025 as the active ExecPlan, reran the required inspections `rg -n "docs-sync|doc_file|doc_section|runbook|smoke|validation|rollback|curl |pnpm |node |bash" apps packages docs README.md START_HERE.md WORKFLOW.md AGENTS.md`, `git status --short`, and `git diff --name-only HEAD`, and captured the required in-thread `M3.5B runbook indexing gap` note before editing.
+- [x] (2026-03-19T15:06:00Z) Implemented the M3.5B runbook slice inside the same twin bounded context: added conservative runbook classification, deterministic command extraction from fenced shell blocks and safe command-like bullets, durable `runbook_document` plus `runbook_step` persistence, a dedicated `runbooks-sync` path, a stored runbooks formatter, thin runbooks routes, shared domain contracts, and focused runbook specs.
+- [x] (2026-03-19T15:07:00Z) Ran the narrow runbook test ring successfully with `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/docs-parser.spec.ts src/modules/twin/runbook-classifier.spec.ts src/modules/twin/runbook-parser.spec.ts src/modules/twin/runbook-sync.spec.ts src/modules/twin/runbook-routes.spec.ts`.
 
 ## Surprises & Discoveries
 
@@ -36,6 +39,12 @@ It explicitly stops before runbook command extraction, freshness scoring, blast-
 
 - Observation: the real `616xold/pocket-cto` repository already yields a non-trivial docs surface under the approved discovery scope.
   Evidence: the final live docs sync for `616xold/pocket-cto` completed successfully with `docFileCount: 20`, `docSectionCount: 192`, and sync run id `0aad9bf9-0816-480f-9220-6f2ebcb4c5c9`.
+
+- Observation: the legacy Drizzle enum still has a `runbook` bucket, so `runbook_document` and `runbook_step` can map there without a schema migration while preserving the exact new `kind` strings in the additive twin columns.
+  Evidence: `packages/db/src/schema/twin.ts` still exposes `twin_entity_type` with `runbook`, and `apps/control-plane/src/modules/twin/drizzle-repository.ts` now maps `runbook_document` plus `runbook_step` into that legacy bucket while persisting the exact `kind`.
+
+- Observation: deterministic runbook extraction needs to treat multiline env-prefixed shell commands as one operational step rather than splitting the prefix lines away from the executable command.
+  Evidence: `docs/ops/local-dev.md` contains multiline `DATABASE_URL=... \` and `env \` command forms, and the new runbook parser had to skip leading env assignments and continuation markers before classifying the actual command family.
 
 ## Decision Log
 
@@ -67,6 +76,18 @@ It explicitly stops before runbook command extraction, freshness scoring, blast-
   Rationale: the prompt requires one real docs sync result but does not require a reusable smoke command, and the narrowest compliant change is to verify through the existing app surface without expanding product or tooling scope.
   Date/Author: 2026-03-19 / Codex
 
+- Decision: classify runbook documents only from the already-approved docs scope using the deterministic path or heading rules `docs/ops/**`, `WORKFLOW.md`, `START_HERE.md`, and `README.md` only when clearly operational headings are present.
+  Rationale: the prompt requires conservative deterministic classification and explicitly warns against inventing broader semantics. These rules are narrow, path-based where possible, and auditable in tests.
+  Date/Author: 2026-03-19 / Codex
+
+- Decision: extract runbook steps only from fenced `bash`, `sh`, or `shell` blocks plus safe one-line command-like list items, and key those steps by repo plus doc path plus ordinal.
+  Rationale: this keeps the command surface deterministic, rerunnable, and honest while avoiding partial natural-language interpretation. Ordinal-based keys keep reruns convergent even when identical commands appear twice in one document.
+  Date/Author: 2026-03-19 / Codex
+
+- Decision: keep `runbooks-sync` independent from a prior `docs-sync` run even though the slice builds on the same discovery and parser modules.
+  Rationale: the prompt says to classify from the discovered docs set, and a direct sync keeps runbook extraction deterministic and replayable even when docs have not been synced separately yet.
+  Date/Author: 2026-03-19 / Codex
+
 ## Context and Orientation
 
 Pocket CTO exits M3.4 with a real repo-scoped twin bounded context under `apps/control-plane/src/modules/twin/`.
@@ -79,9 +100,9 @@ That bounded context already owns:
 - idempotent edge upserts keyed by repo full name, kind, and endpoints
 - stored metadata, ownership, workflow, test-suite, and CI read routes
 
-M3.5A should extend that same bounded context with a new extractor and stored read model for repository docs.
+M3.5A and M3.5B extend that same bounded context with new extractors and stored read models for repository docs and runbooks.
 The implementation must stay repo-scoped, deterministic, and rerunnable.
-The sync should scan only the approved docs surface for the exact synced repository resolved through the existing source resolver.
+Both syncs should scan only the approved docs surface for the exact synced repository resolved through the existing source resolver.
 
 The relevant existing files and modules are:
 
@@ -105,6 +126,22 @@ The expected new or expanded M3.5A files are:
 - `apps/control-plane/src/lib/types.ts`
 - `packages/domain/src/twin.ts`
 - focused twin docs specs under `apps/control-plane/src/modules/twin/`
+- `docs/ops/local-dev.md`
+
+The expected new or expanded M3.5B files are:
+
+- `plans/EP-0025-docs-and-runbook-indexing.md`
+- `apps/control-plane/src/modules/twin/runbook-classifier.ts`
+- `apps/control-plane/src/modules/twin/runbook-parser.ts`
+- `apps/control-plane/src/modules/twin/runbook-sync.ts`
+- `apps/control-plane/src/modules/twin/runbook-formatter.ts`
+- `apps/control-plane/src/modules/twin/service.ts`
+- `apps/control-plane/src/modules/twin/routes.ts`
+- `apps/control-plane/src/modules/twin/schema.ts`
+- `apps/control-plane/src/lib/types.ts`
+- `apps/control-plane/src/modules/twin/drizzle-repository.ts`
+- `packages/domain/src/twin.ts`
+- focused twin runbook specs under `apps/control-plane/src/modules/twin/`
 - `docs/ops/local-dev.md`
 
 This slice should preserve boundaries:
@@ -175,7 +212,7 @@ Do not print secrets, tokens, or raw auth headers.
 
 ## Validation and Acceptance
 
-Success for M3.5A is demonstrated when all of the following are true:
+Success for the full M3.5 slice is demonstrated when all of the following are true:
 
 1. Docs sync uses the existing repository registry and the existing twin source resolver; it does not clone repositories or invent a second source-selection path.
 2. Discovery scans only root `README.md`, `START_HERE.md`, `WORKFLOW.md`, `AGENTS.md`, plus `docs/**/*.md`, and excludes `plans/**` and eval-result surfaces.
@@ -190,23 +227,37 @@ Success for M3.5A is demonstrated when all of the following are true:
 11. `GET /twin/repositories/:owner/:repo/doc-sections` returns concise stored section summaries from the latest successful docs snapshot.
 12. The docs read routes stay thin and do not rescan the repository on read.
 13. Focused tests prove discovery scope, deterministic heading extraction, truthful zero-doc sync success, rerun idempotence, and stored route responses.
-14. `docs/ops/local-dev.md` documents the new docs-sync and docs read routes honestly, without claiming runbook extraction, freshness scoring, or blast-radius answers.
-15. The full validation matrix plus `pnpm ci:repro:current` passes after the slice lands.
+14. Runbook classification uses only the deterministic rules `docs/ops/**`, `WORKFLOW.md`, `START_HERE.md`, and `README.md` only when clearly operational headings are present.
+15. The runbooks slice persists `runbook_document` and `runbook_step` entities with deterministic stable keys.
+16. The runbooks slice persists `repository_has_runbook_document` and `runbook_document_contains_step` edges with repo-scoped idempotent upserts.
+17. `runbook_step` payloads include at least source doc path, ordinal, heading context, command text, command family, and a short purpose label when that label is easily inferred.
+18. Command extraction stays intentionally narrow: fenced `bash`, `sh`, or `shell` blocks plus safe one-line command-like list items.
+19. Classified runbook docs with zero extracted steps still succeed truthfully and remain visible in the stored runbooks view with zero step counts.
+20. Repeated runbooks syncs converge on the same runbook-document and runbook-step entity ids instead of duplicating them.
+21. `GET /twin/repositories/:owner/:repo/runbooks` returns a concise stored runbook view from the latest successful runbooks snapshot.
+22. The runbooks read route stays thin and does not rescan the repository on read.
+23. Focused tests prove deterministic classification, deterministic shell-step extraction, truthful no-step success, rerun idempotence, and stored route responses.
+24. `docs/ops/local-dev.md` documents the new docs-sync, runbooks-sync, and stored read routes honestly, without claiming freshness scoring or blast-radius answers.
+25. The full validation matrix plus `pnpm ci:repro:current` passes after the slice lands.
 
 Human acceptance after implementation should look like:
 
     curl -i -X POST http://localhost:4000/twin/repositories/OWNER/REPO/docs-sync
+    curl -i -X POST http://localhost:4000/twin/repositories/OWNER/REPO/runbooks-sync
     curl -i http://localhost:4000/twin/repositories/OWNER/REPO/docs
     curl -i http://localhost:4000/twin/repositories/OWNER/REPO/doc-sections
+    curl -i http://localhost:4000/twin/repositories/OWNER/REPO/runbooks
     curl -i http://localhost:4000/twin/repositories/OWNER/REPO/runs
 
-For a synced repo with approved docs present, the sync route should return a completed run plus stored counts, the docs route should list stored doc files, and the doc-sections route should list stored headings with their source file and excerpt.
-For a synced repo with no approved docs present, the sync route should still succeed truthfully with zero counts.
+For a synced repo with approved docs present, the docs sync route should return a completed run plus stored counts, the docs route should list stored doc files, and the doc-sections route should list stored headings with their source file and excerpt.
+For a synced repo with conservative runbook docs present, the runbooks sync route should return a completed run plus stored runbook-document and runbook-step counts, and the runbooks route should list stored documents plus grouped steps with command-family counts.
+For a synced repo with no approved docs present, the docs sync route should still succeed truthfully with zero counts.
+For a synced repo with classified runbook docs but no extracted commands, the runbooks sync route should still succeed truthfully with zero steps.
 
 ## Idempotence and Recovery
 
-Docs sync must be safe to rerun.
-Stable entity keys should keep doc-file and doc-section rows convergent across runs, and repo-scoped edges should upsert on the same repository-to-file and file-to-section relationships.
+Docs sync and runbooks sync must both be safe to rerun.
+Stable entity keys should keep doc-file, doc-section, runbook-document, and runbook-step rows convergent across runs, and repo-scoped edges should upsert on the same repository-to-file, file-to-section, repository-to-runbook, and runbook-to-step relationships.
 No delete pass is required in this slice beyond what is necessary to keep reruns coherent through latest-successful-run filtering.
 
 If a sync fails midway, the run should still finish as `failed` with an error summary so operators can see what happened.
@@ -214,8 +265,8 @@ Retrying the same sync after fixing the local checkout or the offending Markdown
 
 Safe rollback guidance:
 
-- revert the new docs-sync modules, route additions, domain contracts, docs, tests, and this ExecPlan together
-- do not delete existing twin rows; the persisted docs rows are additive and can remain inert if the code is rolled back
+- revert the new docs-sync and runbooks-sync modules, route additions, domain contracts, docs, tests, and this ExecPlan together
+- do not delete existing twin rows; the persisted docs and runbooks rows are additive and can remain inert if the code is rolled back
 - no database rollback should be required unless implementation later proves a schema change is necessary
 
 ## Artifacts and Notes
@@ -240,6 +291,9 @@ Validation results:
 - `pnpm build` passed.
 - `pnpm test` passed with `55` control-plane files and `218` control-plane tests green.
 - `pnpm ci:repro:current` passed from a fresh temp worktree and finished with a clean-tree check.
+- `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/docs-parser.spec.ts src/modules/twin/runbook-classifier.spec.ts src/modules/twin/runbook-parser.spec.ts src/modules/twin/runbook-sync.spec.ts src/modules/twin/runbook-routes.spec.ts` passed with `5` files and `6` tests green before the full matrix.
+- The M3.5B full validation matrix passed again after the runbook slice landed: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current`.
+- The repo-wide `pnpm test` pass finished with `59` control-plane files and `223` control-plane tests green.
 
 Live proof result:
 
@@ -247,6 +301,10 @@ Live proof result:
 - doc file count: `20`
 - doc section count: `192`
 - docs sync run id: `0aad9bf9-0816-480f-9220-6f2ebcb4c5c9`
+- runbook document count: `7`
+- runbook step count: `337`
+- top command family counts: `other=206`, `pnpm=71`, `curl=53`, `node=3`, `git=2`, `docker=2`
+- runbooks sync run id: `c464e226-dde5-4e13-a6b5-e39b2db1d0ed`
 
 Exact changed files in this slice:
 
@@ -263,6 +321,15 @@ Exact changed files in this slice:
 - `apps/control-plane/src/modules/twin/docs-parser.spec.ts`
 - `apps/control-plane/src/modules/twin/docs-sync.spec.ts`
 - `apps/control-plane/src/modules/twin/docs-routes.spec.ts`
+- `apps/control-plane/src/modules/twin/runbook-classifier.ts`
+- `apps/control-plane/src/modules/twin/runbook-parser.ts`
+- `apps/control-plane/src/modules/twin/runbook-sync.ts`
+- `apps/control-plane/src/modules/twin/runbook-formatter.ts`
+- `apps/control-plane/src/modules/twin/runbook-classifier.spec.ts`
+- `apps/control-plane/src/modules/twin/runbook-parser.spec.ts`
+- `apps/control-plane/src/modules/twin/runbook-sync.spec.ts`
+- `apps/control-plane/src/modules/twin/runbook-routes.spec.ts`
+- `apps/control-plane/src/modules/twin/drizzle-repository.ts`
 - `packages/domain/src/twin.ts`
 - `docs/ops/local-dev.md`
 - `apps/control-plane/src/bootstrap.spec.ts`
@@ -280,11 +347,13 @@ Important existing interfaces and dependencies for this slice are:
 - Fastify route registration in `apps/control-plane/src/modules/twin/routes.ts`
 - Zod route and response schemas in `apps/control-plane/src/modules/twin/schema.ts`
 
-Expected new docs interfaces:
+Expected new docs and runbooks interfaces:
 
 - docs sync result schema and types in `packages/domain/src/twin.ts`
 - stored docs and stored doc-sections view schemas and types in `packages/domain/src/twin.ts`
+- runbooks sync result schema and stored runbooks view schemas and types in `packages/domain/src/twin.ts`
 - deterministic docs discovery and heading extraction helpers under `apps/control-plane/src/modules/twin/`
+- deterministic runbook classification and command extraction helpers under `apps/control-plane/src/modules/twin/`
 
 No new environment variables are expected.
 No new GitHub App permissions or webhook subscriptions are expected.
@@ -292,12 +361,12 @@ No new package dependency is expected unless heading extraction proves a standar
 
 ## Outcomes & Retrospective
 
-M3.5A now ships a truthful repo-scoped docs spine for the engineering twin.
-Pocket CTO can deterministically discover the approved documentation files for a synced repository, extract durable heading facts, persist `doc_file` plus `doc_section` entities and their required edges, and serve stored docs views through thin routes.
+M3.5 now ships a truthful repo-scoped docs and runbooks spine for the engineering twin.
+Pocket CTO can deterministically discover the approved documentation files for a synced repository, extract durable heading facts, conservatively classify runbook documents from that docs scope, persist `doc_file`, `doc_section`, `runbook_document`, and `runbook_step` entities with their required edges, and serve stored docs plus runbooks views through thin routes.
 
-The exact persisted entity kinds are `doc_file` and `doc_section`, with the existing shared `repository` entity upserted as the stable edge source when needed.
-The exact persisted edge kinds are `repository_has_doc_file` and `doc_file_contains_section`.
-The exact new routes are `POST /twin/repositories/:owner/:repo/docs-sync`, `GET /twin/repositories/:owner/:repo/docs`, and `GET /twin/repositories/:owner/:repo/doc-sections`.
+The exact persisted entity kinds are `doc_file`, `doc_section`, `runbook_document`, and `runbook_step`, with the existing shared `repository` entity upserted as the stable edge source when needed.
+The exact persisted edge kinds are `repository_has_doc_file`, `doc_file_contains_section`, `repository_has_runbook_document`, and `runbook_document_contains_step`.
+The exact new routes are `POST /twin/repositories/:owner/:repo/docs-sync`, `GET /twin/repositories/:owner/:repo/docs`, `GET /twin/repositories/:owner/:repo/doc-sections`, `POST /twin/repositories/:owner/:repo/runbooks-sync`, and `GET /twin/repositories/:owner/:repo/runbooks`.
 
 The validation matrix is green, and live GitHub proof was captured successfully against `616xold/pocket-cto`.
-What remains for the follow-up `M3.5B` slice is intentionally narrow: runbook-command extraction from the stored docs corpus, without reopening M3.2 through M3.5A boundaries or widening early into freshness scoring or blast-radius answers.
+M3.6 can now start cleanly on top of this stored docs and runbooks corpus without reopening M3.2 through M3.5 boundaries.

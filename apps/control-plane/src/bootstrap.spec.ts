@@ -321,6 +321,30 @@ function createAppContainer(
           sections: [],
         };
       },
+      async getRepositoryRunbooks() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          latestRun: null,
+          runbookState: "not_synced" as const,
+          counts: {
+            runbookDocumentCount: 0,
+            runbookStepCount: 0,
+            commandFamilyCounts: {},
+          },
+          runbooks: [],
+        };
+      },
       async getRepositoryDocs() {
         return {
           repository: {
@@ -704,6 +728,47 @@ function createAppContainer(
           edgeCount: 0,
           entityCountsByKind: {},
           edgeCountsByKind: {},
+        };
+      },
+      async syncRepositoryRunbooks() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          syncRun: {
+            id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+            repoFullName: "616xold/pocket-cto",
+            extractor: "repository_runbooks",
+            status: "succeeded" as const,
+            startedAt: "2026-03-15T00:00:00.000Z",
+            completedAt: "2026-03-15T00:01:00.000Z",
+            stats: {
+              entityCount: 0,
+              edgeCount: 0,
+              runbookDocumentCount: 0,
+              runbookStepCount: 0,
+              commandFamilyCounts: {},
+            },
+            errorSummary: null,
+            createdAt: "2026-03-15T00:00:00.000Z",
+          },
+          runbookState: "no_runbooks" as const,
+          runbookDocumentCount: 0,
+          runbookStepCount: 0,
+          entityCount: 0,
+          edgeCount: 0,
+          entityCountsByKind: {},
+          edgeCountsByKind: {},
+          commandFamilyCounts: {},
         };
       },
       async syncRepositoryTestSuites() {

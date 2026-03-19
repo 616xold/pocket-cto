@@ -264,6 +264,76 @@ export const TwinRepositoryDocsSyncResultSchema = z.object({
   edgeCountsByKind: TwinKindCountMapSchema,
 });
 
+export const TwinRunbookStateSchema = z.enum([
+  "not_synced",
+  "no_runbooks",
+  "runbooks_available",
+]);
+
+export const TwinRunbookCommandFamilySchema = z.enum([
+  "curl",
+  "pnpm",
+  "node",
+  "git",
+  "docker",
+  "other",
+]);
+
+export const TwinCommandFamilyCountMapSchema = z.record(
+  z.string(),
+  z.number().int().nonnegative(),
+);
+
+export const TwinRunbookStepSummarySchema = z.object({
+  stableKey: z.string().min(1),
+  sourceDocPath: z.string().min(1),
+  ordinal: z.number().int().positive(),
+  headingContext: z.string().min(1),
+  commandText: z.string().min(1),
+  commandFamily: TwinRunbookCommandFamilySchema,
+  purposeLabel: z.string().min(1).nullable(),
+});
+
+export const TwinRunbookDocumentSummarySchema = z.object({
+  path: z.string().min(1),
+  title: z.string().min(1),
+  classificationReason: z.string().min(1),
+  headingCount: z.number().int().nonnegative(),
+  lineCount: z.number().int().nonnegative(),
+  sizeBytes: z.number().int().nonnegative(),
+  modifiedAt: z.string().datetime({ offset: true }).nullable(),
+  stepCount: z.number().int().nonnegative(),
+  commandFamilyCounts: TwinCommandFamilyCountMapSchema,
+  steps: z.array(TwinRunbookStepSummarySchema),
+});
+
+export const TwinRepositoryRunbooksCountsSchema = z.object({
+  runbookDocumentCount: z.number().int().nonnegative(),
+  runbookStepCount: z.number().int().nonnegative(),
+  commandFamilyCounts: TwinCommandFamilyCountMapSchema,
+});
+
+export const TwinRepositoryRunbooksViewSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  latestRun: TwinSyncRunSchema.nullable(),
+  runbookState: TwinRunbookStateSchema,
+  counts: TwinRepositoryRunbooksCountsSchema,
+  runbooks: z.array(TwinRunbookDocumentSummarySchema),
+});
+
+export const TwinRepositoryRunbooksSyncResultSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  syncRun: TwinSyncRunSchema,
+  runbookState: TwinRunbookStateSchema,
+  runbookDocumentCount: z.number().int().nonnegative(),
+  runbookStepCount: z.number().int().nonnegative(),
+  entityCount: z.number().int().nonnegative(),
+  edgeCount: z.number().int().nonnegative(),
+  entityCountsByKind: TwinKindCountMapSchema,
+  edgeCountsByKind: TwinKindCountMapSchema,
+  commandFamilyCounts: TwinCommandFamilyCountMapSchema,
+});
+
 export const TwinRepositoryOwnershipRulesViewSchema = z.object({
   repository: TwinRepositorySummarySchema,
   latestRun: TwinSyncRunSchema.nullable(),
@@ -586,6 +656,28 @@ export type TwinRepositoryDocSectionsView = z.infer<
 >;
 export type TwinRepositoryDocsSyncResult = z.infer<
   typeof TwinRepositoryDocsSyncResultSchema
+>;
+export type TwinRunbookState = z.infer<typeof TwinRunbookStateSchema>;
+export type TwinRunbookCommandFamily = z.infer<
+  typeof TwinRunbookCommandFamilySchema
+>;
+export type TwinCommandFamilyCountMap = z.infer<
+  typeof TwinCommandFamilyCountMapSchema
+>;
+export type TwinRunbookStepSummary = z.infer<
+  typeof TwinRunbookStepSummarySchema
+>;
+export type TwinRunbookDocumentSummary = z.infer<
+  typeof TwinRunbookDocumentSummarySchema
+>;
+export type TwinRepositoryRunbooksCounts = z.infer<
+  typeof TwinRepositoryRunbooksCountsSchema
+>;
+export type TwinRepositoryRunbooksView = z.infer<
+  typeof TwinRepositoryRunbooksViewSchema
+>;
+export type TwinRepositoryRunbooksSyncResult = z.infer<
+  typeof TwinRepositoryRunbooksSyncResultSchema
 >;
 export type TwinRepositoryOwnershipRulesView = z.infer<
   typeof TwinRepositoryOwnershipRulesViewSchema

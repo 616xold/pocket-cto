@@ -46,9 +46,11 @@ describe("docs parser", () => {
 
     expect(second).toEqual(first);
     expect(first.titleFallback).toBe("Intro");
-    expect(first.sections).toEqual([
+    expect(first.sections).toMatchObject([
       {
         anchor: "intro",
+        contentStartLineIndex: 4,
+        endLineIndexExclusive: 7,
         excerpt: "Pocket CTO overview.",
         headingLevel: 1,
         headingPath: "Intro",
@@ -59,6 +61,8 @@ describe("docs parser", () => {
       },
       {
         anchor: "details",
+        contentStartLineIndex: 8,
+        endLineIndexExclusive: 15,
         excerpt: "More detail for the operator.",
         headingLevel: 2,
         headingPath: "Intro > Details",
@@ -69,6 +73,8 @@ describe("docs parser", () => {
       },
       {
         anchor: "duplicate",
+        contentStartLineIndex: 16,
+        endLineIndexExclusive: 19,
         excerpt: "First duplicate body.",
         headingLevel: 3,
         headingPath: "Intro > Details > Duplicate",
@@ -79,6 +85,8 @@ describe("docs parser", () => {
       },
       {
         anchor: "duplicate-1",
+        contentStartLineIndex: 20,
+        endLineIndexExclusive: 23,
         excerpt: "Second duplicate body.",
         headingLevel: 3,
         headingPath: "Intro > Details > Duplicate",
@@ -89,6 +97,8 @@ describe("docs parser", () => {
       },
       {
         anchor: "overview",
+        contentStartLineIndex: 25,
+        endLineIndexExclusive: 28,
         excerpt: "Setext section body.",
         headingLevel: 2,
         headingPath: "Intro > Overview",

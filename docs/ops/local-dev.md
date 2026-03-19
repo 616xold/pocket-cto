@@ -1038,21 +1038,23 @@ Write-readiness is intentionally narrower than simple visibility:
 
 ### Twin routes
 
-M3.1, M3.2, M3.3, M3.4A, M3.4B, and M3.5A add the first repo-scoped engineering-twin debug, metadata-sync, docs-sync, ownership-sync, workflow-sync, and test-suite-sync surface on top of the durable repository registry.
+M3.1, M3.2, M3.3, M3.4A, M3.4B, M3.5A, and M3.5B add the first repo-scoped engineering-twin debug, metadata-sync, docs-sync, runbooks-sync, ownership-sync, workflow-sync, and test-suite-sync surface on top of the durable repository registry.
 The read routes return stored twin state.
-The metadata, docs, workflow, and ownership sync routes perform deterministic local scans for the requested synced repository.
+The metadata, docs, runbooks, workflow, and ownership sync routes perform deterministic local scans for the requested synced repository.
 The test-suite sync route is a stored-data pass over the latest successful manifest and workflow-job snapshots for that repository.
-These routes still do not extract runbook commands, compute freshness scoring, or answer blast-radius questions yet.
+These routes still do not compute freshness scoring or answer blast-radius questions yet.
 
 Available routes:
 
 - `POST /twin/repositories/:owner/:repo/metadata-sync`
 - `POST /twin/repositories/:owner/:repo/docs-sync`
+- `POST /twin/repositories/:owner/:repo/runbooks-sync`
 - `POST /twin/repositories/:owner/:repo/workflows-sync`
 - `POST /twin/repositories/:owner/:repo/test-suites-sync`
 - `POST /twin/repositories/:owner/:repo/ownership-sync`
 - `GET /twin/repositories/:owner/:repo/docs`
 - `GET /twin/repositories/:owner/:repo/doc-sections`
+- `GET /twin/repositories/:owner/:repo/runbooks`
 - `GET /twin/repositories/:owner/:repo/workflows`
 - `GET /twin/repositories/:owner/:repo/test-suites`
 - `GET /twin/repositories/:owner/:repo/ci-summary`
@@ -1075,11 +1077,13 @@ Examples:
 ```bash
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/metadata-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/docs-sync
+curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/runbooks-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/test-suites-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-sync
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/docs
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/doc-sections
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/runbooks
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/test-suites
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/ci-summary
@@ -1143,7 +1147,7 @@ It discovers only:
 - root `AGENTS.md`
 - `docs/**/*.md`
 
-It does not index `plans/**`, and it does not widen into runbook-command extraction in this slice.
+It does not index `plans/**`.
 
 When approved docs exist, the sync persists:
 
@@ -1169,7 +1173,44 @@ curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/docs
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/doc-sections
 ```
 
-This slice still does not extract runbook commands, freshness scoring, or blast-radius answers.
+This slice still does not compute freshness scoring or blast-radius answers.
+
+### Twin runbooks sync
+
+The M3.5B runbook extractor stays intentionally conservative and auditable.
+It classifies runbook documents only from the already-approved docs scope using deterministic rules:
+
+- any doc under `docs/ops/**`
+- root `WORKFLOW.md`
+- root `START_HERE.md`
+- root `README.md` only when the parsed heading set includes clearly operational headings such as local development, bootstrap, commands, smoke, validation, rollback, troubleshooting, or runbook terms
+
+The runbooks sync persists:
+
+- one `runbook_document` entity per classified runbook doc
+- one `runbook_step` entity per deterministic extracted command
+- `repository_has_runbook_document` and `runbook_document_contains_step` edges
+
+Step extraction is intentionally narrow:
+
+- fenced `bash`, `sh`, or `shell` code blocks
+- safe one-line list items that are already command-like, such as inline-coded or bare `curl`, `pnpm`, `node`, `git`, `docker`, `bash`, `sh`, `env`, or env-prefixed commands
+
+Each stored runbook step includes the source doc path, ordinal, heading context, command text, command family, and a short purpose label derived from the nearest heading when that label is obvious.
+
+The runbooks read route is a stored summary, not a live rescan:
+
+- `GET /twin/repositories/:owner/:repo/runbooks` returns the latest stored runbook documents, grouped step summaries, and top command-family counts
+
+If a classified runbook doc contains no deterministic steps, the sync still succeeds truthfully with a runbook document count and a zero step count.
+
+Example runbook routes:
+
+```bash
+curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/docs-sync
+curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/runbooks-sync
+curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/runbooks
+```
 
 ### Twin ownership sync
 
