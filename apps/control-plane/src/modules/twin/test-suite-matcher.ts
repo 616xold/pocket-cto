@@ -1,3 +1,4 @@
+import type { TwinCiUnmappedJobReasonCode } from "@pocket-cto/domain";
 import { posix } from "node:path";
 
 export type StoredManifestForTestSuites = {
@@ -41,6 +42,11 @@ export type MatchedTestSuiteJob = {
   suiteStableKey: string;
 };
 
+export type ExplainedUnmappedTestSuiteJob = StoredWorkflowJobForTestSuites & {
+  reasonCode: TwinCiUnmappedJobReasonCode;
+  reasonSummary: string;
+};
+
 type ScriptInvocation =
   | {
       kind: "manifest_dir";
@@ -59,6 +65,24 @@ type ScriptInvocation =
       rawCommand: string;
       scriptKey: string;
     };
+
+type InvocationResolution =
+  | {
+      status: "matched";
+      suite: DerivedTestSuite;
+    }
+  | {
+      status: "ambiguous";
+    }
+  | {
+      status: "missing_suite";
+    };
+
+type UnmappedReasonCandidate = {
+  priority: number;
+  reasonCode: TwinCiUnmappedJobReasonCode;
+  reasonSummary: string;
+};
 
 export function buildTestSuiteStableKey(
   manifestPath: string,
@@ -97,39 +121,66 @@ export function matchJobsToTestSuites(input: {
 }) {
   const indexes = buildSuiteIndexes(input.suites);
   const matchesByScope = new Map<string, MatchedTestSuiteJob>();
-  const unmappedJobs: StoredWorkflowJobForTestSuites[] = [];
+  const unmappedJobs: ExplainedUnmappedTestSuiteJob[] = [];
 
   for (const job of sortJobs(input.jobs)) {
     let matched = false;
+    let reason: UnmappedReasonCandidate | null = null;
 
     for (const step of job.steps) {
       if (step.kind !== "run") {
         continue;
       }
 
-      for (const invocation of extractScriptInvocations(step.value)) {
-        const suite = resolveSuiteFromInvocation(invocation, indexes);
+      for (const segment of splitCommandSegments(step.value)) {
+        const invocations = extractScriptInvocationsFromSegment(segment);
 
-        if (!suite) {
+        if (invocations.length === 0) {
+          if (isUnsupportedTestInvocationShape(segment)) {
+            reason = chooseHigherPriorityReason(
+              reason,
+              buildUnsupportedInvocationReason(segment),
+            );
+          }
           continue;
         }
 
-        const match = {
-          jobEntityId: job.entityId,
-          jobStableKey: job.stableKey,
-          manifestPath: suite.manifestPath,
-          matchedBy: invocation.kind,
-          matchedCommand: normalizeWhitespace(invocation.rawCommand),
-          scriptKey: suite.scriptKey,
-          suiteStableKey: suite.stableKey,
-        } satisfies MatchedTestSuiteJob;
-        matchesByScope.set(`${job.entityId}::${suite.stableKey}`, match);
-        matched = true;
+        for (const invocation of invocations) {
+          const resolution = resolveSuiteFromInvocation(invocation, indexes);
+
+          if (resolution.status === "matched") {
+            const match = {
+              jobEntityId: job.entityId,
+              jobStableKey: job.stableKey,
+              manifestPath: resolution.suite.manifestPath,
+              matchedBy: invocation.kind,
+              matchedCommand: normalizeWhitespace(invocation.rawCommand),
+              scriptKey: resolution.suite.scriptKey,
+              suiteStableKey: resolution.suite.stableKey,
+            } satisfies MatchedTestSuiteJob;
+            matchesByScope.set(
+              `${job.entityId}::${resolution.suite.stableKey}`,
+              match,
+            );
+            matched = true;
+            continue;
+          }
+
+          reason = chooseHigherPriorityReason(
+            reason,
+            resolution.status === "ambiguous"
+              ? buildAmbiguousInvocationReason(invocation)
+              : buildMissingSuiteReason(invocation),
+          );
+        }
       }
     }
 
     if (!matched) {
-      unmappedJobs.push(job);
+      unmappedJobs.push({
+        ...job,
+        ...(reason ?? buildNoTestInvocationReason()),
+      });
     }
   }
 
@@ -142,6 +193,15 @@ export function matchJobsToTestSuites(input: {
     }),
     unmappedJobs,
   };
+}
+
+export function explainUnmappedJobs(input: {
+  jobs: StoredWorkflowJobForTestSuites[];
+  suites: DerivedTestSuite[];
+}) {
+  const indexes = buildSuiteIndexes(input.suites);
+
+  return sortJobs(input.jobs).map((job) => explainUnmappedJob(job, indexes));
 }
 
 function buildSuiteIndexes(suites: DerivedTestSuite[]) {
@@ -180,90 +240,238 @@ function buildSuiteIndexes(suites: DerivedTestSuite[]) {
 function resolveSuiteFromInvocation(
   invocation: ScriptInvocation,
   indexes: ReturnType<typeof buildSuiteIndexes>,
-) {
+): InvocationResolution {
   if (invocation.kind === "root_script") {
-    return indexes.rootSuites.get(invocation.scriptKey) ?? null;
+    const suite = indexes.rootSuites.get(invocation.scriptKey) ?? null;
+    return suite === null
+      ? {
+          status: "missing_suite",
+        }
+      : {
+          status: "matched",
+          suite,
+        };
   }
 
   if (invocation.kind === "package_filter") {
-    return getUniqueSuite(
+    return resolveSuiteCandidates(
       indexes.suitesByPackageName.get(
         `${invocation.packageName}::${invocation.scriptKey}`,
       ) ?? [],
     );
   }
 
-  return getUniqueSuite(
+  return resolveSuiteCandidates(
     indexes.suitesByManifestDir.get(
       `${invocation.manifestDir}::${invocation.scriptKey}`,
     ) ?? [],
   );
 }
 
-function getUniqueSuite(suites: DerivedTestSuite[]) {
-  return suites.length === 1 ? suites[0] : null;
+function resolveSuiteCandidates(
+  suites: DerivedTestSuite[],
+): InvocationResolution {
+  if (suites.length === 1) {
+    return {
+      status: "matched",
+      suite: suites[0]!,
+    };
+  }
+
+  if (suites.length === 0) {
+    return {
+      status: "missing_suite",
+    };
+  }
+
+  return {
+    status: "ambiguous",
+  };
 }
 
-function extractScriptInvocations(command: string): ScriptInvocation[] {
+function extractScriptInvocationsFromSegment(
+  segment: string,
+): ScriptInvocation[] {
   const invocations: ScriptInvocation[] = [];
 
-  for (const segment of splitCommandSegments(command)) {
-    const filterMatch = segment.match(
-      /^pnpm\s+(?:--filter|-F)(?:=|\s+)(?<filter>"[^"]+"|'[^']+'|\S+)\s+(?:(?:run|run-script)\s+)?(?<script>test(?::[A-Za-z0-9:_-]+)?)\b/u,
-    );
+  const filterMatch = segment.match(
+    /^pnpm\s+(?:--filter|-F)(?:=|\s+)(?<filter>"[^"]+"|'[^']+'|\S+)\s+(?:(?:run|run-script)\s+)?(?<script>test(?::[A-Za-z0-9:_-]+)?)\b/u,
+  );
 
-    if (filterMatch?.groups?.filter && filterMatch.groups.script) {
-      invocations.push({
-        kind: "package_filter",
-        packageName: unquote(filterMatch.groups.filter),
-        rawCommand: segment,
-        scriptKey: filterMatch.groups.script,
-      });
-      continue;
-    }
+  if (filterMatch?.groups?.filter && filterMatch.groups.script) {
+    invocations.push({
+      kind: "package_filter",
+      packageName: unquote(filterMatch.groups.filter),
+      rawCommand: segment,
+      scriptKey: filterMatch.groups.script,
+    });
+    return invocations;
+  }
 
-    const dirMatch = segment.match(
-      /^pnpm\s+(?:-C|--dir)(?:=|\s+)(?<dir>"[^"]+"|'[^']+'|\S+)\s+(?:(?:run|run-script)\s+)?(?<script>test(?::[A-Za-z0-9:_-]+)?)\b/u,
-    );
+  const dirMatch = segment.match(
+    /^pnpm\s+(?:-C|--dir)(?:=|\s+)(?<dir>"[^"]+"|'[^']+'|\S+)\s+(?:(?:run|run-script)\s+)?(?<script>test(?::[A-Za-z0-9:_-]+)?)\b/u,
+  );
 
-    if (dirMatch?.groups?.dir && dirMatch.groups.script) {
-      invocations.push({
-        kind: "manifest_dir",
-        manifestDir: normalizeManifestDir(unquote(dirMatch.groups.dir)),
-        rawCommand: segment,
-        scriptKey: dirMatch.groups.script,
-      });
-      continue;
-    }
+  if (dirMatch?.groups?.dir && dirMatch.groups.script) {
+    invocations.push({
+      kind: "manifest_dir",
+      manifestDir: normalizeManifestDir(unquote(dirMatch.groups.dir)),
+      rawCommand: segment,
+      scriptKey: dirMatch.groups.script,
+    });
+    return invocations;
+  }
 
-    const pnpmLikeRootMatch = segment.match(
-      /^(?<pm>pnpm|npm|bun)\s+(?:(?:run|run-script)\s+)?(?<script>test(?::[A-Za-z0-9:_-]+)?)\b/u,
-    );
+  const pnpmLikeRootMatch = segment.match(
+    /^(?<pm>pnpm|npm|bun)\s+(?:(?:run|run-script)\s+)?(?<script>test(?::[A-Za-z0-9:_-]+)?)\b/u,
+  );
 
-    if (pnpmLikeRootMatch?.groups?.script) {
-      invocations.push({
-        kind: "root_script",
-        rawCommand: segment,
-        scriptKey: pnpmLikeRootMatch.groups.script,
-      });
-      continue;
-    }
+  if (pnpmLikeRootMatch?.groups?.script) {
+    invocations.push({
+      kind: "root_script",
+      rawCommand: segment,
+      scriptKey: pnpmLikeRootMatch.groups.script,
+    });
+    return invocations;
+  }
 
-    const yarnRootMatch = segment.match(
-      /^yarn\s+(?<script>test(?::[A-Za-z0-9:_-]+)?)\b/u,
-    );
+  const yarnRootMatch = segment.match(
+    /^yarn\s+(?<script>test(?::[A-Za-z0-9:_-]+)?)\b/u,
+  );
 
-    if (yarnRootMatch?.groups?.script) {
-      invocations.push({
-        kind: "root_script",
-        rawCommand: segment,
-        scriptKey: yarnRootMatch.groups.script,
-      });
-    }
+  if (yarnRootMatch?.groups?.script) {
+    invocations.push({
+      kind: "root_script",
+      rawCommand: segment,
+      scriptKey: yarnRootMatch.groups.script,
+    });
   }
 
   return invocations;
 }
+
+function explainUnmappedJob(
+  job: StoredWorkflowJobForTestSuites,
+  indexes: ReturnType<typeof buildSuiteIndexes>,
+): ExplainedUnmappedTestSuiteJob {
+  let reason: UnmappedReasonCandidate | null = null;
+
+  for (const step of job.steps) {
+    if (step.kind !== "run") {
+      continue;
+    }
+
+    for (const segment of splitCommandSegments(step.value)) {
+      const invocations = extractScriptInvocationsFromSegment(segment);
+
+      if (invocations.length === 0) {
+        if (isUnsupportedTestInvocationShape(segment)) {
+          reason = chooseHigherPriorityReason(
+            reason,
+            buildUnsupportedInvocationReason(segment),
+          );
+        }
+        continue;
+      }
+
+      for (const invocation of invocations) {
+        const resolution = resolveSuiteFromInvocation(invocation, indexes);
+
+        if (resolution.status === "matched") {
+          continue;
+        }
+
+        reason = chooseHigherPriorityReason(
+          reason,
+          resolution.status === "ambiguous"
+            ? buildAmbiguousInvocationReason(invocation)
+            : buildMissingSuiteReason(invocation),
+        );
+      }
+    }
+  }
+
+  return {
+    ...job,
+    ...(reason ?? buildNoTestInvocationReason()),
+  };
+}
+
+function chooseHigherPriorityReason(
+  current: UnmappedReasonCandidate | null,
+  next: UnmappedReasonCandidate,
+) {
+  if (current === null || next.priority > current.priority) {
+    return next;
+  }
+
+  return current;
+}
+
+function buildNoTestInvocationReason(): UnmappedReasonCandidate {
+  return {
+    priority: 1,
+    reasonCode: "no_test_invocation",
+    reasonSummary:
+      "No run command clearly invokes a stored manifest test script.",
+  };
+}
+
+function buildUnsupportedInvocationReason(
+  segment: string,
+): UnmappedReasonCandidate {
+  const command = summarizeCommand(segment);
+
+  return {
+    priority: 2,
+    reasonCode: "unsupported_invocation_shape",
+    reasonSummary: `Found test-oriented command "${command}", but it does not use a supported package-manager script invocation shape.`,
+  };
+}
+
+function buildMissingSuiteReason(
+  invocation: ScriptInvocation,
+): UnmappedReasonCandidate {
+  return {
+    priority: 3,
+    reasonCode: "test_invocation_without_known_suite",
+    reasonSummary: `Command "${summarizeCommand(invocation.rawCommand)}" invokes script "${invocation.scriptKey}" through a supported shape, but no stored test suite matches it.`,
+  };
+}
+
+function buildAmbiguousInvocationReason(
+  invocation: ScriptInvocation,
+): UnmappedReasonCandidate {
+  return {
+    priority: 4,
+    reasonCode: "ambiguous_test_invocation",
+    reasonSummary: `Command "${summarizeCommand(invocation.rawCommand)}" matched more than one stored test suite for script "${invocation.scriptKey}".`,
+  };
+}
+
+function isUnsupportedTestInvocationShape(segment: string) {
+  const normalized = normalizeWhitespace(segment);
+
+  return unsupportedTestInvocationPatterns.some((pattern) =>
+    pattern.test(normalized),
+  );
+}
+
+function summarizeCommand(command: string) {
+  const normalized = normalizeWhitespace(command);
+  return normalized.length > 140
+    ? `${normalized.slice(0, 137).trimEnd()}...`
+    : normalized;
+}
+
+const unsupportedTestInvocationPatterns = [
+  /^(?:pnpm|npm|yarn|bun)\s+.+\btest(?::[A-Za-z0-9:_-]+)?\b/u,
+  /^(?:(?:pnpm|npm|yarn|bun)\s+(?:exec|dlx)\s+)?vitest\b/u,
+  /^(?:(?:pnpm|npm|yarn|bun)\s+(?:exec|dlx)\s+|npx\s+)?jest\b/u,
+  /^(?:(?:pnpm|npm|yarn|bun)\s+(?:exec|dlx)\s+)?playwright\s+test\b/u,
+  /^(?:(?:pnpm|npm|yarn|bun)\s+(?:exec|dlx)\s+)?cypress\s+(?:run|open)\b/u,
+  /^(?:(?:pnpm|npm|yarn|bun)\s+(?:exec\s+)?|npx\s+)?turbo\s+test\b/u,
+] as const;
 
 function splitCommandSegments(command: string) {
   return command

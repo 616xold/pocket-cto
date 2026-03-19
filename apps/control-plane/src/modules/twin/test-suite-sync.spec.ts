@@ -212,6 +212,9 @@ describe("TwinService test suite sync", () => {
       unmappedJobs: [
         {
           jobKey: "opaque",
+          reasonCode: "no_test_invocation",
+          reasonSummary:
+            "No run command clearly invokes a stored manifest test script.",
           runCommands: ["pnpm ci:integration-db"],
         },
       ],

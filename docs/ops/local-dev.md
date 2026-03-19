@@ -1322,6 +1322,7 @@ The stored read routes are:
 - `GET /twin/repositories/:owner/:repo/ci-summary`
 
 `GET /twin/repositories/:owner/:repo/test-suites` returns the latest test-suite sync state, suite count, mapped or unmapped job counts, stored suites, and explicit unmapped jobs when a workflow snapshot exists.
+Those unmapped jobs now carry deterministic `reasonCode` and `reasonSummary` fields so operators can distinguish no clear test invocation from unsupported, ambiguous, or unknown-suite invocation shapes without guessing.
 
 `GET /twin/repositories/:owner/:repo/ci-summary` combines the latest stored workflow snapshot and the latest stored test-suite snapshot.
 It reports:
@@ -1333,7 +1334,7 @@ It reports:
 - mapped job count
 - unmapped job count
 - stored test suites with manifest path, script key, and matched jobs
-- explicit unmapped jobs with their run commands
+- explicit unmapped jobs with their run commands plus `reasonCode` and `reasonSummary`
 
 Repeatable live smoke:
 
