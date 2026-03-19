@@ -331,10 +331,7 @@ describe("twin routes", () => {
   });
 });
 
-async function createTwinApp(
-  apps: FastifyInstance[],
-  service: TwinService,
-) {
+async function createTwinApp(apps: FastifyInstance[], service: TwinService) {
   const app = Fastify();
   registerHttpErrorHandler(app);
   await registerTwinRoutes(app, {
@@ -492,16 +489,14 @@ async function createOwnershipSourceRepo(fullName: string) {
       cwd: sourceRepo.repoRoot,
     },
   );
-  await Promise.all([
-    mkdir(join(sourceRepo.repoRoot, ".github"), {
-      recursive: true,
-    }),
-    writeFile(
-      join(sourceRepo.repoRoot, ".github", "CODEOWNERS"),
-      ["# Ownership", "* @Platform", "docs/ @Platform @Runtime/Team"].join("\n"),
-      "utf8",
-    ),
-  ]);
+  await mkdir(join(sourceRepo.repoRoot, ".github"), {
+    recursive: true,
+  });
+  await writeFile(
+    join(sourceRepo.repoRoot, ".github", "CODEOWNERS"),
+    ["# Ownership", "* @Platform", "docs/ @Platform @Runtime/Team"].join("\n"),
+    "utf8",
+  );
 
   return sourceRepo;
 }

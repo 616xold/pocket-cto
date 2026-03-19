@@ -18,9 +18,33 @@ export async function registerTwinRoutes(
     },
   );
 
+  app.post(
+    "/twin/repositories/:owner/:repo/test-suites-sync",
+    async (request) => {
+      const params = parseTwinRepositoryParams(request.params);
+      return deps.twinService.syncRepositoryTestSuites(
+        `${params.owner}/${params.repo}`,
+      );
+    },
+  );
+
   app.get("/twin/repositories/:owner/:repo/workflows", async (request) => {
     const params = parseTwinRepositoryParams(request.params);
     return deps.twinService.getRepositoryWorkflows(
+      `${params.owner}/${params.repo}`,
+    );
+  });
+
+  app.get("/twin/repositories/:owner/:repo/test-suites", async (request) => {
+    const params = parseTwinRepositoryParams(request.params);
+    return deps.twinService.getRepositoryTestSuites(
+      `${params.owner}/${params.repo}`,
+    );
+  });
+
+  app.get("/twin/repositories/:owner/:repo/ci-summary", async (request) => {
+    const params = parseTwinRepositoryParams(request.params);
+    return deps.twinService.getRepositoryCiSummary(
       `${params.owner}/${params.repo}`,
     );
   });

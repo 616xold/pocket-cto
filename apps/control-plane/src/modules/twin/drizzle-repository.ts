@@ -337,6 +337,10 @@ function readJsonObject(value: unknown) {
 function toLegacyTwinEntityType(
   kind: string,
 ): (typeof legacyTwinEntityTypes)[number] {
+  if (kind === "test_suite") {
+    return "testSuite";
+  }
+
   if (kind === "ci_job") {
     return "ciJob";
   }

@@ -370,6 +370,61 @@ function createAppContainer(
           workflows: [],
         };
       },
+      async getRepositoryTestSuites() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          latestRun: null,
+          testSuiteState: "not_synced" as const,
+          counts: {
+            testSuiteCount: 0,
+            mappedJobCount: 0,
+            unmappedJobCount: 0,
+          },
+          testSuites: [],
+          unmappedJobs: [],
+        };
+      },
+      async getRepositoryCiSummary() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          latestWorkflowRun: null,
+          latestTestSuiteRun: null,
+          workflowState: "not_synced" as const,
+          testSuiteState: "not_synced" as const,
+          counts: {
+            workflowFileCount: 0,
+            workflowCount: 0,
+            jobCount: 0,
+            testSuiteCount: 0,
+            mappedJobCount: 0,
+            unmappedJobCount: 0,
+          },
+          testSuites: [],
+          unmappedJobs: [],
+        };
+      },
       async getRepositoryOwnershipSummary() {
         return {
           repository: {
@@ -560,6 +615,49 @@ function createAppContainer(
           workflowFileCount: 0,
           workflowCount: 0,
           jobCount: 0,
+          entityCount: 0,
+          edgeCount: 0,
+          entityCountsByKind: {},
+          edgeCountsByKind: {},
+        };
+      },
+      async syncRepositoryTestSuites() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          syncRun: {
+            id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            repoFullName: "616xold/pocket-cto",
+            extractor: "repository_test_suites",
+            status: "succeeded",
+            startedAt: "2026-03-15T00:00:00.000Z",
+            completedAt: "2026-03-15T00:01:00.000Z",
+            stats: {
+              entityCount: 0,
+              edgeCount: 0,
+              jobCount: 0,
+              testSuiteCount: 0,
+              mappedJobCount: 0,
+              unmappedJobCount: 0,
+            },
+            errorSummary: null,
+            createdAt: "2026-03-15T00:00:00.000Z",
+          },
+          testSuiteState: "no_test_suites" as const,
+          testSuiteCount: 0,
+          jobCount: 0,
+          mappedJobCount: 0,
+          unmappedJobCount: 0,
           entityCount: 0,
           edgeCount: 0,
           entityCountsByKind: {},

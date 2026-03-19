@@ -4,11 +4,13 @@ This ExecPlan is a living document. Keep `Progress`, `Surprises & Discoveries`, 
 
 ## Purpose / Big Picture
 
-After this slice, Pocket CTO can inspect one synced repository, discover workflow files under `.github/workflows`, parse durable CI workflow and job facts deterministically, persist those facts into the repo-scoped twin, and return a concise stored workflow summary through thin control-plane routes.
-Operators will be able to trigger a repo-scoped workflow sync, inspect the resulting sync run, and read stored workflow and job summaries without rescanning the repository on every GET.
+After this slice, Pocket CTO can inspect one synced repository, discover workflow files under `.github/workflows`, parse durable CI workflow and job facts deterministically, derive durable test-suite facts from stored package manifests, persist those facts plus honest CI-to-test linkage into the repo-scoped twin, and return concise stored workflow plus CI/test summaries through thin control-plane routes.
+Operators will be able to trigger repo-scoped workflow sync and test-suite sync passes, inspect the resulting sync runs, and read stored workflow, test-suite, and CI linkage summaries without rescanning the repository on every GET.
 
-This plan covers roadmap submilestone `M3.4 CI workflow and test suite extraction`, but this prompt intentionally implements only the first half: `M3.4A CI workflow extraction`.
-It explicitly stops before test suite extraction, docs indexing, freshness scoring, blast-radius answers, or redesigning the existing metadata and ownership slices.
+This plan covers roadmap submilestone `M3.4 CI workflow and test suite extraction`.
+Prompt A implemented `M3.4A CI workflow extraction`.
+The active prompt now implements `M3.4B durable test-suite extraction and CI linkage`.
+It still explicitly stops before docs indexing, freshness scoring, blast-radius answers, or redesigning the existing metadata and ownership slices.
 
 ## Progress
 
@@ -20,6 +22,10 @@ It explicitly stops before test suite extraction, docs indexing, freshness scori
 - [x] (2026-03-19T00:00:00Z) Updated `docs/ops/local-dev.md` and declared a direct YAML parser dependency for `@pocket-cto/control-plane` so the workflow slice stays explicit instead of relying on a transitive hoist.
 - [x] (2026-03-19T02:32:00Z) Ran the full required validation matrix successfully: `pnpm db:generate`, `pnpm db:migrate`, `pnpm run db:migrate:ci`, `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current`.
 - [x] (2026-03-19T02:32:00Z) Confirmed live GitHub App env was available through the local `.env`, synced GitHub installations plus the repository registry, and completed one real workflow sync for `616xold/pocket-cto` using a temporary local checkout so the existing source resolver could stay truthful without product-side clone fallback.
+- [x] (2026-03-19T03:00:00Z) Re-read the requested M3.4B files plus the named skills, ran the required inspections `rg -n "package_manifest|scriptNames|pnpm test|vitest|playwright|jest|cypress|test:" .github apps packages docs plans package.json`, `git status --short`, and `git diff --name-only HEAD`, confirmed the worktree was clean, and captured the required pre-coding M3.4B test-suite extraction gap note in-thread.
+- [x] (2026-03-19T03:00:00Z) Implemented the M3.4B stored test-suite extraction slice inside the twin bounded context: added a dedicated `test-suites-sync` extractor, derived `test_suite` entities from stored manifest script keys, persisted `package_manifest_declares_test_suite` plus `ci_job_runs_test_suite` edges, exposed thin `test-suites` and `ci-summary` routes, and updated the legacy `test_suite -> testSuite` compatibility mapping.
+- [x] (2026-03-19T03:00:00Z) Added focused M3.4B coverage for stable suite derivation, rerun idempotence, explicit job-to-suite mapping, explicit unmapped jobs, route summaries, and a pre-existing ownership route-spec race that the widened twin test ring surfaced and fixed.
+- [x] (2026-03-19T03:12:00Z) Reran the full validation matrix successfully, completed the live GitHub App smoke for `616xold/pocket-cto`, and recorded the final M3.4B evidence plus changed-file set in this ExecPlan.
 
 ## Surprises & Discoveries
 
@@ -34,6 +40,12 @@ It explicitly stops before test suite extraction, docs indexing, freshness scori
 
 - Observation: YAML parsing is not currently declared directly in `@pocket-cto/control-plane`.
   Evidence: `apps/control-plane/package.json` has no direct `yaml` or `js-yaml` dependency even though the lockfile contains transitive YAML parsers.
+
+- Observation: the stored `package_manifest` twin entities already carry deterministic suite-discovery inputs, but they do not carry script command bodies.
+  Evidence: `repository-metadata-extractor.ts` persists only `path`, `packageName`, `private`, `hasWorkspaces`, and sorted `scriptNames`, so M3.4B can safely derive suites from script keys but cannot justify broad command inference from manifest payloads alone.
+
+- Observation: widening the twin test ring surfaced an existing race in the ownership route fixture helper.
+  Evidence: `routes.spec.ts` wrote `.github/CODEOWNERS` in parallel with `mkdir(".github")`, which produced an `ENOENT` on a clean rerun until the helper was made sequential.
 
 ## Decision Log
 
@@ -69,6 +81,14 @@ It explicitly stops before test suite extraction, docs indexing, freshness scori
   Rationale: workflow parsing is now a first-class bounded-context responsibility, and the repo instructions prefer explicit dependencies over relying on a transitive hoist.
   Date/Author: 2026-03-19 / Codex
 
+- Decision: implement M3.4B as a separate `test-suites-sync` extractor that reads stored manifest and workflow-job entities instead of widening `workflows-sync`.
+  Rationale: workflow discovery should stay local-checkout based while test-suite extraction should remain a stored-data pass over existing manifest and job rows.
+  Date/Author: 2026-03-19 / Codex
+
+- Decision: derive test suites only from stored manifest script keys `test` and `test:*`, and match workflow jobs only when a `run` command clearly invokes one of those script keys through deterministic package-manager patterns.
+  Rationale: the prompt explicitly prefers honest linkage over broad shell guessing, and the stored manifest payloads do not justify wider inference.
+  Date/Author: 2026-03-19 / Codex
+
 ## Context and Orientation
 
 Pocket CTO exits M3.3 with a real repo-scoped twin bounded context under `apps/control-plane/src/modules/twin/`.
@@ -82,8 +102,8 @@ That bounded context already owns:
 - metadata sync plus summary routes
 - ownership sync plus stored ownership read routes
 
-What is still missing for M3.4A is a durable CI workflow slice.
-Today, Pocket CTO does not discover workflow files under `.github/workflows`, does not parse workflow/job facts, does not persist `ci_workflow_file`, `ci_workflow`, or `ci_job` entities, and does not expose a stored workflow summary route.
+What is still missing for M3.4B is a durable stored-data test-suite slice on top of the completed workflow extractor.
+Today, Pocket CTO still does not persist `test_suite` entities from stored manifest rows, does not persist `package_manifest_declares_test_suite` or `ci_job_runs_test_suite` edges, and does not expose a stored `test-suites` or `ci-summary` read route that makes unmapped jobs explicit.
 
 The relevant existing files and modules are:
 
@@ -103,19 +123,22 @@ The relevant existing files and modules are:
 - `docs/ops/local-dev.md`
 - `.github/workflows/ci.yml`
 
-The planned new or expanded workflow files are:
+The planned new or expanded M3.4 files are:
 
 - `apps/control-plane/src/modules/twin/workflow-discovery.ts`
 - `apps/control-plane/src/modules/twin/workflow-parser.ts`
 - `apps/control-plane/src/modules/twin/workflow-sync.ts`
 - `apps/control-plane/src/modules/twin/workflow-formatter.ts`
+- `apps/control-plane/src/modules/twin/test-suite-sync.ts`
+- `apps/control-plane/src/modules/twin/test-suite-matcher.ts`
+- `apps/control-plane/src/modules/twin/test-suite-formatter.ts`
 - the touched twin service, route, schema, repository, formatter, and spec files
 
 This slice should preserve boundaries:
 
 - `packages/domain` stays pure and adds only shared read-model or sync-result contracts
 - `packages/db` should remain unchanged unless implementation proves a schema extension is actually required
-- `apps/control-plane/src/modules/twin/` owns workflow discovery, parsing, persistence orchestration, and route formatting
+- `apps/control-plane/src/modules/twin/` owns workflow discovery, parsing, stored manifest or job matching, persistence orchestration, and route formatting
 - routes stay thin and must not walk the filesystem or parse YAML inline
 
 No new environment variables are expected.
@@ -124,28 +147,21 @@ No new GitHub App permissions or webhook subscriptions are expected.
 
 ## Plan of Work
 
-First, add a small workflow discovery module that inspects only `.github/workflows` under the resolved repository root and returns every `.yml` or `.yaml` file in deterministic path order, along with cheap file stats and file contents needed for parsing.
-If the directory does not exist or contains no matching files, discovery should return a truthful empty result instead of failing.
+First, keep the completed M3.4A workflow extractor intact and build M3.4B on top of stored twin state rather than widening the local-checkout workflow parser.
 
-Next, add a parser module that reads each workflow file, extracts the workflow display name with a deterministic fallback when `name` is absent, normalizes the workflow trigger summary from the `on` section, and extracts one stored job summary per top-level job entry.
-The job summary should include the stable job key plus compact normalized fields for display name, `runs-on`, `needs`, `permissions`, and step `run` or `uses` entries.
-This parser should not create separate step entities and should not attempt test-suite extraction yet.
+Next, add a dedicated `test-suites-sync` orchestrator that:
 
-Then, add a dedicated `workflows-sync` orchestrator that:
+- reads the latest successful `package_manifest` snapshot from metadata sync
+- reads the latest successful workflow-job snapshot from workflow sync
+- derives one `test_suite` entity per deterministic manifest script key
+- persists `package_manifest_declares_test_suite` edges
+- persists `ci_job_runs_test_suite` edges only when a job step run command clearly invokes one of those stored suites
+- finishes truthfully with zero suites or zero mapped jobs when that is the actual stored state
 
-- resolves repository detail from the registry
-- starts a workflow sync run with a dedicated extractor name
-- resolves the truthful local checkout through the existing source resolver
-- discovers and parses workflow files
-- ensures the repo-scoped `repository` entity exists for edge creation
-- upserts `ci_workflow_file`, `ci_workflow`, and `ci_job` entities with stable keys
-- upserts `repository_has_ci_workflow_file`, `workflow_file_defines_workflow`, and `workflow_contains_job` edges
-- finishes the sync run with truthful counts, including the zero-file path
+After that, add a formatter-backed stored read model for `GET /twin/repositories/:owner/:repo/test-suites` and `GET /twin/repositories/:owner/:repo/ci-summary`.
+The summary route should combine the latest successful workflow snapshot and the latest successful test-suite snapshot, report mapped plus unmapped job counts, and keep unmapped jobs explicit instead of inventing a linkage.
 
-After that, add a stored read model for workflows derived from the latest successful workflow sync snapshot rather than a live rescan.
-If the latest successful run recorded zero workflow files, the read route should return a truthful empty workflow summary.
-
-Finally, add thin routes for `POST /twin/repositories/:owner/:repo/workflows-sync` and `GET /twin/repositories/:owner/:repo/workflows`, add focused tests, update `docs/ops/local-dev.md`, run the full required validation matrix, and if live GitHub App env is available, run one real workflow sync against `616xold/pocket-cto` after refreshing the repository registry.
+Finally, add the thin routes, focused tests, docs updates, full validation rerun, and if live GitHub App env is available, run workflow sync plus test-suite sync for `616xold/pocket-cto` before fetching the stored `ci-summary`.
 
 Expected file edits are:
 
@@ -177,7 +193,7 @@ Schema changes are not expected unless implementation proves the current generic
 
 Run these commands from the repository root as needed:
 
-    rg -n "workflow|ci.yml|\\.github/workflows|pnpm test|vitest|playwright|jest|cypress|turbo test|test:" .github apps packages docs plans package.json
+    rg -n "package_manifest|scriptNames|pnpm test|vitest|playwright|jest|cypress|test:" .github apps packages docs plans package.json
     git status --short
     git diff --name-only HEAD
     pnpm db:generate
@@ -192,43 +208,54 @@ Run these commands from the repository root as needed:
 
 Useful narrow commands during implementation:
 
-    pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/service.spec.ts src/modules/twin/routes.spec.ts src/modules/twin/drizzle-repository.spec.ts src/modules/twin/metadata-sync.spec.ts
-    rg -n "workflows-sync|ci_workflow|ci_job|workflow_file|workflow_contains_job" apps/control-plane/src packages/domain/src docs/ops/local-dev.md
+    pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/test-suite-sync.spec.ts src/modules/twin/test-suite-routes.spec.ts src/modules/twin/workflow-sync.spec.ts src/modules/twin/workflow-routes.spec.ts src/modules/twin/drizzle-repository.spec.ts
+    rg -n "test_suite|ci_job_runs_test_suite|package_manifest_declares_test_suite|ci-summary|test-suites" apps/control-plane/src packages/domain/src docs/ops/local-dev.md
 
 If live GitHub env is present after implementation:
 
     curl -X POST http://localhost:4000/github/repositories/sync
     curl -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows-sync
-    curl http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows
+    curl -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/test-suites-sync
+    curl http://localhost:4000/twin/repositories/616xold/pocket-cto/ci-summary
 
-Record only the repo full name, workflow file count, workflow count, job count, and sync-run id.
+Record only the repo full name, workflow file count, job count, test suite count, mapped or unmapped job counts, and the test-suite sync-run id.
 Do not print secrets, tokens, or raw auth headers.
 
 ## Validation and Acceptance
 
-Success for M3.4A is demonstrated when all of the following are true:
+Success for M3.4 is demonstrated when all of the following are true:
 
 1. Workflow sync uses the existing repository registry and the existing twin source resolver; it does not clone repositories or invent a second source-selection path.
 2. Discovery scans only `.github/workflows` and only `.yml` or `.yaml` files beneath that directory.
 3. When no workflow files exist, `POST /twin/repositories/:owner/:repo/workflows-sync` succeeds truthfully, finishes the sync run as `succeeded`, and reports zero workflow files, zero workflows, and zero jobs.
-4. The sync persists `ci_workflow_file`, `ci_workflow`, and `ci_job` entities with deterministic stable keys.
-5. The sync persists `repository_has_ci_workflow_file`, `workflow_file_defines_workflow`, and `workflow_contains_job` edges with repo-scoped idempotent upserts.
-6. Workflow-file payloads include at least relative path plus cheap file stats when available.
-7. Workflow payloads include at least name plus normalized trigger summary.
-8. Job payloads include at least job key, display name when present, normalized `runs-on`, normalized `needs`, permissions when present, and a compact list of step `run` or `uses` entries.
-9. Workflow name fallback is deterministic when the YAML omits `name`.
-10. Repeated workflow syncs converge on the same workflow-file, workflow, and job entity ids instead of duplicating them.
-11. `GET /twin/repositories/:owner/:repo/workflows` returns a clean stored workflow summary and job summaries without rescanning the repository.
-12. The workflow read route derives its view from the latest successful workflow sync snapshot so zero-file reruns remain truthful.
-13. `docs/ops/local-dev.md` documents the current workflow sync and read routes honestly, without claiming test suite extraction, docs indexing, freshness scoring, or blast-radius behavior.
+4. The workflow slice persists `ci_workflow_file`, `ci_workflow`, and `ci_job` entities with deterministic stable keys plus the required workflow edges.
+5. Workflow-file payloads include at least relative path plus cheap file stats when available.
+6. Workflow payloads include at least name plus normalized trigger summary.
+7. Job payloads include at least job key, display name when present, normalized `runs-on`, normalized `needs`, permissions when present, and a compact list of step `run` or `uses` entries.
+8. Workflow name fallback is deterministic when the YAML omits `name`.
+9. Repeated workflow syncs converge on the same workflow-file, workflow, and job entity ids instead of duplicating them.
+10. `GET /twin/repositories/:owner/:repo/workflows` returns a clean stored workflow summary and job summaries without rescanning the repository.
+11. Test-suite extraction reads only stored `package_manifest` entities and derives suites only from deterministic script keys `test` and `test:*`.
+12. Test-suite sync persists `test_suite` entities keyed by repo plus manifest path plus script key.
+13. Test-suite sync persists `package_manifest_declares_test_suite` edges for each derived suite and `ci_job_runs_test_suite` edges only when a workflow job `run` command clearly invokes the suite through deterministic package-manager patterns.
+14. Repeated test-suite syncs converge on the same suite ids and do not duplicate suite rows.
+15. When jobs cannot be mapped honestly, they remain explicit as unmapped jobs in the stored summary instead of being force-matched.
+16. `GET /twin/repositories/:owner/:repo/test-suites` returns a concise stored suite view with matched jobs and explicit unmapped jobs.
+17. `GET /twin/repositories/:owner/:repo/ci-summary` returns repo summary, workflow counts, test-suite counts, mapped or unmapped job counts, and suite-to-job linkage without rescanning the repository.
+18. The test-suite and CI summary views derive from the latest successful workflow and test-suite sync snapshots so reruns remain truthful.
+19. `docs/ops/local-dev.md` documents the workflow, test-suite, and CI summary routes honestly, without claiming docs indexing, freshness scoring, or blast-radius behavior.
+20. The full validation matrix plus `pnpm ci:repro:current` passes after the slice lands.
 
 Human acceptance after implementation should look like:
 
     curl -i -X POST http://localhost:4000/twin/repositories/OWNER/REPO/workflows-sync
+    curl -i -X POST http://localhost:4000/twin/repositories/OWNER/REPO/test-suites-sync
     curl -i http://localhost:4000/twin/repositories/OWNER/REPO/workflows
+    curl -i http://localhost:4000/twin/repositories/OWNER/REPO/test-suites
+    curl -i http://localhost:4000/twin/repositories/OWNER/REPO/ci-summary
 
-For a synced repo with workflow files, the sync route should return a succeeded run with non-zero counts and the read route should return stored workflow and job summaries.
-For a synced repo without workflow files, the sync route should still succeed and the read route should return a truthful empty workflow snapshot.
+For a synced repo with workflow files and stored package manifests, the sync routes should return succeeded runs with truthful counts and the read routes should return stored workflow, suite, and CI linkage summaries.
+For a synced repo without workflow files or without derivable test suites, the sync routes should still succeed and the read routes should return truthful empty snapshots and explicit unmapped-job state when applicable.
 
 ## Idempotence and Recovery
 
@@ -238,16 +265,19 @@ Stable entity keys should converge on:
 - `ci_workflow_file` by discovered file path
 - `ci_workflow` by discovered file path plus workflow name or deterministic file fallback
 - `ci_job` by discovered file path plus job key
+- `test_suite` by manifest path plus script key
 
-Edge upserts should converge on the same repository-to-file, file-to-workflow, and workflow-to-job relationships.
+Edge upserts should converge on the same repository-to-file, file-to-workflow, workflow-to-job, manifest-to-suite, and job-to-suite relationships.
 
 If a sync fails after the run starts, the run must finish as `failed` with an error summary so operators can distinguish extraction failures from truthful “no workflow files” absence.
+The same rule applies to test-suite sync: fixing a stored-manifest or linkage issue should produce a new run while converging on the same suite entity and edge ids.
 Retrying the same repo after fixing the local checkout or YAML issue should create a new sync run and converge on the same workflow entity and edge ids.
+Conservative linkage should remain honest on rerun: jobs that do not clearly invoke a stored suite should stay unmapped.
 
 Safe rollback guidance:
 
-- revert the workflow modules, route additions, docs, package dependency updates, and this ExecPlan together
-- do not delete existing twin rows manually during rollback; persisted workflow facts are additive and can remain inert
+- revert the workflow or test-suite modules, route additions, docs updates, and this ExecPlan together
+- do not delete existing twin rows manually during rollback; persisted workflow and suite facts are additive and can remain inert
 - if implementation unexpectedly needs a schema change, keep it additive-first and roll it back only through the repo migration workflow
 
 ## Artifacts and Notes
@@ -262,55 +292,57 @@ Required pre-coding gap note captured in-thread:
 Validation evidence:
 
 - `pnpm --filter @pocket-cto/control-plane add yaml@^2.4.2` succeeded and updated the package manifest plus lockfile for an explicit workflow parser dependency.
-- `pnpm exec prettier --write apps/control-plane/package.json apps/control-plane/src/bootstrap.spec.ts apps/control-plane/src/lib/types.ts apps/control-plane/src/modules/orchestrator/drizzle-service.spec.ts apps/control-plane/src/modules/twin/drizzle-repository.spec.ts apps/control-plane/src/modules/twin/drizzle-repository.ts apps/control-plane/src/modules/twin/routes.ts apps/control-plane/src/modules/twin/schema.ts apps/control-plane/src/modules/twin/service.ts apps/control-plane/src/modules/twin/workflow-discovery.spec.ts apps/control-plane/src/modules/twin/workflow-discovery.ts apps/control-plane/src/modules/twin/workflow-formatter.ts apps/control-plane/src/modules/twin/workflow-parser.ts apps/control-plane/src/modules/twin/workflow-routes.spec.ts apps/control-plane/src/modules/twin/workflow-sync.spec.ts apps/control-plane/src/modules/twin/workflow-sync.ts docs/ops/local-dev.md packages/domain/src/twin.ts plans/EP-0024-ci-workflow-and-test-suite-extraction.md` succeeded.
+- `pnpm exec prettier --write apps/control-plane/src/bootstrap.spec.ts apps/control-plane/src/lib/types.ts apps/control-plane/src/modules/orchestrator/drizzle-service.spec.ts apps/control-plane/src/modules/twin/drizzle-repository.spec.ts apps/control-plane/src/modules/twin/drizzle-repository.ts apps/control-plane/src/modules/twin/routes.spec.ts apps/control-plane/src/modules/twin/routes.ts apps/control-plane/src/modules/twin/schema.ts apps/control-plane/src/modules/twin/service.ts apps/control-plane/src/modules/twin/test-suite-formatter.ts apps/control-plane/src/modules/twin/test-suite-matcher.ts apps/control-plane/src/modules/twin/test-suite-routes.spec.ts apps/control-plane/src/modules/twin/test-suite-sync.spec.ts apps/control-plane/src/modules/twin/test-suite-sync.ts docs/ops/local-dev.md packages/domain/src/twin.ts plans/EP-0024-ci-workflow-and-test-suite-extraction.md` succeeded.
 - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-discovery.spec.ts src/modules/twin/workflow-sync.spec.ts src/modules/twin/workflow-routes.spec.ts src/modules/twin/drizzle-repository.spec.ts` passed.
-- `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-discovery.spec.ts src/modules/twin/workflow-sync.spec.ts src/modules/twin/workflow-routes.spec.ts src/modules/twin/drizzle-repository.spec.ts src/modules/twin/service.spec.ts src/modules/twin/routes.spec.ts src/modules/twin/metadata-sync.spec.ts` passed with 27 tests across 7 files.
+- `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/test-suite-sync.spec.ts src/modules/twin/test-suite-routes.spec.ts src/modules/twin/workflow-sync.spec.ts src/modules/twin/workflow-routes.spec.ts src/modules/twin/drizzle-repository.spec.ts` passed with 13 tests across 5 files.
+- `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/test-suite-sync.spec.ts src/modules/twin/test-suite-routes.spec.ts src/modules/twin/workflow-sync.spec.ts src/modules/twin/workflow-routes.spec.ts src/modules/twin/drizzle-repository.spec.ts src/modules/twin/service.spec.ts src/modules/twin/routes.spec.ts src/modules/twin/metadata-sync.spec.ts` passed with 29 tests across 8 files after fixing the pre-existing `.github/CODEOWNERS` fixture race in `routes.spec.ts`.
 - `pnpm db:generate` passed with no schema changes required.
 - `pnpm db:migrate` passed.
 - `pnpm run db:migrate:ci` passed.
 - `pnpm repo:hygiene` passed.
 - `pnpm lint` passed.
-- `pnpm typecheck` passed after extending the affected test doubles for the new twin service port methods and tightening one workflow-sync iteration type.
+- `pnpm typecheck` passed after extending the affected test doubles for the new twin service port methods.
 - `pnpm build` passed.
-- `pnpm test` passed with 49 control-plane test files and 209 tests green.
+- `pnpm test` passed with 51 control-plane test files and 213 tests green.
 - `pnpm ci:repro:current` passed, including the temp-worktree `ci:static`, DB prep and migration, integration test run, and clean-tree verification.
 
 Live smoke evidence:
 
 - Live GitHub App env was present in the local `.env` through `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY_BASE64`, `GITHUB_WEBHOOK_SECRET`, and `DATABASE_URL`; no secrets were printed.
 - Because this workspace remote is `616xold/pocket-cto-starter`, the live proof used a temporary shallow checkout of `https://github.com/616xold/pocket-cto.git` and set `POCKET_CTO_SOURCE_REPO_ROOT` to that checkout so the existing M3.2 source resolver could verify the requested repo truthfully.
-- `POST /github/installations/sync` succeeded with `syncedCount: 1`.
-- `POST /github/repositories/sync` succeeded with `syncedInstallationCount: 1` and `syncedRepositoryCount: 1`.
-- `POST /twin/repositories/616xold/pocket-cto/workflows-sync` succeeded with sync run `09c57e13-012e-4eb9-a1e6-2c4ec4664f86`, `workflowFileCount: 1`, `workflowCount: 1`, and `jobCount: 2`.
-- `GET /twin/repositories/616xold/pocket-cto/workflows` returned the same stored counts with `workflowState: workflows_available` and the same latest run id.
+- `git ls-remote https://github.com/616xold/pocket-cto.git HEAD` succeeded and returned `14a3a487c48ad3755764b7759b835a8bb462f025`.
+- `POST /github/installations/sync` succeeded.
+- `POST /github/repositories/sync` succeeded.
+- `POST /twin/repositories/616xold/pocket-cto/metadata-sync` succeeded so the stored manifest snapshot required by M3.4B existed locally.
+- `POST /twin/repositories/616xold/pocket-cto/workflows-sync` succeeded with sync run `ac7ed9a6-d8ff-4f10-a35b-9b031e80fb0c`, `workflowFileCount: 1`, `workflowCount: 1`, and `jobCount: 2`.
+- `POST /twin/repositories/616xold/pocket-cto/test-suites-sync` succeeded with sync run `c660f26b-264f-40c4-861c-f3838fe6b31f`, `testSuiteCount: 9`, `mappedJobCount: 0`, and `unmappedJobCount: 2`.
+- `GET /twin/repositories/616xold/pocket-cto/ci-summary` returned `workflowFileCount: 1`, `workflowCount: 1`, `jobCount: 2`, `testSuiteCount: 9`, `mappedJobCount: 0`, and `unmappedJobCount: 2`.
+- The live repo stayed honest: both jobs remained unmapped because the persisted job `run` commands did not clearly invoke one of the stored manifest `test` or `test:*` script keys through the deterministic matcher.
 
 Exact changed files in this slice:
 
-- `apps/control-plane/package.json`
 - `apps/control-plane/src/bootstrap.spec.ts`
 - `apps/control-plane/src/lib/types.ts`
 - `apps/control-plane/src/modules/orchestrator/drizzle-service.spec.ts`
 - `apps/control-plane/src/modules/twin/drizzle-repository.spec.ts`
 - `apps/control-plane/src/modules/twin/drizzle-repository.ts`
+- `apps/control-plane/src/modules/twin/routes.spec.ts`
 - `apps/control-plane/src/modules/twin/routes.ts`
 - `apps/control-plane/src/modules/twin/schema.ts`
 - `apps/control-plane/src/modules/twin/service.ts`
-- `apps/control-plane/src/modules/twin/workflow-discovery.spec.ts`
-- `apps/control-plane/src/modules/twin/workflow-discovery.ts`
-- `apps/control-plane/src/modules/twin/workflow-formatter.ts`
-- `apps/control-plane/src/modules/twin/workflow-parser.ts`
-- `apps/control-plane/src/modules/twin/workflow-routes.spec.ts`
-- `apps/control-plane/src/modules/twin/workflow-sync.spec.ts`
-- `apps/control-plane/src/modules/twin/workflow-sync.ts`
+- `apps/control-plane/src/modules/twin/test-suite-formatter.ts`
+- `apps/control-plane/src/modules/twin/test-suite-matcher.ts`
+- `apps/control-plane/src/modules/twin/test-suite-routes.spec.ts`
+- `apps/control-plane/src/modules/twin/test-suite-sync.spec.ts`
+- `apps/control-plane/src/modules/twin/test-suite-sync.ts`
 - `docs/ops/local-dev.md`
 - `packages/domain/src/twin.ts`
 - `plans/EP-0024-ci-workflow-and-test-suite-extraction.md`
-- `pnpm-lock.yaml`
 
 Replay and evidence implications:
 
 - no new mission replay events are expected because this slice does not change mission or task lifecycle behavior
-- the durable evidence surface is the workflow sync run plus the stored workflow read route
+- the durable evidence surface is the workflow sync run, the test-suite sync run, and the stored `workflows`, `test-suites`, and `ci-summary` read routes
 - the final closeout must still state objective, change summary, validation evidence, risks, rollback guidance, and whether M3.4B can now start cleanly
 
 ## Interfaces and Dependencies
@@ -337,25 +369,27 @@ If a YAML parser is added, it should be declared directly in `@pocket-cto/contro
 
 ## Outcomes & Retrospective
 
-M3.4A is complete.
-Pocket CTO can now discover workflow files only under `.github/workflows`, parse deterministic workflow and job facts, persist `ci_workflow_file`, `ci_workflow`, and `ci_job` entities plus the required workflow edges, and expose a stored `GET /twin/repositories/:owner/:repo/workflows` read route backed by the latest successful workflow sync snapshot.
+M3.4 is complete.
+Pocket CTO can now discover workflow files only under `.github/workflows`, parse deterministic workflow and job facts, persist `ci_workflow_file`, `ci_workflow`, and `ci_job` entities plus the required workflow edges, derive stored `test_suite` entities from manifest script keys `test` and `test:*`, persist honest `package_manifest_declares_test_suite` and `ci_job_runs_test_suite` edges, and expose stored `GET /twin/repositories/:owner/:repo/workflows`, `GET /twin/repositories/:owner/:repo/test-suites`, and `GET /twin/repositories/:owner/:repo/ci-summary` routes backed by the latest successful sync snapshots.
 
 The slice stayed inside the existing twin architecture:
 
 - repo targeting still flows through the GitHub App repository registry
-- source verification still flows through the existing M3.2 source resolver
+- source verification still flows through the existing M3.2 source resolver for workflow discovery
+- test-suite extraction stays a stored-data pass over prior metadata and workflow rows
 - persistence stays additive inside the generic twin entity and edge tables
 - thin routes delegate immediately to the twin service
-- no replay events, schema redesign, docs indexing, freshness scoring, blast-radius logic, or test-suite extraction were added
+- no replay events, schema redesign, docs indexing, freshness scoring, or blast-radius logic were added
 
 Residual risks and follow-up notes:
 
-- The current parser intentionally captures only one workflow definition per file and compact job step summaries; M3.4B can build on these persisted facts but should not assume richer step-level graph detail exists yet.
+- Suite derivation is intentionally limited to stored manifest script keys because manifest payloads do not include script command bodies.
+- Job-to-suite linkage is intentionally conservative and currently recognizes only clear package-manager invocations, so some real CI jobs will remain explicitly unmapped until a future slice broadens the matcher with justified evidence.
 - Live workflow sync still depends on having a truthful local checkout of the requested synced repository; when the active workspace remote differs, operators must point `POCKET_CTO_SOURCE_REPO_ROOT` at the correct repo checkout.
 
 Rollback remains straightforward:
 
-- revert the workflow modules, twin service or route wiring, docs updates, package dependency change, and this ExecPlan together
-- leave persisted workflow twin rows in place rather than performing manual destructive cleanup
+- revert the test-suite modules, twin service or route wiring, docs updates, and this ExecPlan together
+- leave persisted workflow and test-suite twin rows in place rather than performing manual destructive cleanup
 
-M3.4B can now start cleanly on top of the repo-scoped workflow sync-run, stored workflow read model, and deterministic keying patterns introduced here.
+M3.5 can now start cleanly on top of the repo-scoped workflow sync-run, stored manifest snapshot, stored test-suite read model, and deterministic CI-to-test linkage introduced here.

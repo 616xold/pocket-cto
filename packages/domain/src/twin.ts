@@ -372,6 +372,82 @@ export const TwinRepositoryWorkflowSyncResultSchema = z.object({
   edgeCountsByKind: TwinKindCountMapSchema,
 });
 
+export const TwinTestSuiteStateSchema = z.enum([
+  "not_synced",
+  "no_test_suites",
+  "test_suites_available",
+]);
+
+export const TwinCiMatchedJobSchema = z.object({
+  jobStableKey: z.string().min(1),
+  workflowStableKey: z.string().min(1),
+  workflowName: z.string().min(1),
+  workflowFilePath: z.string().min(1),
+  jobKey: z.string().min(1),
+  jobName: z.string().min(1).nullable(),
+});
+
+export const TwinCiUnmappedJobSchema = TwinCiMatchedJobSchema.extend({
+  runCommands: z.array(z.string().min(1)),
+});
+
+export const TwinTestSuiteSummarySchema = z.object({
+  stableKey: z.string().min(1),
+  manifestPath: z.string().min(1),
+  packageName: z.string().min(1).nullable(),
+  scriptKey: z.string().min(1),
+  matchedJobs: z.array(TwinCiMatchedJobSchema),
+});
+
+export const TwinRepositoryTestSuitesCountsSchema = z.object({
+  testSuiteCount: z.number().int().nonnegative(),
+  mappedJobCount: z.number().int().nonnegative(),
+  unmappedJobCount: z.number().int().nonnegative(),
+});
+
+export const TwinRepositoryTestSuitesViewSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  latestRun: TwinSyncRunSchema.nullable(),
+  testSuiteState: TwinTestSuiteStateSchema,
+  counts: TwinRepositoryTestSuitesCountsSchema,
+  testSuites: z.array(TwinTestSuiteSummarySchema),
+  unmappedJobs: z.array(TwinCiUnmappedJobSchema),
+});
+
+export const TwinRepositoryCiSummaryCountsSchema = z.object({
+  workflowFileCount: z.number().int().nonnegative(),
+  workflowCount: z.number().int().nonnegative(),
+  jobCount: z.number().int().nonnegative(),
+  testSuiteCount: z.number().int().nonnegative(),
+  mappedJobCount: z.number().int().nonnegative(),
+  unmappedJobCount: z.number().int().nonnegative(),
+});
+
+export const TwinRepositoryCiSummarySchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  latestWorkflowRun: TwinSyncRunSchema.nullable(),
+  latestTestSuiteRun: TwinSyncRunSchema.nullable(),
+  workflowState: TwinWorkflowStateSchema,
+  testSuiteState: TwinTestSuiteStateSchema,
+  counts: TwinRepositoryCiSummaryCountsSchema,
+  testSuites: z.array(TwinTestSuiteSummarySchema),
+  unmappedJobs: z.array(TwinCiUnmappedJobSchema),
+});
+
+export const TwinRepositoryTestSuiteSyncResultSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  syncRun: TwinSyncRunSchema,
+  testSuiteState: TwinTestSuiteStateSchema,
+  testSuiteCount: z.number().int().nonnegative(),
+  jobCount: z.number().int().nonnegative(),
+  mappedJobCount: z.number().int().nonnegative(),
+  unmappedJobCount: z.number().int().nonnegative(),
+  entityCount: z.number().int().nonnegative(),
+  edgeCount: z.number().int().nonnegative(),
+  entityCountsByKind: TwinKindCountMapSchema,
+  edgeCountsByKind: TwinKindCountMapSchema,
+});
+
 export type TwinJsonObject = z.infer<typeof TwinJsonObjectSchema>;
 export type TwinRepositoryWriteReadinessFailureCode = z.infer<
   typeof TwinRepositoryWriteReadinessFailureCodeSchema
@@ -474,4 +550,23 @@ export type TwinRepositoryWorkflowsView = z.infer<
 >;
 export type TwinRepositoryWorkflowSyncResult = z.infer<
   typeof TwinRepositoryWorkflowSyncResultSchema
+>;
+export type TwinTestSuiteState = z.infer<typeof TwinTestSuiteStateSchema>;
+export type TwinCiMatchedJob = z.infer<typeof TwinCiMatchedJobSchema>;
+export type TwinCiUnmappedJob = z.infer<typeof TwinCiUnmappedJobSchema>;
+export type TwinTestSuiteSummary = z.infer<typeof TwinTestSuiteSummarySchema>;
+export type TwinRepositoryTestSuitesCounts = z.infer<
+  typeof TwinRepositoryTestSuitesCountsSchema
+>;
+export type TwinRepositoryTestSuitesView = z.infer<
+  typeof TwinRepositoryTestSuitesViewSchema
+>;
+export type TwinRepositoryCiSummaryCounts = z.infer<
+  typeof TwinRepositoryCiSummaryCountsSchema
+>;
+export type TwinRepositoryCiSummary = z.infer<
+  typeof TwinRepositoryCiSummarySchema
+>;
+export type TwinRepositoryTestSuiteSyncResult = z.infer<
+  typeof TwinRepositoryTestSuiteSyncResultSchema
 >;
