@@ -2606,6 +2606,11 @@ async function createHarness(options?: {
         async finishSyncRun() {
           throw new Error("Not implemented in orchestrator harness");
         },
+        async queryRepositoryBlastRadius() {
+          throw new Error(
+            "queryRepositoryBlastRadius should not be called in orchestrator harness",
+          );
+        },
         async getRepositoryDocSections() {
           return {
             repository: {

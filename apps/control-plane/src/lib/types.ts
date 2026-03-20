@@ -44,6 +44,7 @@ export type TwinServicePort = Pick<
   TwinService,
   | "finishSyncRun"
   | "getRepositoryCiSummary"
+  | "queryRepositoryBlastRadius"
   | "getRepositoryDocSections"
   | "getRepositoryDocs"
   | "getRepositoryFreshness"

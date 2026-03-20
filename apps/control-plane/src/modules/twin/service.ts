@@ -1,4 +1,6 @@
 import type {
+  TwinRepositoryBlastRadiusQuery,
+  TwinRepositoryBlastRadiusQueryResult,
   TwinRepositoryFreshnessView,
   TwinRepositoryCiSummary,
   TwinRepositoryDocSectionsView,
@@ -20,6 +22,7 @@ import type {
   TwinRepositoryOwnershipSyncResult,
   TwinSyncRunListView,
 } from "@pocket-cto/domain";
+import { buildTwinRepositoryBlastRadiusQueryResult } from "./blast-radius-query";
 import type { GitHubRepositoryDetailResult } from "../github-app/schema";
 import {
   buildTwinRepositoryDocSectionsView,
@@ -344,6 +347,70 @@ export class TwinService {
       testSuiteState: testSuiteSnapshot.testSuiteState,
       testSuiteEntities: testSuiteSnapshot.testSuiteEntities,
       jobSuiteEdges: testSuiteSnapshot.jobSuiteEdges,
+    });
+  }
+
+  async queryRepositoryBlastRadius(
+    repoFullName: string,
+    query: TwinRepositoryBlastRadiusQuery,
+  ): Promise<TwinRepositoryBlastRadiusQueryResult> {
+    const repository = await this.getRepositorySummary(repoFullName);
+    const storedState = await this.loadRepositoryStoredState(repoFullName);
+    const freshnessSlices = this.buildFreshnessSlices(storedState);
+    const metadataSnapshot = this.buildMetadataReadSnapshot(storedState);
+    const ownershipSnapshot = this.buildOwnershipReadSnapshot(storedState);
+    const workflowSnapshot = this.buildWorkflowReadSnapshot(storedState);
+    const testSuiteSnapshot = this.buildTestSuiteReadSnapshot(storedState);
+
+    return buildTwinRepositoryBlastRadiusQueryResult({
+      query,
+      metadataSummary: buildTwinRepositoryMetadataSummary({
+        repository,
+        entities: storedState.entities,
+        edges: storedState.edges,
+        latestRun: metadataSnapshot.latestRun,
+        freshness: buildTwinFreshnessSummary(freshnessSlices.metadata),
+      }),
+      ownershipSummary: buildTwinRepositoryOwnershipSummary({
+        repository,
+        latestRun: ownershipSnapshot.latestRun,
+        freshness: buildTwinFreshnessSummary(freshnessSlices.ownership),
+        ownershipState: ownershipSnapshot.ownershipState,
+        codeownersFileEntity: ownershipSnapshot.codeownersFileEntity,
+        ownerEntities: ownershipSnapshot.ownerEntities,
+        ruleEntities: ownershipSnapshot.ruleEntities,
+        effectiveOwnershipEdges: ownershipSnapshot.effectiveOwnershipEdges,
+        targetEntities: ownershipSnapshot.targetEntities,
+      }),
+      ciSummary: buildTwinRepositoryCiSummary({
+        repository,
+        latestWorkflowRun: workflowSnapshot.latestRun,
+        latestTestSuiteRun: testSuiteSnapshot.latestRun,
+        freshness: buildTwinFreshnessSummary(
+          buildTwinFreshnessRollupForEntries([
+            {
+              sliceName: "workflows",
+              slice: freshnessSlices.workflows,
+            },
+            {
+              sliceName: "testSuites",
+              slice: freshnessSlices.testSuites,
+            },
+          ]),
+        ),
+        workflowState: workflowSnapshot.workflowState,
+        workflowFileCount: workflowSnapshot.fileEntities.length,
+        workflowCount: workflowSnapshot.workflowEntities.length,
+        workflowEntities: workflowSnapshot.workflowEntities,
+        jobEntities: workflowSnapshot.jobEntities,
+        testSuiteState: testSuiteSnapshot.testSuiteState,
+        testSuiteEntities: testSuiteSnapshot.testSuiteEntities,
+        jobSuiteEdges: testSuiteSnapshot.jobSuiteEdges,
+      }),
+      freshnessView: buildTwinRepositoryFreshnessView({
+        repository,
+        slices: freshnessSlices,
+      }),
     });
   }
 

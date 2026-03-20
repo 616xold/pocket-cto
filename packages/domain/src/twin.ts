@@ -634,6 +634,94 @@ export const TwinRepositoryFreshnessViewSchema = z.object({
   slices: TwinFreshnessSlicesSchema,
 });
 
+export const TwinBlastRadiusQuestionKindSchema = z.enum(["auth_change"]);
+
+export const TwinRepositoryBlastRadiusQuerySchema = z
+  .object({
+    questionKind: TwinBlastRadiusQuestionKindSchema,
+    changedPaths: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+
+export const TwinBlastRadiusTargetKindSchema = z.enum([
+  "workspace_directory",
+  "package_manifest",
+]);
+
+export const TwinBlastRadiusOwnershipStateSchema = z.enum([
+  "owned",
+  "unowned",
+  "unknown",
+]);
+
+export const TwinBlastRadiusTargetOwnersSchema = z.object({
+  targetKind: TwinBlastRadiusTargetKindSchema,
+  targetPath: z.string().min(1),
+  ownershipState: TwinBlastRadiusOwnershipStateSchema,
+  effectiveOwners: z.array(z.string().min(1)),
+  appliedRule: TwinOwnershipAppliedRuleSchema.nullable(),
+});
+
+export const TwinBlastRadiusImpactedDirectorySchema =
+  TwinRepositoryMetadataDirectorySchema.extend({
+    matchedChangedPaths: z.array(z.string().min(1)),
+    ownershipState: TwinBlastRadiusOwnershipStateSchema,
+    effectiveOwners: z.array(z.string().min(1)),
+    appliedRule: TwinOwnershipAppliedRuleSchema.nullable(),
+  });
+
+export const TwinBlastRadiusImpactedManifestSchema =
+  TwinRepositoryMetadataManifestSchema.extend({
+    matchedChangedPaths: z.array(z.string().min(1)),
+    ownershipState: TwinBlastRadiusOwnershipStateSchema,
+    effectiveOwners: z.array(z.string().min(1)),
+    appliedRule: TwinOwnershipAppliedRuleSchema.nullable(),
+    relatedTestSuiteCount: z.number().int().nonnegative(),
+    relatedMappedCiJobCount: z.number().int().nonnegative(),
+  });
+
+export const TwinBlastRadiusRelatedTestSuiteSchema =
+  TwinTestSuiteSummarySchema.extend({
+    impactedByChangedPaths: z.array(z.string().min(1)),
+  });
+
+export const TwinBlastRadiusRelatedMappedCiJobSchema =
+  TwinCiMatchedJobSchema.extend({
+    manifestPaths: z.array(z.string().min(1)),
+    scriptKeys: z.array(z.string().min(1)),
+  });
+
+export const TwinBlastRadiusLimitationSchema = z.object({
+  code: z.string().min(1),
+  summary: z.string().min(1),
+  changedPaths: z.array(z.string().min(1)).default([]),
+  targetPaths: z.array(z.string().min(1)).default([]),
+  manifestPaths: z.array(z.string().min(1)).default([]),
+  jobKeys: z.array(z.string().min(1)).default([]),
+  reasonCodes: z.array(TwinCiUnmappedJobReasonCodeSchema).default([]),
+  sliceNames: z.array(TwinFreshnessSliceNameSchema).default([]),
+});
+
+export const TwinRepositoryBlastRadiusFreshnessBlockSchema = z.object({
+  rollup: TwinRepositoryFreshnessRollupSchema,
+  slices: TwinFreshnessSlicesSchema,
+});
+
+export const TwinRepositoryBlastRadiusQueryResultSchema = z.object({
+  repository: TwinRepositorySummarySchema,
+  queryEcho: TwinRepositoryBlastRadiusQuerySchema,
+  unmatchedPaths: z.array(z.string().min(1)),
+  impactedDirectories: z.array(TwinBlastRadiusImpactedDirectorySchema),
+  impactedManifests: z.array(TwinBlastRadiusImpactedManifestSchema),
+  ownersByTarget: z.array(TwinBlastRadiusTargetOwnersSchema),
+  relatedTestSuites: z.array(TwinBlastRadiusRelatedTestSuiteSchema),
+  relatedMappedCiJobs: z.array(TwinBlastRadiusRelatedMappedCiJobSchema),
+  ciCoverageLimitations: z.array(TwinBlastRadiusLimitationSchema),
+  freshness: TwinRepositoryBlastRadiusFreshnessBlockSchema,
+  limitations: z.array(TwinBlastRadiusLimitationSchema),
+  answerSummary: z.string().min(1),
+});
+
 export const TwinRepositoryTestSuiteSyncResultSchema = z.object({
   repository: TwinRepositorySummarySchema,
   syncRun: TwinSyncRunSchema,
@@ -819,6 +907,42 @@ export type TwinRepositoryCiSummary = z.infer<
 >;
 export type TwinRepositoryFreshnessView = z.infer<
   typeof TwinRepositoryFreshnessViewSchema
+>;
+export type TwinBlastRadiusQuestionKind = z.infer<
+  typeof TwinBlastRadiusQuestionKindSchema
+>;
+export type TwinRepositoryBlastRadiusQuery = z.infer<
+  typeof TwinRepositoryBlastRadiusQuerySchema
+>;
+export type TwinBlastRadiusTargetKind = z.infer<
+  typeof TwinBlastRadiusTargetKindSchema
+>;
+export type TwinBlastRadiusOwnershipState = z.infer<
+  typeof TwinBlastRadiusOwnershipStateSchema
+>;
+export type TwinBlastRadiusTargetOwners = z.infer<
+  typeof TwinBlastRadiusTargetOwnersSchema
+>;
+export type TwinBlastRadiusImpactedDirectory = z.infer<
+  typeof TwinBlastRadiusImpactedDirectorySchema
+>;
+export type TwinBlastRadiusImpactedManifest = z.infer<
+  typeof TwinBlastRadiusImpactedManifestSchema
+>;
+export type TwinBlastRadiusRelatedTestSuite = z.infer<
+  typeof TwinBlastRadiusRelatedTestSuiteSchema
+>;
+export type TwinBlastRadiusRelatedMappedCiJob = z.infer<
+  typeof TwinBlastRadiusRelatedMappedCiJobSchema
+>;
+export type TwinBlastRadiusLimitation = z.infer<
+  typeof TwinBlastRadiusLimitationSchema
+>;
+export type TwinRepositoryBlastRadiusFreshnessBlock = z.infer<
+  typeof TwinRepositoryBlastRadiusFreshnessBlockSchema
+>;
+export type TwinRepositoryBlastRadiusQueryResult = z.infer<
+  typeof TwinRepositoryBlastRadiusQueryResultSchema
 >;
 export type TwinRepositoryTestSuiteSyncResult = z.infer<
   typeof TwinRepositoryTestSuiteSyncResultSchema

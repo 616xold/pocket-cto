@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+  TwinRepositoryBlastRadiusQueryResultSchema,
+  TwinRepositoryBlastRadiusQuerySchema,
   TwinRepositoryFreshnessViewSchema,
   TwinRepositoryCiSummarySchema,
   TwinRepositoryDocSectionsViewSchema,
@@ -29,7 +31,12 @@ export function parseTwinRepositoryParams(params: unknown) {
   return TwinRepositoryParamsSchema.parse(params);
 }
 
+export function parseTwinRepositoryBlastRadiusQuery(body: unknown) {
+  return TwinRepositoryBlastRadiusQuerySchema.parse(body);
+}
+
 export {
+  TwinRepositoryBlastRadiusQueryResultSchema,
   TwinRepositoryCiSummarySchema,
   TwinRepositoryDocSectionsViewSchema,
   TwinRepositoryDocsSyncResultSchema,

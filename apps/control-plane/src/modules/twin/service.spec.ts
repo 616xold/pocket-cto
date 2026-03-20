@@ -140,15 +140,54 @@ describe("TwinService", () => {
       ).rejects.toBe(error);
     },
   );
+
+  it("answers blast-radius queries without performing new persistence writes", async () => {
+    const repository = new InMemoryTwinRepository();
+    await repository.upsertEntity({
+      repoFullName,
+      kind: "workspace_directory",
+      stableKey: "apps",
+      title: "Apps",
+      payload: {
+        path: "apps",
+        label: "Apps",
+        classification: "application_group",
+      },
+      observedAt: "2026-03-16T22:50:00.000Z",
+    });
+    const startSyncRunSpy = vi.spyOn(repository, "startSyncRun");
+    const finishSyncRunSpy = vi.spyOn(repository, "finishSyncRun");
+    const upsertEntitySpy = vi.spyOn(repository, "upsertEntity");
+    const upsertEdgeSpy = vi.spyOn(repository, "upsertEdge");
+    const service = createTwinService({
+      repository,
+    });
+
+    const result = await service.queryRepositoryBlastRadius(repoFullName, {
+      questionKind: "auth_change",
+      changedPaths: ["apps/web/lib/auth.ts"],
+    });
+
+    expect(result.impactedDirectories).toEqual([
+      expect.objectContaining({
+        path: "apps",
+      }),
+    ]);
+    expect(startSyncRunSpy).not.toHaveBeenCalled();
+    expect(finishSyncRunSpy).not.toHaveBeenCalled();
+    expect(upsertEntitySpy).not.toHaveBeenCalled();
+    expect(upsertEdgeSpy).not.toHaveBeenCalled();
+  });
 });
 
 function createTwinService(overrides?: {
   getRepository?: ReturnType<typeof vi.fn>;
+  repository?: InMemoryTwinRepository;
   resolveWritableRepository?: ReturnType<typeof vi.fn>;
 }) {
   return new TwinService({
     metadataExtractor: new LocalTwinRepositoryMetadataExtractor(),
-    repository: new InMemoryTwinRepository(),
+    repository: overrides?.repository ?? new InMemoryTwinRepository(),
     repositoryRegistry: {
       getRepository:
         overrides?.getRepository ??

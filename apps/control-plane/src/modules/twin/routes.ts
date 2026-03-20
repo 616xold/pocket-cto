@@ -1,6 +1,9 @@
 import type { FastifyInstance } from "fastify";
 import type { TwinServicePort } from "../../lib/types";
-import { parseTwinRepositoryParams } from "./schema";
+import {
+  parseTwinRepositoryBlastRadiusQuery,
+  parseTwinRepositoryParams,
+} from "./schema";
 
 export async function registerTwinRoutes(
   app: FastifyInstance,
@@ -48,6 +51,18 @@ export async function registerTwinRoutes(
       `${params.owner}/${params.repo}`,
     );
   });
+
+  app.post(
+    "/twin/repositories/:owner/:repo/blast-radius/query",
+    async (request) => {
+      const params = parseTwinRepositoryParams(request.params);
+      const body = parseTwinRepositoryBlastRadiusQuery(request.body);
+      return deps.twinService.queryRepositoryBlastRadius(
+        `${params.owner}/${params.repo}`,
+        body,
+      );
+    },
+  );
 
   app.get("/twin/repositories/:owner/:repo/freshness", async (request) => {
     const params = parseTwinRepositoryParams(request.params);

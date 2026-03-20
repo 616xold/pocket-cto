@@ -1043,7 +1043,7 @@ The read routes return stored twin state.
 The metadata, docs, runbooks, workflow, and ownership sync routes perform deterministic local scans for the requested synced repository.
 The test-suite sync route is a stored-data pass over the latest successful manifest and workflow-job snapshots for that repository.
 The dedicated freshness route computes deterministic freshness from existing sync runs plus the existing stored slice state; it does not trigger new scans or extraction passes.
-Blast-radius answers are still a later M3 slice.
+The blast-radius query route is also stored-state only; it does not trigger new syncs or extraction work.
 
 Available routes:
 
@@ -1053,6 +1053,7 @@ Available routes:
 - `POST /twin/repositories/:owner/:repo/workflows-sync`
 - `POST /twin/repositories/:owner/:repo/test-suites-sync`
 - `POST /twin/repositories/:owner/:repo/ownership-sync`
+- `POST /twin/repositories/:owner/:repo/blast-radius/query`
 - `GET /twin/repositories/:owner/:repo/docs`
 - `GET /twin/repositories/:owner/:repo/doc-sections`
 - `GET /twin/repositories/:owner/:repo/runbooks`
@@ -1083,6 +1084,9 @@ curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/runbo
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/workflows-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/test-suites-sync
 curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/ownership-sync
+curl -i -X POST http://localhost:4000/twin/repositories/616xold/pocket-cto/blast-radius/query \
+  -H 'content-type: application/json' \
+  -d '{"questionKind":"auth_change","changedPaths":["apps/web/lib/auth.ts","packages/domain/src/twin.ts"]}'
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/docs
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/doc-sections
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/runbooks
@@ -1098,6 +1102,58 @@ curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/entities
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/edges
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/runs
 ```
+
+### Twin blast-radius query
+
+`POST /twin/repositories/:owner/:repo/blast-radius/query` answers a direct repository blast-radius question from already stored twin state.
+It is intentionally narrow and deterministic in M3.7.
+The request body currently accepts:
+
+```json
+{
+  "questionKind": "auth_change",
+  "changedPaths": ["apps/web/lib/auth.ts", "packages/domain/src/twin.ts"]
+}
+```
+
+The route reads only these existing stored twin facts:
+
+- `workspace_directory` targets
+- `package_manifest` targets
+- effective ownership over those targets
+- stored test suites declared by impacted manifests
+- mapped CI jobs linked to those suites
+- stored freshness posture
+
+Current matching rules:
+
+- a changed path impacts a stored `workspace_directory` when the path is equal to or nested under that directory path
+- a changed path impacts a stored `package_manifest` when the path is that manifest itself or nested under that manifest directory
+- when multiple manifests match, the route uses the nearest ancestor manifest as the primary package target for that path
+- unmatched paths remain explicit instead of being guessed
+
+The response is summary-shaped and operator-readable.
+It includes at minimum:
+
+- repository summary
+- query echo
+- explicit `unmatchedPaths`
+- `impactedDirectories`
+- `impactedManifests`
+- `ownersByTarget`
+- `relatedTestSuites`
+- `relatedMappedCiJobs`
+- `ciCoverageLimitations`
+- repository freshness rollup plus per-slice freshness
+- general `limitations`
+- one concise `answerSummary`
+
+The route stays conservative:
+
+- it does not infer owners when ownership has not been synced
+- it does not invent CI coverage when no stored mapped jobs exist
+- it keeps stale, failed, or never-synced freshness visible as limitations
+- it does not widen into docs, runbooks, or arbitrary file-graph reasoning yet
 
 ### Twin freshness
 

@@ -298,6 +298,11 @@ function createAppContainer(
       async finishSyncRun() {
         throw new Error("finishSyncRun should not be called in this test");
       },
+      async queryRepositoryBlastRadius() {
+        throw new Error(
+          "queryRepositoryBlastRadius should not be called in this test",
+        );
+      },
       async getRepositoryDocSections() {
         return {
           repository: {
