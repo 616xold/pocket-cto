@@ -1155,6 +1155,35 @@ The route stays conservative:
 - it keeps stale, failed, or never-synced freshness visible as limitations
 - it does not widen into docs, runbooks, or arbitrary file-graph reasoning yet
 
+Repeatable live smoke:
+
+```bash
+pnpm smoke:twin-blast-radius:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts
+pnpm smoke:twin-blast-radius:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts --source-repo-root /absolute/path/to/pocket-cto
+```
+
+The helper keeps the product surface unchanged and uses only existing routes.
+It always syncs GitHub installations and the repository registry, then runs the blast-radius query plus freshness read route.
+If the requested local source root truthfully matches the requested synced repository, it also refreshes the existing metadata, ownership, workflows, and test-suites routes before running the query.
+Otherwise it reuses already-persisted twin state as the only truthful option.
+
+The helper prints only safe summary fields and explicitly labels the proof mode:
+
+- `stored_state_only`: reads the current stored twin state without triggering slice refresh
+- `refreshed_live_state`: refreshed the existing twin slices from a truthful local checkout before running the query
+
+The helper reports at minimum:
+
+- repo full name
+- changed paths
+- impacted manifest count
+- impacted directory count
+- owner count
+- related test suite count
+- related mapped CI job count
+- freshness rollup
+- limitation count
+
 ### Twin freshness
 
 `GET /twin/repositories/:owner/:repo/freshness` scores the currently stored twin for the requested repository across these slices:

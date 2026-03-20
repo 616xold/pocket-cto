@@ -20,6 +20,8 @@ It intentionally stops before discovery-mission formatting, natural-language par
 - [x] (2026-03-20T00:56:36Z) Added focused tests for deterministic directory and manifest matching, ownership visibility, stored-edge-only suite and job linkage, unmatched path handling, stale or failed freshness limitations, route behavior, and the no-new-persistence contract.
 - [x] (2026-03-20T00:56:36Z) Updated `docs/ops/local-dev.md` with the new blast-radius route, request shape, matching semantics, and conservative stored-state-only response expectations.
 - [x] (2026-03-20T00:56:36Z) Ran the full requested validation matrix successfully and captured a real persisted-state blast-radius query against `616xold/pocket-cto`.
+- [x] (2026-03-20T01:06:21Z) Closed the remaining M3.7 proof and docs gap without redesigning the service: added one packaged smoke helper under `tools/`, added the root alias `smoke:twin-blast-radius:live`, and documented the exact smoke command plus proof-mode behavior in `docs/ops/local-dev.md`.
+- [x] (2026-03-20T01:06:21Z) Re-ran the full requested validation matrix after the tooling/docs closeout and captured the exact packaged smoke output for `616xold/pocket-cto` using the new helper.
 
 ## Surprises & Discoveries
 
@@ -56,6 +58,10 @@ It intentionally stops before discovery-mission formatting, natural-language par
 
 - Decision: split the implementation into `blast-radius-paths.ts`, `blast-radius-limitations.ts`, and `blast-radius-query.ts` instead of extending `service.ts` with all matching and explanation logic inline.
   Rationale: the repo instructions and modular architecture skill both require small bounded modules, and this split keeps path normalization, conservative limitation shaping, and route-level orchestration independently testable.
+  Date/Author: 2026-03-20 / Codex
+
+- Decision: keep the M3.7 proof helper route-driven and in-process, and allow it to reuse already-persisted twin state when no truthful local checkout match is available.
+  Rationale: the prompt explicitly narrowed this follow-up to tooling and docs, required the helper to call only existing routes, and allowed stored-state reuse when that is the only truthful option.
   Date/Author: 2026-03-20 / Codex
 
 ## Context and Orientation
@@ -226,6 +232,13 @@ Validation results:
 - `pnpm test` passed.
 - `pnpm ci:repro:current` passed.
 
+Proof/docs closeout changed files:
+
+- `docs/ops/local-dev.md`
+- `package.json`
+- `plans/EP-0027-blast-radius-query-service.md`
+- `tools/twin-blast-radius-smoke.mjs`
+
 Exact changed files for this slice:
 
 - `apps/control-plane/src/bootstrap.spec.ts`
@@ -258,6 +271,27 @@ Live proof captured at `2026-03-20T00:56:36Z`:
   freshness rollup `fresh`
   limitations count `3`
 - The live answer correctly mapped the changed auth path to the stored `apps` workspace directory and the nearest ancestor manifest `apps/control-plane/package.json`, surfaced the absence of a CODEOWNERS file explicitly, and kept CI coverage conservative because the impacted manifest's stored `test` suite had no mapped CI jobs while the repo still had explicit unmapped jobs.
+
+Packaged smoke proof captured at `2026-03-20T01:04:30.802Z`:
+
+- Command:
+
+      pnpm smoke:twin-blast-radius:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts
+
+- Proof mode: `stored_state_only`
+- Proof-mode reason: `no_source_repo_root`
+- Result summary:
+  repo full name `616xold/pocket-cto`
+  changed paths `["apps/control-plane/src/modules/github-app/auth.ts"]`
+  impacted manifest count `1`
+  impacted directory count `1`
+  owner count `0`
+  related test suite count `1`
+  related mapped CI job count `0`
+  freshness rollup `fresh`
+  limitation count `3`
+- Limitation codes: `no_codeowners_file`, `manifest_without_mapped_ci_jobs`, `repo_has_unmapped_ci_jobs`
+- The packaged helper stayed product-safe: it synced only the GitHub App installation plus repository registry routes, reused already-persisted twin state because no truthful matching source checkout was configured, then called only the existing blast-radius query and freshness routes.
 
 ## Interfaces and Dependencies
 
@@ -295,4 +329,4 @@ What remains for follow-on work:
 - M3.7B can build discovery-mission formatting and higher-level operator workflows on top of this response without redesigning the core matching rules.
 - M3.8 can widen the model only if it introduces new truthful persisted facts instead of weakening the current conservative semantics.
 
-The current route is strong enough for M3.7B to start cleanly because the core answer surface is now deterministic, repository-scoped, explicit about unknowns, and validated against both focused tests and one live persisted-state repository query.
+The current route is strong enough for M3.7B to start cleanly because the core answer surface is now deterministic, repository-scoped, explicit about unknowns, validated against focused tests, proven once through a direct live route probe, and now supported by one repeatable packaged smoke plus aligned local-ops docs.
