@@ -22,6 +22,8 @@ It intentionally stops before discovery-mission formatting, natural-language par
 - [x] (2026-03-20T00:56:36Z) Ran the full requested validation matrix successfully and captured a real persisted-state blast-radius query against `616xold/pocket-cto`.
 - [x] (2026-03-20T01:06:21Z) Closed the remaining M3.7 proof and docs gap without redesigning the service: added one packaged smoke helper under `tools/`, added the root alias `smoke:twin-blast-radius:live`, and documented the exact smoke command plus proof-mode behavior in `docs/ops/local-dev.md`.
 - [x] (2026-03-20T01:06:21Z) Re-ran the full requested validation matrix after the tooling/docs closeout and captured the exact packaged smoke output for `616xold/pocket-cto` using the new helper.
+- [x] (2026-03-20T01:56:48Z) Created a truthful temporary checkout of `https://github.com/616xold/pocket-cto.git` and re-ran the packaged helper with `--source-repo-root`, proving the stronger `refreshed_live_state` path without changing the route contract or product code.
+- [x] (2026-03-20T01:56:48Z) Tightened the local-dev blast-radius smoke wording so the fallback `stored_state_only` mode and the preferred truthful `refreshed_live_state` mode are explicitly distinguished in the operator docs.
 
 ## Surprises & Discoveries
 
@@ -33,6 +35,9 @@ It intentionally stops before discovery-mission formatting, natural-language par
 
 - Observation: mapped CI coverage is already intentionally conservative, so M3.7 should preserve that posture and surface limitations instead of broadening matching.
   Evidence: `apps/control-plane/src/modules/twin/test-suite-sync.ts`, `test-suite-matcher.ts`, and `test-suite-formatter.ts` derive suites only from stored manifest scripts and jobs only from stored `ci_job_runs_test_suite` edges, while explicit unmapped jobs already carry `reasonCode` and `reasonSummary`.
+
+- Observation: the packaged live smoke helper already supported the stronger refreshed-live path with no code changes once given a truthful matching checkout.
+  Evidence: `pnpm smoke:twin-blast-radius:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts --source-repo-root /tmp/pocket-cto-live-2LRfwG` returned `proofMode: "refreshed_live_state"` and successful refresh results for `metadata`, `ownership`, `workflows`, and `testSuites`.
 
 ## Decision Log
 
@@ -62,6 +67,10 @@ It intentionally stops before discovery-mission formatting, natural-language par
 
 - Decision: keep the M3.7 proof helper route-driven and in-process, and allow it to reuse already-persisted twin state when no truthful local checkout match is available.
   Rationale: the prompt explicitly narrowed this follow-up to tooling and docs, required the helper to call only existing routes, and allowed stored-state reuse when that is the only truthful option.
+  Date/Author: 2026-03-20 / Codex
+
+- Decision: record both packaged smoke modes in the ExecPlan, but treat `refreshed_live_state` as the stronger M3.7 proof base when a truthful matching checkout is available.
+  Rationale: `stored_state_only` proves the read-model route over persisted state, while `refreshed_live_state` additionally proves the packaged helper can truthfully refresh the already-shipped twin slices and then query the same route without widening the product surface.
   Date/Author: 2026-03-20 / Codex
 
 ## Context and Orientation
@@ -232,6 +241,23 @@ Validation results:
 - `pnpm test` passed.
 - `pnpm ci:repro:current` passed.
 
+Refreshed-live proof refresh validation results:
+
+- After capturing the truthful `refreshed_live_state` packaged smoke and tightening the local-dev wording, `pnpm db:generate` passed again with no new schema changes to generate.
+- `pnpm db:migrate` passed again.
+- `pnpm run db:migrate:ci` passed again.
+- `pnpm repo:hygiene` passed again.
+- `pnpm lint` passed again.
+- `pnpm typecheck` passed again.
+- `pnpm build` passed again.
+- `pnpm test` passed again.
+- `pnpm ci:repro:current` passed again.
+
+Refreshed-live proof refresh changed files:
+
+- `docs/ops/local-dev.md`
+- `plans/EP-0027-blast-radius-query-service.md`
+
 Proof/docs closeout changed files:
 
 - `docs/ops/local-dev.md`
@@ -272,7 +298,7 @@ Live proof captured at `2026-03-20T00:56:36Z`:
   limitations count `3`
 - The live answer correctly mapped the changed auth path to the stored `apps` workspace directory and the nearest ancestor manifest `apps/control-plane/package.json`, surfaced the absence of a CODEOWNERS file explicitly, and kept CI coverage conservative because the impacted manifest's stored `test` suite had no mapped CI jobs while the repo still had explicit unmapped jobs.
 
-Packaged smoke proof captured at `2026-03-20T01:04:30.802Z`:
+Packaged stored-state smoke proof captured at `2026-03-20T01:04:30.802Z`:
 
 - Command:
 
@@ -292,6 +318,32 @@ Packaged smoke proof captured at `2026-03-20T01:04:30.802Z`:
   limitation count `3`
 - Limitation codes: `no_codeowners_file`, `manifest_without_mapped_ci_jobs`, `repo_has_unmapped_ci_jobs`
 - The packaged helper stayed product-safe: it synced only the GitHub App installation plus repository registry routes, reused already-persisted twin state because no truthful matching source checkout was configured, then called only the existing blast-radius query and freshness routes.
+
+Packaged refreshed-live smoke proof captured at `2026-03-20T01:56:20.897Z`:
+
+- Command:
+
+      pnpm smoke:twin-blast-radius:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts --source-repo-root /tmp/pocket-cto-live-2LRfwG
+
+- Proof mode: `refreshed_live_state`
+- Proof-mode reason: `truthful_source_match`
+- Refresh results:
+  metadata `succeeded`
+  ownership `succeeded`
+  workflows `succeeded`
+  testSuites `succeeded`
+- Result summary:
+  repo full name `616xold/pocket-cto`
+  changed paths `["apps/control-plane/src/modules/github-app/auth.ts"]`
+  impacted manifest count `1`
+  impacted directory count `1`
+  owner count `0`
+  related test suite count `1`
+  related mapped CI job count `0`
+  freshness rollup `fresh`
+  limitation count `3`
+- Limitation codes: `no_codeowners_file`, `manifest_without_mapped_ci_jobs`, `repo_has_unmapped_ci_jobs`
+- This is the stronger packaged M3.7 proof base: the helper truthfully matched the temp checkout back to `616xold/pocket-cto`, refreshed the existing `metadata`, `ownership`, `workflows`, and `testSuites` slices through existing routes only, then answered the blast-radius query and freshness read without changing core matching semantics or adding new persistence.
 
 ## Interfaces and Dependencies
 
@@ -329,4 +381,4 @@ What remains for follow-on work:
 - M3.7B can build discovery-mission formatting and higher-level operator workflows on top of this response without redesigning the core matching rules.
 - M3.8 can widen the model only if it introduces new truthful persisted facts instead of weakening the current conservative semantics.
 
-The current route is strong enough for M3.7B to start cleanly because the core answer surface is now deterministic, repository-scoped, explicit about unknowns, validated against focused tests, proven once through a direct live route probe, and now supported by one repeatable packaged smoke plus aligned local-ops docs.
+The current route is strong enough for M3.7B to start cleanly because the core answer surface is now deterministic, repository-scoped, explicit about unknowns, validated against focused tests, proven once through a direct live route probe, and now supported by both a stored-state fallback smoke and a stronger refreshed-live packaged smoke plus aligned local-ops docs.
