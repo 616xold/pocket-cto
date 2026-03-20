@@ -2290,6 +2290,60 @@ async function createHarness(options?: {
   >;
   runtimeCodexService?: Pick<CodexRuntimeService, "runTurn">;
   sourceRepoRoot?: string;
+  twinService?: {
+    queryRepositoryBlastRadius: () => Promise<{
+      repository: {
+        fullName: string;
+        installationId: string;
+        defaultBranch: string;
+        archived: boolean | null;
+        disabled: boolean | null;
+        isActive: boolean;
+        writeReadiness: {
+          ready: boolean;
+          failureCode: null;
+        };
+      };
+      queryEcho: {
+        questionKind: "auth_change";
+        changedPaths: string[];
+      };
+      unmatchedPaths: string[];
+      impactedDirectories: Array<{
+        path: string;
+        label: string;
+        classification: string;
+        matchedChangedPaths: string[];
+        ownershipState: "unknown";
+        effectiveOwners: string[];
+        appliedRule: null;
+      }>;
+      impactedManifests: [];
+      ownersByTarget: [];
+      relatedTestSuites: [];
+      relatedMappedCiJobs: [];
+      ciCoverageLimitations: [];
+      freshness: {
+        rollup: {
+          state: "fresh";
+          scorePercent: number;
+          latestRunStatus: "succeeded";
+          ageSeconds: number;
+          staleAfterSeconds: number;
+          reasonCode: string;
+          reasonSummary: string;
+          freshSliceCount: number;
+          staleSliceCount: number;
+          failedSliceCount: number;
+          neverSyncedSliceCount: number;
+          blockingSlices: [];
+        };
+        slices: ReturnType<typeof createTwinFreshnessSlices>;
+      };
+      limitations: [];
+      answerSummary: string;
+    }>;
+  };
   validationService?: Pick<
     LocalExecutorValidationService,
     "validateExecutorTurn"
@@ -2380,6 +2434,67 @@ async function createHarness(options?: {
       new LocalExecutorValidationService(
         new LocalWorkspaceValidationGitClient(),
       ),
+    options?.twinService ?? {
+      async queryRepositoryBlastRadius() {
+        return {
+          repository: {
+            fullName: "616xold/pocket-cto",
+            installationId: "12345",
+            defaultBranch: "main",
+            archived: false,
+            disabled: false,
+            isActive: true,
+            writeReadiness: {
+              ready: true,
+              failureCode: null,
+            },
+          },
+          queryEcho: {
+            questionKind: "auth_change",
+            changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+          },
+          unmatchedPaths: [],
+          impactedDirectories: [
+            {
+              path: "apps",
+              label: "Apps",
+              classification: "application_group",
+              matchedChangedPaths: [
+                "apps/control-plane/src/modules/github-app/auth.ts",
+              ],
+              ownershipState: "unknown" as const,
+              effectiveOwners: [],
+              appliedRule: null,
+            },
+          ],
+          impactedManifests: [],
+          ownersByTarget: [],
+          relatedTestSuites: [],
+          relatedMappedCiJobs: [],
+          ciCoverageLimitations: [],
+          freshness: {
+            rollup: {
+              state: "fresh" as const,
+              scorePercent: 100,
+              latestRunStatus: "succeeded" as const,
+              ageSeconds: 10,
+              staleAfterSeconds: 3600,
+              reasonCode: "fresh",
+              reasonSummary: "Stored twin state is fresh.",
+              freshSliceCount: 6,
+              staleSliceCount: 0,
+              failedSliceCount: 0,
+              neverSyncedSliceCount: 0,
+              blockingSlices: [],
+            },
+            slices: createTwinFreshnessSlices(),
+          },
+          limitations: [],
+          answerSummary:
+            "Stored twin state shows apps as the only impacted directory for this auth change.",
+        };
+      },
+    },
     options?.githubPublishService ?? {
       async publishValidatedExecutorWorkspace(input) {
         return {
@@ -3368,6 +3483,33 @@ async function createHarness(options?: {
       approvalService,
       runtimeControlService,
     }),
+  };
+}
+
+function createTwinFreshnessSlices() {
+  return {
+    metadata: createTwinFreshnessSlice(),
+    ownership: createTwinFreshnessSlice(),
+    workflows: createTwinFreshnessSlice(),
+    testSuites: createTwinFreshnessSlice(),
+    docs: createTwinFreshnessSlice(),
+    runbooks: createTwinFreshnessSlice(),
+  };
+}
+
+function createTwinFreshnessSlice() {
+  return {
+    state: "fresh" as const,
+    scorePercent: 100,
+    latestRunStatus: "succeeded" as const,
+    ageSeconds: 10,
+    staleAfterSeconds: 3600,
+    reasonCode: "fresh",
+    reasonSummary: "Stored twin state is fresh.",
+    latestRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    latestCompletedAt: "2026-03-20T00:15:00.000Z",
+    latestSuccessfulRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    latestSuccessfulCompletedAt: "2026-03-20T00:15:00.000Z",
   };
 }
 

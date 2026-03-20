@@ -399,6 +399,7 @@ async function buildWorker(input: {
     new EvidenceService(),
     workspaceService,
     validationService,
+    input.kernel.twinService,
     githubPublishService,
     input.kernel.proofBundleAssembly,
   );

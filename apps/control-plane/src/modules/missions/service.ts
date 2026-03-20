@@ -1,5 +1,6 @@
 import type {
   ApprovalRecord,
+  CreateDiscoveryMissionInput,
   CreateMissionFromTextInput,
   MissionDetailView,
   MissionListItem,
@@ -19,6 +20,7 @@ import type { EvidenceService } from "../evidence/service";
 import type { PersistenceSession } from "../../lib/persistence";
 import type { ReplayService } from "../replay/service";
 import type { MissionCompilationResult, MissionCompiler } from "./compiler";
+import { buildDiscoveryMissionCreationInput } from "./discovery";
 import { buildQueuedMissionStatusChangedPayload } from "./events";
 import type { MissionRepository } from "./repository";
 
@@ -65,6 +67,13 @@ export class MissionService {
         sourceRef: input.sourceRef ?? null,
         spec,
       },
+      undefined,
+    );
+  }
+
+  async createDiscovery(rawInput: CreateDiscoveryMissionInput) {
+    return this.createFromCompilation(
+      buildDiscoveryMissionCreationInput(rawInput),
       undefined,
     );
   }
@@ -178,6 +187,7 @@ export class MissionService {
   private async createFromCompilation(
     input: {
       compilation: MissionCompilationResult;
+      compilerOutput?: Record<string, unknown>;
       createdBy: string;
       primaryRepo: string | null;
       rawText: string;
@@ -210,7 +220,9 @@ export class MissionService {
           compilerName: input.compilation.compilerName,
           compilerVersion: input.compilation.compilerVersion,
           compilerConfidence: input.compilation.confidence,
-          compilerOutput: input.spec as unknown as Record<string, unknown>,
+          compilerOutput:
+            input.compilerOutput ??
+            (input.spec as unknown as Record<string, unknown>),
         },
         activeSession,
       );

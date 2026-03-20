@@ -4,6 +4,7 @@ export const missionStatusChangeReasons = {
   approvalRequested: "approval_requested",
   approvalResolved: "approval_resolved",
   runtimeTurnStarted: "runtime_turn_started",
+  taskStarted: "task_started",
   taskTerminalized: "task_terminalized",
   tasksMaterialized: "tasks_materialized",
 } as const;
@@ -33,6 +34,17 @@ export function buildRuntimeStartedMissionStatusChangedPayload(
     from,
     to,
     reason: missionStatusChangeReasons.runtimeTurnStarted,
+  };
+}
+
+export function buildTaskStartedMissionStatusChangedPayload(
+  from: MissionStatus,
+  to: MissionStatus,
+): MissionStatusChangedPayload {
+  return {
+    from,
+    to,
+    reason: missionStatusChangeReasons.taskStarted,
   };
 }
 

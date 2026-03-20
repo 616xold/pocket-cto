@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DiscoveryMissionQuestionSchema } from "./discovery-mission";
 
 export const MissionTypeSchema = z.enum([
   "build",
@@ -28,12 +29,19 @@ export const SandboxModeSchema = z.enum([
 
 export const MissionSourceKindSchema = z.enum([
   "manual_text",
+  "manual_discovery",
   "github_issue",
   "github_comment",
   "alert",
   "voice_note",
   "screenshot",
 ]);
+
+export const MissionSpecInputSchema = z
+  .object({
+    discoveryQuestion: DiscoveryMissionQuestionSchema.optional(),
+  })
+  .strict();
 
 export const RiskBudgetSchema = z.object({
   sandboxMode: SandboxModeSchema,
@@ -62,6 +70,7 @@ export const MissionSpecSchema = z.object({
   riskBudget: RiskBudgetSchema,
   deliverables: z.array(z.string()).min(1),
   evidenceRequirements: z.array(z.string()).default([]),
+  input: MissionSpecInputSchema.optional(),
 });
 
 export type MissionType = z.infer<typeof MissionTypeSchema>;

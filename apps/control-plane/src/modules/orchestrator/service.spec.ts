@@ -1,9 +1,18 @@
 import { setTimeout as delay } from "node:timers/promises";
+import type {
+  TwinBlastRadiusLimitation,
+  TwinFreshnessSlice,
+  TwinFreshnessSliceName,
+  TwinRepositoryBlastRadiusQueryResult,
+  TwinRepositoryFreshnessView,
+} from "@pocket-cto/domain";
 import { describe, expect, it, vi } from "vitest";
 import { InMemoryApprovalRepository } from "../approvals/repository";
 import { ApprovalService } from "../approvals/service";
+import { readDiscoveryAnswerArtifactMetadata } from "../evidence/discovery-answer";
 import { ProofBundleAssemblyService } from "../evidence/proof-bundle-assembly";
 import { EvidenceService } from "../evidence/service";
+import { GitHubRepositoryNotFoundError } from "../github-app/errors";
 import { StubMissionCompiler } from "../missions/compiler";
 import { InMemoryMissionRepository } from "../missions/repository";
 import { MissionService } from "../missions/service";
@@ -12,6 +21,7 @@ import { ReplayService } from "../replay/service";
 import { RuntimeControlService } from "../runtime-codex/control-service";
 import { InMemoryRuntimeSessionRegistry } from "../runtime-codex/live-session-registry";
 import type { RuntimeCodexRunTurnResult } from "../runtime-codex/types";
+import type { TwinService } from "../twin/service";
 import type { ExecutorValidationService } from "../validation";
 import {
   InMemoryWorkspaceRepository,
@@ -303,10 +313,152 @@ describe("OrchestratorWorker", () => {
       "Worker failed during Codex runtime processing",
     );
   });
+
+  it("executes discovery missions through TwinService, not Codex runtime, and stores a durable answer artifact", async () => {
+    const runtimeRunTurn = vi.fn(async () => {
+      throw new Error("runtime should not be called for discovery");
+    });
+    const queryRepositoryBlastRadius = vi.fn(async () =>
+      createDiscoveryQueryResult({
+        limitations: [
+          {
+            code: "repository_freshness_stale",
+            summary: "Stored workflow and test-suite state is stale.",
+            changedPaths: [],
+            targetPaths: [],
+            manifestPaths: [],
+            jobKeys: [],
+            reasonCodes: [],
+            sliceNames: ["workflows", "testSuites"],
+          },
+        ],
+        rollupState: "stale",
+        rollupReasonCode: "stale_twin_state",
+        rollupReasonSummary:
+          "Stored twin state is stale for: workflows, testSuites.",
+      }),
+    );
+    const { missionRepository, missionService, worker } = createHarness({
+      runtimeCodexService: {
+        runTurn: runtimeRunTurn,
+      },
+      twinService: {
+        queryRepositoryBlastRadius,
+      },
+    });
+    const created = await missionService.createDiscovery({
+      repoFullName: "616xold/pocket-cto",
+      questionKind: "auth_change",
+      changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+      requestedBy: "operator",
+    });
+
+    const tick = await worker.run({
+      log: {
+        error: vi.fn(),
+        info: vi.fn(),
+      },
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "task_completed",
+      task: {
+        role: "scout",
+        status: "succeeded",
+      },
+    });
+    expect(runtimeRunTurn).not.toHaveBeenCalled();
+    expect(queryRepositoryBlastRadius).toHaveBeenCalledWith(
+      "616xold/pocket-cto",
+      {
+        questionKind: "auth_change",
+        changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+      },
+    );
+
+    const artifacts = await missionRepository.listArtifactsByMissionId(
+      created.mission.id,
+    );
+    const discoveryArtifact =
+      artifacts.find((artifact) => artifact.kind === "discovery_answer") ?? null;
+    const metadata = readDiscoveryAnswerArtifactMetadata(discoveryArtifact);
+    const detail = await missionService.getMissionDetail(created.mission.id);
+
+    expect(metadata).toMatchObject({
+      repoFullName: "616xold/pocket-cto",
+      questionKind: "auth_change",
+      answerSummary:
+        "Stored twin state shows apps as the main impacted directory for this auth change.",
+      freshnessRollup: {
+        state: "stale",
+      },
+      limitations: [
+        expect.objectContaining({
+          code: "repository_freshness_stale",
+        }),
+      ],
+    });
+    expect(detail.proofBundle.status).toBe("ready");
+    expect(detail.artifacts.map((artifact) => artifact.kind)).toEqual([
+      "proof_bundle_manifest",
+      "discovery_answer",
+    ]);
+  });
+
+  it("fails discovery missions explicitly when the target repository is unavailable", async () => {
+    const runtimeRunTurn = vi.fn(async () => {
+      throw new Error("runtime should not be called for discovery");
+    });
+    const { missionService, worker } = createHarness({
+      runtimeCodexService: {
+        runTurn: runtimeRunTurn,
+      },
+      twinService: {
+        async queryRepositoryBlastRadius() {
+          throw new GitHubRepositoryNotFoundError("missing/repo");
+        },
+      },
+    });
+    const created = await missionService.createDiscovery({
+      repoFullName: "missing/repo",
+      questionKind: "auth_change",
+      changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+      requestedBy: "operator",
+    });
+
+    const tick = await worker.run({
+      log: {
+        error: vi.fn(),
+        info: vi.fn(),
+      },
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+    const detail = await missionService.getMissionDetail(created.mission.id);
+
+    expect(tick).toMatchObject({
+      kind: "task_failed",
+      stage: "discovery_execution",
+      task: {
+        role: "scout",
+        status: "failed",
+      },
+    });
+    expect(runtimeRunTurn).not.toHaveBeenCalled();
+    expect(detail.mission.status).toBe("failed");
+    expect(detail.tasks[0]).toMatchObject({
+      status: "failed",
+      summary: "Discovery execution failed: GitHub repository not found",
+    });
+    expect(detail.proofBundle.status).toBe("failed");
+  });
 });
 
 function createHarness(options?: {
   runtimeCodexService?: Pick<OrchestratorServiceRuntimeDeps, "runTurn">;
+  twinService?: Pick<TwinService, "queryRepositoryBlastRadius">;
   validationService?: Pick<ExecutorValidationService, "validateExecutorTurn">;
 }) {
   const missionRepository = new InMemoryMissionRepository();
@@ -368,6 +520,11 @@ function createHarness(options?: {
     evidenceService,
     workspaceService,
     options?.validationService ?? createValidationService(),
+    options?.twinService ?? {
+      async queryRepositoryBlastRadius() {
+        return createDiscoveryQueryResult();
+      },
+    },
     {
       async publishValidatedExecutorWorkspace() {
         return {
@@ -411,6 +568,102 @@ function createHarness(options?: {
 type OrchestratorServiceRuntimeDeps = ConstructorParameters<
   typeof OrchestratorService
 >[3];
+
+function createFreshnessSlices(): TwinRepositoryFreshnessView["slices"] {
+  return {
+    metadata: createFreshnessSlice(),
+    ownership: createFreshnessSlice(),
+    workflows: createFreshnessSlice(),
+    testSuites: createFreshnessSlice(),
+    docs: createFreshnessSlice(),
+    runbooks: createFreshnessSlice(),
+  };
+}
+
+function createFreshnessSlice(): TwinFreshnessSlice {
+  return {
+    state: "fresh" as const,
+    scorePercent: 100,
+    latestRunStatus: "succeeded" as const,
+    ageSeconds: 10,
+    staleAfterSeconds: 3600,
+    reasonCode: "fresh",
+    reasonSummary: "Stored twin state is fresh.",
+    latestRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    latestCompletedAt: "2026-03-20T00:15:00.000Z",
+    latestSuccessfulRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    latestSuccessfulCompletedAt: "2026-03-20T00:15:00.000Z",
+  };
+}
+
+function createDiscoveryQueryResult(input?: {
+  limitations?: TwinBlastRadiusLimitation[];
+  rollupReasonCode?: string;
+  rollupReasonSummary?: string;
+  rollupState?: "failed" | "fresh" | "never_synced" | "stale";
+}): TwinRepositoryBlastRadiusQueryResult {
+  return {
+    repository: {
+      fullName: "616xold/pocket-cto",
+      installationId: "12345",
+      defaultBranch: "main",
+      archived: false,
+      disabled: false,
+      isActive: true,
+      writeReadiness: {
+        ready: true,
+        failureCode: null,
+      },
+    },
+    queryEcho: {
+      questionKind: "auth_change" as const,
+      changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+    },
+    unmatchedPaths: [],
+    impactedDirectories: [
+      {
+        path: "apps",
+        label: "Apps",
+        classification: "application_group",
+        matchedChangedPaths: [
+          "apps/control-plane/src/modules/github-app/auth.ts",
+        ],
+        ownershipState: "unknown" as const,
+        effectiveOwners: [],
+        appliedRule: null,
+      },
+    ],
+    impactedManifests: [],
+    ownersByTarget: [],
+    relatedTestSuites: [],
+    relatedMappedCiJobs: [],
+    ciCoverageLimitations: [],
+    freshness: {
+      rollup: {
+        state: input?.rollupState ?? "fresh",
+        scorePercent: input?.rollupState === "stale" ? 72 : 100,
+        latestRunStatus: "succeeded" as const,
+        ageSeconds: 10,
+        staleAfterSeconds: 3600,
+        reasonCode: input?.rollupReasonCode ?? "fresh",
+        reasonSummary:
+          input?.rollupReasonSummary ?? "Stored twin state is fresh.",
+        freshSliceCount: input?.rollupState === "stale" ? 4 : 6,
+        staleSliceCount: input?.rollupState === "stale" ? 2 : 0,
+        failedSliceCount: 0,
+        neverSyncedSliceCount: 0,
+        blockingSlices:
+          input?.rollupState === "stale"
+            ? (["workflows", "testSuites"] satisfies TwinFreshnessSliceName[])
+            : [],
+      },
+      slices: createFreshnessSlices(),
+    },
+    limitations: input?.limitations ?? [],
+    answerSummary:
+      "Stored twin state shows apps as the main impacted directory for this auth change.",
+  };
+}
 
 async function createCompletedTurnResult(
   input: Parameters<OrchestratorServiceRuntimeDeps["runTurn"]>[0],

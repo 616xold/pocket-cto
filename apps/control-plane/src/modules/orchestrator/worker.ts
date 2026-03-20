@@ -116,6 +116,24 @@ export class OrchestratorWorker {
         return result;
       }
 
+      if (result.kind === "task_completed") {
+        log.info(
+          {
+            event: "worker.tick",
+            finalStatus: result.task.status,
+            missionId: result.task.missionId,
+            outcome: "task_completed",
+            role: result.task.role,
+            sequence: result.task.sequence,
+            stage: result.stage,
+            summary: result.task.summary,
+            taskId: result.task.id,
+          },
+          "Worker completed deterministic task execution",
+        );
+        return result;
+      }
+
       if (result.kind === "task_failed") {
         log.info(
           {

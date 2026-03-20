@@ -19,12 +19,13 @@ import {
 } from "./proof-bundle-summary";
 import { truncate } from "./text";
 
-const FINAL_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = [
+const BUILD_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = [
   "plan",
   "diff_summary",
   "test_report",
   "pr_link",
 ];
+const DISCOVERY_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = ["discovery_answer"];
 
 const SUMMARY_MAX_LENGTH = 240;
 
@@ -191,10 +192,11 @@ export function assembleProofBundleManifest(input: {
 }
 
 function buildEvidenceCompleteness(facts: ProofBundleAssemblyFacts) {
-  const presentArtifactKinds = FINAL_EXPECTED_ARTIFACT_KINDS.filter((kind) =>
+  const expectedArtifactKinds = readExpectedArtifactKinds(facts);
+  const presentArtifactKinds = expectedArtifactKinds.filter((kind) =>
     facts.presentArtifactKinds.includes(kind),
   );
-  const missingArtifactKinds = FINAL_EXPECTED_ARTIFACT_KINDS.filter(
+  const missingArtifactKinds = expectedArtifactKinds.filter(
     (kind) => !presentArtifactKinds.includes(kind),
   );
   const notes = missingArtifactKinds.map((kind) => readMissingArtifactNote(kind));
@@ -217,7 +219,7 @@ function buildEvidenceCompleteness(facts: ProofBundleAssemblyFacts) {
         : missingArtifactKinds.length === 0
           ? "complete"
           : "partial",
-    expectedArtifactKinds: FINAL_EXPECTED_ARTIFACT_KINDS,
+    expectedArtifactKinds,
     presentArtifactKinds,
     missingArtifactKinds,
     notes,
@@ -229,9 +231,12 @@ function buildProofBundleStatus(input: {
   facts: ProofBundleAssemblyFacts;
   mission: MissionRecord;
 }): ProofBundleStatus {
-  const hasTaskFailure = input.facts.latestPlannerTask?.status === "failed" ||
-    input.facts.latestExecutorTask?.status === "failed" ||
-    input.facts.latestExecutorTask?.status === "cancelled";
+  const hasTaskFailure = isDiscoveryMission(input.mission)
+    ? input.facts.latestScoutTask?.status === "failed" ||
+      input.facts.latestScoutTask?.status === "cancelled"
+    : input.facts.latestPlannerTask?.status === "failed" ||
+      input.facts.latestExecutorTask?.status === "failed" ||
+      input.facts.latestExecutorTask?.status === "cancelled";
   const hasMissionFailure = ["failed", "cancelled"].includes(input.mission.status);
   const hasRejectedApproval =
     input.facts.latestApproval !== null &&
@@ -241,7 +246,9 @@ function buildProofBundleStatus(input: {
     input.facts.artifacts.length > 0 || input.facts.latestApproval !== null;
   const hasReadyArtifacts =
     input.evidenceCompleteness.missingArtifactKinds.length === 0 &&
-    input.facts.latestExecutorTask?.status === "succeeded";
+    (isDiscoveryMission(input.mission)
+      ? input.facts.latestScoutTask?.status === "succeeded"
+      : input.facts.latestExecutorTask?.status === "succeeded");
 
   if (hasTaskFailure || hasMissionFailure || hasRejectedApproval) {
     return "failed";
@@ -266,6 +273,14 @@ function buildChangeSummary(
     return facts.changeSummary;
   }
 
+  if (facts.missionType === "discovery" && facts.latestScoutTask) {
+    if (status === "failed" && facts.latestScoutTask.summary) {
+      return truncate(facts.latestScoutTask.summary, SUMMARY_MAX_LENGTH);
+    }
+
+    return "Discovery execution is still pending a stored answer artifact.";
+  }
+
   if (status === "failed" && facts.latestExecutorTask?.summary) {
     return truncate(facts.latestExecutorTask.summary, SUMMARY_MAX_LENGTH);
   }
@@ -285,6 +300,22 @@ function buildValidationSummary(
     return facts.validationSummary;
   }
 
+  if (facts.missionType === "discovery" && facts.latestScoutTask) {
+    if (status === "ready") {
+      return "Discovery answer was assembled from stored twin state without running the Codex runtime.";
+    }
+
+    if (status === "incomplete") {
+      return "Discovery answer evidence is still pending from the stored twin query path.";
+    }
+
+    if (status === "failed") {
+      return "No stored-twin discovery answer could be persisted for this mission.";
+    }
+
+    return "";
+  }
+
   if (status === "ready" || status === "incomplete") {
     return "Pending local executor validation evidence.";
   }
@@ -300,6 +331,25 @@ function buildVerificationSummary(
   status: ProofBundleStatus,
   facts: ProofBundleAssemblyFacts,
 ) {
+  if (facts.missionType === "discovery" && facts.latestScoutTask) {
+    if (status === "ready" && facts.discoveryAnswerSummary) {
+      return truncate(
+        `${facts.discoveryAnswerSummary} Review the stored freshness and limitation details before acting on the answer.`,
+        SUMMARY_MAX_LENGTH,
+      );
+    }
+
+    if (status === "failed") {
+      return "The stored twin could not produce a truthful discovery answer for this mission.";
+    }
+
+    if (status === "incomplete") {
+      return "Discovery execution has not yet persisted its answer artifact.";
+    }
+
+    return "";
+  }
+
   if (
     status === "ready" &&
     facts.pullRequestNumber &&
@@ -346,6 +396,22 @@ function buildRiskSummary(
     return facts.riskSummary;
   }
 
+  if (facts.missionType === "discovery" && facts.latestScoutTask) {
+    if (status === "failed") {
+      return "The discovery answer is currently unavailable; inspect the mission timeline and twin freshness posture before retrying.";
+    }
+
+    if (status === "incomplete") {
+      return "Discovery readiness depends entirely on stored twin state and one durable answer artifact still being persisted.";
+    }
+
+    if (status === "ready") {
+      return "The answer is grounded only in stored twin state, so stale or missing slices must be weighed before taking follow-up action.";
+    }
+
+    return "";
+  }
+
   if (facts.latestApproval?.status === "pending") {
     return "A gated runtime action is still awaiting operator approval.";
   }
@@ -373,6 +439,22 @@ function buildRollbackSummary(
     return facts.rollbackSummary;
   }
 
+  if (facts.missionType === "discovery" && facts.latestScoutTask) {
+    if (status === "failed") {
+      return "Safe fallback: refresh the relevant twin slices truthfully, then retry the discovery mission; no code or GitHub changes were produced.";
+    }
+
+    if (status === "incomplete") {
+      return "Wait for the stored discovery answer artifact before relying on this mission for operator follow-up.";
+    }
+
+    if (status === "ready") {
+      return "No code, branch, pull request, or deploy side effect was produced; retry only if the stored twin needs fresher evidence.";
+    }
+
+    return "";
+  }
+
   if (facts.pullRequestUrl) {
     return "Close or supersede the linked pull request branch before retrying; no automatic merge or deploy has occurred.";
   }
@@ -392,6 +474,8 @@ function readMissingArtifactNote(kind: ArtifactKind) {
   switch (kind) {
     case "plan":
       return "Planner evidence is missing.";
+    case "discovery_answer":
+      return "Discovery answer evidence is missing.";
     case "diff_summary":
       return "Change-summary evidence is missing.";
     case "test_report":
@@ -408,4 +492,14 @@ function proofBundleManifestEquals(
   right: ProofBundleManifest,
 ) {
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function isDiscoveryMission(mission: MissionRecord) {
+  return mission.type === "discovery";
+}
+
+function readExpectedArtifactKinds(facts: ProofBundleAssemblyFacts) {
+  return facts.missionType === "discovery"
+    ? DISCOVERY_EXPECTED_ARTIFACT_KINDS
+    : BUILD_EXPECTED_ARTIFACT_KINDS;
 }

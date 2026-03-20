@@ -9,11 +9,13 @@ import type {
   ProofBundleManifest,
   ProofBundleTimestamps,
 } from "@pocket-cto/domain";
+import { readDiscoveryAnswerArtifactMetadata } from "./discovery-answer";
 import { normalizeSentence, truncate } from "./text";
 
 const SUMMARY_MAX_LENGTH = 240;
 
 type ProofBundleLatestArtifacts = {
+  discoveryAnswer: ArtifactRecord | null;
   diffSummary: ArtifactRecord | null;
   logExcerpt: ArtifactRecord | null;
   plan: ArtifactRecord | null;
@@ -26,11 +28,14 @@ export type ProofBundleAssemblyFacts = {
   artifacts: ProofBundleArtifactSummary[];
   branchName: string | null;
   changeSummary: string | null;
+  discoveryAnswerSummary: string | null;
   decisionTrace: string[];
   latestApproval: ProofBundleLatestApproval | null;
   latestArtifacts: ProofBundleLatestArtifacts;
   latestExecutorTask: MissionTaskRecord | null;
   latestPlannerTask: MissionTaskRecord | null;
+  latestScoutTask: MissionTaskRecord | null;
+  missionType: MissionRecord["type"];
   presentArtifactKinds: ArtifactKind[];
   pullRequestIsDraft: boolean | null;
   pullRequestNumber: number | null;
@@ -54,13 +59,24 @@ export function deriveProofBundleAssemblyFacts(input: {
     (artifact) => artifact.kind !== "proof_bundle_manifest",
   );
   const hasCurrentExecutionEvidence = evidenceArtifacts.some((artifact) =>
-    ["diff_summary", "test_report", "log_excerpt", "pr_link"].includes(artifact.kind),
+    [
+      "diff_summary",
+      "discovery_answer",
+      "test_report",
+      "log_excerpt",
+      "pr_link",
+    ].includes(artifact.kind),
   );
   const latestArtifacts = readLatestArtifacts(evidenceArtifacts);
+  const discoveryAnswerMetadata = readDiscoveryAnswerArtifactMetadata(
+    latestArtifacts.discoveryAnswer,
+  );
   const latestApproval = readLatestApproval(input.approvals);
   const latestPlannerTask = readLatestTaskByRole(input.tasks, "planner");
   const latestExecutorTask = readLatestTaskByRole(input.tasks, "executor");
+  const latestScoutTask = readLatestTaskByRole(input.tasks, "scout");
   const targetRepoFullName =
+    discoveryAnswerMetadata?.repoFullName ??
     readMetadataString(latestArtifacts.pullRequest?.metadata, "repoFullName") ??
     readFullRepoName(input.mission.primaryRepo) ??
     input.existingBundle?.targetRepoFullName ??
@@ -92,14 +108,18 @@ export function deriveProofBundleAssemblyFacts(input: {
     })),
     branchName,
     changeSummary:
+      discoveryAnswerMetadata?.answerSummary ??
       readArtifactSummary(latestArtifacts.diffSummary) ??
+      normalizeSentence(latestScoutTask?.summary ?? null) ??
       normalizeSentence(latestExecutorTask?.summary ?? null) ??
       normalizeSentence(input.existingBundle?.changeSummary ?? null),
+    discoveryAnswerSummary: discoveryAnswerMetadata?.answerSummary ?? null,
     decisionTrace: buildDecisionTrace({
       artifacts: evidenceArtifacts,
       latestApproval,
       latestExecutorTask,
       latestPlannerTask,
+      latestScoutTask,
       pullRequestArtifact: latestArtifacts.pullRequest,
       taskById,
     }),
@@ -107,6 +127,8 @@ export function deriveProofBundleAssemblyFacts(input: {
     latestArtifacts,
     latestExecutorTask,
     latestPlannerTask,
+    latestScoutTask,
+    missionType: input.mission.type,
     presentArtifactKinds: readPresentArtifactKinds(evidenceArtifacts),
     pullRequestIsDraft,
     pullRequestNumber,
@@ -136,6 +158,7 @@ function readLatestArtifacts(
   artifacts: ArtifactRecord[],
 ): ProofBundleLatestArtifacts {
   return {
+    discoveryAnswer: readLatestArtifactByKind(artifacts, "discovery_answer"),
     diffSummary: readLatestArtifactByKind(artifacts, "diff_summary"),
     logExcerpt: readLatestArtifactByKind(artifacts, "log_excerpt"),
     plan: readLatestArtifactByKind(artifacts, "plan"),
@@ -192,6 +215,7 @@ function buildDecisionTrace(input: {
   latestApproval: ProofBundleLatestApproval | null;
   latestExecutorTask: MissionTaskRecord | null;
   latestPlannerTask: MissionTaskRecord | null;
+  latestScoutTask: MissionTaskRecord | null;
   pullRequestArtifact: ArtifactRecord | null;
   taskById: Map<string, MissionTaskRecord>;
 }) {
@@ -217,6 +241,20 @@ function buildDecisionTrace(input: {
     if (executorArtifacts.length > 0) {
       lines.push(
         `Executor task ${input.latestExecutorTask.sequence} terminalized as ${input.latestExecutorTask.status} with persisted evidence.`,
+      );
+    }
+  }
+
+  if (input.latestScoutTask) {
+    const scoutArtifacts = input.artifacts.filter(
+      (artifact) =>
+        artifact.taskId === input.latestScoutTask?.id &&
+        artifact.kind === "discovery_answer",
+    );
+
+    if (scoutArtifacts.length > 0) {
+      lines.push(
+        `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted discovery evidence.`,
       );
     }
   }

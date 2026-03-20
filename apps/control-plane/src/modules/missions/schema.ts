@@ -1,10 +1,12 @@
 import { z } from "zod";
 import {
+  CreateDiscoveryMissionInputSchema,
   CreateMissionFromTextInputSchema,
   MissionSourceKindSchema,
   MissionStatusSchema,
 } from "@pocket-cto/domain";
 
+export const createDiscoveryMissionSchema = CreateDiscoveryMissionInputSchema;
 export const createMissionFromTextSchema = CreateMissionFromTextInputSchema;
 
 export const missionIdParamsSchema = z.object({

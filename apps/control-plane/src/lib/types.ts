@@ -35,7 +35,7 @@ export type GitHubIssueIntakeServicePort = Pick<
 
 export type MissionServicePort = Pick<
   MissionService,
-  "createFromText" | "getMissionDetail" | "listMissions"
+  "createDiscovery" | "createFromText" | "getMissionDetail" | "listMissions"
 >;
 
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;

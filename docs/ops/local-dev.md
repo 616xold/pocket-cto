@@ -156,6 +156,39 @@ curl 'http://localhost:4000/missions?limit=6'
 curl 'http://localhost:4000/missions?status=queued&sourceKind=manual_text'
 ```
 
+## Deterministic discovery missions
+
+Pocket CTO now exposes one typed backend-only discovery route for stored blast-radius questions:
+
+```bash
+curl -i -X POST \
+  'http://localhost:4000/missions/discovery' \
+  -H 'content-type: application/json' \
+  -d '{
+    "repoFullName": "616xold/pocket-cto",
+    "questionKind": "auth_change",
+    "changedPaths": ["apps/control-plane/src/modules/github-app/auth.ts"],
+    "requestedBy": "operator"
+  }'
+```
+
+Behavior notes:
+
+- this route is deterministic and separate from `POST /missions/text`
+- discovery execution uses stored twin blast-radius data and does not start a Codex runtime session
+- the route persists one `discovery` mission with one `scout` task and a placeholder proof bundle immediately
+- a successful run persists one durable `discovery_answer` artifact and refreshes the proof bundle to `ready`
+- stale, failed-latest, or missing freshness stays visible in the stored answer instead of being hidden
+- the target repository must already exist in the synced repository registry, and the answer can only use previously stored twin state
+
+If live GitHub App env is present and you need a repo registered locally first:
+
+```bash
+curl -i -X POST 'http://localhost:4000/github/repositories/sync'
+```
+
+If the synced repository still has no stored twin data, discovery missions fail explicitly instead of silently resyncing the twin inside the executor.
+
 ## GitHub issue intake
 
 When live `issues` and `issue_comment` webhook deliveries have already been persisted through `POST /github/webhooks`, the control plane now exposes a truthful issue-intake read model without reprocessing ingress:

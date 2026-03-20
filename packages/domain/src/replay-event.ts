@@ -42,6 +42,7 @@ export const MissionStatusChangeReasonSchema = z.enum([
   "approval_requested",
   "approval_resolved",
   "runtime_turn_started",
+  "task_started",
   "task_terminalized",
 ]);
 
@@ -55,11 +56,13 @@ export const TaskStatusChangeReasonSchema = z.enum([
   "approval_requested",
   "approval_resolved",
   "worker_claimed",
+  "task_started",
   "task_completed",
   "runtime_turn_started",
   "runtime_turn_completed",
   "runtime_turn_failed",
   "runtime_turn_interrupted",
+  "discovery_query_failed",
   "planner_evidence_failed",
   "executor_missing_planner_artifact",
   "executor_no_changes",
@@ -185,6 +188,7 @@ export const ApprovalResolvedPayloadSchema = z.object({
 export const ProofBundleRefreshTriggerSchema = z.enum([
   "planner_evidence",
   "executor_evidence",
+  "discovery_answer",
   "pull_request_link",
   "approval_resolution",
 ]);

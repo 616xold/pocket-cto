@@ -257,6 +257,9 @@ function createAppContainer(
       },
     } as AppContainer["githubWebhookService"],
     missionService: {
+      async createDiscovery() {
+        throw new Error("createDiscovery should not be called in this test");
+      },
       async createFromText() {
         throw new Error("createFromText should not be called in this test");
       },

@@ -98,6 +98,60 @@ describe("control-plane app", () => {
     });
   });
 
+  it("POST /missions/discovery returns 201 with one scout task and a discovery proof placeholder", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/discovery",
+      payload: {
+        repoFullName: "616xold/pocket-cto",
+        questionKind: "auth_change",
+        changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+        requestedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      mission: {
+        type: "discovery",
+        status: "queued",
+        title: "Assess auth-change blast radius for 616xold/pocket-cto",
+        sourceKind: "manual_discovery",
+        createdBy: "operator",
+        primaryRepo: "616xold/pocket-cto",
+        spec: {
+          repos: ["616xold/pocket-cto"],
+          constraints: {
+            allowedPaths: [
+              "apps/control-plane/src/modules/github-app/auth.ts",
+            ],
+          },
+          input: {
+            discoveryQuestion: {
+              repoFullName: "616xold/pocket-cto",
+              questionKind: "auth_change",
+              changedPaths: [
+                "apps/control-plane/src/modules/github-app/auth.ts",
+              ],
+            },
+          },
+        },
+      },
+      tasks: [{ role: "scout", sequence: 0, status: "pending" }],
+      proofBundle: {
+        status: "placeholder",
+        objective:
+          "Answer the stored auth-change blast radius for 616xold/pocket-cto across: apps/control-plane/src/modules/github-app/auth.ts.",
+        evidenceCompleteness: {
+          expectedArtifactKinds: ["discovery_answer"],
+          missingArtifactKinds: ["discovery_answer"],
+        },
+      },
+    });
+  });
+
   it("GET /missions returns newest-first mission summaries with the list contract", async () => {
     const app = await createTestApp(apps);
     const older = await createMission(app, {
@@ -200,6 +254,9 @@ describe("control-plane app", () => {
   it("GET /missions/:missionId returns summary-shaped approvals and artifacts in the mission detail read model", async () => {
     const app = await createStubApp(apps, {
       missionService: {
+        async createDiscovery() {
+          throw new Error("create should not be called");
+        },
         async createFromText() {
           throw new Error("create should not be called");
         },

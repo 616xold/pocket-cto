@@ -11,8 +11,10 @@ import { taskStatusChangeReasons } from "./events";
 import type { MissionRepository } from "../missions/repository";
 import type { ReplayService } from "../replay/service";
 import type { CodexRuntimeService } from "../runtime-codex/service";
+import type { TwinService } from "../twin/service";
 import type { ExecutorValidationService } from "../validation";
 import type { WorkspaceService } from "../workspaces/service";
+import { DiscoveryOrchestratorPhase } from "./discovery-phase";
 import type { ExecuteClaimedTaskTurnResult } from "./runtime-phase";
 import { OrchestratorRuntimePhase } from "./runtime-phase";
 import { buildTaskStatusChangedPayload } from "./events";
@@ -20,15 +22,20 @@ import { buildTaskStatusChangedPayload } from "./events";
 export type OrchestratorTickResult =
   | { kind: "idle" }
   | {
+      kind: "task_completed";
+      stage: "discovery_execution";
+      task: MissionTaskRecord;
+    }
+  | {
       kind: "task_failed";
       error: Error;
-      stage: "turn_execution";
+      stage: "discovery_execution" | "turn_execution";
       task: MissionTaskRecord;
     }
   | {
       kind: "runtime_failed";
       error: Error;
-      stage: "turn_execution";
+      stage: "discovery_execution" | "turn_execution";
       task: MissionTaskRecord;
     }
   | {
@@ -38,6 +45,7 @@ export type OrchestratorTickResult =
     };
 
 export class OrchestratorService {
+  private readonly discoveryPhase: DiscoveryOrchestratorPhase;
   private readonly runtimePhase: OrchestratorRuntimePhase;
 
   constructor(
@@ -84,6 +92,7 @@ export class OrchestratorService {
       ExecutorValidationService,
       "validateExecutorTurn"
     >,
+    twinService: Pick<TwinService, "queryRepositoryBlastRadius">,
     githubPublishService: Pick<
       GitHubPublishService,
       "publishValidatedExecutorWorkspace"
@@ -93,6 +102,12 @@ export class OrchestratorService {
       "refreshProofBundle"
     >,
   ) {
+    this.discoveryPhase = new DiscoveryOrchestratorPhase(
+      missionRepository,
+      replayService,
+      twinService,
+      proofBundleAssembly,
+    );
     this.runtimePhase = new OrchestratorRuntimePhase(
       missionRepository,
       replayService,
@@ -165,6 +180,52 @@ export class OrchestratorService {
   private async executeTaskTurn(
     task: MissionTaskRecord,
   ): Promise<OrchestratorTickResult> {
+    const mission = await this.missionRepository.getMissionById(task.missionId);
+
+    if (mission?.type === "discovery" && task.role === "scout") {
+      try {
+        const completedTask = await this.discoveryPhase.executeClaimedDiscoveryTask(
+          task.id,
+        );
+
+        if (completedTask.status === "failed" || completedTask.status === "cancelled") {
+          return {
+            kind: "task_failed",
+            error: new Error(
+              completedTask.summary ?? "Discovery execution failed",
+            ),
+            stage: "discovery_execution",
+            task: completedTask,
+          };
+        }
+
+        return {
+          kind: "task_completed",
+          stage: "discovery_execution",
+          task: completedTask,
+        };
+      } catch (error) {
+        const latestTask = await this.missionRepository.getTaskById(task.id);
+        const classifiedError = asError(error, "Discovery execution failed");
+
+        if (isControlledTaskFailure(latestTask)) {
+          return {
+            kind: "task_failed",
+            error: classifiedError,
+            stage: "discovery_execution",
+            task: latestTask,
+          };
+        }
+
+        return {
+          kind: "runtime_failed",
+          error: classifiedError,
+          stage: "discovery_execution",
+          task: latestTask ?? task,
+        };
+      }
+    }
+
     try {
       const completedTurn = await this.runtimePhase.executeClaimedTaskTurn(task.id);
 

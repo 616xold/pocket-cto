@@ -103,6 +103,48 @@ describe("MissionService", () => {
     );
   });
 
+  it("creates a typed discovery mission with truthful source, repo context, and one scout task", async () => {
+    const { replayService, service } = createService();
+
+    const created = await service.createDiscovery({
+      repoFullName: "616xold/pocket-cto",
+      questionKind: "auth_change",
+      changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+      requestedBy: "operator",
+    });
+
+    expect(created.mission.type).toBe("discovery");
+    expect(created.mission.sourceKind).toBe("manual_discovery");
+    expect(created.mission.primaryRepo).toBe("616xold/pocket-cto");
+    expect(created.mission.spec.repos).toEqual(["616xold/pocket-cto"]);
+    expect(created.mission.spec.constraints.allowedPaths).toEqual([
+      "apps/control-plane/src/modules/github-app/auth.ts",
+    ]);
+    expect(created.mission.spec.input?.discoveryQuestion).toEqual({
+      repoFullName: "616xold/pocket-cto",
+      questionKind: "auth_change",
+      changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+    });
+    expect(created.tasks).toMatchObject([
+      {
+        role: "scout",
+        sequence: 0,
+        status: "pending",
+      },
+    ]);
+    expect(created.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual([
+      "discovery_answer",
+    ]);
+
+    const events = await replayService.listByMissionId(created.mission.id);
+    expect(events.map((event) => event.type)).toEqual([
+      "mission.created",
+      "task.created",
+      "mission.status_changed",
+      "artifact.created",
+    ]);
+  });
+
   it("returns summary-shaped approvals, approval cards, and artifacts in mission detail", async () => {
     const approval: ApprovalRecord = {
       createdAt: "2026-03-14T10:00:00.000Z",

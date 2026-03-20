@@ -38,6 +38,8 @@ export type PlannerArtifactCapture = {
 
 export class EvidenceService {
   createPlaceholder(mission: MissionRecord): ProofBundleManifest {
+    const isDiscoveryMission = mission.type === "discovery";
+
     return {
       missionId: mission.id,
       missionTitle: mission.title,
@@ -57,15 +59,21 @@ export class EvidenceService {
       latestApproval: null,
       evidenceCompleteness: {
         status: "missing",
-        expectedArtifactKinds: ["plan", "diff_summary", "test_report", "pr_link"],
+        expectedArtifactKinds: isDiscoveryMission
+          ? ["discovery_answer"]
+          : ["plan", "diff_summary", "test_report", "pr_link"],
         presentArtifactKinds: [],
-        missingArtifactKinds: ["plan", "diff_summary", "test_report", "pr_link"],
-        notes: [
-          "Planner evidence is missing.",
-          "Change-summary evidence is missing.",
-          "Validation evidence is missing.",
-          "GitHub pull request evidence is missing.",
-        ],
+        missingArtifactKinds: isDiscoveryMission
+          ? ["discovery_answer"]
+          : ["plan", "diff_summary", "test_report", "pr_link"],
+        notes: isDiscoveryMission
+          ? ["Discovery answer evidence is missing."]
+          : [
+              "Planner evidence is missing.",
+              "Change-summary evidence is missing.",
+              "Validation evidence is missing.",
+              "GitHub pull request evidence is missing.",
+            ],
       },
       decisionTrace: [],
       artifactIds: [],

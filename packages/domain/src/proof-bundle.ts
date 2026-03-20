@@ -3,6 +3,7 @@ import { ApprovalKindSchema, ApprovalStatusSchema } from "./approval";
 
 export const ArtifactKindSchema = z.enum([
   "plan",
+  "discovery_answer",
   "pr_link",
   "diff_summary",
   "test_report",
