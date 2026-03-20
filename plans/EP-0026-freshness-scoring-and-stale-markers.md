@@ -19,6 +19,9 @@ It intentionally stops before blast-radius answering, docs indexing redesign, CI
 - [x] (2026-03-19T23:04:11Z) Implemented additive freshness contracts plus a dedicated `GET /twin/repositories/:owner/:repo/freshness` route, added a small `freshness.ts` policy module, threaded freshness through `TwinService`, and attached one concise freshness block to the existing summary, ownership, CI, docs, and runbooks surfaces without widening twin persistence.
 - [x] (2026-03-19T23:04:11Z) Added focused freshness tests for explicit never-synced slices, deterministic fresh-to-stale transitions, latest-failed-run visibility, conservative rollup behavior, and freshness blocks on the existing summary routes.
 - [x] (2026-03-19T23:04:11Z) Updated `docs/ops/local-dev.md`, passed the full required validation matrix, and fetched a live freshness read from already-persisted twin state for the installed repo after confirming the GitHub App env was present locally.
+- [x] (2026-03-20T00:26:51Z) Re-read the requested proof-tooling inputs, reran the required inspections `rg -n "freshness|never_synced|stale|failed|fresh|smoke:twin|summary|ownership-summary|ci-summary|docs|runbooks" apps packages docs plans package.json`, `git status --short`, and `git diff --name-only HEAD`, confirmed the worktree was clean, and captured the required in-thread `M3.6 proof-tooling gap` note before editing.
+- [x] (2026-03-20T00:26:51Z) Added the repeatable route-driven helper `tools/twin-freshness-smoke.mjs` plus the root alias `pnpm smoke:twin-freshness:live`, kept it honest about `stored_state_only` versus `refreshed_live_state`, and updated `docs/ops/local-dev.md` so M3.6 no longer depends on ad hoc route snippets for proof.
+- [x] (2026-03-20T00:26:51Z) Re-ran the full required validation matrix successfully and captured both packaged freshness smoke modes: a truthful `stored_state_only` read against persisted twin state and a fresh `refreshed_live_state` proof against a temporary checkout of `616xold/pocket-cto`.
 
 ## Surprises & Discoveries
 
@@ -36,6 +39,12 @@ It intentionally stops before blast-radius answering, docs indexing redesign, CI
 
 - Observation: the repo still had durable twin state for the installed live repo even though the current checkout could not safely resync it.
   Evidence: `GET /twin/repositories/616xold/pocket-cto/freshness` returned stored slice assessments, including one failed metadata slice, one stale ownership slice, and four fresh slices.
+
+- Observation: M3.6 was weaker than the earlier twin slices only in proof packaging, not in freshness logic.
+  Evidence: before this follow-up, `package.json` had no `smoke:twin-freshness:live` alias, `tools/` had no freshness smoke helper, and `docs/ops/local-dev.md` documented the route but not one repeatable freshness proof command.
+
+- Observation: the new helper can report both the weaker stored snapshot and the stronger refreshed snapshot without any product-code change.
+  Evidence: `pnpm smoke:twin-freshness:live -- --repo-full-name 616xold/pocket-cto` returned `proofMode = stored_state_only`, while `pnpm smoke:twin-freshness:live -- --repo-full-name 616xold/pocket-cto --source-repo-root /private/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-m36-freshness-tr6OHa` returned `proofMode = refreshed_live_state` with all six slice sync routes succeeding.
 
 ## Decision Log
 
@@ -74,6 +83,14 @@ It intentionally stops before blast-radius answering, docs indexing redesign, CI
 - Decision: do not add replay events for this slice.
   Rationale: freshness scoring changes twin read models and operator visibility, not mission or task lifecycle state. The durable evidence surface for M3.6 is the stored sync-run history, the new freshness route, the updated summary surfaces, and validation proof.
   Date/Author: 2026-03-19 / Codex
+
+- Decision: close the remaining M3.6 proof gap with one checked-in `tools/twin-freshness-smoke.mjs` helper and one root `pnpm smoke:twin-freshness:live` alias instead of relying on one-off `tsx --eval` or manual curl sequences.
+  Rationale: M3.2 through M3.5 already use tiny route-driven helpers as their repeatable live proof surface. M3.6 should match that packaging so the proof base stays current and easy to rerun.
+  Date/Author: 2026-03-20 / Codex
+
+- Decision: the helper must print an explicit proof mode, using `stored_state_only` when no truthful refresh path exists and `refreshed_live_state` only when the requested source root resolves to the same synced `owner/repo`.
+  Rationale: the user explicitly asked for honest proof labeling, and the earlier stored-state-only route read should not be mistaken for a freshly refreshed twin snapshot.
+  Date/Author: 2026-03-20 / Codex
 
 ## Context and Orientation
 
@@ -123,6 +140,7 @@ The expected M3.6 edit surface is:
 No new environment variables are expected.
 No new GitHub App permissions or webhook subscriptions are expected.
 `WORKFLOW.md` should remain accurate without edits because this slice stays additive and route-driven.
+The remaining follow-up work for this prompt is tooling and docs only unless the packaged live smoke exposes a real freshness bug.
 
 ## Plan of Work
 
@@ -153,6 +171,7 @@ After the dedicated route works, add one concise freshness block to the existing
 - `GET /twin/repositories/:owner/:repo/runbooks`
 
 Finally, add focused tests, update `docs/ops/local-dev.md` with the new route and state meanings, keep this ExecPlan current, run the full validation matrix, and, if GitHub env is available, collect one real freshness read from stored twin state.
+This proof-refresh follow-up keeps the existing freshness scoring intact and adds only a packaged smoke helper, one root alias, and current docs plus ExecPlan evidence.
 
 ## Concrete Steps
 
@@ -266,6 +285,7 @@ No new GitHub App permissions or webhook subscriptions are expected.
 
 M3.6 landed as an additive read-model slice with no schema change.
 Freshness now derives only from persisted `twin_sync_runs` plus the existing stored twin slice state, and operators can read that truth through one dedicated route plus concise summary freshness blocks on the existing twin surfaces.
+This follow-up closes the remaining proof-tooling gap by giving M3.6 the same kind of packaged live smoke helper that M3.2 through M3.5 already had.
 
 Chosen freshness state model:
 
@@ -297,6 +317,7 @@ Chosen scoring and rollup rules:
 Exact changed files for this milestone slice:
 
 - `plans/EP-0026-freshness-scoring-and-stale-markers.md`
+- `package.json`
 - `packages/domain/src/twin.ts`
 - `apps/control-plane/src/lib/types.ts`
 - `apps/control-plane/src/modules/twin/schema.ts`
@@ -317,6 +338,7 @@ Exact changed files for this milestone slice:
 - `apps/control-plane/src/bootstrap.spec.ts`
 - `apps/control-plane/src/modules/orchestrator/drizzle-service.spec.ts`
 - `docs/ops/local-dev.md`
+- `tools/twin-freshness-smoke.mjs`
 
 Validation results:
 
@@ -329,25 +351,30 @@ Validation results:
 - `pnpm build` passed
 - `pnpm test` passed
 - `pnpm ci:repro:current` passed, including clean-tree verification in a temporary worktree
+- `pnpm smoke:twin-freshness:live -- --repo-full-name 616xold/pocket-cto` passed in `stored_state_only` mode
+- `pnpm smoke:twin-freshness:live -- --repo-full-name 616xold/pocket-cto --source-repo-root /private/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-m36-freshness-tr6OHa` passed in `refreshed_live_state` mode
 
 Live evidence:
 
 - GitHub App env was present in the local `.env`; no secrets were printed.
 - The synced live installation exposed `616xold/pocket-cto`, not `616xold/pocket-cto-starter`.
-- Because the local checkout resolves to `616xold/pocket-cto-starter`, source-backed live resync for `616xold/pocket-cto` would have been dishonest and correctly failed with `twin_source_unavailable`.
-- Reusing already-persisted twin state, `GET /twin/repositories/616xold/pocket-cto/freshness` returned:
-  - rollup: `failed`, score `0`, reason `rollup_failed`, blocking slices `metadata`, `ownership`
-  - metadata: `failed`, latest run `failed`, age `2727`, stale-after `21600`, reason `latest_run_failed`
-  - ownership: `stale`, latest run `succeeded`, age `77363`, stale-after `43200`, reason `no_codeowners_file`
-  - workflows: `fresh`, latest run `succeeded`, age `2727`, stale-after `43200`
-  - testSuites: `fresh`, latest run `succeeded`, age `2727`, stale-after `43200`
-  - docs: `fresh`, latest run `succeeded`, age `1744`, stale-after `86400`
-  - runbooks: `fresh`, latest run `succeeded`, age `1744`, stale-after `86400`
+- The packaged stored-state fallback is now explicit and repeatable: `pnpm smoke:twin-freshness:live -- --repo-full-name 616xold/pocket-cto` returned `proofMode = stored_state_only`, rollup `failed`, score `0`, blocking slices `metadata` and `ownership`, and per-slice states `metadata = failed`, `ownership = stale`, `workflows = fresh`, `testSuites = fresh`, `docs = fresh`, `runbooks = fresh`.
+- The packaged current proof base is the refreshed run, not the stored-state fallback.
+- Using a truthful temporary checkout at `/private/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-m36-freshness-tr6OHa`, `pnpm smoke:twin-freshness:live -- --repo-full-name 616xold/pocket-cto --source-repo-root /private/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-m36-freshness-tr6OHa` returned:
+  - proof mode: `refreshed_live_state`
+  - rollup: `fresh`, score `100`, blocking slices `[]`
+  - metadata: `fresh`, latest run `17a6acfe-d768-482b-9fba-95c7ca3fe7f5`
+  - ownership: `fresh`, latest run `983ffd8b-e139-4bb1-b13b-fc862c16443f`
+  - workflows: `fresh`, latest run `0ffcc80d-9824-44e9-959f-5ebb8febb253`
+  - testSuites: `fresh`, latest run `3de8eb84-a3a0-4d01-ba69-dd0d8420d5a9`
+  - docs: `fresh`, latest run `8e2a4325-3062-40fc-97e2-bdedf0fa6063`
+  - runbooks: `fresh`, latest run `737fe279-c0d7-4ef4-9d82-8438c7b8d335`
+- No product bug surfaced during the refreshed smoke, so this follow-up stayed tooling-and-docs only.
 
 Risks and rollback:
 
 - Freshness windows are intentionally conservative and hard-coded in M3.6, so future tuning may still be needed once operator behavior is observed.
-- The live proof in this session reused existing stored state because the installed repo and local checkout did not match; that is honest evidence for route behavior, but not a fresh end-to-end extraction run.
+- The `stored_state_only` helper mode remains intentionally weaker evidence than `refreshed_live_state`; it is useful as a fallback, but it should not be presented as a fresh extraction proof.
 - Rollback is straightforward: remove the new freshness contracts, helper module, route wiring, formatter additions, summary freshness blocks, tests, docs, and this ExecPlan update together. No schema rollback is required.
 
 M3.7 can now start cleanly.

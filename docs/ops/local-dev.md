@@ -1148,6 +1148,32 @@ Example:
 curl -i http://localhost:4000/twin/repositories/616xold/pocket-cto/freshness
 ```
 
+Repeatable live smoke:
+
+```bash
+pnpm smoke:twin-freshness:live -- --repo-full-name 616xold/pocket-cto
+pnpm smoke:twin-freshness:live -- --repo-full-name 616xold/pocket-cto --source-repo-root /absolute/path/to/pocket-cto
+```
+
+The helper keeps the product surface unchanged.
+It always syncs GitHub installations and the repository registry, then reads the existing freshness route.
+If the requested local source root truthfully matches the requested synced repository, it also refreshes the existing metadata, ownership, workflows, test suites, docs, and runbooks slice routes before reading freshness.
+
+The helper prints only safe summary fields and explicitly labels the proof mode:
+
+- `stored_state_only`: reads the current stored twin state without triggering slice refresh
+- `refreshed_live_state`: refreshed the existing twin slices from a truthful local checkout before reading freshness
+
+The helper reports at minimum:
+
+- repo full name
+- proof mode and proof-mode reason
+- freshness rollup state
+- freshness rollup score
+- blocking slices
+- per-slice state map
+- per-slice latest run ids
+
 ### Twin metadata sync
 
 The first M3.2 extractor is intentionally narrow and auditable.
