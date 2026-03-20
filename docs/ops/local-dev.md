@@ -1158,7 +1158,10 @@ The route stays conservative:
 Repeatable live smoke:
 
 ```bash
+# fallback proof when no truthful matching checkout is available locally
 pnpm smoke:twin-blast-radius:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts
+
+# preferred refreshed-live proof when the local checkout truthfully matches owner/repo
 pnpm smoke:twin-blast-radius:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts --source-repo-root /absolute/path/to/pocket-cto
 ```
 
@@ -1171,6 +1174,8 @@ The helper prints only safe summary fields and explicitly labels the proof mode:
 
 - `stored_state_only`: reads the current stored twin state without triggering slice refresh
 - `refreshed_live_state`: refreshed the existing twin slices from a truthful local checkout before running the query
+
+For M3.7 closeout, prefer the second form when you have a truthful matching checkout because it proves the packaged helper can refresh the already-shipped twin slices and then answer the blast-radius query without changing the route contract.
 
 The helper reports at minimum:
 
