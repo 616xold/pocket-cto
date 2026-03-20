@@ -2,27 +2,29 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const getControlPlaneHealth = vi.fn();
 const getMissionList = vi.fn();
 const getGitHubIssueIntakeList = vi.fn();
 
-vi.mock("../../lib/api", () => ({
+vi.mock("../lib/api", () => ({
+  getControlPlaneHealth,
   getGitHubIssueIntakeList,
   getMissionList,
 }));
 
-vi.mock("../../components/mission-intake-form", () => ({
+vi.mock("../components/mission-intake-form", () => ({
   MissionIntakeForm() {
     return <div>mission-intake-form</div>;
   },
 }));
 
-vi.mock("../../components/discovery-mission-intake-form", () => ({
+vi.mock("../components/discovery-mission-intake-form", () => ({
   DiscoveryMissionIntakeForm() {
     return <div>discovery-mission-intake-form</div>;
   },
 }));
 
-vi.mock("../../components/github-issue-intake-list", () => ({
+vi.mock("../components/github-issue-intake-list", () => ({
   GitHubIssueIntakeList(props: {
     issues: Array<{
       issueTitle: string;
@@ -42,56 +44,40 @@ vi.mock("../../components/github-issue-intake-list", () => ({
   },
 }));
 
-describe("MissionsPage", () => {
+describe("HomePage", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("renders real summary cards from the mission-list route", async () => {
+  it("renders build and discovery intake cards alongside health and recent work", async () => {
+    getControlPlaneHealth.mockResolvedValue({
+      ok: true,
+      service: "control-plane",
+      now: "2026-03-20T03:30:00.000Z",
+    });
     getMissionList.mockResolvedValue({
       filters: {
-        limit: 20,
+        limit: 6,
         sourceKind: null,
         status: null,
       },
       missions: [
         {
-          createdAt: "2026-03-16T01:00:00.000Z",
+          createdAt: "2026-03-20T03:00:00.000Z",
           id: "11111111-1111-4111-8111-111111111111",
-          latestTask: {
-            id: "33333333-3333-4333-8333-333333333333",
-            role: "executor",
-            sequence: 1,
-            status: "running",
-            updatedAt: "2026-03-16T01:05:00.000Z",
-          },
-          objectiveExcerpt: "Ship passkeys without breaking email login.",
-          pendingApprovalCount: 1,
-          primaryRepo: "web",
-          proofBundleStatus: "incomplete",
-          pullRequestNumber: 19,
-          pullRequestUrl: "https://github.com/acme/web/pull/19",
-          sourceKind: "manual_text",
-          sourceRef: null,
-          status: "running",
-          title: "Implement passkeys for sign-in",
-          updatedAt: "2026-03-16T01:05:00.000Z",
-        },
-        {
-          createdAt: "2026-03-15T23:00:00.000Z",
-          id: "22222222-2222-4222-8222-222222222222",
           latestTask: null,
-          objectiveExcerpt: "Draft rollback notes for a staged release.",
+          objectiveExcerpt:
+            "Answer the stored auth-change blast radius for 616xold/pocket-cto.",
           pendingApprovalCount: 0,
-          primaryRepo: "ops",
-          proofBundleStatus: "placeholder",
+          primaryRepo: "616xold/pocket-cto",
+          proofBundleStatus: "ready",
           pullRequestNumber: null,
           pullRequestUrl: null,
-          sourceKind: "github_issue",
-          sourceRef: "https://github.com/acme/ops/issues/7",
-          status: "queued",
-          title: "Prepare rollback notes",
-          updatedAt: "2026-03-15T23:00:00.000Z",
+          sourceKind: "manual_discovery",
+          sourceRef: null,
+          status: "succeeded",
+          title: "Assess auth-change blast radius for 616xold/pocket-cto",
+          updatedAt: "2026-03-20T03:05:00.000Z",
         },
       ],
     });
@@ -105,8 +91,8 @@ describe("MissionsPage", () => {
           issueState: "open",
           senderLogin: "octo-operator",
           sourceRef: "https://github.com/acme/web/issues/42",
-          receivedAt: "2026-03-16T01:55:00.000Z",
-          commentCount: 2,
+          receivedAt: "2026-03-20T03:10:00.000Z",
+          commentCount: 1,
           hasCommentActivity: true,
           isBound: false,
           boundMissionId: null,
@@ -118,16 +104,13 @@ describe("MissionsPage", () => {
     const mod = await import("./page");
     const html = renderToStaticMarkup(await mod.default());
 
-    expect(getMissionList).toHaveBeenCalledWith({ limit: 20 });
+    expect(getControlPlaneHealth).toHaveBeenCalledOnce();
+    expect(getMissionList).toHaveBeenCalledWith({ limit: 6 });
     expect(getGitHubIssueIntakeList).toHaveBeenCalledOnce();
-    expect(html).toContain("Implement passkeys for sign-in");
-    expect(html).toContain("Prepare rollback notes");
     expect(html).toContain("mission-intake-form");
     expect(html).toContain("discovery-mission-intake-form");
-    expect(html).toContain("GitHub issue intake");
+    expect(html).toContain("reachable");
+    expect(html).toContain("Assess auth-change blast radius for 616xold/pocket-cto");
     expect(html).toContain("Ship issue intake");
-    expect(html).toContain("Create mission");
-    expect(html).toContain("Open mission");
-    expect(html).toContain("PR #19");
   });
 });

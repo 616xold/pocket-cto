@@ -110,7 +110,8 @@ M2.2 now expects `GITHUB_WEBHOOK_SECRET` for live `POST /github/webhooks` ingres
 With `pnpm dev` running, `http://localhost:3000/` is now the operator home and `http://localhost:3000/missions` is the newest-first mission list; the text-intake box on those surfaces reuses `POST /missions/text` and redirects into mission detail.
 Those same surfaces now include a small GitHub issue intake section when persisted issue envelopes exist locally.
 If no live `issues` delivery is stored yet, you can run a truthful local signed ingress replay with `pnpm smoke:github-issue-intake:local` after `pnpm dev`; see [docs/ops/local-dev.md](docs/ops/local-dev.md).
-For deterministic backend discovery work, `POST /missions/discovery` now creates a stored-state discovery mission without natural-language parsing or Codex runtime execution; see [docs/ops/local-dev.md](docs/ops/local-dev.md).
+For deterministic backend discovery work, the operator home and mission list now include a typed discovery-intake card, and `POST /missions/discovery` still creates the stored-state discovery mission without natural-language parsing or Codex runtime execution.
+Use `pnpm smoke:m3-discovery:live` for the packaged end-to-end discovery proof path; see [docs/ops/local-dev.md](docs/ops/local-dev.md).
 
 ### Quality gates
 

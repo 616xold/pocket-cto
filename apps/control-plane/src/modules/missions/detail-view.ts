@@ -10,6 +10,7 @@ import type {
   ProofBundleManifest,
 } from "@pocket-cto/domain";
 import { buildMissionApprovalCards } from "../approvals/card-formatter";
+import { readMissionDiscoveryAnswer } from "./discovery-answer-view";
 import { readProofBundleManifest } from "./repository-mappers";
 
 const ARTIFACT_SUMMARY_MAX_LENGTH = 180;
@@ -26,6 +27,7 @@ export function buildMissionDetailView(input: {
     mission: input.mission,
     tasks: input.tasks,
     proofBundle: input.proofBundle,
+    discoveryAnswer: readMissionDiscoveryAnswer(input.artifacts),
     approvals: input.approvals.map(summarizeApproval),
     approvalCards: summarizeApprovalCards(input),
     artifacts: input.artifacts.map(summarizeArtifact),

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApprovalKindSchema, ApprovalStatusSchema } from "./approval";
+import { DiscoveryAnswerArtifactMetadataSchema } from "./discovery-mission";
 import { MissionRecordSchema } from "./mission";
 import { MissionTaskRecordSchema, MissionTaskRoleSchema } from "./mission-task";
 import { ArtifactKindSchema, ProofBundleManifestSchema } from "./proof-bundle";
@@ -70,6 +71,7 @@ export const MissionDetailViewSchema = z.object({
   mission: MissionRecordSchema,
   tasks: z.array(MissionTaskRecordSchema),
   proofBundle: ProofBundleManifestSchema,
+  discoveryAnswer: DiscoveryAnswerArtifactMetadataSchema.nullable().default(null),
   approvals: z.array(MissionApprovalSummarySchema),
   approvalCards: z.array(MissionApprovalCardSchema),
   artifacts: z.array(MissionArtifactSummarySchema),

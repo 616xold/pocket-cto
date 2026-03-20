@@ -1,3 +1,5 @@
+import React from "react";
+import { DiscoveryMissionIntakeForm } from "../components/discovery-mission-intake-form";
 import Link from "next/link";
 import { GitHubIssueIntakeList } from "../components/github-issue-intake-list";
 import { MissionIntakeForm } from "../components/mission-intake-form";
@@ -21,9 +23,10 @@ export default async function HomePage() {
         <p className="eyebrow">Pocket CTO</p>
         <h1>Operator home for evidence-native engineering missions.</h1>
         <p className="lede">
-          Create a mission from text, scan recent work, and jump straight into
-          the evidence-heavy detail page from here. The home surface stays small
-          and summary-shaped so it works cleanly on mobile.
+          Create a build mission from text or a deterministic discovery mission,
+          scan recent work, and jump straight into the evidence-heavy detail
+          page from here. The home surface stays small and summary-shaped so it
+          works cleanly on mobile.
         </p>
         <div className="button-row" style={{ marginTop: 22 }}>
           <Link href={{ pathname: "/missions" }} className="button primary">
@@ -46,30 +49,40 @@ export default async function HomePage() {
           <MissionIntakeForm />
         </article>
 
-        <article className="card status-card">
-          <h2>Control-plane health</h2>
-          {health.ok ? (
-            <dl className="status-list">
-              <div>
-                <dt>Status</dt>
-                <dd>reachable</dd>
-              </div>
-              <div>
-                <dt>Service</dt>
-                <dd>{health.service}</dd>
-              </div>
-              <div>
-                <dt>Observed</dt>
-                <dd>{health.now}</dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="muted">
-              The control plane is not reachable yet. Start it with <code>pnpm
-              dev</code> after bootstrapping dependencies.
-            </p>
-          )}
+        <article className="card">
+          <h2>Start discovery</h2>
+          <p className="muted">
+            This narrow intake calls the existing `POST /missions/discovery`
+            backend with one repo, one fixed question kind, and explicit
+            changed paths, then redirects into mission detail.
+          </p>
+          <DiscoveryMissionIntakeForm />
         </article>
+      </section>
+
+      <section className="card status-card">
+        <h2>Control-plane health</h2>
+        {health.ok ? (
+          <dl className="status-list">
+            <div>
+              <dt>Status</dt>
+              <dd>reachable</dd>
+            </div>
+            <div>
+              <dt>Service</dt>
+              <dd>{health.service}</dd>
+            </div>
+            <div>
+              <dt>Observed</dt>
+              <dd>{health.now}</dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="muted">
+            The control plane is not reachable yet. Start it with <code>pnpm
+            dev</code> after bootstrapping dependencies.
+          </p>
+        )}
       </section>
 
       <section className="card">

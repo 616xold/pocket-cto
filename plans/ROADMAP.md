@@ -85,6 +85,7 @@ Exit criteria:
 ### M3 - Engineering twin v1
 
 Goal: make planning and discovery grounded in a freshness-aware twin.
+Status: complete. See `docs/ops/m3-exit-report.md` for the closeout evidence and live discovery proof.
 
 Submilestones:
 

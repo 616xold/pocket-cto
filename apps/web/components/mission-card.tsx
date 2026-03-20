@@ -1,12 +1,14 @@
 import React from "react";
 import type { MissionDetailView } from "@pocket-cto/domain";
 import { ApprovalCardList } from "./approval-card-list";
+import { DiscoveryAnswerCard } from "./discovery-answer-card";
 import { StatusPill } from "./status-pill";
 
 type MissionCardProps = Pick<
   MissionDetailView,
   | "approvalCards"
   | "artifacts"
+  | "discoveryAnswer"
   | "liveControl"
   | "mission"
   | "proofBundle"
@@ -16,6 +18,7 @@ type MissionCardProps = Pick<
 export function MissionCard({
   approvalCards,
   artifacts,
+  discoveryAnswer,
   liveControl,
   mission,
   proofBundle,
@@ -50,6 +53,10 @@ export function MissionCard({
           </div>
         </div>
       </section>
+
+      {mission.type === "discovery" || discoveryAnswer ? (
+        <DiscoveryAnswerCard answer={discoveryAnswer} mission={mission} />
+      ) : null}
 
       <section className="card">
         <h2>Run graph snapshot</h2>

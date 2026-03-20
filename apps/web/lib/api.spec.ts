@@ -182,6 +182,43 @@ describe("web api module", () => {
     );
   });
 
+  it("posts the discovery mission-create route correctly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        return buildDiscoveryMissionCreatePayload();
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const created = await mod.createDiscoveryMission({
+      repoFullName: "616xold/pocket-cto",
+      questionKind: "auth_change",
+      changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+      requestedBy: "Local web operator",
+    });
+
+    expect(created.mission.type).toBe("discovery");
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/missions/discovery`,
+      {
+        body: JSON.stringify({
+          repoFullName: "616xold/pocket-cto",
+          questionKind: "auth_change",
+          changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+          requestedBy: "Local web operator",
+        }),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+  });
+
   it("forms approval-resolution and task-interrupt requests correctly", async () => {
     const fetchMock = vi
       .fn()
@@ -510,6 +547,7 @@ function buildMissionDetailPayload() {
         updatedAt: "2026-03-14T10:01:00.000Z",
       },
     ],
+    discoveryAnswer: null,
     approvalCards: [
       {
         actionHint:
@@ -562,6 +600,106 @@ function buildMissionDetailPayload() {
       limitation: "single_process_only",
       mode: "embedded_worker",
     },
+  };
+}
+
+function buildDiscoveryMissionCreatePayload() {
+  return {
+    mission: {
+      createdAt: "2026-03-20T03:00:00.000Z",
+      createdBy: "Local web operator",
+      id: missionId,
+      objective:
+        "Answer the stored auth-change blast radius for 616xold/pocket-cto across: apps/control-plane/src/modules/github-app/auth.ts.",
+      primaryRepo: "616xold/pocket-cto",
+      sourceKind: "manual_discovery",
+      sourceRef: null,
+      spec: {
+        acceptance: ["persist one durable discovery answer artifact"],
+        constraints: {
+          allowedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+          mustNot: [],
+        },
+        deliverables: ["discovery_answer", "proof_bundle"],
+        evidenceRequirements: ["stored twin blast-radius answer"],
+        input: {
+          discoveryQuestion: {
+            repoFullName: "616xold/pocket-cto",
+            questionKind: "auth_change",
+            changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+          },
+        },
+        objective:
+          "Answer the stored auth-change blast radius for 616xold/pocket-cto across: apps/control-plane/src/modules/github-app/auth.ts.",
+        repos: ["616xold/pocket-cto"],
+        riskBudget: {
+          allowNetwork: false,
+          maxCostUsd: 1,
+          maxWallClockMinutes: 5,
+          requiresHumanApprovalFor: [],
+          sandboxMode: "read-only",
+        },
+        title: "Assess auth-change blast radius for 616xold/pocket-cto",
+        type: "discovery",
+      },
+      status: "queued",
+      title: "Assess auth-change blast radius for 616xold/pocket-cto",
+      type: "discovery",
+      updatedAt: "2026-03-20T03:00:00.000Z",
+    },
+    proofBundle: {
+      artifactIds: [],
+      artifacts: [],
+      branchName: null,
+      changeSummary: "",
+      decisionTrace: [],
+      evidenceCompleteness: {
+        status: "missing",
+        expectedArtifactKinds: ["discovery_answer"],
+        presentArtifactKinds: [],
+        missingArtifactKinds: ["discovery_answer"],
+        notes: ["Discovery answer evidence is missing."],
+      },
+      latestApproval: null,
+      missionId,
+      missionTitle: "Assess auth-change blast radius for 616xold/pocket-cto",
+      objective:
+        "Answer the stored auth-change blast radius for 616xold/pocket-cto across: apps/control-plane/src/modules/github-app/auth.ts.",
+      pullRequestNumber: null,
+      pullRequestUrl: null,
+      replayEventCount: 0,
+      riskSummary: "",
+      rollbackSummary: "",
+      status: "placeholder",
+      targetRepoFullName: null,
+      timestamps: {
+        missionCreatedAt: "2026-03-20T03:00:00.000Z",
+        latestPlannerEvidenceAt: null,
+        latestExecutorEvidenceAt: null,
+        latestPullRequestAt: null,
+        latestApprovalAt: null,
+        latestArtifactAt: null,
+      },
+      validationSummary: "",
+      verificationSummary: "",
+    },
+    tasks: [
+      {
+        attemptCount: 0,
+        codexThreadId: null,
+        codexTurnId: null,
+        createdAt: "2026-03-20T03:00:00.000Z",
+        dependsOnTaskId: null,
+        id: taskId,
+        missionId,
+        role: "scout",
+        sequence: 0,
+        status: "pending",
+        summary: null,
+        updatedAt: "2026-03-20T03:00:00.000Z",
+        workspaceId: null,
+      },
+    ],
   };
 }
 

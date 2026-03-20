@@ -401,6 +401,14 @@ describe("OrchestratorWorker", () => {
       ],
     });
     expect(detail.proofBundle.status).toBe("ready");
+    expect(detail.discoveryAnswer).toMatchObject({
+      repoFullName: "616xold/pocket-cto",
+      questionKind: "auth_change",
+      changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+      freshnessRollup: {
+        state: "stale",
+      },
+    });
     expect(detail.artifacts.map((artifact) => artifact.kind)).toEqual([
       "proof_bundle_manifest",
       "discovery_answer",

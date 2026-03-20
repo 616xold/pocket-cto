@@ -429,6 +429,7 @@ describe("control-plane app", () => {
                 uri: "pocket-cto://missions/11111111-1111-4111-8111-111111111111/tasks/33333333-3333-4333-8333-333333333333/diff-summary",
               },
             ],
+            discoveryAnswer: null,
             liveControl: {
               enabled: false,
               limitation: "single_process_only",
@@ -633,6 +634,7 @@ describe("control-plane app", () => {
           uri: "pocket-cto://missions/11111111-1111-4111-8111-111111111111/tasks/33333333-3333-4333-8333-333333333333/diff-summary",
         },
       ],
+      discoveryAnswer: null,
       liveControl: {
         enabled: true,
         limitation: "single_process_only",

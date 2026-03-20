@@ -1,5 +1,6 @@
 import {
   ApprovalRecordSchema,
+  CreateDiscoveryMissionInputSchema,
   GitHubIssueIntakeListViewSchema,
   GitHubIssueMissionCreateResultSchema,
   MissionDetailViewSchema,
@@ -12,6 +13,7 @@ import {
   ProofBundleManifestSchema,
 } from "@pocket-cto/domain";
 import type { ApprovalDecision, MissionSourceKind, MissionStatus } from "@pocket-cto/domain";
+import type { CreateDiscoveryMissionInput } from "@pocket-cto/domain";
 import { z } from "zod";
 import {
   controlPlaneActionErrorResponseSchema,
@@ -41,7 +43,7 @@ type GitHubIssueMissionCreateResult = z.output<
 
 const liveControlSchema = OperatorControlAvailabilitySchema;
 
-const createMissionFromTextResponseSchema = z.object({
+const createMissionResponseSchema = z.object({
   mission: MissionRecordSchema,
   proofBundle: ProofBundleManifestSchema,
   tasks: z.array(MissionTaskRecordSchema),
@@ -220,7 +222,17 @@ export async function createMissionFromText(input: {
       sourceRef: input.sourceRef ?? undefined,
       text: input.text,
     },
-    createMissionFromTextResponseSchema,
+    createMissionResponseSchema,
+  );
+}
+
+export async function createDiscoveryMission(
+  input: CreateDiscoveryMissionInput,
+) {
+  return postJsonStrict(
+    "/missions/discovery",
+    CreateDiscoveryMissionInputSchema.parse(input),
+    createMissionResponseSchema,
   );
 }
 

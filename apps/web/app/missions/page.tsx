@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { DiscoveryMissionIntakeForm } from "../../components/discovery-mission-intake-form";
 import { GitHubIssueIntakeList } from "../../components/github-issue-intake-list";
 import { MissionIntakeForm } from "../../components/mission-intake-form";
 import { MissionList } from "../../components/mission-list";
@@ -17,9 +18,10 @@ export default async function MissionsPage() {
         <p className="eyebrow">Mission list</p>
         <h1>Recent missions, newest first.</h1>
         <p className="lede">
-          This surface stays summary-shaped on purpose. Start from text, scan
-          mission status and proof posture, then open the existing detail page
-          when you need the full evidence bundle.
+          This surface stays summary-shaped on purpose. Start from text or one
+          deterministic discovery question, scan mission status and proof
+          posture, then open the existing detail page when you need the full
+          evidence bundle.
         </p>
         <div className="button-row">
           <Link href="/" className="button outline">
@@ -38,15 +40,25 @@ export default async function MissionsPage() {
           <MissionIntakeForm buttonLabel="Create and open mission" />
         </article>
 
-        <article className="card status-card">
-          <h2>List rules</h2>
-          <ul className="list-clean">
-            <li>Newest-first mission cards</li>
-            <li>Summary-shaped payload from `GET /missions`</li>
-            <li>Proof-bundle status and pending approvals at a glance</li>
-            <li>Mission detail stays the evidence-heavy drill-down</li>
-          </ul>
+        <article className="card">
+          <h2>Start discovery</h2>
+          <p className="muted">
+            Ask one stored auth-change blast-radius question with explicit
+            changed paths. This page only submits the typed payload and
+            redirects.
+          </p>
+          <DiscoveryMissionIntakeForm buttonLabel="Create and open discovery mission" />
         </article>
+      </section>
+
+      <section className="card status-card">
+        <h2>List rules</h2>
+        <ul className="list-clean">
+          <li>Newest-first mission cards</li>
+          <li>Text and deterministic discovery intake stay separate</li>
+          <li>Proof-bundle status and pending approvals at a glance</li>
+          <li>Mission detail stays the evidence-heavy drill-down</li>
+        </ul>
       </section>
 
       <section className="card" id="github-issue-intake">

@@ -145,6 +145,7 @@ Once `pnpm dev` or `pnpm dev:embedded` is running:
 
 The home and list surfaces now stay deliberately summary-shaped.
 They call the new `GET /missions` control-plane route for newest-first mission cards and expose one minimal text-intake box that reuses the existing `POST /missions/text` backend.
+They also expose one deterministic discovery-intake card with repo full name, fixed `auth_change` question kind, and explicit changed paths that reuses `POST /missions/discovery`.
 Successful submits redirect directly into the created mission detail page.
 They also expose a small GitHub issue intake section that reads the latest actionable persisted GitHub issue envelopes and lets you create one build mission per GitHub issue identity.
 
@@ -188,6 +189,37 @@ curl -i -X POST 'http://localhost:4000/github/repositories/sync'
 ```
 
 If the synced repository still has no stored twin data, discovery missions fail explicitly instead of silently resyncing the twin inside the executor.
+
+### Repeatable live discovery smoke
+
+Use the packaged helper when you want one route-driven end-to-end proof for the discovery mission path:
+
+```bash
+# stored-state proof when no truthful matching checkout is available locally
+pnpm smoke:m3-discovery:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts
+
+# preferred refreshed-live proof when the local checkout truthfully matches owner/repo
+pnpm smoke:m3-discovery:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts --source-repo-root /absolute/path/to/pocket-cto
+```
+
+The helper loads the local `.env`, boots the real control-plane in embedded-worker mode, syncs GitHub installations plus the repository registry, optionally refreshes the stored twin slices when the provided source checkout is a truthful repo match, creates a discovery mission through `POST /missions/discovery`, polls mission detail until terminal, and prints only safe summary fields.
+
+The helper reports at minimum:
+
+- repo full name
+- changed paths
+- mission id
+- discovery artifact id
+- proof-bundle status
+- impacted manifest count
+- impacted directory count
+- owner count
+- related test suite count
+- related mapped CI job count
+- freshness rollup
+- limitation count
+
+For M3 closeout, prefer the second form when a truthful checkout is available because it proves the packaged helper can refresh the already-shipped twin slices and then execute the real discovery mission path without widening the route contract.
 
 ## GitHub issue intake
 

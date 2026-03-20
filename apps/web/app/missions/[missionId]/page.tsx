@@ -21,6 +21,7 @@ export default async function MissionPage({ params }: MissionPageProps) {
           <MissionCard
             approvalCards={demoMission.approvalCards}
             artifacts={demoMission.artifacts}
+            discoveryAnswer={demoMission.discoveryAnswer}
             liveControl={demoMission.liveControl}
             mission={demoMission.mission}
             proofBundle={demoMission.proofBundle}
@@ -44,6 +45,7 @@ export default async function MissionPage({ params }: MissionPageProps) {
       <MissionCard
         approvalCards={mission.approvalCards}
         artifacts={mission.artifacts}
+        discoveryAnswer={mission.discoveryAnswer}
         liveControl={mission.liveControl}
         mission={mission.mission}
         proofBundle={mission.proofBundle}
@@ -170,6 +172,7 @@ function buildDemoMissionDetail(): MissionDetailView {
       },
       status: "placeholder",
     },
+    discoveryAnswer: null,
     approvals: [],
     approvalCards: [],
     artifacts: [],

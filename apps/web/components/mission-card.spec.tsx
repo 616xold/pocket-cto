@@ -86,6 +86,7 @@ describe("MissionCard", () => {
           limitation: "single_process_only",
           mode: "embedded_worker",
         }}
+        discoveryAnswer={null}
         mission={{
           createdAt: "2026-03-14T10:00:00.000Z",
           createdBy: "operator",
@@ -219,6 +220,7 @@ describe("MissionCard", () => {
           limitation: "single_process_only",
           mode: "api_only",
         }}
+        discoveryAnswer={null}
         mission={{
           createdAt: "2026-03-16T10:00:00.000Z",
           createdBy: "operator",
@@ -294,5 +296,319 @@ describe("MissionCard", () => {
     expect(html).toContain("Not recorded yet.");
     expect(html).not.toContain("Pending PR publication.");
     expect(html).not.toContain("Pending repo resolution.");
+  });
+
+  it("renders the stored discovery answer with freshness and limitations prominently", () => {
+    const html = renderToStaticMarkup(
+      <MissionCard
+        approvalCards={[]}
+        artifacts={[
+          {
+            createdAt: "2026-03-20T03:10:00.000Z",
+            id: "77777777-7777-4777-8777-777777777777",
+            kind: "discovery_answer",
+            summary:
+              "Stored twin state shows apps as the main impacted directory for this auth change.",
+            taskId: "33333333-3333-4333-8333-333333333333",
+            uri: "pocket-cto://missions/11111111-1111-4111-8111-111111111111/tasks/33333333-3333-4333-8333-333333333333/discovery-answer",
+          },
+        ]}
+        discoveryAnswer={{
+          source: "stored_twin_blast_radius_query",
+          summary:
+            "Stored twin state shows apps as the main impacted directory for this auth change.",
+          repoFullName: "616xold/pocket-cto",
+          questionKind: "auth_change",
+          changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+          answerSummary:
+            "Stored twin state shows apps as the main impacted directory for this auth change.",
+          impactedDirectories: [
+            {
+              path: "apps",
+              label: "apps",
+              classification: "workspace_directory",
+              matchedChangedPaths: [
+                "apps/control-plane/src/modules/github-app/auth.ts",
+              ],
+              ownershipState: "unowned",
+              effectiveOwners: [],
+              appliedRule: null,
+            },
+          ],
+          impactedManifests: [
+            {
+              path: "apps/control-plane/package.json",
+              packageName: "@pocket-cto/control-plane",
+              private: null,
+              hasWorkspaces: false,
+              scriptNames: ["dev", "test"],
+              matchedChangedPaths: [
+                "apps/control-plane/src/modules/github-app/auth.ts",
+              ],
+              ownershipState: "unknown",
+              effectiveOwners: [],
+              appliedRule: null,
+              relatedTestSuiteCount: 1,
+              relatedMappedCiJobCount: 0,
+            },
+          ],
+          ownersByTarget: [],
+          relatedTestSuites: [
+            {
+              stableKey: "suite:apps/control-plane/package.json:test",
+              manifestPath: "apps/control-plane/package.json",
+              packageName: "@pocket-cto/control-plane",
+              scriptKey: "test",
+              matchedJobs: [],
+              impactedByChangedPaths: [
+                "apps/control-plane/src/modules/github-app/auth.ts",
+              ],
+            },
+          ],
+          relatedMappedCiJobs: [],
+          freshness: {
+            rollup: {
+              state: "stale",
+              scorePercent: 50,
+              latestRunStatus: "succeeded",
+              ageSeconds: 50000,
+              staleAfterSeconds: 43200,
+              reasonCode: "stale_twin_state",
+              reasonSummary:
+                "Stored twin state is stale for: workflows, testSuites.",
+              freshSliceCount: 4,
+              staleSliceCount: 2,
+              failedSliceCount: 0,
+              neverSyncedSliceCount: 0,
+              blockingSlices: ["workflows", "testSuites"],
+            },
+            slices: {
+              metadata: {
+                state: "fresh",
+                scorePercent: 100,
+                latestRunStatus: "succeeded",
+                latestRunId: "11111111-1111-4111-8111-111111111111",
+                latestCompletedAt: "2026-03-20T03:00:00.000Z",
+                latestSuccessfulRunId: "11111111-1111-4111-8111-111111111111",
+                latestSuccessfulCompletedAt: "2026-03-20T03:00:00.000Z",
+                ageSeconds: 100,
+                staleAfterSeconds: 21600,
+                reasonCode: "fresh_successful_sync",
+                reasonSummary: "Stored metadata is fresh.",
+              },
+              ownership: {
+                state: "fresh",
+                scorePercent: 100,
+                latestRunStatus: "succeeded",
+                latestRunId: "22222222-2222-4222-8222-222222222222",
+                latestCompletedAt: "2026-03-20T03:00:00.000Z",
+                latestSuccessfulRunId: "22222222-2222-4222-8222-222222222222",
+                latestSuccessfulCompletedAt: "2026-03-20T03:00:00.000Z",
+                ageSeconds: 100,
+                staleAfterSeconds: 43200,
+                reasonCode: "fresh_successful_sync",
+                reasonSummary: "Stored ownership is fresh.",
+              },
+              workflows: {
+                state: "stale",
+                scorePercent: 50,
+                latestRunStatus: "succeeded",
+                latestRunId: "33333333-3333-4333-8333-333333333333",
+                latestCompletedAt: "2026-03-19T12:00:00.000Z",
+                latestSuccessfulRunId: "33333333-3333-4333-8333-333333333333",
+                latestSuccessfulCompletedAt: "2026-03-19T12:00:00.000Z",
+                ageSeconds: 50000,
+                staleAfterSeconds: 43200,
+                reasonCode: "stale_successful_sync",
+                reasonSummary: "Stored workflows are stale.",
+              },
+              testSuites: {
+                state: "stale",
+                scorePercent: 50,
+                latestRunStatus: "succeeded",
+                latestRunId: "44444444-4444-4444-8444-444444444444",
+                latestCompletedAt: "2026-03-19T12:00:00.000Z",
+                latestSuccessfulRunId: "44444444-4444-4444-8444-444444444444",
+                latestSuccessfulCompletedAt: "2026-03-19T12:00:00.000Z",
+                ageSeconds: 50000,
+                staleAfterSeconds: 43200,
+                reasonCode: "stale_successful_sync",
+                reasonSummary: "Stored test suites are stale.",
+              },
+              docs: {
+                state: "fresh",
+                scorePercent: 100,
+                latestRunStatus: "succeeded",
+                latestRunId: "55555555-5555-4555-8555-555555555555",
+                latestCompletedAt: "2026-03-20T03:00:00.000Z",
+                latestSuccessfulRunId: "55555555-5555-4555-8555-555555555555",
+                latestSuccessfulCompletedAt: "2026-03-20T03:00:00.000Z",
+                ageSeconds: 100,
+                staleAfterSeconds: 86400,
+                reasonCode: "fresh_successful_sync",
+                reasonSummary: "Stored docs are fresh.",
+              },
+              runbooks: {
+                state: "fresh",
+                scorePercent: 100,
+                latestRunStatus: "succeeded",
+                latestRunId: "66666666-6666-4666-8666-666666666666",
+                latestCompletedAt: "2026-03-20T03:00:00.000Z",
+                latestSuccessfulRunId: "66666666-6666-4666-8666-666666666666",
+                latestSuccessfulCompletedAt: "2026-03-20T03:00:00.000Z",
+                ageSeconds: 100,
+                staleAfterSeconds: 86400,
+                reasonCode: "fresh_successful_sync",
+                reasonSummary: "Stored runbooks are fresh.",
+              },
+            },
+          },
+          freshnessRollup: {
+            state: "stale",
+            scorePercent: 50,
+            latestRunStatus: "succeeded",
+            ageSeconds: 50000,
+            staleAfterSeconds: 43200,
+            reasonCode: "stale_twin_state",
+            reasonSummary:
+              "Stored twin state is stale for: workflows, testSuites.",
+            freshSliceCount: 4,
+            staleSliceCount: 2,
+            failedSliceCount: 0,
+            neverSyncedSliceCount: 0,
+            blockingSlices: ["workflows", "testSuites"],
+          },
+          limitations: [
+            {
+              code: "repository_freshness_stale",
+              summary: "Stored workflow and test-suite state is stale.",
+              changedPaths: [],
+              targetPaths: [],
+              manifestPaths: [],
+              jobKeys: [],
+              reasonCodes: [],
+              sliceNames: ["workflows", "testSuites"],
+            },
+          ],
+        }}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          createdAt: "2026-03-20T03:00:00.000Z",
+          createdBy: "operator",
+          id: "11111111-1111-4111-8111-111111111111",
+          objective:
+            "Answer the stored auth-change blast radius for 616xold/pocket-cto across: apps/control-plane/src/modules/github-app/auth.ts.",
+          primaryRepo: "616xold/pocket-cto",
+          sourceKind: "manual_discovery",
+          sourceRef: null,
+          spec: {
+            acceptance: ["persist one durable discovery answer artifact"],
+            constraints: {
+              allowedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+              mustNot: [],
+            },
+            deliverables: ["discovery_answer", "proof_bundle"],
+            evidenceRequirements: ["stored twin blast-radius answer"],
+            input: {
+              discoveryQuestion: {
+                repoFullName: "616xold/pocket-cto",
+                questionKind: "auth_change",
+                changedPaths: [
+                  "apps/control-plane/src/modules/github-app/auth.ts",
+                ],
+              },
+            },
+            objective:
+              "Answer the stored auth-change blast radius for 616xold/pocket-cto across: apps/control-plane/src/modules/github-app/auth.ts.",
+            repos: ["616xold/pocket-cto"],
+            riskBudget: {
+              allowNetwork: false,
+              maxCostUsd: 1,
+              maxWallClockMinutes: 5,
+              requiresHumanApprovalFor: [],
+              sandboxMode: "read-only",
+            },
+            title: "Assess auth-change blast radius for 616xold/pocket-cto",
+            type: "discovery",
+          },
+          status: "succeeded",
+          title: "Assess auth-change blast radius for 616xold/pocket-cto",
+          type: "discovery",
+          updatedAt: "2026-03-20T03:10:00.000Z",
+        }}
+        proofBundle={{
+          artifactIds: ["77777777-7777-4777-8777-777777777777"],
+          artifacts: [
+            {
+              id: "77777777-7777-4777-8777-777777777777",
+              kind: "discovery_answer",
+            },
+          ],
+          branchName: null,
+          changeSummary:
+            "Stored twin state shows apps as the main impacted directory for this auth change.",
+          decisionTrace: [],
+          evidenceCompleteness: {
+            status: "complete",
+            expectedArtifactKinds: ["discovery_answer"],
+            presentArtifactKinds: ["discovery_answer"],
+            missingArtifactKinds: [],
+            notes: [],
+          },
+          latestApproval: null,
+          missionId: "11111111-1111-4111-8111-111111111111",
+          missionTitle: "Assess auth-change blast radius for 616xold/pocket-cto",
+          objective:
+            "Answer the stored auth-change blast radius for 616xold/pocket-cto across: apps/control-plane/src/modules/github-app/auth.ts.",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          replayEventCount: 8,
+          riskSummary: "",
+          rollbackSummary: "",
+          status: "ready",
+          targetRepoFullName: "616xold/pocket-cto",
+          timestamps: {
+            missionCreatedAt: "2026-03-20T03:00:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPullRequestAt: null,
+            latestApprovalAt: null,
+            latestArtifactAt: "2026-03-20T03:10:00.000Z",
+          },
+          validationSummary: "",
+          verificationSummary:
+            "Review the stored freshness and limitation details before acting on the answer.",
+        }}
+        tasks={[
+          {
+            attemptCount: 1,
+            codexThreadId: null,
+            codexTurnId: null,
+            createdAt: "2026-03-20T03:00:00.000Z",
+            dependsOnTaskId: null,
+            id: "33333333-3333-4333-8333-333333333333",
+            missionId: "11111111-1111-4111-8111-111111111111",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            summary:
+              "Stored twin state shows apps as the main impacted directory for this auth change.",
+            updatedAt: "2026-03-20T03:10:00.000Z",
+            workspaceId: null,
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain("Stored blast-radius evidence");
+    expect(html).toContain("616xold/pocket-cto");
+    expect(html).toContain("auth_change");
+    expect(html).toContain("Stored workflow and test-suite state is stale.");
+    expect(html).toContain("No related mapped CI jobs were stored.");
+    expect(html).toContain("apps/control-plane/src/modules/github-app/auth.ts");
   });
 });
