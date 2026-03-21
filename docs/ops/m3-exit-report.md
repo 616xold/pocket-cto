@@ -2,7 +2,7 @@
 
 Status: `M3 complete`
 
-Date: `2026-03-20`
+Date: `2026-03-21`
 
 ## Scope closed
 
@@ -10,7 +10,7 @@ M3 closes with the engineering-twin stack now operator-visible and proofable end
 
 - the web operator home and `/missions` surface both expose a typed discovery-intake card
 - mission detail renders the stored `discovery_answer` artifact as a summary-shaped evidence block
-- `pnpm smoke:m3-discovery:live` packages the real route-driven discovery proof path
+- `pnpm smoke:m3-discovery:live -- --isolate-db ...` is now the canonical packaged proof path
 - the live closeout proof below shows a real `auth_change` discovery mission succeeding with a ready proof bundle
 
 ## Exact smoke inputs
@@ -18,11 +18,11 @@ M3 closes with the engineering-twin stack now operator-visible and proofable end
 Primary live closeout run:
 
 ```bash
-DATABASE_URL=<fresh local postgres db> \
 pnpm smoke:m3-discovery:live -- \
+  --isolate-db \
   --repo-full-name 616xold/pocket-cto \
   --changed-path apps/control-plane/src/modules/github-app/auth.ts \
-  --source-repo-root /tmp/pocket-cto-source-gXy9Gv
+  --source-repo-root /tmp/pocket-cto-source-zNcXqW
 ```
 
 Truthful proof notes:
@@ -31,14 +31,18 @@ Truthful proof notes:
 - `proofMode`: `refreshed_live_state`
 - `proofModeReason`: `truthful_source_match`
 - the source checkout remote resolved to `https://github.com/616xold/pocket-cto.git`
-- the first attempt against the shared local development database left the mission queued behind older unrelated work, so the final closeout proof reran against a fresh local Postgres database while keeping the same live GitHub App credentials and truthful source checkout
+- the helper itself now owns the fresh local Postgres isolation path, including DB creation, migration, teardown, and optional failure preservation, so M3 proof no longer depends on manual shell choreography
+- shared-database mode still exists for day-to-day local debugging, but the isolated packaged command is the canonical closeout path because it avoids unrelated queued local work
+- the first packaged isolated rerun exposed one honest teardown bug: the helper closed Fastify but did not explicitly drain shared `pg` pools before dropping the temporary databases, so Postgres terminated a still-open pooled connection; the helper now calls `closeAllPools()` before cleanup and the rerun below completed with isolated DB teardown succeeding
 
 ## Live discovery evidence
 
-- `mission id`: `c8c98c5f-5c8b-4278-af33-b1a52a554603`
-- `artifact id`: `c0ff006f-057b-4c18-9f11-7b9b9c7ac801`
+- `mission id`: `9516babf-208c-445b-b71d-e94b8a6bdfa4`
+- `artifact id`: `cec554ca-0438-42bd-a024-508b655f98e6`
 - `proof bundle status`: `ready`
 - `repo full name`: `616xold/pocket-cto`
+- `question kind`: `auth_change`
+- `changed paths`: `apps/control-plane/src/modules/github-app/auth.ts`
 - `freshness rollup`: `fresh`
 - `freshness reason`: `All scored twin slices are within their freshness windows.`
 - `impacted manifest count`: `1`
@@ -49,6 +53,8 @@ Truthful proof notes:
 - `limitation count`: `3`
 - `installations synced`: `1`
 - `repositories synced`: `1`
+- `proof mode`: `refreshed_live_state`
+- `isolated DB cleanup status`: `dropped_after_success`
 
 Safe answer summary:
 
@@ -81,6 +87,8 @@ Notable findings during validation:
 
 - repo-wide `typecheck` initially failed because one new web spec fixture included fields not present in the domain schema; that fixture was corrected and the full validation matrix then passed
 - the clean-worktree repro succeeded after the fix, confirming the slice is reproducible outside the active workspace
+- the packaged discovery helper now carries the isolation lifecycle itself, replacing the earlier ad hoc `DATABASE_URL=<fresh local postgres db>` wrapper that had been used only to dodge shared-local backlog
+- the first isolated packaged rerun surfaced one real cleanup bug in the helper itself, and the final rerun after explicitly draining shared DB pools succeeded with the isolated databases dropped automatically
 
 ## Exit decision
 

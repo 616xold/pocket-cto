@@ -195,18 +195,37 @@ If the synced repository still has no stored twin data, discovery missions fail 
 Use the packaged helper when you want one route-driven end-to-end proof for the discovery mission path:
 
 ```bash
-# stored-state proof when no truthful matching checkout is available locally
-pnpm smoke:m3-discovery:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts
-
-# preferred refreshed-live proof when the local checkout truthfully matches owner/repo
-pnpm smoke:m3-discovery:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts --source-repo-root /absolute/path/to/pocket-cto
+# preferred isolated refreshed-live proof when the local checkout truthfully matches owner/repo
+pnpm smoke:m3-discovery:live -- \
+  --isolate-db \
+  --repo-full-name 616xold/pocket-cto \
+  --changed-path apps/control-plane/src/modules/github-app/auth.ts \
+  --source-repo-root /absolute/path/to/pocket-cto
 ```
 
-The helper loads the local `.env`, boots the real control-plane in embedded-worker mode, syncs GitHub installations plus the repository registry, optionally refreshes the stored twin slices when the provided source checkout is a truthful repo match, creates a discovery mission through `POST /missions/discovery`, polls mission detail until terminal, and prints only safe summary fields.
+That isolated mode is the canonical M3 proof path.
+The helper loads the local `.env`, creates a fresh local `DATABASE_URL` plus `TEST_DATABASE_URL` pair, runs the checked-in Postgres prep and migrate helpers, boots the real control-plane in embedded-worker mode, syncs GitHub installations plus the repository registry, optionally refreshes the stored twin slices when the provided source checkout is a truthful repo match, creates a discovery mission through `POST /missions/discovery`, polls mission detail until terminal, prints only safe summary fields, and drops the temporary databases after a successful run.
+
+Shared-database mode is still available when you deliberately want to reuse the current local state:
+
+```bash
+# stored-state proof when no truthful matching checkout is available locally
+pnpm smoke:m3-discovery:live -- \
+  --repo-full-name 616xold/pocket-cto \
+  --changed-path apps/control-plane/src/modules/github-app/auth.ts
+```
+
+Useful isolation options:
+
+- `--db-name-prefix pocket_cto_m3_smoke` picks a clearer temporary database prefix
+- `--keep-db-on-failure` preserves the isolated databases for inspection when a run fails
+- `--source-repo-root /absolute/path/to/pocket-cto` remains required for `refreshed_live_state`
 
 The helper reports at minimum:
 
+- proof mode
 - repo full name
+- question kind
 - changed paths
 - mission id
 - discovery artifact id
@@ -219,7 +238,7 @@ The helper reports at minimum:
 - freshness rollup
 - limitation count
 
-For M3 closeout, prefer the second form when a truthful checkout is available because it proves the packaged helper can refresh the already-shipped twin slices and then execute the real discovery mission path without widening the route contract.
+For M3 closeout, prefer the isolated form when a truthful checkout is available because it proves the packaged helper can refresh the already-shipped twin slices and then execute the real discovery mission path without widening the route contract or depending on unrelated local mission backlog.
 
 ## GitHub issue intake
 

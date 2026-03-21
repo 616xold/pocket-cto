@@ -12,6 +12,11 @@ It is intentionally narrow: it finishes the operator visibility, proof packaging
 
 ## Progress
 
+- [x] (2026-03-21T14:52:00Z) Re-read the active plan, required docs, proof helper, and DB tooling, then ran the required inspections `rg -n "smoke:m3-discovery:live|queued behind older|fresh local Postgres|discoveryAnswer|proofMode|truthful_source_match|ci-prepare-postgres|db:migrate:ci" tools docs plans package.json apps`, `git status --short`, and `git diff --name-only HEAD` to frame the M3.8B isolated discovery smoke hardening slice.
+- [x] (2026-03-21T14:52:00Z) Captured the required in-thread `M3.8B isolated discovery smoke gap` note before editing, confirming that the backend, UI, and packaged proof path already work end to end but the canonical live proof was still weaker than M3.6 and M3.7 because it could be queued behind unrelated local backlog.
+- [x] (2026-03-21T15:02:00Z) Extended `tools/m3-discovery-mission-smoke.mjs` with route-driven isolated DB support, added focused helper coverage for argument parsing plus DB-name construction, and updated the docs guard so the local-dev guide, exit report, and active ExecPlan must all mention the packaged `--isolate-db` path.
+- [x] (2026-03-21T15:05:00Z) Ran the hardened isolated live smoke against a truthful temporary clone of `616xold/pocket-cto`, found and fixed one teardown bug where shared `pg` pools were not drained before DB drop, then reran successfully with mission `9516babf-208c-445b-b71d-e94b8a6bdfa4`, artifact `cec554ca-0438-42bd-a024-508b655f98e6`, proof bundle `ready`, and isolated DB cleanup `dropped_after_success`.
+- [x] (2026-03-21T15:10:00Z) Re-ran the full required validation tail and clean-worktree repro after the live hardening fixes, found one brittle discovery-artifact ordering expectation in `src/modules/orchestrator/service.spec.ts`, changed that spec to assert sorted membership instead of incidental order, and finished with `pnpm ci:repro:current` succeeding again.
 - [x] (2026-03-20T03:07:29Z) Read the required repo docs, roadmap, M3.2 through M3.8-adjacent ExecPlans, architecture references, the named skills, and the listed mission or web or proof files, then ran the required inspections `rg -n "discoveryAnswer|POST /missions/discovery|smoke:twin|m3 exit|blast-radius|auth_change|proof bundle|mission detail|operator home" apps packages docs plans package.json`, `git status --short`, and `git diff --name-only HEAD`.
 - [x] (2026-03-20T03:07:29Z) Captured the required in-thread `M3.8B discovery mission operator gap` note before editing, confirming that the backend discovery spine already exists but the operator intake, readable mission-detail answer block, packaged M3 smoke, and explicit closeout evidence are still missing.
 - [x] (2026-03-20T03:07:29Z) Created EP-0029 before coding so the new UI, proof, tests, and M3-exit acceptance bar stay explicit and resumable.
@@ -37,6 +42,15 @@ It is intentionally narrow: it finishes the operator visibility, proof packaging
 - Observation: a shared local development database can contain older queued missions that starve a new live discovery smoke, even when the packaged helper itself is correct.
   Evidence: the first live smoke against the default local database created mission `17fc804c-afd1-4120-a66c-958d5d7d5a8f`, but that mission remained `queued` behind unrelated older work; rerunning the same helper against a fresh local Postgres database with the same GitHub App credentials and truthful source checkout succeeded immediately.
 
+- Observation: the repo already had the right Postgres building blocks for isolated proof, but the packaged M3 helper was not using them directly yet.
+  Evidence: `tools/ci-prepare-postgres.mjs` already creates both `DATABASE_URL` and `TEST_DATABASE_URL` safely, and `tools/ci-migrate-databases.mjs` already migrates both URLs, so the missing piece was packaging those checked-in steps into `tools/m3-discovery-mission-smoke.mjs` instead of requiring a manual shell wrapper.
+
+- Observation: isolated DB teardown also needs an explicit pool drain, not just `app.close()`.
+  Evidence: the first isolated live rerun crashed with Postgres `57P01 terminating connection due to administrator command` while dropping the temporary databases because app-owned pooled connections were still alive; importing `closeAllPools()` from `@pocket-cto/db` and calling it before DB drop resolved the issue and the rerun completed with cleanup status `dropped_after_success`.
+
+- Observation: the clean-worktree repro was also valuable for the docs-and-tooling slice because it exposed one spec that depended on incidental artifact ordering.
+  Evidence: `pnpm ci:repro:current` failed in the detached worktree on `apps/control-plane/src/modules/orchestrator/service.spec.ts` when the discovery mission artifacts came back in a different order; switching the assertion to compare sorted kinds preserved the actual product guarantee while removing the flaky ordering assumption.
+
 ## Decision Log
 
 - Decision: extend mission detail additively with one explicit `discoveryAnswer` summary block derived only from the persisted `discovery_answer` artifact.
@@ -54,6 +68,18 @@ It is intentionally narrow: it finishes the operator visibility, proof packaging
 - Decision: only update `plans/ROADMAP.md` to say `M3 complete` if the packaged smoke, stored proof bundle state, and checked-in exit report all support that wording truthfully.
   Rationale: the evidence-bundle guard requires closeout language to follow evidence, not optimism. If the evidence is incomplete, the report should say exactly why instead of forcing a milestone label.
   Date/Author: 2026-03-20 / Codex
+
+- Decision: keep one discovery smoke helper and harden it with an optional `--isolate-db` mode instead of creating a second proof entrypoint.
+  Rationale: the prompt explicitly asks to preserve the existing product path and make the live proof repeatable by extending `tools/m3-discovery-mission-smoke.mjs`, not by introducing a parallel smoke surface.
+  Date/Author: 2026-03-21 / Codex
+
+- Decision: make isolated DB mode the documented default for M3 closeout while retaining shared mode for local debugging.
+  Rationale: isolated mode removes the only known source of false-negative live proof noise, namely unrelated queued missions in a shared local database, while still using the real route, the real app bootstrap, and the same GitHub App credentials.
+  Date/Author: 2026-03-21 / Codex
+
+- Decision: keep isolated DB teardown inside the helper and explicitly drain all shared Drizzle or `pg` pools before the admin drop step.
+  Rationale: the script is a one-shot proof tool, so closing all pools at shutdown is safe, and it prevents Postgres from crashing the process with an unhandled connection-termination event during isolated cleanup.
+  Date/Author: 2026-03-21 / Codex
 
 ## Context and Orientation
 
@@ -106,6 +132,7 @@ Stale, missing, or failed twin limitations must remain prominent rather than bur
 
 After that, add a repeatable packaged proof helper and the closeout docs.
 Create `tools/m3-discovery-mission-smoke.mjs`, wire a root alias such as `smoke:m3-discovery:live`, load env safely, call the real discovery route, poll mission detail until the mission terminals, and print only safe summary fields.
+For M3.8B hardening, keep that same helper and extend it with `--isolate-db` so it can create and migrate fresh local `DATABASE_URL` plus `TEST_DATABASE_URL` targets, boot the real control plane against them, and tear those databases down afterward without any manual shell wrapper.
 Update `docs/ops/local-dev.md` with the exact command and its truthful proof posture.
 Create or update `docs/ops/m3-exit-report.md` with the required counts and identifiers, then tighten `plans/ROADMAP.md` only if the evidence really supports an explicit `M3 complete`.
 
@@ -139,6 +166,7 @@ If live GitHub env is present after implementation:
     curl -X POST http://localhost:4000/github/repositories/sync
     pnpm smoke:m3-discovery:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts
     pnpm smoke:m3-discovery:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts --source-repo-root /absolute/path/to/pocket-cto
+    pnpm smoke:m3-discovery:live -- --isolate-db --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts --source-repo-root /absolute/path/to/pocket-cto
 
 Record only safe fields: repo full name, mission id, artifact id, proof-bundle status, impacted manifest count, owner count, related test-suite count, related mapped CI job count, freshness rollup, limitation count, and any explicit proof mode label.
 Do not print secrets, tokens, or raw auth headers.
@@ -155,10 +183,11 @@ Success for this M3 closeout slice is demonstrated when all of the following are
 6. The mission-detail discovery block clearly shows repo full name, question kind, changed paths, answer summary, impacted directories, impacted manifests, owners or unowned note, related test suites, related mapped CI jobs, freshness rollup, and limitations.
 7. Stale or missing twin posture is prominent in the discovery block and is not hidden inside generic proof-bundle wording.
 8. The packaged smoke helper loads env safely, accepts repo full name plus changed paths, optionally accepts a truthful source repo root, creates a real discovery mission through the real route, polls mission detail until terminal, and prints only safe summary fields.
-9. `docs/ops/local-dev.md` documents the exact packaged discovery smoke command honestly.
-10. `docs/ops/m3-exit-report.md` records the exact smoke inputs and the required mission, artifact, proof, freshness, ownership, manifest, CI, suite, and limitation counts.
-11. Focused tests prove discovery intake redirect behavior, discovery-detail rendering, and truthful proof-tooling or docs reflection without regressing the existing text-intake, issue-intake, build, or operator flows.
-12. `plans/ROADMAP.md` says `M3 complete` only if the evidence in the exit report and smoke output supports that claim truthfully.
+9. The packaged smoke helper also supports an isolated local DB mode that creates fresh `DATABASE_URL` plus `TEST_DATABASE_URL` targets, runs the checked-in prep and migrate tooling, and cleans them up after success without bypassing the product routes.
+10. `docs/ops/local-dev.md` documents the exact packaged discovery smoke command honestly, with isolated mode as the preferred closeout path.
+11. `docs/ops/m3-exit-report.md` records the exact smoke inputs and the required mission, artifact, proof, freshness, ownership, manifest, CI, suite, and limitation counts.
+12. Focused tests prove discovery intake redirect behavior, discovery-detail rendering, and truthful proof-tooling or docs reflection without regressing the existing text-intake, issue-intake, build, or operator flows.
+13. `plans/ROADMAP.md` says `M3 complete` only if the evidence in the exit report and smoke output supports that claim truthfully.
 
 Human acceptance after implementation should look like:
 
@@ -167,7 +196,7 @@ Human acceptance after implementation should look like:
     create a discovery mission from the typed intake card
     confirm the browser redirects to /missions/<mission-id>
     confirm the mission detail page shows the stored discovery answer clearly
-    pnpm smoke:m3-discovery:live -- --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts
+    pnpm smoke:m3-discovery:live -- --isolate-db --repo-full-name 616xold/pocket-cto --changed-path apps/control-plane/src/modules/github-app/auth.ts --source-repo-root /absolute/path/to/pocket-cto
     open docs/ops/m3-exit-report.md
 
 The operator should be able to create, inspect, and prove the discovery slice without reading raw database rows or assembling evidence manually.
@@ -226,18 +255,20 @@ UI strategy shipped:
 
 Proof and evidence outcome:
 
-- packaged helper: `pnpm smoke:m3-discovery:live`
+- packaged helper: `pnpm smoke:m3-discovery:live -- --isolate-db`
 - live proof mode used for closeout: `refreshed_live_state`
-- truthful source checkout: `/tmp/pocket-cto-source-gXy9Gv` resolving to `616xold/pocket-cto`
-- closeout mission id: `c8c98c5f-5c8b-4278-af33-b1a52a554603`
-- closeout artifact id: `c0ff006f-057b-4c18-9f11-7b9b9c7ac801`
+- truthful source checkout: `/tmp/pocket-cto-source-zNcXqW` resolving to `616xold/pocket-cto`
+- closeout mission id: `9516babf-208c-445b-b71d-e94b8a6bdfa4`
+- closeout artifact id: `cec554ca-0438-42bd-a024-508b655f98e6`
 - closeout proof-bundle status: `ready`
 - freshness rollup: `fresh`
 - impacted manifest count: `1`
+- impacted directory count: `1`
 - owner count: `0`
 - related test-suite count: `1`
 - related mapped CI job count: `0`
 - limitation count: `3`
+- isolated DB cleanup status: `dropped_after_success`
 
 Validation results:
 
@@ -246,10 +277,12 @@ Validation results:
 - `pnpm run db:migrate:ci` passed
 - `pnpm repo:hygiene` passed
 - `pnpm lint` passed
-- `pnpm typecheck` passed after trimming invalid fixture-only fields from the new discovery-answer spec
+- `pnpm typecheck` initially failed because the new helper spec imported `tools/m3-discovery-mission-smoke.mjs` without declarations; adding `tools/m3-discovery-mission-smoke.d.mts` fixed the missing-module type gap and the rerun passed
 - `pnpm build` passed
 - `pnpm test` passed
 - `pnpm ci:repro:current` passed on a clean detached worktree snapshot
+- the first isolated live helper rerun failed during cleanup with Postgres `57P01` because shared pools were still open; the final rerun after adding `closeAllPools()` passed and dropped the isolated databases automatically
+- one post-hardening clean-worktree repro briefly failed on a brittle artifact-order expectation in `src/modules/orchestrator/service.spec.ts`; sorting the artifact-kind assertion fixed the repro-only flake and the rerun passed
 
 Changed-file set for the slice:
 
@@ -257,6 +290,7 @@ Changed-file set for the slice:
 - `apps/control-plane/src/modules/missions/detail-view.ts`
 - `apps/control-plane/src/modules/missions/discovery-answer-view.ts`
 - `apps/control-plane/src/modules/missions/m3-closeout-docs.spec.ts`
+- `apps/control-plane/src/modules/missions/m3-discovery-smoke-tool.spec.ts`
 - `apps/control-plane/src/modules/orchestrator/service.spec.ts`
 - `apps/web/app/globals.css`
 - `apps/web/app/missions/[missionId]/page.tsx`
@@ -280,6 +314,7 @@ Changed-file set for the slice:
 - `plans/EP-0029-discovery-mission-ui-proof-and-m3-closeout.md`
 - `plans/ROADMAP.md`
 - `tools/m3-discovery-mission-smoke.mjs`
+- `tools/m3-discovery-mission-smoke.d.mts`
 
 Final milestone statement:
 
