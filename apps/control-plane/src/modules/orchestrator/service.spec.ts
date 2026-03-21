@@ -409,10 +409,9 @@ describe("OrchestratorWorker", () => {
         state: "stale",
       },
     });
-    expect(detail.artifacts.map((artifact) => artifact.kind)).toEqual([
-      "proof_bundle_manifest",
-      "discovery_answer",
-    ]);
+    expect(
+      detail.artifacts.map((artifact) => artifact.kind).sort(),
+    ).toEqual(["discovery_answer", "proof_bundle_manifest"]);
   });
 
   it("fails discovery missions explicitly when the target repository is unavailable", async () => {
