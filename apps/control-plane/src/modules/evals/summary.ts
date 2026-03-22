@@ -1,5 +1,6 @@
 import { basename } from "node:path";
 import type {
+  EvalBackend,
   EvalProviderCallSummary,
   EvalProviderMetadata,
   EvalResultRecord,
@@ -7,6 +8,7 @@ import type {
 } from "./types";
 
 export function buildEvalRunSummary(input: {
+  backend: EvalBackend;
   candidateModel: string;
   graderModel: string;
   mode: "dry-run" | "live";
@@ -29,6 +31,7 @@ export function buildEvalRunSummary(input: {
 
   return {
     averageOverallScore,
+    backend: input.backend,
     candidateModel: input.candidateModel,
     graderModel: input.graderModel,
     provenance: {
@@ -68,6 +71,7 @@ export function formatEvalRunSummary(summary: EvalRunSummary) {
   const lines = [
     `Eval run ${summary.runLabel}`,
     `Mode: ${summary.mode}`,
+    `Backend: ${summary.backend}`,
     `Candidate model: ${summary.candidateModel}`,
     `Grader model: ${summary.graderModel}`,
     `Dataset: ${summary.provenance.datasetNames.join(", ")}`,
@@ -100,6 +104,36 @@ function summarizeProviderCalls(
     (provider): provider is EvalProviderMetadata => provider !== null,
   );
 
+  const backends = Array.from(
+    new Set(liveProviders.map((provider) => provider.backend)),
+  );
+  const transports = Array.from(
+    new Set(liveProviders.map((provider) => provider.transport)),
+  );
+  const proofModes = Array.from(
+    new Set(liveProviders.map((provider) => provider.proofMode)),
+  );
+  const threadIds = Array.from(
+    new Set(
+      liveProviders
+        .map((provider) => provider.threadId)
+        .filter((threadId): threadId is string => Boolean(threadId)),
+    ),
+  );
+  const turnIds = Array.from(
+    new Set(
+      liveProviders
+        .map((provider) => provider.turnId)
+        .filter((turnId): turnId is string => Boolean(turnId)),
+    ),
+  );
+  const codexVersions = Array.from(
+    new Set(
+      liveProviders
+        .map((provider) => provider.codexVersion)
+        .filter((version): version is string => Boolean(version)),
+    ),
+  );
   const responseIds = Array.from(
     new Set(
       liveProviders
@@ -124,8 +158,14 @@ function summarizeProviderCalls(
   const hasUsage = liveProviders.some((provider) => provider.usage !== null);
 
   return {
+    backends,
+    codexVersions,
     calls: liveProviders.length,
+    proofModes,
     responseIds,
+    threadIds,
+    transports,
+    turnIds,
     usage: hasUsage ? usageTotals : null,
   };
 }
@@ -136,15 +176,43 @@ function formatProviderSummary(
 ) {
   const details = [
     `${summary.calls} call${summary.calls === 1 ? "" : "s"}`,
+    summary.backends.length > 0
+      ? `backend=${summary.backends.join(", ")}`
+      : "backend unavailable",
+    summary.transports.length > 0
+      ? `transport=${summary.transports.join(", ")}`
+      : "transport unavailable",
     summary.usage
       ? `tokens in/out/total=${summary.usage.inputTokens}/${summary.usage.outputTokens}/${summary.usage.totalTokens}`
       : "token usage unavailable",
   ];
 
+  if (summary.proofModes.length > 0) {
+    details.push(`proof mode=${summary.proofModes.join(", ")}`);
+  }
+
   if (summary.responseIds.length > 0) {
     details.push(`response ids=${summary.responseIds.join(", ")}`);
-  } else {
-    details.push("response ids unavailable");
+  }
+
+  if (summary.threadIds.length > 0) {
+    details.push(`thread ids=${summary.threadIds.join(", ")}`);
+  }
+
+  if (summary.turnIds.length > 0) {
+    details.push(`turn ids=${summary.turnIds.join(", ")}`);
+  }
+
+  if (summary.codexVersions.length > 0) {
+    details.push(`codex versions=${summary.codexVersions.join(", ")}`);
+  }
+
+  if (
+    summary.responseIds.length === 0 &&
+    summary.threadIds.length === 0 &&
+    summary.turnIds.length === 0
+  ) {
+    details.push("backend proof ids unavailable");
   }
 
   return `${label} live proof: ${details.join("; ")}`;

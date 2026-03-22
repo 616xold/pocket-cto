@@ -1,6 +1,7 @@
 import { type EvalEnv } from "@pocket-cto/config";
 import type { EvalTarget } from "./dataset";
 import { runEvalCommand } from "./run";
+import type { EvalProviderCallSummary } from "./types";
 
 export async function runPlannerSmokeCommand(input?: {
   argv?: string[];
@@ -35,16 +36,24 @@ async function runSmokeEvalCommand(
     },
   );
 
-  const candidateProven = summary.live.candidate.responseIds.length > 0;
-  const graderProven = summary.live.grader.responseIds.length > 0;
+  const candidateProven = hasBackendProof(summary.live.candidate);
+  const graderProven = hasBackendProof(summary.live.grader);
 
   if (!candidateProven && !graderProven) {
     throw new Error(
-      `${capitalize(target)} smoke eval did not capture any OpenAI response ids. Live smoke requires provider metadata proof.`,
+      `${capitalize(target)} smoke eval did not capture any backend proof metadata. Live smoke requires response ids or thread/turn ids.`,
     );
   }
 
   return summary;
+}
+
+function hasBackendProof(summary: EvalProviderCallSummary) {
+  return (
+    summary.responseIds.length > 0 ||
+    summary.threadIds.length > 0 ||
+    summary.turnIds.length > 0
+  );
 }
 
 function capitalize(value: string) {

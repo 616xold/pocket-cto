@@ -12,12 +12,12 @@ describe("planner smoke eval", () => {
     await expect(
       runPlannerSmokeCommand({
         env: EvalEnvSchema.parse({
-          OPENAI_EVALS_ENABLED: false,
+          EVALS_ENABLED: false,
         }),
         outputDirectory,
       }),
     ).rejects.toThrow(
-      "Live evals are disabled. Set OPENAI_EVALS_ENABLED=true or rerun with --dry-run.",
+      "Live evals are disabled. Set EVALS_ENABLED=true (or legacy OPENAI_EVALS_ENABLED=true) or rerun with --dry-run.",
     );
   });
 
@@ -28,13 +28,13 @@ describe("planner smoke eval", () => {
       runExecutorSmokeCommand({
         argv: ["--dry-run"],
         env: EvalEnvSchema.parse({
+          EVALS_ENABLED: true,
           OPENAI_API_KEY: "sk-test-1234",
-          OPENAI_EVALS_ENABLED: true,
         }),
         outputDirectory,
       }),
     ).rejects.toThrow(
-      "Smoke evals require a real live OpenAI call. Remove --dry-run and enable OPENAI_EVALS_ENABLED=true.",
+      "Smoke evals require a real live eval backend call. Remove --dry-run and enable EVALS_ENABLED=true (or legacy OPENAI_EVALS_ENABLED=true).",
     );
   });
 });

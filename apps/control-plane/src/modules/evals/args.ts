@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { evalBackends, type EvalBackend } from "./types";
 
 export const evalCommandTargetSchema = z.enum([
   "planner",
@@ -6,10 +7,12 @@ export const evalCommandTargetSchema = z.enum([
   "compiler",
   "all",
 ]);
+export const evalBackendSchema = z.enum(evalBackends);
 
 export type EvalCommandTarget = z.infer<typeof evalCommandTargetSchema>;
 
 export type EvalCliArgs = {
+  backend: EvalBackend | null;
   dryRun: boolean;
   limit: number | null;
   target: EvalCommandTarget;
@@ -19,6 +22,7 @@ export type EvalCliArgs = {
 export function parseEvalCliArgs(argv: string[]): EvalCliArgs {
   const [targetArg, ...flags] = argv;
   const target = evalCommandTargetSchema.catch("all").parse(targetArg ?? "all");
+  let backend: EvalBackend | null = null;
   let dryRun = false;
   let withReference = false;
   let limit: number | null = null;
@@ -28,6 +32,20 @@ export function parseEvalCliArgs(argv: string[]): EvalCliArgs {
 
     if (flag === "--dry-run") {
       dryRun = true;
+      continue;
+    }
+
+    if (flag === "--backend") {
+      const nextValue = flags[index + 1];
+
+      if (!nextValue) {
+        throw new Error(
+          `Missing backend after --backend. Expected one of ${evalBackends.join(", ")}.`,
+        );
+      }
+
+      backend = evalBackendSchema.parse(nextValue);
+      index += 1;
       continue;
     }
 
@@ -62,6 +80,7 @@ export function parseEvalCliArgs(argv: string[]): EvalCliArgs {
   }
 
   return {
+    backend,
     dryRun,
     limit,
     target,

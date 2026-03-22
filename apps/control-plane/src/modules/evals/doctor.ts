@@ -1,8 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { loadEvalEnv, type EvalEnv } from "@pocket-cto/config";
-import { maskApiKey, resolveEvalLiveGuardState } from "./config";
+import { maskApiKey, resolveEvalEnvironment, resolveEvalLiveGuardState } from "./config";
 import { getEvalResultsDirectory } from "./paths";
+import type { EvalBackend } from "./types";
 
 export type EvalApiKeySource = "loaded .env" | "shell env" | "unknown";
 
@@ -12,7 +13,9 @@ export type EvalDoctorReport = {
     present: boolean;
     source: EvalApiKeySource | null;
   };
+  backend: EvalBackend;
   candidateModel: string;
+  codexAppServerCommand: string;
   defaultMode: "dry-run" | "live";
   defaultRunBehavior: "dry-run-required" | "live";
   evalsEnabled: boolean;
@@ -23,6 +26,7 @@ export type EvalDoctorReport = {
 
 export function createEvalDoctorReport(input?: {
   apiKeySource?: EvalApiKeySource;
+  backendOverride?: EvalBackend | null;
   cwd?: string;
   env?: EvalEnv;
   rawEnv?: NodeJS.ProcessEnv;
@@ -30,7 +34,14 @@ export function createEvalDoctorReport(input?: {
 }): EvalDoctorReport {
   const rawEnvBeforeLoad = input?.rawEnv ?? { ...process.env };
   const env = input?.env ?? loadEvalEnv();
-  const liveGuard = resolveEvalLiveGuardState(env);
+  const liveGuard = resolveEvalLiveGuardState({
+    backendOverride: input?.backendOverride,
+    env,
+  });
+  const resolvedEnv = resolveEvalEnvironment({
+    backendOverride: input?.backendOverride,
+    env,
+  });
   const apiKeySource =
     input?.apiKeySource ??
     detectApiKeySource({
@@ -45,32 +56,48 @@ export function createEvalDoctorReport(input?: {
       present: liveGuard.apiKeyPresent,
       source: apiKeySource,
     },
-    candidateModel: env.OPENAI_EVAL_MODEL,
+    backend: resolvedEnv.backend,
+    candidateModel: resolvedEnv.candidateModel,
+    codexAppServerCommand: `${env.CODEX_APP_SERVER_COMMAND} ${env.CODEX_APP_SERVER_ARGS}`.trim(),
     defaultMode: liveGuard.defaultMode,
     defaultRunBehavior: liveGuard.liveReady ? "live" : "dry-run-required",
     evalsEnabled: liveGuard.evalsEnabled,
-    graderModel: env.OPENAI_EVAL_GRADER_MODEL,
-    referenceModel: env.OPENAI_EVAL_REFERENCE_MODEL,
+    graderModel: resolvedEnv.graderModel,
+    referenceModel: resolvedEnv.referenceModel,
     resultsDirectory: input?.resultsDirectory ?? getEvalResultsDirectory(),
   };
 }
 
 export function formatEvalDoctorReport(report: EvalDoctorReport) {
+  const apiKeyLine =
+    report.backend === "openai_responses"
+      ? `OPENAI_API_KEY: ${report.apiKey.present ? `present (${report.apiKey.masked})` : "missing"}`
+      : `OPENAI_API_KEY: ${report.apiKey.present ? `present (${report.apiKey.masked})` : "missing"} (unused for current backend)`;
   const lines = [
     "Eval doctor",
-    `OPENAI_API_KEY: ${report.apiKey.present ? `present (${report.apiKey.masked})` : "missing"}`,
+    `Backend: ${report.backend}`,
+    apiKeyLine,
     `OPENAI_API_KEY source: ${report.apiKey.source ?? "unavailable"}`,
-    `OPENAI_EVALS_ENABLED: ${report.evalsEnabled ? "true" : "false"}`,
+    `EVALS_ENABLED: ${report.evalsEnabled ? "true" : "false"}`,
     `Candidate model: ${report.candidateModel}`,
     `Grader model: ${report.graderModel}`,
     `Reference model: ${report.referenceModel}`,
+    `Codex app server: ${report.codexAppServerCommand}`,
     `Default mode: ${report.defaultMode}`,
     `Results directory: ${report.resultsDirectory}`,
   ];
 
   if (report.defaultRunBehavior === "dry-run-required") {
     lines.push(
-      "Live evals are not fully enabled, so standard eval commands still need --dry-run until OPENAI_API_KEY is present and OPENAI_EVALS_ENABLED=true.",
+      report.backend === "openai_responses"
+        ? "Live evals are not fully enabled, so standard eval commands still need --dry-run until OPENAI_API_KEY is present and EVALS_ENABLED=true (or legacy OPENAI_EVALS_ENABLED=true)."
+        : "Live evals are not fully enabled, so standard eval commands still need --dry-run until EVALS_ENABLED=true (or legacy OPENAI_EVALS_ENABLED=true).",
+    );
+  }
+
+  if (report.backend === "codex_subscription") {
+    lines.push(
+      "Local Codex auth is verified only by a live smoke run; doctor reports config readiness, not subscription state.",
     );
   }
 

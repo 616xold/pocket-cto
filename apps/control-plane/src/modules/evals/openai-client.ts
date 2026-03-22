@@ -1,20 +1,19 @@
+import type { EvalModelClient } from "./model-client";
 import type { EvalProviderMetadata, EvalProviderUsage } from "./types";
 
-type ResponseFormat =
-  | {
-      kind: "json_schema";
-      schema: Record<string, unknown>;
-      schemaName: string;
-    }
-  | {
-      kind: "text";
-    };
-
-export class OpenAIResponsesClient {
+export class OpenAIResponsesClient implements EvalModelClient {
   constructor(private readonly apiKey: string) {}
 
   async generate(input: {
-    format: ResponseFormat;
+    format:
+      | {
+          kind: "json_schema";
+          schema: Record<string, unknown>;
+          schemaName: string;
+        }
+      | {
+          kind: "text";
+        };
     model: string;
     prompt: string;
   }): Promise<{
@@ -195,12 +194,19 @@ function buildProviderMetadata(input: {
   requestedModel: string;
 }): EvalProviderMetadata {
   return {
+    backend: "openai_responses",
+    codexVersion: null,
+    proofMode: "api_key",
     provider: "openai-responses",
     requestId: input.requestId,
     requestedModel: input.requestedModel,
     resolvedModel:
       typeof input.payload.model === "string" ? input.payload.model : null,
     responseId: typeof input.payload.id === "string" ? input.payload.id : null,
+    threadId: null,
+    transport: "openai_responses_api",
+    turnId: null,
+    userAgent: null,
     usage: extractUsage(input.payload.usage),
   };
 }

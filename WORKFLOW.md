@@ -63,3 +63,4 @@ Unless an ExecPlan says otherwise, a code task in this repo is only complete whe
 
 This is a seed contract.
 Pocket CTO itself will later consume and enforce contracts in this shape for target repositories.
+The local eval lane remains manual and outside CI: use `openai_responses` when you need official reported eval artifacts and `codex_subscription` when you want cheaper local prompt tuning through the supported Codex app-server path.

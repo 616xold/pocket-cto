@@ -21,8 +21,8 @@ export async function runEvalCompareCommand(argv: string[]) {
 export function formatEvalCompareReport(report: EvalCompareReport) {
   const lines = [
     "Eval compare",
-    `A: ${report.a.fileName} (${report.a.candidateModel} / ${report.a.graderModel})`,
-    `B: ${report.b.fileName} (${report.b.candidateModel} / ${report.b.graderModel})`,
+    `A: ${report.a.fileName} (${report.a.candidateBackend}:${report.a.candidateModel} / ${report.a.graderBackend}:${report.a.graderModel})`,
+    `B: ${report.b.fileName} (${report.b.candidateBackend}:${report.b.candidateModel} / ${report.b.graderBackend}:${report.b.graderModel})`,
     `Overall score: ${report.a.averageOverallScore} -> ${report.b.averageOverallScore} (${formatDelta(report.overallDelta)})`,
     `Dimensions: ${formatDimensionDeltas(report.dimensionDeltas)}`,
     `Datasets: ${report.a.datasetNames.join(", ")} -> ${report.b.datasetNames.join(", ")}`,
@@ -40,10 +40,12 @@ type EvalCompareArgs = {
 type EvalCompareSide = {
   averageOverallScore: number;
   branchName: string | null;
+  candidateBackend: string;
   candidateModel: string;
   datasetNames: string[];
   fileName: string;
   gitSha: string | null;
+  graderBackend: string;
   graderModel: string;
 };
 
@@ -133,12 +135,14 @@ function summarizeCompareSide(
         records.length,
     ),
     branchName: first?.provenance.branchName ?? null,
+    candidateBackend: first?.candidate.provider?.backend ?? "dry-run",
     candidateModel: first?.candidate.model ?? "unknown-candidate-model",
     datasetNames: Array.from(
       new Set(records.map((record) => record.provenance.datasetName)),
     ),
     fileName: basename(filePath),
     gitSha: first?.provenance.gitSha ?? null,
+    graderBackend: first?.grader.provider?.backend ?? "dry-run",
     graderModel: first?.grader.model ?? "dry-run",
   };
 }

@@ -2,6 +2,20 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 
+const EvalBackendSchema = z.enum(["openai_responses", "codex_subscription"]);
+
+const SharedEvalFields = {
+  EVALS_ENABLED: z.coerce.boolean().optional(),
+  EVAL_BACKEND: EvalBackendSchema.optional(),
+  EVAL_MODEL: z.string().optional(),
+  EVAL_GRADER_MODEL: z.string().optional(),
+  EVAL_REFERENCE_MODEL: z.string().optional(),
+  OPENAI_EVALS_ENABLED: z.coerce.boolean().optional(),
+  OPENAI_EVAL_MODEL: z.string().optional(),
+  OPENAI_EVAL_GRADER_MODEL: z.string().optional(),
+  OPENAI_EVAL_REFERENCE_MODEL: z.string().optional(),
+} satisfies Record<string, z.ZodTypeAny>;
+
 const SharedEnvFields = {
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -10,14 +24,16 @@ const SharedEnvFields = {
   OPENAI_MISSION_COMPILER_MODEL: z.string().default("gpt-5-mini"),
   OPENAI_SUMMARY_MODEL: z.string().default("gpt-5-mini"),
   OPENAI_REASONING_MODEL: z.string().default("gpt-5"),
-  OPENAI_EVALS_ENABLED: z.coerce.boolean().default(false),
-  OPENAI_EVAL_MODEL: z.string().default("gpt-5-mini"),
-  OPENAI_EVAL_GRADER_MODEL: z.string().default("gpt-5-mini"),
-  OPENAI_EVAL_REFERENCE_MODEL: z.string().default("gpt-5-codex"),
+  ...SharedEvalFields,
 } satisfies Record<string, z.ZodTypeAny>;
 
 export const EvalEnvSchema = z.object({
   ...SharedEnvFields,
+  CODEX_APP_SERVER_COMMAND: z.string().default("codex"),
+  CODEX_APP_SERVER_ARGS: z.string().default("app-server"),
+  CODEX_DEFAULT_SERVICE_NAME: z
+    .string()
+    .default("pocket-cto-control-plane"),
 });
 
 export const EnvSchema = z.object({
