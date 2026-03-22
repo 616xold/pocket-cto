@@ -369,19 +369,41 @@ Pocket CTO now includes a manual real-LLM eval lane for prompt and artifact qual
 It is intentionally outside CI.
 `pnpm ci:static`, `pnpm ci:integration-db`, `pnpm test`, and `pnpm check` do not run any paid model calls.
 
-Required env for live evals:
+Primary eval envs:
 
-- `OPENAI_API_KEY`
-- `OPENAI_EVALS_ENABLED=true`
-- `OPENAI_EVAL_MODEL` defaults to `gpt-5-mini`
-- `OPENAI_EVAL_GRADER_MODEL` defaults to `gpt-5-mini`
-- `OPENAI_EVAL_REFERENCE_MODEL` defaults to `gpt-5-codex` and is only used when you add `--with-reference`
+- `EVALS_ENABLED=true`
+- `EVAL_BACKEND=openai_responses` or `EVAL_BACKEND=codex_subscription`
+- `EVAL_MODEL` defaults to `gpt-5.4`
+- `EVAL_GRADER_MODEL` defaults to `gpt-5.4-mini`
+- `EVAL_REFERENCE_MODEL` defaults to `gpt-5.4` and is only used when you add `--with-reference`
+
+Legacy env aliases still work for backward compatibility:
+
+- `OPENAI_EVALS_ENABLED`
+- `OPENAI_EVAL_MODEL`
+- `OPENAI_EVAL_GRADER_MODEL`
+- `OPENAI_EVAL_REFERENCE_MODEL`
+
+When both families are present, the generic `EVAL_*` keys take precedence.
+
+Backend policy:
+
+- `openai_responses` is the official reported lane. It requires `OPENAI_API_KEY` and saves API proof metadata such as response ids and token usage.
+- `codex_subscription` is the local tuning lane. It uses the supported local Codex app-server path only, runs each eval item in a fresh read-only/no-network session, and records thread or turn proof instead of fake API ids.
+
+Default model policy:
+
+- candidate defaults to `gpt-5.4` so prompt candidates align with the strongest current shared baseline across Codex and API paths
+- grader defaults to `gpt-5.4-mini` so scoring stays strong while remaining cheaper
+- reference defaults to `gpt-5.4`
+- `gpt-5.3-codex-spark` is optional and experimental, not the baseline default
 
 Checked-in datasets live under `evals/datasets/`.
 The grading rubric lives under `evals/rubrics/quality-rubric.md`.
 Timestamped result files are written to the gitignored `evals/results/` directory as JSONL.
-This harness calls the OpenAI Responses API directly.
-It does not create a hosted OpenAI Evals run, so you should expect local JSONL artifacts and CLI output here rather than a hosted Evals dashboard entry.
+This harness is custom and local-first.
+The `openai_responses` backend calls the OpenAI Responses API directly and the `codex_subscription` backend uses the supported local Codex app-server path.
+Neither backend creates a hosted OpenAI Evals run, so you should expect local JSONL artifacts and CLI output here rather than a hosted Evals dashboard entry.
 
 Check the local eval configuration before spending tokens:
 
@@ -389,7 +411,8 @@ Check the local eval configuration before spending tokens:
 pnpm eval:doctor
 ```
 
-`pnpm eval:doctor` prints whether `OPENAI_API_KEY` is present, where it came from when that can be detected (`shell env`, `loaded .env`, or `unknown`), whether `OPENAI_EVALS_ENABLED` is true, the candidate or grader or reference models, the effective live-vs-dry-run mode, and the results directory.
+`pnpm eval:doctor` prints the selected backend, whether `OPENAI_API_KEY` is present, where it came from when that can be detected (`shell env`, `loaded .env`, or `unknown`), whether `EVALS_ENABLED` is true, the candidate or grader or reference models, the Codex app-server command, the effective live-vs-dry-run mode, and the results directory.
+If you are using `codex_subscription`, doctor is honest about the limit: it reports config readiness, but a live smoke run is still the proof that local Codex auth works in this shell.
 
 Run the lane manually from the repo root:
 
@@ -403,16 +426,28 @@ pnpm eval:all -- --dry-run
 Run live evals only when you explicitly opt in:
 
 ```bash
-OPENAI_EVALS_ENABLED=true pnpm eval:planner
-OPENAI_EVALS_ENABLED=true pnpm eval:executor
-OPENAI_EVALS_ENABLED=true pnpm eval:compiler
-OPENAI_EVALS_ENABLED=true pnpm eval:all
+EVALS_ENABLED=true pnpm eval:planner
+EVALS_ENABLED=true pnpm eval:executor
+EVALS_ENABLED=true pnpm eval:compiler
+EVALS_ENABLED=true pnpm eval:all
 ```
 
 Optional reference runs use a second model pass for comparison:
 
 ```bash
-OPENAI_EVALS_ENABLED=true pnpm eval:planner -- --limit 1 --with-reference
+EVALS_ENABLED=true pnpm eval:planner -- --limit 1 --with-reference
+```
+
+Use the official API lane when you want a reported eval artifact:
+
+```bash
+EVALS_ENABLED=true EVAL_BACKEND=openai_responses pnpm eval:planner
+```
+
+Use the local Codex lane when you want cheaper iterative tuning through the app-server subscription path:
+
+```bash
+EVALS_ENABLED=true EVAL_BACKEND=codex_subscription pnpm eval:planner
 ```
 
 If either the key or opt-in flag is missing, the live eval scripts fail fast with a clear message.
@@ -421,12 +456,15 @@ Use `--dry-run` when you want to exercise dataset loading, prompt generation, gr
 To intentionally prove the live path with one seeded planner sample:
 
 ```bash
-OPENAI_EVALS_ENABLED=true pnpm eval:smoke:planner
-OPENAI_EVALS_ENABLED=true pnpm eval:smoke:executor
+EVALS_ENABLED=true pnpm eval:smoke:planner
+EVALS_ENABLED=true pnpm eval:smoke:executor
+EVALS_ENABLED=true EVAL_BACKEND=codex_subscription pnpm eval:smoke:planner
 ```
 
 The smoke commands refuse to proceed if they would become a dry run.
-On success each one writes a results file under `evals/results/` and prints a compact summary with the mode, dataset, prompt version, git provenance, output path, response ids, and token usage when the API returns that metadata.
+On success each one writes a results file under `evals/results/` and prints a compact summary with the mode, backend, dataset, prompt version, git provenance, output path, and whichever proof fields are honestly available for that backend.
+`openai_responses` prints response ids and token usage when the API returns them.
+`codex_subscription` prints thread or turn ids and Codex version when the app-server path provides them.
 
 To compare two saved runs locally:
 

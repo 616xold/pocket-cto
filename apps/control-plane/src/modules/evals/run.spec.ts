@@ -26,8 +26,9 @@ describe("runEvalCommand", () => {
     expect(summary.samples).toBe(1);
     expect(summary.runLabel).toBe("planner");
     expect(summary.mode).toBe("dry-run");
-    expect(summary.candidateModel).toBe("gpt-5-mini");
-    expect(summary.graderModel).toBe("gpt-5-mini");
+    expect(summary.backend).toBe("openai_responses");
+    expect(summary.candidateModel).toBe("gpt-5.4");
+    expect(summary.graderModel).toBe("gpt-5.4-mini");
     expect(summary.provenance).toEqual({
       branchName: "main",
       datasetNames: ["planner"],
@@ -45,5 +46,25 @@ describe("runEvalCommand", () => {
       gitSha: "abc123def456",
       promptVersion: "planner-prompt.v1",
     });
+  });
+
+  it("lets a CLI backend override the configured backend during dry runs", async () => {
+    const outputDirectory = await mkdtemp(join(tmpdir(), "pocket-cto-evals-"));
+    const summary = await runEvalCommand(
+      ["planner", "--backend", "codex_subscription", "--dry-run", "--limit", "1"],
+      {
+        env: EvalEnvSchema.parse({
+          EVAL_BACKEND: "openai_responses",
+        }),
+        outputDirectory,
+        repoProvenance: {
+          branchName: "main",
+          gitSha: "abc123def456",
+        },
+      },
+    );
+
+    expect(summary.backend).toBe("codex_subscription");
+    expect(summary.mode).toBe("dry-run");
   });
 });

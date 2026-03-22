@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { z } from "zod";
 import { getEvalRubricPath } from "./paths";
-import type { OpenAIResponsesClient } from "./openai-client";
+import type { EvalModelClient } from "./model-client";
 import type { DimensionScores, ModelAssessment, RuleAssessment } from "./types";
 
 const graderResponseSchema = z.object({
@@ -31,7 +31,7 @@ export async function loadEvalRubric() {
 export async function gradeWithModel(input: {
   candidateModel: string;
   candidateOutputText: string;
-  client: OpenAIResponsesClient;
+  client: EvalModelClient;
   expectations: unknown;
   graderModel: string;
   itemId: string;

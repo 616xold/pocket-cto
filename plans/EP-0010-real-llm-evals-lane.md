@@ -28,6 +28,11 @@ This change is intentionally narrow. It does not put paid model calls into CI, d
 - [x] (2026-03-14T03:05Z) Added `eval:smoke:executor` plus a simple `eval:compare` helper so the lane now supports both live executor smoke checks and local run-to-run comparisons.
 - [x] (2026-03-14T03:05Z) Re-ran `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, and `pnpm test` successfully after the prompt-iteration improvements.
 - [x] (2026-03-14T03:05Z) Verified the new prompt-iteration ergonomics by running `OPENAI_EVALS_ENABLED=true pnpm eval:doctor`, `OPENAI_EVALS_ENABLED=true pnpm eval:smoke:planner`, `OPENAI_EVALS_ENABLED=true pnpm eval:smoke:executor`, and `pnpm eval:compare` against stored result files.
+- [x] (2026-03-22T10:35Z) Re-read the eval lane, config surface, runtime-codex seam, repo workflow contract, and the active EP-0010 plan before starting the backend-abstraction follow-up. Confirmed that the current lane is still hard-wired to one OpenAI Responses client even though the repository already has a supported local Codex app-server integration seam.
+- [x] (2026-03-22T16:15Z) Refactored the harness behind a shared backend abstraction, kept `openai_responses` intact, and added `codex_subscription` through the supported runtime-codex app-server seam without touching product runtime defaults.
+- [x] (2026-03-22T16:15Z) Added generic `EVAL_*` env keys with legacy `OPENAI_EVAL_*` compatibility, changed eval-only defaults to `gpt-5.4` / `gpt-5.4-mini` / `gpt-5.4`, and updated doctor, summary, compare, smoke, and writer paths to handle mixed-backend proof metadata honestly.
+- [x] (2026-03-22T16:15Z) Added focused tests for backend selection, generic-versus-legacy env precedence, new defaults, mixed-backend result persistence, and the mockable Codex backend; then re-ran `pnpm repo:hygiene`, `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, and `pnpm ci:repro:current` successfully.
+- [x] (2026-03-22T16:15Z) Verified Codex config readiness with `EVALS_ENABLED=true EVAL_BACKEND=codex_subscription pnpm eval:doctor -- --backend codex_subscription`. A follow-up live planner smoke spawned `codex app-server` through the supported seam but did not produce a terminal result in this session, so live Codex proof remains an honest blocker instead of a claimed success.
 
 ## Surprises & Discoveries
 
@@ -63,6 +68,12 @@ This change is intentionally narrow. It does not put paid model calls into CI, d
 
 - Observation: stored compare inputs can come from the repo root or a package-local working directory, so result-file resolution must not depend on the current package cwd.
   Evidence: the first `pnpm eval:compare -- --a evals/results/... --b evals/results/...` attempt failed until result-file loading resolved relative paths from the repository root instead of `apps/control-plane/`.
+
+- Observation: the current eval bounded context still treats provider identity as synonymous with OpenAI Responses, which blocks a second local backend even though runtime-codex already has a clean app-server bootstrap path.
+  Evidence: `apps/control-plane/src/modules/evals/config.ts`, `doctor.ts`, `run.ts`, `summary.ts`, and `types.ts` all read `OPENAI_EVAL*` names directly or assume `provider: "openai-responses"`, while `apps/control-plane/src/modules/runtime-codex/service.ts` and `config.ts` already expose a supported no-browser app-server seam.
+
+- Observation: the supported local Codex app-server can start successfully without immediately proving that a fresh eval turn will complete in this desktop session.
+  Evidence: `EVALS_ENABLED=true EVAL_BACKEND=codex_subscription pnpm eval:doctor -- --backend codex_subscription` reported a valid `codex app-server` command and live-ready config, while the subsequent `pnpm eval:smoke:planner` attempt spawned `codex app-server` but never emitted a terminal result or result file after repeated polling.
 
 ## Decision Log
 
@@ -109,6 +120,26 @@ This change is intentionally narrow. It does not put paid model calls into CI, d
 - Decision: Resolve compare input paths from the repository root and backfill missing provenance when reading legacy result files.
   Rationale: Developers should be able to compare older and newer result files with the same helper even if earlier artifacts predate the provenance fields added in this follow-up slice.
   Date/Author: 2026-03-14 / Codex
+
+- Decision: Keep EP-0010 as the active plan for the backend-abstraction follow-up instead of opening a new plan.
+  Rationale: This work extends the same manual eval lane and stays within the same architecture, evidence, and CI-isolation boundaries rather than creating a separate milestone.
+  Date/Author: 2026-03-22 / Codex
+
+- Decision: Add a shared eval backend abstraction with `openai_responses` and `codex_subscription` implementations, while keeping the existing OpenAI lane intact for official reported evals.
+  Rationale: Prompt iteration now needs one harness that can serve both truthful API-backed runs and cheap local Codex-backed tuning without forking datasets, writer logic, or CLI surface.
+  Date/Author: 2026-03-22 / Codex
+
+- Decision: Reuse the supported runtime-codex app-server seam for the new `codex_subscription` backend and keep it eval-specific.
+  Rationale: The repository already has a narrow app-server integration path that can start fresh threads with explicit sandbox and approval policy. Reusing that seam avoids undocumented endpoints, shell scraping, and orchestrator coupling.
+  Date/Author: 2026-03-22 / Codex
+
+- Decision: Add backend-neutral `EVAL_*` keys that take precedence over the older `OPENAI_EVAL_*` names, while continuing to accept the legacy aliases.
+  Rationale: The eval harness now serves more than one backend, so neutral naming makes the interface future-friendly without breaking the earlier manual OpenAI lane.
+  Date/Author: 2026-03-22 / Codex
+
+- Decision: Change eval-only model defaults to `gpt-5.4` for candidate and reference plus `gpt-5.4-mini` for grading, without changing product runtime defaults.
+  Rationale: The candidate should track the strongest current cross-surface model, the grader should stay cheaper for repeated scoring, and runtime production defaults are outside this slice.
+  Date/Author: 2026-03-22 / Codex
 
 ## Context and Orientation
 
@@ -258,6 +289,25 @@ Validation results captured after implementation:
   - showed `overall 4.8 -> 4.8 (+0.0)`
   - showed dimension deltas: `constraintCompliance +0.2`, `clarity -0.5`, `evidenceReadiness +0.0`, `actionability +0.2`
   - showed model pairing and git provenance progression from legacy `unavailable` metadata to the new recorded branch and SHA
+- `pnpm repo:hygiene` passed again after the backend-abstraction follow-up.
+- `pnpm lint` passed again after the backend-abstraction follow-up.
+- `pnpm typecheck` passed again after the backend-abstraction follow-up.
+- `pnpm build` passed after the backend-abstraction follow-up.
+- `pnpm test` passed after the backend-abstraction follow-up.
+- `pnpm ci:repro:current` passed after the backend-abstraction follow-up.
+  - reproduced the full install, `ci:static`, `ci:integration-db`, test, and clean-tree flow in a temporary worktree
+- `EVALS_ENABLED=true EVAL_BACKEND=codex_subscription pnpm eval:doctor -- --backend codex_subscription` passed.
+  - backend: `codex_subscription`
+  - default mode: `live`
+  - candidate model: `gpt-5.4`
+  - grader model: `gpt-5.4-mini`
+  - reference model: `gpt-5.4`
+  - Codex app server: `codex app-server`
+  - note: doctor reports config readiness only; it does not prove local subscription auth or turn completion
+- `EVALS_ENABLED=true EVAL_BACKEND=codex_subscription pnpm eval:smoke:planner` did not reach a terminal result in this session.
+  - spawned a fresh `codex app-server` process via the supported runtime seam
+  - produced no JSONL result file before manual cleanup
+  - therefore no Codex thread id, turn id, or other live proof metadata was recorded for this session
 
 Live-run note:
 
@@ -286,22 +336,17 @@ Expected new interfaces:
 External dependencies:
 
 - `OPENAI_API_KEY`
-- new env vars `OPENAI_EVALS_ENABLED`, `OPENAI_EVAL_MODEL`, `OPENAI_EVAL_GRADER_MODEL`, and `OPENAI_EVAL_REFERENCE_MODEL`
-- likely the official `openai` Node SDK if that is the smallest clean integration surface
+- backend-neutral env vars `EVALS_ENABLED`, `EVAL_BACKEND`, `EVAL_MODEL`, `EVAL_GRADER_MODEL`, and `EVAL_REFERENCE_MODEL`, with legacy `OPENAI_EVAL_*` aliases still accepted
+- local Codex app-server configuration through `CODEX_APP_SERVER_COMMAND` and `CODEX_APP_SERVER_ARGS` when using `codex_subscription`
 
 This slice should not introduce new database schema, replay event types, mission state transitions, or GitHub integration expectations.
 
 ## Outcomes & Retrospective
 
-EP-0010 is complete for the intended first slice, the live-visibility follow-up, and the prompt-iteration usefulness follow-up.
-Pocket CTO now has a checked-in, opt-in real-LLM eval lane that stays outside required CI, evaluates the current planner, executor, and compiler-quality surfaces with small seeded datasets, writes timestamped JSONL results to a gitignored comparison folder, records provider plus repo provenance, and exposes small doctor, smoke, and compare commands that make prompt iteration practical instead of opaque.
+EP-0010 is now complete through four connected slices: the original manual OpenAI eval lane, the live-visibility follow-up, the prompt-iteration usefulness follow-up, and the backend-abstraction follow-up.
+Pocket CTO now has one checked-in eval harness with two honest backends: `openai_responses` for official reported evals and `codex_subscription` for local tuning through the supported Codex app-server seam. The lane stays outside required CI, evaluates the current planner, executor, and compiler-quality surfaces with small seeded datasets, writes timestamped JSONL results to a gitignored comparison folder, records provider plus repo provenance, and exposes doctor, smoke, and compare commands that make prompt iteration practical instead of opaque.
 
-The implementation stayed modular and out of the runtime hot path. The latest live planner smoke confirms that the lane now gives stronger iteration guidance: the saved record proves the provider round-trip, the rule checks no longer fail on harmless hyphenation, and the compare helper can show how dimension-level scores moved between runs. The executor smoke also exposed a real weak point in the current final-report prompt contract, which is exactly the kind of iteration signal this lane was meant to surface.
-The new bounded context lives under `apps/control-plane/src/modules/evals/`, the CLI entrypoint lives under `apps/control-plane/src/evals/`, configuration lives in `packages/config`, and the checked-in rubric and datasets live under `evals/`.
+The implementation stayed modular and out of the runtime hot path. The OpenAI-backed planner and executor smokes still provide a proven API-based lane with response ids and token usage, while the new backend abstraction keeps summary, compare, and writer logic truthful for mixed-backend result files. Eval-only defaults now move to `gpt-5.4` for candidate and reference plus `gpt-5.4-mini` for grading, without changing product runtime defaults.
 
-The live proof path is now demonstrated, not just configured.
-This session successfully ran a one-sample planner smoke eval against the OpenAI Responses API and captured candidate and grader response ids plus token usage in both the CLI summary and the saved JSONL result file.
-
-Follow-up note for the live-visibility slice:
-the original lane was operationally useful but not self-proving.
-This follow-up adds a doctor command, a deliberate live planner smoke command, explicit live-vs-dry-run CLI summaries, and provider metadata in result records so a saved JSONL file and the terminal output both make live usage unmistakable.
+The local Codex tuning lane is architecturally ready and test-covered, but this session did not obtain live Codex proof.
+The supported smoke path spawned `codex app-server` yet never reached a terminal result, so the plan records the Codex live run as unverified rather than claiming success. Prompt 2 can start cleanly from the code and test boundary, but the first live Codex smoke still needs follow-up in a session where the local Codex subscription and runtime complete a turn end to end.

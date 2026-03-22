@@ -51,8 +51,8 @@ describe("eval compare helper", () => {
     expect(report.overallDelta).toBe(0.9);
     expect(report.dimensionDeltas.actionability).toBe(1);
     expect(text).toContain("Overall score: 3.5 -> 4.4 (+0.9)");
-    expect(text).toContain("A: a.jsonl (gpt-5-mini / gpt-5-mini)");
-    expect(text).toContain("B: b.jsonl (gpt-5-mini / gpt-5-mini)");
+    expect(text).toContain("A: a.jsonl (dry-run:gpt-5-mini / dry-run:gpt-5-mini)");
+    expect(text).toContain("B: b.jsonl (dry-run:gpt-5-mini / dry-run:gpt-5-mini)");
   });
 });
 

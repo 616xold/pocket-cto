@@ -15,7 +15,8 @@ import {
   gradeWithModel,
   loadEvalRubric,
 } from "./grader";
-import { OpenAIResponsesClient } from "./openai-client";
+import { createEvalModelClient } from "./client-factory";
+import type { EvalModelClient } from "./model-client";
 import {
   buildCompilerPromptEnvelope,
   buildExecutorPromptEnvelope,
@@ -28,7 +29,10 @@ import {
 } from "./provenance";
 import { evaluateCompilerOutput, evaluateTextOutput } from "./rules";
 import { parseEvalCliArgs, expandEvalTargets } from "./args";
-import { assertLiveEvalEnabled, resolveEvalRunConfig } from "./config";
+import {
+  assertLiveEvalEnabled,
+  resolveEvalRunConfig,
+} from "./config";
 import type { EvalResultRecord } from "./types";
 import { buildEvalRunSummary } from "./summary";
 import { createPromptRecord, writeEvalResults } from "./writer";
@@ -45,7 +49,7 @@ export async function runEvalCommand(
   const args = parseEvalCliArgs(argv);
   if (options?.requireLive && args.dryRun) {
     throw new Error(
-      "Smoke evals require a real live OpenAI call. Remove --dry-run and enable OPENAI_EVALS_ENABLED=true.",
+      "Smoke evals require a real live eval backend call. Remove --dry-run and enable EVALS_ENABLED=true (or legacy OPENAI_EVALS_ENABLED=true).",
     );
   }
   const env = options?.env ?? loadEvalEnv();
@@ -56,6 +60,7 @@ export async function runEvalCommand(
 
   assertLiveEvalEnabled({
     apiKey: config.apiKey,
+    backend: config.backend,
     dryRun: config.dryRun,
     env,
   });
@@ -65,7 +70,11 @@ export async function runEvalCommand(
   const targets = expandEvalTargets(args.target);
   const client = config.dryRun
     ? null
-    : new OpenAIResponsesClient(config.apiKey as string);
+    : createEvalModelClient({
+        apiKey: config.apiKey,
+        backend: config.backend,
+        env,
+      });
   const repoProvenance =
     options?.repoProvenance ?? (await loadEvalRepoProvenance());
   const records: EvalResultRecord[] = [];
@@ -138,6 +147,7 @@ export async function runEvalCommand(
 
   return {
     ...buildEvalRunSummary({
+      backend: config.backend,
       candidateModel: config.candidateModel,
       graderModel: config.graderModel,
       mode: config.dryRun ? "dry-run" : "live",
@@ -150,7 +160,7 @@ export async function runEvalCommand(
 }
 
 async function runPlannerItem(input: {
-  client: OpenAIResponsesClient | null;
+  client: EvalModelClient | null;
   config: ReturnType<typeof resolveEvalRunConfig>;
   item: PlannerEvalDatasetItem;
   repoProvenance: EvalRepoProvenance;
@@ -186,7 +196,7 @@ async function runPlannerItem(input: {
     : await gradeWithModel({
         candidateModel: input.config.candidateModel,
         candidateOutputText: candidate.text,
-        client: input.client as OpenAIResponsesClient,
+        client: input.client as EvalModelClient,
         expectations: input.item.expectations,
         graderModel: input.config.graderModel,
         itemId: input.item.id,
@@ -233,7 +243,7 @@ async function runPlannerItem(input: {
 }
 
 async function runExecutorItem(input: {
-  client: OpenAIResponsesClient | null;
+  client: EvalModelClient | null;
   config: ReturnType<typeof resolveEvalRunConfig>;
   item: ExecutorEvalDatasetItem;
   repoProvenance: EvalRepoProvenance;
@@ -269,7 +279,7 @@ async function runExecutorItem(input: {
     : await gradeWithModel({
         candidateModel: input.config.candidateModel,
         candidateOutputText: candidate.text,
-        client: input.client as OpenAIResponsesClient,
+        client: input.client as EvalModelClient,
         expectations: input.item.expectations,
         graderModel: input.config.graderModel,
         itemId: input.item.id,
@@ -316,7 +326,7 @@ async function runExecutorItem(input: {
 }
 
 async function runCompilerItem(input: {
-  client: OpenAIResponsesClient | null;
+  client: EvalModelClient | null;
   config: ReturnType<typeof resolveEvalRunConfig>;
   item: CompilerEvalDatasetItem;
   repoProvenance: EvalRepoProvenance;
@@ -357,7 +367,7 @@ async function runCompilerItem(input: {
     : await gradeWithModel({
         candidateModel: input.config.candidateModel,
         candidateOutputText: candidate.text,
-        client: input.client as OpenAIResponsesClient,
+        client: input.client as EvalModelClient,
         expectations: input.item.expectations,
         graderModel: input.config.graderModel,
         itemId: input.item.id,
@@ -412,7 +422,7 @@ function buildDryRunCandidate(text: string, output: unknown = text) {
 }
 
 async function runLiveCandidate(input: {
-  client: OpenAIResponsesClient | null;
+  client: EvalModelClient | null;
   format:
     | {
         kind: "json_schema";
@@ -426,7 +436,7 @@ async function runLiveCandidate(input: {
   prompt: string;
 }) {
   if (!input.client) {
-    throw new Error("Live candidate execution requires an OpenAI client.");
+    throw new Error("Live candidate execution requires an eval model client.");
   }
 
   return input.client.generate({
@@ -437,7 +447,7 @@ async function runLiveCandidate(input: {
 }
 
 async function runOptionalReference(input: {
-  client: OpenAIResponsesClient | null;
+  client: EvalModelClient | null;
   dryRun: boolean;
   dryRunOutput: string;
   dryRunStructuredOutput?: unknown;
