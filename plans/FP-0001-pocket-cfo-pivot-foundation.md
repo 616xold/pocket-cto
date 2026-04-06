@@ -19,24 +19,22 @@ This is the preparation slice that makes the real implementation work tractable.
 
 ## Progress
 
-- [ ] 2026-04-05T00:00:00Z Tag the current repo state as `pocket-cto-m3-final`.
-- [ ] 2026-04-05T00:00:00Z Apply the Pocket CFO prep-pack overlay files to the repo root.
-- [ ] 2026-04-05T00:00:00Z Create `docs/archive/pocket-cto/`, `docs/archive/pocket-cto/plans/`, and `docs/archive/pocket-cto/ops/`.
-- [ ] 2026-04-05T00:00:00Z Move historical `plans/EP-*.md` files into `docs/archive/pocket-cto/plans/`.
-- [ ] 2026-04-05T00:00:00Z Move `docs/ops/m2-exit-report.md` and `docs/ops/m3-exit-report.md` into `docs/archive/pocket-cto/ops/`.
-- [ ] 2026-04-05T00:00:00Z Run repo validation and confirm the active docs now point to Pocket CFO.
-- [ ] 2026-04-05T00:00:00Z Start the next implementation slice from F1 source-registry work.
+- [x] 2026-04-05T00:00:00Z Tag the current repo state as `pocket-cto-m3-final`.
+- [x] 2026-04-05T00:00:00Z Apply the Pocket CFO prep-pack overlay files to the repo root.
+- [x] 2026-04-05T00:00:00Z Create `docs/archive/pocket-cto/`, `docs/archive/pocket-cto/plans/`, and `docs/archive/pocket-cto/ops/`.
+- [x] 2026-04-05T00:00:00Z Move historical `plans/EP-*.md` files into `docs/archive/pocket-cto/plans/`.
+- [x] 2026-04-05T00:00:00Z Move `docs/ops/m2-exit-report.md` and `docs/ops/m3-exit-report.md` into `docs/archive/pocket-cto/ops/`.
+- [x] 2026-04-06T17:44:19Z Reproduced the post-placement CI regression locally and confirmed that `apps/control-plane/src/modules/missions/m3-closeout-docs.spec.ts` still pointed at the pre-archive Pocket CTO paths and old local-dev expectations.
+- [x] 2026-04-06T17:49:04Z Run repo validation, confirm the active docs now point to Pocket CFO without stale engineering-closeout assumptions, and restore green CI on this branch.
+- [ ] 2026-04-06T17:44:19Z Start the next implementation slice from F1 source-registry work only after this branch is green again.
 
 ## Surprises & Discoveries
 
-Use this section while executing the plan.
+- Observation: the docs placement itself completed cleanly, but one stale engineering-closeout spec kept CI red afterward.
+  Evidence: `apps/control-plane/src/modules/missions/m3-closeout-docs.spec.ts` still opened `docs/ops/m3-exit-report.md` and `plans/EP-0029-discovery-mission-ui-proof-and-m3-closeout.md` from their former active paths and still treated the old M3 smoke command as an active `docs/ops/local-dev.md` requirement.
 
-Record anything that materially changes sequencing, such as:
-
-- stale docs still being read by Codex
-- hidden GitHub-first assumptions in operator copy
-- runtime or env docs that still imply the old product center
-- archive moves that reveal other active-vs-historical collisions
+- Observation: the safest F0 follow-up is archive-boundary hardening rather than restoring old files into active locations.
+  Evidence: the historical proof still exists intact under `docs/archive/pocket-cto/ops/` and `docs/archive/pocket-cto/plans/`, so the truthful fix is to point the guardrail at the archive plus `docs/ACTIVE_DOCS.md`.
 
 ## Decision Log
 
@@ -45,6 +43,8 @@ Record anything that materially changes sequencing, such as:
 - Internal package scope stays `@pocket-cto/*` during F0 to avoid unnecessary churn.
 - Historical Pocket CTO plans remain valuable, but only after being archived or clearly marked reference-only.
 - The CFO Wiki is a compiled markdown layer beside the Finance Twin, not a replacement for it.
+- The historical M3 closeout proof stays in the Pocket CTO archive; active Pocket CFO local-dev guidance should not be forced to carry the old engineering smoke-command contract.
+- This follow-up hardening slice is docs-and-test only, so replay, evidence bundle, provenance, and freshness behavior remain unchanged.
 
 ## Context and Orientation
 
@@ -77,22 +77,30 @@ Execute the pivot foundation in three waves.
 
 The first wave replaces the active guidance surface so the repo reads as Pocket CFO.
 The second wave creates the archive boundary and moves historical Pocket CTO plans and exit reports out of the active path.
-The third wave validates that the repo still behaves as a stable working monorepo and that the next slice can begin from F1 source-registry work.
+Those two waves are already complete on this branch.
+The remaining F0 work is to keep the repo green by hardening the archive boundary, then validate that the next slice can begin from F1 source-registry work.
 
 Throughout this plan, avoid destructive code changes.
 The point is to make the repo **think correctly before it starts changing deeply**.
 
 ## Concrete Steps
 
-1. Create a safety tag:
+1. Confirm the already-completed F0 placement state:
+
+   ```bash
+   git tag --list pocket-cto-m3-final
+   rg --files docs/archive/pocket-cto/plans docs/archive/pocket-cto/ops
+   ```
+
+2. If you are porting the reset onto an older branch, create a safety tag:
 
    ```bash
    git tag pocket-cto-m3-final
    ```
 
-2. Copy the prep-pack overlay into the repository root, preserving paths.
+3. If you are porting the reset onto an older branch, copy the prep-pack overlay into the repository root, preserving paths.
 
-3. Review the diff to confirm the active files now include:
+4. Review the diff to confirm the active files now include:
 
    - `README.md`
    - `START_HERE.md`
@@ -105,13 +113,13 @@ The point is to make the repo **think correctly before it starts changing deeply
    - `docs/ACTIVE_DOCS.md`
    - the new and updated skills under `.agents/skills/`
 
-4. Create archive folders:
+5. If you are porting the reset onto an older branch, create archive folders:
 
    ```bash
    mkdir -p docs/archive/pocket-cto/plans docs/archive/pocket-cto/ops
    ```
 
-5. Move historical plans and exit reports:
+6. If you are porting the reset onto an older branch, move historical plans and exit reports:
 
    ```bash
    git mv plans/EP-*.md docs/archive/pocket-cto/plans/
@@ -119,13 +127,13 @@ The point is to make the repo **think correctly before it starts changing deeply
    git mv docs/ops/m3-exit-report.md docs/archive/pocket-cto/ops/
    ```
 
-6. Re-open `docs/ACTIVE_DOCS.md` and confirm the archive boundary is still accurate after the moves.
+7. Re-open `docs/ACTIVE_DOCS.md` and confirm the archive boundary is still accurate after the moves and after any follow-up docs hardening.
 
-7. Run validation.
+8. Run validation and keep CI green.
 
-8. Commit the result as one clean F0 docs-and-guidance reset.
+9. Commit the result as one clean F0 docs-and-guidance reset or follow-up hardening slice.
 
-9. Start the next Codex session from this plan and move into F1 source-registry work.
+10. Start the next Codex session from this plan and move into F1 source-registry work only after the validation step is green.
 
 ## Validation and Acceptance
 
@@ -152,6 +160,7 @@ Acceptance is met when all of the following are true:
 - Codex startup instructions now point to this Finance Plan
 - GitHub is described as an optional connector rather than the product center
 - the repo still boots under the current package structure
+- the post-placement archive boundary does not depend on pre-archive file paths or old engineering local-dev requirements
 - no production code was deleted as part of this prep-only slice
 
 ## Idempotence and Recovery
@@ -193,11 +202,8 @@ It prepares those later slices.
 
 ## Outcomes & Retrospective
 
-Fill this section after execution.
+The branch now carries the intended Pocket CFO guidance reset and Pocket CTO archive placement instead of leaving those actions as future work.
+The main follow-up surprise was small but important: one stale engineering-closeout spec still pointed at pre-archive paths and briefly made the branch look unfinished even though the archived proof was already in the right place.
 
-Capture:
-
-- whether Codex stopped reading stale Pocket CTO docs as active truth
-- whether any hidden active-doc collisions remained
-- whether the archive move uncovered additional files that should move later
-- the exact first F1 slice chosen next
+This F0 follow-up keeps the historical M3 proof intact in the archive, narrows the active-doc boundary so later Codex sessions do not treat old engineering closeout material as current guidance, and leaves the repo ready for F1 source-registry work once validation is green again.
+Validation now includes the repaired narrow spec, the repo-level `pnpm lint`, `pnpm typecheck`, and `pnpm test` passes, plus a successful `pnpm ci:repro:current` run through the clean-worktree static and integration-db path.

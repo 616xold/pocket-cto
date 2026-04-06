@@ -30,16 +30,12 @@ pnpm test
 pnpm check
 ```
 
-## Recommended F0 apply sequence
+## F0 branch state
 
-When you are applying the prep pack or beginning the pivot:
+On the current F0 branch, the Pocket CFO guidance reset and Pocket CTO archive placement are already in place.
+Do not rerun the prep-pack apply sequence here as if it were still the active next step.
 
-1. create a safety tag: `git tag pocket-cto-m3-final`
-2. copy the overlay files into the repo root
-3. commit the guidance reset as one clean docs change
-4. create `docs/archive/pocket-cto/` and child folders
-5. move old `plans/EP-*.md` and the M2/M3 exit reports into the archive tree
-6. start the next Codex session from `plans/FP-0001-pocket-cfo-pivot-foundation.md`
+If you need to port the same reset onto an older branch, follow the documented sequence in `plans/FP-0001-pocket-cfo-pivot-foundation.md` and keep that work scoped to guidance and archive placement only.
 
 ## Source-ingest-first mindset
 

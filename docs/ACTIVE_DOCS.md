@@ -1,7 +1,7 @@
 # Active docs boundary
 
 This repository is mid-pivot.
-Use this file to know which docs are active, which are reference-only, and which should be archived.
+Use this file to know which docs are active, which are archived reference-only history, and where historical Pocket CTO materials now live.
 
 ## Read these first
 
@@ -21,26 +21,19 @@ Treat these as the active product and implementation guidance, in this order:
 12. `docs/benchmarks/seeded-missions.md`
 13. `evals/README.md`
 
-## Reference-only until rewritten
+## Archived Pocket CTO reference material
 
 These may contain reusable implementation ideas, but they are **not** the active product truth:
 
 - `docs/architecture/**`
-- `plans/EP-*.md`
-- `docs/ops/m2-exit-report.md`
-- `docs/ops/m3-exit-report.md`
+- `docs/archive/pocket-cto/plans/EP-*.md`
+- `docs/archive/pocket-cto/ops/m2-exit-report.md`
+- `docs/archive/pocket-cto/ops/m3-exit-report.md`
 - GitHub-first or engineering-first milestone notes anywhere else in the repo
 
 You may reuse them for control-plane, replay, evidence, or twin patterns.
 Do not reuse their product wording or product assumptions as active scope.
-
-## Archive targets
-
-After the new guidance files are copied into place, move these into the Pocket CTO archive tree:
-
-- `plans/EP-*.md` -> `docs/archive/pocket-cto/plans/`
-- `docs/ops/m2-exit-report.md` -> `docs/archive/pocket-cto/ops/`
-- `docs/ops/m3-exit-report.md` -> `docs/archive/pocket-cto/ops/`
+The Pocket CTO archive root is `docs/archive/pocket-cto/`.
 
 ## Conflict rule
 
