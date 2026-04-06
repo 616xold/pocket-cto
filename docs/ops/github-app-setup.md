@@ -1,59 +1,57 @@
 # GitHub App setup
 
-Pocket CTO should use a GitHub App, not a long-lived PAT.
+GitHub is now an **optional connector** for Pocket CFO.
+It is no longer the product boundary.
 
-## Why
+## When to set this up
 
-GitHub Apps are the right default for this project because they offer fine-grained permissions, short-lived installation tokens, and centralized webhooks.
-That matches Pocket CTO's need for least privilege, repo-scoped automation, and long-lived orchestration.
+Set up the GitHub App only if you actually need repo content as a connector input, for example:
 
-## Initial permissions for v1
+- dbt or analytics repos
+- finance-policy markdown repos
+- repo-stored compliance or diligence documents
+- migration work that bridges the old GitHub slice into a generic source-registry boundary
+
+If you are doing F0 or early F1 work, this setup is usually not required.
+
+## Recommended default permissions
+
+For a read-mostly Pocket CFO connector, start narrow:
 
 Repository permissions:
 
 - Metadata: Read-only
-- Contents: Read and write
-- Pull requests: Read and write
-- Issues: Read and write
-- Commit statuses: Read-only
-- Checks: Read-only
+- Contents: Read-only
+
+Optional only when the connector truly needs them:
+
+- Pull requests: Read-only
+- Issues: Read-only
 - Actions: Read-only
+- Checks: Read-only
 
-Optional later:
+Do not request write permissions just because Pocket CTO used them historically.
+Escalate only when the Finance Plan requires it.
 
-- Workflows: Read and write, only if Pocket CTO must edit workflow files
-- Deployments: Read-only or read-write, only if release automation becomes a real milestone
+## Recommended webhook events
 
-## Initial webhook events
+Start small:
 
-- `issues`
-- `issue_comment`
-- `pull_request`
-- `pull_request_review`
-- `push`
-- `check_run`
-- `check_suite`
-- `workflow_run`
 - `installation`
 - `installation_repositories`
+- `push`
 
-## Implementation notes
+Add other events only if the connector logic really depends on them.
 
-- store installation identity separately from repository metadata
+## Implementation rules
+
 - verify webhook signatures before processing payloads
-- treat webhook handling as idempotent
+- keep webhook handling idempotent
 - cache installation tokens until expiry
-- use periodic reconciliation as a safety net for missed events
-- scope installation tokens to the repositories and permissions actually needed
+- keep GitHub logic behind connector boundaries
+- do not let GitHub-specific types become the main product ontology
 
-## Token model
+## Migration note
 
-Use the standard GitHub App flow:
-
-1. create a JWT with the app private key
-2. exchange the JWT for an installation access token
-3. cache the installation token until it expires
-4. refresh on demand
-
-Installation access tokens are intentionally short-lived.
-Build the client so token refresh is ordinary, not exceptional.
+If you need the older GitHub-first flow for historical reference or migration work, keep it explicitly marked as legacy or connector-only.
+Do not block the Pocket CFO pivot on a full GitHub setup.

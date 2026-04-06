@@ -1,7 +1,7 @@
 interface:
   display_name: "Modular Architecture Guard"
-  short_description: "Keep Pocket CTO modular and boundary-safe."
+  short_description: "Keep Pocket CFO modular, finance-boundary-safe, and small-file friendly."
   brand_color: "#059669"
-  default_prompt: "Implement this feature with strict module boundaries and small files."
+  default_prompt: "Implement this Pocket CFO feature with strict module boundaries and small files."
 policy:
   allow_implicit_invocation: true

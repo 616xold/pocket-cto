@@ -1,185 +1,144 @@
-# Pocket CTO roadmap
+# Pocket CFO roadmap
 
-This roadmap is the working build order for the repo.
-
-It is intentionally specific.
-If you change the sequence, record the reason in an ADR or the active ExecPlan.
+This roadmap replaces the old engineering-centric milestone story with a finance-specific sequence that Codex can follow cleanly.
 
 ## Build philosophy
 
-Build one strong vertical slice at a time.
+Preserve the strongest spine from Pocket CTO:
 
-The first version should prove that Pocket CTO can:
+- typed missions
+- replay
+- approvals
+- evidence bundles
+- operator-facing read models
+- Codex runtime seam
 
-1. persist typed missions
-2. orchestrate isolated tasks
-3. drive Codex App Server
-4. capture replay events
-5. assemble proof bundles
-6. present decision-ready outputs on a mobile-friendly surface
+Change the product boundary:
 
-## Milestone map
+- finance evidence becomes source truth
+- the engineering twin becomes a Finance Twin
+- docs/runbooks indexing becomes the CFO Wiki
+- GitHub becomes an optional connector
 
-### M0 - Foundation and mission spine
+## F0 — Pivot foundation, naming, and source-registry bridge
 
-Goal: make text intake become a persisted mission with task records, replay events, and a visible proof-bundle placeholder.
+Goal:
+Turn the repo into a Pocket CFO repo at the active-doc and workflow layer without breaking CI or Codex implementation flow.
 
-Submilestones:
+Focus:
 
-- M0.1 repo bootstrap and dev infrastructure
-- M0.2 domain schemas and DB schema
-- M0.3 API and worker process spine
-- M0.4 replay event pipeline
-- M0.5 proof bundle placeholder and mission detail endpoint
-
-Exit criteria:
-
-- `POST /missions/text` creates a mission
-- tasks are materialized and persisted
-- replay events can be fetched for the mission
-- the mission detail response includes a proof-bundle placeholder
-- tests cover mission creation and replay appends
-
-### M1 - Codex runtime integration and Build Run v1
-
-Goal: take a queued build mission and run it through a Codex-backed planner and executor path.
-
-Submilestones:
-
-- M1.1 Codex App Server process bootstrap and initialize handshake
-- M1.2 thread and turn lifecycle mapping
-- M1.3 workspace manager with isolated worktrees
-- M1.4 basic planner task
-- M1.5 basic executor task
-- M1.6 approval record creation for runtime approval requests
-- M1.7 artifact placeholder emission for PR, test report, and summary
+- tag the current engineering product as `pocket-cto-m3-final`
+- rewrite root docs and active guidance
+- establish active-vs-archive boundaries
+- introduce the generic source-registry concept in guidance
+- define finance mission types and artifact language
 
 Exit criteria:
 
-- one seeded build mission reaches `awaiting_approval` or `succeeded`
-- task records store Codex thread ids
-- runtime item events are visible as replay events
-- approval requests are persisted and inspectable
+- repo boots and CI stays green under Pocket CFO terminology
+- active docs no longer depend on GitHub-first product assumptions
+- the next slice can start from a clean finance-oriented plan
 
-### M2 - GitHub-first vertical slice and evidence-native completion
+## F1 — Source registry and raw ingest
 
-Goal: connect Pocket CTO to GitHub so an issue or operator prompt can result in a branch, PR, and proof bundle.
+Goal:
+Create a trustworthy ingestion layer for finance data and documents.
 
-Submilestones:
+Focus:
 
-- M2.1 GitHub App auth and installation model
-- M2.2 webhook ingestion
-- M2.3 repository registry and repo sync
-- M2.4 branch and PR artifact creation
-- M2.5 proof bundle manifest assembly
-- M2.6 approval card formatter
-- M2.7 web UI mission list and mission detail
+- source, source snapshot, and provenance models
+- file-first upload and object storage path
+- ingest status and parser dispatch
+- operator source inventory
 
 Exit criteria:
 
-- a GitHub issue or text request can create a build mission
-- successful missions attach a PR link and proof bundle manifest
-- mission detail page shows evidence and approval trace
-- at least 3 seeded build tasks run end to end against the real single-operator M2 stack, using staging when it exists and otherwise the real local embedded stack with live GitHub App and Codex evidence
+- a user can register finance source truth
+- every raw file has identity, checksum, type, and ingest status
 
-### M3 - Engineering twin v1
+## F2 — Finance Twin v1
 
-Goal: make planning and discovery grounded in a freshness-aware twin.
-Status: complete. See `docs/ops/m3-exit-report.md` for the closeout evidence and live discovery proof.
+Goal:
+Replace engineering twin semantics with a finance twin that can support real questions.
 
-Submilestones:
+Focus:
 
-- M3.1 twin entity and edge schema
-- M3.2 repository metadata extraction
-- M3.3 CODEOWNERS and ownership extraction
-- M3.4 CI workflow and test suite extraction
-- M3.5 docs and runbook indexing
-- M3.6 freshness scoring and stale markers
-- M3.7 blast-radius query service
-- M3.8 discovery mission formatter
+- finance entity and edge kinds
+- deterministic extractors for core source families
+- freshness and stale-state posture
+- source-to-entity lineage
+- finance summary and query routes
 
 Exit criteria:
 
-- a discovery mission can answer an auth-change blast-radius question
-- answers cite twin entities and freshness state
-- stale or missing twin data is visible instead of hidden
+- one source bundle produces a persisted Finance Twin snapshot
+- summary routes expose fresh/stale posture clearly
 
-### M4 - Incident Run and release safety
+## F3 — CFO Wiki compiler
 
-Goal: extend the system beyond build runs into triage and safe action selection.
+Goal:
+Add the compiled markdown knowledge layer beside the Finance Twin.
 
-Submilestones:
+Focus:
 
-- M4.1 incident mission type prompt and schema tuning
-- M4.2 observability adapter interfaces
-- M4.3 dashboard and alert twin entities
-- M4.4 suspect ranking
-- M4.5 rollback note generator
-- M4.6 canary and release checklist contracts
-- M4.7 incident proof bundle and summary cards
+- wiki page generation
+- index and log maintenance
+- backlinks and page linting
+- filing durable mission outputs back into the wiki
 
 Exit criteria:
 
-- a simulated incident mission ends with either a fix PR or a rollback recommendation
-- the result includes suspects, evidence, and a rollback path
-- replay clearly shows the decision chain
+- one company can refresh a reproducible CFO Wiki
+- the wiki is linked, readable, and evidence-aware
 
-### M5 - Pocket interface
+## F4 — Finance discovery and analysis missions
 
-Goal: make the full mission lifecycle operable from a phone.
+Goal:
+Make deterministic finance question-answering the primary mission type.
 
-Submilestones:
+Focus:
 
-- M5.1 PWA shell and installability
-- M5.2 web push subscription flow
-- M5.3 concise approval cards
-- M5.4 mission timeline optimized for mobile
-- M5.5 pause, cancel, retry controls
-- M5.6 optional screenshot and voice note ingestion interface stubs
+- typed finance discovery questions
+- answer artifacts
+- explicit freshness and limitation posture
+- seeded smoke paths and eval hooks
 
 Exit criteria:
 
-- a mission can be started, monitored, approved, retried, and cancelled from mobile
-- the mobile view preserves proof and replay legibility
+- one finance discovery mission completes end to end
+- proof bundles are finance-ready rather than PR-ready
 
-### M6 - Public adoption loop
+## F5 — Reporting, memo, and packet compiler
 
-Goal: turn the project from a private build into a category-defining public artifact.
+Goal:
+Turn discovery outputs into artifacts real operators can share and review.
 
-Submilestones:
+Focus:
 
-- M6.1 public replay gallery
-- M6.2 benchmark repo and scorer
-- M6.3 first stack pack
-- M6.4 docs hardening and onboarding
-- M6.5 public demo repo and three polished replays
-- M6.6 optional messaging bridge
+- finance memos
+- board packets
+- lender or diligence updates
+- evidence appendices
+- approval and release flows
 
 Exit criteria:
 
-- an external engineer can clone the repo, follow docs, and run a seeded mission
-- public replays are shareable and self-explanatory
-- at least one stack pack reduces onboarding friction for a real target stack
+- at least one discovery path can produce a reviewable finance artifact
+- the artifact remains reproducible and evidence-linked
 
-## What to defer unless proven necessary
+## F6 — Monitoring, controls, and adoption loop
 
-- Redis
-- multi-tenant auth
-- OpenClaw bridge
-- Jira or Linear adapters
-- deploy automation
-- automatic merges
-- generalized portfolio scheduling across dozens of repos
+Goal:
+Turn Pocket CFO into a recurring finance operating system.
 
-## Kill criteria and narrowing moves
+Focus:
 
-If M2 is slipping badly, do not add channels or packs.
-Narrow instead:
+- recurring checks
+- alerts and follow-up missions
+- control ownership
+- benchmark datasets and demo stacks
 
-- single repo instead of multi-repo
-- build and discovery only
-- no reviewer task yet
-- no voice or screenshot intake
-- simple PWA instead of polished dashboard
+Exit criteria:
 
-If M3 twin work is harder than expected, ship a useful small twin based on repo metadata, CODEOWNERS, test manifests, docs, and CI before adding deeper graph extraction.
+- one recurring finance monitor can trigger a human-reviewable mission
+- a new user can bootstrap a demo company from docs and sources
