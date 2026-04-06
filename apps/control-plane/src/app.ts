@@ -11,6 +11,7 @@ import { registerApprovalRoutes } from "./modules/approvals/routes";
 import { createServerContainer } from "./bootstrap";
 import type { AppContainer } from "./lib/types";
 import { registerRuntimeControlRoutes } from "./modules/runtime-codex/routes";
+import { registerSourceRoutes } from "./modules/sources/routes";
 import { registerTwinRoutes } from "./modules/twin/routes";
 
 export async function buildApp(options?: { container?: AppContainer }) {
@@ -39,6 +40,9 @@ export async function buildApp(options?: { container?: AppContainer }) {
   });
   await registerReplayRoutes(app, {
     replayService: container.replayService,
+  });
+  await registerSourceRoutes(app, {
+    sourceService: container.sourceService,
   });
   await registerApprovalRoutes(app, {
     operatorControl: container.operatorControl,

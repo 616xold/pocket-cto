@@ -152,6 +152,113 @@ describe("control-plane app", () => {
     });
   });
 
+  it("POST /sources registers a source with its first snapshot and GET /sources surfaces the registry summary", async () => {
+    const app = await createTestApp(apps);
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/sources",
+      payload: {
+        kind: "document",
+        name: "March board deck",
+        createdBy: "finance-operator",
+        snapshot: {
+          originalFileName: "march-board-deck.pdf",
+          mediaType: "application/pdf",
+          sizeBytes: 4096,
+          checksumSha256:
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          storageKind: "external_url",
+          storageRef: "https://example.com/board/march-board-deck.pdf",
+          capturedAt: "2026-04-06T23:50:00.000Z",
+        },
+      },
+    });
+
+    expect(createResponse.statusCode).toBe(201);
+    expect(createResponse.json()).toMatchObject({
+      source: {
+        kind: "document",
+        originKind: "manual",
+        name: "March board deck",
+        createdBy: "finance-operator",
+      },
+      snapshots: [
+        {
+          version: 1,
+          originalFileName: "march-board-deck.pdf",
+          mediaType: "application/pdf",
+          sizeBytes: 4096,
+          checksumSha256:
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          storageKind: "external_url",
+          storageRef: "https://example.com/board/march-board-deck.pdf",
+          ingestStatus: "registered",
+        },
+      ],
+    });
+
+    const created = createResponse.json() as {
+      source: { id: string };
+      snapshots: Array<{ id: string }>;
+    };
+
+    const [listResponse, detailResponse] = await Promise.all([
+      app.inject({
+        method: "GET",
+        url: "/sources",
+      }),
+      app.inject({
+        method: "GET",
+        url: `/sources/${created.source.id}`,
+      }),
+    ]);
+
+    expect(listResponse.statusCode).toBe(200);
+    expect(listResponse.json()).toMatchObject({
+      limit: 20,
+      sourceCount: 1,
+      sources: [
+        {
+          id: created.source.id,
+          snapshotCount: 1,
+          latestSnapshot: {
+            id: created.snapshots[0]?.id,
+            version: 1,
+          },
+        },
+      ],
+    });
+    expect(detailResponse.statusCode).toBe(200);
+    expect(detailResponse.json()).toMatchObject({
+      source: {
+        id: created.source.id,
+      },
+      snapshots: [
+        {
+          id: created.snapshots[0]?.id,
+        },
+      ],
+    });
+  });
+
+  it("GET /sources/:sourceId returns 404 for an unknown source", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/sources/11111111-1111-4111-8111-111111111111",
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      error: {
+        code: "source_not_found",
+        message: "Source not found",
+      },
+    });
+  });
+
   it("GET /missions returns newest-first mission summaries with the list contract", async () => {
     const app = await createTestApp(apps);
     const older = await createMission(app, {
@@ -1766,6 +1873,7 @@ async function createStubApp(
     missionService?: Partial<AppContainer["missionService"]>;
     operatorControl?: Partial<AppContainer["operatorControl"]>;
     replayService?: Partial<AppContainer["replayService"]>;
+    sourceService?: Partial<AppContainer["sourceService"]>;
     twinService?: Partial<AppContainer["twinService"]>;
   },
 ) {
@@ -1798,6 +1906,10 @@ async function createStubApp(
       replayService: {
         ...base.replayService,
         ...overrides.replayService,
+      },
+      sourceService: {
+        ...base.sourceService,
+        ...overrides.sourceService,
       },
       twinService: {
         ...base.twinService,

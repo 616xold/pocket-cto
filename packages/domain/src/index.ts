@@ -7,4 +7,5 @@ export * from "./mission";
 export * from "./mission-task";
 export * from "./proof-bundle";
 export * from "./replay-event";
+export * from "./source-registry";
 export * from "./twin";

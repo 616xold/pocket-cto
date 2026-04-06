@@ -297,6 +297,21 @@ function createAppContainer(
         return [];
       },
     } as AppContainer["replayService"],
+    sourceService: {
+      async createSource() {
+        throw new Error("createSource should not be called in this test");
+      },
+      async getSource() {
+        throw new Error("getSource should not be called in this test");
+      },
+      async listSources() {
+        return {
+          limit: 20,
+          sourceCount: 0,
+          sources: [],
+        };
+      },
+    } as AppContainer["sourceService"],
     twinService: {
       async finishSyncRun() {
         throw new Error("finishSyncRun should not be called in this test");

@@ -29,6 +29,7 @@ import {
   RuntimeInterruptDeliveryError,
   RuntimeTaskNotFoundError,
 } from "../modules/runtime-codex/errors";
+import { SourceNotFoundError } from "../modules/sources/errors";
 import { TwinSourceUnavailableError } from "../modules/twin/errors";
 
 export type ApiErrorCode =
@@ -53,6 +54,7 @@ export type ApiErrorCode =
   | "github_webhook_not_configured"
   | "live_control_unavailable"
   | "mission_not_found"
+  | "source_not_found"
   | "internal_error"
   | "task_conflict"
   | "task_not_found"
@@ -189,6 +191,18 @@ function mapHttpError(error: unknown): ErrorMapping {
         error: {
           code: "approval_not_found",
           message: "Approval not found",
+        },
+      },
+    };
+  }
+
+  if (error instanceof SourceNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        error: {
+          code: "source_not_found",
+          message: "Source not found",
         },
       },
     };
