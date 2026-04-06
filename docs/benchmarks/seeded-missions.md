@@ -1,38 +1,77 @@
-# Seeded benchmark missions
+# Seeded finance missions
 
-Pocket CTO should have a small benchmark suite from the beginning.
+Pocket CFO should benchmark trusted finance work, not generic “AI CFO” vibes.
 
-## Why
+This file defines the first seeded mission families the product should eventually support and grade.
 
-Without seeded missions, it is too easy to confuse a flashy demo with a reliable system.
+## Why these matter
 
-## v1 seeded missions
+The product thesis is evidence-native finance discovery and decision support.
+Seeded missions should therefore stress:
 
-1. **Build task**
-   Implement a small feature from a short prompt and produce a PR plus proof bundle.
+- provenance
+- freshness honesty
+- numeric consistency
+- limitation handling
+- artifact quality
+- reproducibility
 
-2. **Bug fix**
-   Reproduce a failing test, patch it, and attach verification.
+## Recommended seeded mission families
 
-3. **Discovery task**
-   Answer a blast-radius question using the twin and cite the entities used.
+### 1. Source registration and ingest proof
 
-4. **Review task**
-   Run a reviewer thread against a proposed diff and produce a revision note.
+Input:
+A mixed bundle of finance exports and docs.
 
-## Metrics
+Success:
+The system registers each file as source truth, records checksums and ingest status, and emits an operator-readable ingest proof artifact.
 
-Track at least:
+### 2. Runway answer
 
-- acceptance rate
-- time to first useful evidence
-- proof bundle completeness
+Input:
+Cash summary, trial balance, burn assumptions, and policy notes.
+
+Success:
+The system returns a cited runway answer with freshness posture, assumptions, and clear limitations.
+
+### 3. Concentration answer
+
+Input:
+AR aging plus customer revenue or invoice exports.
+
+Success:
+The system identifies concentration risk and cites which source records support the result.
+
+### 4. Policy lookup
+
+Input:
+One or more policy, SOP, or board documents.
+
+Success:
+The system answers a typed policy question with section-level evidence and explicit uncertainty where the policy is ambiguous.
+
+### 5. Memo or packet compilation
+
+Input:
+A stored answer plus relevant twin or wiki context.
+
+Success:
+The system produces a short memo or packet with linked evidence, freshness notes, and an appendix-ready structure.
+
+## Rubric dimensions
+
+Each seeded mission should eventually be graded on:
+
+- groundedness
+- citation completeness
+- freshness disclosure
+- numeric consistency
+- limitation honesty
+- artifact completeness
+- rerun reproducibility
 - operator touch time
-- replay fidelity
-- cost per successful mission
 
-## Repository implementation map
+## Implementation note
 
-- fixtures: `packages/testkit/src/fixtures.ts`
-- docs: this file
-- later eval runners: `apps/control-plane/src/modules/evals/`
+During the early pivot, the repo may still carry legacy engineering eval commands.
+Keep the eval harness architecture, but replace the scenarios and rubrics with finance-oriented datasets as F4/F5 land.

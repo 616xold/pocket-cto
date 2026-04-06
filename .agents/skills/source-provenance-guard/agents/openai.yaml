@@ -1,0 +1,7 @@
+interface:
+  display_name: "Source Provenance Guard"
+  short_description: "Protect immutable source ingest, checksums, lineage, and freshness."
+  brand_color: "#7C3AED"
+  default_prompt: "Implement this ingest or lineage change with strict provenance and immutable raw-source rules."
+policy:
+  allow_implicit_invocation: true

@@ -1,3 +1,7 @@
-name: github-app-integration-guard
-version: 1
-summary: Guardrails for GitHub App auth, webhooks, and repo operations in Pocket CTO.
+interface:
+  display_name: "GitHub Connector Guard"
+  short_description: "Keep GitHub App work secure and connector-scoped inside Pocket CFO."
+  brand_color: "#111827"
+  default_prompt: "Implement this GitHub App change as an optional connector, not as the Pocket CFO product center."
+policy:
+  allow_implicit_invocation: true

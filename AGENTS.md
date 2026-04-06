@@ -1,84 +1,99 @@
-# Pocket CTO repository instructions for Codex
+# Pocket CFO repository instructions for Codex
 
-You are working on Pocket CTO, a GitHub-first, evidence-native engineering mission control system.
+You are working on **Pocket CFO**, an evidence-native finance discovery and decision system.
 
-Read this file before doing any work. For non-trivial work, also read `PLANS.md`, `plans/ROADMAP.md`, and the current ExecPlan in `plans/`.
+Read this file before doing any work.
+For non-trivial work, also read `docs/ACTIVE_DOCS.md`, `PLANS.md`, `plans/ROADMAP.md`, and the active Finance Plan in `plans/`.
 
 ## Non-negotiable working rules
 
 1. **Prefer modular code.**
-   Do not collapse unrelated responsibilities into one file.
-   Use small modules, public package entrypoints, and explicit interfaces.
+   Do not collapse transport, domain logic, persistence, formatting, and prompt assembly into one file.
    Soft cap: keep most source files below 300 logical lines.
-   If a file starts mixing transport, business logic, persistence, and formatting, split it.
+   Split early.
 
-2. **Use an ExecPlan for meaningful work.**
-   If the task spans multiple files, more than one package, or is likely to take more than 45 minutes, create or update an ExecPlan in `plans/` before coding.
+2. **Use a Finance Plan for meaningful work.**
+   If a task spans multiple files, touches more than one package, or is likely to take more than 45 minutes, create or update a `plans/FP-*.md` plan before coding.
    Follow `PLANS.md` exactly.
 
-3. **Preserve architecture boundaries.**
-   - `packages/domain`: pure contracts, schemas, shared domain types
+3. **Finance evidence is the source of truth.**
+   Raw source files, source snapshots, checksums, provenance, freshness posture, and derived twin state matter more than chat convenience.
+   Never treat a model answer as the source of truth.
+
+4. **Raw sources are immutable.**
+   Do not silently rewrite uploaded exports, PDFs, or source documents.
+   Derived artifacts belong in the twin, wiki, reports, or evidence layers.
+
+5. **GitHub is an optional connector, not the product center.**
+   Do not let repo or PR semantics leak into the primary Pocket CFO path.
+   Keep GitHub-specific logic isolated behind connector boundaries.
+
+6. **Preserve architecture boundaries.**
+   - `packages/domain`: pure contracts, schemas, shared finance mission and artifact types
    - `packages/db`: persistence schema and DB helpers only
    - `packages/codex-runtime`: Codex App Server protocol wrapper only
    - `packages/config`: env parsing and runtime config
    - `packages/stack-packs`: pack interfaces and manifests
    - `packages/testkit`: fixtures and reusable test helpers
-   - `apps/control-plane`: orchestration, APIs, webhooks, evidence, twin, workers
-   - `apps/web`: read models and operator UI only
+   - `apps/control-plane`: sources, missions, orchestrator, replay, evidence, finance twin, wiki, reports, monitoring
+   - `apps/web`: operator UI and read models only
 
-4. **Routes stay thin.**
+7. **Routes stay thin.**
    HTTP route files should parse input, call a service, and serialize output.
-   They should not contain SQL, orchestration logic, or prompt-building.
+   They should not contain SQL, ingest logic, finance math, or prompt-building.
 
-5. **Database changes are additive first.**
-   Avoid destructive schema changes unless the ExecPlan explicitly calls for them and includes a rollback path.
+8. **Database changes are additive first.**
+   Avoid destructive schema changes unless the active Finance Plan names them explicitly and includes recovery guidance.
 
-6. **Replay and evidence are mandatory.**
-   Any mission state change or task lifecycle change must have a replay event or an explicit reason why it does not.
+9. **Replay and evidence are mandatory.**
+   Any mission state change or meaningful ingest/report action needs replay or an explicit recorded reason why it does not.
 
-7. **No hidden policy.**
-   If a workflow rule matters, encode it in code, config, `WORKFLOW.md`, or a checked-in doc.
-   Do not rely on ephemeral prompt memory.
+10. **Freshness and limitations are first-class.**
+    If a result depends on stale, partial, inferred, or conflicting evidence, say that plainly in code, docs, and outputs.
+    Do not hide uncertainty.
 
-8. **Do not default to PAT-based GitHub access.**
-   Use the GitHub App model unless a local dev-only shortcut is explicitly marked as temporary.
+11. **Do not claim unfinished finance capabilities as implemented.**
+    The active docs define direction.
+    The code defines current reality.
+    When those differ, state the gap honestly and implement through the active plan.
 
-9. **Ship the spine before magic.**
-   The mission contract, replay events, workspaces, approvals, and evidence layers are more important than voice intake, pretty UI, or multi-channel integrations.
+12. **No hidden policy.**
+    If a workflow rule matters, encode it in code, config, `WORKFLOW.md`, or a checked-in doc.
+    Do not rely on ephemeral prompt memory.
 
-10. **When uncertain, narrow scope instead of diluting the design.**
-    Prefer one strong vertical slice over three half-built surfaces.
+13. **Ship the evidence spine before cleverness.**
+    Source registry, Finance Twin, replay, approvals, evidence bundles, and durable outputs matter more than glossy chat behavior.
 
-11. **Keep repo hygiene explicit.**
-    - Never commit local env files; `.env.example` is the only env file that stays tracked.
-    - Never commit generated outputs like `node_modules`, `dist`, `.next`, `coverage`, local runtime artifacts, or `*.tsbuildinfo`.
-    - If a new toolchain creates new generated files, update `.gitignore` and `pnpm repo:hygiene` in the same change.
-    - Keep TypeScript `src/` trees source-only; do not keep generated `.js` or `.d.ts` companions there.
+14. **Do not cross the product safety boundary.**
+    No autonomous bank writes, ledger writes, tax filings, legal advice, or external communication releases without explicit human approval and a named plan.
 
-## Definition of done for any milestone
+15. **When uncertain, narrow scope instead of diluting the design.**
+    Prefer one strong finance slice over three half-built surfaces.
 
-A milestone is not done until all of the following are true:
+## Definition of done for any slice
+
+A slice is not done until all of the following are true:
 
 - code exists in the right module boundaries
 - tests exist for the touched behavior
-- `README` or architecture docs are updated if behavior changed
-- the relevant ExecPlan progress section is updated
-- there is an explicit acceptance check a human can run
-- any new mission/task state emits replay events
-- any new user-visible action has clear evidence outputs
+- the active Finance Plan is updated
+- the active docs are updated if behavior or workflow changed
+- acceptance is observable by a human
+- replay implications are covered
+- mission-facing outputs expose provenance, freshness posture, and limitations when relevant
 
 ## Modular code preferences
 
 Use these patterns by default:
 
-- `controller.ts` or `routes.ts` for transport
-- `service.ts` for business logic
+- `routes.ts` or `controller.ts` for transport
+- `schema.ts` for validation
+- `service.ts` for orchestration or domain logic
 - `repository.ts` for persistence
-- `schema.ts` or `types.ts` for validation and contracts
-- `formatter.ts` for approval cards or summaries
-- `events.ts` for replay/outbox event definitions
+- `formatter.ts` for operator summaries and evidence formatting
+- `events.ts` for replay or outbox events
 
-If a bounded context grows, create a folder with those modules instead of extending one file.
+If a bounded context grows, make a folder and split by responsibility instead of extending one file forever.
 
 ## Default implementation preferences
 
@@ -89,11 +104,11 @@ If a bounded context grows, create a folder with those modules instead of extend
 - Next.js App Router for the web UI
 - Pino for logs
 - OpenTelemetry hooks from the beginning
-- GitHub App authentication for repo integrations
-- Postgres outbox pattern for async notifications and projections
-- MinIO or S3-compatible artifact store
-- PWA first, Telegram later
-- event-assisted orchestration using webhooks plus periodic reconciliation
+- Postgres as the state source of truth
+- S3-compatible artifact storage
+- file-first finance ingestion before API connector sprawl
+- Codex App Server as the narrow runtime seam
+- deterministic extraction before freeform generation
 
 ## Commands
 
@@ -115,47 +130,55 @@ Skills live in `.agents/skills`.
 
 Use them deliberately:
 
-- `$execplan-orchestrator` for any complex milestone or refactor
+- `$execplan-orchestrator` for any complex slice or refactor
 - `$modular-architecture-guard` when implementing or refactoring code
-- `$evidence-bundle-auditor` when shipping replay, evidence, or approval card behavior
-- `$github-app-integration-guard` when implementing GitHub auth, webhooks, or PR flows
+- `$source-provenance-guard` when touching source ingest, lineage, or freshness
+- `$cfo-wiki-maintainer` when compiling or maintaining the markdown knowledge layer
+- `$evidence-bundle-auditor` when shipping answers, reports, approvals, or proof logic
+- `$github-app-integration-guard` only for GitHub connector work
 
 ## Files you should usually read before large changes
 
+- `docs/ACTIVE_DOCS.md`
 - `README.md`
+- `START_HERE.md`
 - `PLANS.md`
 - `plans/ROADMAP.md`
-- current ExecPlan in `plans/`
-- `docs/architecture/overview.md`
-- `docs/architecture/repo-map.md`
-- `docs/architecture/mission-ir.md`
-- `docs/architecture/state-machine.md`
-- `docs/architecture/replay-and-evidence.md`
-- `docs/architecture/security-model.md`
+- current active `plans/FP-*.md`
+- `docs/ops/source-ingest-and-cfo-wiki.md`
+- `docs/ops/local-dev.md`
+- `docs/ops/codex-app-server.md`
+- `docs/ops/github-app-setup.md` only if connector work is in scope
+
+Historical Pocket CTO material such as `plans/EP-*.md` and the old M2/M3 exit reports may still exist temporarily, but they are **reference only** and must not be treated as active product scope.
 
 ## Forbidden shortcuts
 
-Avoid these unless an ExecPlan explicitly approves them:
+Avoid these unless the active Finance Plan explicitly approves them:
 
-- one giant `index.ts` with all logic
+- using GitHub as the default product source of truth
+- mutating raw source files instead of creating derived artifacts
+- answering finance questions from chat context alone
+- deleting legacy engineering modules before the replacement path exists
+- one giant route or service file that owns everything
 - route handlers talking directly to the database
-- embedding giant workflow rules in code comments instead of checked-in policy files
-- using a shared workspace for multiple missions
-- skipping replay events "for now"
-- using uncontrolled network access by default
-- auto-merging PRs
-- treating local host access as the security boundary for future multi-user designs
+- a repo-wide internal namespace rename during the pivot foundation phase
+- auto-releasing external memos or packets without a review path
 
 ## Reporting progress
 
 At each stopping point:
 
-- update the active ExecPlan `Progress` section
-- record any design changes in the ExecPlan `Decision Log`
-- if you discovered a better boundary, update the relevant architecture doc
-- mention exactly what remains
+- update the active Finance Plan `Progress` section
+- record design changes in the `Decision Log`
+- note surprises that affect scope or sequence
+- state exactly what remains
+- mention any archive or active-doc boundary changes you made
 
 ## Repo-specific north star
 
-The first compelling proof point is not a fancy UI.
-It is a text request that becomes a persisted mission, queues tasks, starts an isolated Codex runtime, records replay events, and returns a decision-ready proof bundle.
+The compelling proof point is not “an AI that sounds like a CFO.”
+
+It is:
+
+> raw finance evidence becomes a persisted, freshness-aware decision system that can answer a question, explain its limitations, and produce a durable artifact another human can review outside chat.

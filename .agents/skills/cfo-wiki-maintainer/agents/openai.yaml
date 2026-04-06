@@ -1,0 +1,7 @@
+interface:
+  display_name: "CFO Wiki Maintainer"
+  short_description: "Maintain the compiled CFO wiki from immutable finance sources and twin facts."
+  brand_color: "#0F766E"
+  default_prompt: "Compile or update the CFO wiki, preserve provenance, and keep index/log current."
+policy:
+  allow_implicit_invocation: true

@@ -1,43 +1,65 @@
-# Pocket CTO
+# Pocket CFO
 
-Pocket CTO is an evidence-native engineering mission control system.
+Pocket CFO is an evidence-native finance discovery and decision system.
 
-It is **not** a generic chat bot and it is **not** a thin wrapper around a coding model.
-It turns messy operator intent into typed engineering missions, executes those missions in isolated workspaces, records proof, and returns decision-ready evidence to a pocket-friendly interface.
+It is **not** a generic finance chatbot and it is **not** an autonomous accounting agent.
+It turns messy finance questions and raw source bundles into typed finance missions, a persisted Finance Twin, a compiled CFO Wiki, and decision-ready evidence artifacts.
+
+## Current repo state
+
+This repository is in **pivot mode**.
+
+The active guidance layer now describes **Pocket CFO**.
+Some code, package names, database names, and legacy modules still say `pocket-cto`.
+Treat those as migration scaffolding, not as product direction.
+The control-plane spine stays; the domain substrate is what changes.
+
+Read `docs/ACTIVE_DOCS.md` before trusting older plans or engineering-era docs.
 
 ## Product boundary for v1
 
-Pocket CTO v1 is intentionally narrow:
+Pocket CFO v1 is intentionally narrow:
 
-- single operator, single trust boundary
-- GitHub-first
-- text-first intake
-- PWA-first mobile interface
-- Codex App Server as the coding runtime
-- no multi-tenant SaaS boundary
-- no autonomous production deploys
-- no automatic merges
-- no OpenClaw or multi-channel bridge in the critical path
-
-This repo is structured to help Codex implement the system modularly and milestone by milestone.
+- single company
+- single operator
+- single trust boundary
+- manual-export and file-first ingest
+- finance evidence first; GitHub is only an optional connector
+- PWA-first operator surface
+- Codex App Server as the coding/runtime seam
+- no autonomous bank writes, accounting writes, tax filings, or legal advice
+- no multi-tenant SaaS boundary in v1
 
 ## What is already decided
 
-1. **Mission IR is the core contract.**
-   Every request gets compiled into a typed mission before orchestration starts.
+1. **Mission, replay, and proof stay.**
+   The orchestration spine from Pocket CTO is still the most valuable part of the repo.
 
-2. **GitHub App, not PAT.**
-   Use a GitHub App for repo access, webhooks, and PR coordination.
+2. **Raw finance sources become the product boundary.**
+   The primary source of truth is no longer a repository or PR flow.
+   It is source files, documents, policies, definitions, exports, and derived structured state.
 
-3. **Postgres is the source of truth.**
-   State, replay events, twin entities, approvals, and the outbox live in Postgres.
-   Redis is intentionally deferred from v1.
+3. **The engineering twin becomes a Finance Twin.**
+   Keep the twin engine pattern, but replace the ontology and query semantics.
 
-4. **Evidence is first-class.**
-   Successful runs do not end with "done". They end with a proof bundle.
+4. **A compiled CFO Wiki sits beside the twin.**
+   The twin is the machine-queryable layer.
+   The CFO Wiki is the operator-readable markdown layer built from raw sources plus twin facts.
 
-5. **Codex works through plans and skills.**
-   Complex work must go through `PLANS.md` and the checked-in skills under `.agents/skills`.
+5. **GitHub is demoted to connector status.**
+   Keep the integration patterns, but do not let GitHub define the product.
+
+6. **Internal package scope stays stable for now.**
+   Keep `@pocket-cto/*` until the finance vertical is implemented cleanly enough to justify a later rename.
+
+## Working architecture planes
+
+1. **Source Registry** for uploads, snapshots, checksums, provenance, and raw artifacts.
+2. **Finance Twin** for deterministic structured entities, edges, freshness, and lineage.
+3. **CFO Wiki** for compiled markdown pages, indexes, backlinks, and durable analysis notes.
+4. **Mission Engine** for analysis, reporting, monitoring, diligence, and close/control work.
+5. **Evidence & Output Layer** for answers, memos, packets, and appendices.
+6. **Operator Surface** for ingest, review, approval, export, and tracked questions.
 
 ## Repository map
 
@@ -51,10 +73,11 @@ This repo is structured to help Codex implement the system modularly and milesto
 │   ├── control-plane
 │   └── web
 ├── docs
+│   ├── ACTIVE_DOCS.md
 │   ├── architecture
+│   ├── archive
 │   ├── benchmarks
-│   ├── ops
-│   └── adrs
+│   └── ops
 ├── packages
 │   ├── codex-runtime
 │   ├── config
@@ -64,36 +87,26 @@ This repo is structured to help Codex implement the system modularly and milesto
 │   └── testkit
 ├── plans
 │   ├── ROADMAP.md
-│   ├── EP-0001-mission-spine.md
+│   ├── FP-0001-pocket-cfo-pivot-foundation.md
 │   └── templates
 └── .agents
     └── skills
 ```
 
-## Immediate implementation order
+## Immediate build order
 
-1. Read `START_HERE.md`.
-2. Read `AGENTS.md`.
-3. Read `PLANS.md`.
-4. Read `plans/ROADMAP.md`.
-5. Start with `plans/EP-0001-mission-spine.md`.
-6. Keep all progress updates inside the ExecPlan while working.
-7. Do not skip tests, replay logging, or docs updates.
+1. Read `docs/ACTIVE_DOCS.md`.
+2. Read `START_HERE.md`.
+3. Read `AGENTS.md`.
+4. Read `PLANS.md`.
+5. Read `plans/ROADMAP.md`.
+6. Start with `plans/FP-0001-pocket-cfo-pivot-foundation.md`.
+7. Keep progress updates inside the active Finance Plan while working.
+8. Do not delete legacy engineering modules until the finance replacement path exists and a smoke proves it.
 
 ## Local development
 
-### Prerequisites
-
-- Node 22+
-- pnpm 10+
-- Docker Desktop or compatible container runtime
-- A GitHub App if you want to exercise M2.1 installation sync or M2.2 webhook ingress locally
-- Codex app or Codex CLI installed locally
-
-M2.4 now extends that GitHub slice: when a mission resolves to a synced writable repository row, successful executor runs can publish a deterministic branch, open a draft PR through the GitHub App installation, and persist a durable `pr_link` artifact. Mission repo targeting is now narrow but friendlier: Pocket CTO can normalize an exact `owner/repo`, a unique synced short repo name, or the single active synced repo in one-repo local setups. See [docs/ops/local-dev.md](docs/ops/local-dev.md) for the current permission and smoke-test details.
-M2.7 now adds a truthful GitHub issue-intake seam on top of persisted webhook envelopes: `GET /github/intake/issues` lists actionable stored issue deliveries, and `POST /github/intake/issues/:deliveryId/create-mission` turns one persisted GitHub issue into an idempotently bound build mission without using issue comments as mission creators.
-
-### Bootstrap
+The repo still boots with the existing monorepo structure and internal package names.
 
 ```bash
 cp .env.example .env
@@ -102,34 +115,15 @@ pnpm install
 pnpm db:generate
 pnpm db:migrate
 pnpm dev
-pnpm dev:worker   # in a second terminal once task execution work begins
 ```
 
-For the local GitHub App and webhook setup, use the local-dev guide in `docs/ops/local-dev.md`.
-M2.2 now expects `GITHUB_WEBHOOK_SECRET` for live `POST /github/webhooks` ingress.
-With `pnpm dev` running, `http://localhost:3000/` is now the operator home and `http://localhost:3000/missions` is the newest-first mission list; the text-intake box on those surfaces reuses `POST /missions/text` and redirects into mission detail.
-Those same surfaces now include a small GitHub issue intake section when persisted issue envelopes exist locally.
-If no live `issues` delivery is stored yet, you can run a truthful local signed ingress replay with `pnpm smoke:github-issue-intake:local` after `pnpm dev`; see [docs/ops/local-dev.md](docs/ops/local-dev.md).
-For deterministic backend discovery work, the operator home and mission list now include a typed discovery-intake card, and `POST /missions/discovery` still creates the stored-state discovery mission without natural-language parsing or Codex runtime execution.
-Use `pnpm smoke:m3-discovery:live` for the packaged end-to-end discovery proof path; see [docs/ops/local-dev.md](docs/ops/local-dev.md).
-
-### Quality gates
-
-```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm check
-```
+Use `docs/ops/local-dev.md` for the pivot-aware operating pattern.
+During F0 the important success is that the repo becomes **Pocket CFO in its active docs and Codex guidance** without destabilizing the working codebase.
 
 ## North star
 
 The hero behavior is:
 
-> a vague mobile request becomes a governed software mission with a plan, isolated execution, proof, and a one-tap approval card.
+> a founder or finance operator drops raw exports and documents into Pocket CFO, asks a typed finance question, and receives a cited answer, freshness posture, limitations, and a memo or packet that can survive outside chat.
 
 Everything in this repository should push toward that behavior.
-
-## License
-
-This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE).

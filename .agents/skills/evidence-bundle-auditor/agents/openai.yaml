@@ -1,7 +1,7 @@
 interface:
   display_name: "Evidence Bundle Auditor"
-  short_description: "Audit mission outputs for proof, replay, and approval readiness."
+  short_description: "Audit finance mission outputs for evidence, freshness, and review readiness."
   brand_color: "#B45309"
-  default_prompt: "Audit the mission-facing outputs and ensure the evidence bundle is complete."
+  default_prompt: "Audit the finance-facing outputs and ensure the evidence bundle is complete."
 policy:
   allow_implicit_invocation: true
