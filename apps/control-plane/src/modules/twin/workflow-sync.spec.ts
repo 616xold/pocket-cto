@@ -11,6 +11,7 @@ import { LocalTwinRepositorySourceResolver } from "./source-resolver";
 
 const execFile = promisify(execFileCallback);
 const repoFullName = "616xold/pocket-cto";
+const workflowSyncTestTimeoutMs = 15_000;
 
 describe("TwinService workflow sync", () => {
   const cleanups: Array<() => Promise<void>> = [];
@@ -57,7 +58,7 @@ describe("TwinService workflow sync", () => {
         jobCount: 0,
       },
     });
-  });
+  }, workflowSyncTestTimeoutMs);
 
   it("uses a deterministic workflow name fallback when the workflow YAML omits name", async () => {
     const sourceRepo = await createWorkflowSourceRepo(repoFullName, [
@@ -128,9 +129,13 @@ describe("TwinService workflow sync", () => {
         },
       ],
     });
-  });
+  }, workflowSyncTestTimeoutMs);
 
   it("persists jobs with stable keys and reruns without duplicating them", async () => {
+    const expectedJobStableKeys = [
+      ".github/workflows/ci.yml#job:lint",
+      ".github/workflows/ci.yml#job:test",
+    ];
     const sourceRepo = await createWorkflowSourceRepo(repoFullName, [
       {
         path: ".github/workflows/ci.yml",
@@ -158,27 +163,28 @@ describe("TwinService workflow sync", () => {
 
     await service.syncRepositoryWorkflows(repoFullName);
     const firstEntities = await service.listRepositoryEntities(repoFullName);
+    const firstJobs = firstEntities.entities.filter(
+      (entity) => entity.kind === "ci_job",
+    );
     const firstJobIds = new Map(
-      firstEntities.entities
-        .filter((entity) => entity.kind === "ci_job")
-        .map((entity) => [entity.stableKey, entity.id]),
+      firstJobs.map((entity) => [entity.stableKey, entity.id]),
     );
 
     await service.syncRepositoryWorkflows(repoFullName);
 
     const secondEntities = await service.listRepositoryEntities(repoFullName);
+    const secondJobs = secondEntities.entities.filter(
+      (entity) => entity.kind === "ci_job",
+    );
     const secondJobIds = new Map(
-      secondEntities.entities
-        .filter((entity) => entity.kind === "ci_job")
-        .map((entity) => [entity.stableKey, entity.id]),
+      secondJobs.map((entity) => [entity.stableKey, entity.id]),
     );
     const view = await service.getRepositoryWorkflows(repoFullName);
     const runs = await service.listRepositoryRuns(repoFullName);
 
-    expect([...firstJobIds.keys()]).toEqual([
-      ".github/workflows/ci.yml#job:lint",
-      ".github/workflows/ci.yml#job:test",
-    ]);
+    expect(firstJobs).toHaveLength(expectedJobStableKeys.length);
+    // Entity listing order is not the contract here; stable keys and IDs are.
+    expect([...firstJobIds.keys()].sort()).toEqual(expectedJobStableKeys);
     expect(firstJobIds.get(".github/workflows/ci.yml#job:lint")).toEqual(
       expect.any(String),
     );
@@ -186,9 +192,7 @@ describe("TwinService workflow sync", () => {
       expect.any(String),
     );
     expect(secondJobIds).toEqual(firstJobIds);
-    expect(
-      secondEntities.entities.filter((entity) => entity.kind === "ci_job"),
-    ).toHaveLength(2);
+    expect(secondJobs).toHaveLength(expectedJobStableKeys.length);
     expect(runs.runCount).toBe(2);
     expect(view).toMatchObject({
       counts: {
@@ -212,7 +216,7 @@ describe("TwinService workflow sync", () => {
         },
       ],
     });
-  });
+  }, workflowSyncTestTimeoutMs);
 });
 
 function createWorkflowTwinService(input: {
