@@ -7,6 +7,7 @@ import type { MissionService } from "../modules/missions/service";
 import type { OrchestratorWorker } from "../modules/orchestrator/worker";
 import type { ReplayService } from "../modules/replay/service";
 import type { RuntimeControlService } from "../modules/runtime-codex/control-service";
+import type { SourceRegistryService } from "../modules/sources/service";
 import type { TwinService } from "../modules/twin/service";
 
 export type OperatorControlAvailability = DomainOperatorControlAvailability;
@@ -39,6 +40,11 @@ export type MissionServicePort = Pick<
 >;
 
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;
+
+export type SourceServicePort = Pick<
+  SourceRegistryService,
+  "createSource" | "getSource" | "listSources"
+>;
 
 export type TwinServicePort = Pick<
   TwinService,
@@ -83,6 +89,7 @@ export type AppContainer = {
     runtimeControlService: Pick<RuntimeControlService, "interruptActiveTurn">;
   };
   replayService: ReplayServicePort;
+  sourceService: SourceServicePort;
   twinService: TwinServicePort;
 };
 

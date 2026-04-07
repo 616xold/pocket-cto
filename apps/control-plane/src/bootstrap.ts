@@ -56,6 +56,12 @@ import {
 } from "./modules/runtime-codex/config";
 import { InMemoryRuntimeSessionRegistry } from "./modules/runtime-codex/live-session-registry";
 import { CodexRuntimeService } from "./modules/runtime-codex/service";
+import { DrizzleSourceRepository } from "./modules/sources/drizzle-repository";
+import {
+  InMemorySourceRepository,
+  type SourceRepository,
+} from "./modules/sources/repository";
+import { SourceRegistryService } from "./modules/sources/service";
 import {
   buildDefaultWorkspaceRoot,
   DrizzleWorkspaceRepository,
@@ -94,6 +100,7 @@ type SharedKernel = {
   proofBundleAssembly: ProofBundleAssemblyService;
   replayService: ReplayService;
   runtimeControlService: RuntimeControlService;
+  sourceService: SourceRegistryService;
   twinService: TwinService;
   liveSessionRegistry: InMemoryRuntimeSessionRegistry;
   worker: OrchestratorWorker | null;
@@ -188,6 +195,7 @@ export function createInMemoryContainer(): AppContainer {
     githubWebhookRepository: new InMemoryGitHubWebhookRepository(),
     missionRepository: new InMemoryMissionRepository(),
     replayRepository: new InMemoryReplayRepository(),
+    sourceRepository: new InMemorySourceRepository(),
     twinRepository: new InMemoryTwinRepository(),
   });
 
@@ -228,6 +236,7 @@ async function buildDrizzleKernel(input: {
     githubWebhookRepository: new DrizzleGitHubWebhookRepository(input.db),
     missionRepository: new DrizzleMissionRepository(input.db),
     replayRepository: new DrizzleReplayRepository(input.db),
+    sourceRepository: new DrizzleSourceRepository(input.db),
     twinRepository: new DrizzleTwinRepository(input.db),
   });
 
@@ -263,6 +272,7 @@ function buildSharedKernel(input: {
   githubWebhookRepository: GitHubWebhookRepository;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
   replayRepository: ConstructorParameters<typeof ReplayService>[0];
+  sourceRepository: SourceRepository;
   twinRepository: TwinRepository;
 }): SharedKernel {
   const githubAppConfig = resolveGitHubAppConfig({
@@ -322,6 +332,7 @@ function buildSharedKernel(input: {
       approvalReader: approvalService,
     },
   );
+  const sourceService = new SourceRegistryService(input.sourceRepository);
   const githubIssueIntakeService = new GitHubIssueIntakeService({
     bindingRepository: input.githubIssueIntakeRepository,
     missionRepository: input.missionRepository,
@@ -349,6 +360,7 @@ function buildSharedKernel(input: {
     proofBundleAssembly,
     replayService,
     runtimeControlService,
+    sourceService,
     twinService,
     worker: null,
   };
@@ -425,6 +437,7 @@ function toAppContainer(
       runtimeControlService: kernel.runtimeControlService,
     },
     replayService: kernel.replayService,
+    sourceService: kernel.sourceService,
     twinService: kernel.twinService,
   };
 }

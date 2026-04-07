@@ -2717,6 +2717,21 @@ async function createHarness(options?: {
         runtimeControlService,
       },
       replayService,
+      sourceService: {
+        async createSource() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getSource() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async listSources() {
+          return {
+            limit: 20,
+            sourceCount: 0,
+            sources: [],
+          };
+        },
+      },
       twinService: {
         async finishSyncRun() {
           throw new Error("Not implemented in orchestrator harness");

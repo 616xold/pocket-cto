@@ -81,12 +81,14 @@ describe("TwinService test suite sync", () => {
         status: "succeeded",
       },
     });
-    expect([...firstSuiteIds.keys()]).toEqual([
+    expect(sortStableKeys(firstSuiteIds.keys())).toEqual([
       "apps/web/package.json#script:test",
       "apps/web/package.json#script:test:e2e",
       "package.json#script:test",
     ]);
-    expect(secondSuiteIds).toEqual(firstSuiteIds);
+    expect(normalizeSuiteIdMap(secondSuiteIds)).toEqual(
+      normalizeSuiteIdMap(firstSuiteIds),
+    );
     expect(
       secondEntities.entities.filter((entity) => entity.kind === "test_suite"),
     ).toHaveLength(3);
@@ -97,21 +99,21 @@ describe("TwinService test suite sync", () => {
         mappedJobCount: 0,
         unmappedJobCount: 0,
       },
-      testSuites: [
-        {
-          manifestPath: "apps/web/package.json",
-          scriptKey: "test",
-        },
-        {
-          manifestPath: "apps/web/package.json",
-          scriptKey: "test:e2e",
-        },
-        {
-          manifestPath: "package.json",
-          scriptKey: "test",
-        },
-      ],
     });
+    expect(sortSuiteIdentities(view.testSuites)).toEqual([
+      {
+        manifestPath: "apps/web/package.json",
+        scriptKey: "test",
+      },
+      {
+        manifestPath: "apps/web/package.json",
+        scriptKey: "test:e2e",
+      },
+      {
+        manifestPath: "package.json",
+        scriptKey: "test",
+      },
+    ]);
   });
 
   it("maps obvious workflow job invocations to suites and keeps opaque jobs unmapped", async () => {
@@ -189,26 +191,6 @@ describe("TwinService test suite sync", () => {
         mappedJobCount: 2,
         unmappedJobCount: 1,
       },
-      testSuites: [
-        {
-          manifestPath: "apps/web/package.json",
-          scriptKey: "test:e2e",
-          matchedJobs: [
-            {
-              jobKey: "web-e2e",
-            },
-          ],
-        },
-        {
-          manifestPath: "package.json",
-          scriptKey: "test",
-          matchedJobs: [
-            {
-              jobKey: "root-test",
-            },
-          ],
-        },
-      ],
       unmappedJobs: [
         {
           jobKey: "opaque",
@@ -219,8 +201,67 @@ describe("TwinService test suite sync", () => {
         },
       ],
     });
+    expect(sortSuiteSummaries(summary.testSuites)).toEqual([
+      {
+        manifestPath: "apps/web/package.json",
+        scriptKey: "test:e2e",
+        matchedJobKeys: ["web-e2e"],
+      },
+      {
+        manifestPath: "package.json",
+        scriptKey: "test",
+        matchedJobKeys: ["root-test"],
+      },
+    ]);
   });
 });
+
+function sortStableKeys(keys: Iterable<string>) {
+  return [...keys].sort((left, right) => left.localeCompare(right));
+}
+
+function normalizeSuiteIdMap(suiteIds: Map<string, string>) {
+  return [...suiteIds.entries()].sort(([left], [right]) =>
+    left.localeCompare(right),
+  );
+}
+
+function sortSuiteIdentities(
+  testSuites: Array<{ manifestPath: string; scriptKey: string }>,
+) {
+  return [...testSuites]
+    .map((testSuite) => ({
+      manifestPath: testSuite.manifestPath,
+      scriptKey: testSuite.scriptKey,
+    }))
+    .sort(compareSuiteIdentity);
+}
+
+function sortSuiteSummaries(
+  testSuites: Array<{
+    manifestPath: string;
+    scriptKey: string;
+    matchedJobs: Array<{ jobKey: string }>;
+  }>,
+) {
+  return [...testSuites]
+    .map((testSuite) => ({
+      manifestPath: testSuite.manifestPath,
+      scriptKey: testSuite.scriptKey,
+      matchedJobKeys: testSuite.matchedJobs.map((job) => job.jobKey).sort(),
+    }))
+    .sort(compareSuiteIdentity);
+}
+
+function compareSuiteIdentity(
+  left: { manifestPath: string; scriptKey: string },
+  right: { manifestPath: string; scriptKey: string },
+) {
+  return (
+    left.manifestPath.localeCompare(right.manifestPath) ||
+    left.scriptKey.localeCompare(right.scriptKey)
+  );
+}
 
 function createTwinService(configuredSourceRepoRoot: string) {
   let tick = 0;
