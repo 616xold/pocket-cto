@@ -15,6 +15,7 @@ This slice matters now because later F1 parser work and later F2/F3 provenance-s
 - [x] 2026-04-08T00:55:19Z Read the active repo guidance, F1 roadmap context, F0/F1A plans, control-plane and DB AGENTS files, and source-provenance guidance; inspect the current source-registry module, schema, tests, env, and storage-related seams.
 - [x] 2026-04-08T00:55:19Z Implement additive domain contracts, DB schema, migration, control-plane storage helper, repository changes, and raw-ingest routes for `source_files` and `provenance_records`.
 - [x] 2026-04-08T00:55:19Z Add deterministic tests for service, repository, storage, and HTTP behavior, then run the required validation sequence through `pnpm ci:repro:current`.
+- [x] 2026-04-08T15:22:42Z Diagnose PR #62 `integration-db` against GitHub Actions logs, confirm the missing object-store service and bucket provisioning as the red CI cause, and validate the narrow CI hotfix through the failing storage spec, `pnpm ci:integration-db`, and `pnpm ci:repro:current`.
 - [ ] 2026-04-08T00:55:19Z If every required validation is green, create exactly one commit, push `codex/f1b-source-files-and-provenance-local-v1`, and create or report the PR into `main`.
 
 ## Surprises & Discoveries
@@ -30,6 +31,9 @@ This slice matters now because later F1 parser work and later F2/F3 provenance-s
 
 - Observation: the first clean-room `pnpm ci:repro:current` run exposed a deterministic failure in `src/modules/twin/codeowners-discovery.spec.ts` because the test wrote files before the `.github` and `docs` directories were fully created.
   Evidence: the repro run failed inside the temp worktree until the spec awaited the directory creation before calling `writeFile`.
+
+- Observation: PR #62 `integration-db` on GitHub Actions exported S3 env vars for the new F1B storage surface but only provisioned Postgres, so `src/modules/sources/storage.spec.ts` failed with `ECONNREFUSED` against `127.0.0.1:9000`.
+  Evidence: `gh run view 24112600278 -R 616xold/pocket-cfo --log-failed` showed the `S3SourceFileStorage` spec failing while the workflow job only started the Postgres service container.
 
 ## Decision Log
 
@@ -47,6 +51,9 @@ This slice matters now because later F1 parser work and later F2/F3 provenance-s
 
 - Decision: keep GitHub connector work explicitly out of scope and keep source-domain replay out of scope for this slice.
   Rationale: the user forbids widening into connector replacement or later-phase work; provenance records provide the requested additive audit trail while replay remains mission-scoped today and would otherwise broaden the slice.
+
+- Decision: keep the PR #62 hotfix inside CI provisioning and shared repro defaults instead of changing F1B source-domain code or tests.
+  Rationale: the failing log proved the regression was environmental rather than product logic, so the narrow truthful fix is to provision MinIO plus the expected bucket in GitHub Actions and align `tools/ci-repro-shared.mjs` with the same object-store defaults.
 
 ## Context and Orientation
 
@@ -204,4 +211,4 @@ Validation passed for the targeted source-ingest tests, the required twin guard 
 The only surprise during validation was an unrelated twin reproducibility race in the CODEOWNERS discovery spec, which was fixed narrowly by awaiting directory creation so the existing reproducibility surface stayed green.
 
 Remaining work at the time of this update is publication only:
-create the single requested commit, push the existing feature branch, and create or report the PR into `main`.
+create the single requested hotfix commit, push the existing feature branch, and watch PR #62 checks to green.

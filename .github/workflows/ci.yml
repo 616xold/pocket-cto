@@ -23,10 +23,11 @@ env:
   TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/pocket_cto_test
   ARTIFACT_S3_ENDPOINT: http://127.0.0.1:9000
   ARTIFACT_S3_REGION: us-east-1
-  ARTIFACT_S3_BUCKET: pocket-cto-ci-artifacts
-  ARTIFACT_S3_ACCESS_KEY: ci-access-key
-  ARTIFACT_S3_SECRET_KEY: ci-secret-key
+  ARTIFACT_S3_BUCKET: pocket-cto-artifacts
+  ARTIFACT_S3_ACCESS_KEY: minioadmin
+  ARTIFACT_S3_SECRET_KEY: minioadmin
   ARTIFACT_S3_FORCE_PATH_STYLE: "true"
+  SOURCE_OBJECT_PREFIX: sources
   CODEX_APP_SERVER_COMMAND: node
   CODEX_APP_SERVER_ARGS: --eval process.exit(0)
   CODEX_DEFAULT_MODEL: gpt-5.2-codex
@@ -82,11 +83,37 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      - name: Start MinIO
+        run: |
+          docker run --detach \
+            --name ci-minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER="${ARTIFACT_S3_ACCESS_KEY}" \
+            -e MINIO_ROOT_PASSWORD="${ARTIFACT_S3_SECRET_KEY}" \
+            minio/minio:latest server /data
       - name: Tool versions
         run: |
           node --version
           pnpm --version
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Create object storage bucket
+        run: |
+          docker run --rm \
+            --network host \
+            -e ARTIFACT_S3_ACCESS_KEY \
+            -e ARTIFACT_S3_BUCKET \
+            -e ARTIFACT_S3_ENDPOINT \
+            -e ARTIFACT_S3_SECRET_KEY \
+            --entrypoint /bin/sh \
+            minio/mc:latest -c '
+            set -eu
+            until (/usr/bin/mc alias set local "$ARTIFACT_S3_ENDPOINT" "$ARTIFACT_S3_ACCESS_KEY" "$ARTIFACT_S3_SECRET_KEY") do
+              echo "waiting for minio"
+              sleep 1
+            done
+            /usr/bin/mc mb -p "local/$ARTIFACT_S3_BUCKET" || true
+            /usr/bin/mc anonymous set none "local/$ARTIFACT_S3_BUCKET" || true
+            '
       - name: Run integration DB CI
         run: pnpm ci:integration-db
