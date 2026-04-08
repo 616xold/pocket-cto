@@ -29,7 +29,11 @@ import {
   RuntimeInterruptDeliveryError,
   RuntimeTaskNotFoundError,
 } from "../modules/runtime-codex/errors";
-import { SourceNotFoundError } from "../modules/sources/errors";
+import {
+  SourceFileNotFoundError,
+  SourceFilePayloadParseError,
+  SourceNotFoundError,
+} from "../modules/sources/errors";
 import { TwinSourceUnavailableError } from "../modules/twin/errors";
 
 export type ApiErrorCode =
@@ -54,6 +58,7 @@ export type ApiErrorCode =
   | "github_webhook_not_configured"
   | "live_control_unavailable"
   | "mission_not_found"
+  | "source_file_not_found"
   | "source_not_found"
   | "internal_error"
   | "task_conflict"
@@ -203,6 +208,36 @@ function mapHttpError(error: unknown): ErrorMapping {
         error: {
           code: "source_not_found",
           message: "Source not found",
+        },
+      },
+    };
+  }
+
+  if (error instanceof SourceFileNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        error: {
+          code: "source_file_not_found",
+          message: "Source file not found",
+        },
+      },
+    };
+  }
+
+  if (error instanceof SourceFilePayloadParseError) {
+    return {
+      statusCode: 400,
+      body: {
+        error: {
+          code: "invalid_request",
+          message: "Invalid request",
+          details: [
+            {
+              path: "body",
+              message: error.message,
+            },
+          ],
         },
       },
     };

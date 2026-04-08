@@ -51,6 +51,7 @@ export const EnvSchema = z.object({
   ARTIFACT_S3_ACCESS_KEY: z.string().min(1),
   ARTIFACT_S3_SECRET_KEY: z.string().min(1),
   ARTIFACT_S3_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
+  SOURCE_OBJECT_PREFIX: z.string().min(1).default("sources"),
   CODEX_APP_SERVER_COMMAND: z.string().default("codex"),
   CODEX_APP_SERVER_ARGS: z.string().default("app-server"),
   CODEX_DEFAULT_MODEL: z.string().default("gpt-5.2-codex"),

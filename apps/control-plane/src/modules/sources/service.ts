@@ -1,21 +1,31 @@
+import { createHash } from "node:crypto";
 import {
   CreateSourceInputSchema,
+  RegisterSourceFileMetadataSchema,
+  SourceFileDetailViewSchema,
+  SourceFileListViewSchema,
   SourceDetailViewSchema,
   SourceListViewSchema,
   type CreateSourceInput,
+  type RegisterSourceFileMetadata,
+  type SourceFileDetailView,
+  type SourceFileListView,
+  type SourceFileSummary,
   type SourceDetailView,
   type SourceListView,
   type SourceSnapshotRecord,
   type SourceSummary,
 } from "@pocket-cto/domain";
-import { SourceNotFoundError } from "./errors";
+import { SourceFileNotFoundError, SourceNotFoundError } from "./errors";
 import type { SourceRepository } from "./repository";
+import type { SourceFileStorage } from "./storage";
 
 export class SourceRegistryService {
   private readonly now: () => Date;
 
   constructor(
     private readonly repository: SourceRepository,
+    private readonly storage: SourceFileStorage,
     now?: () => Date,
   ) {
     this.now = now ?? (() => new Date());
@@ -95,6 +105,145 @@ export class SourceRegistryService {
       limit: input.limit,
       sourceCount: summaries.length,
       sources: summaries,
+    });
+  }
+
+  async registerSourceFile(
+    sourceId: string,
+    metadata: RegisterSourceFileMetadata,
+    body: Buffer,
+  ): Promise<SourceFileDetailView> {
+    const parsed = RegisterSourceFileMetadataSchema.parse(metadata);
+    const source = await this.repository.getSourceById(sourceId);
+
+    if (!source) {
+      throw new SourceNotFoundError(sourceId);
+    }
+
+    const recordedAt = this.now().toISOString();
+    const capturedAt = parsed.capturedAt ?? recordedAt;
+    const checksumSha256 = createHash("sha256").update(body).digest("hex");
+    const storedFile = await this.storage.write({
+      body,
+      checksumSha256,
+      mediaType: parsed.mediaType,
+      originalFileName: parsed.originalFileName,
+      sourceId,
+    });
+
+    const detail = await this.repository.transaction(async (session) => {
+      const nextVersion =
+        (await this.repository.getLatestSnapshotVersion(sourceId, session)) + 1;
+      const snapshot = await this.repository.createSnapshot(
+        {
+          sourceId,
+          version: nextVersion,
+          originalFileName: parsed.originalFileName,
+          mediaType: parsed.mediaType,
+          sizeBytes: body.byteLength,
+          checksumSha256,
+          storageKind: storedFile.storageKind,
+          storageRef: storedFile.storageRef,
+          capturedAt,
+          ingestStatus: "registered",
+        },
+        session,
+      );
+      const sourceFile = await this.repository.createSourceFile(
+        {
+          sourceId,
+          sourceSnapshotId: snapshot.id,
+          originalFileName: parsed.originalFileName,
+          mediaType: parsed.mediaType,
+          sizeBytes: body.byteLength,
+          checksumSha256,
+          storageKind: storedFile.storageKind,
+          storageRef: storedFile.storageRef,
+          createdBy: parsed.createdBy,
+          capturedAt,
+        },
+        session,
+      );
+      const provenanceRecord = await this.repository.createProvenanceRecord(
+        {
+          sourceId,
+          sourceSnapshotId: snapshot.id,
+          sourceFileId: sourceFile.id,
+          kind: "source_file_registered",
+          recordedBy: parsed.createdBy,
+          recordedAt,
+        },
+        session,
+      );
+
+      return {
+        provenanceRecords: [provenanceRecord],
+        snapshot,
+        sourceFile,
+      };
+    });
+
+    return SourceFileDetailViewSchema.parse(detail);
+  }
+
+  async listSourceFiles(sourceId: string): Promise<SourceFileListView> {
+    const source = await this.repository.getSourceById(sourceId);
+
+    if (!source) {
+      throw new SourceNotFoundError(sourceId);
+    }
+
+    const [sourceFiles, snapshots] = await Promise.all([
+      this.repository.listSourceFilesBySourceId(sourceId),
+      this.repository.listSnapshotsBySourceId(sourceId),
+    ]);
+    const snapshotVersionById = new Map(
+      snapshots.map((snapshot) => [snapshot.id, snapshot.version]),
+    );
+    const files: SourceFileSummary[] = sourceFiles.map((sourceFile) => {
+      const snapshotVersion = snapshotVersionById.get(sourceFile.sourceSnapshotId);
+
+      if (!snapshotVersion) {
+        throw new Error(
+          `Source file ${sourceFile.id} is missing its linked snapshot version`,
+        );
+      }
+
+      return {
+        ...sourceFile,
+        snapshotVersion,
+      };
+    });
+
+    return SourceFileListViewSchema.parse({
+      fileCount: files.length,
+      files,
+      sourceId,
+    });
+  }
+
+  async getSourceFile(sourceFileId: string): Promise<SourceFileDetailView> {
+    const sourceFile = await this.repository.getSourceFileById(sourceFileId);
+
+    if (!sourceFile) {
+      throw new SourceFileNotFoundError(sourceFileId);
+    }
+
+    const [snapshot, provenanceRecords] = await Promise.all([
+      this.repository.getSnapshotById(sourceFile.sourceSnapshotId),
+      this.repository.listProvenanceRecordsBySourceFileId(sourceFile.id),
+    ]);
+
+    if (!snapshot) {
+      throw new Error(
+        `Source file ${sourceFile.id} is missing its linked snapshot`,
+      );
+    }
+
+    return SourceFileDetailViewSchema.parse({
+      provenanceRecords,
+      snapshot,
+      sourceFile,
     });
   }
 }

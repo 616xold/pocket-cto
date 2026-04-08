@@ -80,6 +80,40 @@ export const CreateSourceInputSchema = z.object({
   snapshot: CreateSourceSnapshotInputSchema,
 });
 
+export const ProvenanceRecordKindSchema = z.enum(["source_file_registered"]);
+
+export const SourceFileRecordSchema = z.object({
+  id: z.string().uuid(),
+  sourceId: z.string().uuid(),
+  sourceSnapshotId: z.string().uuid(),
+  originalFileName: z.string().min(1),
+  mediaType: z.string().min(1),
+  sizeBytes: z.number().int().nonnegative(),
+  checksumSha256: SourceChecksumSha256Schema,
+  storageKind: SourceSnapshotStorageKindSchema,
+  storageRef: z.string().min(1),
+  createdBy: z.string().min(1),
+  capturedAt: z.string().datetime({ offset: true }),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+export const ProvenanceRecordSchema = z.object({
+  id: z.string().uuid(),
+  sourceId: z.string().uuid(),
+  sourceSnapshotId: z.string().uuid(),
+  sourceFileId: z.string().uuid(),
+  kind: ProvenanceRecordKindSchema,
+  recordedBy: z.string().min(1),
+  recordedAt: z.string().datetime({ offset: true }),
+});
+
+export const RegisterSourceFileMetadataSchema = z.object({
+  originalFileName: z.string().trim().min(1),
+  mediaType: z.string().trim().min(1),
+  createdBy: z.string().trim().min(1).default("operator"),
+  capturedAt: z.string().datetime({ offset: true }).optional(),
+});
+
 export const SourceSummarySchema = SourceRecordSchema.extend({
   latestSnapshot: SourceSnapshotRecordSchema.nullable(),
   snapshotCount: z.number().int().nonnegative(),
@@ -96,6 +130,22 @@ export const SourceDetailViewSchema = z.object({
   snapshots: z.array(SourceSnapshotRecordSchema),
 });
 
+export const SourceFileSummarySchema = SourceFileRecordSchema.extend({
+  snapshotVersion: z.number().int().positive(),
+});
+
+export const SourceFileListViewSchema = z.object({
+  sourceId: z.string().uuid(),
+  fileCount: z.number().int().nonnegative(),
+  files: z.array(SourceFileSummarySchema),
+});
+
+export const SourceFileDetailViewSchema = z.object({
+  sourceFile: SourceFileRecordSchema,
+  snapshot: SourceSnapshotRecordSchema,
+  provenanceRecords: z.array(ProvenanceRecordSchema),
+});
+
 export type SourceKind = z.infer<typeof SourceKindSchema>;
 export type SourceOriginKind = z.infer<typeof SourceOriginKindSchema>;
 export type SourceSnapshotStorageKind = z.infer<
@@ -110,6 +160,15 @@ export type CreateSourceInput = z.infer<typeof CreateSourceInputSchema>;
 export type CreateSourceSnapshotInput = z.infer<
   typeof CreateSourceSnapshotInputSchema
 >;
+export type ProvenanceRecordKind = z.infer<typeof ProvenanceRecordKindSchema>;
+export type SourceFileRecord = z.infer<typeof SourceFileRecordSchema>;
+export type ProvenanceRecord = z.infer<typeof ProvenanceRecordSchema>;
+export type RegisterSourceFileMetadata = z.infer<
+  typeof RegisterSourceFileMetadataSchema
+>;
 export type SourceSummary = z.infer<typeof SourceSummarySchema>;
 export type SourceListView = z.infer<typeof SourceListViewSchema>;
 export type SourceDetailView = z.infer<typeof SourceDetailViewSchema>;
+export type SourceFileSummary = z.infer<typeof SourceFileSummarySchema>;
+export type SourceFileListView = z.infer<typeof SourceFileListViewSchema>;
+export type SourceFileDetailView = z.infer<typeof SourceFileDetailViewSchema>;

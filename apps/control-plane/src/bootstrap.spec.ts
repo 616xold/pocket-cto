@@ -304,12 +304,25 @@ function createAppContainer(
       async getSource() {
         throw new Error("getSource should not be called in this test");
       },
+      async getSourceFile() {
+        throw new Error("getSourceFile should not be called in this test");
+      },
+      async listSourceFiles() {
+        return {
+          fileCount: 0,
+          files: [],
+          sourceId: "00000000-0000-4000-8000-000000000000",
+        };
+      },
       async listSources() {
         return {
           limit: 20,
           sourceCount: 0,
           sources: [],
         };
+      },
+      async registerSourceFile() {
+        throw new Error("registerSourceFile should not be called in this test");
       },
     } as AppContainer["sourceService"],
     twinService: {

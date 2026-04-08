@@ -63,6 +63,11 @@ import {
 } from "./modules/sources/repository";
 import { SourceRegistryService } from "./modules/sources/service";
 import {
+  InMemorySourceFileStorage,
+  S3SourceFileStorage,
+  type SourceFileStorage,
+} from "./modules/sources/storage";
+import {
   buildDefaultWorkspaceRoot,
   DrizzleWorkspaceRepository,
   InMemoryWorkspaceRepository,
@@ -195,7 +200,8 @@ export function createInMemoryContainer(): AppContainer {
     githubWebhookRepository: new InMemoryGitHubWebhookRepository(),
     missionRepository: new InMemoryMissionRepository(),
     replayRepository: new InMemoryReplayRepository(),
-    sourceRepository: new InMemorySourceRepository(),
+  sourceRepository: new InMemorySourceRepository(),
+    sourceFileStorage: new InMemorySourceFileStorage(),
     twinRepository: new InMemoryTwinRepository(),
   });
 
@@ -237,6 +243,7 @@ async function buildDrizzleKernel(input: {
     missionRepository: new DrizzleMissionRepository(input.db),
     replayRepository: new DrizzleReplayRepository(input.db),
     sourceRepository: new DrizzleSourceRepository(input.db),
+    sourceFileStorage: new S3SourceFileStorage(input.env),
     twinRepository: new DrizzleTwinRepository(input.db),
   });
 
@@ -273,6 +280,7 @@ function buildSharedKernel(input: {
   missionRepository: ConstructorParameters<typeof MissionService>[1];
   replayRepository: ConstructorParameters<typeof ReplayService>[0];
   sourceRepository: SourceRepository;
+  sourceFileStorage: SourceFileStorage;
   twinRepository: TwinRepository;
 }): SharedKernel {
   const githubAppConfig = resolveGitHubAppConfig({
@@ -332,7 +340,10 @@ function buildSharedKernel(input: {
       approvalReader: approvalService,
     },
   );
-  const sourceService = new SourceRegistryService(input.sourceRepository);
+  const sourceService = new SourceRegistryService(
+    input.sourceRepository,
+    input.sourceFileStorage,
+  );
   const githubIssueIntakeService = new GitHubIssueIntakeService({
     bindingRepository: input.githubIssueIntakeRepository,
     missionRepository: input.missionRepository,

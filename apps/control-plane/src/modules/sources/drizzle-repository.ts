@@ -1,5 +1,7 @@
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import {
+  provenanceRecords,
+  sourceFiles,
   sourceSnapshots,
   sources,
   type Db,
@@ -10,9 +12,16 @@ import {
   getDbExecutor,
   type PersistenceSession,
 } from "../../lib/persistence";
-import { mapSourceRow, mapSourceSnapshotRow } from "./repository-mappers";
+import {
+  mapProvenanceRecordRow,
+  mapSourceFileRow,
+  mapSourceRow,
+  mapSourceSnapshotRow,
+} from "./repository-mappers";
 import type {
+  CreateProvenanceRecordInput,
   CreateSourceRecordInput,
+  CreateSourceFileRecordInput,
   CreateSourceSnapshotRecordInput,
   SourceRepository,
 } from "./repository";
@@ -87,6 +96,58 @@ export class DrizzleSourceRepository implements SourceRepository {
     return mapSourceSnapshotRow(row);
   }
 
+  async createSourceFile(
+    input: CreateSourceFileRecordInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(sourceFiles)
+      .values({
+        sourceId: input.sourceId,
+        sourceSnapshotId: input.sourceSnapshotId,
+        originalFileName: input.originalFileName,
+        mediaType: input.mediaType,
+        sizeBytes: input.sizeBytes,
+        checksumSha256: input.checksumSha256,
+        storageKind: input.storageKind,
+        storageRef: input.storageRef,
+        createdBy: input.createdBy,
+        capturedAt: new Date(input.capturedAt),
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Source file insert did not return a row");
+    }
+
+    return mapSourceFileRow(row);
+  }
+
+  async createProvenanceRecord(
+    input: CreateProvenanceRecordInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(provenanceRecords)
+      .values({
+        sourceId: input.sourceId,
+        sourceSnapshotId: input.sourceSnapshotId,
+        sourceFileId: input.sourceFileId,
+        kind: input.kind,
+        recordedBy: input.recordedBy,
+        recordedAt: new Date(input.recordedAt),
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Provenance record insert did not return a row");
+    }
+
+    return mapProvenanceRecordRow(row);
+  }
+
   async getSourceById(sourceId: string, session?: PersistenceSession) {
     const executor = this.getExecutor(session);
     const [row] = await executor
@@ -96,6 +157,28 @@ export class DrizzleSourceRepository implements SourceRepository {
       .limit(1);
 
     return row ? mapSourceRow(row) : null;
+  }
+
+  async getSnapshotById(snapshotId: string, session?: PersistenceSession) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .select()
+      .from(sourceSnapshots)
+      .where(eq(sourceSnapshots.id, snapshotId))
+      .limit(1);
+
+    return row ? mapSourceSnapshotRow(row) : null;
+  }
+
+  async getSourceFileById(sourceFileId: string, session?: PersistenceSession) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .select()
+      .from(sourceFiles)
+      .where(eq(sourceFiles.id, sourceFileId))
+      .limit(1);
+
+    return row ? mapSourceFileRow(row) : null;
   }
 
   async listSources(
@@ -110,6 +193,21 @@ export class DrizzleSourceRepository implements SourceRepository {
       .limit(input.limit);
 
     return rows.map(mapSourceRow);
+  }
+
+  async getLatestSnapshotVersion(
+    sourceId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .select({ version: sourceSnapshots.version })
+      .from(sourceSnapshots)
+      .where(eq(sourceSnapshots.sourceId, sourceId))
+      .orderBy(desc(sourceSnapshots.version))
+      .limit(1);
+
+    return row?.version ?? 0;
   }
 
   async listSnapshotsBySourceId(
@@ -150,6 +248,38 @@ export class DrizzleSourceRepository implements SourceRepository {
       );
 
     return rows.map(mapSourceSnapshotRow);
+  }
+
+  async listSourceFilesBySourceId(
+    sourceId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(sourceFiles)
+      .where(eq(sourceFiles.sourceId, sourceId))
+      .orderBy(
+        desc(sourceFiles.capturedAt),
+        desc(sourceFiles.createdAt),
+        asc(sourceFiles.originalFileName),
+      );
+
+    return rows.map(mapSourceFileRow);
+  }
+
+  async listProvenanceRecordsBySourceFileId(
+    sourceFileId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(provenanceRecords)
+      .where(eq(provenanceRecords.sourceFileId, sourceFileId))
+      .orderBy(desc(provenanceRecords.recordedAt), asc(provenanceRecords.id));
+
+    return rows.map(mapProvenanceRecordRow);
   }
 
   private getExecutor(session?: PersistenceSession) {

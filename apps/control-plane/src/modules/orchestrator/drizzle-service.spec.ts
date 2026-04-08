@@ -2724,12 +2724,25 @@ async function createHarness(options?: {
         async getSource() {
           throw new Error("Not implemented in orchestrator harness");
         },
+        async getSourceFile() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async listSourceFiles() {
+          return {
+            fileCount: 0,
+            files: [],
+            sourceId: "00000000-0000-4000-8000-000000000000",
+          };
+        },
         async listSources() {
           return {
             limit: 20,
             sourceCount: 0,
             sources: [],
           };
+        },
+        async registerSourceFile() {
+          throw new Error("Not implemented in orchestrator harness");
         },
       },
       twinService: {

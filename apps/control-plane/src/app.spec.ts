@@ -242,6 +242,133 @@ describe("control-plane app", () => {
     });
   });
 
+  it("POST /sources/:sourceId/files stores raw bytes and exposes source-file provenance views", async () => {
+    const app = await createTestApp(apps);
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/sources",
+      payload: {
+        kind: "document",
+        name: "April board deck",
+        createdBy: "finance-operator",
+        snapshot: {
+          originalFileName: "april-board-deck-link.txt",
+          mediaType: "text/plain",
+          sizeBytes: 20,
+          checksumSha256:
+            "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          storageKind: "external_url",
+          storageRef: "https://example.com/board/april-link.txt",
+          capturedAt: "2026-04-08T00:00:00.000Z",
+        },
+      },
+    });
+    const created = createResponse.json() as { source: { id: string } };
+
+    const uploadResponse = await app.inject({
+      method: "POST",
+      url: `/sources/${created.source.id}/files?originalFileName=april-board-deck.pdf&mediaType=application%2Fpdf&createdBy=finance-operator&capturedAt=2026-04-08T00:05:00.000Z`,
+      headers: {
+        "content-type": "application/octet-stream",
+      },
+      payload: Buffer.from("april board deck pdf bytes"),
+    });
+
+    expect(uploadResponse.statusCode).toBe(201);
+    expect(uploadResponse.json()).toMatchObject({
+      sourceFile: {
+        sourceId: created.source.id,
+        originalFileName: "april-board-deck.pdf",
+        mediaType: "application/pdf",
+        sizeBytes: 26,
+        storageKind: "object_store",
+        createdBy: "finance-operator",
+      },
+      snapshot: {
+        sourceId: created.source.id,
+        version: 2,
+        originalFileName: "april-board-deck.pdf",
+        mediaType: "application/pdf",
+        sizeBytes: 26,
+        storageKind: "object_store",
+        ingestStatus: "registered",
+      },
+      provenanceRecords: [
+        {
+          sourceId: created.source.id,
+          kind: "source_file_registered",
+          recordedBy: "finance-operator",
+        },
+      ],
+    });
+
+    const uploaded = uploadResponse.json() as {
+      sourceFile: { id: string };
+      snapshot: { id: string };
+    };
+    const [fileListResponse, fileDetailResponse, sourceDetailResponse] =
+      await Promise.all([
+        app.inject({
+          method: "GET",
+          url: `/sources/${created.source.id}/files`,
+        }),
+        app.inject({
+          method: "GET",
+          url: `/sources/files/${uploaded.sourceFile.id}`,
+        }),
+        app.inject({
+          method: "GET",
+          url: `/sources/${created.source.id}`,
+        }),
+      ]);
+
+    expect(fileListResponse.statusCode).toBe(200);
+    expect(fileListResponse.json()).toMatchObject({
+      sourceId: created.source.id,
+      fileCount: 1,
+      files: [
+        {
+          id: uploaded.sourceFile.id,
+          snapshotVersion: 2,
+        },
+      ],
+    });
+    expect(fileDetailResponse.statusCode).toBe(200);
+    expect(fileDetailResponse.json()).toMatchObject({
+      sourceFile: {
+        id: uploaded.sourceFile.id,
+      },
+      snapshot: {
+        id: uploaded.snapshot.id,
+        version: 2,
+      },
+      provenanceRecords: [
+        {
+          sourceFileId: uploaded.sourceFile.id,
+        },
+      ],
+    });
+    expect(sourceDetailResponse.statusCode).toBe(200);
+    const sourceDetail = sourceDetailResponse.json() as {
+      snapshots: Array<{
+        id: string;
+        version: number;
+        originalFileName: string;
+      }>;
+    };
+
+    expect(sourceDetail.snapshots[0]).toMatchObject({
+      id: uploaded.snapshot.id,
+      version: 2,
+      originalFileName: "april-board-deck.pdf",
+    });
+    expect(sourceDetail.snapshots.map((snapshot) => snapshot.version)).toEqual([
+      2,
+      1,
+    ]);
+  });
+
   it("GET /sources/:sourceId returns 404 for an unknown source", async () => {
     const app = await createTestApp(apps);
 
@@ -255,6 +382,23 @@ describe("control-plane app", () => {
       error: {
         code: "source_not_found",
         message: "Source not found",
+      },
+    });
+  });
+
+  it("GET /sources/files/:sourceFileId returns 404 for an unknown source file", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/sources/files/11111111-1111-4111-8111-111111111111",
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      error: {
+        code: "source_file_not_found",
+        message: "Source file not found",
       },
     });
   });

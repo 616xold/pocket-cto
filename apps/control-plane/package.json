@@ -27,6 +27,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1026.0",
     "@pocket-cto/codex-runtime": "workspace:*",
     "@pocket-cto/config": "workspace:*",
     "@pocket-cto/db": "workspace:*",

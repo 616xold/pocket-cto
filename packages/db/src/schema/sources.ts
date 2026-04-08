@@ -34,6 +34,10 @@ export const sourceSnapshotIngestStatusEnum = pgEnum(
   ["registered", "queued", "processing", "ready", "failed"],
 );
 
+export const provenanceRecordKindEnum = pgEnum("provenance_record_kind", [
+  "source_file_registered",
+]);
+
 export const sources = pgTable(
   "sources",
   {
@@ -82,6 +86,63 @@ export const sourceSnapshots = pgTable(
       table.version,
     ),
     sourceSnapshotLookupIndex: index("source_snapshots_source_id_idx").on(
+      table.sourceId,
+    ),
+  }),
+);
+
+export const sourceFiles = pgTable(
+  "source_files",
+  {
+    id: id(),
+    sourceId: uuid("source_id")
+      .references(() => sources.id, { onDelete: "cascade" })
+      .notNull(),
+    sourceSnapshotId: uuid("source_snapshot_id")
+      .references(() => sourceSnapshots.id, { onDelete: "cascade" })
+      .notNull(),
+    originalFileName: text("original_file_name").notNull(),
+    mediaType: text("media_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    checksumSha256: text("checksum_sha256").notNull(),
+    storageKind: sourceSnapshotStorageKindEnum("storage_kind").notNull(),
+    storageRef: text("storage_ref").notNull(),
+    createdBy: text("created_by").notNull().default("operator"),
+    capturedAt: timestamp("captured_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => ({
+    sourceFilesSourceIndex: index("source_files_source_id_idx").on(table.sourceId),
+    sourceFilesSnapshotUnique: uniqueIndex(
+      "source_files_source_snapshot_id_key",
+    ).on(table.sourceSnapshotId),
+  }),
+);
+
+export const provenanceRecords = pgTable(
+  "provenance_records",
+  {
+    id: id(),
+    sourceId: uuid("source_id")
+      .references(() => sources.id, { onDelete: "cascade" })
+      .notNull(),
+    sourceSnapshotId: uuid("source_snapshot_id")
+      .references(() => sourceSnapshots.id, { onDelete: "cascade" })
+      .notNull(),
+    sourceFileId: uuid("source_file_id")
+      .references(() => sourceFiles.id, { onDelete: "cascade" })
+      .notNull(),
+    kind: provenanceRecordKindEnum("kind")
+      .notNull()
+      .default("source_file_registered"),
+    recordedBy: text("recorded_by").notNull().default("operator"),
+    recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    provenanceSourceFileIndex: index("provenance_records_source_file_id_idx").on(
+      table.sourceFileId,
+    ),
+    provenanceSourceIndex: index("provenance_records_source_id_idx").on(
       table.sourceId,
     ),
   }),

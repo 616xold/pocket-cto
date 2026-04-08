@@ -8,7 +8,12 @@ import {
   missions,
   replayEvents,
 } from "@pocket-cto/db";
-import type { sourceSnapshots, sources } from "@pocket-cto/db";
+import type {
+  provenanceRecords,
+  sourceFiles,
+  sourceSnapshots,
+  sources,
+} from "@pocket-cto/db";
 import { count, sql } from "drizzle-orm";
 
 const env = loadEnv();
@@ -30,6 +35,8 @@ export async function resetTestDatabase() {
       twin_edges,
       twin_entities,
       twin_sync_runs,
+      provenance_records,
+      source_files,
       source_snapshots,
       sources,
       github_issue_mission_bindings,
@@ -86,7 +93,9 @@ async function selectCount(
     | typeof replayEvents
     | typeof artifacts
     | typeof sources
-    | typeof sourceSnapshots,
+    | typeof sourceSnapshots
+    | typeof sourceFiles
+    | typeof provenanceRecords,
 ) {
   const [result] = await db.select({ count: count() }).from(table);
   return result?.count ?? 0;

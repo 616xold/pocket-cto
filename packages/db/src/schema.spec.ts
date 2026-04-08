@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { missionTasks, missions, sourceSnapshots, sources } from "./schema";
+import {
+  missionTasks,
+  missions,
+  provenanceRecords,
+  sourceFiles,
+  sourceSnapshots,
+  sources,
+} from "./schema";
 
 describe("db schema exports", () => {
   it("exposes core tables", () => {
@@ -7,5 +14,7 @@ describe("db schema exports", () => {
     expect(missionTasks).toBeDefined();
     expect(sources).toBeDefined();
     expect(sourceSnapshots).toBeDefined();
+    expect(sourceFiles).toBeDefined();
+    expect(provenanceRecords).toBeDefined();
   });
 });

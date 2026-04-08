@@ -43,7 +43,12 @@ export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;
 
 export type SourceServicePort = Pick<
   SourceRegistryService,
-  "createSource" | "getSource" | "listSources"
+  | "createSource"
+  | "getSource"
+  | "getSourceFile"
+  | "listSourceFiles"
+  | "listSources"
+  | "registerSourceFile"
 >;
 
 export type TwinServicePort = Pick<

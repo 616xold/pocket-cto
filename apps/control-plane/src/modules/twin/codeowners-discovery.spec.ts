@@ -27,12 +27,10 @@ describe("discoverCodeownersFile", () => {
       },
     );
     await Promise.all([
-      mkdir(join(sourceRepo.repoRoot, ".github"), {
-        recursive: true,
-      }),
-      mkdir(join(sourceRepo.repoRoot, "docs"), {
-        recursive: true,
-      }),
+      mkdir(join(sourceRepo.repoRoot, ".github"), { recursive: true }),
+      mkdir(join(sourceRepo.repoRoot, "docs"), { recursive: true }),
+    ]);
+    await Promise.all([
       writeFile(join(sourceRepo.repoRoot, ".github", "CODEOWNERS"), "* @platform\n"),
       writeFile(join(sourceRepo.repoRoot, "CODEOWNERS"), "* @root-owner\n"),
       writeFile(join(sourceRepo.repoRoot, "docs", "CODEOWNERS"), "* @docs-owner\n"),
