@@ -1,13 +1,13 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset and into early F1 source-ingest work.
+This repo is now past the Pocket CFO pivot-foundation reset and through the F1 source-ingest milestone.
 
 That means two things are true at once:
 
 - the active docs now define a finance evidence product
 - parts of the working codebase still reflect the older Pocket CTO implementation
 
-The goal of local development in the current repo state is to keep the repo green while extending the source-ingest-first Pocket CFO path without widening into later-phase work accidentally.
+The goal of local development in the current repo state is to keep the repo green while preserving the finished F1 source-ingest path and starting later-phase work only through an explicit active Finance Plan.
 
 ## Baseline bootstrap
 
@@ -50,7 +50,7 @@ For Pocket CFO, local development should move toward a source-ingest-first loop:
 5. refresh the CFO Wiki
 6. run discovery or reporting missions against stored state
 
-Not all of that is implemented yet during F1 closeout.
+Not all of that is implemented yet after F1.
 Use the docs to guide what gets built next.
 
 ## GitHub setup is optional

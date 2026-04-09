@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Pocket CTO",
-  description: "Evidence-native engineering mission control.",
+  title: "Pocket CFO",
+  description: "Evidence-native finance source ingest and operator review.",
   manifest: "/manifest.webmanifest",
 };
 

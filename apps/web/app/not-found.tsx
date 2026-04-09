@@ -4,14 +4,15 @@ export default function NotFound() {
   return (
     <main className="shell">
       <section className="card">
-        <p className="eyebrow">Pocket CTO</p>
-        <h1>Mission not found</h1>
+        <p className="eyebrow">Pocket CFO</p>
+        <h1>Page not found</h1>
         <p className="muted">
-          The mission has not been created yet or the id is incorrect.
+          The page or record could not be found in the current operator
+          surface.
         </p>
         <div className="actions">
           <Link href="/" className="button primary">
-            Back to home
+            Back to operator home
           </Link>
         </div>
       </section>
