@@ -1,6 +1,7 @@
 import {
   ApprovalRecordSchema,
   CreateDiscoveryMissionInputSchema,
+  CreateSourceInputSchema,
   GitHubIssueIntakeListViewSchema,
   GitHubIssueMissionCreateResultSchema,
   MissionDetailViewSchema,
@@ -11,9 +12,24 @@ import {
   MissionTaskRecordSchema,
   OperatorControlAvailabilitySchema,
   ProofBundleManifestSchema,
+  SourceDetailViewSchema,
+  SourceFileDetailViewSchema,
+  SourceFileListViewSchema,
+  SourceIngestRunDetailViewSchema,
+  SourceIngestRunListViewSchema,
+  SourceListViewSchema,
 } from "@pocket-cto/domain";
 import type { ApprovalDecision, MissionSourceKind, MissionStatus } from "@pocket-cto/domain";
-import type { CreateDiscoveryMissionInput } from "@pocket-cto/domain";
+import type {
+  CreateDiscoveryMissionInput,
+  CreateSourceInput,
+  SourceDetailView,
+  SourceFileDetailView,
+  SourceFileListView,
+  SourceIngestRunDetailView,
+  SourceIngestRunListView,
+  SourceListView,
+} from "@pocket-cto/domain";
 import { z } from "zod";
 import {
   controlPlaneActionErrorResponseSchema,
@@ -32,6 +48,18 @@ type MissionDetail = z.output<typeof missionDetailSchema>;
 
 const missionListSchema = MissionListViewSchema;
 type MissionList = z.output<typeof missionListSchema>;
+
+const sourceListSchema = SourceListViewSchema;
+
+const sourceDetailSchema = SourceDetailViewSchema;
+
+const sourceFileListSchema = SourceFileListViewSchema;
+
+const sourceFileDetailSchema = SourceFileDetailViewSchema;
+
+const sourceIngestRunListSchema = SourceIngestRunListViewSchema;
+
+const sourceIngestRunDetailSchema = SourceIngestRunDetailViewSchema;
 
 const githubIssueIntakeListSchema = GitHubIssueIntakeListViewSchema;
 type GitHubIssueIntakeList = z.output<typeof githubIssueIntakeListSchema>;
@@ -198,6 +226,61 @@ export async function getMissionList(input?: {
   return fetchJson(`/missions${suffix}`, missionListSchema);
 }
 
+export async function getSourceList(input?: {
+  limit?: number;
+}): Promise<SourceListView | null> {
+  const search = new URLSearchParams();
+
+  if (typeof input?.limit === "number") {
+    search.set("limit", String(input.limit));
+  }
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : "";
+  return fetchJson(`/sources${suffix}`, sourceListSchema);
+}
+
+export async function getSourceDetail(
+  sourceId: string,
+): Promise<SourceDetailView | null> {
+  return fetchJson(`/sources/${encodeURIComponent(sourceId)}`, sourceDetailSchema);
+}
+
+export async function getSourceFileList(
+  sourceId: string,
+): Promise<SourceFileListView | null> {
+  return fetchJson(
+    `/sources/${encodeURIComponent(sourceId)}/files`,
+    sourceFileListSchema,
+  );
+}
+
+export async function getSourceFileDetail(
+  sourceFileId: string,
+): Promise<SourceFileDetailView | null> {
+  return fetchJson(
+    `/sources/files/${encodeURIComponent(sourceFileId)}`,
+    sourceFileDetailSchema,
+  );
+}
+
+export async function getSourceIngestRunList(
+  sourceFileId: string,
+): Promise<SourceIngestRunListView | null> {
+  return fetchJson(
+    `/sources/files/${encodeURIComponent(sourceFileId)}/ingest-runs`,
+    sourceIngestRunListSchema,
+  );
+}
+
+export async function getSourceIngestRunDetail(
+  ingestRunId: string,
+): Promise<SourceIngestRunDetailView | null> {
+  return fetchJson(
+    `/sources/ingest-runs/${encodeURIComponent(ingestRunId)}`,
+    sourceIngestRunDetailSchema,
+  );
+}
+
 export async function getGitHubIssueIntakeList(): Promise<GitHubIssueIntakeList | null> {
   return fetchJson("/github/intake/issues", githubIssueIntakeListSchema);
 }
@@ -233,6 +316,59 @@ export async function createDiscoveryMission(
     "/missions/discovery",
     CreateDiscoveryMissionInputSchema.parse(input),
     createMissionResponseSchema,
+  );
+}
+
+export async function createSource(input: CreateSourceInput) {
+  return postJsonStrict(
+    "/sources",
+    CreateSourceInputSchema.parse(input),
+    sourceDetailSchema,
+  );
+}
+
+export async function uploadSourceFile(input: {
+  sourceId: string;
+  originalFileName: string;
+  mediaType: string;
+  createdBy: string;
+  capturedAt?: string;
+  body: Uint8Array;
+}) {
+  const search = new URLSearchParams({
+    createdBy: input.createdBy,
+    mediaType: input.mediaType,
+    originalFileName: input.originalFileName,
+  });
+
+  if (input.capturedAt) {
+    search.set("capturedAt", input.capturedAt);
+  }
+
+  const response = await fetch(
+    `${resolveControlPlaneUrl()}/sources/${encodeURIComponent(input.sourceId)}/files?${search.toString()}`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/octet-stream",
+      },
+      body: toArrayBuffer(input.body),
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Control-plane request failed (${response.status})`);
+  }
+
+  return sourceFileDetailSchema.parse(await response.json());
+}
+
+export async function ingestSourceFile(input: { sourceFileId: string }) {
+  return postJsonStrict(
+    `/sources/files/${encodeURIComponent(input.sourceFileId)}/ingest`,
+    {},
+    sourceIngestRunDetailSchema,
   );
 }
 
@@ -305,4 +441,10 @@ async function postJsonStrict<TSchema extends z.ZodTypeAny>(
   }
 
   return schema.parse(await response.json());
+}
+
+function toArrayBuffer(value: Uint8Array) {
+  const buffer = new ArrayBuffer(value.byteLength);
+  new Uint8Array(buffer).set(value);
+  return buffer;
 }

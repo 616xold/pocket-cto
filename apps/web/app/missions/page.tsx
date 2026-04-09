@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { DiscoveryMissionIntakeForm } from "../../components/discovery-mission-intake-form";
 import { GitHubIssueIntakeList } from "../../components/github-issue-intake-list";
 import { MissionIntakeForm } from "../../components/mission-intake-form";
@@ -16,16 +17,20 @@ export default async function MissionsPage() {
     <main className="shell">
       <section className="hero">
         <p className="eyebrow">Mission list</p>
-        <h1>Recent missions, newest first.</h1>
+        <h1>Mission operations remain available, but they are no longer the main F1 flow.</h1>
         <p className="lede">
-          This surface stays summary-shaped on purpose. Start from text or one
-          deterministic discovery question, scan mission status and proof
-          posture, then open the existing detail page when you need the full
-          evidence bundle.
+          Pocket CFO now starts from source inventory and ingest. This page
+          stays available for mission review, text intake, deterministic
+          discovery intake, and legacy GitHub connector handoff without
+          pretending engineering/GitHub work is still the primary operator
+          posture.
         </p>
         <div className="button-row">
           <Link href="/" className="button outline">
             Back to operator home
+          </Link>
+          <Link href={"/sources" as Route} className="button outline">
+            Open source inventory
           </Link>
         </div>
       </section>
@@ -34,8 +39,9 @@ export default async function MissionsPage() {
         <article className="card">
           <h2>Start from text</h2>
           <p className="muted">
-            One text box is enough for M2. The existing mission compiler still
-            owns mission shaping; this page only creates and redirects.
+            The existing mission compiler still owns mission shaping. This page
+            only creates and redirects, and it now sits beside the source-first
+            F1 operator path rather than ahead of it.
           </p>
           <MissionIntakeForm buttonLabel="Create and open mission" />
         </article>
@@ -43,9 +49,8 @@ export default async function MissionsPage() {
         <article className="card">
           <h2>Start discovery</h2>
           <p className="muted">
-            Ask one stored auth-change blast-radius question with explicit
-            changed paths. This page only submits the typed payload and
-            redirects.
+            Ask one stored deterministic question when mission work is actually
+            needed. This page only submits the typed payload and redirects.
           </p>
           <DiscoveryMissionIntakeForm buttonLabel="Create and open discovery mission" />
         </article>
@@ -54,9 +59,10 @@ export default async function MissionsPage() {
       <section className="card status-card">
         <h2>List rules</h2>
         <ul className="list-clean">
+          <li>Source inventory is the primary F1 operator surface</li>
           <li>Newest-first mission cards</li>
           <li>Text and deterministic discovery intake stay separate</li>
-          <li>Proof-bundle status and pending approvals at a glance</li>
+          <li>Proof-bundle status and pending approvals stay visible at a glance</li>
           <li>Mission detail stays the evidence-heavy drill-down</li>
         </ul>
       </section>
@@ -64,11 +70,12 @@ export default async function MissionsPage() {
       <section className="card" id="github-issue-intake">
         <div className="section-head">
           <div>
-            <p className="kicker">GitHub issue intake</p>
+            <p className="kicker">Legacy GitHub connector</p>
             <h2>Persisted issue envelopes</h2>
           </div>
           <p className="muted">
-            Latest stored `issues` deliveries, one card per issue identity.
+            Latest stored `issues` deliveries, preserved as a secondary intake
+            path instead of the product center.
           </p>
         </div>
 
