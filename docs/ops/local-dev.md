@@ -28,6 +28,8 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm check
+pnpm smoke:source-registry:local
+pnpm smoke:source-ingest:local
 ```
 
 ## F0 branch state
