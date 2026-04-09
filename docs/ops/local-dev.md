@@ -1,13 +1,13 @@
 # Local development
 
-This repo is in the Pocket CFO pivot foundation phase.
+This repo is now past the Pocket CFO pivot-foundation reset and into early F1 source-ingest work.
 
 That means two things are true at once:
 
 - the active docs now define a finance evidence product
 - parts of the working codebase still reflect the older Pocket CTO implementation
 
-The goal of local development during F0 is to keep the repo green while shifting the active guidance layer.
+The goal of local development in the current repo state is to keep the repo green while extending the source-ingest-first Pocket CFO path without widening into later-phase work accidentally.
 
 ## Baseline bootstrap
 
@@ -28,11 +28,13 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm check
+pnpm smoke:source-registry:local
+pnpm smoke:source-ingest:local
 ```
 
-## F0 branch state
+## Pivot-foundation baseline
 
-On the current F0 branch, the Pocket CFO guidance reset and Pocket CTO archive placement are already in place.
+On the current Pocket CFO branch, the F0 guidance reset and Pocket CTO archive placement are already in place.
 Do not rerun the prep-pack apply sequence here as if it were still the active next step.
 
 If you need to port the same reset onto an older branch, follow the documented sequence in `plans/FP-0001-pocket-cfo-pivot-foundation.md` and keep that work scoped to guidance and archive placement only.
@@ -48,13 +50,13 @@ For Pocket CFO, local development should move toward a source-ingest-first loop:
 5. refresh the CFO Wiki
 6. run discovery or reporting missions against stored state
 
-Not all of that is implemented yet during F0.
+Not all of that is implemented yet during F1 closeout.
 Use the docs to guide what gets built next.
 
 ## GitHub setup is optional
 
 Do not block local development on GitHub App setup unless your active Finance Plan explicitly includes connector work.
-For most pivot-foundation work, GitHub should stay out of the critical path.
+For most source-ingest and reconciliation work, GitHub should stay out of the critical path.
 
 ## Working with Codex
 

@@ -46,6 +46,8 @@
     "smoke:github-issue-intake:doctor": "node tools/github-webhook-live-doctor.mjs",
     "smoke:github-issue-intake:local": "node tools/github-issue-intake-local-smoke.mjs",
     "smoke:github-issue-intake:live": "node tools/github-issue-intake-local-smoke.mjs --mode live_github_hosted_issue",
+    "smoke:source-ingest:local": "tsx tools/source-ingest-smoke.mjs --mode ingest",
+    "smoke:source-registry:local": "tsx tools/source-ingest-smoke.mjs --mode registry",
     "smoke:m3-discovery:live": "tsx tools/m3-discovery-mission-smoke.mjs",
     "smoke:twin-blast-radius:live": "tsx tools/twin-blast-radius-smoke.mjs",
     "smoke:twin-ci:live": "tsx tools/twin-ci-smoke.mjs",
