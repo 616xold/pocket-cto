@@ -219,6 +219,228 @@ describe("web api module", () => {
     );
   });
 
+  it("parses the source inventory and detail routes", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        async json() {
+          return buildSourceListPayload();
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        async json() {
+          return buildSourceDetailPayload();
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        async json() {
+          return buildSourceFileListPayload();
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        async json() {
+          return buildSourceIngestRunListPayload();
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        async json() {
+          return buildSourceFileDetailPayload();
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        async json() {
+          return buildSourceIngestRunDetailPayload();
+        },
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const sourceList = await mod.getSourceList({ limit: 5 });
+    const sourceDetail = await mod.getSourceDetail(missionId);
+    const fileList = await mod.getSourceFileList(taskId);
+    const runList = await mod.getSourceIngestRunList(approvalId);
+    const fileDetail = await mod.getSourceFileDetail(approvalId);
+    const runDetail = await mod.getSourceIngestRunDetail(
+      "44444444-4444-4444-8444-444444444444",
+    );
+
+    expect(sourceList?.sourceCount).toBe(1);
+    expect(sourceList?.sources[0]).toMatchObject({
+      name: "Board package",
+      snapshotCount: 2,
+    });
+    expect(sourceDetail?.source.name).toBe("Board package");
+    expect(fileList?.files[0]?.originalFileName).toBe("board-pack.csv");
+    expect(runList?.ingestRuns[0]?.parserSelection.parserKey).toBe("csv_tabular");
+    expect(fileDetail?.provenanceRecords[0]?.kind).toBe("source_file_registered");
+    expect(runDetail?.ingestRun.status).toBe("ready");
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${mod.resolveControlPlaneUrl()}/sources?limit=5`,
+      {
+        cache: "no-store",
+      },
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${mod.resolveControlPlaneUrl()}/sources/${missionId}`,
+      {
+        cache: "no-store",
+      },
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${mod.resolveControlPlaneUrl()}/sources/${taskId}/files`,
+      {
+        cache: "no-store",
+      },
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      `${mod.resolveControlPlaneUrl()}/sources/files/${approvalId}/ingest-runs`,
+      {
+        cache: "no-store",
+      },
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      5,
+      `${mod.resolveControlPlaneUrl()}/sources/files/${approvalId}`,
+      {
+        cache: "no-store",
+      },
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      6,
+      `${mod.resolveControlPlaneUrl()}/sources/ingest-runs/44444444-4444-4444-8444-444444444444`,
+      {
+        cache: "no-store",
+      },
+    );
+  });
+
+  it("posts the source registration, upload, and ingest routes correctly", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        async json() {
+          return buildSourceDetailPayload();
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        async json() {
+          return buildSourceFileDetailPayload();
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        async json() {
+          return buildSourceIngestRunDetailPayload();
+        },
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const body = Buffer.from("month,cash\nJan,100\n");
+
+    const created = await mod.createSource({
+      createdBy: "finance-operator",
+      kind: "document",
+      name: "Board package",
+      originKind: "manual",
+      snapshot: {
+        checksumSha256:
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        ingestStatus: "registered",
+        mediaType: "application/pdf",
+        originalFileName: "board-pack.pdf",
+        sizeBytes: 4096,
+        storageKind: "external_url",
+        storageRef: "https://example.com/board-pack.pdf",
+      },
+    });
+    const uploaded = await mod.uploadSourceFile({
+      body,
+      createdBy: "finance-operator",
+      mediaType: "text/csv",
+      originalFileName: "board-pack.csv",
+      sourceId: missionId,
+    });
+    const ingested = await mod.ingestSourceFile({
+      sourceFileId: approvalId,
+    });
+
+    expect(created.source.name).toBe("Board package");
+    expect(uploaded.sourceFile.originalFileName).toBe("board-pack.csv");
+    expect(ingested.ingestRun.parserSelection.parserKey).toBe("csv_tabular");
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      `${mod.resolveControlPlaneUrl()}/sources`,
+      {
+        body: JSON.stringify({
+          kind: "document",
+          originKind: "manual",
+          name: "Board package",
+          createdBy: "finance-operator",
+          snapshot: {
+            originalFileName: "board-pack.pdf",
+            mediaType: "application/pdf",
+            sizeBytes: 4096,
+            checksumSha256:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            storageKind: "external_url",
+            storageRef: "https://example.com/board-pack.pdf",
+            ingestStatus: "registered",
+          },
+        }),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `${mod.resolveControlPlaneUrl()}/sources/${missionId}/files?createdBy=finance-operator&mediaType=text%2Fcsv&originalFileName=board-pack.csv`,
+      expect.objectContaining({
+        body: expect.any(ArrayBuffer),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/octet-stream",
+        },
+        method: "POST",
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      `${mod.resolveControlPlaneUrl()}/sources/files/${approvalId}/ingest`,
+      {
+        body: JSON.stringify({}),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+    const uploadCall = fetchMock.mock.calls[1]?.[1];
+    expect(uploadCall).toBeDefined();
+    expect(
+      Array.from(new Uint8Array(uploadCall?.body as ArrayBuffer)),
+    ).toEqual(Array.from(body));
+  });
+
   it("forms approval-resolution and task-interrupt requests correctly", async () => {
     const fetchMock = vi
       .fn()
@@ -750,6 +972,198 @@ function buildMissionListPayload() {
         updatedAt: "2026-03-13T09:00:00.000Z",
       },
     ],
+  };
+}
+
+function buildSourceListPayload() {
+  return {
+    limit: 5,
+    sourceCount: 1,
+    sources: [
+      {
+        createdAt: "2026-04-09T10:00:00.000Z",
+        createdBy: "finance-operator",
+        description: "Board package imported from the investor portal.",
+        id: missionId,
+        kind: "document",
+        latestSnapshot: {
+          capturedAt: "2026-04-09T10:10:00.000Z",
+          checksumSha256:
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          createdAt: "2026-04-09T10:10:00.000Z",
+          id: taskId,
+          ingestErrorSummary: null,
+          ingestStatus: "ready",
+          mediaType: "application/pdf",
+          originalFileName: "board-pack.pdf",
+          sizeBytes: 4096,
+          sourceId: missionId,
+          storageKind: "object_store",
+          storageRef: "sources/board-pack.pdf",
+          updatedAt: "2026-04-09T10:11:00.000Z",
+          version: 2,
+        },
+        name: "Board package",
+        originKind: "manual",
+        snapshotCount: 2,
+        updatedAt: "2026-04-09T10:11:00.000Z",
+      },
+    ],
+  };
+}
+
+function buildSourceDetailPayload() {
+  return {
+    source: {
+      createdAt: "2026-04-09T10:00:00.000Z",
+      createdBy: "finance-operator",
+      description: "Board package imported from the investor portal.",
+      id: missionId,
+      kind: "document",
+      name: "Board package",
+      originKind: "manual",
+      updatedAt: "2026-04-09T10:11:00.000Z",
+    },
+    snapshots: [
+      {
+        capturedAt: "2026-04-09T10:10:00.000Z",
+        checksumSha256:
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        createdAt: "2026-04-09T10:10:00.000Z",
+        id: taskId,
+        ingestErrorSummary: null,
+        ingestStatus: "ready",
+        mediaType: "application/pdf",
+        originalFileName: "board-pack.pdf",
+        sizeBytes: 4096,
+        sourceId: missionId,
+        storageKind: "object_store",
+        storageRef: "sources/board-pack.pdf",
+        updatedAt: "2026-04-09T10:11:00.000Z",
+        version: 2,
+      },
+    ],
+  };
+}
+
+function buildSourceFileListPayload() {
+  return {
+    fileCount: 1,
+    sourceId: taskId,
+    files: [
+      {
+        capturedAt: "2026-04-09T10:20:00.000Z",
+        checksumSha256:
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        createdAt: "2026-04-09T10:20:00.000Z",
+        createdBy: "finance-operator",
+        id: approvalId,
+        mediaType: "text/csv",
+        originalFileName: "board-pack.csv",
+        sizeBytes: 512,
+        snapshotVersion: 3,
+        sourceId: taskId,
+        sourceSnapshotId: missionId,
+        storageKind: "object_store",
+        storageRef: "sources/board-pack.csv",
+      },
+    ],
+  };
+}
+
+function buildSourceFileDetailPayload() {
+  return {
+    provenanceRecords: [
+      {
+        id: "55555555-5555-4555-8555-555555555555",
+        kind: "source_file_registered",
+        recordedAt: "2026-04-09T10:20:00.000Z",
+        recordedBy: "finance-operator",
+        sourceFileId: approvalId,
+        sourceId: missionId,
+        sourceSnapshotId: taskId,
+      },
+    ],
+    snapshot: {
+      capturedAt: "2026-04-09T10:20:00.000Z",
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      createdAt: "2026-04-09T10:20:00.000Z",
+      id: taskId,
+      ingestErrorSummary: null,
+      ingestStatus: "registered",
+      mediaType: "text/csv",
+      originalFileName: "board-pack.csv",
+      sizeBytes: 512,
+      sourceId: missionId,
+      storageKind: "object_store",
+      storageRef: "sources/board-pack.csv",
+      updatedAt: "2026-04-09T10:20:00.000Z",
+      version: 3,
+    },
+    sourceFile: {
+      capturedAt: "2026-04-09T10:20:00.000Z",
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      createdAt: "2026-04-09T10:20:00.000Z",
+      createdBy: "finance-operator",
+      id: approvalId,
+      mediaType: "text/csv",
+      originalFileName: "board-pack.csv",
+      sizeBytes: 512,
+      sourceId: missionId,
+      sourceSnapshotId: taskId,
+      storageKind: "object_store",
+      storageRef: "sources/board-pack.csv",
+    },
+  };
+}
+
+function buildSourceIngestRunListPayload() {
+  return {
+    ingestRuns: [
+      buildSourceIngestRunDetailPayload().ingestRun,
+    ],
+    runCount: 1,
+    sourceFileId: approvalId,
+  };
+}
+
+function buildSourceIngestRunDetailPayload() {
+  return {
+    ingestRun: {
+      completedAt: "2026-04-09T10:25:00.000Z",
+      createdAt: "2026-04-09T10:25:00.000Z",
+      errorCount: 0,
+      errors: [],
+      id: "44444444-4444-4444-8444-444444444444",
+      inputChecksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      parserSelection: {
+        fileExtension: ".csv",
+        matchedBy: "file_extension",
+        mediaType: "text/csv",
+        parserKey: "csv_tabular",
+        sourceKind: "document",
+      },
+      receiptSummary: {
+        kind: "csv_tabular",
+        columnCount: 2,
+        header: ["month", "cash"],
+        rowCount: 3,
+        sampleRows: [["Jan", "100"]],
+      },
+      sourceFileId: approvalId,
+      sourceId: missionId,
+      sourceSnapshotId: taskId,
+      startedAt: "2026-04-09T10:24:00.000Z",
+      status: "ready",
+      storageKind: "object_store",
+      storageRef: "sources/board-pack.csv",
+      updatedAt: "2026-04-09T10:25:00.000Z",
+      warningCount: 0,
+      warnings: [],
+    },
   };
 }
 

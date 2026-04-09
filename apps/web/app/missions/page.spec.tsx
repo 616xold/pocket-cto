@@ -124,7 +124,7 @@ describe("MissionsPage", () => {
     expect(html).toContain("Prepare rollback notes");
     expect(html).toContain("mission-intake-form");
     expect(html).toContain("discovery-mission-intake-form");
-    expect(html).toContain("GitHub issue intake");
+    expect(html).toContain("Legacy GitHub connector");
     expect(html).toContain("Ship issue intake");
     expect(html).toContain("Create mission");
     expect(html).toContain("Open mission");
