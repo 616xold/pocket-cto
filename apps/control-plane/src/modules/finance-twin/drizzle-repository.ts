@@ -1,5 +1,6 @@
 import { and, asc, count, desc, eq } from "drizzle-orm";
 import {
+  financeAccountCatalogEntries,
   financeCompanies,
   financeLedgerAccounts,
   financeReportingPeriods,
@@ -15,6 +16,8 @@ import {
   type PersistenceSession,
 } from "../../lib/persistence";
 import {
+  mapFinanceAccountCatalogEntryRow,
+  mapFinanceAccountCatalogEntryViewRow,
   mapFinanceCompanyRow,
   mapFinanceLedgerAccountRow,
   mapFinanceReportingPeriodRow,
@@ -27,6 +30,7 @@ import type {
   FinishFinanceTwinSyncRunInput,
   FinanceTwinRepository,
   StartFinanceTwinSyncRunInput,
+  UpsertFinanceAccountCatalogEntryInput,
   UpsertFinanceCompanyInput,
   UpsertFinanceLedgerAccountInput,
   UpsertFinanceReportingPeriodInput,
@@ -283,6 +287,57 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
     return row ? mapFinanceTwinSyncRunRow(row) : null;
   }
 
+  async getLatestSyncRunByCompanyIdAndExtractorKey(
+    companyId: string,
+    extractorKey: StartFinanceTwinSyncRunInput["extractorKey"],
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .select()
+      .from(financeTwinSyncRuns)
+      .where(
+        and(
+          eq(financeTwinSyncRuns.companyId, companyId),
+          eq(financeTwinSyncRuns.extractorKey, extractorKey),
+        ),
+      )
+      .orderBy(
+        desc(financeTwinSyncRuns.startedAt),
+        desc(financeTwinSyncRuns.createdAt),
+        desc(financeTwinSyncRuns.id),
+      )
+      .limit(1);
+
+    return row ? mapFinanceTwinSyncRunRow(row) : null;
+  }
+
+  async getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+    companyId: string,
+    extractorKey: StartFinanceTwinSyncRunInput["extractorKey"],
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .select()
+      .from(financeTwinSyncRuns)
+      .where(
+        and(
+          eq(financeTwinSyncRuns.companyId, companyId),
+          eq(financeTwinSyncRuns.extractorKey, extractorKey),
+          eq(financeTwinSyncRuns.status, "succeeded"),
+        ),
+      )
+      .orderBy(
+        desc(financeTwinSyncRuns.startedAt),
+        desc(financeTwinSyncRuns.createdAt),
+        desc(financeTwinSyncRuns.id),
+      )
+      .limit(1);
+
+    return row ? mapFinanceTwinSyncRunRow(row) : null;
+  }
+
   async upsertTrialBalanceLine(
     input: UpsertFinanceTrialBalanceLineInput,
     session?: PersistenceSession,
@@ -338,6 +393,72 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
       .orderBy(asc(financeTrialBalanceLines.lineNumber));
 
     return rows.map(mapFinanceTrialBalanceLineRow);
+  }
+
+  async upsertAccountCatalogEntry(
+    input: UpsertFinanceAccountCatalogEntryInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(financeAccountCatalogEntries)
+      .values({
+        companyId: input.companyId,
+        ledgerAccountId: input.ledgerAccountId,
+        syncRunId: input.syncRunId,
+        lineNumber: input.lineNumber,
+        detailType: input.detailType,
+        description: input.description,
+        parentAccountCode: input.parentAccountCode,
+        isActive: input.isActive,
+        observedAt: new Date(input.observedAt),
+      })
+      .onConflictDoUpdate({
+        target: [
+          financeAccountCatalogEntries.syncRunId,
+          financeAccountCatalogEntries.ledgerAccountId,
+        ],
+        set: {
+          lineNumber: input.lineNumber,
+          detailType: input.detailType,
+          description: input.description,
+          parentAccountCode: input.parentAccountCode,
+          isActive: input.isActive,
+          observedAt: new Date(input.observedAt),
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Finance account catalog upsert did not return a row");
+    }
+
+    return mapFinanceAccountCatalogEntryRow(row);
+  }
+
+  async listAccountCatalogEntriesBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select({
+        catalogEntry: financeAccountCatalogEntries,
+        ledgerAccount: financeLedgerAccounts,
+      })
+      .from(financeAccountCatalogEntries)
+      .innerJoin(
+        financeLedgerAccounts,
+        eq(
+          financeAccountCatalogEntries.ledgerAccountId,
+          financeLedgerAccounts.id,
+        ),
+      )
+      .where(eq(financeAccountCatalogEntries.syncRunId, syncRunId))
+      .orderBy(asc(financeAccountCatalogEntries.lineNumber));
+
+    return rows.map(mapFinanceAccountCatalogEntryViewRow);
   }
 
   async createLineage(

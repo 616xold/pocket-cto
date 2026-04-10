@@ -11,8 +11,8 @@ Open the repository root in the Codex app.
 Then start a fresh thread and give Codex this prompt:
 
 ```text
-Read docs/ACTIVE_DOCS.md, README.md, AGENTS.md, PLANS.md, plans/ROADMAP.md, plans/FP-0001-pocket-cfo-pivot-foundation.md, and docs/ops/source-ingest-and-cfo-wiki.md.
-Summarize the active phase, the archive boundary, and the next unchecked slice of FP-0001.
+Read docs/ACTIVE_DOCS.md, README.md, AGENTS.md, PLANS.md, plans/ROADMAP.md, the current active plans/FP-*.md file, and docs/ops/source-ingest-and-cfo-wiki.md.
+Summarize the active phase, the archive boundary, and the next unchecked slice of the active Finance Plan.
 Then implement only that slice.
 Keep internal package scope unchanged, preserve repo hygiene, update the Finance Plan Progress and Decision Log as you work, and run the narrowest meaningful validation after each step.
 ```
@@ -25,7 +25,8 @@ Suggested thread naming:
 
 - `F0-pivot-foundation`
 - `F1-source-registry-bridge`
-- `F2-finance-twin-cash-slice`
+- `F2A-finance-twin-trial-balance`
+- `F2B-chart-of-accounts`
 - `F3-cfo-wiki-compiler`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`
@@ -74,10 +75,10 @@ Do not start with:
 
 ## The correct first success
 
-The first success is not a flashy finance UI.
+The first success in a new thread is not guessing from stale plans or restarting F0 work.
 
 The first success is:
 
-> Pocket CFO becomes the active guidance layer of the repo, Codex stops reading stale Pocket CTO docs as product truth, and the next implementation slices can proceed from a clean F0 plan.
+> Codex identifies the current active Finance Plan, respects the active-vs-archive boundary, and continues the next narrow shipped-unfinished slice without widening scope.
 
-Once that is solid, F1 source registry work can begin safely.
+Once that is solid, the next active finance slice can proceed safely.

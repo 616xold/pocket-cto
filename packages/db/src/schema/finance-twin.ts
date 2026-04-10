@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   index,
   integer,
@@ -16,7 +17,7 @@ import { createdAt, id, updatedAt } from "./shared";
 
 export const financeTwinExtractorKeyEnum = pgEnum(
   "finance_twin_extractor_key",
-  ["trial_balance_csv"],
+  ["trial_balance_csv", "chart_of_accounts_csv"],
 );
 
 export const financeTwinSyncRunStatusEnum = pgEnum(
@@ -26,7 +27,12 @@ export const financeTwinSyncRunStatusEnum = pgEnum(
 
 export const financeTwinLineageTargetKindEnum = pgEnum(
   "finance_twin_lineage_target_kind",
-  ["reporting_period", "ledger_account", "trial_balance_line"],
+  [
+    "reporting_period",
+    "ledger_account",
+    "trial_balance_line",
+    "account_catalog_entry",
+  ],
 );
 
 export const financeCompanies = pgTable(
@@ -130,6 +136,39 @@ export const financeTwinSyncRuns = pgTable(
     sourceFileCreatedAtIndex: index(
       "finance_twin_sync_runs_source_file_id_idx",
     ).on(table.sourceFileId, table.createdAt),
+  }),
+);
+
+export const financeAccountCatalogEntries = pgTable(
+  "finance_account_catalog_entries",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    ledgerAccountId: uuid("ledger_account_id")
+      .references(() => financeLedgerAccounts.id, { onDelete: "cascade" })
+      .notNull(),
+    syncRunId: uuid("sync_run_id")
+      .references(() => financeTwinSyncRuns.id, { onDelete: "cascade" })
+      .notNull(),
+    lineNumber: integer("line_number").notNull(),
+    detailType: text("detail_type"),
+    description: text("description"),
+    parentAccountCode: text("parent_account_code"),
+    isActive: boolean("is_active"),
+    observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    syncRunLedgerAccountUnique: uniqueIndex(
+      "finance_account_catalog_entries_sync_run_ledger_account_key",
+    ).on(table.syncRunId, table.ledgerAccountId),
+    companySyncIndex: index("finance_account_catalog_entries_company_sync_idx").on(
+      table.companyId,
+      table.syncRunId,
+    ),
   }),
 );
 

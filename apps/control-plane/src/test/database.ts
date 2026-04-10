@@ -9,6 +9,7 @@ import {
   replayEvents,
 } from "@pocket-cto/db";
 import type {
+  financeAccountCatalogEntries,
   financeCompanies,
   financeLedgerAccounts,
   financeReportingPeriods,
@@ -41,6 +42,7 @@ export async function resetTestDatabase() {
     TRUNCATE TABLE
       finance_twin_lineage,
       finance_trial_balance_lines,
+      finance_account_catalog_entries,
       finance_twin_sync_runs,
       finance_ledger_accounts,
       finance_reporting_periods,
@@ -111,6 +113,7 @@ async function selectCount(
     | typeof sourceFiles
     | typeof sourceIngestRuns
     | typeof provenanceRecords
+    | typeof financeAccountCatalogEntries
     | typeof financeCompanies
     | typeof financeReportingPeriods
     | typeof financeLedgerAccounts

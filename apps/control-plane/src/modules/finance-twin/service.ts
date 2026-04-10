@@ -1,12 +1,16 @@
 import {
+  FinanceAccountCatalogViewSchema,
   FinanceTwinCompanySummarySchema,
   FinanceTwinSyncInputSchema,
   FinanceTwinSyncResultSchema,
+  type FinanceAccountCatalogEntryView,
+  type FinanceAccountCatalogView,
   type FinanceCompanyRecord,
+  type FinanceLatestSuccessfulSlices,
   type FinanceTwinCompanySummary,
   type FinanceTwinSyncInput,
   type FinanceTwinSyncResult,
-  type FinanceTrialBalanceLineRecord,
+  type FinanceTwinSyncRunRecord,
 } from "@pocket-cto/domain";
 import {
   SourceFileNotFoundError,
@@ -14,23 +18,36 @@ import {
 } from "../sources/errors";
 import type { SourceRepository } from "../sources/repository";
 import type { SourceFileStorage } from "../sources/storage";
+import type { ChartOfAccountsExtractionResult } from "./chart-of-accounts-csv";
 import {
   FinanceCompanyNotFoundError,
   FinanceTwinExtractionError,
   FinanceTwinUnsupportedSourceError,
 } from "./errors";
+import { extractFinanceTwinSource } from "./extractor-dispatch";
 import { buildFinanceFreshnessView } from "./freshness";
 import type { FinanceTwinRepository } from "./repository";
 import {
-  extractTrialBalanceCsv,
-  supportsTrialBalanceCsvSource,
-} from "./trial-balance-csv";
+  buildChartOfAccountsSummary,
+  buildTrialBalanceSummary,
+  FINANCE_TWIN_LIMITATIONS,
+} from "./summary";
+import type { TrialBalanceExtractionResult } from "./trial-balance-csv";
 
 const MAX_ERROR_SUMMARY_LENGTH = 500;
-const SUMMARY_LIMITATIONS = [
-  "F2A only covers deterministic trial-balance CSV extraction.",
-  "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
-];
+
+type CompanyReadState = {
+  companyTotals: {
+    ledgerAccountCount: number;
+    reportingPeriodCount: number;
+  };
+  freshness: ReturnType<typeof buildFinanceFreshnessView>;
+  latestAccountCatalogEntries: FinanceAccountCatalogEntryView[];
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecord | null;
+  latestChartOfAccountsAttemptedSyncRun: FinanceTwinSyncRunRecord | null;
+  latestSuccessfulSlices: FinanceLatestSuccessfulSlices;
+  latestSuccessfulSyncRun: FinanceTwinSyncRunRecord | null;
+};
 
 export class FinanceTwinService {
   private readonly now: () => Date;
@@ -78,6 +95,16 @@ export class FinanceTwinService {
       );
     }
 
+    const body = await this.input.sourceFileStorage.read(sourceFile.storageRef);
+    const extracted = extractFinanceTwinSource({
+      body,
+      sourceFile,
+    });
+
+    if (!extracted) {
+      throw new FinanceTwinUnsupportedSourceError(sourceFile.id);
+    }
+
     const company = await this.input.financeTwinRepository.upsertCompany({
       companyKey,
       displayName:
@@ -89,189 +116,38 @@ export class FinanceTwinService {
       sourceId: source.id,
       sourceSnapshotId: snapshot.id,
       sourceFileId: sourceFile.id,
-      extractorKey: "trial_balance_csv",
+      extractorKey: extracted.extractorKey,
       startedAt,
     });
 
     try {
-      if (!supportsTrialBalanceCsvSource(sourceFile)) {
-        throw new FinanceTwinUnsupportedSourceError(sourceFile.id);
-      }
-
-      const body = await this.input.sourceFileStorage.read(sourceFile.storageRef);
-      const extracted = extractTrialBalanceCsv({
-        body,
-        sourceFile,
-      });
-      const observedAt = this.now().toISOString();
-      const persisted = await this.input.financeTwinRepository.transaction(
-        async (session) => {
-          const reportingPeriod =
-            await this.input.financeTwinRepository.upsertReportingPeriod(
-              {
-                companyId: company.id,
-                periodKey: extracted.reportingPeriod.periodKey,
-                label: extracted.reportingPeriod.label,
-                periodStart: extracted.reportingPeriod.periodStart,
-                periodEnd: extracted.reportingPeriod.periodEnd,
-              },
-              session,
-            );
-
-          await this.input.financeTwinRepository.createLineage(
-            {
-              companyId: company.id,
-              syncRunId: syncRun.id,
-              targetKind: "reporting_period",
-              targetId: reportingPeriod.id,
-              sourceId: source.id,
-              sourceSnapshotId: snapshot.id,
+      const finalizedRun =
+        extracted.extractorKey === "trial_balance_csv"
+          ? await this.persistTrialBalanceSync({
+              company,
+              extracted: extracted.trialBalance,
+              snapshotId: snapshot.id,
               sourceFileId: sourceFile.id,
-              recordedAt: observedAt,
-            },
-            session,
-          );
-
-          const ledgerAccounts = new Map<string, { id: string }>();
-
-          for (const account of extracted.accounts) {
-            const storedAccount =
-              await this.input.financeTwinRepository.upsertLedgerAccount(
-                {
-                  companyId: company.id,
-                  accountCode: account.accountCode,
-                  accountName: account.accountName,
-                  accountType: account.accountType,
-                },
-                session,
-              );
-
-            ledgerAccounts.set(account.accountCode, storedAccount);
-            await this.input.financeTwinRepository.createLineage(
-              {
-                companyId: company.id,
-                syncRunId: syncRun.id,
-                targetKind: "ledger_account",
-                targetId: storedAccount.id,
-                sourceId: source.id,
-                sourceSnapshotId: snapshot.id,
-                sourceFileId: sourceFile.id,
-                recordedAt: observedAt,
-              },
-              session,
-            );
-          }
-
-          const lines: FinanceTrialBalanceLineRecord[] = [];
-
-          for (const line of extracted.lines) {
-            const ledgerAccount = ledgerAccounts.get(line.accountCode);
-
-            if (!ledgerAccount) {
-              throw new Error(
-                `Ledger account ${line.accountCode} was not available for line persistence`,
-              );
-            }
-
-            const storedLine =
-              await this.input.financeTwinRepository.upsertTrialBalanceLine(
-                {
-                  companyId: company.id,
-                  reportingPeriodId: reportingPeriod.id,
-                  ledgerAccountId: ledgerAccount.id,
-                  syncRunId: syncRun.id,
-                  lineNumber: line.lineNumber,
-                  debitAmount: line.debitAmount,
-                  creditAmount: line.creditAmount,
-                  netAmount: line.netAmount,
-                  currencyCode: line.currencyCode,
-                  observedAt,
-                },
-                session,
-              );
-
-            lines.push(storedLine);
-            await this.input.financeTwinRepository.createLineage(
-              {
-                companyId: company.id,
-                syncRunId: syncRun.id,
-                targetKind: "trial_balance_line",
-                targetId: storedLine.id,
-                sourceId: source.id,
-                sourceSnapshotId: snapshot.id,
-                sourceFileId: sourceFile.id,
-                recordedAt: observedAt,
-              },
-              session,
-            );
-          }
-
-          const ledgerAccountCount =
-            await this.input.financeTwinRepository.countLedgerAccountsByCompanyId(
-              company.id,
-              session,
-            );
-          const reportingPeriodCount =
-            await this.input.financeTwinRepository.countReportingPeriodsByCompanyId(
-              company.id,
-              session,
-            );
-          const finalizedRun = await this.input.financeTwinRepository.finishSyncRun(
-            {
-              syncRunId: syncRun.id,
-              reportingPeriodId: reportingPeriod.id,
-              status: "succeeded",
-              completedAt: observedAt,
-              stats: {
-                ledgerAccountCount: extracted.accounts.length,
-                reportingPeriodCount,
-                trialBalanceLineCount: lines.length,
-              },
-              errorSummary: null,
-            },
-            session,
-          );
-          const lineageCount =
-            await this.input.financeTwinRepository.countLineageBySyncRunId(
-              syncRun.id,
-              session,
-            );
-
-          return {
-            finalizedRun,
-            ledgerAccountCount,
-            lineageCount,
-            lines,
-            reportingPeriod,
-            reportingPeriodCount,
-          };
-        },
-      );
-      const freshness = buildFinanceFreshnessView({
-        latestRun: persisted.finalizedRun,
-        latestSuccessfulRun: persisted.finalizedRun,
-        now: this.now(),
-      });
+              sourceId: source.id,
+              syncRun,
+            })
+          : await this.persistChartOfAccountsSync({
+              company,
+              extracted: extracted.chartOfAccounts,
+              snapshotId: snapshot.id,
+              sourceFileId: sourceFile.id,
+              sourceId: source.id,
+              syncRun,
+            });
+      const readState = await this.readCompanyState(company);
 
       return FinanceTwinSyncResultSchema.parse({
         company,
-        latestSource: {
-          sourceId: source.id,
-          sourceSnapshotId: snapshot.id,
-          sourceFileId: sourceFile.id,
-          syncRunId: persisted.finalizedRun.id,
-        },
-        syncRun: persisted.finalizedRun,
-        reportingPeriod: persisted.reportingPeriod,
-        freshness,
-        coverage: {
-          reportingPeriodCount: persisted.reportingPeriodCount,
-          ledgerAccountCount: persisted.ledgerAccountCount,
-          trialBalanceLineCount: persisted.lines.length,
-          lineageCount: persisted.lineageCount,
-        },
-        trialBalance: buildTrialBalanceSummary(persisted.lines),
-        limitations: SUMMARY_LIMITATIONS,
+        syncRun: finalizedRun,
+        freshness: readState.freshness,
+        companyTotals: readState.companyTotals,
+        latestSuccessfulSlices: readState.latestSuccessfulSlices,
+        limitations: FINANCE_TWIN_LIMITATIONS,
       });
     } catch (error) {
       const failedAt = this.now().toISOString();
@@ -298,90 +174,442 @@ export class FinanceTwinService {
       throw new FinanceCompanyNotFoundError(companyKey);
     }
 
-    return this.buildCompanySummary(company);
-  }
-
-  private async buildCompanySummary(
-    company: FinanceCompanyRecord,
-  ): Promise<FinanceTwinCompanySummary> {
-    const [latestRun, latestSuccessfulRun, ledgerAccountCount, reportingPeriodCount] =
-      await Promise.all([
-        this.input.financeTwinRepository.getLatestSyncRunByCompanyId(company.id),
-        this.input.financeTwinRepository.getLatestSuccessfulSyncRunByCompanyId(
-          company.id,
-        ),
-        this.input.financeTwinRepository.countLedgerAccountsByCompanyId(company.id),
-        this.input.financeTwinRepository.countReportingPeriodsByCompanyId(
-          company.id,
-        ),
-      ]);
-    const [latestReportingPeriod, latestLines, lineageCount] =
-      latestSuccessfulRun?.reportingPeriodId
-        ? await Promise.all([
-            this.input.financeTwinRepository.getReportingPeriodById(
-              latestSuccessfulRun.reportingPeriodId,
-            ),
-            this.input.financeTwinRepository.listTrialBalanceLinesBySyncRunId(
-              latestSuccessfulRun.id,
-            ),
-            this.input.financeTwinRepository.countLineageBySyncRunId(
-              latestSuccessfulRun.id,
-            ),
-          ])
-        : [null, [], 0];
+    const readState = await this.readCompanyState(company);
 
     return FinanceTwinCompanySummarySchema.parse({
       company,
-      latestSource: latestSuccessfulRun
-        ? {
-            sourceId: latestSuccessfulRun.sourceId,
-            sourceSnapshotId: latestSuccessfulRun.sourceSnapshotId,
-            sourceFileId: latestSuccessfulRun.sourceFileId,
-            syncRunId: latestSuccessfulRun.id,
-          }
-        : null,
-      latestSyncRun: latestRun,
-      latestReportingPeriod,
+      latestAttemptedSyncRun: readState.latestAttemptedSyncRun,
+      latestSuccessfulSyncRun: readState.latestSuccessfulSyncRun,
+      freshness: readState.freshness,
+      companyTotals: readState.companyTotals,
+      latestSuccessfulSlices: readState.latestSuccessfulSlices,
+      limitations: FINANCE_TWIN_LIMITATIONS,
+    });
+  }
+
+  async getAccountCatalog(companyKey: string): Promise<FinanceAccountCatalogView> {
+    const company = await this.input.financeTwinRepository.getCompanyByKey(
+      companyKey,
+    );
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(companyKey);
+    }
+
+    const readState = await this.readCompanyState(company);
+
+    return FinanceAccountCatalogViewSchema.parse({
+      company,
+      latestAttemptedSyncRun: readState.latestChartOfAccountsAttemptedSyncRun,
+      latestSuccessfulSlice: readState.latestSuccessfulSlices.chartOfAccounts,
+      freshness: readState.freshness.chartOfAccounts,
+      accounts: readState.latestAccountCatalogEntries,
+      limitations: FINANCE_TWIN_LIMITATIONS,
+    });
+  }
+
+  private async persistTrialBalanceSync(input: {
+    company: FinanceCompanyRecord;
+    extracted: TrialBalanceExtractionResult;
+    snapshotId: string;
+    sourceFileId: string;
+    sourceId: string;
+    syncRun: FinanceTwinSyncRunRecord;
+  }) {
+    const observedAt = this.now().toISOString();
+
+    return this.input.financeTwinRepository.transaction(async (session) => {
+      const reportingPeriod =
+        await this.input.financeTwinRepository.upsertReportingPeriod(
+          {
+            companyId: input.company.id,
+            periodKey: input.extracted.reportingPeriod.periodKey,
+            label: input.extracted.reportingPeriod.label,
+            periodStart: input.extracted.reportingPeriod.periodStart,
+            periodEnd: input.extracted.reportingPeriod.periodEnd,
+          },
+          session,
+        );
+
+      await this.input.financeTwinRepository.createLineage(
+        {
+          companyId: input.company.id,
+          syncRunId: input.syncRun.id,
+          targetKind: "reporting_period",
+          targetId: reportingPeriod.id,
+          sourceId: input.sourceId,
+          sourceSnapshotId: input.snapshotId,
+          sourceFileId: input.sourceFileId,
+          recordedAt: observedAt,
+        },
+        session,
+      );
+
+      const ledgerAccounts = new Map<string, { id: string }>();
+
+      for (const account of input.extracted.accounts) {
+        const storedAccount =
+          await this.input.financeTwinRepository.upsertLedgerAccount(
+            {
+              companyId: input.company.id,
+              accountCode: account.accountCode,
+              accountName: account.accountName,
+              accountType: account.accountType,
+            },
+            session,
+          );
+
+        ledgerAccounts.set(account.accountCode, storedAccount);
+        await this.input.financeTwinRepository.createLineage(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            targetKind: "ledger_account",
+            targetId: storedAccount.id,
+            sourceId: input.sourceId,
+            sourceSnapshotId: input.snapshotId,
+            sourceFileId: input.sourceFileId,
+            recordedAt: observedAt,
+          },
+          session,
+        );
+      }
+
+      for (const line of input.extracted.lines) {
+        const ledgerAccount = ledgerAccounts.get(line.accountCode);
+
+        if (!ledgerAccount) {
+          throw new Error(
+            `Ledger account ${line.accountCode} was not available for line persistence`,
+          );
+        }
+
+        const storedLine =
+          await this.input.financeTwinRepository.upsertTrialBalanceLine(
+            {
+              companyId: input.company.id,
+              reportingPeriodId: reportingPeriod.id,
+              ledgerAccountId: ledgerAccount.id,
+              syncRunId: input.syncRun.id,
+              lineNumber: line.lineNumber,
+              debitAmount: line.debitAmount,
+              creditAmount: line.creditAmount,
+              netAmount: line.netAmount,
+              currencyCode: line.currencyCode,
+              observedAt,
+            },
+            session,
+          );
+
+        await this.input.financeTwinRepository.createLineage(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            targetKind: "trial_balance_line",
+            targetId: storedLine.id,
+            sourceId: input.sourceId,
+            sourceSnapshotId: input.snapshotId,
+            sourceFileId: input.sourceFileId,
+            recordedAt: observedAt,
+          },
+          session,
+        );
+      }
+
+      const reportingPeriodCount =
+        await this.input.financeTwinRepository.countReportingPeriodsByCompanyId(
+          input.company.id,
+          session,
+        );
+      const ledgerAccountCount =
+        await this.input.financeTwinRepository.countLedgerAccountsByCompanyId(
+          input.company.id,
+          session,
+        );
+
+      return this.input.financeTwinRepository.finishSyncRun(
+        {
+          syncRunId: input.syncRun.id,
+          reportingPeriodId: reportingPeriod.id,
+          status: "succeeded",
+          completedAt: observedAt,
+          stats: {
+            ledgerAccountCount,
+            reportingPeriodCount,
+            trialBalanceLineCount: input.extracted.lines.length,
+          },
+          errorSummary: null,
+        },
+        session,
+      );
+    });
+  }
+
+  private async persistChartOfAccountsSync(input: {
+    company: FinanceCompanyRecord;
+    extracted: ChartOfAccountsExtractionResult;
+    snapshotId: string;
+    sourceFileId: string;
+    sourceId: string;
+    syncRun: FinanceTwinSyncRunRecord;
+  }) {
+    const observedAt = this.now().toISOString();
+
+    return this.input.financeTwinRepository.transaction(async (session) => {
+      for (const account of input.extracted.accounts) {
+        const storedAccount =
+          await this.input.financeTwinRepository.upsertLedgerAccount(
+            {
+              companyId: input.company.id,
+              accountCode: account.accountCode,
+              accountName: account.accountName,
+              accountType: account.accountType,
+            },
+            session,
+          );
+
+        await this.input.financeTwinRepository.createLineage(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            targetKind: "ledger_account",
+            targetId: storedAccount.id,
+            sourceId: input.sourceId,
+            sourceSnapshotId: input.snapshotId,
+            sourceFileId: input.sourceFileId,
+            recordedAt: observedAt,
+          },
+          session,
+        );
+
+        const storedCatalogEntry =
+          await this.input.financeTwinRepository.upsertAccountCatalogEntry(
+            {
+              companyId: input.company.id,
+              ledgerAccountId: storedAccount.id,
+              syncRunId: input.syncRun.id,
+              lineNumber: account.lineNumber,
+              detailType: account.detailType,
+              description: account.description,
+              parentAccountCode: account.parentAccountCode,
+              isActive: account.isActive,
+              observedAt,
+            },
+            session,
+          );
+
+        await this.input.financeTwinRepository.createLineage(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            targetKind: "account_catalog_entry",
+            targetId: storedCatalogEntry.id,
+            sourceId: input.sourceId,
+            sourceSnapshotId: input.snapshotId,
+            sourceFileId: input.sourceFileId,
+            recordedAt: observedAt,
+          },
+          session,
+        );
+      }
+
+      const reportingPeriodCount =
+        await this.input.financeTwinRepository.countReportingPeriodsByCompanyId(
+          input.company.id,
+          session,
+        );
+      const ledgerAccountCount =
+        await this.input.financeTwinRepository.countLedgerAccountsByCompanyId(
+          input.company.id,
+          session,
+        );
+
+      return this.input.financeTwinRepository.finishSyncRun(
+        {
+          syncRunId: input.syncRun.id,
+          reportingPeriodId: null,
+          status: "succeeded",
+          completedAt: observedAt,
+          stats: {
+            accountCatalogEntryCount: input.extracted.accounts.length,
+            ledgerAccountCount,
+            reportingPeriodCount,
+          },
+          errorSummary: null,
+        },
+        session,
+      );
+    });
+  }
+
+  private async readCompanyState(
+    company: FinanceCompanyRecord,
+  ): Promise<CompanyReadState> {
+    const [
+      latestAttemptedSyncRun,
+      latestSuccessfulSyncRun,
+      trialBalanceLatestRun,
+      trialBalanceLatestSuccessfulRun,
+      chartOfAccountsLatestRun,
+      chartOfAccountsLatestSuccessfulRun,
+      ledgerAccountCount,
+      reportingPeriodCount,
+    ] = await Promise.all([
+      this.input.financeTwinRepository.getLatestSyncRunByCompanyId(company.id),
+      this.input.financeTwinRepository.getLatestSuccessfulSyncRunByCompanyId(
+        company.id,
+      ),
+      this.input.financeTwinRepository.getLatestSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "trial_balance_csv",
+      ),
+      this.input.financeTwinRepository.getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "trial_balance_csv",
+      ),
+      this.input.financeTwinRepository.getLatestSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "chart_of_accounts_csv",
+      ),
+      this.input.financeTwinRepository.getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "chart_of_accounts_csv",
+      ),
+      this.input.financeTwinRepository.countLedgerAccountsByCompanyId(company.id),
+      this.input.financeTwinRepository.countReportingPeriodsByCompanyId(company.id),
+    ]);
+
+    const [trialBalanceSlice, chartOfAccountsSlice] = await Promise.all([
+      this.readLatestSuccessfulTrialBalanceSlice(trialBalanceLatestSuccessfulRun),
+      this.readLatestSuccessfulChartOfAccountsSlice(
+        chartOfAccountsLatestSuccessfulRun,
+      ),
+    ]);
+
+    return {
+      latestAttemptedSyncRun,
+      latestChartOfAccountsAttemptedSyncRun: chartOfAccountsLatestRun,
+      latestSuccessfulSyncRun,
       freshness: buildFinanceFreshnessView({
-        latestRun,
-        latestSuccessfulRun,
+        trialBalance: {
+          latestRun: trialBalanceLatestRun,
+          latestSuccessfulRun: trialBalanceLatestSuccessfulRun,
+        },
+        chartOfAccounts: {
+          latestRun: chartOfAccountsLatestRun,
+          latestSuccessfulRun: chartOfAccountsLatestSuccessfulRun,
+        },
         now: this.now(),
       }),
-      coverage: {
-        reportingPeriodCount,
+      companyTotals: {
         ledgerAccountCount,
-        trialBalanceLineCount: latestLines.length,
-        lineageCount,
+        reportingPeriodCount,
       },
-      trialBalance:
-        latestLines.length > 0 ? buildTrialBalanceSummary(latestLines) : null,
-      limitations: SUMMARY_LIMITATIONS,
-    });
+      latestSuccessfulSlices: {
+        trialBalance: trialBalanceSlice.snapshot,
+        chartOfAccounts: chartOfAccountsSlice.snapshot,
+      },
+      latestAccountCatalogEntries: chartOfAccountsSlice.accounts,
+    };
+  }
+
+  private async readLatestSuccessfulTrialBalanceSlice(
+    latestSuccessfulRun: FinanceTwinSyncRunRecord | null,
+  ) {
+    if (!latestSuccessfulRun?.reportingPeriodId) {
+      return {
+        snapshot: {
+          latestSource: null,
+          latestSyncRun: null,
+          reportingPeriod: null,
+          coverage: {
+            lineCount: 0,
+            lineageCount: 0,
+          },
+          summary: null,
+        },
+      };
+    }
+
+    const [reportingPeriod, lines, lineageCount] = await Promise.all([
+      this.input.financeTwinRepository.getReportingPeriodById(
+        latestSuccessfulRun.reportingPeriodId,
+      ),
+      this.input.financeTwinRepository.listTrialBalanceLinesBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+      this.input.financeTwinRepository.countLineageBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+    ]);
+
+    return {
+      snapshot: {
+        latestSource: buildSourceRef(latestSuccessfulRun),
+        latestSyncRun: latestSuccessfulRun,
+        reportingPeriod,
+        coverage: {
+          lineCount: lines.length,
+          lineageCount,
+        },
+        summary: lines.length > 0 ? buildTrialBalanceSummary(lines) : null,
+      },
+    };
+  }
+
+  private async readLatestSuccessfulChartOfAccountsSlice(
+    latestSuccessfulRun: FinanceTwinSyncRunRecord | null,
+  ) {
+    if (!latestSuccessfulRun) {
+      return {
+        accounts: [],
+        snapshot: {
+          latestSource: null,
+          latestSyncRun: null,
+          coverage: {
+            accountCatalogEntryCount: 0,
+            lineageCount: 0,
+          },
+          summary: null,
+        },
+      };
+    }
+
+    const [accounts, lineageCount] = await Promise.all([
+      this.input.financeTwinRepository.listAccountCatalogEntriesBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+      this.input.financeTwinRepository.countLineageBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+    ]);
+
+    return {
+      accounts,
+      snapshot: {
+        latestSource: buildSourceRef(latestSuccessfulRun),
+        latestSyncRun: latestSuccessfulRun,
+        coverage: {
+          accountCatalogEntryCount: accounts.length,
+          lineageCount,
+        },
+        summary:
+          accounts.length > 0 ? buildChartOfAccountsSummary(accounts) : null,
+      },
+    };
   }
 }
 
-function buildTrialBalanceSummary(lines: FinanceTrialBalanceLineRecord[]) {
-  let totalDebit = 0n;
-  let totalCredit = 0n;
-  let totalNet = 0n;
-  const currencyCodes = new Set<string>();
-
-  for (const line of lines) {
-    totalDebit += parseMoney(line.debitAmount);
-    totalCredit += parseMoney(line.creditAmount);
-    totalNet += parseMoney(line.netAmount);
-    if (line.currencyCode) {
-      currencyCodes.add(line.currencyCode);
-    }
+function buildSourceRef(syncRun: FinanceTwinSyncRunRecord | null) {
+  if (!syncRun) {
+    return null;
   }
 
   return {
-    accountCount: new Set(lines.map((line) => line.ledgerAccountId)).size,
-    lineCount: lines.length,
-    totalDebitAmount: formatMoney(totalDebit),
-    totalCreditAmount: formatMoney(totalCredit),
-    totalNetAmount: formatMoney(totalNet),
-    currencyCode: currencyCodes.size === 1 ? Array.from(currencyCodes)[0] : null,
+    sourceId: syncRun.sourceId,
+    sourceSnapshotId: syncRun.sourceSnapshotId,
+    sourceFileId: syncRun.sourceFileId,
+    syncRunId: syncRun.id,
   };
 }
 
@@ -404,20 +632,4 @@ function summarizeError(error: unknown) {
           : "Finance twin sync failed";
 
   return message.slice(0, MAX_ERROR_SUMMARY_LENGTH);
-}
-
-function parseMoney(value: string) {
-  const normalized = value.startsWith("-") ? value.slice(1) : value;
-  const [wholePart = "0", fractionalPart = "00"] = normalized.split(".");
-  const cents =
-    BigInt(wholePart) * 100n + BigInt((fractionalPart + "00").slice(0, 2));
-
-  return value.startsWith("-") ? -cents : cents;
-}
-
-function formatMoney(cents: bigint) {
-  const absolute = cents < 0n ? -cents : cents;
-  const whole = absolute / 100n;
-  const fraction = (absolute % 100n).toString().padStart(2, "0");
-  return `${cents < 0n ? "-" : ""}${whole.toString()}.${fraction}`;
 }

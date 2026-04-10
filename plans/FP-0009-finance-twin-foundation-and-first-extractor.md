@@ -15,7 +15,7 @@ It starts Finance Twin persistence and sync behavior, but it does not begin CFO 
 - [x] 2026-04-09T22:44:56Z Read the active repo guidance, roadmap, F0/F1 Finance Plans, scoped AGENTS files, and source-ingest ops guidance; inspect the current source-registry, raw-ingest, twin, bootstrap, app, and test seams before planning.
 - [x] 2026-04-09T22:44:56Z Implement additive finance-twin contracts, schema, migration, control-plane module, and local smoke for the first real finance extractor family.
 - [x] 2026-04-10T00:07:56Z Run the required validation ladder, fix only in-scope failures, and confirm the full slice is green through `pnpm ci:repro:current`.
-- [ ] 2026-04-10T00:07:56Z Publish exactly one commit, push, and PR for the finished F2A slice.
+- [x] 2026-04-10T12:45:19Z F2A is now shipped on fetched `origin/main`, so the earlier branch-local publish placeholder is no longer active work in this plan.
 
 ## Surprises & Discoveries
 
@@ -260,4 +260,5 @@ Scope and truthfulness notes:
 - No active-doc boundary change was required for this slice.
 
 Remaining work:
-publish the validated branch through the requested single commit, push, and PR flow.
+none inside this plan.
+F2A is merged and this plan now serves as the truthful implementation record for the shipped first finance-twin extractor.

@@ -30,4 +30,12 @@ export async function registerFinanceTwinRoutes(
     const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
     return deps.financeTwinService.getCompanySummary(params.companyKey);
   });
+
+  app.get(
+    "/finance-twin/companies/:companyKey/account-catalog",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getAccountCatalog(params.companyKey);
+    },
+  );
 }

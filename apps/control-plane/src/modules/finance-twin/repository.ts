@@ -1,13 +1,15 @@
 import type {
+  FinanceAccountCatalogEntryRecord,
+  FinanceAccountCatalogEntryView,
   FinanceCompanyRecord,
+  FinanceLedgerAccountRecord,
+  FinanceReportingPeriodRecord,
+  FinanceTrialBalanceLineRecord,
   FinanceTwinExtractorKey,
   FinanceTwinLineageRecord,
   FinanceTwinLineageTargetKind,
   FinanceTwinSyncRunRecord,
   FinanceTwinSyncRunStatus,
-  FinanceLedgerAccountRecord,
-  FinanceReportingPeriodRecord,
-  FinanceTrialBalanceLineRecord,
 } from "@pocket-cto/domain";
 import {
   createMemorySession,
@@ -63,6 +65,18 @@ export type UpsertFinanceTrialBalanceLineInput = {
   creditAmount: string;
   netAmount: string;
   currencyCode: string | null;
+  observedAt: string;
+};
+
+export type UpsertFinanceAccountCatalogEntryInput = {
+  companyId: string;
+  ledgerAccountId: string;
+  syncRunId: string;
+  lineNumber: number;
+  detailType: string | null;
+  description: string | null;
+  parentAccountCode: string | null;
+  isActive: boolean | null;
   observedAt: string;
 };
 
@@ -122,6 +136,16 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     companyId: string,
     session?: PersistenceSession,
   ): Promise<FinanceTwinSyncRunRecord | null>;
+  getLatestSyncRunByCompanyIdAndExtractorKey(
+    companyId: string,
+    extractorKey: FinanceTwinExtractorKey,
+    session?: PersistenceSession,
+  ): Promise<FinanceTwinSyncRunRecord | null>;
+  getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+    companyId: string,
+    extractorKey: FinanceTwinExtractorKey,
+    session?: PersistenceSession,
+  ): Promise<FinanceTwinSyncRunRecord | null>;
   upsertTrialBalanceLine(
     input: UpsertFinanceTrialBalanceLineInput,
     session?: PersistenceSession,
@@ -130,6 +154,14 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     syncRunId: string,
     session?: PersistenceSession,
   ): Promise<FinanceTrialBalanceLineRecord[]>;
+  upsertAccountCatalogEntry(
+    input: UpsertFinanceAccountCatalogEntryInput,
+    session?: PersistenceSession,
+  ): Promise<FinanceAccountCatalogEntryRecord>;
+  listAccountCatalogEntriesBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceAccountCatalogEntryView[]>;
   createLineage(
     input: CreateFinanceTwinLineageInput,
     session?: PersistenceSession,
@@ -150,6 +182,11 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
   private readonly syncRuns = new Map<string, FinanceTwinSyncRunRecord>();
   private readonly trialBalanceLines = new Map<string, FinanceTrialBalanceLineRecord>();
   private readonly trialBalanceLinesByScope = new Map<string, string>();
+  private readonly accountCatalogEntries = new Map<
+    string,
+    FinanceAccountCatalogEntryRecord
+  >();
+  private readonly accountCatalogEntriesByScope = new Map<string, string>();
   private readonly lineage = new Map<string, FinanceTwinLineageRecord>();
   private readonly lineageByScope = new Map<string, string>();
 
@@ -319,6 +356,36 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     );
   }
 
+  async getLatestSyncRunByCompanyIdAndExtractorKey(
+    companyId: string,
+    extractorKey: FinanceTwinExtractorKey,
+  ) {
+    return (
+      sortSyncRuns(
+        [...this.syncRuns.values()].filter(
+          (run) =>
+            run.companyId === companyId && run.extractorKey === extractorKey,
+        ),
+      )[0] ?? null
+    );
+  }
+
+  async getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+    companyId: string,
+    extractorKey: FinanceTwinExtractorKey,
+  ) {
+    return (
+      sortSyncRuns(
+        [...this.syncRuns.values()].filter(
+          (run) =>
+            run.companyId === companyId &&
+            run.extractorKey === extractorKey &&
+            run.status === "succeeded",
+        ),
+      )[0] ?? null
+    );
+  }
+
   async upsertTrialBalanceLine(input: UpsertFinanceTrialBalanceLineInput) {
     const existing = this.trialBalanceLines.get(
       this.trialBalanceLinesByScope.get(
@@ -365,6 +432,67 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     return [...this.trialBalanceLines.values()]
       .filter((line) => line.syncRunId === syncRunId)
       .sort((left, right) => left.lineNumber - right.lineNumber);
+  }
+
+  async upsertAccountCatalogEntry(input: UpsertFinanceAccountCatalogEntryInput) {
+    const existing = this.accountCatalogEntries.get(
+      this.accountCatalogEntriesByScope.get(
+        `${input.syncRunId}::${input.ledgerAccountId}`,
+      ) ?? "",
+    );
+    const now = new Date().toISOString();
+    const entry: FinanceAccountCatalogEntryRecord = existing
+      ? {
+          ...existing,
+          lineNumber: input.lineNumber,
+          detailType: input.detailType,
+          description: input.description,
+          parentAccountCode: input.parentAccountCode,
+          isActive: input.isActive,
+          observedAt: input.observedAt,
+          updatedAt: now,
+        }
+      : {
+          id: crypto.randomUUID(),
+          companyId: input.companyId,
+          ledgerAccountId: input.ledgerAccountId,
+          syncRunId: input.syncRunId,
+          lineNumber: input.lineNumber,
+          detailType: input.detailType,
+          description: input.description,
+          parentAccountCode: input.parentAccountCode,
+          isActive: input.isActive,
+          observedAt: input.observedAt,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+    this.accountCatalogEntries.set(entry.id, entry);
+    this.accountCatalogEntriesByScope.set(
+      `${input.syncRunId}::${input.ledgerAccountId}`,
+      entry.id,
+    );
+    return entry;
+  }
+
+  async listAccountCatalogEntriesBySyncRunId(syncRunId: string) {
+    return [...this.accountCatalogEntries.values()]
+      .filter((entry) => entry.syncRunId === syncRunId)
+      .sort((left, right) => left.lineNumber - right.lineNumber)
+      .map((catalogEntry) => {
+        const ledgerAccount = this.ledgerAccounts.get(catalogEntry.ledgerAccountId);
+
+        if (!ledgerAccount) {
+          throw new Error(
+            `Ledger account ${catalogEntry.ledgerAccountId} missing for account catalog entry ${catalogEntry.id}`,
+          );
+        }
+
+        return {
+          catalogEntry,
+          ledgerAccount,
+        };
+      });
   }
 
   async createLineage(input: CreateFinanceTwinLineageInput) {

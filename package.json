@@ -46,6 +46,7 @@
     "smoke:github-issue-intake:doctor": "node tools/github-webhook-live-doctor.mjs",
     "smoke:github-issue-intake:local": "node tools/github-issue-intake-local-smoke.mjs",
     "smoke:github-issue-intake:live": "node tools/github-issue-intake-local-smoke.mjs --mode live_github_hosted_issue",
+    "smoke:finance-twin-account-catalog:local": "tsx tools/finance-twin-account-catalog-smoke.mjs",
     "smoke:finance-twin:local": "tsx tools/finance-twin-smoke.mjs",
     "smoke:source-ingest:local": "tsx tools/source-ingest-smoke.mjs --mode ingest",
     "smoke:source-registry:local": "tsx tools/source-ingest-smoke.mjs --mode registry",

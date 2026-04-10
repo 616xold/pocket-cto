@@ -2,12 +2,169 @@ import { describe, expect, it } from "vitest";
 import { SourceRegistryService } from "../sources/service";
 import { InMemorySourceRepository } from "../sources/repository";
 import { InMemorySourceFileStorage } from "../sources/storage";
-import { FinanceTwinUnsupportedSourceError } from "./errors";
+import {
+  FinanceCompanyNotFoundError,
+  FinanceTwinUnsupportedSourceError,
+} from "./errors";
 import { InMemoryFinanceTwinRepository } from "./repository";
 import { FinanceTwinService } from "./service";
 
 describe("FinanceTwinService", () => {
-  it("syncs one uploaded trial-balance CSV into persisted finance twin state", async () => {
+  it("syncs one uploaded chart-of-accounts CSV into persisted account-catalog state", async () => {
+    const now = () => new Date("2026-04-10T09:15:00.000Z");
+    const sourceRepository = new InMemorySourceRepository();
+    const sourceStorage = new InMemorySourceFileStorage();
+    const sourceService = new SourceRegistryService(
+      sourceRepository,
+      sourceStorage,
+      now,
+    );
+    const financeRepository = new InMemoryFinanceTwinRepository();
+    const financeTwinService = new FinanceTwinService({
+      financeTwinRepository: financeRepository,
+      sourceFileStorage: sourceStorage,
+      sourceRepository,
+      now,
+    });
+    const created = await sourceService.createSource({
+      kind: "dataset",
+      name: "Chart of accounts",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "chart-of-accounts-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        storageKind: "external_url",
+        storageRef: "https://example.com/chart-of-accounts",
+        ingestStatus: "registered",
+      },
+    });
+    const registered = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "chart-of-accounts.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "account_code,account_name,account_type,detail_type,parent_account_code,is_active,description",
+          "1000,Cash,asset,current_asset,,true,Operating cash",
+          "1100,Petty Cash,asset,current_asset,1000,false,Small cash drawer",
+        ].join("\n"),
+      ),
+    );
+
+    const synced = await financeTwinService.syncCompanySourceFile(
+      "acme",
+      registered.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
+    const summary = await financeTwinService.getCompanySummary("acme");
+    const accountCatalog = await financeTwinService.getAccountCatalog("acme");
+
+    expect(synced).toMatchObject({
+      company: {
+        companyKey: "acme",
+        displayName: "Acme Holdings",
+      },
+      syncRun: {
+        status: "succeeded",
+        sourceFileId: registered.sourceFile.id,
+        extractorKey: "chart_of_accounts_csv",
+      },
+      companyTotals: {
+        reportingPeriodCount: 0,
+        ledgerAccountCount: 2,
+      },
+      latestSuccessfulSlices: {
+        chartOfAccounts: {
+          coverage: {
+            accountCatalogEntryCount: 2,
+            lineageCount: 4,
+          },
+          summary: {
+            accountCount: 2,
+            activeAccountCount: 1,
+            inactiveAccountCount: 1,
+            parentLinkedCount: 1,
+          },
+        },
+      },
+    });
+    expect(summary).toMatchObject({
+      company: {
+        companyKey: "acme",
+      },
+      freshness: {
+        overall: {
+          state: "missing",
+        },
+        trialBalance: {
+          state: "missing",
+        },
+        chartOfAccounts: {
+          state: "fresh",
+        },
+      },
+      companyTotals: {
+        reportingPeriodCount: 0,
+        ledgerAccountCount: 2,
+      },
+      latestSuccessfulSlices: {
+        chartOfAccounts: {
+          coverage: {
+            accountCatalogEntryCount: 2,
+          },
+        },
+      },
+    });
+    expect(accountCatalog).toMatchObject({
+      company: {
+        companyKey: "acme",
+      },
+      latestSuccessfulSlice: {
+        coverage: {
+          accountCatalogEntryCount: 2,
+          lineageCount: 4,
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      accounts: [
+        {
+          ledgerAccount: {
+            accountCode: "1000",
+            accountName: "Cash",
+          },
+          catalogEntry: {
+            detailType: "current_asset",
+            description: "Operating cash",
+            parentAccountCode: null,
+            isActive: true,
+          },
+        },
+        {
+          ledgerAccount: {
+            accountCode: "1100",
+            accountName: "Petty Cash",
+          },
+          catalogEntry: {
+            parentAccountCode: "1000",
+            isActive: false,
+          },
+        },
+      ],
+    });
+  });
+
+  it("syncs one uploaded trial-balance CSV and leaves chart-of-accounts freshness missing", async () => {
     const now = () => new Date("2026-04-09T23:15:00.000Z");
     const sourceRepository = new InMemorySourceRepository();
     const sourceStorage = new InMemorySourceFileStorage();
@@ -33,7 +190,7 @@ describe("FinanceTwinService", () => {
         mediaType: "text/plain",
         sizeBytes: 18,
         checksumSha256:
-          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         storageKind: "external_url",
         storageRef: "https://example.com/march-trial-balance",
         ingestStatus: "registered",
@@ -65,67 +222,58 @@ describe("FinanceTwinService", () => {
     const summary = await financeTwinService.getCompanySummary("acme");
 
     expect(synced).toMatchObject({
-      company: {
-        companyKey: "acme",
-        displayName: "Acme Holdings",
-      },
-      latestSource: {
-        sourceId: created.source.id,
-        sourceSnapshotId: registered.snapshot.id,
-        sourceFileId: registered.sourceFile.id,
-      },
       syncRun: {
-        status: "succeeded",
-        sourceFileId: registered.sourceFile.id,
         extractorKey: "trial_balance_csv",
+        status: "succeeded",
       },
-      reportingPeriod: {
-        periodKey: "2026-03-31",
-      },
-      coverage: {
+      companyTotals: {
         reportingPeriodCount: 1,
         ledgerAccountCount: 2,
-        trialBalanceLineCount: 2,
-        lineageCount: 5,
       },
-      trialBalance: {
-        accountCount: 2,
-        lineCount: 2,
-        totalDebitAmount: "125000.00",
-        totalCreditAmount: "42000.00",
-        totalNetAmount: "83000.00",
-        currencyCode: "USD",
+      latestSuccessfulSlices: {
+        trialBalance: {
+          coverage: {
+            lineCount: 2,
+            lineageCount: 5,
+          },
+          summary: {
+            accountCount: 2,
+            lineCount: 2,
+            totalDebitAmount: "125000.00",
+            totalCreditAmount: "42000.00",
+            totalNetAmount: "83000.00",
+          },
+        },
       },
     });
     expect(summary).toMatchObject({
-      company: {
-        companyKey: "acme",
-      },
-      latestSyncRun: {
-        id: synced.syncRun.id,
-        status: "succeeded",
-      },
-      latestReportingPeriod: {
-        id: synced.reportingPeriod.id,
-      },
       freshness: {
         overall: {
-          state: "fresh",
+          state: "missing",
         },
         trialBalance: {
           state: "fresh",
         },
+        chartOfAccounts: {
+          state: "missing",
+        },
       },
-      coverage: {
-        reportingPeriodCount: 1,
-        ledgerAccountCount: 2,
-        trialBalanceLineCount: 2,
-        lineageCount: 5,
+      latestSuccessfulSlices: {
+        trialBalance: {
+          coverage: {
+            lineCount: 2,
+          },
+        },
+        chartOfAccounts: {
+          coverage: {
+            accountCatalogEntryCount: 0,
+          },
+        },
       },
     });
   });
 
-  it("persists a failed sync posture when the uploaded source is outside the supported extractor family", async () => {
+  it("rejects unsupported source files before creating finance company state", async () => {
     const now = () => new Date("2026-04-09T23:30:00.000Z");
     const sourceRepository = new InMemorySourceRepository();
     const sourceStorage = new InMemorySourceFileStorage();
@@ -150,7 +298,7 @@ describe("FinanceTwinService", () => {
         mediaType: "text/plain",
         sizeBytes: 18,
         checksumSha256:
-          "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
         storageKind: "external_url",
         storageRef: "https://example.com/board-deck",
         ingestStatus: "registered",
@@ -169,15 +317,8 @@ describe("FinanceTwinService", () => {
     await expect(
       financeTwinService.syncCompanySourceFile("acme", registered.sourceFile.id, {}),
     ).rejects.toBeInstanceOf(FinanceTwinUnsupportedSourceError);
-
-    const summary = await financeTwinService.getCompanySummary("acme");
-
-    expect(summary.latestSyncRun).toMatchObject({
-      sourceFileId: registered.sourceFile.id,
-      status: "failed",
-    });
-    expect(summary.latestSource).toBeNull();
-    expect(summary.freshness.trialBalance.state).toBe("failed");
-    expect(summary.coverage.trialBalanceLineCount).toBe(0);
+    await expect(financeTwinService.getCompanySummary("acme")).rejects.toBeInstanceOf(
+      FinanceCompanyNotFoundError,
+    );
   });
 });

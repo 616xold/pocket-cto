@@ -57,7 +57,7 @@ export type SourceServicePort = Pick<
 
 export type FinanceTwinServicePort = Pick<
   FinanceTwinService,
-  "getCompanySummary" | "syncCompanySourceFile"
+  "getAccountCatalog" | "getCompanySummary" | "syncCompanySourceFile"
 >;
 
 export type TwinServicePort = Pick<

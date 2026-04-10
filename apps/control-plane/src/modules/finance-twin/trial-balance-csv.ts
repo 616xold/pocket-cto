@@ -1,12 +1,12 @@
 import type { SourceFileRecord } from "@pocket-cto/domain";
+import {
+  buildHeaderLookup,
+  decodeCsvText,
+  getOptionalHeaderIndex,
+  parseCsvRows,
+  supportsCsvLikeSource,
+} from "./csv-utils";
 import { FinanceTwinExtractionError } from "./errors";
-
-const CSV_MEDIA_TYPES = new Set([
-  "application/csv",
-  "application/vnd.ms-excel",
-  "text/csv",
-  "text/plain",
-]);
 
 const ACCOUNT_CODE_HEADERS = [
   "account_code",
@@ -59,9 +59,31 @@ export type TrialBalanceExtractionResult = {
 export function supportsTrialBalanceCsvSource(
   sourceFile: Pick<SourceFileRecord, "mediaType" | "originalFileName">,
 ) {
-  const mediaType = normalizeMediaType(sourceFile.mediaType);
-  const fileExtension = getFileExtension(sourceFile.originalFileName);
-  return CSV_MEDIA_TYPES.has(mediaType) || fileExtension === "csv";
+  return supportsCsvLikeSource(sourceFile);
+}
+
+export function looksLikeTrialBalanceCsv(input: {
+  body: Buffer;
+  sourceFile: Pick<SourceFileRecord, "mediaType" | "originalFileName">;
+}) {
+  if (!supportsTrialBalanceCsvSource(input.sourceFile)) {
+    return false;
+  }
+
+  const header = readHeaderRow(input.body);
+
+  if (!header) {
+    return false;
+  }
+
+  const headerLookup = buildHeaderLookup(header);
+  return (
+    getOptionalHeaderIndex(headerLookup, ACCOUNT_CODE_HEADERS) !== null &&
+    getOptionalHeaderIndex(headerLookup, ACCOUNT_NAME_HEADERS) !== null &&
+    getOptionalHeaderIndex(headerLookup, PERIOD_END_HEADERS) !== null &&
+    getOptionalHeaderIndex(headerLookup, DEBIT_HEADERS) !== null &&
+    getOptionalHeaderIndex(headerLookup, CREDIT_HEADERS) !== null
+  );
 }
 
 export function extractTrialBalanceCsv(input: {
@@ -75,7 +97,7 @@ export function extractTrialBalanceCsv(input: {
     );
   }
 
-  const rows = parseCsvRows(decodeText(input.body));
+  const rows = readCsvRows(input.body);
   const header = rows[0];
 
   if (!header) {
@@ -85,9 +107,7 @@ export function extractTrialBalanceCsv(input: {
     );
   }
 
-  const headerLookup = new Map(
-    header.map((value, index) => [normalizeHeader(value), index]),
-  );
+  const headerLookup = buildHeaderLookup(header);
   const accountCodeIndex = getRequiredHeaderIndex(
     headerLookup,
     ACCOUNT_CODE_HEADERS,
@@ -154,9 +174,14 @@ export function extractTrialBalanceCsv(input: {
       "period end",
       lineNumber,
     );
-    const periodStart = periodStartIndex === null
-      ? null
-      : readOptionalIsoDate(row[periodStartIndex], "period start", lineNumber);
+    const periodStart =
+      periodStartIndex === null
+        ? null
+        : readOptionalIsoDate(
+            row[periodStartIndex],
+            "period start",
+            lineNumber,
+          );
     const debitAmount = parseNonNegativeMoney(
       row[debitIndex],
       "debit amount",
@@ -167,8 +192,10 @@ export function extractTrialBalanceCsv(input: {
       "credit amount",
       lineNumber,
     );
-    const accountType = readOptionalCell(row[accountTypeIndex ?? -1]);
-    const currencyCode = normalizeCurrency(row[currencyIndex ?? -1]);
+    const accountType =
+      accountTypeIndex === null ? null : readOptionalCell(row[accountTypeIndex]);
+    const currencyCode =
+      currencyIndex === null ? null : normalizeCurrency(row[currencyIndex]);
     const existingAccount = accountsByCode.get(accountCode);
 
     if (
@@ -246,82 +273,23 @@ export function extractTrialBalanceCsv(input: {
   };
 }
 
-function parseCsvRows(text: string) {
-  if (text.length === 0) {
-    return [] as string[][];
-  }
-
-  const rows: string[][] = [];
-  let currentRow: string[] = [];
-  let currentField = "";
-  let inQuotes = false;
-
-  for (let index = 0; index < text.length; index += 1) {
-    const character = text[index];
-
-    if (character === undefined) {
-      break;
-    }
-
-    if (inQuotes) {
-      if (character === '"') {
-        if (text[index + 1] === '"') {
-          currentField += '"';
-          index += 1;
-          continue;
-        }
-
-        inQuotes = false;
-        continue;
-      }
-
-      currentField += character;
-      continue;
-    }
-
-    if (character === '"') {
-      inQuotes = true;
-      continue;
-    }
-
-    if (character === ",") {
-      currentRow.push(currentField);
-      currentField = "";
-      continue;
-    }
-
-    if (character === "\n" || character === "\r") {
-      if (character === "\r" && text[index + 1] === "\n") {
-        index += 1;
-      }
-
-      currentRow.push(currentField);
-      rows.push(currentRow);
-      currentRow = [];
-      currentField = "";
-      continue;
-    }
-
-    currentField += character;
-  }
-
-  if (inQuotes) {
-    throw new FinanceTwinExtractionError(
-      "trial_balance_unterminated_quote",
-      "Trial-balance CSV ended while a quoted field was still open.",
-    );
-  }
-
-  if (currentField.length > 0 || currentRow.length > 0) {
-    currentRow.push(currentField);
-    rows.push(currentRow);
-  }
-
-  return rows;
+function readHeaderRow(body: Buffer) {
+  return readCsvRows(body)[0] ?? null;
 }
 
-function decodeText(body: Buffer) {
-  return new TextDecoder("utf-8").decode(body).replace(/^\uFEFF/u, "");
+function readCsvRows(body: Buffer) {
+  try {
+    return parseCsvRows(decodeCsvText(body));
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new FinanceTwinExtractionError(
+        "trial_balance_unterminated_quote",
+        "Trial-balance CSV ended while a quoted field was still open.",
+      );
+    }
+
+    throw error;
+  }
 }
 
 function getRequiredHeaderIndex(
@@ -339,29 +307,6 @@ function getRequiredHeaderIndex(
   }
 
   return index;
-}
-
-function getOptionalHeaderIndex(
-  headerLookup: Map<string, number>,
-  candidateHeaders: string[],
-) {
-  for (const candidate of candidateHeaders) {
-    const index = headerLookup.get(candidate);
-
-    if (index !== undefined) {
-      return index;
-    }
-  }
-
-  return null;
-}
-
-function normalizeHeader(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, "_")
-    .replace(/^_+|_+$/gu, "");
 }
 
 function requireCell(value: string | undefined, label: string, lineNumber: number) {
@@ -401,7 +346,10 @@ function parseIsoDate(value: string, label: string, lineNumber: number) {
 
   const parsed = new Date(`${value}T00:00:00.000Z`);
 
-  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+  if (
+    Number.isNaN(parsed.getTime()) ||
+    parsed.toISOString().slice(0, 10) !== value
+  ) {
     throw new FinanceTwinExtractionError(
       "trial_balance_invalid_date",
       `Trial-balance CSV row ${lineNumber} has an invalid ${label}: ${value}.`,
@@ -472,15 +420,4 @@ function formatMoney(cents: bigint) {
 function normalizeCurrency(value: string | undefined) {
   const normalized = value?.trim();
   return normalized ? normalized.toUpperCase() : null;
-}
-
-function getFileExtension(fileName: string) {
-  const lastDot = fileName.lastIndexOf(".");
-  return lastDot < 0 || lastDot === fileName.length - 1
-    ? null
-    : fileName.slice(lastDot + 1).toLowerCase();
-}
-
-function normalizeMediaType(mediaType: string) {
-  return mediaType.split(";")[0]?.trim().toLowerCase() ?? mediaType.trim().toLowerCase();
 }

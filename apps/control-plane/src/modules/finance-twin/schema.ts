@@ -1,4 +1,5 @@
 import {
+  FinanceAccountCatalogViewSchema,
   FinanceCompanyKeySchema,
   FinanceTwinCompanySummarySchema,
   FinanceTwinSyncInputSchema,
@@ -17,6 +18,7 @@ export const financeTwinSyncParamsSchema = financeTwinCompanyKeyParamsSchema.ext
 export const financeTwinSyncBodySchema = FinanceTwinSyncInputSchema;
 
 export {
+  FinanceAccountCatalogViewSchema,
   FinanceTwinCompanySummarySchema,
   FinanceTwinSyncResultSchema,
 };

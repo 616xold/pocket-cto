@@ -8,12 +8,12 @@ import { createContainer } from "../apps/control-plane/src/bootstrap.ts";
 import { closeAllPools } from "../packages/db/src/client.ts";
 import { buildRunTag, loadNearestEnvFile } from "./m2-exit-utils.mjs";
 
-const DEFAULT_COMPANY_KEY = "local-trial-balance-smoke-company";
-const DEFAULT_COMPANY_NAME = "Local Trial Balance Smoke Company";
-const DEFAULT_CREATED_BY = "finance-twin-smoke";
+const DEFAULT_COMPANY_KEY = "local-account-catalog-smoke-company";
+const DEFAULT_COMPANY_NAME = "Local Account Catalog Smoke Company";
+const DEFAULT_CREATED_BY = "finance-account-catalog-smoke";
 const MODULE_PATH = fileURLToPath(import.meta.url);
 
-function parseFinanceTwinSmokeArgs(argv) {
+function parseArgs(argv) {
   const options = {
     companyKey: DEFAULT_COMPANY_KEY,
     companyName: DEFAULT_COMPANY_NAME,
@@ -56,38 +56,38 @@ function parseFinanceTwinSmokeArgs(argv) {
   return options;
 }
 
-function buildFinanceTwinSmokeFixture(input) {
+function buildFixture(input) {
   const seedText = JSON.stringify(
     {
       createdBy: input.createdBy,
-      note: "Seed snapshot for the packaged finance twin smoke.",
-      requestedBy: "finance_twin_smoke",
+      note: "Seed snapshot for the packaged finance account catalog smoke.",
+      requestedBy: "finance_account_catalog_smoke",
       runTag: input.runTag,
     },
     null,
     2,
   );
   const uploadText = [
-    "account_code,account_name,period_end,debit,credit,currency_code,account_type",
-    "1000,Cash,2026-03-31,125000.00,0.00,USD,asset",
-    "2000,Accounts Payable,2026-03-31,0.00,42000.00,USD,liability",
-    "3000,Retained Earnings,2026-03-31,0.00,83000.00,USD,equity",
+    "account_code,account_name,account_type,detail_type,parent_account_code,is_active,description",
+    "1000,Cash,asset,current_asset,,true,Operating cash",
+    "1100,Petty Cash,asset,current_asset,1000,false,Small cash drawer",
+    "2000,Accounts Payable,liability,current_liability,,true,Open supplier balances",
   ].join("\n");
 
   return {
     createdBy: input.createdBy,
     companyKey: input.companyKey,
     companyName: input.companyName,
-    sourceName: `Trial balance smoke ${input.runTag}`,
+    sourceName: `Account catalog smoke ${input.runTag}`,
     seed: {
       body: Buffer.from(`${seedText}\n`, "utf8"),
       mediaType: "application/json",
-      originalFileName: `finance-twin-seed-${input.runTag}.json`,
+      originalFileName: `finance-account-catalog-seed-${input.runTag}.json`,
     },
     upload: {
       body: Buffer.from(`${uploadText}\n`, "utf8"),
       mediaType: "text/csv",
-      originalFileName: `trial-balance-${input.runTag}.csv`,
+      originalFileName: `chart-of-accounts-${input.runTag}.csv`,
     },
   };
 }
@@ -95,11 +95,9 @@ function buildFinanceTwinSmokeFixture(input) {
 async function main() {
   loadNearestEnvFile();
 
-  const options = parseFinanceTwinSmokeArgs(
-    process.argv.slice(2).filter((entry) => entry !== "--"),
-  );
+  const options = parseArgs(process.argv.slice(2).filter((entry) => entry !== "--"));
   const runTag = buildRunTag();
-  const fixture = buildFinanceTwinSmokeFixture({
+  const fixture = buildFixture({
     ...options,
     runTag,
   });
@@ -117,7 +115,7 @@ async function main() {
       method: "POST",
       payload: {
         createdBy: fixture.createdBy,
-        description: "Packaged finance-twin smoke source.",
+        description: "Packaged finance account-catalog smoke source.",
         kind: "dataset",
         name: fixture.sourceName,
         snapshot: {
@@ -132,7 +130,6 @@ async function main() {
       },
       url: "/sources",
     });
-
     const sourceId = requireUuid(created?.source?.id, "source id");
     const uploaded = await injectJson(app, {
       expectedStatus: 201,
@@ -148,11 +145,7 @@ async function main() {
         originalFileName: fixture.upload.originalFileName,
       }).toString()}`,
     });
-
-    const sourceFileId = requireUuid(
-      uploaded?.sourceFile?.id,
-      "source file id",
-    );
+    const sourceFileId = requireUuid(uploaded?.sourceFile?.id, "source file id");
     const synced = await injectJson(app, {
       expectedStatus: 201,
       method: "POST",
@@ -161,11 +154,18 @@ async function main() {
       },
       url: `/finance-twin/companies/${fixture.companyKey}/source-files/${sourceFileId}/sync`,
     });
-    const summary = await injectJson(app, {
-      expectedStatus: 200,
-      method: "GET",
-      url: `/finance-twin/companies/${fixture.companyKey}/summary`,
-    });
+    const [summary, accountCatalog] = await Promise.all([
+      injectJson(app, {
+        expectedStatus: 200,
+        method: "GET",
+        url: `/finance-twin/companies/${fixture.companyKey}/summary`,
+      }),
+      injectJson(app, {
+        expectedStatus: 200,
+        method: "GET",
+        url: `/finance-twin/companies/${fixture.companyKey}/account-catalog`,
+      }),
+    ]);
 
     console.log(
       JSON.stringify(
@@ -192,7 +192,16 @@ async function main() {
           },
           companyTotals: summary.companyTotals,
           freshness: summary.freshness,
-          latestSuccessfulSlices: summary.latestSuccessfulSlices,
+          latestSuccessfulChartOfAccounts:
+            summary.latestSuccessfulSlices.chartOfAccounts,
+          accountCatalog: accountCatalog.accounts.map((account) => ({
+            accountCode: account.ledgerAccount.accountCode,
+            accountName: account.ledgerAccount.accountName,
+            accountType: account.ledgerAccount.accountType,
+            detailType: account.catalogEntry.detailType,
+            parentAccountCode: account.catalogEntry.parentAccountCode,
+            isActive: account.catalogEntry.isActive,
+          })),
           limitations: summary.limitations,
         },
         null,
@@ -209,7 +218,9 @@ async function main() {
 }
 
 async function writeSeedSnapshot(seed) {
-  const directory = await mkdtemp(join(tmpdir(), "pocket-cfo-finance-smoke-"));
+  const directory = await mkdtemp(
+    join(tmpdir(), "pocket-cfo-finance-account-catalog-smoke-"),
+  );
   const storageRef = join(directory, seed.originalFileName);
 
   await writeFile(storageRef, seed.body);

@@ -572,51 +572,88 @@ describe("control-plane app", () => {
         companyKey: "acme",
         displayName: "Acme Holdings",
       },
-      latestSource: {
-        sourceFileId: uploaded.sourceFile.id,
-      },
       syncRun: {
         extractorKey: "trial_balance_csv",
         status: "succeeded",
       },
-      coverage: {
-        reportingPeriodCount: 1,
+      companyTotals: {
         ledgerAccountCount: 2,
-        trialBalanceLineCount: 2,
-        lineageCount: 5,
       },
-      trialBalance: {
-        totalDebitAmount: "125000.00",
-        totalCreditAmount: "42000.00",
-        totalNetAmount: "83000.00",
+      latestSuccessfulSlices: {
+        trialBalance: {
+          coverage: {
+            lineCount: 2,
+            lineageCount: 5,
+          },
+          summary: {
+            totalDebitAmount: "125000.00",
+            totalCreditAmount: "42000.00",
+            totalNetAmount: "83000.00",
+          },
+        },
       },
     });
 
-    const summaryResponse = await app.inject({
-      method: "GET",
-      url: "/finance-twin/companies/acme/summary",
-    });
+    const [summaryResponse, accountCatalogResponse] = await Promise.all([
+      app.inject({
+        method: "GET",
+        url: "/finance-twin/companies/acme/summary",
+      }),
+      app.inject({
+        method: "GET",
+        url: "/finance-twin/companies/acme/account-catalog",
+      }),
+    ]);
 
     expect(summaryResponse.statusCode).toBe(200);
     expect(summaryResponse.json()).toMatchObject({
       company: {
         companyKey: "acme",
       },
-      latestSyncRun: {
+      latestAttemptedSyncRun: {
         sourceFileId: uploaded.sourceFile.id,
         status: "succeeded",
       },
       freshness: {
         overall: {
-          state: "fresh",
+          state: "missing",
         },
         trialBalance: {
           state: "fresh",
         },
+        chartOfAccounts: {
+          state: "missing",
+        },
       },
-      coverage: {
-        trialBalanceLineCount: 2,
+      latestSuccessfulSlices: {
+        trialBalance: {
+          coverage: {
+            lineCount: 2,
+          },
+        },
+        chartOfAccounts: {
+          coverage: {
+            accountCatalogEntryCount: 0,
+          },
+        },
       },
+    });
+    expect(accountCatalogResponse.statusCode).toBe(200);
+    expect(accountCatalogResponse.json()).toMatchObject({
+      company: {
+        companyKey: "acme",
+      },
+      latestAttemptedSyncRun: null,
+      latestSuccessfulSlice: {
+        coverage: {
+          accountCatalogEntryCount: 0,
+          lineageCount: 0,
+        },
+      },
+      freshness: {
+        state: "missing",
+      },
+      accounts: [],
     });
   });
 

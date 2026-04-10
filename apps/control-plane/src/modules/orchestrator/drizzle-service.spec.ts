@@ -2707,6 +2707,9 @@ async function createHarness(options?: {
         },
       },
       financeTwinService: {
+        async getAccountCatalog() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
         async getCompanySummary() {
           throw new Error("Not implemented in orchestrator harness");
         },

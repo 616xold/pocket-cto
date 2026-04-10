@@ -22,7 +22,10 @@ export const FinanceAmountSchema = z
   .string()
   .regex(/^-?\d+\.\d{2}$/u, "Expected money amount with 2 decimal places");
 
-export const FinanceTwinExtractorKeySchema = z.enum(["trial_balance_csv"]);
+export const FinanceTwinExtractorKeySchema = z.enum([
+  "trial_balance_csv",
+  "chart_of_accounts_csv",
+]);
 
 export const FinanceTwinSyncRunStatusSchema = z.enum([
   "running",
@@ -34,6 +37,7 @@ export const FinanceTwinLineageTargetKindSchema = z.enum([
   "reporting_period",
   "ledger_account",
   "trial_balance_line",
+  "account_catalog_entry",
 ]);
 
 export const FinanceFreshnessStateSchema = z.enum([
@@ -43,7 +47,10 @@ export const FinanceFreshnessStateSchema = z.enum([
   "failed",
 ]);
 
-export const FinanceFreshnessSliceNameSchema = z.enum(["trial_balance"]);
+export const FinanceFreshnessSliceNameSchema = z.enum([
+  "trial_balance",
+  "chart_of_accounts",
+]);
 
 export const FinanceCompanyRecordSchema = z.object({
   id: z.string().uuid(),
@@ -70,6 +77,21 @@ export const FinanceLedgerAccountRecordSchema = z.object({
   accountCode: z.string().min(1),
   accountName: z.string().min(1),
   accountType: z.string().min(1).nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+});
+
+export const FinanceAccountCatalogEntryRecordSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  ledgerAccountId: z.string().uuid(),
+  syncRunId: z.string().uuid(),
+  lineNumber: z.number().int().positive(),
+  detailType: z.string().min(1).nullable(),
+  description: z.string().min(1).nullable(),
+  parentAccountCode: z.string().min(1).nullable(),
+  isActive: z.boolean().nullable(),
+  observedAt: z.string().datetime({ offset: true }),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
 });
@@ -146,6 +168,7 @@ export const FinanceFreshnessSummarySchema = z.object({
 export const FinanceFreshnessViewSchema = z.object({
   overall: FinanceFreshnessSummarySchema,
   trialBalance: FinanceFreshnessSummarySchema,
+  chartOfAccounts: FinanceFreshnessSummarySchema,
 });
 
 export const FinanceTrialBalanceSummarySchema = z.object({
@@ -157,32 +180,78 @@ export const FinanceTrialBalanceSummarySchema = z.object({
   currencyCode: z.string().min(1).nullable(),
 });
 
-export const FinanceTwinCoverageSummarySchema = z.object({
+export const FinanceChartOfAccountsSummarySchema = z.object({
+  accountCount: z.number().int().nonnegative(),
+  activeAccountCount: z.number().int().nonnegative(),
+  inactiveAccountCount: z.number().int().nonnegative(),
+  parentLinkedCount: z.number().int().nonnegative(),
+});
+
+export const FinanceCompanyTotalsSchema = z.object({
   reportingPeriodCount: z.number().int().nonnegative(),
   ledgerAccountCount: z.number().int().nonnegative(),
-  trialBalanceLineCount: z.number().int().nonnegative(),
+});
+
+export const FinanceTrialBalanceCoverageSchema = z.object({
+  lineCount: z.number().int().nonnegative(),
   lineageCount: z.number().int().nonnegative(),
+});
+
+export const FinanceChartOfAccountsCoverageSchema = z.object({
+  accountCatalogEntryCount: z.number().int().nonnegative(),
+  lineageCount: z.number().int().nonnegative(),
+});
+
+export const FinanceLatestSuccessfulTrialBalanceSliceSchema = z.object({
+  latestSource: FinanceTwinSourceRefSchema.nullable(),
+  latestSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  reportingPeriod: FinanceReportingPeriodRecordSchema.nullable(),
+  coverage: FinanceTrialBalanceCoverageSchema,
+  summary: FinanceTrialBalanceSummarySchema.nullable(),
+});
+
+export const FinanceLatestSuccessfulChartOfAccountsSliceSchema = z.object({
+  latestSource: FinanceTwinSourceRefSchema.nullable(),
+  latestSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  coverage: FinanceChartOfAccountsCoverageSchema,
+  summary: FinanceChartOfAccountsSummarySchema.nullable(),
+});
+
+export const FinanceLatestSuccessfulSlicesSchema = z.object({
+  trialBalance: FinanceLatestSuccessfulTrialBalanceSliceSchema,
+  chartOfAccounts: FinanceLatestSuccessfulChartOfAccountsSliceSchema,
 });
 
 export const FinanceTwinCompanySummarySchema = z.object({
   company: FinanceCompanyRecordSchema,
-  latestSource: FinanceTwinSourceRefSchema.nullable(),
-  latestSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
-  latestReportingPeriod: FinanceReportingPeriodRecordSchema.nullable(),
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  latestSuccessfulSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
   freshness: FinanceFreshnessViewSchema,
-  coverage: FinanceTwinCoverageSummarySchema,
-  trialBalance: FinanceTrialBalanceSummarySchema.nullable(),
+  companyTotals: FinanceCompanyTotalsSchema,
+  latestSuccessfulSlices: FinanceLatestSuccessfulSlicesSchema,
   limitations: z.array(z.string().min(1)),
 });
 
 export const FinanceTwinSyncResultSchema = z.object({
   company: FinanceCompanyRecordSchema,
-  latestSource: FinanceTwinSourceRefSchema,
   syncRun: FinanceTwinSyncRunRecordSchema,
-  reportingPeriod: FinanceReportingPeriodRecordSchema,
   freshness: FinanceFreshnessViewSchema,
-  coverage: FinanceTwinCoverageSummarySchema,
-  trialBalance: FinanceTrialBalanceSummarySchema,
+  companyTotals: FinanceCompanyTotalsSchema,
+  latestSuccessfulSlices: FinanceLatestSuccessfulSlicesSchema,
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceAccountCatalogEntryViewSchema = z.object({
+  ledgerAccount: FinanceLedgerAccountRecordSchema,
+  catalogEntry: FinanceAccountCatalogEntryRecordSchema,
+});
+
+export const FinanceAccountCatalogViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  latestSuccessfulSlice: FinanceLatestSuccessfulChartOfAccountsSliceSchema,
+  freshness: FinanceFreshnessSummarySchema,
+  accounts: z.array(FinanceAccountCatalogEntryViewSchema),
   limitations: z.array(z.string().min(1)),
 });
 
@@ -211,6 +280,9 @@ export type FinanceReportingPeriodRecord = z.infer<
 export type FinanceLedgerAccountRecord = z.infer<
   typeof FinanceLedgerAccountRecordSchema
 >;
+export type FinanceAccountCatalogEntryRecord = z.infer<
+  typeof FinanceAccountCatalogEntryRecordSchema
+>;
 export type FinanceTrialBalanceLineRecord = z.infer<
   typeof FinanceTrialBalanceLineRecordSchema
 >;
@@ -229,10 +301,32 @@ export type FinanceFreshnessView = z.infer<typeof FinanceFreshnessViewSchema>;
 export type FinanceTrialBalanceSummary = z.infer<
   typeof FinanceTrialBalanceSummarySchema
 >;
-export type FinanceTwinCoverageSummary = z.infer<
-  typeof FinanceTwinCoverageSummarySchema
+export type FinanceChartOfAccountsSummary = z.infer<
+  typeof FinanceChartOfAccountsSummarySchema
+>;
+export type FinanceCompanyTotals = z.infer<typeof FinanceCompanyTotalsSchema>;
+export type FinanceTrialBalanceCoverage = z.infer<
+  typeof FinanceTrialBalanceCoverageSchema
+>;
+export type FinanceChartOfAccountsCoverage = z.infer<
+  typeof FinanceChartOfAccountsCoverageSchema
+>;
+export type FinanceLatestSuccessfulTrialBalanceSlice = z.infer<
+  typeof FinanceLatestSuccessfulTrialBalanceSliceSchema
+>;
+export type FinanceLatestSuccessfulChartOfAccountsSlice = z.infer<
+  typeof FinanceLatestSuccessfulChartOfAccountsSliceSchema
+>;
+export type FinanceLatestSuccessfulSlices = z.infer<
+  typeof FinanceLatestSuccessfulSlicesSchema
 >;
 export type FinanceTwinCompanySummary = z.infer<
   typeof FinanceTwinCompanySummarySchema
 >;
 export type FinanceTwinSyncResult = z.infer<typeof FinanceTwinSyncResultSchema>;
+export type FinanceAccountCatalogEntryView = z.infer<
+  typeof FinanceAccountCatalogEntryViewSchema
+>;
+export type FinanceAccountCatalogView = z.infer<
+  typeof FinanceAccountCatalogViewSchema
+>;

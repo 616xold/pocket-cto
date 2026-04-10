@@ -127,6 +127,13 @@
       "when": 1775775399172,
       "tag": "0017_broad_jetstream",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1775825067266,
+      "tag": "0018_spooky_captain_cross",
+      "breakpoints": true
     }
   ]
 }

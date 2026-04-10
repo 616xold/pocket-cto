@@ -257,6 +257,11 @@ function createAppContainer(
       },
     } as AppContainer["githubWebhookService"],
     financeTwinService: {
+      async getAccountCatalog() {
+        throw new Error(
+          "getAccountCatalog should not be called in this test",
+        );
+      },
       async getCompanySummary() {
         throw new Error(
           "getCompanySummary should not be called in this test",
