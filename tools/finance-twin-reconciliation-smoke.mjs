@@ -8,9 +8,9 @@ import { createContainer } from "../apps/control-plane/src/bootstrap.ts";
 import { closeAllPools } from "../packages/db/src/client.ts";
 import { buildRunTag, loadNearestEnvFile } from "./m2-exit-utils.mjs";
 
-const DEFAULT_COMPANY_KEY = "local-finance-snapshot-smoke-company";
-const DEFAULT_COMPANY_NAME = "Local Finance Snapshot Smoke Company";
-const DEFAULT_CREATED_BY = "finance-snapshot-smoke";
+const DEFAULT_COMPANY_KEY = "local-finance-reconciliation-smoke-company";
+const DEFAULT_COMPANY_NAME = "Local Finance Reconciliation Smoke Company";
+const DEFAULT_CREATED_BY = "finance-reconciliation-smoke";
 const MODULE_PATH = fileURLToPath(import.meta.url);
 
 function parseArgs(argv) {
@@ -60,8 +60,8 @@ function buildFixture(input) {
   const seedText = JSON.stringify(
     {
       createdBy: input.createdBy,
-      note: "Seed snapshot for the packaged finance snapshot smoke.",
-      requestedBy: "finance_snapshot_smoke",
+      note: "Seed snapshot for the packaged finance reconciliation smoke.",
+      requestedBy: "finance_reconciliation_smoke",
       runTag: input.runTag,
     },
     null,
@@ -72,66 +72,42 @@ function buildFixture(input) {
     companyKey: input.companyKey,
     companyName: input.companyName,
     createdBy: input.createdBy,
+    source: {
+      sourceName: `Reconciliation smoke ${input.runTag}`,
+      capturedAt: "2026-04-11T00:00:00.000Z",
+      storageRef: `https://example.com/reconciliation/${input.runTag}`,
+      seed: {
+        body: Buffer.from(`${seedText}\n`, "utf8"),
+        mediaType: "application/json",
+        originalFileName: `finance-reconciliation-seed-${input.runTag}.json`,
+      },
+    },
     chartOfAccounts: {
-      linkName: `chart-of-accounts-link-${input.runTag}.txt`,
-      sourceName: `Chart of accounts smoke ${input.runTag}`,
       uploadName: `chart-of-accounts-${input.runTag}.csv`,
+      capturedAt: "2026-04-11T00:05:00.000Z",
       uploadText: [
         "account_code,account_name,account_type,detail_type,parent_account_code,is_active,description",
         "1000,Cash,asset,current_asset,,true,Operating cash",
-        "1100,Petty Cash,asset,current_asset,1000,false,Small cash drawer",
         "2000,Accounts Payable,liability,current_liability,,true,Supplier balances",
       ].join("\n"),
-      capturedAt: "2026-04-11T00:00:00.000Z",
-      storageRef: `https://example.com/chart-of-accounts/${input.runTag}`,
-      checksumSha256:
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      seed: {
-        body: Buffer.from(`${seedText}\n`, "utf8"),
-        mediaType: "application/json",
-        originalFileName: `finance-snapshot-chart-seed-${input.runTag}.json`,
-      },
     },
     trialBalance: {
-      linkName: `trial-balance-link-${input.runTag}.txt`,
-      sourceName: `Trial balance smoke ${input.runTag}`,
       uploadName: `trial-balance-${input.runTag}.csv`,
+      capturedAt: "2026-04-11T00:10:00.000Z",
       uploadText: [
-        "account_code,account_name,period_end,debit,credit,currency_code,account_type",
-        "1000,Cash,2026-03-31,100.00,0.00,USD,asset",
-        "2000,Accounts Payable,2026-03-31,0.00,40.00,USD,liability",
-        "3000,Retained Earnings,2026-03-31,0.00,60.00,USD,equity",
+        "account_code,account_name,period_start,period_end,debit,credit,currency_code,account_type",
+        "1000,Cash,2026-03-01,2026-03-31,120.00,0.00,USD,asset",
+        "2000,Accounts Payable,2026-03-01,2026-03-31,0.00,120.00,USD,liability",
       ].join("\n"),
-      capturedAt: "2026-04-11T00:05:00.000Z",
-      storageRef: `https://example.com/trial-balance/${input.runTag}`,
-      checksumSha256:
-        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      seed: {
-        body: Buffer.from(`${seedText}\n`, "utf8"),
-        mediaType: "application/json",
-        originalFileName: `finance-snapshot-trial-balance-seed-${input.runTag}.json`,
-      },
     },
     generalLedger: {
-      linkName: `general-ledger-link-${input.runTag}.txt`,
-      sourceName: `General ledger smoke ${input.runTag}`,
       uploadName: `general-ledger-${input.runTag}.csv`,
+      capturedAt: "2026-04-11T00:15:00.000Z",
       uploadText: [
         "journal_id,transaction_date,account_code,account_name,account_type,debit,credit,currency_code,memo",
-        "J-100,2026-04-01,1100,Petty Cash,asset,25.00,0.00,USD,Fund the petty cash drawer",
-        "J-100,2026-04-01,1000,Cash,asset,0.00,25.00,USD,Fund the petty cash drawer",
-        "J-101,2026-04-02,1000,Cash,asset,50.00,0.00,USD,Customer receipt",
-        "J-101,2026-04-02,4000,Revenue,revenue,0.00,50.00,USD,Customer receipt",
+        "J-100,2026-03-15,1000,Cash,asset,120.00,0.00,USD,Customer receipt",
+        "J-100,2026-03-15,2000,Accounts Payable,liability,0.00,120.00,USD,Customer receipt",
       ].join("\n"),
-      capturedAt: "2026-04-11T00:10:00.000Z",
-      storageRef: `https://example.com/general-ledger/${input.runTag}`,
-      checksumSha256:
-        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-      seed: {
-        body: Buffer.from(`${seedText}\n`, "utf8"),
-        mediaType: "application/json",
-        originalFileName: `finance-snapshot-general-ledger-seed-${input.runTag}.json`,
-      },
     },
   };
 }
@@ -152,9 +128,25 @@ async function main() {
     app = await buildApp({ container });
     app.log.level = "silent";
 
-    const chart = await createFinanceSourceFile(app, fixture.chartOfAccounts);
-    const trialBalance = await createFinanceSourceFile(app, fixture.trialBalance);
-    const generalLedger = await createFinanceSourceFile(app, fixture.generalLedger);
+    const source = await createSharedSource(app, fixture);
+    const chartFile = await createSourceFile(app, source.source.id, {
+      capturedAt: fixture.chartOfAccounts.capturedAt,
+      createdBy: fixture.createdBy,
+      originalFileName: fixture.chartOfAccounts.uploadName,
+      uploadText: fixture.chartOfAccounts.uploadText,
+    });
+    const trialBalanceFile = await createSourceFile(app, source.source.id, {
+      capturedAt: fixture.trialBalance.capturedAt,
+      createdBy: fixture.createdBy,
+      originalFileName: fixture.trialBalance.uploadName,
+      uploadText: fixture.trialBalance.uploadText,
+    });
+    const generalLedgerFile = await createSourceFile(app, source.source.id, {
+      capturedAt: fixture.generalLedger.capturedAt,
+      createdBy: fixture.createdBy,
+      originalFileName: fixture.generalLedger.uploadName,
+      uploadText: fixture.generalLedger.uploadText,
+    });
 
     await injectJson(app, {
       expectedStatus: 201,
@@ -162,27 +154,26 @@ async function main() {
       payload: {
         companyName: fixture.companyName,
       },
-      url: `/finance-twin/companies/${fixture.companyKey}/source-files/${chart.sourceFile.id}/sync`,
+      url: `/finance-twin/companies/${fixture.companyKey}/source-files/${chartFile.sourceFile.id}/sync`,
     });
     await injectJson(app, {
       expectedStatus: 201,
       method: "POST",
       payload: {},
-      url: `/finance-twin/companies/${fixture.companyKey}/source-files/${trialBalance.sourceFile.id}/sync`,
+      url: `/finance-twin/companies/${fixture.companyKey}/source-files/${trialBalanceFile.sourceFile.id}/sync`,
     });
     const generalLedgerSync = await injectJson(app, {
       expectedStatus: 201,
       method: "POST",
       payload: {},
-      url: `/finance-twin/companies/${fixture.companyKey}/source-files/${generalLedger.sourceFile.id}/sync`,
+      url: `/finance-twin/companies/${fixture.companyKey}/source-files/${generalLedgerFile.sourceFile.id}/sync`,
     });
-
-    const snapshot = await injectJson(app, {
+    const reconciliation = await injectJson(app, {
       expectedStatus: 200,
       method: "GET",
-      url: `/finance-twin/companies/${fixture.companyKey}/snapshot`,
+      url: `/finance-twin/companies/${fixture.companyKey}/reconciliation/trial-balance-vs-general-ledger`,
     });
-    const cashRow = snapshot.accounts.find(
+    const cashRow = reconciliation.accounts.find(
       (account) => account.ledgerAccount.accountCode === "1000",
     );
     const activityLineage = await injectJson(app, {
@@ -205,23 +196,18 @@ async function main() {
         {
           generatedAt: new Date().toISOString(),
           company: {
-            companyKey: snapshot.company.companyKey,
-            displayName: snapshot.company.displayName,
+            companyKey: reconciliation.company.companyKey,
+            displayName: reconciliation.company.displayName,
           },
-          sliceAlignment: snapshot.sliceAlignment,
-          coverageSummary: snapshot.coverageSummary,
-          latestSuccessfulSlices: snapshot.latestSuccessfulSlices,
-          accounts: snapshot.accounts.map((account) => ({
+          sliceAlignment: reconciliation.sliceAlignment,
+          comparability: reconciliation.comparability,
+          coverageSummary: reconciliation.coverageSummary,
+          accounts: reconciliation.accounts.map((account) => ({
             accountCode: account.ledgerAccount.accountCode,
-            accountName: account.ledgerAccount.accountName,
-            presentInChartOfAccounts: account.presentInChartOfAccounts,
             presentInTrialBalance: account.presentInTrialBalance,
             presentInGeneralLedger: account.presentInGeneralLedger,
-            missingFromChartOfAccounts: account.missingFromChartOfAccounts,
-            missingFromTrialBalance: account.missingFromTrialBalance,
-            missingFromGeneralLedger: account.missingFromGeneralLedger,
-            inactiveWithGeneralLedgerActivity:
-              account.inactiveWithGeneralLedgerActivity,
+            trialBalanceOnly: account.trialBalanceOnly,
+            generalLedgerOnly: account.generalLedgerOnly,
             activityLineageRef: account.activityLineageRef,
           })),
           activityLineage: activityLineage.records.map((record) => ({
@@ -238,7 +224,7 @@ async function main() {
             sourceFileName: record.sourceFile.originalFileName,
             sourceSnapshotId: record.sourceSnapshot.id,
           })),
-          limitations: snapshot.limitations,
+          limitations: reconciliation.limitations,
         },
         null,
         2,
@@ -253,55 +239,51 @@ async function main() {
   }
 }
 
-async function createFinanceSourceFile(app, fixture) {
-  const seedSnapshot = await writeSeedSnapshot(fixture.seed);
-  const created = await injectJson(app, {
+async function createSharedSource(app, fixture) {
+  const seedSnapshot = await writeSeedSnapshot(fixture.source.seed);
+
+  return injectJson(app, {
     expectedStatus: 201,
     method: "POST",
     payload: {
-      createdBy: fixture.createdBy ?? DEFAULT_CREATED_BY,
-      description: "Packaged finance snapshot smoke source.",
+      createdBy: fixture.createdBy,
+      description: "Packaged finance reconciliation smoke source.",
       kind: "dataset",
-      name: fixture.sourceName,
+      name: fixture.source.sourceName,
       snapshot: {
-        capturedAt: fixture.capturedAt,
+        capturedAt: fixture.source.capturedAt,
         checksumSha256: seedSnapshot.checksumSha256,
-        mediaType: fixture.seed.mediaType,
-        originalFileName: fixture.linkName,
-        sizeBytes: fixture.seed.body.byteLength,
+        mediaType: fixture.source.seed.mediaType,
+        originalFileName: fixture.source.seed.originalFileName,
+        sizeBytes: fixture.source.seed.body.byteLength,
         storageKind: "local_path",
         storageRef: seedSnapshot.storageRef,
       },
     },
     url: "/sources",
   });
-  const sourceId = requireUuid(created?.source?.id, "source id");
-  const uploaded = await injectJson(app, {
+}
+
+async function createSourceFile(app, sourceId, input) {
+  return injectJson(app, {
     expectedStatus: 201,
     headers: {
       "content-type": "application/octet-stream",
     },
     method: "POST",
-    payload: Buffer.from(`${fixture.uploadText}\n`, "utf8"),
+    payload: Buffer.from(`${input.uploadText}\n`, "utf8"),
     url: `/sources/${sourceId}/files?${new URLSearchParams({
-      capturedAt: fixture.capturedAt,
-      createdBy: fixture.createdBy ?? DEFAULT_CREATED_BY,
+      capturedAt: input.capturedAt,
+      createdBy: input.createdBy,
       mediaType: "text/csv",
-      originalFileName: fixture.uploadName,
+      originalFileName: input.originalFileName,
     }).toString()}`,
   });
-
-  return {
-    sourceId,
-    sourceFile: {
-      id: requireUuid(uploaded?.sourceFile?.id, "source file id"),
-    },
-  };
 }
 
 async function writeSeedSnapshot(seed) {
   const directory = await mkdtemp(
-    join(tmpdir(), "pocket-cfo-finance-snapshot-smoke-"),
+    join(tmpdir(), "pocket-cfo-finance-reconciliation-smoke-"),
   );
   const storageRef = join(directory, seed.originalFileName);
 
@@ -328,14 +310,6 @@ async function injectJson(app, input) {
   }
 
   return response.body ? response.json() : null;
-}
-
-function requireUuid(value, label) {
-  if (typeof value !== "string" || value.length === 0) {
-    throw new Error(`${label} missing from response`);
-  }
-
-  return value;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === MODULE_PATH) {

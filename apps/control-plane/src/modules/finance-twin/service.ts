@@ -1,7 +1,9 @@
 import {
   FinanceAccountCatalogViewSchema,
+  FinanceGeneralLedgerActivityLineageViewSchema,
   FinanceGeneralLedgerViewSchema,
   FinanceLineageDrillViewSchema,
+  FinanceReconciliationReadinessViewSchema,
   FinanceSnapshotViewSchema,
   FinanceTwinCompanySummarySchema,
   FinanceTwinSyncInputSchema,
@@ -9,10 +11,12 @@ import {
   type FinanceAccountCatalogEntryView,
   type FinanceAccountCatalogView,
   type FinanceCompanyRecord,
+  type FinanceGeneralLedgerActivityLineageView,
   type FinanceLineageDrillView,
   type FinanceGeneralLedgerEntryView,
   type FinanceGeneralLedgerView,
   type FinanceLatestAttemptedSlices,
+  type FinanceReconciliationReadinessView,
   type FinanceLatestSuccessfulSlices,
   type FinanceSnapshotView,
   type FinanceTwinLineageTargetKind,
@@ -37,8 +41,10 @@ import {
 } from "./errors";
 import { extractFinanceTwinSource } from "./extractor-dispatch";
 import { buildFinanceFreshnessView } from "./freshness";
+import { buildFinanceGeneralLedgerActivityLineageView } from "./general-ledger-activity-lineage";
 import { buildFinanceLineageDrillView, buildLineageTargetCounts } from "./lineage";
 import type { GeneralLedgerExtractionResult } from "./general-ledger-csv";
+import { buildFinanceReconciliationReadinessView } from "./reconciliation";
 import type {
   FinanceTrialBalanceLineView,
   FinanceTwinRepository,
@@ -289,6 +295,103 @@ export class FinanceTwinService {
         trialBalanceLineViews: readState.latestTrialBalanceLineViews,
         generalLedgerEntries: readState.latestGeneralLedgerEntries,
         limitations: FINANCE_TWIN_LIMITATIONS,
+      }),
+    );
+  }
+
+  async getReconciliationReadiness(
+    companyKey: string,
+  ): Promise<FinanceReconciliationReadinessView> {
+    const company = await this.input.financeTwinRepository.getCompanyByKey(
+      companyKey,
+    );
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(companyKey);
+    }
+
+    const readState = await this.readCompanyState(company);
+
+    return FinanceReconciliationReadinessViewSchema.parse(
+      buildFinanceReconciliationReadinessView({
+        company,
+        trialBalanceSlice: readState.latestSuccessfulSlices.trialBalance,
+        generalLedgerSlice: readState.latestSuccessfulSlices.generalLedger,
+        freshness: readState.freshness,
+        trialBalanceLineViews: readState.latestTrialBalanceLineViews,
+        generalLedgerEntries: readState.latestGeneralLedgerEntries,
+        limitations: FINANCE_TWIN_LIMITATIONS,
+      }),
+    );
+  }
+
+  async getGeneralLedgerAccountActivityLineage(input: {
+    companyKey: string;
+    ledgerAccountId: string;
+    syncRunId?: string;
+  }): Promise<FinanceGeneralLedgerActivityLineageView> {
+    const company = await this.input.financeTwinRepository.getCompanyByKey(
+      input.companyKey,
+    );
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(input.companyKey);
+    }
+
+    const readState = await this.readCompanyState(company);
+    const latestSuccessfulRun =
+      readState.latestSuccessfulSlices.generalLedger.latestSyncRun;
+    const latestSuccessfulEntries = readState.latestGeneralLedgerEntries;
+    const requestedSyncRun = input.syncRunId
+      ? await this.input.financeTwinRepository.getSyncRunById(input.syncRunId)
+      : latestSuccessfulRun;
+    const syncRun =
+      requestedSyncRun &&
+      requestedSyncRun.companyId === company.id &&
+      requestedSyncRun.extractorKey === "general_ledger_csv" &&
+      requestedSyncRun.status === "succeeded"
+        ? requestedSyncRun
+        : null;
+    const entries =
+      syncRun === null
+        ? []
+        : input.syncRunId === undefined || syncRun.id === latestSuccessfulRun?.id
+          ? latestSuccessfulEntries
+          : await this.input.financeTwinRepository.listGeneralLedgerEntriesBySyncRunId(
+              syncRun.id,
+            );
+    const limitations = [...FINANCE_TWIN_LIMITATIONS];
+
+    if (!latestSuccessfulRun && input.syncRunId === undefined) {
+      limitations.push(
+        "No successful general-ledger slice exists yet for this activity-lineage drill.",
+      );
+    }
+
+    if (input.syncRunId && syncRun === null) {
+      limitations.push(
+        "The requested sync run is not a successful general-ledger slice for this company.",
+      );
+    }
+
+    if (
+      syncRun !== null &&
+      !entries.some((entry) =>
+        entry.lines.some((line) => line.ledgerAccount.id === input.ledgerAccountId),
+      )
+    ) {
+      limitations.push(
+        "No journal-line activity for this ledger account was found in the requested general-ledger slice.",
+      );
+    }
+
+    return FinanceGeneralLedgerActivityLineageViewSchema.parse(
+      buildFinanceGeneralLedgerActivityLineageView({
+        company,
+        ledgerAccountId: input.ledgerAccountId,
+        syncRunId: syncRun?.id ?? null,
+        entries,
+        limitations,
       }),
     );
   }

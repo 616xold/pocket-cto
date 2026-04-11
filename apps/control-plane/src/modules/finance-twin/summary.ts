@@ -5,7 +5,7 @@ import type {
 } from "@pocket-cto/domain";
 
 export const FINANCE_TWIN_LIMITATIONS = [
-  "F2D only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, and additive finance snapshot read models.",
+  "F2E only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot read models, and reconciliation-readiness reads.",
   "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
 ];
 

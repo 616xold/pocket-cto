@@ -2,6 +2,8 @@ import type { FastifyInstance } from "fastify";
 import type { FinanceTwinServicePort } from "../../lib/types";
 import {
   financeTwinCompanyKeyParamsSchema,
+  financeTwinGeneralLedgerActivityLineageParamsSchema,
+  financeTwinGeneralLedgerActivityLineageQuerySchema,
   financeTwinLineageParamsSchema,
   financeTwinLineageQuerySchema,
   financeTwinSyncBodySchema,
@@ -39,6 +41,14 @@ export async function registerFinanceTwinRoutes(
   });
 
   app.get(
+    "/finance-twin/companies/:companyKey/reconciliation/trial-balance-vs-general-ledger",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getReconciliationReadiness(params.companyKey);
+    },
+  );
+
+  app.get(
     "/finance-twin/companies/:companyKey/account-catalog",
     async (request) => {
       const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
@@ -51,6 +61,24 @@ export async function registerFinanceTwinRoutes(
     async (request) => {
       const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
       return deps.financeTwinService.getGeneralLedger(params.companyKey);
+    },
+  );
+
+  app.get(
+    "/finance-twin/companies/:companyKey/general-ledger/accounts/:ledgerAccountId/lineage",
+    async (request) => {
+      const params = financeTwinGeneralLedgerActivityLineageParamsSchema.parse(
+        request.params,
+      );
+      const query = financeTwinGeneralLedgerActivityLineageQuerySchema.parse(
+        request.query ?? {},
+      );
+
+      return deps.financeTwinService.getGeneralLedgerAccountActivityLineage({
+        companyKey: params.companyKey,
+        ledgerAccountId: params.ledgerAccountId,
+        syncRunId: query.syncRunId,
+      });
     },
   );
 

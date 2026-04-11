@@ -272,6 +272,11 @@ function createAppContainer(
           "getGeneralLedger should not be called in this test",
         );
       },
+      async getGeneralLedgerAccountActivityLineage() {
+        throw new Error(
+          "getGeneralLedgerAccountActivityLineage should not be called in this test",
+        );
+      },
       async getCompanySummary() {
         throw new Error(
           "getCompanySummary should not be called in this test",
@@ -280,6 +285,11 @@ function createAppContainer(
       async getLineageDrill() {
         throw new Error(
           "getLineageDrill should not be called in this test",
+        );
+      },
+      async getReconciliationReadiness() {
+        throw new Error(
+          "getReconciliationReadiness should not be called in this test",
         );
       },
       async syncCompanySourceFile() {

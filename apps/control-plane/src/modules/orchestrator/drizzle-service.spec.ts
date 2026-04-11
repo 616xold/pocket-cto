@@ -2716,10 +2716,16 @@ async function createHarness(options?: {
         async getGeneralLedger() {
           throw new Error("Not implemented in orchestrator harness");
         },
+        async getGeneralLedgerAccountActivityLineage() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
         async getCompanySummary() {
           throw new Error("Not implemented in orchestrator harness");
         },
         async getLineageDrill() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getReconciliationReadiness() {
           throw new Error("Not implemented in orchestrator harness");
         },
         async syncCompanySourceFile() {

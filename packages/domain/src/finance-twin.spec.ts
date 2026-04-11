@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   FinanceAccountCatalogViewSchema,
+  FinanceGeneralLedgerActivityLineageViewSchema,
   FinanceGeneralLedgerViewSchema,
   FinanceLineageDrillViewSchema,
+  FinanceReconciliationReadinessViewSchema,
   FinanceSnapshotViewSchema,
   FinanceTwinCompanySummarySchema,
   FinanceTwinSyncInputSchema,
@@ -576,15 +578,18 @@ describe("finance twin domain schemas", () => {
         state: "mixed",
         implementedSliceCount: 3,
         availableSliceCount: 3,
+        distinctSourceCount: 3,
         distinctSyncRunCount: 3,
         distinctSourceSnapshotCount: 3,
+        sameSource: false,
         sameSyncRun: false,
         sameSourceSnapshot: false,
+        sharedSourceId: null,
         sharedSyncRunId: null,
         sharedSourceSnapshotId: null,
-        reasonCode: "mixed_source_snapshots",
+        reasonCode: "mixed_sources",
         reasonSummary:
-          "The latest successful finance slices are mixed across different source snapshots and sync runs.",
+          "The latest successful finance slices are mixed across different registered sources.",
       },
       coverageSummary: {
         accountRowCount: 1,
@@ -653,6 +658,10 @@ describe("finance twin domain schemas", () => {
           missingFromTrialBalance: false,
           missingFromGeneralLedger: false,
           inactiveWithGeneralLedgerActivity: false,
+          activityLineageRef: {
+            ledgerAccountId: "12121212-3434-4343-8343-343434343434",
+            syncRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          },
           lineageTargets: {
             ledgerAccount: {
               targetKind: "ledger_account",
@@ -669,16 +678,11 @@ describe("finance twin domain schemas", () => {
               targetId: "14141414-3434-4343-8343-343434343434",
               syncRunId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
             },
-            generalLedger: {
-              targetKind: "ledger_account",
-              targetId: "12121212-3434-4343-8343-343434343434",
-              syncRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-            },
           },
         },
       ],
       limitations: [
-        "F2D only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, and additive finance snapshot read models.",
+        "F2E only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot read models, and reconciliation-readiness reads.",
       ],
     });
 
@@ -777,5 +781,301 @@ describe("finance twin domain schemas", () => {
     });
 
     expect(parsed.records[0]?.syncRun.extractorKey).toBe("general_ledger_csv");
+  });
+
+  it("parses a finance reconciliation-readiness view", () => {
+    const parsed = FinanceReconciliationReadinessViewSchema.parse({
+      company: {
+        id: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        displayName: "Acme",
+        createdAt: "2026-04-09T00:00:00.000Z",
+        updatedAt: "2026-04-09T00:00:00.000Z",
+      },
+      trialBalanceSlice: {
+        latestSource: {
+          sourceId: "22222222-2222-4222-8222-222222222222",
+          sourceSnapshotId: "33333333-3333-4333-8333-333333333333",
+          sourceFileId: "44444444-4444-4444-8444-444444444444",
+          syncRunId: "55555555-5555-4555-8555-555555555555",
+        },
+        latestSyncRun: {
+          id: "55555555-5555-4555-8555-555555555555",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          reportingPeriodId: "66666666-6666-4666-8666-666666666666",
+          sourceId: "22222222-2222-4222-8222-222222222222",
+          sourceSnapshotId: "33333333-3333-4333-8333-333333333333",
+          sourceFileId: "44444444-4444-4444-8444-444444444444",
+          extractorKey: "trial_balance_csv",
+          status: "succeeded",
+          startedAt: "2026-04-11T00:05:00.000Z",
+          completedAt: "2026-04-11T00:05:03.000Z",
+          stats: {},
+          errorSummary: null,
+          createdAt: "2026-04-11T00:05:00.000Z",
+        },
+        reportingPeriod: {
+          id: "66666666-6666-4666-8666-666666666666",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          periodKey: "2026-03-31",
+          label: "As of 2026-03-31",
+          periodStart: "2026-03-01",
+          periodEnd: "2026-03-31",
+          createdAt: "2026-04-11T00:05:00.000Z",
+          updatedAt: "2026-04-11T00:05:00.000Z",
+        },
+        coverage: {
+          lineCount: 2,
+          lineageCount: 4,
+        },
+        summary: {
+          accountCount: 2,
+          lineCount: 2,
+          totalDebitAmount: "120.00",
+          totalCreditAmount: "120.00",
+          totalNetAmount: "0.00",
+          currencyCode: "USD",
+        },
+      },
+      generalLedgerSlice: {
+        latestSource: {
+          sourceId: "22222222-2222-4222-8222-222222222222",
+          sourceSnapshotId: "77777777-7777-4777-8777-777777777777",
+          sourceFileId: "88888888-8888-4888-8888-888888888888",
+          syncRunId: "99999999-9999-4999-8999-999999999999",
+        },
+        latestSyncRun: {
+          id: "99999999-9999-4999-8999-999999999999",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          reportingPeriodId: null,
+          sourceId: "22222222-2222-4222-8222-222222222222",
+          sourceSnapshotId: "77777777-7777-4777-8777-777777777777",
+          sourceFileId: "88888888-8888-4888-8888-888888888888",
+          extractorKey: "general_ledger_csv",
+          status: "succeeded",
+          startedAt: "2026-04-11T00:10:00.000Z",
+          completedAt: "2026-04-11T00:10:03.000Z",
+          stats: {},
+          errorSummary: null,
+          createdAt: "2026-04-11T00:10:00.000Z",
+        },
+        coverage: {
+          journalEntryCount: 1,
+          journalLineCount: 2,
+          lineageCount: 3,
+        },
+        summary: {
+          journalEntryCount: 1,
+          journalLineCount: 2,
+          ledgerAccountCount: 2,
+          totalDebitAmount: "120.00",
+          totalCreditAmount: "120.00",
+          earliestEntryDate: "2026-03-15",
+          latestEntryDate: "2026-03-15",
+          currencyCode: "USD",
+        },
+      },
+      freshness: {
+        overall: {
+          state: "fresh",
+          latestSyncRunId: "99999999-9999-4999-8999-999999999999",
+          latestSyncStatus: "succeeded",
+          latestCompletedAt: "2026-04-11T00:10:03.000Z",
+          latestSuccessfulSyncRunId: "99999999-9999-4999-8999-999999999999",
+          latestSuccessfulCompletedAt: "2026-04-11T00:10:03.000Z",
+          ageSeconds: 1,
+          staleAfterSeconds: 86400,
+          reasonCode: "reconciliation_slices_fresh",
+          reasonSummary:
+            "The implemented reconciliation-readiness slices are within the 24 hour freshness window.",
+        },
+        trialBalance: {
+          state: "fresh",
+          latestSyncRunId: "55555555-5555-4555-8555-555555555555",
+          latestSyncStatus: "succeeded",
+          latestCompletedAt: "2026-04-11T00:05:03.000Z",
+          latestSuccessfulSyncRunId: "55555555-5555-4555-8555-555555555555",
+          latestSuccessfulCompletedAt: "2026-04-11T00:05:03.000Z",
+          ageSeconds: 1,
+          staleAfterSeconds: 86400,
+          reasonCode: "latest_successful_sync_fresh",
+          reasonSummary:
+            "The latest successful trial-balance sync is within the 24 hour freshness window.",
+        },
+        generalLedger: {
+          state: "fresh",
+          latestSyncRunId: "99999999-9999-4999-8999-999999999999",
+          latestSyncStatus: "succeeded",
+          latestCompletedAt: "2026-04-11T00:10:03.000Z",
+          latestSuccessfulSyncRunId: "99999999-9999-4999-8999-999999999999",
+          latestSuccessfulCompletedAt: "2026-04-11T00:10:03.000Z",
+          ageSeconds: 1,
+          staleAfterSeconds: 86400,
+          reasonCode: "latest_successful_sync_fresh",
+          reasonSummary:
+            "The latest successful general-ledger sync is within the 24 hour freshness window.",
+        },
+      },
+      sliceAlignment: {
+        state: "shared_source",
+        implementedSliceCount: 2,
+        availableSliceCount: 2,
+        distinctSourceCount: 1,
+        distinctSyncRunCount: 2,
+        distinctSourceSnapshotCount: 2,
+        sameSource: true,
+        sameSyncRun: false,
+        sameSourceSnapshot: false,
+        sharedSourceId: "22222222-2222-4222-8222-222222222222",
+        sharedSyncRunId: null,
+        sharedSourceSnapshotId: null,
+        reasonCode: "shared_source",
+        reasonSummary:
+          "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs.",
+      },
+      comparability: {
+        state: "window_comparable",
+        reasonCode: "shared_source_window_match",
+        reasonSummary:
+          "The latest successful trial-balance and general-ledger slices share one registered source, and the general-ledger activity window fits inside the trial-balance reporting window.",
+        trialBalanceWindow: {
+          periodKey: "2026-03-31",
+          label: "As of 2026-03-31",
+          periodStart: "2026-03-01",
+          periodEnd: "2026-03-31",
+        },
+        generalLedgerWindow: {
+          earliestEntryDate: "2026-03-15",
+          latestEntryDate: "2026-03-15",
+        },
+        sameSource: true,
+        sameSourceSnapshot: false,
+        sameSyncRun: false,
+        sharedSourceId: "22222222-2222-4222-8222-222222222222",
+        sharedSourceSnapshotId: null,
+        sharedSyncRunId: null,
+      },
+      coverageSummary: {
+        accountRowCount: 2,
+        presentInTrialBalanceCount: 2,
+        presentInGeneralLedgerCount: 2,
+        overlapCount: 2,
+        trialBalanceOnlyCount: 0,
+        generalLedgerOnlyCount: 0,
+      },
+      accounts: [
+        {
+          ledgerAccount: {
+            id: "12121212-3434-4343-8343-343434343434",
+            companyId: "11111111-1111-4111-8111-111111111111",
+            accountCode: "1000",
+            accountName: "Cash",
+            accountType: "asset",
+            createdAt: "2026-04-11T00:00:01.000Z",
+            updatedAt: "2026-04-11T00:10:01.000Z",
+          },
+          trialBalanceLine: {
+            id: "14141414-3434-4343-8343-343434343434",
+            companyId: "11111111-1111-4111-8111-111111111111",
+            reportingPeriodId: "66666666-6666-4666-8666-666666666666",
+            ledgerAccountId: "12121212-3434-4343-8343-343434343434",
+            syncRunId: "55555555-5555-4555-8555-555555555555",
+            lineNumber: 2,
+            debitAmount: "120.00",
+            creditAmount: "0.00",
+            netAmount: "120.00",
+            currencyCode: "USD",
+            observedAt: "2026-04-11T00:05:01.000Z",
+            createdAt: "2026-04-11T00:05:01.000Z",
+            updatedAt: "2026-04-11T00:05:01.000Z",
+          },
+          generalLedgerActivity: {
+            journalEntryCount: 1,
+            journalLineCount: 1,
+            totalDebitAmount: "120.00",
+            totalCreditAmount: "0.00",
+            earliestEntryDate: "2026-03-15",
+            latestEntryDate: "2026-03-15",
+          },
+          presentInTrialBalance: true,
+          presentInGeneralLedger: true,
+          trialBalanceOnly: false,
+          generalLedgerOnly: false,
+          activityLineageRef: {
+            ledgerAccountId: "12121212-3434-4343-8343-343434343434",
+            syncRunId: "99999999-9999-4999-8999-999999999999",
+          },
+        },
+      ],
+      limitations: [
+        "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
+      ],
+    });
+
+    expect(parsed.comparability.state).toBe("window_comparable");
+  });
+
+  it("parses a general-ledger activity lineage drill view", () => {
+    const parsed = FinanceGeneralLedgerActivityLineageViewSchema.parse({
+      company: {
+        id: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        displayName: "Acme",
+        createdAt: "2026-04-09T00:00:00.000Z",
+        updatedAt: "2026-04-09T00:00:00.000Z",
+      },
+      target: {
+        ledgerAccountId: "12121212-3434-4343-8343-343434343434",
+        syncRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      },
+      recordCount: 1,
+      journalEntryCount: 1,
+      journalLineCount: 1,
+      activityWindow: {
+        earliestEntryDate: "2026-04-11",
+        latestEntryDate: "2026-04-11",
+      },
+      records: [
+        {
+          journalEntry: {
+            id: "16161616-1616-4616-8616-161616161616",
+            companyId: "11111111-1111-4111-8111-111111111111",
+            syncRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            externalEntryId: "J-100",
+            transactionDate: "2026-04-11",
+            entryDescription: "Customer receipt",
+            createdAt: "2026-04-11T00:10:01.000Z",
+            updatedAt: "2026-04-11T00:10:01.000Z",
+          },
+          journalLine: {
+            id: "17171717-1717-4717-8717-171717171717",
+            companyId: "11111111-1111-4111-8111-111111111111",
+            journalEntryId: "16161616-1616-4616-8616-161616161616",
+            ledgerAccountId: "12121212-3434-4343-8343-343434343434",
+            syncRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            lineNumber: 2,
+            debitAmount: "50.00",
+            creditAmount: "0.00",
+            currencyCode: "USD",
+            lineDescription: "Customer receipt",
+            createdAt: "2026-04-11T00:10:01.000Z",
+            updatedAt: "2026-04-11T00:10:01.000Z",
+          },
+          journalEntryLineage: {
+            targetKind: "journal_entry",
+            targetId: "16161616-1616-4616-8616-161616161616",
+            syncRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          },
+          journalLineLineage: {
+            targetKind: "journal_line",
+            targetId: "17171717-1717-4717-8717-171717171717",
+            syncRunId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          },
+        },
+      ],
+      limitations: [],
+    });
+
+    expect(parsed.records[0]?.journalLineLineage.targetKind).toBe("journal_line");
   });
 });

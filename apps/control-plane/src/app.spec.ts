@@ -931,8 +931,10 @@ describe("control-plane app", () => {
       },
       sliceAlignment: {
         state: "mixed",
+        distinctSourceCount: 3,
         distinctSyncRunCount: 3,
         distinctSourceSnapshotCount: 3,
+        sameSource: false,
         sameSyncRun: false,
         sameSourceSnapshot: false,
       },
@@ -972,18 +974,18 @@ describe("control-plane app", () => {
         },
       },
       limitations: [
-        "F2D only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, and additive finance snapshot read models.",
+        "F2E only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot read models, and reconciliation-readiness reads.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
-        "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed.",
+        "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed across different registered sources.",
       ],
     });
 
     const snapshot = snapshotResponse.json() as {
       accounts: Array<{
+        activityLineageRef: { ledgerAccountId: string; syncRunId: string } | null;
         ledgerAccount: { accountCode: string; id: string };
         lineageTargets: {
           chartOfAccountsEntry: { targetId: string; syncRunId: string } | null;
-          generalLedger: { syncRunId: string; targetId: string } | null;
           trialBalanceLine: { targetId: string; syncRunId: string } | null;
         };
       }>;
@@ -1001,44 +1003,63 @@ describe("control-plane app", () => {
         trialBalanceLine: {
           syncRunId: trialBalanceSync.syncRun.id,
         },
-        generalLedger: {
-          syncRunId: generalLedgerSync.syncRun.id,
-        },
+      },
+      activityLineageRef: {
+        ledgerAccountId: cashRow?.ledgerAccount.id,
+        syncRunId: generalLedgerSync.syncRun.id,
       },
     });
 
-    const ledgerAccountLineageResponse = await app.inject({
+    const activityLineageResponse = await app.inject({
       method: "GET",
-      url: `/finance-twin/companies/acme/lineage/ledger_account/${cashRow?.ledgerAccount.id ?? ""}`,
-    });
-    const generalLedgerLineageResponse = await app.inject({
-      method: "GET",
-      url: `/finance-twin/companies/acme/lineage/ledger_account/${cashRow?.ledgerAccount.id ?? ""}?${new URLSearchParams({
+      url: `/finance-twin/companies/acme/general-ledger/accounts/${cashRow?.ledgerAccount.id ?? ""}/lineage?${new URLSearchParams({
         syncRunId: generalLedgerSync.syncRun.id,
       }).toString()}`,
     });
 
-    expect(ledgerAccountLineageResponse.statusCode).toBe(200);
-    expect(ledgerAccountLineageResponse.json()).toMatchObject({
-      recordCount: 3,
-    });
-    expect(
-      (
-        ledgerAccountLineageResponse.json() as {
-          records: Array<{ syncRun: { extractorKey: string } }>;
-        }
-      ).records
-        .map((record) => record.syncRun.extractorKey)
-        .sort(),
-    ).toEqual([
-      "chart_of_accounts_csv",
-      "general_ledger_csv",
-      "trial_balance_csv",
-    ]);
-    expect(generalLedgerLineageResponse.statusCode).toBe(200);
-    expect(generalLedgerLineageResponse.json()).toMatchObject({
+    expect(activityLineageResponse.statusCode).toBe(200);
+    expect(activityLineageResponse.json()).toMatchObject({
       target: {
-        targetKind: "ledger_account",
+        ledgerAccountId: cashRow?.ledgerAccount.id,
+        syncRunId: generalLedgerSync.syncRun.id,
+      },
+      recordCount: 2,
+      journalEntryCount: 2,
+      journalLineCount: 2,
+    });
+    expect((activityLineageResponse.json() as { records: unknown[] }).records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          journalEntryLineage: {
+            targetKind: "journal_entry",
+            syncRunId: generalLedgerSync.syncRun.id,
+            targetId: expect.any(String),
+          },
+          journalLineLineage: {
+            targetKind: "journal_line",
+            syncRunId: generalLedgerSync.syncRun.id,
+            targetId: expect.any(String),
+          },
+        }),
+      ]),
+    );
+
+    const activityLineage = activityLineageResponse.json() as {
+      records: Array<{
+        journalLineLineage: { targetId: string; syncRunId: string };
+      }>;
+    };
+    const journalLineLineageResponse = await app.inject({
+      method: "GET",
+      url: `/finance-twin/companies/acme/lineage/journal_line/${activityLineage.records[0]?.journalLineLineage.targetId ?? ""}?${new URLSearchParams({
+        syncRunId: generalLedgerSync.syncRun.id,
+      }).toString()}`,
+    });
+
+    expect(journalLineLineageResponse.statusCode).toBe(200);
+    expect(journalLineLineageResponse.json()).toMatchObject({
+      target: {
+        targetKind: "journal_line",
         syncRunId: generalLedgerSync.syncRun.id,
       },
       recordCount: 1,
@@ -1052,6 +1073,138 @@ describe("control-plane app", () => {
             originalFileName: "general-ledger.csv",
           },
         },
+      ],
+    });
+  });
+
+  it("GET /finance-twin/companies/:companyKey/reconciliation/trial-balance-vs-general-ledger returns a truthful readiness view", async () => {
+    const app = await createTestApp(apps);
+    const createSourceResponse = await app.inject({
+      method: "POST",
+      url: "/sources",
+      payload: {
+        kind: "dataset",
+        name: "March close package",
+        createdBy: "finance-operator",
+        snapshot: {
+          originalFileName: "march-close-package-link.txt",
+          mediaType: "text/plain",
+          sizeBytes: 18,
+          checksumSha256:
+            "f222222222222222222222222222222222222222222222222222222222222222",
+          storageKind: "external_url",
+          storageRef: "https://example.com/march-close-package",
+          capturedAt: "2026-04-11T00:00:00.000Z",
+        },
+      },
+    });
+
+    expect(createSourceResponse.statusCode).toBe(201);
+
+    const source = createSourceResponse.json() as {
+      source: { id: string };
+    };
+    const trialBalanceFile = await app.inject({
+      method: "POST",
+      url: `/sources/${source.source.id}/files?originalFileName=trial-balance.csv&mediaType=text%2Fcsv&createdBy=finance-operator&capturedAt=2026-04-11T00:05:00.000Z`,
+      headers: {
+        "content-type": "application/octet-stream",
+      },
+      payload: Buffer.from(
+        [
+          "account_code,account_name,period_start,period_end,debit,credit,currency_code,account_type",
+          "1000,Cash,2026-03-01,2026-03-31,120.00,0.00,USD,asset",
+          "2000,Accounts Payable,2026-03-01,2026-03-31,0.00,120.00,USD,liability",
+        ].join("\n"),
+      ),
+    });
+    const generalLedgerFile = await app.inject({
+      method: "POST",
+      url: `/sources/${source.source.id}/files?originalFileName=general-ledger.csv&mediaType=text%2Fcsv&createdBy=finance-operator&capturedAt=2026-04-11T00:10:00.000Z`,
+      headers: {
+        "content-type": "application/octet-stream",
+      },
+      payload: Buffer.from(
+        [
+          "journal_id,transaction_date,account_code,account_name,account_type,debit,credit,currency_code,memo",
+          "J-100,2026-03-15,1000,Cash,asset,120.00,0.00,USD,Customer receipt",
+          "J-100,2026-03-15,2000,Accounts Payable,liability,0.00,120.00,USD,Customer receipt",
+        ].join("\n"),
+      ),
+    });
+
+    expect(trialBalanceFile.statusCode).toBe(201);
+    expect(generalLedgerFile.statusCode).toBe(201);
+
+    const trialBalance = trialBalanceFile.json() as {
+      sourceFile: { id: string };
+    };
+    const generalLedger = generalLedgerFile.json() as {
+      sourceFile: { id: string };
+    };
+
+    const trialBalanceSyncResponse = await app.inject({
+      method: "POST",
+      url: `/finance-twin/companies/acme/source-files/${trialBalance.sourceFile.id}/sync`,
+      payload: {
+        companyName: "Acme Holdings",
+      },
+    });
+    const generalLedgerSyncResponse = await app.inject({
+      method: "POST",
+      url: `/finance-twin/companies/acme/source-files/${generalLedger.sourceFile.id}/sync`,
+      payload: {},
+    });
+
+    expect(trialBalanceSyncResponse.statusCode).toBe(201);
+    expect(generalLedgerSyncResponse.statusCode).toBe(201);
+
+    const reconciliationResponse = await app.inject({
+      method: "GET",
+      url: "/finance-twin/companies/acme/reconciliation/trial-balance-vs-general-ledger",
+    });
+
+    expect(reconciliationResponse.statusCode).toBe(200);
+    expect(reconciliationResponse.json()).toMatchObject({
+      company: {
+        companyKey: "acme",
+        displayName: "Acme Holdings",
+      },
+      sliceAlignment: {
+        state: "shared_source",
+        distinctSourceCount: 1,
+        distinctSyncRunCount: 2,
+        distinctSourceSnapshotCount: 2,
+        sameSource: true,
+        sameSyncRun: false,
+        sameSourceSnapshot: false,
+      },
+      comparability: {
+        state: "window_comparable",
+        reasonCode: "shared_source_window_match",
+        trialBalanceWindow: {
+          periodStart: "2026-03-01",
+          periodEnd: "2026-03-31",
+        },
+        generalLedgerWindow: {
+          earliestEntryDate: "2026-03-15",
+          latestEntryDate: "2026-03-15",
+        },
+        sameSource: true,
+      },
+      coverageSummary: {
+        accountRowCount: 2,
+        presentInTrialBalanceCount: 2,
+        presentInGeneralLedgerCount: 2,
+        overlapCount: 2,
+        trialBalanceOnlyCount: 0,
+        generalLedgerOnlyCount: 0,
+      },
+      limitations: [
+        "F2E only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot read models, and reconciliation-readiness reads.",
+        "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
+        "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
+        "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs.",
       ],
     });
   });

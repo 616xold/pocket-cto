@@ -29,6 +29,7 @@ Suggested thread naming:
 - `F2B-chart-of-accounts`
 - `F2C-general-ledger-and-hardening`
 - `F2D-cross-slice-finance-snapshot-and-lineage`
+- `F2E-reconciliation-readiness-and-snapshot-hardening`
 - `F3-cfo-wiki-compiler`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`
