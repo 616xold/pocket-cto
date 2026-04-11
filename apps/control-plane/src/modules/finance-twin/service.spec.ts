@@ -607,11 +607,13 @@ describe("FinanceTwinService", () => {
       state: "mixed",
       availableSliceCount: 3,
       implementedSliceCount: 3,
+      distinctSourceCount: 3,
       distinctSyncRunCount: 3,
       distinctSourceSnapshotCount: 3,
+      sameSource: false,
       sameSyncRun: false,
       sameSourceSnapshot: false,
-      reasonCode: "mixed_source_snapshots",
+      reasonCode: "mixed_sources",
     });
     expect(snapshot.coverageSummary).toMatchObject({
       accountRowCount: 5,
@@ -653,7 +655,7 @@ describe("FinanceTwinService", () => {
       },
     });
     expect(snapshot.limitations).toContain(
-      "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed.",
+      "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed across different registered sources.",
     );
     expect(cashRow).toMatchObject({
       presentInChartOfAccounts: true,
@@ -667,6 +669,10 @@ describe("FinanceTwinService", () => {
         earliestEntryDate: "2026-04-01",
         latestEntryDate: "2026-04-02",
       },
+      activityLineageRef: {
+        ledgerAccountId: cashRow?.ledgerAccount.id,
+        syncRunId: generalLedgerSync.syncRun.id,
+      },
       lineageTargets: {
         ledgerAccount: {
           targetKind: "ledger_account",
@@ -676,10 +682,6 @@ describe("FinanceTwinService", () => {
         },
         trialBalanceLine: {
           targetKind: "trial_balance_line",
-        },
-        generalLedger: {
-          targetKind: "ledger_account",
-          syncRunId: generalLedgerSync.syncRun.id,
         },
       },
     });
@@ -712,13 +714,6 @@ describe("FinanceTwinService", () => {
       targetKind: "ledger_account",
       targetId: cashRow?.ledgerAccount.id ?? "",
     });
-    const generalLedgerLineage = await financeTwinService.getLineageDrill({
-      companyKey: "acme",
-      targetKind: "ledger_account",
-      targetId: cashRow?.ledgerAccount.id ?? "",
-      syncRunId: generalLedgerSync.syncRun.id,
-    });
-
     expect(ledgerAccountLineage.recordCount).toBe(3);
     expect(
       ledgerAccountLineage.records
@@ -729,10 +724,53 @@ describe("FinanceTwinService", () => {
       "general_ledger_csv",
       "trial_balance_csv",
     ]);
-    expect(generalLedgerLineage).toMatchObject({
+
+    const activityLineage =
+      await financeTwinService.getGeneralLedgerAccountActivityLineage({
+        companyKey: "acme",
+        ledgerAccountId: cashRow?.ledgerAccount.id ?? "",
+        syncRunId: generalLedgerSync.syncRun.id,
+      });
+
+    expect(activityLineage).toMatchObject({
       target: {
-        targetKind: "ledger_account",
-        targetId: cashRow?.ledgerAccount.id,
+        ledgerAccountId: cashRow?.ledgerAccount.id,
+        syncRunId: generalLedgerSync.syncRun.id,
+      },
+      recordCount: 2,
+      journalEntryCount: 2,
+      journalLineCount: 2,
+    });
+    expect(activityLineage.records).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          journalEntry: expect.objectContaining({
+            externalEntryId: "J-100",
+          }),
+          journalEntryLineage: {
+            targetKind: "journal_entry",
+            syncRunId: generalLedgerSync.syncRun.id,
+            targetId: expect.any(String),
+          },
+          journalLineLineage: {
+            targetKind: "journal_line",
+            syncRunId: generalLedgerSync.syncRun.id,
+            targetId: expect.any(String),
+          },
+        }),
+      ]),
+    );
+
+    const journalLineLineage = await financeTwinService.getLineageDrill({
+      companyKey: "acme",
+      targetKind: "journal_line",
+      targetId: activityLineage.records[0]?.journalLineLineage.targetId ?? "",
+      syncRunId: generalLedgerSync.syncRun.id,
+    });
+
+    expect(journalLineLineage).toMatchObject({
+      target: {
+        targetKind: "journal_line",
         syncRunId: generalLedgerSync.syncRun.id,
       },
       recordCount: 1,
@@ -747,6 +785,170 @@ describe("FinanceTwinService", () => {
           },
         },
       ],
+    });
+  });
+
+  it("builds shared-source reconciliation readiness without faking a balance variance", async () => {
+    const now = () => new Date("2026-04-11T12:00:00.000Z");
+    const sourceRepository = new InMemorySourceRepository();
+    const sourceStorage = new InMemorySourceFileStorage();
+    const sourceService = new SourceRegistryService(
+      sourceRepository,
+      sourceStorage,
+      now,
+    );
+    const financeRepository = new InMemoryFinanceTwinRepository();
+    const financeTwinService = new FinanceTwinService({
+      financeTwinRepository: financeRepository,
+      sourceFileStorage: sourceStorage,
+      sourceRepository,
+      now,
+    });
+    const created = await sourceService.createSource({
+      kind: "dataset",
+      name: "March close package",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "march-close-package-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "f111111111111111111111111111111111111111111111111111111111111111",
+        storageKind: "external_url",
+        storageRef: "https://example.com/march-close-package",
+        ingestStatus: "registered",
+      },
+    });
+    const chartFile = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "chart-of-accounts.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "account_code,account_name,account_type,detail_type,parent_account_code,is_active,description",
+          "1000,Cash,asset,current_asset,,true,Operating cash",
+          "2000,Accounts Payable,liability,current_liability,,true,Supplier balances",
+        ].join("\n"),
+      ),
+    );
+    const trialBalanceFile = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "trial-balance.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "account_code,account_name,period_start,period_end,debit,credit,currency_code,account_type",
+          "1000,Cash,2026-03-01,2026-03-31,120.00,0.00,USD,asset",
+          "2000,Accounts Payable,2026-03-01,2026-03-31,0.00,120.00,USD,liability",
+        ].join("\n"),
+      ),
+    );
+    const generalLedgerFile = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "general-ledger.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "journal_id,transaction_date,account_code,account_name,account_type,debit,credit,currency_code,memo",
+          "J-100,2026-03-15,1000,Cash,asset,120.00,0.00,USD,Customer receipt",
+          "J-100,2026-03-15,2000,Accounts Payable,liability,0.00,120.00,USD,Customer receipt",
+        ].join("\n"),
+      ),
+    );
+
+    await financeTwinService.syncCompanySourceFile("acme", chartFile.sourceFile.id, {
+      companyName: "Acme Holdings",
+    });
+    await financeTwinService.syncCompanySourceFile(
+      "acme",
+      trialBalanceFile.sourceFile.id,
+      {},
+    );
+    const generalLedgerSync = await financeTwinService.syncCompanySourceFile(
+      "acme",
+      generalLedgerFile.sourceFile.id,
+      {},
+    );
+
+    const snapshot = await financeTwinService.getCompanySnapshot("acme");
+    const reconciliation =
+      await financeTwinService.getReconciliationReadiness("acme");
+    const cashRow = reconciliation.accounts.find(
+      (account) => account.ledgerAccount.accountCode === "1000",
+    );
+
+    expect(snapshot.sliceAlignment).toMatchObject({
+      state: "shared_source",
+      availableSliceCount: 3,
+      implementedSliceCount: 3,
+      distinctSourceCount: 1,
+      distinctSyncRunCount: 3,
+      distinctSourceSnapshotCount: 3,
+      sameSource: true,
+      sameSyncRun: false,
+      sameSourceSnapshot: false,
+      reasonCode: "shared_source",
+    });
+    expect(reconciliation.sliceAlignment).toMatchObject({
+      state: "shared_source",
+      availableSliceCount: 2,
+      implementedSliceCount: 2,
+      distinctSourceCount: 1,
+      distinctSyncRunCount: 2,
+      distinctSourceSnapshotCount: 2,
+      sameSource: true,
+      sharedSourceId: created.source.id,
+      reasonCode: "shared_source",
+    });
+    expect(reconciliation.comparability).toMatchObject({
+      state: "window_comparable",
+      reasonCode: "shared_source_window_match",
+      trialBalanceWindow: {
+        periodStart: "2026-03-01",
+        periodEnd: "2026-03-31",
+      },
+      generalLedgerWindow: {
+        earliestEntryDate: "2026-03-15",
+        latestEntryDate: "2026-03-15",
+      },
+      sameSource: true,
+      sameSourceSnapshot: false,
+      sameSyncRun: false,
+      sharedSourceId: created.source.id,
+    });
+    expect(reconciliation.coverageSummary).toMatchObject({
+      accountRowCount: 2,
+      presentInTrialBalanceCount: 2,
+      presentInGeneralLedgerCount: 2,
+      overlapCount: 2,
+      trialBalanceOnlyCount: 0,
+      generalLedgerOnlyCount: 0,
+    });
+    expect(reconciliation.limitations).toContain(
+      "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
+    );
+    expect(reconciliation.limitations).toContain(
+      "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs.",
+    );
+    expect(cashRow).toMatchObject({
+      presentInTrialBalance: true,
+      presentInGeneralLedger: true,
+      trialBalanceOnly: false,
+      generalLedgerOnly: false,
+      activityLineageRef: {
+        ledgerAccountId: cashRow?.ledgerAccount.id,
+        syncRunId: generalLedgerSync.syncRun.id,
+      },
     });
   });
 

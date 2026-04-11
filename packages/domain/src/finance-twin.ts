@@ -391,17 +391,25 @@ export const FinanceGeneralLedgerViewSchema = z.object({
 });
 
 export const FinanceSliceAlignmentViewSchema = z.object({
-  state: z.enum(["empty", "partial", "aligned", "mixed"]),
+  state: z.enum(["empty", "partial", "shared_source", "mixed"]),
   implementedSliceCount: z.number().int().positive(),
   availableSliceCount: z.number().int().nonnegative(),
+  distinctSourceCount: z.number().int().nonnegative(),
   distinctSyncRunCount: z.number().int().nonnegative(),
   distinctSourceSnapshotCount: z.number().int().nonnegative(),
+  sameSource: z.boolean(),
   sameSyncRun: z.boolean(),
   sameSourceSnapshot: z.boolean(),
+  sharedSourceId: z.string().uuid().nullable(),
   sharedSyncRunId: z.string().uuid().nullable(),
   sharedSourceSnapshotId: z.string().uuid().nullable(),
   reasonCode: z.string().min(1),
   reasonSummary: z.string().min(1),
+});
+
+export const FinanceGeneralLedgerActivityLineageRefSchema = z.object({
+  ledgerAccountId: z.string().uuid(),
+  syncRunId: z.string().uuid(),
 });
 
 export const FinanceSnapshotCoverageSummarySchema = z.object({
@@ -429,11 +437,11 @@ export const FinanceSnapshotAccountRowSchema = z.object({
   missingFromTrialBalance: z.boolean(),
   missingFromGeneralLedger: z.boolean(),
   inactiveWithGeneralLedgerActivity: z.boolean(),
+  activityLineageRef: FinanceGeneralLedgerActivityLineageRefSchema.nullable(),
   lineageTargets: z.object({
     ledgerAccount: FinanceLineageLookupRefSchema,
     chartOfAccountsEntry: FinanceLineageLookupRefSchema.nullable(),
     trialBalanceLine: FinanceLineageLookupRefSchema.nullable(),
-    generalLedger: FinanceLineageLookupRefSchema.nullable(),
   }),
 });
 
@@ -462,6 +470,98 @@ export const FinanceLineageDrillViewSchema = z.object({
   target: FinanceLineageLookupRefSchema,
   recordCount: z.number().int().nonnegative(),
   records: z.array(FinanceLineageRecordViewSchema),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceReconciliationFreshnessViewSchema = z.object({
+  overall: FinanceFreshnessSummarySchema,
+  trialBalance: FinanceFreshnessSummarySchema,
+  generalLedger: FinanceFreshnessSummarySchema,
+});
+
+export const FinanceTrialBalanceWindowSchema = z.object({
+  periodKey: z.string().min(1),
+  label: z.string().min(1),
+  periodStart: FinanceIsoDateSchema.nullable(),
+  periodEnd: FinanceIsoDateSchema,
+});
+
+export const FinanceGeneralLedgerWindowSchema = z.object({
+  earliestEntryDate: FinanceIsoDateSchema,
+  latestEntryDate: FinanceIsoDateSchema,
+});
+
+export const FinanceReconciliationComparabilityViewSchema = z.object({
+  state: z.enum([
+    "missing_slice",
+    "not_comparable",
+    "coverage_only",
+    "window_comparable",
+  ]),
+  reasonCode: z.string().min(1),
+  reasonSummary: z.string().min(1),
+  trialBalanceWindow: FinanceTrialBalanceWindowSchema.nullable(),
+  generalLedgerWindow: FinanceGeneralLedgerWindowSchema.nullable(),
+  sameSource: z.boolean(),
+  sameSourceSnapshot: z.boolean(),
+  sameSyncRun: z.boolean(),
+  sharedSourceId: z.string().uuid().nullable(),
+  sharedSourceSnapshotId: z.string().uuid().nullable(),
+  sharedSyncRunId: z.string().uuid().nullable(),
+});
+
+export const FinanceReconciliationCoverageSummarySchema = z.object({
+  accountRowCount: z.number().int().nonnegative(),
+  presentInTrialBalanceCount: z.number().int().nonnegative(),
+  presentInGeneralLedgerCount: z.number().int().nonnegative(),
+  overlapCount: z.number().int().nonnegative(),
+  trialBalanceOnlyCount: z.number().int().nonnegative(),
+  generalLedgerOnlyCount: z.number().int().nonnegative(),
+});
+
+export const FinanceReconciliationAccountRowSchema = z.object({
+  ledgerAccount: FinanceLedgerAccountRecordSchema,
+  trialBalanceLine: FinanceTrialBalanceLineRecordSchema.nullable(),
+  generalLedgerActivity: FinanceGeneralLedgerActivitySchema.nullable(),
+  presentInTrialBalance: z.boolean(),
+  presentInGeneralLedger: z.boolean(),
+  trialBalanceOnly: z.boolean(),
+  generalLedgerOnly: z.boolean(),
+  activityLineageRef: FinanceGeneralLedgerActivityLineageRefSchema.nullable(),
+});
+
+export const FinanceReconciliationReadinessViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  trialBalanceSlice: FinanceLatestSuccessfulTrialBalanceSliceSchema,
+  generalLedgerSlice: FinanceLatestSuccessfulGeneralLedgerSliceSchema,
+  freshness: FinanceReconciliationFreshnessViewSchema,
+  sliceAlignment: FinanceSliceAlignmentViewSchema,
+  comparability: FinanceReconciliationComparabilityViewSchema,
+  coverageSummary: FinanceReconciliationCoverageSummarySchema,
+  accounts: z.array(FinanceReconciliationAccountRowSchema),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceGeneralLedgerActivityLineageTargetSchema = z.object({
+  ledgerAccountId: z.string().uuid(),
+  syncRunId: z.string().uuid().nullable(),
+});
+
+export const FinanceGeneralLedgerActivityLineageRowSchema = z.object({
+  journalEntry: FinanceJournalEntryRecordSchema,
+  journalLine: FinanceJournalLineRecordSchema,
+  journalEntryLineage: FinanceLineageLookupRefSchema,
+  journalLineLineage: FinanceLineageLookupRefSchema,
+});
+
+export const FinanceGeneralLedgerActivityLineageViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  target: FinanceGeneralLedgerActivityLineageTargetSchema,
+  recordCount: z.number().int().nonnegative(),
+  journalEntryCount: z.number().int().nonnegative(),
+  journalLineCount: z.number().int().nonnegative(),
+  activityWindow: FinanceGeneralLedgerWindowSchema.nullable(),
+  records: z.array(FinanceGeneralLedgerActivityLineageRowSchema),
   limitations: z.array(z.string().min(1)),
 });
 
@@ -582,6 +682,9 @@ export type FinanceGeneralLedgerView = z.infer<
 export type FinanceSliceAlignmentView = z.infer<
   typeof FinanceSliceAlignmentViewSchema
 >;
+export type FinanceGeneralLedgerActivityLineageRef = z.infer<
+  typeof FinanceGeneralLedgerActivityLineageRefSchema
+>;
 export type FinanceSnapshotCoverageSummary = z.infer<
   typeof FinanceSnapshotCoverageSummarySchema
 >;
@@ -594,4 +697,34 @@ export type FinanceLineageRecordView = z.infer<
 >;
 export type FinanceLineageDrillView = z.infer<
   typeof FinanceLineageDrillViewSchema
+>;
+export type FinanceReconciliationFreshnessView = z.infer<
+  typeof FinanceReconciliationFreshnessViewSchema
+>;
+export type FinanceTrialBalanceWindow = z.infer<
+  typeof FinanceTrialBalanceWindowSchema
+>;
+export type FinanceGeneralLedgerWindow = z.infer<
+  typeof FinanceGeneralLedgerWindowSchema
+>;
+export type FinanceReconciliationComparabilityView = z.infer<
+  typeof FinanceReconciliationComparabilityViewSchema
+>;
+export type FinanceReconciliationCoverageSummary = z.infer<
+  typeof FinanceReconciliationCoverageSummarySchema
+>;
+export type FinanceReconciliationAccountRow = z.infer<
+  typeof FinanceReconciliationAccountRowSchema
+>;
+export type FinanceReconciliationReadinessView = z.infer<
+  typeof FinanceReconciliationReadinessViewSchema
+>;
+export type FinanceGeneralLedgerActivityLineageTarget = z.infer<
+  typeof FinanceGeneralLedgerActivityLineageTargetSchema
+>;
+export type FinanceGeneralLedgerActivityLineageRow = z.infer<
+  typeof FinanceGeneralLedgerActivityLineageRowSchema
+>;
+export type FinanceGeneralLedgerActivityLineageView = z.infer<
+  typeof FinanceGeneralLedgerActivityLineageViewSchema
 >;

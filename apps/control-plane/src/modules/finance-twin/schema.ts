@@ -1,8 +1,10 @@
 import {
   FinanceAccountCatalogViewSchema,
   FinanceCompanyKeySchema,
+  FinanceGeneralLedgerActivityLineageViewSchema,
   FinanceGeneralLedgerViewSchema,
   FinanceLineageDrillViewSchema,
+  FinanceReconciliationReadinessViewSchema,
   FinanceTwinLineageTargetKindSchema,
   FinanceSnapshotViewSchema,
   FinanceTwinCompanySummarySchema,
@@ -30,10 +32,21 @@ export const financeTwinLineageQuerySchema = z.object({
   syncRunId: z.string().uuid().optional(),
 });
 
+export const financeTwinGeneralLedgerActivityLineageParamsSchema =
+  financeTwinCompanyKeyParamsSchema.extend({
+    ledgerAccountId: z.string().uuid(),
+  });
+
+export const financeTwinGeneralLedgerActivityLineageQuerySchema = z.object({
+  syncRunId: z.string().uuid().optional(),
+});
+
 export {
   FinanceAccountCatalogViewSchema,
+  FinanceGeneralLedgerActivityLineageViewSchema,
   FinanceGeneralLedgerViewSchema,
   FinanceLineageDrillViewSchema,
+  FinanceReconciliationReadinessViewSchema,
   FinanceSnapshotViewSchema,
   FinanceTwinCompanySummarySchema,
   FinanceTwinSyncResultSchema,

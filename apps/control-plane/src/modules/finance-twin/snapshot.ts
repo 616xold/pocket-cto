@@ -4,7 +4,6 @@ import {
   type FinanceCompanyRecord,
   type FinanceCompanyTotals,
   type FinanceFreshnessView,
-  type FinanceGeneralLedgerActivity,
   type FinanceGeneralLedgerEntryView,
   type FinanceLatestAttemptedSlices,
   type FinanceLatestSuccessfulSlices,
@@ -12,7 +11,11 @@ import {
   type FinanceSnapshotView,
 } from "@pocket-cto/domain";
 import type { FinanceTrialBalanceLineView } from "./repository";
-import { formatMoney, parseMoney } from "./summary";
+import {
+  buildGeneralLedgerActivityByAccountId,
+  type GeneralLedgerActivityByAccount,
+} from "./general-ledger-activity";
+import { buildFinanceSliceAlignment } from "./slice-alignment";
 
 const IMPLEMENTED_SLICE_COUNT = 3;
 
@@ -44,7 +47,16 @@ export function buildFinanceSnapshotView(input: {
     sliceAvailability,
     trialBalanceLineViews: input.trialBalanceLineViews,
   });
-  const sliceAlignment = buildSliceAlignment(input.latestSuccessfulSlices);
+  const sliceAlignment = buildFinanceSliceAlignment({
+    latestSources: [
+      input.latestSuccessfulSlices.trialBalance.latestSource,
+      input.latestSuccessfulSlices.chartOfAccounts.latestSource,
+      input.latestSuccessfulSlices.generalLedger.latestSource,
+    ],
+    implementedSliceCount: IMPLEMENTED_SLICE_COUNT,
+    subjectLabel: "finance slices",
+    viewLabel: "company snapshot",
+  });
   const limitations = buildSnapshotLimitations({
     existing: input.limitations,
     sliceAlignment,
@@ -66,13 +78,7 @@ export function buildFinanceSnapshotView(input: {
 
 function buildSnapshotAccounts(input: {
   chartOfAccountsEntries: FinanceAccountCatalogEntryView[];
-  generalLedgerActivityByAccountId: Map<
-    string,
-    {
-      activity: FinanceGeneralLedgerActivity;
-      ledgerAccount: FinanceTrialBalanceLineView["ledgerAccount"];
-    }
-  >;
+  generalLedgerActivityByAccountId: GeneralLedgerActivityByAccount;
   latestSuccessfulSlices: FinanceLatestSuccessfulSlices;
   sliceAvailability: SliceAvailability;
   trialBalanceLineViews: FinanceTrialBalanceLineView[];
@@ -105,7 +111,6 @@ function buildSnapshotAccounts(input: {
       const trialBalanceLineView = trialBalanceByAccountId.get(ledgerAccount.id) ?? null;
       const generalLedgerActivity =
         input.generalLedgerActivityByAccountId.get(ledgerAccount.id)?.activity ?? null;
-
       const presentInChartOfAccounts = chartOfAccountsEntry !== null;
       const presentInTrialBalance = trialBalanceLineView !== null;
       const presentInGeneralLedger = generalLedgerActivity !== null;
@@ -127,6 +132,14 @@ function buildSnapshotAccounts(input: {
         missingFromGeneralLedger:
           input.sliceAvailability.generalLedger && !presentInGeneralLedger,
         inactiveWithGeneralLedgerActivity,
+        activityLineageRef:
+          presentInGeneralLedger &&
+          input.latestSuccessfulSlices.generalLedger.latestSyncRun
+            ? {
+                ledgerAccountId: ledgerAccount.id,
+                syncRunId: input.latestSuccessfulSlices.generalLedger.latestSyncRun.id,
+              }
+            : null,
         lineageTargets: {
           ledgerAccount: {
             targetKind: "ledger_account",
@@ -147,15 +160,6 @@ function buildSnapshotAccounts(input: {
                 syncRunId: trialBalanceLineView.trialBalanceLine.syncRunId,
               }
             : null,
-          generalLedger:
-            presentInGeneralLedger &&
-            input.latestSuccessfulSlices.generalLedger.latestSyncRun
-              ? {
-                  targetKind: "ledger_account",
-                  targetId: ledgerAccount.id,
-                  syncRunId: input.latestSuccessfulSlices.generalLedger.latestSyncRun.id,
-                }
-              : null,
         },
       } satisfies FinanceSnapshotAccountRow;
     });
@@ -198,102 +202,9 @@ function buildCoverageSummary(accounts: FinanceSnapshotAccountRow[]) {
   };
 }
 
-function buildSliceAlignment(latestSuccessfulSlices: FinanceLatestSuccessfulSlices) {
-  const availableSources = [
-    latestSuccessfulSlices.trialBalance.latestSource,
-    latestSuccessfulSlices.chartOfAccounts.latestSource,
-    latestSuccessfulSlices.generalLedger.latestSource,
-  ].filter((source): source is NonNullable<typeof source> => source !== null);
-  const distinctSyncRunIds = new Set(
-    availableSources.map((source) => source.syncRunId),
-  );
-  const distinctSourceSnapshotIds = new Set(
-    availableSources.map((source) => source.sourceSnapshotId),
-  );
-  const sameSyncRun =
-    availableSources.length > 0 && distinctSyncRunIds.size === 1;
-  const sameSourceSnapshot =
-    availableSources.length > 0 && distinctSourceSnapshotIds.size === 1;
-  const sharedSyncRunId =
-    sameSyncRun ? (availableSources[0]?.syncRunId ?? null) : null;
-  const sharedSourceSnapshotId = sameSourceSnapshot
-    ? (availableSources[0]?.sourceSnapshotId ?? null)
-    : null;
-  const availableSliceCount = availableSources.length;
-
-  if (availableSliceCount === 0) {
-    return {
-      state: "empty",
-      implementedSliceCount: IMPLEMENTED_SLICE_COUNT,
-      availableSliceCount,
-      distinctSyncRunCount: 0,
-      distinctSourceSnapshotCount: 0,
-      sameSyncRun: false,
-      sameSourceSnapshot: false,
-      sharedSyncRunId: null,
-      sharedSourceSnapshotId: null,
-      reasonCode: "no_successful_slices",
-      reasonSummary:
-        "No implemented finance slice has completed a successful sync for this company yet.",
-    } as const;
-  }
-
-  if (availableSliceCount < IMPLEMENTED_SLICE_COUNT) {
-    return {
-      state: "partial",
-      implementedSliceCount: IMPLEMENTED_SLICE_COUNT,
-      availableSliceCount,
-      distinctSyncRunCount: distinctSyncRunIds.size,
-      distinctSourceSnapshotCount: distinctSourceSnapshotIds.size,
-      sameSyncRun,
-      sameSourceSnapshot,
-      sharedSyncRunId,
-      sharedSourceSnapshotId,
-      reasonCode: "missing_successful_slice",
-      reasonSummary:
-        "The company snapshot is partial because one or more implemented finance slices do not have a successful sync yet.",
-    } as const;
-  }
-
-  if (sameSyncRun && sameSourceSnapshot) {
-    return {
-      state: "aligned",
-      implementedSliceCount: IMPLEMENTED_SLICE_COUNT,
-      availableSliceCount,
-      distinctSyncRunCount: distinctSyncRunIds.size,
-      distinctSourceSnapshotCount: distinctSourceSnapshotIds.size,
-      sameSyncRun,
-      sameSourceSnapshot,
-      sharedSyncRunId,
-      sharedSourceSnapshotId,
-      reasonCode: "shared_sync_run",
-      reasonSummary:
-        "The latest successful trial-balance, chart-of-accounts, and general-ledger slices all came from the same sync run and source snapshot.",
-    } as const;
-  }
-
-  return {
-    state: "mixed",
-    implementedSliceCount: IMPLEMENTED_SLICE_COUNT,
-    availableSliceCount,
-    distinctSyncRunCount: distinctSyncRunIds.size,
-    distinctSourceSnapshotCount: distinctSourceSnapshotIds.size,
-    sameSyncRun,
-    sameSourceSnapshot,
-    sharedSyncRunId,
-    sharedSourceSnapshotId,
-    reasonCode: sameSourceSnapshot
-      ? "mixed_sync_runs"
-      : "mixed_source_snapshots",
-    reasonSummary: sameSourceSnapshot
-      ? "The latest successful finance slices share one source snapshot but span different sync runs."
-      : "The latest successful finance slices are mixed across different source snapshots and sync runs.",
-  } as const;
-}
-
 function buildSnapshotLimitations(input: {
   existing: string[];
-  sliceAlignment: ReturnType<typeof buildSliceAlignment>;
+  sliceAlignment: FinanceSnapshotView["sliceAlignment"];
   sliceAvailability: SliceAvailability;
 }) {
   const limitations = [...input.existing];
@@ -320,9 +231,16 @@ function buildSnapshotLimitations(input: {
     limitations.push(input.sliceAlignment.reasonSummary);
   }
 
+  if (
+    input.sliceAlignment.state === "shared_source" &&
+    (!input.sliceAlignment.sameSourceSnapshot || !input.sliceAlignment.sameSyncRun)
+  ) {
+    limitations.push(input.sliceAlignment.reasonSummary);
+  }
+
   if (input.sliceAlignment.state === "mixed") {
     limitations.push(
-      "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed.",
+      "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed across different registered sources.",
     );
   }
 
@@ -337,68 +255,4 @@ function resolveSliceAvailability(
     generalLedger: latestSuccessfulSlices.generalLedger.latestSyncRun !== null,
     trialBalance: latestSuccessfulSlices.trialBalance.latestSyncRun !== null,
   };
-}
-
-function buildGeneralLedgerActivityByAccountId(
-  entries: FinanceGeneralLedgerEntryView[],
-) {
-  const activityByAccountId = new Map<
-    string,
-    {
-      earliestEntryDate: string;
-      journalEntryIds: Set<string>;
-      journalLineCount: number;
-      latestEntryDate: string;
-      ledgerAccount: FinanceTrialBalanceLineView["ledgerAccount"];
-      totalCredit: bigint;
-      totalDebit: bigint;
-    }
-  >();
-
-  for (const entry of entries) {
-    for (const line of entry.lines) {
-      const existing = activityByAccountId.get(line.ledgerAccount.id);
-      const activity =
-        existing ??
-        {
-          earliestEntryDate: entry.journalEntry.transactionDate,
-          journalEntryIds: new Set<string>(),
-          journalLineCount: 0,
-          latestEntryDate: entry.journalEntry.transactionDate,
-          ledgerAccount: line.ledgerAccount,
-          totalCredit: 0n,
-          totalDebit: 0n,
-        };
-
-      activity.journalEntryIds.add(entry.journalEntry.id);
-      activity.journalLineCount += 1;
-      activity.totalDebit += parseMoney(line.journalLine.debitAmount);
-      activity.totalCredit += parseMoney(line.journalLine.creditAmount);
-      if (entry.journalEntry.transactionDate < activity.earliestEntryDate) {
-        activity.earliestEntryDate = entry.journalEntry.transactionDate;
-      }
-      if (entry.journalEntry.transactionDate > activity.latestEntryDate) {
-        activity.latestEntryDate = entry.journalEntry.transactionDate;
-      }
-
-      activityByAccountId.set(line.ledgerAccount.id, activity);
-    }
-  }
-
-  return new Map(
-    Array.from(activityByAccountId.entries()).map(([ledgerAccountId, activity]) => [
-      ledgerAccountId,
-      {
-        ledgerAccount: activity.ledgerAccount,
-        activity: {
-          journalEntryCount: activity.journalEntryIds.size,
-          journalLineCount: activity.journalLineCount,
-          totalDebitAmount: formatMoney(activity.totalDebit),
-          totalCreditAmount: formatMoney(activity.totalCredit),
-          earliestEntryDate: activity.earliestEntryDate,
-          latestEntryDate: activity.latestEntryDate,
-        } satisfies FinanceGeneralLedgerActivity,
-      },
-    ]),
-  );
 }

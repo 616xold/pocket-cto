@@ -22,10 +22,13 @@ Today the merged backbone is:
 - F2A deterministic trial-balance CSV sync into the Finance Twin
 - F2B deterministic chart-of-accounts CSV sync and account-catalog reads
 - F2C deterministic general-ledger CSV sync and persisted journal-entry or journal-line state
+- F2D additive company snapshot and lineage reads across the latest successful implemented finance slices
 
-The active next slice is F2D:
+The active next slice is F2E:
 
-- additive backend-first company snapshot and lineage reads across the latest successful trial-balance, chart-of-accounts, and general-ledger slices
+- additive backend-first trial-balance-versus-general-ledger reconciliation-readiness reads
+- tighter source-grounded slice-alignment truthfulness for the company snapshot
+- more drillable general-ledger activity lineage than the coarse ledger-account posture
 
 ## Product boundary for v1
 
@@ -103,6 +106,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0010-chart-of-accounts-and-f2a-polish.md
 │   ├── FP-0011-general-ledger-and-finance-twin-hardening.md
 │   ├── FP-0012-cross-slice-finance-snapshot-and-lineage.md
+│   ├── FP-0013-reconciliation-readiness-and-snapshot-hardening.md
 │   └── templates
 └── .agents
     └── skills
@@ -116,7 +120,7 @@ Pocket CFO v1 is intentionally narrow:
 4. Read `PLANS.md`.
 5. Read `plans/ROADMAP.md`.
 6. Read the current active `plans/FP-*.md` file for the next narrow slice instead of restarting from `FP-0001`.
-7. The current active plan is `plans/FP-0012-cross-slice-finance-snapshot-and-lineage.md`.
+7. The current active plan is `plans/FP-0013-reconciliation-readiness-and-snapshot-hardening.md`.
 8. Keep progress updates inside the active Finance Plan while working.
 9. Do not delete legacy engineering modules until the finance replacement path exists and a smoke proves it.
 
@@ -142,7 +146,18 @@ pnpm smoke:finance-twin:local
 pnpm smoke:finance-twin-account-catalog:local
 pnpm smoke:finance-twin-general-ledger:local
 pnpm smoke:finance-twin-snapshot:local
+pnpm smoke:finance-twin-reconciliation:local
 ```
+
+The current backend-first finance-twin read surface is:
+
+- company summary
+- company snapshot
+- account catalog
+- general ledger
+- lineage drill
+- trial-balance-versus-general-ledger reconciliation readiness
+- general-ledger account activity lineage
 
 The current success condition is no longer an F0 guidance reset.
 It is preserving the authoritative raw-source ingest spine while extending the deterministic Finance Twin additively and truthfully.
