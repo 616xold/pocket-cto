@@ -2,6 +2,8 @@ import type { FastifyInstance } from "fastify";
 import type { FinanceTwinServicePort } from "../../lib/types";
 import {
   financeTwinCompanyKeyParamsSchema,
+  financeTwinLineageParamsSchema,
+  financeTwinLineageQuerySchema,
   financeTwinSyncBodySchema,
   financeTwinSyncParamsSchema,
 } from "./schema";
@@ -31,6 +33,11 @@ export async function registerFinanceTwinRoutes(
     return deps.financeTwinService.getCompanySummary(params.companyKey);
   });
 
+  app.get("/finance-twin/companies/:companyKey/snapshot", async (request) => {
+    const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+    return deps.financeTwinService.getCompanySnapshot(params.companyKey);
+  });
+
   app.get(
     "/finance-twin/companies/:companyKey/account-catalog",
     async (request) => {
@@ -44,6 +51,21 @@ export async function registerFinanceTwinRoutes(
     async (request) => {
       const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
       return deps.financeTwinService.getGeneralLedger(params.companyKey);
+    },
+  );
+
+  app.get(
+    "/finance-twin/companies/:companyKey/lineage/:targetKind/:targetId",
+    async (request) => {
+      const params = financeTwinLineageParamsSchema.parse(request.params);
+      const query = financeTwinLineageQuerySchema.parse(request.query ?? {});
+
+      return deps.financeTwinService.getLineageDrill({
+        companyKey: params.companyKey,
+        targetKind: params.targetKind,
+        targetId: params.targetId,
+        syncRunId: query.syncRunId,
+      });
     },
   );
 }

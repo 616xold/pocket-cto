@@ -28,6 +28,7 @@ Suggested thread naming:
 - `F2A-finance-twin-trial-balance`
 - `F2B-chart-of-accounts`
 - `F2C-general-ledger-and-hardening`
+- `F2D-cross-slice-finance-snapshot-and-lineage`
 - `F3-cfo-wiki-compiler`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`

@@ -790,6 +790,272 @@ describe("control-plane app", () => {
     });
   });
 
+  it("GET /finance-twin/companies/:companyKey/snapshot and lineage expose cross-slice alignment and drill-through", async () => {
+    const app = await createTestApp(apps);
+
+    async function createFinanceSourceFile(input: {
+      capturedAt: string;
+      checksumSha256: string;
+      fileBody: Buffer;
+      fileName: string;
+      linkName: string;
+      name: string;
+      storageRef: string;
+    }) {
+      const createResponse = await app.inject({
+        method: "POST",
+        url: "/sources",
+        payload: {
+          kind: "dataset",
+          name: input.name,
+          createdBy: "finance-operator",
+          snapshot: {
+            originalFileName: input.linkName,
+            mediaType: "text/plain",
+            sizeBytes: 18,
+            checksumSha256: input.checksumSha256,
+            storageKind: "external_url",
+            storageRef: input.storageRef,
+            capturedAt: input.capturedAt,
+          },
+        },
+      });
+      const created = createResponse.json() as { source: { id: string } };
+      const uploadResponse = await app.inject({
+        method: "POST",
+        url: `/sources/${created.source.id}/files?${new URLSearchParams({
+          originalFileName: input.fileName,
+          mediaType: "text/csv",
+          createdBy: "finance-operator",
+          capturedAt: input.capturedAt,
+        }).toString()}`,
+        headers: {
+          "content-type": "application/octet-stream",
+        },
+        payload: input.fileBody,
+      });
+
+      return uploadResponse.json() as {
+        sourceFile: { id: string };
+      };
+    }
+
+    const chartFile = await createFinanceSourceFile({
+      capturedAt: "2026-04-11T00:00:00.000Z",
+      checksumSha256:
+        "1010101010101010101010101010101010101010101010101010101010101010",
+      fileName: "chart-of-accounts.csv",
+      linkName: "chart-of-accounts-link.txt",
+      name: "Chart of accounts export",
+      storageRef: "https://example.com/chart-of-accounts",
+      fileBody: Buffer.from(
+        [
+          "account_code,account_name,account_type,detail_type,parent_account_code,is_active,description",
+          "1000,Cash,asset,current_asset,,true,Operating cash",
+          "1100,Petty Cash,asset,current_asset,1000,false,Small cash drawer",
+          "2000,Accounts Payable,liability,current_liability,,true,Supplier balances",
+        ].join("\n"),
+      ),
+    });
+    const trialBalanceFile = await createFinanceSourceFile({
+      capturedAt: "2026-04-11T00:05:00.000Z",
+      checksumSha256:
+        "2020202020202020202020202020202020202020202020202020202020202020",
+      fileName: "trial-balance.csv",
+      linkName: "trial-balance-link.txt",
+      name: "Trial balance export",
+      storageRef: "https://example.com/trial-balance",
+      fileBody: Buffer.from(
+        [
+          "account_code,account_name,period_end,debit,credit,currency_code,account_type",
+          "1000,Cash,2026-03-31,100.00,0.00,USD,asset",
+          "2000,Accounts Payable,2026-03-31,0.00,40.00,USD,liability",
+          "3000,Retained Earnings,2026-03-31,0.00,60.00,USD,equity",
+        ].join("\n"),
+      ),
+    });
+    const generalLedgerFile = await createFinanceSourceFile({
+      capturedAt: "2026-04-11T00:10:00.000Z",
+      checksumSha256:
+        "3030303030303030303030303030303030303030303030303030303030303030",
+      fileName: "general-ledger.csv",
+      linkName: "general-ledger-link.txt",
+      name: "General ledger export",
+      storageRef: "https://example.com/general-ledger",
+      fileBody: Buffer.from(
+        [
+          "journal_id,transaction_date,account_code,account_name,account_type,debit,credit,currency_code,memo",
+          "J-100,2026-04-01,1100,Petty Cash,asset,25.00,0.00,USD,Fund the petty cash drawer",
+          "J-100,2026-04-01,1000,Cash,asset,0.00,25.00,USD,Fund the petty cash drawer",
+          "J-101,2026-04-02,1000,Cash,asset,50.00,0.00,USD,Customer receipt",
+          "J-101,2026-04-02,4000,Revenue,revenue,0.00,50.00,USD,Customer receipt",
+        ].join("\n"),
+      ),
+    });
+
+    const chartSyncResponse = await app.inject({
+      method: "POST",
+      url: `/finance-twin/companies/acme/source-files/${chartFile.sourceFile.id}/sync`,
+      payload: {
+        companyName: "Acme Holdings",
+      },
+    });
+    const trialBalanceSyncResponse = await app.inject({
+      method: "POST",
+      url: `/finance-twin/companies/acme/source-files/${trialBalanceFile.sourceFile.id}/sync`,
+      payload: {},
+    });
+    const generalLedgerSyncResponse = await app.inject({
+      method: "POST",
+      url: `/finance-twin/companies/acme/source-files/${generalLedgerFile.sourceFile.id}/sync`,
+      payload: {},
+    });
+    const chartSync = chartSyncResponse.json() as { syncRun: { id: string } };
+    const trialBalanceSync = trialBalanceSyncResponse.json() as {
+      syncRun: { id: string };
+    };
+    const generalLedgerSync = generalLedgerSyncResponse.json() as {
+      syncRun: { id: string };
+    };
+
+    const snapshotResponse = await app.inject({
+      method: "GET",
+      url: "/finance-twin/companies/acme/snapshot",
+    });
+
+    expect(snapshotResponse.statusCode).toBe(200);
+    expect(snapshotResponse.json()).toMatchObject({
+      company: {
+        companyKey: "acme",
+        displayName: "Acme Holdings",
+      },
+      sliceAlignment: {
+        state: "mixed",
+        distinctSyncRunCount: 3,
+        distinctSourceSnapshotCount: 3,
+        sameSyncRun: false,
+        sameSourceSnapshot: false,
+      },
+      coverageSummary: {
+        accountRowCount: 5,
+        chartOfAccountsAccountCount: 3,
+        trialBalanceAccountCount: 3,
+        generalLedgerActiveAccountCount: 3,
+        inactiveWithGeneralLedgerActivityCount: 1,
+      },
+      latestSuccessfulSlices: {
+        chartOfAccounts: {
+          coverage: {
+            lineageTargetCounts: {
+              ledgerAccountCount: 3,
+              accountCatalogEntryCount: 3,
+            },
+          },
+        },
+        trialBalance: {
+          coverage: {
+            lineageTargetCounts: {
+              reportingPeriodCount: 1,
+              ledgerAccountCount: 3,
+              trialBalanceLineCount: 3,
+            },
+          },
+        },
+        generalLedger: {
+          coverage: {
+            lineageTargetCounts: {
+              ledgerAccountCount: 3,
+              journalEntryCount: 2,
+              journalLineCount: 4,
+            },
+          },
+        },
+      },
+      limitations: [
+        "F2D only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, and additive finance snapshot read models.",
+        "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
+        "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed.",
+      ],
+    });
+
+    const snapshot = snapshotResponse.json() as {
+      accounts: Array<{
+        ledgerAccount: { accountCode: string; id: string };
+        lineageTargets: {
+          chartOfAccountsEntry: { targetId: string; syncRunId: string } | null;
+          generalLedger: { syncRunId: string; targetId: string } | null;
+          trialBalanceLine: { targetId: string; syncRunId: string } | null;
+        };
+      }>;
+    };
+    const cashRow = snapshot.accounts.find(
+      (account) => account.ledgerAccount.accountCode === "1000",
+    );
+
+    expect(cashRow).toBeDefined();
+    expect(cashRow).toMatchObject({
+      lineageTargets: {
+        chartOfAccountsEntry: {
+          syncRunId: chartSync.syncRun.id,
+        },
+        trialBalanceLine: {
+          syncRunId: trialBalanceSync.syncRun.id,
+        },
+        generalLedger: {
+          syncRunId: generalLedgerSync.syncRun.id,
+        },
+      },
+    });
+
+    const ledgerAccountLineageResponse = await app.inject({
+      method: "GET",
+      url: `/finance-twin/companies/acme/lineage/ledger_account/${cashRow?.ledgerAccount.id ?? ""}`,
+    });
+    const generalLedgerLineageResponse = await app.inject({
+      method: "GET",
+      url: `/finance-twin/companies/acme/lineage/ledger_account/${cashRow?.ledgerAccount.id ?? ""}?${new URLSearchParams({
+        syncRunId: generalLedgerSync.syncRun.id,
+      }).toString()}`,
+    });
+
+    expect(ledgerAccountLineageResponse.statusCode).toBe(200);
+    expect(ledgerAccountLineageResponse.json()).toMatchObject({
+      recordCount: 3,
+    });
+    expect(
+      (
+        ledgerAccountLineageResponse.json() as {
+          records: Array<{ syncRun: { extractorKey: string } }>;
+        }
+      ).records
+        .map((record) => record.syncRun.extractorKey)
+        .sort(),
+    ).toEqual([
+      "chart_of_accounts_csv",
+      "general_ledger_csv",
+      "trial_balance_csv",
+    ]);
+    expect(generalLedgerLineageResponse.statusCode).toBe(200);
+    expect(generalLedgerLineageResponse.json()).toMatchObject({
+      target: {
+        targetKind: "ledger_account",
+        syncRunId: generalLedgerSync.syncRun.id,
+      },
+      recordCount: 1,
+      records: [
+        {
+          syncRun: {
+            extractorKey: "general_ledger_csv",
+            id: generalLedgerSync.syncRun.id,
+          },
+          sourceFile: {
+            originalFileName: "general-ledger.csv",
+          },
+        },
+      ],
+    });
+  });
+
   it("GET /missions returns newest-first mission summaries with the list contract", async () => {
     const app = await createTestApp(apps);
     const older = await createMission(app, {

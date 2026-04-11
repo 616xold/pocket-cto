@@ -28,6 +28,7 @@ import {
   mapFinanceLedgerAccountRow,
   mapFinanceReportingPeriodRow,
   mapFinanceTrialBalanceLineRow,
+  mapFinanceTrialBalanceLineViewRow,
   mapFinanceTwinLineageRow,
   mapFinanceTwinSyncRunRow,
 } from "./repository-mappers";
@@ -35,6 +36,7 @@ import type {
   CreateFinanceTwinLineageInput,
   FinishFinanceTwinSyncRunInput,
   FinanceTwinRepository,
+  ListFinanceTwinLineageByTargetInput,
   StartFinanceTwinSyncRunInput,
   UpsertFinanceAccountCatalogEntryInput,
   UpsertFinanceCompanyInput,
@@ -374,6 +376,17 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
     return row ? mapFinanceTwinSyncRunRow(row) : null;
   }
 
+  async getSyncRunById(syncRunId: string, session?: PersistenceSession) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .select()
+      .from(financeTwinSyncRuns)
+      .where(eq(financeTwinSyncRuns.id, syncRunId))
+      .limit(1);
+
+    return row ? mapFinanceTwinSyncRunRow(row) : null;
+  }
+
   async upsertTrialBalanceLine(
     input: UpsertFinanceTrialBalanceLineInput,
     session?: PersistenceSession,
@@ -429,6 +442,27 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
       .orderBy(asc(financeTrialBalanceLines.lineNumber));
 
     return rows.map(mapFinanceTrialBalanceLineRow);
+  }
+
+  async listTrialBalanceLineViewsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select({
+        trialBalanceLine: financeTrialBalanceLines,
+        ledgerAccount: financeLedgerAccounts,
+      })
+      .from(financeTrialBalanceLines)
+      .innerJoin(
+        financeLedgerAccounts,
+        eq(financeTrialBalanceLines.ledgerAccountId, financeLedgerAccounts.id),
+      )
+      .where(eq(financeTrialBalanceLines.syncRunId, syncRunId))
+      .orderBy(asc(financeTrialBalanceLines.lineNumber));
+
+    return rows.map(mapFinanceTrialBalanceLineViewRow);
   }
 
   async upsertAccountCatalogEntry(
@@ -694,6 +728,48 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
       .where(eq(financeTwinLineage.syncRunId, syncRunId));
 
     return result?.count ?? 0;
+  }
+
+  async listLineageBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(financeTwinLineage)
+      .where(eq(financeTwinLineage.syncRunId, syncRunId))
+      .orderBy(asc(financeTwinLineage.targetKind), asc(financeTwinLineage.targetId));
+
+    return rows.map(mapFinanceTwinLineageRow);
+  }
+
+  async listLineageByTarget(
+    input: ListFinanceTwinLineageByTargetInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const clauses = [
+      eq(financeTwinLineage.companyId, input.companyId),
+      eq(financeTwinLineage.targetKind, input.targetKind),
+      eq(financeTwinLineage.targetId, input.targetId),
+    ];
+
+    if (input.syncRunId) {
+      clauses.push(eq(financeTwinLineage.syncRunId, input.syncRunId));
+    }
+
+    const rows = await executor
+      .select()
+      .from(financeTwinLineage)
+      .where(and(...clauses))
+      .orderBy(
+        desc(financeTwinLineage.recordedAt),
+        desc(financeTwinLineage.createdAt),
+        desc(financeTwinLineage.id),
+      );
+
+    return rows.map(mapFinanceTwinLineageRow);
   }
 
   private getExecutor(session?: PersistenceSession) {

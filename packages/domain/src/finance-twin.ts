@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  SourceFileRecordSchema,
+  SourceRecordSchema,
+  SourceSnapshotRecordSchema,
+} from "./source-registry";
 
 export const FinanceTwinJsonObjectSchema = z
   .record(z.string(), z.unknown())
@@ -182,6 +187,30 @@ export const FinanceTwinSourceRefSchema = z.object({
   syncRunId: z.string().uuid(),
 });
 
+const FinanceEmptyLineageTargetCounts = {
+  reportingPeriodCount: 0,
+  ledgerAccountCount: 0,
+  trialBalanceLineCount: 0,
+  accountCatalogEntryCount: 0,
+  journalEntryCount: 0,
+  journalLineCount: 0,
+} as const;
+
+export const FinanceLineageTargetCountsSchema = z.object({
+  reportingPeriodCount: z.number().int().nonnegative().default(0),
+  ledgerAccountCount: z.number().int().nonnegative().default(0),
+  trialBalanceLineCount: z.number().int().nonnegative().default(0),
+  accountCatalogEntryCount: z.number().int().nonnegative().default(0),
+  journalEntryCount: z.number().int().nonnegative().default(0),
+  journalLineCount: z.number().int().nonnegative().default(0),
+});
+
+export const FinanceLineageLookupRefSchema = z.object({
+  targetKind: FinanceTwinLineageTargetKindSchema,
+  targetId: z.string().uuid(),
+  syncRunId: z.string().uuid().nullable(),
+});
+
 export const FinanceLatestAttemptedSliceSchema = z.object({
   latestSource: FinanceTwinSourceRefSchema.nullable(),
   latestSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
@@ -242,17 +271,26 @@ export const FinanceCompanyTotalsSchema = z.object({
 export const FinanceTrialBalanceCoverageSchema = z.object({
   lineCount: z.number().int().nonnegative(),
   lineageCount: z.number().int().nonnegative(),
+  lineageTargetCounts: FinanceLineageTargetCountsSchema.optional().default(
+    FinanceEmptyLineageTargetCounts,
+  ),
 });
 
 export const FinanceChartOfAccountsCoverageSchema = z.object({
   accountCatalogEntryCount: z.number().int().nonnegative(),
   lineageCount: z.number().int().nonnegative(),
+  lineageTargetCounts: FinanceLineageTargetCountsSchema.optional().default(
+    FinanceEmptyLineageTargetCounts,
+  ),
 });
 
 export const FinanceGeneralLedgerCoverageSchema = z.object({
   journalEntryCount: z.number().int().nonnegative(),
   journalLineCount: z.number().int().nonnegative(),
   lineageCount: z.number().int().nonnegative(),
+  lineageTargetCounts: FinanceLineageTargetCountsSchema.optional().default(
+    FinanceEmptyLineageTargetCounts,
+  ),
 });
 
 export const FinanceLatestSuccessfulTrialBalanceSliceSchema = z.object({
@@ -334,12 +372,96 @@ export const FinanceGeneralLedgerEntryViewSchema = z.object({
   lines: z.array(FinanceJournalLineViewSchema),
 });
 
+export const FinanceGeneralLedgerActivitySchema = z.object({
+  journalEntryCount: z.number().int().nonnegative(),
+  journalLineCount: z.number().int().nonnegative(),
+  totalDebitAmount: FinanceAmountSchema,
+  totalCreditAmount: FinanceAmountSchema,
+  earliestEntryDate: FinanceIsoDateSchema,
+  latestEntryDate: FinanceIsoDateSchema,
+});
+
 export const FinanceGeneralLedgerViewSchema = z.object({
   company: FinanceCompanyRecordSchema,
   latestAttemptedSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
   latestSuccessfulSlice: FinanceLatestSuccessfulGeneralLedgerSliceSchema,
   freshness: FinanceFreshnessSummarySchema,
   entries: z.array(FinanceGeneralLedgerEntryViewSchema),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceSliceAlignmentViewSchema = z.object({
+  state: z.enum(["empty", "partial", "aligned", "mixed"]),
+  implementedSliceCount: z.number().int().positive(),
+  availableSliceCount: z.number().int().nonnegative(),
+  distinctSyncRunCount: z.number().int().nonnegative(),
+  distinctSourceSnapshotCount: z.number().int().nonnegative(),
+  sameSyncRun: z.boolean(),
+  sameSourceSnapshot: z.boolean(),
+  sharedSyncRunId: z.string().uuid().nullable(),
+  sharedSourceSnapshotId: z.string().uuid().nullable(),
+  reasonCode: z.string().min(1),
+  reasonSummary: z.string().min(1),
+});
+
+export const FinanceSnapshotCoverageSummarySchema = z.object({
+  accountRowCount: z.number().int().nonnegative(),
+  chartOfAccountsAccountCount: z.number().int().nonnegative(),
+  trialBalanceAccountCount: z.number().int().nonnegative(),
+  generalLedgerActiveAccountCount: z.number().int().nonnegative(),
+  accountsPresentInAllImplementedSlicesCount: z.number().int().nonnegative(),
+  missingFromChartOfAccountsCount: z.number().int().nonnegative(),
+  missingFromTrialBalanceCount: z.number().int().nonnegative(),
+  missingFromGeneralLedgerCount: z.number().int().nonnegative(),
+  inactiveAccountCount: z.number().int().nonnegative(),
+  inactiveWithGeneralLedgerActivityCount: z.number().int().nonnegative(),
+});
+
+export const FinanceSnapshotAccountRowSchema = z.object({
+  ledgerAccount: FinanceLedgerAccountRecordSchema,
+  chartOfAccountsEntry: FinanceAccountCatalogEntryRecordSchema.nullable(),
+  trialBalanceLine: FinanceTrialBalanceLineRecordSchema.nullable(),
+  generalLedgerActivity: FinanceGeneralLedgerActivitySchema.nullable(),
+  presentInChartOfAccounts: z.boolean(),
+  presentInTrialBalance: z.boolean(),
+  presentInGeneralLedger: z.boolean(),
+  missingFromChartOfAccounts: z.boolean(),
+  missingFromTrialBalance: z.boolean(),
+  missingFromGeneralLedger: z.boolean(),
+  inactiveWithGeneralLedgerActivity: z.boolean(),
+  lineageTargets: z.object({
+    ledgerAccount: FinanceLineageLookupRefSchema,
+    chartOfAccountsEntry: FinanceLineageLookupRefSchema.nullable(),
+    trialBalanceLine: FinanceLineageLookupRefSchema.nullable(),
+    generalLedger: FinanceLineageLookupRefSchema.nullable(),
+  }),
+});
+
+export const FinanceSnapshotViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  companyTotals: FinanceCompanyTotalsSchema,
+  freshness: FinanceFreshnessViewSchema,
+  latestAttemptedSlices: FinanceLatestAttemptedSlicesSchema,
+  latestSuccessfulSlices: FinanceLatestSuccessfulSlicesSchema,
+  sliceAlignment: FinanceSliceAlignmentViewSchema,
+  coverageSummary: FinanceSnapshotCoverageSummarySchema,
+  accounts: z.array(FinanceSnapshotAccountRowSchema),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceLineageRecordViewSchema = z.object({
+  lineage: FinanceTwinLineageRecordSchema,
+  syncRun: FinanceTwinSyncRunRecordSchema,
+  source: SourceRecordSchema,
+  sourceSnapshot: SourceSnapshotRecordSchema,
+  sourceFile: SourceFileRecordSchema,
+});
+
+export const FinanceLineageDrillViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  target: FinanceLineageLookupRefSchema,
+  recordCount: z.number().int().nonnegative(),
+  records: z.array(FinanceLineageRecordViewSchema),
   limitations: z.array(z.string().min(1)),
 });
 
@@ -388,6 +510,12 @@ export type FinanceTwinLineageRecord = z.infer<
 >;
 export type FinanceTwinSyncInput = z.infer<typeof FinanceTwinSyncInputSchema>;
 export type FinanceTwinSourceRef = z.infer<typeof FinanceTwinSourceRefSchema>;
+export type FinanceLineageTargetCounts = z.infer<
+  typeof FinanceLineageTargetCountsSchema
+>;
+export type FinanceLineageLookupRef = z.infer<
+  typeof FinanceLineageLookupRefSchema
+>;
 export type FinanceLatestAttemptedSlice = z.infer<
   typeof FinanceLatestAttemptedSliceSchema
 >;
@@ -445,6 +573,25 @@ export type FinanceJournalLineView = z.infer<
 export type FinanceGeneralLedgerEntryView = z.infer<
   typeof FinanceGeneralLedgerEntryViewSchema
 >;
+export type FinanceGeneralLedgerActivity = z.infer<
+  typeof FinanceGeneralLedgerActivitySchema
+>;
 export type FinanceGeneralLedgerView = z.infer<
   typeof FinanceGeneralLedgerViewSchema
+>;
+export type FinanceSliceAlignmentView = z.infer<
+  typeof FinanceSliceAlignmentViewSchema
+>;
+export type FinanceSnapshotCoverageSummary = z.infer<
+  typeof FinanceSnapshotCoverageSummarySchema
+>;
+export type FinanceSnapshotAccountRow = z.infer<
+  typeof FinanceSnapshotAccountRowSchema
+>;
+export type FinanceSnapshotView = z.infer<typeof FinanceSnapshotViewSchema>;
+export type FinanceLineageRecordView = z.infer<
+  typeof FinanceLineageRecordViewSchema
+>;
+export type FinanceLineageDrillView = z.infer<
+  typeof FinanceLineageDrillViewSchema
 >;

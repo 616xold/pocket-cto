@@ -16,12 +16,16 @@ The control-plane spine stays; the finance evidence substrate is what changes.
 
 Read `docs/ACTIVE_DOCS.md` before trusting older plans or engineering-era docs.
 
-Today the shipped backbone is:
+Today the merged backbone is:
 
 - F1 raw source registration and immutable file ingest
 - F2A deterministic trial-balance CSV sync into the Finance Twin
 - F2B deterministic chart-of-accounts CSV sync and account-catalog reads
-- F2C deterministic general-ledger CSV sync and persisted journal-entry or journal-line state on branches that carry that slice
+- F2C deterministic general-ledger CSV sync and persisted journal-entry or journal-line state
+
+The active next slice is F2D:
+
+- additive backend-first company snapshot and lineage reads across the latest successful trial-balance, chart-of-accounts, and general-ledger slices
 
 ## Product boundary for v1
 
@@ -98,6 +102,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0009-finance-twin-foundation-and-first-extractor.md
 │   ├── FP-0010-chart-of-accounts-and-f2a-polish.md
 │   ├── FP-0011-general-ledger-and-finance-twin-hardening.md
+│   ├── FP-0012-cross-slice-finance-snapshot-and-lineage.md
 │   └── templates
 └── .agents
     └── skills
@@ -111,7 +116,7 @@ Pocket CFO v1 is intentionally narrow:
 4. Read `PLANS.md`.
 5. Read `plans/ROADMAP.md`.
 6. Read the current active `plans/FP-*.md` file for the next narrow slice instead of restarting from `FP-0001`.
-7. On this F2C branch, that active plan is `plans/FP-0011-general-ledger-and-finance-twin-hardening.md`.
+7. The current active plan is `plans/FP-0012-cross-slice-finance-snapshot-and-lineage.md`.
 8. Keep progress updates inside the active Finance Plan while working.
 9. Do not delete legacy engineering modules until the finance replacement path exists and a smoke proves it.
 
@@ -136,6 +141,7 @@ pnpm smoke:source-ingest:local
 pnpm smoke:finance-twin:local
 pnpm smoke:finance-twin-account-catalog:local
 pnpm smoke:finance-twin-general-ledger:local
+pnpm smoke:finance-twin-snapshot:local
 ```
 
 The current success condition is no longer an F0 guidance reset.

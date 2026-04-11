@@ -2,6 +2,9 @@ import {
   FinanceAccountCatalogViewSchema,
   FinanceCompanyKeySchema,
   FinanceGeneralLedgerViewSchema,
+  FinanceLineageDrillViewSchema,
+  FinanceTwinLineageTargetKindSchema,
+  FinanceSnapshotViewSchema,
   FinanceTwinCompanySummarySchema,
   FinanceTwinSyncInputSchema,
   FinanceTwinSyncResultSchema,
@@ -18,9 +21,20 @@ export const financeTwinSyncParamsSchema = financeTwinCompanyKeyParamsSchema.ext
 
 export const financeTwinSyncBodySchema = FinanceTwinSyncInputSchema;
 
+export const financeTwinLineageParamsSchema = financeTwinCompanyKeyParamsSchema.extend({
+  targetId: z.string().uuid(),
+  targetKind: FinanceTwinLineageTargetKindSchema,
+});
+
+export const financeTwinLineageQuerySchema = z.object({
+  syncRunId: z.string().uuid().optional(),
+});
+
 export {
   FinanceAccountCatalogViewSchema,
   FinanceGeneralLedgerViewSchema,
+  FinanceLineageDrillViewSchema,
+  FinanceSnapshotViewSchema,
   FinanceTwinCompanySummarySchema,
   FinanceTwinSyncResultSchema,
 };

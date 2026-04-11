@@ -117,6 +117,18 @@ export type CreateFinanceTwinLineageInput = {
   recordedAt: string;
 };
 
+export type FinanceTrialBalanceLineView = {
+  ledgerAccount: FinanceLedgerAccountRecord;
+  trialBalanceLine: FinanceTrialBalanceLineRecord;
+};
+
+export type ListFinanceTwinLineageByTargetInput = {
+  companyId: string;
+  targetKind: FinanceTwinLineageTargetKind;
+  targetId: string;
+  syncRunId?: string;
+};
+
 export interface FinanceTwinRepository extends TransactionalRepository {
   getCompanyByKey(
     companyKey: string,
@@ -172,6 +184,10 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     extractorKey: FinanceTwinExtractorKey,
     session?: PersistenceSession,
   ): Promise<FinanceTwinSyncRunRecord | null>;
+  getSyncRunById(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceTwinSyncRunRecord | null>;
   upsertTrialBalanceLine(
     input: UpsertFinanceTrialBalanceLineInput,
     session?: PersistenceSession,
@@ -180,6 +196,10 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     syncRunId: string,
     session?: PersistenceSession,
   ): Promise<FinanceTrialBalanceLineRecord[]>;
+  listTrialBalanceLineViewsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceTrialBalanceLineView[]>;
   upsertAccountCatalogEntry(
     input: UpsertFinanceAccountCatalogEntryInput,
     session?: PersistenceSession,
@@ -216,6 +236,14 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     syncRunId: string,
     session?: PersistenceSession,
   ): Promise<number>;
+  listLineageBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceTwinLineageRecord[]>;
+  listLineageByTarget(
+    input: ListFinanceTwinLineageByTargetInput,
+    session?: PersistenceSession,
+  ): Promise<FinanceTwinLineageRecord[]>;
 }
 
 export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
@@ -443,6 +471,10 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     );
   }
 
+  async getSyncRunById(syncRunId: string) {
+    return this.syncRuns.get(syncRunId) ?? null;
+  }
+
   async upsertTrialBalanceLine(input: UpsertFinanceTrialBalanceLineInput) {
     const existing = this.trialBalanceLines.get(
       this.trialBalanceLinesByScope.get(
@@ -489,6 +521,28 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     return [...this.trialBalanceLines.values()]
       .filter((line) => line.syncRunId === syncRunId)
       .sort((left, right) => left.lineNumber - right.lineNumber);
+  }
+
+  async listTrialBalanceLineViewsBySyncRunId(syncRunId: string) {
+    return [...this.trialBalanceLines.values()]
+      .filter((line) => line.syncRunId === syncRunId)
+      .sort((left, right) => left.lineNumber - right.lineNumber)
+      .map((trialBalanceLine) => {
+        const ledgerAccount = this.ledgerAccounts.get(
+          trialBalanceLine.ledgerAccountId,
+        );
+
+        if (!ledgerAccount) {
+          throw new Error(
+            `Ledger account ${trialBalanceLine.ledgerAccountId} missing for trial-balance line ${trialBalanceLine.id}`,
+          );
+        }
+
+        return {
+          ledgerAccount,
+          trialBalanceLine,
+        };
+      });
   }
 
   async upsertAccountCatalogEntry(input: UpsertFinanceAccountCatalogEntryInput) {
@@ -715,6 +769,36 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     return [...this.lineage.values()].filter(
       (lineage) => lineage.syncRunId === syncRunId,
     ).length;
+  }
+
+  async listLineageBySyncRunId(syncRunId: string) {
+    return [...this.lineage.values()]
+      .filter((lineage) => lineage.syncRunId === syncRunId)
+      .sort((left, right) => {
+        return (
+          left.targetKind.localeCompare(right.targetKind) ||
+          left.targetId.localeCompare(right.targetId)
+        );
+      });
+  }
+
+  async listLineageByTarget(input: ListFinanceTwinLineageByTargetInput) {
+    return [...this.lineage.values()]
+      .filter((lineage) => {
+        return (
+          lineage.companyId === input.companyId &&
+          lineage.targetKind === input.targetKind &&
+          lineage.targetId === input.targetId &&
+          (input.syncRunId === undefined || lineage.syncRunId === input.syncRunId)
+        );
+      })
+      .sort((left, right) => {
+        return (
+          right.recordedAt.localeCompare(left.recordedAt) ||
+          right.createdAt.localeCompare(left.createdAt) ||
+          right.id.localeCompare(left.id)
+        );
+      });
   }
 }
 

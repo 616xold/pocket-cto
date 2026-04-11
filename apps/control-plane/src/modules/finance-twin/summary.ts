@@ -5,7 +5,7 @@ import type {
 } from "@pocket-cto/domain";
 
 export const FINANCE_TWIN_LIMITATIONS = [
-  "F2C only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction.",
+  "F2D only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, and additive finance snapshot read models.",
   "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
 ];
 
@@ -102,7 +102,7 @@ export function buildGeneralLedgerSummary(
   };
 }
 
-function parseMoney(value: string) {
+export function parseMoney(value: string) {
   const normalized = value.startsWith("-") ? value.slice(1) : value;
   const [wholePart = "0", fractionalPart = "00"] = normalized.split(".");
   const cents =
@@ -111,7 +111,7 @@ function parseMoney(value: string) {
   return value.startsWith("-") ? -cents : cents;
 }
 
-function formatMoney(cents: bigint) {
+export function formatMoney(cents: bigint) {
   const absolute = cents < 0n ? -cents : cents;
   const whole = absolute / 100n;
   const fraction = (absolute % 100n).toString().padStart(2, "0");
