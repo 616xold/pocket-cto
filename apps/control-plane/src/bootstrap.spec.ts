@@ -262,6 +262,11 @@ function createAppContainer(
           "getAccountCatalog should not be called in this test",
         );
       },
+      async getCompanySnapshot() {
+        throw new Error(
+          "getCompanySnapshot should not be called in this test",
+        );
+      },
       async getGeneralLedger() {
         throw new Error(
           "getGeneralLedger should not be called in this test",
@@ -270,6 +275,11 @@ function createAppContainer(
       async getCompanySummary() {
         throw new Error(
           "getCompanySummary should not be called in this test",
+        );
+      },
+      async getLineageDrill() {
+        throw new Error(
+          "getLineageDrill should not be called in this test",
         );
       },
       async syncCompanySourceFile() {

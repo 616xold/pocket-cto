@@ -185,6 +185,16 @@ export function mapFinanceTwinLineageRow(
   };
 }
 
+export function mapFinanceTrialBalanceLineViewRow(input: {
+  trialBalanceLine: FinanceTrialBalanceLineRow;
+  ledgerAccount: FinanceLedgerAccountRow;
+}) {
+  return {
+    trialBalanceLine: mapFinanceTrialBalanceLineRow(input.trialBalanceLine),
+    ledgerAccount: mapFinanceLedgerAccountRow(input.ledgerAccount),
+  };
+}
+
 export function mapFinanceAccountCatalogEntryViewRow(input: {
   catalogEntry: FinanceAccountCatalogEntryRow;
   ledgerAccount: FinanceLedgerAccountRow;

@@ -462,6 +462,294 @@ describe("FinanceTwinService", () => {
     });
   });
 
+  it("builds a cross-slice company snapshot and scoped lineage drill truthfully", async () => {
+    const now = () => new Date("2026-04-11T11:30:00.000Z");
+    const sourceRepository = new InMemorySourceRepository();
+    const sourceStorage = new InMemorySourceFileStorage();
+    const sourceService = new SourceRegistryService(
+      sourceRepository,
+      sourceStorage,
+      now,
+    );
+    const financeRepository = new InMemoryFinanceTwinRepository();
+    const financeTwinService = new FinanceTwinService({
+      financeTwinRepository: financeRepository,
+      sourceFileStorage: sourceStorage,
+      sourceRepository,
+      now,
+    });
+    const chartSource = await sourceService.createSource({
+      kind: "dataset",
+      name: "Chart of accounts",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "chart-of-accounts-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "1111111111111111111111111111111111111111111111111111111111111111",
+        storageKind: "external_url",
+        storageRef: "https://example.com/chart-of-accounts",
+        ingestStatus: "registered",
+      },
+    });
+    const trialBalanceSource = await sourceService.createSource({
+      kind: "dataset",
+      name: "Trial balance",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "trial-balance-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "2222222222222222222222222222222222222222222222222222222222222222",
+        storageKind: "external_url",
+        storageRef: "https://example.com/trial-balance",
+        ingestStatus: "registered",
+      },
+    });
+    const generalLedgerSource = await sourceService.createSource({
+      kind: "dataset",
+      name: "General ledger",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "general-ledger-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "3333333333333333333333333333333333333333333333333333333333333333",
+        storageKind: "external_url",
+        storageRef: "https://example.com/general-ledger",
+        ingestStatus: "registered",
+      },
+    });
+    const chartFile = await sourceService.registerSourceFile(
+      chartSource.source.id,
+      {
+        originalFileName: "chart-of-accounts.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "account_code,account_name,account_type,detail_type,parent_account_code,is_active,description",
+          "1000,Cash,asset,current_asset,,true,Operating cash",
+          "1100,Petty Cash,asset,current_asset,1000,false,Small cash drawer",
+          "2000,Accounts Payable,liability,current_liability,,true,Supplier balances",
+        ].join("\n"),
+      ),
+    );
+    const trialBalanceFile = await sourceService.registerSourceFile(
+      trialBalanceSource.source.id,
+      {
+        originalFileName: "trial-balance.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "account_code,account_name,period_end,debit,credit,currency_code,account_type",
+          "1000,Cash,2026-03-31,100.00,0.00,USD,asset",
+          "2000,Accounts Payable,2026-03-31,0.00,40.00,USD,liability",
+          "3000,Retained Earnings,2026-03-31,0.00,60.00,USD,equity",
+        ].join("\n"),
+      ),
+    );
+    const generalLedgerFile = await sourceService.registerSourceFile(
+      generalLedgerSource.source.id,
+      {
+        originalFileName: "general-ledger.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "journal_id,transaction_date,account_code,account_name,account_type,debit,credit,currency_code,memo",
+          "J-100,2026-04-01,1100,Petty Cash,asset,25.00,0.00,USD,Fund the petty cash drawer",
+          "J-100,2026-04-01,1000,Cash,asset,0.00,25.00,USD,Fund the petty cash drawer",
+          "J-101,2026-04-02,1000,Cash,asset,50.00,0.00,USD,Customer receipt",
+          "J-101,2026-04-02,4000,Revenue,revenue,0.00,50.00,USD,Customer receipt",
+        ].join("\n"),
+      ),
+    );
+
+    await financeTwinService.syncCompanySourceFile("acme", chartFile.sourceFile.id, {
+      companyName: "Acme Holdings",
+    });
+    await financeTwinService.syncCompanySourceFile(
+      "acme",
+      trialBalanceFile.sourceFile.id,
+      {},
+    );
+    const generalLedgerSync = await financeTwinService.syncCompanySourceFile(
+      "acme",
+      generalLedgerFile.sourceFile.id,
+      {},
+    );
+    const snapshot = await financeTwinService.getCompanySnapshot("acme");
+    const cashRow = snapshot.accounts.find(
+      (account) => account.ledgerAccount.accountCode === "1000",
+    );
+    const pettyCashRow = snapshot.accounts.find(
+      (account) => account.ledgerAccount.accountCode === "1100",
+    );
+    const retainedEarningsRow = snapshot.accounts.find(
+      (account) => account.ledgerAccount.accountCode === "3000",
+    );
+    const revenueRow = snapshot.accounts.find(
+      (account) => account.ledgerAccount.accountCode === "4000",
+    );
+
+    expect(snapshot.sliceAlignment).toMatchObject({
+      state: "mixed",
+      availableSliceCount: 3,
+      implementedSliceCount: 3,
+      distinctSyncRunCount: 3,
+      distinctSourceSnapshotCount: 3,
+      sameSyncRun: false,
+      sameSourceSnapshot: false,
+      reasonCode: "mixed_source_snapshots",
+    });
+    expect(snapshot.coverageSummary).toMatchObject({
+      accountRowCount: 5,
+      chartOfAccountsAccountCount: 3,
+      trialBalanceAccountCount: 3,
+      generalLedgerActiveAccountCount: 3,
+      accountsPresentInAllImplementedSlicesCount: 1,
+      missingFromChartOfAccountsCount: 2,
+      missingFromTrialBalanceCount: 2,
+      missingFromGeneralLedgerCount: 2,
+      inactiveAccountCount: 1,
+      inactiveWithGeneralLedgerActivityCount: 1,
+    });
+    expect(snapshot.latestSuccessfulSlices.trialBalance.coverage).toMatchObject({
+      lineCount: 3,
+      lineageCount: 7,
+      lineageTargetCounts: {
+        reportingPeriodCount: 1,
+        ledgerAccountCount: 3,
+        trialBalanceLineCount: 3,
+      },
+    });
+    expect(snapshot.latestSuccessfulSlices.chartOfAccounts.coverage).toMatchObject({
+      accountCatalogEntryCount: 3,
+      lineageCount: 6,
+      lineageTargetCounts: {
+        ledgerAccountCount: 3,
+        accountCatalogEntryCount: 3,
+      },
+    });
+    expect(snapshot.latestSuccessfulSlices.generalLedger.coverage).toMatchObject({
+      journalEntryCount: 2,
+      journalLineCount: 4,
+      lineageCount: 9,
+      lineageTargetCounts: {
+        ledgerAccountCount: 3,
+        journalEntryCount: 2,
+        journalLineCount: 4,
+      },
+    });
+    expect(snapshot.limitations).toContain(
+      "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed.",
+    );
+    expect(cashRow).toMatchObject({
+      presentInChartOfAccounts: true,
+      presentInTrialBalance: true,
+      presentInGeneralLedger: true,
+      generalLedgerActivity: {
+        journalEntryCount: 2,
+        journalLineCount: 2,
+        totalDebitAmount: "50.00",
+        totalCreditAmount: "25.00",
+        earliestEntryDate: "2026-04-01",
+        latestEntryDate: "2026-04-02",
+      },
+      lineageTargets: {
+        ledgerAccount: {
+          targetKind: "ledger_account",
+        },
+        chartOfAccountsEntry: {
+          targetKind: "account_catalog_entry",
+        },
+        trialBalanceLine: {
+          targetKind: "trial_balance_line",
+        },
+        generalLedger: {
+          targetKind: "ledger_account",
+          syncRunId: generalLedgerSync.syncRun.id,
+        },
+      },
+    });
+    expect(pettyCashRow).toMatchObject({
+      presentInChartOfAccounts: true,
+      presentInTrialBalance: false,
+      presentInGeneralLedger: true,
+      missingFromTrialBalance: true,
+      inactiveWithGeneralLedgerActivity: true,
+    });
+    expect(retainedEarningsRow).toMatchObject({
+      presentInChartOfAccounts: false,
+      presentInTrialBalance: true,
+      presentInGeneralLedger: false,
+      missingFromChartOfAccounts: true,
+      missingFromGeneralLedger: true,
+    });
+    expect(revenueRow).toMatchObject({
+      presentInChartOfAccounts: false,
+      presentInTrialBalance: false,
+      presentInGeneralLedger: true,
+      missingFromChartOfAccounts: true,
+      missingFromTrialBalance: true,
+    });
+
+    expect(cashRow).toBeDefined();
+
+    const ledgerAccountLineage = await financeTwinService.getLineageDrill({
+      companyKey: "acme",
+      targetKind: "ledger_account",
+      targetId: cashRow?.ledgerAccount.id ?? "",
+    });
+    const generalLedgerLineage = await financeTwinService.getLineageDrill({
+      companyKey: "acme",
+      targetKind: "ledger_account",
+      targetId: cashRow?.ledgerAccount.id ?? "",
+      syncRunId: generalLedgerSync.syncRun.id,
+    });
+
+    expect(ledgerAccountLineage.recordCount).toBe(3);
+    expect(
+      ledgerAccountLineage.records
+        .map((record) => record.syncRun.extractorKey)
+        .sort(),
+    ).toEqual([
+      "chart_of_accounts_csv",
+      "general_ledger_csv",
+      "trial_balance_csv",
+    ]);
+    expect(generalLedgerLineage).toMatchObject({
+      target: {
+        targetKind: "ledger_account",
+        targetId: cashRow?.ledgerAccount.id,
+        syncRunId: generalLedgerSync.syncRun.id,
+      },
+      recordCount: 1,
+      records: [
+        {
+          syncRun: {
+            extractorKey: "general_ledger_csv",
+            id: generalLedgerSync.syncRun.id,
+          },
+          sourceFile: {
+            originalFileName: "general-ledger.csv",
+          },
+        },
+      ],
+    });
+  });
+
   it("preserves an existing company display name when a later sync omits companyName", async () => {
     const now = () => new Date("2026-04-11T10:00:00.000Z");
     const sourceRepository = new InMemorySourceRepository();
