@@ -42,6 +42,10 @@ import {
 import { extractFinanceTwinSource } from "./extractor-dispatch";
 import { buildFinanceFreshnessView } from "./freshness";
 import { buildFinanceGeneralLedgerActivityLineageView } from "./general-ledger-activity-lineage";
+import {
+  buildFinanceGeneralLedgerPeriodContext,
+  buildPersistedGeneralLedgerPeriodContextStats,
+} from "./general-ledger-period-context";
 import { buildFinanceLineageDrillView, buildLineageTargetCounts } from "./lineage";
 import type { GeneralLedgerExtractionResult } from "./general-ledger-csv";
 import { buildFinanceReconciliationReadinessView } from "./reconciliation";
@@ -802,6 +806,9 @@ export class FinanceTwinService {
             journalLineCount,
             ledgerAccountCount,
             reportingPeriodCount,
+            ...buildPersistedGeneralLedgerPeriodContextStats({
+              sourceDeclaredPeriod: input.extracted.sourceDeclaredPeriod,
+            }),
           },
           errorSummary: null,
         },
@@ -1115,6 +1122,10 @@ export class FinanceTwinService {
             lineageCount: 0,
             lineageTargetCounts: buildLineageTargetCounts([]),
           },
+          periodContext: buildFinanceGeneralLedgerPeriodContext({
+            latestSuccessfulRun: null,
+            summary: null,
+          }),
           summary: null,
         },
       };
@@ -1132,6 +1143,7 @@ export class FinanceTwinService {
       (count, entry) => count + entry.lines.length,
       0,
     );
+    const summary = entries.length > 0 ? buildGeneralLedgerSummary(entries) : null;
 
     return {
       entries,
@@ -1144,7 +1156,11 @@ export class FinanceTwinService {
           lineageCount: lineages.length,
           lineageTargetCounts: buildLineageTargetCounts(lineages),
         },
-        summary: entries.length > 0 ? buildGeneralLedgerSummary(entries) : null,
+        periodContext: buildFinanceGeneralLedgerPeriodContext({
+          latestSuccessfulRun,
+          summary,
+        }),
+        summary,
       },
     };
   }

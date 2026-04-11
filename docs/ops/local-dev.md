@@ -1,6 +1,6 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, and through the merged F2A, F2B, F2C, and F2D finance-twin slices.
+This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, and through the merged F2A, F2B, F2C, F2D, and F2E finance-twin slices.
 
 That means two things are true at once:
 
@@ -35,6 +35,7 @@ pnpm smoke:finance-twin-account-catalog:local
 pnpm smoke:finance-twin-general-ledger:local
 pnpm smoke:finance-twin-snapshot:local
 pnpm smoke:finance-twin-reconciliation:local
+pnpm smoke:finance-twin-period-context:local
 ```
 
 ## Pivot-foundation baseline
@@ -63,11 +64,13 @@ Today, steps 1 through 4 exist in a narrow form:
 - F2C general-ledger CSV sync and persisted journal-entry or journal-line reads are implemented
 - F2D additive company snapshot and lineage reads now tie the latest successful implemented finance slices together truthfully
 - F2E adds a company-level reconciliation-readiness read that stays explicit about coverage, comparability, and limitations rather than faking a balance reconciliation
+- F2F is the active next slice and hardens reporting-window truth so reconciliation can distinguish source-declared general-ledger period context from activity-window-only fallback
 - the packaged `pnpm smoke:finance-twin:local` path proves the trial-balance sync from stored raw bytes
 - the packaged `pnpm smoke:finance-twin-account-catalog:local` path proves persisted account-catalog state
 - the packaged `pnpm smoke:finance-twin-general-ledger:local` path proves persisted general-ledger journal state from stored raw bytes
 - the packaged `pnpm smoke:finance-twin-snapshot:local` path proves mixed-slice snapshot and lineage drill behavior from persisted state
-- the packaged `pnpm smoke:finance-twin-reconciliation:local` path proves reconciliation-readiness, source-grounded comparability, and general-ledger activity lineage drill behavior from persisted state
+- the packaged `pnpm smoke:finance-twin-reconciliation:local` path proves reconciliation-readiness, explicit basis semantics, and general-ledger activity lineage drill behavior from persisted state
+- the packaged `pnpm smoke:finance-twin-period-context:local` path proves explicit source-declared general-ledger period-context capture and period-scoped reconciliation truth from persisted state
 
 Steps 5 and 6 remain later-phase work.
 Use the docs to guide what gets built next.

@@ -1,4 +1,7 @@
-import type { SourceFileRecord } from "@pocket-cto/domain";
+import type {
+  FinanceGeneralLedgerSourceDeclaredPeriod,
+  SourceFileRecord,
+} from "@pocket-cto/domain";
 import {
   buildHeaderLookup,
   decodeCsvText,
@@ -37,6 +40,25 @@ const ACCOUNT_NAME_HEADERS = [
   "gl_account_name",
 ];
 const ACCOUNT_TYPE_HEADERS = ["account_type", "gl_account_type"];
+const PERIOD_START_HEADERS = [
+  "period_start",
+  "period_start_date",
+  "reporting_period_start",
+  "report_period_start",
+];
+const PERIOD_END_HEADERS = [
+  "period_end",
+  "period_end_date",
+  "reporting_period_end",
+  "report_period_end",
+];
+const PERIOD_KEY_HEADERS = [
+  "period_key",
+  "reporting_period",
+  "reporting_period_key",
+  "report_period",
+];
+const AS_OF_HEADERS = ["as_of", "as_of_date"];
 const DEBIT_HEADERS = ["debit", "debit_amount", "debits"];
 const CREDIT_HEADERS = ["credit", "credit_amount", "credits"];
 const CURRENCY_HEADERS = ["currency", "currency_code"];
@@ -77,6 +99,7 @@ export type GeneralLedgerExtractionResult = {
     lines: ExtractedGeneralLedgerLine[];
     transactionDate: string;
   }>;
+  sourceDeclaredPeriod: FinanceGeneralLedgerSourceDeclaredPeriod | null;
 };
 
 export function supportsGeneralLedgerCsvSource(
@@ -164,6 +187,16 @@ export function extractGeneralLedgerCsv(input: {
     headerLookup,
     ACCOUNT_NAME_HEADERS,
   );
+  const periodStartIndex = getOptionalHeaderIndex(
+    headerLookup,
+    PERIOD_START_HEADERS,
+  );
+  const periodEndIndex = getOptionalHeaderIndex(
+    headerLookup,
+    PERIOD_END_HEADERS,
+  );
+  const periodKeyIndex = getOptionalHeaderIndex(headerLookup, PERIOD_KEY_HEADERS);
+  const asOfIndex = getOptionalHeaderIndex(headerLookup, AS_OF_HEADERS);
   const accountTypeIndex = getOptionalHeaderIndex(
     headerLookup,
     ACCOUNT_TYPE_HEADERS,
@@ -179,6 +212,10 @@ export function extractGeneralLedgerCsv(input: {
   );
 
   const accountsByCode = new Map<string, ExtractedLedgerAccount>();
+  const sourceDeclaredPeriodStarts = new Set<string>();
+  const sourceDeclaredPeriodEnds = new Set<string>();
+  const sourceDeclaredPeriodKeys = new Set<string>();
+  const sourceDeclaredAsOfDates = new Set<string>();
   const entriesById = new Map<
     string,
     {
@@ -222,6 +259,20 @@ export function extractGeneralLedgerCsv(input: {
     );
     const accountName =
       accountNameIndex === null ? null : readOptionalCell(row[accountNameIndex]);
+    const sourceDeclaredPeriodStart =
+      periodStartIndex === null
+        ? null
+        : readOptionalIsoDate(row[periodStartIndex], "period start", lineNumber);
+    const sourceDeclaredPeriodEnd =
+      periodEndIndex === null
+        ? null
+        : readOptionalIsoDate(row[periodEndIndex], "period end", lineNumber);
+    const sourceDeclaredPeriodKey =
+      periodKeyIndex === null ? null : readOptionalCell(row[periodKeyIndex]);
+    const sourceDeclaredAsOf =
+      asOfIndex === null
+        ? null
+        : readOptionalIsoDate(row[asOfIndex], "as-of date", lineNumber);
     const accountType =
       accountTypeIndex === null ? null : readOptionalCell(row[accountTypeIndex]);
     const debitAmount =
@@ -261,6 +312,18 @@ export function extractGeneralLedgerCsv(input: {
     });
 
     accountsByCode.set(accountCode, mergedAccount);
+    if (sourceDeclaredPeriodStart) {
+      sourceDeclaredPeriodStarts.add(sourceDeclaredPeriodStart);
+    }
+    if (sourceDeclaredPeriodEnd) {
+      sourceDeclaredPeriodEnds.add(sourceDeclaredPeriodEnd);
+    }
+    if (sourceDeclaredPeriodKey) {
+      sourceDeclaredPeriodKeys.add(sourceDeclaredPeriodKey);
+    }
+    if (sourceDeclaredAsOf) {
+      sourceDeclaredAsOfDates.add(sourceDeclaredAsOf);
+    }
 
     const existingEntry = entriesById.get(externalEntryId);
 
@@ -315,6 +378,12 @@ export function extractGeneralLedgerCsv(input: {
   }
 
   return {
+    sourceDeclaredPeriod: resolveSourceDeclaredPeriod({
+      asOfDates: sourceDeclaredAsOfDates,
+      periodEnds: sourceDeclaredPeriodEnds,
+      periodKeys: sourceDeclaredPeriodKeys,
+      periodStarts: sourceDeclaredPeriodStarts,
+    }),
     entries: Array.from(entriesById.values())
       .sort((left, right) => {
         return (
@@ -405,6 +474,17 @@ function readOptionalCell(value: string | undefined) {
   return normalized ? normalized : null;
 }
 
+function readOptionalIsoDate(
+  value: string | undefined,
+  label: string,
+  lineNumber: number,
+) {
+  const normalized = readOptionalCell(value);
+  return normalized === null
+    ? null
+    : parseIsoDate(normalized, label, lineNumber);
+}
+
 function parseIsoDate(value: string, label: string, lineNumber: number) {
   if (!/^\d{4}-\d{2}-\d{2}$/u.test(value)) {
     throw new FinanceTwinExtractionError(
@@ -489,6 +569,88 @@ function formatMoney(cents: bigint) {
 function normalizeCurrency(value: string | undefined) {
   const normalized = value?.trim();
   return normalized ? normalized.toUpperCase() : null;
+}
+
+function resolveSourceDeclaredPeriod(input: {
+  asOfDates: Set<string>;
+  periodEnds: Set<string>;
+  periodKeys: Set<string>;
+  periodStarts: Set<string>;
+}): FinanceGeneralLedgerSourceDeclaredPeriod | null {
+  const periodStart = getSingleOptionalValue(
+    input.periodStarts,
+    "period start",
+  );
+  const periodEnd = getSingleOptionalValue(input.periodEnds, "period end");
+  const periodKey = getSingleOptionalValue(input.periodKeys, "period key");
+  const asOf = getSingleOptionalValue(input.asOfDates, "as-of date");
+
+  if (periodEnd !== null && asOf !== null && periodEnd !== asOf) {
+    throw new FinanceTwinExtractionError(
+      "general_ledger_period_context_conflict",
+      "General-ledger CSV included conflicting source-declared period end and as-of dates.",
+    );
+  }
+
+  if (periodStart !== null && periodEnd === null && asOf === null) {
+    throw new FinanceTwinExtractionError(
+      "general_ledger_period_context_incomplete",
+      "General-ledger CSV included a source-declared period start without a matching period end or as-of date.",
+    );
+  }
+
+  if (periodStart !== null && periodEnd !== null) {
+    return {
+      contextKind: "period_window",
+      periodKey,
+      periodStart,
+      periodEnd,
+      asOf,
+    };
+  }
+
+  if (periodEnd !== null) {
+    return {
+      contextKind: "period_end_only",
+      periodKey,
+      periodStart: null,
+      periodEnd,
+      asOf,
+    };
+  }
+
+  if (asOf !== null) {
+    return {
+      contextKind: "as_of",
+      periodKey,
+      periodStart: null,
+      periodEnd: null,
+      asOf,
+    };
+  }
+
+  if (periodKey !== null) {
+    return {
+      contextKind: "period_key_only",
+      periodKey,
+      periodStart: null,
+      periodEnd: null,
+      asOf: null,
+    };
+  }
+
+  return null;
+}
+
+function getSingleOptionalValue(values: Set<string>, label: string) {
+  if (values.size > 1) {
+    throw new FinanceTwinExtractionError(
+      "general_ledger_period_context_conflict",
+      `General-ledger CSV included conflicting source-declared ${label} values.`,
+    );
+  }
+
+  return Array.from(values)[0] ?? null;
 }
 
 function mergeLedgerAccount(input: {

@@ -204,6 +204,15 @@ describe("finance twin domain schemas", () => {
             journalLineCount: 4,
             lineageCount: 6,
           },
+          periodContext: {
+            basis: "activity_window_only",
+            sourceDeclaredPeriod: null,
+            activityWindowEarliestEntryDate: "2026-03-31",
+            activityWindowLatestEntryDate: "2026-04-30",
+            reasonCode: "activity_window_only",
+            reasonSummary:
+              "The latest successful general-ledger slice does not carry explicit source-declared reporting-period fields, so only the observed journal activity window is available.",
+          },
           summary: {
             journalEntryCount: 2,
             journalLineCount: 4,
@@ -281,6 +290,15 @@ describe("finance twin domain schemas", () => {
           journalEntryCount: 0,
           journalLineCount: 0,
           lineageCount: 0,
+        },
+        periodContext: {
+          basis: "missing_context",
+          sourceDeclaredPeriod: null,
+          activityWindowEarliestEntryDate: null,
+          activityWindowLatestEntryDate: null,
+          reasonCode: "missing_general_ledger_slice",
+          reasonSummary:
+            "No successful general-ledger slice exists yet, so period context is unavailable.",
         },
         summary: null,
       },
@@ -562,6 +580,15 @@ describe("finance twin domain schemas", () => {
               journalLineCount: 1,
             },
           },
+          periodContext: {
+            basis: "activity_window_only",
+            sourceDeclaredPeriod: null,
+            activityWindowEarliestEntryDate: "2026-04-11",
+            activityWindowLatestEntryDate: "2026-04-11",
+            reasonCode: "activity_window_only",
+            reasonSummary:
+              "The latest successful general-ledger slice does not carry explicit source-declared reporting-period fields, so only the observed journal activity window is available.",
+          },
           summary: {
             journalEntryCount: 1,
             journalLineCount: 1,
@@ -682,7 +709,7 @@ describe("finance twin domain schemas", () => {
         },
       ],
       limitations: [
-        "F2E only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot read models, and reconciliation-readiness reads.",
+        "F2F only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot and reconciliation read models, and reporting-window truth hardening.",
       ],
     });
 
@@ -864,6 +891,15 @@ describe("finance twin domain schemas", () => {
           journalLineCount: 2,
           lineageCount: 3,
         },
+        periodContext: {
+          basis: "activity_window_only",
+          sourceDeclaredPeriod: null,
+          activityWindowEarliestEntryDate: "2026-03-15",
+          activityWindowLatestEntryDate: "2026-03-15",
+          reasonCode: "activity_window_only",
+          reasonSummary:
+            "The latest successful general-ledger slice does not carry explicit source-declared reporting-period fields, so only the observed journal activity window is available.",
+        },
         summary: {
           journalEntryCount: 1,
           journalLineCount: 2,
@@ -931,19 +967,22 @@ describe("finance twin domain schemas", () => {
         sharedSourceSnapshotId: null,
         reasonCode: "shared_source",
         reasonSummary:
-          "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs.",
+          "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       },
       comparability: {
-        state: "window_comparable",
-        reasonCode: "shared_source_window_match",
+        state: "coverage_only",
+        basis: "activity_window_only",
+        windowRelation: "subset",
+        reasonCode: "activity_window_subset",
         reasonSummary:
-          "The latest successful trial-balance and general-ledger slices share one registered source, and the general-ledger activity window fits inside the trial-balance reporting window.",
+          "The observed general-ledger activity window fits inside the latest trial-balance reporting window, but the general-ledger slice does not include explicit source-declared period context.",
         trialBalanceWindow: {
           periodKey: "2026-03-31",
           label: "As of 2026-03-31",
           periodStart: "2026-03-01",
           periodEnd: "2026-03-31",
         },
+        sourceDeclaredGeneralLedgerPeriod: null,
         generalLedgerWindow: {
           earliestEntryDate: "2026-03-15",
           latestEntryDate: "2026-03-15",
@@ -1012,7 +1051,7 @@ describe("finance twin domain schemas", () => {
       ],
     });
 
-    expect(parsed.comparability.state).toBe("window_comparable");
+    expect(parsed.comparability.state).toBe("coverage_only");
   });
 
   it("parses a general-ledger activity lineage drill view", () => {

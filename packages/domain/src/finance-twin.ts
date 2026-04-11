@@ -252,6 +252,36 @@ export const FinanceChartOfAccountsSummarySchema = z.object({
   parentLinkedCount: z.number().int().nonnegative(),
 });
 
+export const FinanceGeneralLedgerPeriodContextBasisSchema = z.enum([
+  "source_declared_period",
+  "activity_window_only",
+  "missing_context",
+]);
+
+export const FinanceGeneralLedgerDeclaredPeriodKindSchema = z.enum([
+  "period_window",
+  "period_end_only",
+  "as_of",
+  "period_key_only",
+]);
+
+export const FinanceGeneralLedgerSourceDeclaredPeriodSchema = z.object({
+  contextKind: FinanceGeneralLedgerDeclaredPeriodKindSchema,
+  periodKey: z.string().min(1).nullable(),
+  periodStart: FinanceIsoDateSchema.nullable(),
+  periodEnd: FinanceIsoDateSchema.nullable(),
+  asOf: FinanceIsoDateSchema.nullable(),
+});
+
+export const FinanceGeneralLedgerPeriodContextViewSchema = z.object({
+  basis: FinanceGeneralLedgerPeriodContextBasisSchema,
+  sourceDeclaredPeriod: FinanceGeneralLedgerSourceDeclaredPeriodSchema.nullable(),
+  activityWindowEarliestEntryDate: FinanceIsoDateSchema.nullable(),
+  activityWindowLatestEntryDate: FinanceIsoDateSchema.nullable(),
+  reasonCode: z.string().min(1),
+  reasonSummary: z.string().min(1),
+});
+
 export const FinanceGeneralLedgerSummarySchema = z.object({
   journalEntryCount: z.number().int().nonnegative(),
   journalLineCount: z.number().int().nonnegative(),
@@ -312,6 +342,7 @@ export const FinanceLatestSuccessfulGeneralLedgerSliceSchema = z.object({
   latestSource: FinanceTwinSourceRefSchema.nullable(),
   latestSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
   coverage: FinanceGeneralLedgerCoverageSchema,
+  periodContext: FinanceGeneralLedgerPeriodContextViewSchema,
   summary: FinanceGeneralLedgerSummarySchema.nullable(),
 });
 
@@ -491,6 +522,13 @@ export const FinanceGeneralLedgerWindowSchema = z.object({
   latestEntryDate: FinanceIsoDateSchema,
 });
 
+export const FinanceReconciliationWindowRelationSchema = z.enum([
+  "exact_match",
+  "subset",
+  "outside",
+  "unknown",
+]);
+
 export const FinanceReconciliationComparabilityViewSchema = z.object({
   state: z.enum([
     "missing_slice",
@@ -498,9 +536,13 @@ export const FinanceReconciliationComparabilityViewSchema = z.object({
     "coverage_only",
     "window_comparable",
   ]),
+  basis: FinanceGeneralLedgerPeriodContextBasisSchema,
+  windowRelation: FinanceReconciliationWindowRelationSchema,
   reasonCode: z.string().min(1),
   reasonSummary: z.string().min(1),
   trialBalanceWindow: FinanceTrialBalanceWindowSchema.nullable(),
+  sourceDeclaredGeneralLedgerPeriod:
+    FinanceGeneralLedgerSourceDeclaredPeriodSchema.nullable(),
   generalLedgerWindow: FinanceGeneralLedgerWindowSchema.nullable(),
   sameSource: z.boolean(),
   sameSourceSnapshot: z.boolean(),
@@ -629,6 +671,18 @@ export type FinanceTrialBalanceSummary = z.infer<
 export type FinanceChartOfAccountsSummary = z.infer<
   typeof FinanceChartOfAccountsSummarySchema
 >;
+export type FinanceGeneralLedgerPeriodContextBasis = z.infer<
+  typeof FinanceGeneralLedgerPeriodContextBasisSchema
+>;
+export type FinanceGeneralLedgerDeclaredPeriodKind = z.infer<
+  typeof FinanceGeneralLedgerDeclaredPeriodKindSchema
+>;
+export type FinanceGeneralLedgerSourceDeclaredPeriod = z.infer<
+  typeof FinanceGeneralLedgerSourceDeclaredPeriodSchema
+>;
+export type FinanceGeneralLedgerPeriodContextView = z.infer<
+  typeof FinanceGeneralLedgerPeriodContextViewSchema
+>;
 export type FinanceGeneralLedgerSummary = z.infer<
   typeof FinanceGeneralLedgerSummarySchema
 >;
@@ -706,6 +760,9 @@ export type FinanceTrialBalanceWindow = z.infer<
 >;
 export type FinanceGeneralLedgerWindow = z.infer<
   typeof FinanceGeneralLedgerWindowSchema
+>;
+export type FinanceReconciliationWindowRelation = z.infer<
+  typeof FinanceReconciliationWindowRelationSchema
 >;
 export type FinanceReconciliationComparabilityView = z.infer<
   typeof FinanceReconciliationComparabilityViewSchema

@@ -23,12 +23,13 @@ Today the merged backbone is:
 - F2B deterministic chart-of-accounts CSV sync and account-catalog reads
 - F2C deterministic general-ledger CSV sync and persisted journal-entry or journal-line state
 - F2D additive company snapshot and lineage reads across the latest successful implemented finance slices
+- F2E additive backend-first reconciliation-readiness reads, source-grounded slice-alignment truthfulness, and more specific general-ledger activity lineage drill behavior
 
-The active next slice is F2E:
+The active next slice is F2F:
 
-- additive backend-first trial-balance-versus-general-ledger reconciliation-readiness reads
-- tighter source-grounded slice-alignment truthfulness for the company snapshot
-- more drillable general-ledger activity lineage than the coarse ledger-account posture
+- additive reporting-window truth hardening for trial-balance-versus-general-ledger reconciliation
+- clearer distinction between source-declared general-ledger period context and activity-window-only evidence
+- more explicit period-scoped window relation semantics without faking a balance variance
 
 ## Product boundary for v1
 
@@ -107,6 +108,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0011-general-ledger-and-finance-twin-hardening.md
 │   ├── FP-0012-cross-slice-finance-snapshot-and-lineage.md
 │   ├── FP-0013-reconciliation-readiness-and-snapshot-hardening.md
+│   ├── FP-0014-reporting-window-truth-and-period-scoped-reconciliation.md
 │   └── templates
 └── .agents
     └── skills
@@ -120,7 +122,7 @@ Pocket CFO v1 is intentionally narrow:
 4. Read `PLANS.md`.
 5. Read `plans/ROADMAP.md`.
 6. Read the current active `plans/FP-*.md` file for the next narrow slice instead of restarting from `FP-0001`.
-7. The current active plan is `plans/FP-0013-reconciliation-readiness-and-snapshot-hardening.md`.
+7. The current active plan is `plans/FP-0014-reporting-window-truth-and-period-scoped-reconciliation.md`.
 8. Keep progress updates inside the active Finance Plan while working.
 9. Do not delete legacy engineering modules until the finance replacement path exists and a smoke proves it.
 
@@ -147,6 +149,7 @@ pnpm smoke:finance-twin-account-catalog:local
 pnpm smoke:finance-twin-general-ledger:local
 pnpm smoke:finance-twin-snapshot:local
 pnpm smoke:finance-twin-reconciliation:local
+pnpm smoke:finance-twin-period-context:local
 ```
 
 The current backend-first finance-twin read surface is:

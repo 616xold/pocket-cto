@@ -705,9 +705,9 @@ describe("control-plane app", () => {
       },
       payload: Buffer.from(
         [
-          "journal_id,transaction_date,account_code,account_name,debit,credit,currency_code,memo",
-          "J-100,2026-03-31,1000,Cash,100.00,0.00,USD,Seed funding received",
-          "J-100,2026-03-31,3000,Common Stock,0.00,100.00,USD,Seed funding received",
+          "journal_id,transaction_date,period_start,period_end,period_key,account_code,account_name,debit,credit,currency_code,memo",
+          "J-100,2026-03-31,2026-03-01,2026-03-31,2026-03,1000,Cash,100.00,0.00,USD,Seed funding received",
+          "J-100,2026-03-31,2026-03-01,2026-03-31,2026-03,3000,Common Stock,0.00,100.00,USD,Seed funding received",
         ].join("\n"),
       ),
     });
@@ -760,6 +760,16 @@ describe("control-plane app", () => {
           journalEntryCount: 1,
           journalLineCount: 2,
           lineageCount: 5,
+        },
+        periodContext: {
+          basis: "source_declared_period",
+          sourceDeclaredPeriod: {
+            contextKind: "period_window",
+            periodKey: "2026-03",
+            periodStart: "2026-03-01",
+            periodEnd: "2026-03-31",
+            asOf: null,
+          },
         },
       },
       freshness: {
@@ -974,7 +984,7 @@ describe("control-plane app", () => {
         },
       },
       limitations: [
-        "F2E only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot read models, and reconciliation-readiness reads.",
+        "F2F only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot and reconciliation read models, and reporting-window truth hardening.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed across different registered sources.",
       ],
@@ -1180,12 +1190,15 @@ describe("control-plane app", () => {
         sameSourceSnapshot: false,
       },
       comparability: {
-        state: "window_comparable",
-        reasonCode: "shared_source_window_match",
+        state: "coverage_only",
+        basis: "activity_window_only",
+        windowRelation: "subset",
+        reasonCode: "activity_window_subset",
         trialBalanceWindow: {
           periodStart: "2026-03-01",
           periodEnd: "2026-03-31",
         },
+        sourceDeclaredGeneralLedgerPeriod: null,
         generalLedgerWindow: {
           earliestEntryDate: "2026-03-15",
           latestEntryDate: "2026-03-15",
@@ -1201,10 +1214,11 @@ describe("control-plane app", () => {
         generalLedgerOnlyCount: 0,
       },
       limitations: [
-        "F2E only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot read models, and reconciliation-readiness reads.",
+        "F2F only covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV extraction, additive finance snapshot and reconciliation read models, and reporting-window truth hardening.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
-        "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs.",
+        "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+        "The observed general-ledger activity window fits inside the latest trial-balance reporting window, but the general-ledger slice does not include explicit source-declared period context.",
       ],
     });
   });

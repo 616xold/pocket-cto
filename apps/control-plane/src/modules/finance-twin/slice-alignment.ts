@@ -131,5 +131,5 @@ function buildSharedSourceSummary(input: {
     return `The latest successful ${input.subjectLabel} share one registered source and one sync run, but span different source snapshots.`;
   }
 
-  return `The latest successful ${input.subjectLabel} share one registered source, but span different uploaded file snapshots and sync runs.`;
+  return `The latest successful ${input.subjectLabel} share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.`;
 }

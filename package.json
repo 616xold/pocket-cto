@@ -48,6 +48,7 @@
     "smoke:github-issue-intake:live": "node tools/github-issue-intake-local-smoke.mjs --mode live_github_hosted_issue",
     "smoke:finance-twin-account-catalog:local": "tsx tools/finance-twin-account-catalog-smoke.mjs",
     "smoke:finance-twin-general-ledger:local": "tsx tools/finance-twin-general-ledger-smoke.mjs",
+    "smoke:finance-twin-period-context:local": "tsx tools/finance-twin-period-context-smoke.mjs",
     "smoke:finance-twin-reconciliation:local": "tsx tools/finance-twin-reconciliation-smoke.mjs",
     "smoke:finance-twin-snapshot:local": "tsx tools/finance-twin-snapshot-smoke.mjs",
     "smoke:finance-twin:local": "tsx tools/finance-twin-smoke.mjs",

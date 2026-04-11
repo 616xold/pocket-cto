@@ -910,13 +910,23 @@ describe("FinanceTwinService", () => {
       sharedSourceId: created.source.id,
       reasonCode: "shared_source",
     });
+    expect(snapshot.latestSuccessfulSlices.generalLedger.periodContext).toMatchObject({
+      basis: "activity_window_only",
+      sourceDeclaredPeriod: null,
+      activityWindowEarliestEntryDate: "2026-03-15",
+      activityWindowLatestEntryDate: "2026-03-15",
+      reasonCode: "activity_window_only",
+    });
     expect(reconciliation.comparability).toMatchObject({
-      state: "window_comparable",
-      reasonCode: "shared_source_window_match",
+      state: "coverage_only",
+      basis: "activity_window_only",
+      windowRelation: "subset",
+      reasonCode: "activity_window_subset",
       trialBalanceWindow: {
         periodStart: "2026-03-01",
         periodEnd: "2026-03-31",
       },
+      sourceDeclaredGeneralLedgerPeriod: null,
       generalLedgerWindow: {
         earliestEntryDate: "2026-03-15",
         latestEntryDate: "2026-03-15",
@@ -938,7 +948,7 @@ describe("FinanceTwinService", () => {
       "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
     );
     expect(reconciliation.limitations).toContain(
-      "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs.",
+      "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
     );
     expect(cashRow).toMatchObject({
       presentInTrialBalance: true,
@@ -948,6 +958,117 @@ describe("FinanceTwinService", () => {
       activityLineageRef: {
         ledgerAccountId: cashRow?.ledgerAccount.id,
         syncRunId: generalLedgerSync.syncRun.id,
+      },
+    });
+  });
+
+  it("uses explicit source-declared general-ledger period context when the source carries it", async () => {
+    const now = () => new Date("2026-04-11T12:00:00.000Z");
+    const sourceRepository = new InMemorySourceRepository();
+    const sourceStorage = new InMemorySourceFileStorage();
+    const sourceService = new SourceRegistryService(
+      sourceRepository,
+      sourceStorage,
+      now,
+    );
+    const financeTwinService = new FinanceTwinService({
+      financeTwinRepository: new InMemoryFinanceTwinRepository(),
+      sourceFileStorage: sourceStorage,
+      sourceRepository,
+      now,
+    });
+    const created = await sourceService.createSource({
+      kind: "dataset",
+      name: "March close package with explicit GL period",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "march-close-package-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "f222222222222222222222222222222222222222222222222222222222222222",
+        storageKind: "external_url",
+        storageRef: "https://example.com/march-close-package-explicit-period",
+        ingestStatus: "registered",
+      },
+    });
+    const trialBalanceFile = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "trial-balance.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "account_code,account_name,period_start,period_end,debit,credit,currency_code,account_type",
+          "1000,Cash,2026-03-01,2026-03-31,120.00,0.00,USD,asset",
+          "2000,Accounts Payable,2026-03-01,2026-03-31,0.00,120.00,USD,liability",
+        ].join("\n"),
+      ),
+    );
+    const generalLedgerFile = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "general-ledger.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "journal_id,transaction_date,period_start,period_end,period_key,account_code,account_name,account_type,debit,credit,currency_code,memo",
+          "J-100,2026-03-15,2026-03-01,2026-03-31,2026-03,1000,Cash,asset,120.00,0.00,USD,Customer receipt",
+          "J-100,2026-03-15,2026-03-01,2026-03-31,2026-03,2000,Accounts Payable,liability,0.00,120.00,USD,Customer receipt",
+        ].join("\n"),
+      ),
+    );
+
+    await financeTwinService.syncCompanySourceFile(
+      "acme",
+      trialBalanceFile.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
+    await financeTwinService.syncCompanySourceFile(
+      "acme",
+      generalLedgerFile.sourceFile.id,
+      {},
+    );
+
+    const generalLedger = await financeTwinService.getGeneralLedger("acme");
+    const reconciliation =
+      await financeTwinService.getReconciliationReadiness("acme");
+
+    expect(generalLedger.latestSuccessfulSlice.periodContext).toMatchObject({
+      basis: "source_declared_period",
+      sourceDeclaredPeriod: {
+        contextKind: "period_window",
+        periodKey: "2026-03",
+        periodStart: "2026-03-01",
+        periodEnd: "2026-03-31",
+        asOf: null,
+      },
+      activityWindowEarliestEntryDate: "2026-03-15",
+      activityWindowLatestEntryDate: "2026-03-15",
+      reasonCode: "source_declared_period_window",
+    });
+    expect(reconciliation.comparability).toMatchObject({
+      state: "window_comparable",
+      basis: "source_declared_period",
+      windowRelation: "exact_match",
+      reasonCode: "source_declared_period_exact_match",
+      sourceDeclaredGeneralLedgerPeriod: {
+        contextKind: "period_window",
+        periodKey: "2026-03",
+        periodStart: "2026-03-01",
+        periodEnd: "2026-03-31",
+        asOf: null,
+      },
+      generalLedgerWindow: {
+        earliestEntryDate: "2026-03-15",
+        latestEntryDate: "2026-03-15",
       },
     });
   });

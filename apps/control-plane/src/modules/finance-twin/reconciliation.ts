@@ -154,104 +154,20 @@ function buildComparability(input: {
         latestEntryDate: input.generalLedgerSlice.summary.latestEntryDate,
       }
     : null;
-
-  if (
-    input.trialBalanceSlice.latestSyncRun === null ||
-    input.generalLedgerSlice.latestSyncRun === null
-  ) {
-    return {
-      state: "missing_slice",
-      reasonCode: "missing_successful_slice",
-      reasonSummary:
-        "The latest successful trial-balance or general-ledger slice is missing, so this route can only report readiness gaps.",
-      trialBalanceWindow,
-      generalLedgerWindow,
-      sameSource: input.sliceAlignment.sameSource,
-      sameSourceSnapshot: input.sliceAlignment.sameSourceSnapshot,
-      sameSyncRun: input.sliceAlignment.sameSyncRun,
-      sharedSourceId: input.sliceAlignment.sharedSourceId,
-      sharedSourceSnapshotId: input.sliceAlignment.sharedSourceSnapshotId,
-      sharedSyncRunId: input.sliceAlignment.sharedSyncRunId,
-    };
-  }
-
-  if (!trialBalanceWindow || !generalLedgerWindow) {
-    return {
-      state: "missing_slice",
-      reasonCode: "missing_window_context",
-      reasonSummary:
-        "The latest successful trial-balance or general-ledger slice is missing window context, so this route can only report readiness gaps.",
-      trialBalanceWindow,
-      generalLedgerWindow,
-      sameSource: input.sliceAlignment.sameSource,
-      sameSourceSnapshot: input.sliceAlignment.sameSourceSnapshot,
-      sameSyncRun: input.sliceAlignment.sameSyncRun,
-      sharedSourceId: input.sliceAlignment.sharedSourceId,
-      sharedSourceSnapshotId: input.sliceAlignment.sharedSourceSnapshotId,
-      sharedSyncRunId: input.sliceAlignment.sharedSyncRunId,
-    };
-  }
-
-  if (trialBalanceWindow.periodStart === null) {
-    return {
-      state: "coverage_only",
-      reasonCode: "trial_balance_period_start_missing",
-      reasonSummary:
-        "The latest trial-balance slice does not include a period start, so this route stays at coverage and readiness instead of claiming a comparable activity window.",
-      trialBalanceWindow,
-      generalLedgerWindow,
-      sameSource: input.sliceAlignment.sameSource,
-      sameSourceSnapshot: input.sliceAlignment.sameSourceSnapshot,
-      sameSyncRun: input.sliceAlignment.sameSyncRun,
-      sharedSourceId: input.sliceAlignment.sharedSourceId,
-      sharedSourceSnapshotId: input.sliceAlignment.sharedSourceSnapshotId,
-      sharedSyncRunId: input.sliceAlignment.sharedSyncRunId,
-    };
-  }
-
-  if (
-    generalLedgerWindow.earliestEntryDate < trialBalanceWindow.periodStart ||
-    generalLedgerWindow.latestEntryDate > trialBalanceWindow.periodEnd
-  ) {
-    return {
-      state: "not_comparable",
-      reasonCode: "window_mismatch",
-      reasonSummary:
-        "The latest general-ledger activity window falls outside the latest trial-balance reporting window.",
-      trialBalanceWindow,
-      generalLedgerWindow,
-      sameSource: input.sliceAlignment.sameSource,
-      sameSourceSnapshot: input.sliceAlignment.sameSourceSnapshot,
-      sameSyncRun: input.sliceAlignment.sameSyncRun,
-      sharedSourceId: input.sliceAlignment.sharedSourceId,
-      sharedSourceSnapshotId: input.sliceAlignment.sharedSourceSnapshotId,
-      sharedSyncRunId: input.sliceAlignment.sharedSyncRunId,
-    };
-  }
-
-  if (!input.sliceAlignment.sameSource) {
-    return {
-      state: "coverage_only",
-      reasonCode: "mixed_sources",
-      reasonSummary:
-        "The latest successful trial-balance and general-ledger slices come from different registered sources, so this route stops at coverage and readiness.",
-      trialBalanceWindow,
-      generalLedgerWindow,
-      sameSource: input.sliceAlignment.sameSource,
-      sameSourceSnapshot: input.sliceAlignment.sameSourceSnapshot,
-      sameSyncRun: input.sliceAlignment.sameSyncRun,
-      sharedSourceId: input.sliceAlignment.sharedSourceId,
-      sharedSourceSnapshotId: input.sliceAlignment.sharedSourceSnapshotId,
-      sharedSyncRunId: input.sliceAlignment.sharedSyncRunId,
-    };
-  }
-
-  return {
-    state: "window_comparable",
-    reasonCode: "shared_source_window_match",
-    reasonSummary:
-      "The latest successful trial-balance and general-ledger slices share one registered source, and the general-ledger activity window fits inside the trial-balance reporting window.",
+  const basis = input.generalLedgerSlice.periodContext.basis;
+  const sourceDeclaredGeneralLedgerPeriod =
+    input.generalLedgerSlice.periodContext.sourceDeclaredPeriod;
+  const windowRelation = resolveWindowRelation({
+    basis,
+    generalLedgerWindow,
+    sourceDeclaredGeneralLedgerPeriod,
     trialBalanceWindow,
+  });
+  const baseContext = {
+    basis,
+    windowRelation,
+    trialBalanceWindow,
+    sourceDeclaredGeneralLedgerPeriod,
     generalLedgerWindow,
     sameSource: input.sliceAlignment.sameSource,
     sameSourceSnapshot: input.sliceAlignment.sameSourceSnapshot,
@@ -260,6 +176,226 @@ function buildComparability(input: {
     sharedSourceSnapshotId: input.sliceAlignment.sharedSourceSnapshotId,
     sharedSyncRunId: input.sliceAlignment.sharedSyncRunId,
   };
+
+  if (
+    input.trialBalanceSlice.latestSyncRun === null ||
+    input.generalLedgerSlice.latestSyncRun === null
+  ) {
+    return {
+      state: "missing_slice",
+      ...baseContext,
+      reasonCode: "missing_successful_slice",
+      reasonSummary:
+        "The latest successful trial-balance or general-ledger slice is missing, so this route can only report readiness gaps.",
+    };
+  }
+
+  if (!trialBalanceWindow) {
+    return {
+      state: "coverage_only",
+      ...baseContext,
+      reasonCode: "missing_trial_balance_window_context",
+      reasonSummary:
+        "The latest successful trial-balance slice is missing reporting-window context, so this route can only report readiness gaps.",
+    };
+  }
+
+  if (basis === "missing_context") {
+    return {
+      state: "coverage_only",
+      ...baseContext,
+      reasonCode: "missing_general_ledger_period_context",
+      reasonSummary:
+        "The latest successful general-ledger slice does not expose explicit source-declared period context or an activity window, so this route stays at readiness only.",
+    };
+  }
+
+  if (windowRelation === "outside") {
+    return {
+      state: "not_comparable",
+      ...baseContext,
+      reasonCode:
+        basis === "source_declared_period"
+          ? "source_declared_period_outside"
+          : "activity_window_outside",
+      reasonSummary:
+        basis === "source_declared_period"
+          ? "The latest successful general-ledger slice includes explicit source-declared period context that falls outside the latest trial-balance reporting window."
+          : "The observed general-ledger activity window falls outside the latest trial-balance reporting window.",
+    };
+  }
+
+  if (basis === "source_declared_period" && windowRelation === "exact_match") {
+    return {
+      state: "window_comparable",
+      ...baseContext,
+      reasonCode: "source_declared_period_exact_match",
+      reasonSummary:
+        "The latest successful general-ledger slice includes explicit source-declared period context that exactly matches the latest trial-balance reporting window.",
+    };
+  }
+
+  if (basis === "source_declared_period" && windowRelation === "subset") {
+    return {
+      state: "window_comparable",
+      ...baseContext,
+      reasonCode: "source_declared_period_subset",
+      reasonSummary:
+        "The latest successful general-ledger slice includes explicit source-declared period context that fits inside the latest trial-balance reporting window.",
+    };
+  }
+
+  if (basis === "activity_window_only" && windowRelation === "exact_match") {
+    return {
+      state: "coverage_only",
+      ...baseContext,
+      reasonCode: "activity_window_exact_match",
+      reasonSummary:
+        "The observed general-ledger activity window exactly matches the latest trial-balance reporting window, but the general-ledger slice does not include explicit source-declared period context.",
+    };
+  }
+
+  if (basis === "activity_window_only" && windowRelation === "subset") {
+    return {
+      state: "coverage_only",
+      ...baseContext,
+      reasonCode: "activity_window_subset",
+      reasonSummary:
+        "The observed general-ledger activity window fits inside the latest trial-balance reporting window, but the general-ledger slice does not include explicit source-declared period context.",
+    };
+  }
+
+  if (basis === "source_declared_period") {
+    return {
+      state: "coverage_only",
+      ...baseContext,
+      reasonCode: "source_declared_period_unknown",
+      reasonSummary:
+        "The latest successful general-ledger slice includes explicit source-declared period context, but not enough source-declared dates to judge its full relation to the latest trial-balance reporting window.",
+    };
+  }
+
+  if (trialBalanceWindow.periodStart === null) {
+    return {
+      state: "coverage_only",
+      ...baseContext,
+      reasonCode: "trial_balance_period_start_missing",
+      reasonSummary:
+        "The latest trial-balance slice does not include a period start, so this route stays at coverage and readiness instead of claiming a comparable period relation.",
+    };
+  }
+
+  return {
+    state: "coverage_only",
+    ...baseContext,
+    reasonCode: "activity_window_unknown",
+    reasonSummary:
+      "The general-ledger slice only exposes activity-window evidence, so this route cannot judge a stronger period-scoped relation.",
+  };
+}
+
+function resolveWindowRelation(input: {
+  basis: FinanceReconciliationComparabilityView["basis"];
+  generalLedgerWindow: FinanceReconciliationComparabilityView["generalLedgerWindow"];
+  sourceDeclaredGeneralLedgerPeriod:
+    FinanceReconciliationComparabilityView["sourceDeclaredGeneralLedgerPeriod"];
+  trialBalanceWindow: FinanceReconciliationComparabilityView["trialBalanceWindow"];
+}): FinanceReconciliationComparabilityView["windowRelation"] {
+  if (!input.trialBalanceWindow) {
+    return "unknown";
+  }
+
+  if (input.basis === "source_declared_period") {
+    const sourceDeclaredPeriod = input.sourceDeclaredGeneralLedgerPeriod;
+
+    if (!sourceDeclaredPeriod) {
+      return "unknown";
+    }
+
+    switch (sourceDeclaredPeriod.contextKind) {
+      case "period_window":
+        return compareWindowBounds({
+          comparisonEnd: sourceDeclaredPeriod.periodEnd,
+          comparisonStart: sourceDeclaredPeriod.periodStart,
+          trialBalanceEnd: input.trialBalanceWindow.periodEnd,
+          trialBalanceStart: input.trialBalanceWindow.periodStart,
+        });
+      case "period_end_only":
+        return compareSingleDate({
+          trialBalanceWindow: input.trialBalanceWindow,
+          value: sourceDeclaredPeriod.periodEnd,
+        });
+      case "as_of":
+        return compareSingleDate({
+          trialBalanceWindow: input.trialBalanceWindow,
+          value: sourceDeclaredPeriod.asOf,
+        });
+      case "period_key_only":
+        return "unknown";
+    }
+  }
+
+  if (input.basis === "activity_window_only") {
+    if (!input.generalLedgerWindow) {
+      return "unknown";
+    }
+
+    return compareWindowBounds({
+      comparisonEnd: input.generalLedgerWindow.latestEntryDate,
+      comparisonStart: input.generalLedgerWindow.earliestEntryDate,
+      trialBalanceEnd: input.trialBalanceWindow.periodEnd,
+      trialBalanceStart: input.trialBalanceWindow.periodStart,
+    });
+  }
+
+  return "unknown";
+}
+
+function compareWindowBounds(input: {
+  comparisonEnd: string | null;
+  comparisonStart: string | null;
+  trialBalanceEnd: string;
+  trialBalanceStart: string | null;
+}): FinanceReconciliationComparabilityView["windowRelation"] {
+  if (!input.comparisonStart || !input.comparisonEnd || !input.trialBalanceStart) {
+    return "unknown";
+  }
+
+  if (
+    input.comparisonStart < input.trialBalanceStart ||
+    input.comparisonEnd > input.trialBalanceEnd
+  ) {
+    return "outside";
+  }
+
+  if (
+    input.comparisonStart === input.trialBalanceStart &&
+    input.comparisonEnd === input.trialBalanceEnd
+  ) {
+    return "exact_match";
+  }
+
+  return "subset";
+}
+
+function compareSingleDate(input: {
+  trialBalanceWindow: NonNullable<
+    FinanceReconciliationComparabilityView["trialBalanceWindow"]
+  >;
+  value: string | null;
+}): FinanceReconciliationComparabilityView["windowRelation"] {
+  if (!input.value || input.trialBalanceWindow.periodStart === null) {
+    return "unknown";
+  }
+
+  if (
+    input.value < input.trialBalanceWindow.periodStart ||
+    input.value > input.trialBalanceWindow.periodEnd
+  ) {
+    return "outside";
+  }
+
+  return "unknown";
 }
 
 function buildReconciliationFreshnessView(
@@ -355,6 +491,12 @@ function buildReconciliationLimitations(input: {
     (!input.sliceAlignment.sameSourceSnapshot || !input.sliceAlignment.sameSyncRun)
   ) {
     limitations.push(input.sliceAlignment.reasonSummary);
+  }
+
+  if (input.sliceAlignment.state === "mixed") {
+    limitations.push(
+      "Do not treat this reconciliation view as single-source proof because the latest successful trial-balance and general-ledger slices come from different registered sources.",
+    );
   }
 
   if (
