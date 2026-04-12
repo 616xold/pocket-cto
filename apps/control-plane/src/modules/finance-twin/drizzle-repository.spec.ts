@@ -398,6 +398,153 @@ describe("DrizzleFinanceTwinRepository", () => {
     });
   });
 
+  it("persists receivables-aging customers and rows with joined latest-snapshot reads", async () => {
+    const source = await sourceRepository.createSource({
+      kind: "dataset",
+      originKind: "manual",
+      name: "Receivables aging export",
+      description: "Collections posture",
+      createdBy: "finance-operator",
+    });
+    const snapshot = await sourceRepository.createSnapshot({
+      sourceId: source.id,
+      version: 1,
+      originalFileName: "receivables-aging.csv",
+      mediaType: "text/csv",
+      sizeBytes: 512,
+      checksumSha256:
+        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      storageKind: "object_store",
+      storageRef: "s3://bucket/sources/receivables-aging.csv",
+      capturedAt: "2026-04-12T00:00:00.000Z",
+      ingestStatus: "ready",
+    });
+    const sourceFile = await sourceRepository.createSourceFile({
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      originalFileName: "receivables-aging.csv",
+      mediaType: "text/csv",
+      sizeBytes: 512,
+      checksumSha256:
+        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      storageKind: "object_store",
+      storageRef: "s3://bucket/sources/receivables-aging.csv",
+      createdBy: "finance-operator",
+      capturedAt: "2026-04-12T00:00:00.000Z",
+    });
+    const company = await repository.upsertCompany({
+      companyKey: "acme",
+      displayName: "Acme Holdings",
+    });
+    const customer = await repository.upsertCustomer({
+      companyId: company.id,
+      identityKey: "customer_id:c-100",
+      customerLabel: "Alpha Co",
+      externalCustomerId: "C-100",
+    });
+    const syncRun = await repository.startSyncRun({
+      companyId: company.id,
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      sourceFileId: sourceFile.id,
+      extractorKey: "receivables_aging_csv",
+      startedAt: "2026-04-12T00:10:00.000Z",
+    });
+    const row = await repository.upsertReceivablesAgingRow({
+      companyId: company.id,
+      customerId: customer.id,
+      syncRunId: syncRun.id,
+      rowScopeKey: "USD::2026-04-30",
+      lineNumber: 2,
+      sourceLineNumbers: [2, 3],
+      currencyCode: "USD",
+      asOfDate: "2026-04-30",
+      asOfDateSourceColumn: "as_of",
+      bucketValues: [
+        {
+          bucketKey: "current",
+          bucketClass: "current",
+          amount: "100.00",
+          sourceColumn: "current",
+        },
+        {
+          bucketKey: "past_due",
+          bucketClass: "past_due_total",
+          amount: "20.00",
+          sourceColumn: "past_due",
+        },
+        {
+          bucketKey: "total",
+          bucketClass: "total",
+          amount: "120.00",
+          sourceColumn: "total",
+        },
+      ],
+      observedAt: "2026-04-12T00:10:01.000Z",
+    });
+    await repository.createLineage({
+      companyId: company.id,
+      syncRunId: syncRun.id,
+      targetKind: "customer",
+      targetId: customer.id,
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      sourceFileId: sourceFile.id,
+      recordedAt: "2026-04-12T00:10:01.000Z",
+    });
+    await repository.createLineage({
+      companyId: company.id,
+      syncRunId: syncRun.id,
+      targetKind: "receivables_aging_row",
+      targetId: row.id,
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      sourceFileId: sourceFile.id,
+      recordedAt: "2026-04-12T00:10:01.000Z",
+    });
+    const finalized = await repository.finishSyncRun({
+      syncRunId: syncRun.id,
+      reportingPeriodId: null,
+      status: "succeeded",
+      completedAt: "2026-04-12T00:10:03.000Z",
+      stats: {
+        receivablesAgingCustomerCount: 1,
+        receivablesAgingRowCount: 1,
+        reportedBucketKeys: ["current", "past_due", "total"],
+      },
+      errorSummary: null,
+    });
+
+    expect(
+      await repository.listReceivablesAgingRowViewsBySyncRunId(syncRun.id),
+    ).toMatchObject([
+      {
+        customer: {
+          id: customer.id,
+          customerLabel: "Alpha Co",
+          externalCustomerId: "C-100",
+        },
+        receivablesAgingRow: {
+          id: row.id,
+          currencyCode: "USD",
+          asOfDate: "2026-04-30",
+          sourceLineNumbers: [2, 3],
+        },
+      },
+    ]);
+    expect(await repository.countLineageBySyncRunId(syncRun.id)).toBe(2);
+    expect(
+      await repository.getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "receivables_aging_csv",
+      ),
+    ).toMatchObject({
+      id: finalized.id,
+      extractorKey: "receivables_aging_csv",
+      status: "succeeded",
+    });
+  });
+
   it("persists general-ledger journal entries and lines with joined latest-snapshot reads", async () => {
     const source = await sourceRepository.createSource({
       kind: "dataset",

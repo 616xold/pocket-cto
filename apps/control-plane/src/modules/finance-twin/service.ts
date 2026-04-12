@@ -4,10 +4,12 @@ import {
   FinanceBalanceBridgePrerequisitesViewSchema,
   FinanceAccountBridgeReadinessViewSchema,
   FinanceAccountCatalogViewSchema,
+  FinanceCollectionsPostureViewSchema,
   FinanceGeneralLedgerActivityLineageViewSchema,
   type FinanceGeneralLedgerBalanceProofView,
   FinanceGeneralLedgerViewSchema,
   FinanceLineageDrillViewSchema,
+  FinanceReceivablesAgingViewSchema,
   FinanceReconciliationReadinessViewSchema,
   FinanceSnapshotViewSchema,
   FinanceTwinCompanySummarySchema,
@@ -20,6 +22,7 @@ import {
   type FinanceAccountBridgeReadinessView,
   type FinanceAccountCatalogView,
   type FinanceCompanyRecord,
+  type FinanceCollectionsPostureView,
   type FinanceFreshnessSummary,
   type FinanceGeneralLedgerActivityLineageView,
   type FinanceGeneralLedgerBalanceProofRecord,
@@ -27,7 +30,10 @@ import {
   type FinanceGeneralLedgerEntryView,
   type FinanceGeneralLedgerView,
   type FinanceLatestSuccessfulBankAccountSummarySlice,
+  type FinanceLatestSuccessfulReceivablesAgingSlice,
   type FinanceLatestAttemptedSlices,
+  type FinanceReceivablesAgingBucketKey,
+  type FinanceReceivablesAgingView,
   type FinanceReconciliationReadinessView,
   type FinanceLatestSuccessfulSlices,
   type FinanceSnapshotView,
@@ -72,9 +78,11 @@ import {
 import type { GeneralLedgerExtractionResult } from "./general-ledger-csv";
 import { buildFinanceAccountBridgeReadinessView } from "./account-bridge";
 import { buildFinanceBalanceBridgePrerequisitesView } from "./balance-bridge-prerequisites";
+import { buildFinanceCollectionsPostureView } from "./collections-posture";
 import { buildFinanceReconciliationReadinessView } from "./reconciliation";
 import type {
   FinanceBankAccountSummaryView,
+  FinanceReceivablesAgingRowView,
   FinanceTrialBalanceLineView,
   FinanceTwinRepository,
 } from "./repository";
@@ -85,6 +93,8 @@ import {
 } from "./bank-account-summary";
 import type { BankAccountSummaryExtractionResult } from "./bank-account-summary-csv";
 import { buildFinanceCashPostureView } from "./cash-posture";
+import { buildFinanceReceivablesAgingView, buildReceivablesAgingSliceSummary } from "./receivables-aging";
+import type { ReceivablesAgingExtractionResult } from "./receivables-aging-csv";
 import {
   buildChartOfAccountsSummary,
   buildGeneralLedgerSummary,
@@ -118,6 +128,13 @@ type BankAccountSummaryReadState = {
   latestAttemptedSyncRun: FinanceTwinSyncRunRecord | null;
   latestSuccessfulSlice: FinanceLatestSuccessfulBankAccountSummarySlice;
   summaries: FinanceBankAccountSummaryView[];
+};
+
+type ReceivablesAgingReadState = {
+  freshness: FinanceFreshnessSummary;
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecord | null;
+  latestSuccessfulSlice: FinanceLatestSuccessfulReceivablesAgingSlice;
+  rows: FinanceReceivablesAgingRowView[];
 };
 
 export class FinanceTwinService {
@@ -224,6 +241,15 @@ export class FinanceTwinService {
                   sourceId: source.id,
                   syncRun,
                 })
+              : extracted.extractorKey === "receivables_aging_csv"
+                ? await this.persistReceivablesAgingSync({
+                    company,
+                    extracted: extracted.receivablesAging,
+                    snapshotId: snapshot.id,
+                    sourceFileId: sourceFile.id,
+                    sourceId: source.id,
+                    syncRun,
+                  })
               : await this.persistBankAccountSummarySync({
                   company,
                   extracted: extracted.bankAccountSummary,
@@ -678,6 +704,54 @@ export class FinanceTwinService {
         latestSuccessfulBankSummarySlice: readState.latestSuccessfulSlice,
         limitations: FINANCE_TWIN_LIMITATIONS,
         summaries: readState.summaries,
+      }),
+    );
+  }
+
+  async getReceivablesAging(
+    companyKey: string,
+  ): Promise<FinanceReceivablesAgingView> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(companyKey);
+    }
+
+    const readState = await this.readReceivablesAgingState(company);
+
+    return FinanceReceivablesAgingViewSchema.parse(
+      buildFinanceReceivablesAgingView({
+        company,
+        freshness: readState.freshness,
+        latestAttemptedSyncRun: readState.latestAttemptedSyncRun,
+        latestSuccessfulSlice: readState.latestSuccessfulSlice,
+        limitations: FINANCE_TWIN_LIMITATIONS,
+        rows: readState.rows,
+      }),
+    );
+  }
+
+  async getCollectionsPosture(
+    companyKey: string,
+  ): Promise<FinanceCollectionsPostureView> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(companyKey);
+    }
+
+    const readState = await this.readReceivablesAgingState(company);
+
+    return FinanceCollectionsPostureViewSchema.parse(
+      buildFinanceCollectionsPostureView({
+        company,
+        freshness: readState.freshness,
+        latestAttemptedSyncRun: readState.latestAttemptedSyncRun,
+        latestSuccessfulReceivablesAgingSlice: readState.latestSuccessfulSlice,
+        limitations: FINANCE_TWIN_LIMITATIONS,
+        rows: readState.rows,
       }),
     );
   }
@@ -1153,6 +1227,140 @@ export class FinanceTwinService {
     });
   }
 
+  private async persistReceivablesAgingSync(input: {
+    company: FinanceCompanyRecord;
+    extracted: ReceivablesAgingExtractionResult;
+    snapshotId: string;
+    sourceFileId: string;
+    sourceId: string;
+    syncRun: FinanceTwinSyncRunRecord;
+  }) {
+    const recordedAt = this.now().toISOString();
+    const customerIdentityKeys = new Set(
+      input.extracted.rows.map((row) => row.customerIdentityKey),
+    );
+    const currencyCodes = new Set(
+      input.extracted.rows
+        .map((row) => row.currencyCode)
+        .filter((currencyCode): currencyCode is string => currencyCode !== null),
+    );
+
+    return this.input.financeTwinRepository.transaction(async (session) => {
+      const customersByIdentity = new Map<string, { id: string }>();
+
+      for (const customer of input.extracted.customers) {
+        if (!customerIdentityKeys.has(customer.identityKey)) {
+          continue;
+        }
+
+        const storedCustomer = await this.input.financeTwinRepository.upsertCustomer(
+          {
+            companyId: input.company.id,
+            identityKey: customer.identityKey,
+            customerLabel: customer.customerLabel,
+            externalCustomerId: customer.externalCustomerId,
+          },
+          session,
+        );
+
+        customersByIdentity.set(customer.identityKey, storedCustomer);
+        await this.input.financeTwinRepository.createLineage(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            targetKind: "customer",
+            targetId: storedCustomer.id,
+            sourceId: input.sourceId,
+            sourceSnapshotId: input.snapshotId,
+            sourceFileId: input.sourceFileId,
+            recordedAt,
+          },
+          session,
+        );
+      }
+
+      for (const row of input.extracted.rows) {
+        const customer = customersByIdentity.get(row.customerIdentityKey);
+
+        if (!customer) {
+          throw new Error(
+            `Customer ${row.customerIdentityKey} was not available for receivables-aging persistence`,
+          );
+        }
+
+        const storedRow =
+          await this.input.financeTwinRepository.upsertReceivablesAgingRow(
+            {
+              companyId: input.company.id,
+              customerId: customer.id,
+              syncRunId: input.syncRun.id,
+              rowScopeKey: row.rowScopeKey,
+              lineNumber: row.lineNumber,
+              sourceLineNumbers: row.sourceLineNumbers.slice().sort((left, right) => {
+                return left - right;
+              }),
+              currencyCode: row.currencyCode,
+              asOfDate: row.asOfDate,
+              asOfDateSourceColumn: row.asOfDateSourceColumn,
+              bucketValues: row.bucketValues,
+              observedAt: recordedAt,
+            },
+            session,
+          );
+
+        await this.input.financeTwinRepository.createLineage(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            targetKind: "receivables_aging_row",
+            targetId: storedRow.id,
+            sourceId: input.sourceId,
+            sourceSnapshotId: input.snapshotId,
+            sourceFileId: input.sourceFileId,
+            recordedAt,
+          },
+          session,
+        );
+      }
+
+      const [reportingPeriodCount, ledgerAccountCount] = await Promise.all([
+        this.input.financeTwinRepository.countReportingPeriodsByCompanyId(
+          input.company.id,
+          session,
+        ),
+        this.input.financeTwinRepository.countLedgerAccountsByCompanyId(
+          input.company.id,
+          session,
+        ),
+      ]);
+
+      return this.input.financeTwinRepository.finishSyncRun(
+        {
+          syncRunId: input.syncRun.id,
+          reportingPeriodId: null,
+          status: "succeeded",
+          completedAt: recordedAt,
+          stats: {
+            receivablesAgingCustomerCount: customerIdentityKeys.size,
+            receivablesAgingRowCount: input.extracted.rows.length,
+            receivablesAgingCurrencyCount: currencyCodes.size,
+            datedReceivablesAgingRowCount: input.extracted.rows.filter(
+              (row) => row.asOfDate !== null,
+            ).length,
+            undatedReceivablesAgingRowCount: input.extracted.rows.filter(
+              (row) => row.asOfDate === null,
+            ).length,
+            reportedBucketKeys: input.extracted.reportedBucketKeys,
+            ledgerAccountCount,
+            reportingPeriodCount,
+          },
+          errorSummary: null,
+        },
+        session,
+      );
+    });
+  }
+
   private async persistBankAccountSummarySync(input: {
     company: FinanceCompanyRecord;
     extracted: BankAccountSummaryExtractionResult;
@@ -1407,6 +1615,37 @@ export class FinanceTwinService {
       }),
       latestSuccessfulSlice: latestSuccessfulSlice.snapshot,
       summaries: latestSuccessfulSlice.summaries,
+    };
+  }
+
+  private async readReceivablesAgingState(
+    company: FinanceCompanyRecord,
+  ): Promise<ReceivablesAgingReadState> {
+    const [latestAttemptedSyncRun, latestSuccessfulSyncRun] = await Promise.all([
+      this.input.financeTwinRepository.getLatestSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "receivables_aging_csv",
+      ),
+      this.input.financeTwinRepository.getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "receivables_aging_csv",
+      ),
+    ]);
+    const latestSuccessfulSlice =
+      await this.readLatestSuccessfulReceivablesAgingSlice(
+        latestSuccessfulSyncRun,
+      );
+
+    return {
+      latestAttemptedSyncRun,
+      freshness: buildFinanceSliceFreshnessSummary({
+        latestRun: latestAttemptedSyncRun,
+        latestSuccessfulRun: latestSuccessfulSyncRun,
+        now: this.now(),
+        sliceLabel: "receivables-aging",
+      }),
+      latestSuccessfulSlice: latestSuccessfulSlice.snapshot,
+      rows: latestSuccessfulSlice.rows,
     };
   }
 
@@ -1783,6 +2022,60 @@ export class FinanceTwinService {
       },
     };
   }
+
+  private async readLatestSuccessfulReceivablesAgingSlice(
+    latestSuccessfulRun: FinanceTwinSyncRunRecord | null,
+  ) {
+    if (!latestSuccessfulRun) {
+      return {
+        rows: [] as FinanceReceivablesAgingRowView[],
+        snapshot: {
+          latestSource: null,
+          latestSyncRun: null,
+          coverage: {
+            customerCount: 0,
+            rowCount: 0,
+            lineageCount: 0,
+            lineageTargetCounts: buildLineageTargetCounts([]),
+          },
+          summary: null,
+        },
+      };
+    }
+
+    const [rows, lineages] = await Promise.all([
+      this.input.financeTwinRepository.listReceivablesAgingRowViewsBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+      this.input.financeTwinRepository.listLineageBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+    ]);
+    const customerCount = new Set(rows.map((row) => row.customer.id)).size;
+
+    return {
+      rows,
+      snapshot: {
+        latestSource: buildSourceRef(latestSuccessfulRun),
+        latestSyncRun: latestSuccessfulRun,
+        coverage: {
+          customerCount,
+          rowCount: rows.length,
+          lineageCount: lineages.length,
+          lineageTargetCounts: buildLineageTargetCounts(lineages),
+        },
+        summary:
+          rows.length > 0
+            ? buildReceivablesAgingSliceSummary({
+                reportedBucketKeys: readReceivablesAgingReportedBucketKeys(
+                  latestSuccessfulRun.stats,
+                ),
+                rows,
+              })
+            : null,
+      },
+    };
+  }
 }
 
 function buildAttemptedSlice(syncRun: FinanceTwinSyncRunRecord | null) {
@@ -1803,6 +2096,36 @@ function buildSourceRef(syncRun: FinanceTwinSyncRunRecord | null) {
     sourceFileId: syncRun.sourceFileId,
     syncRunId: syncRun.id,
   };
+}
+
+function readReceivablesAgingReportedBucketKeys(
+  stats: Record<string, unknown>,
+): FinanceReceivablesAgingBucketKey[] {
+  const reportedBucketKeys = stats.reportedBucketKeys;
+
+  if (!Array.isArray(reportedBucketKeys)) {
+    return [];
+  }
+
+  return reportedBucketKeys.filter(isReceivablesAgingBucketKey);
+}
+
+function isReceivablesAgingBucketKey(
+  value: unknown,
+): value is FinanceReceivablesAgingBucketKey {
+  return (
+    value === "current" ||
+    value === "0_30" ||
+    value === "1_30" ||
+    value === "31_60" ||
+    value === "61_90" ||
+    value === "91_120" ||
+    value === "120_plus" ||
+    value === "over_90" ||
+    value === "over_120" ||
+    value === "past_due" ||
+    value === "total"
+  );
 }
 
 function resolveCompanyDisplayName(input: {

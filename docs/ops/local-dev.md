@@ -1,6 +1,6 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, and through the merged F2A, F2B, F2C, F2D, F2E, F2F, F2G, F2H, F2I, and F2J finance-twin slices.
+This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, and through the merged F2A, F2B, F2C, F2D, F2E, F2F, F2G, F2H, F2I, F2J, and F2K finance-twin slices.
 
 That means two things are true at once:
 
@@ -36,6 +36,7 @@ pnpm smoke:finance-twin-balance-bridge-prerequisites:local
 pnpm smoke:finance-twin-source-backed-balance-proof:local
 pnpm smoke:finance-twin-balance-proof-lineage:local
 pnpm smoke:finance-twin-bank-account-summary:local
+pnpm smoke:finance-twin-receivables-aging:local
 pnpm smoke:finance-twin-account-catalog:local
 pnpm smoke:finance-twin-general-ledger:local
 pnpm smoke:finance-twin-snapshot:local
@@ -74,13 +75,15 @@ Today, steps 1 through 4 exist in a narrow form:
 - F2H adds balance-bridge-prerequisites reads that stop at explicit missing-proof diagnostics instead of inventing fake bridge numbers or variance
 - F2I adds truthful source-backed general-ledger balance proof from explicit opening-balance or ending-balance fields while keeping snapshot alignment notes diagnostic-only
 - F2J adds direct balance-proof lineage drill behavior on top of persisted proof rows and proof lineage
-- F2K is the active next slice and adds deterministic bank-account-summary ingest plus backend-first bank-account inventory and cash-posture reads without fake FX conversion, transaction detail, or bank reconciliation
+- F2K shipped deterministic bank-account-summary ingest plus backend-first bank-account inventory and cash-posture reads without fake FX conversion, transaction detail, or bank reconciliation
+- F2L is the active next slice and adds deterministic receivables-aging ingest plus backend-first receivables-aging and collections-posture reads without fake invoice detail, expected cash timing, reserve logic, or DSO
 - the packaged `pnpm smoke:finance-twin:local` path proves the trial-balance sync from stored raw bytes
 - the packaged `pnpm smoke:finance-twin-account-bridge:local` path proves matched-period account-bridge readiness, explicit unmatched diagnostics, and activity-lineage drill-through from persisted state
 - the packaged `pnpm smoke:finance-twin-balance-bridge-prerequisites:local` path proves blocked balance-bridge prerequisites, explicit missing-proof diagnostics, and no-fake-variance behavior from persisted state
 - the packaged `pnpm smoke:finance-twin-source-backed-balance-proof:local` path proves explicit opening-balance or ending-balance fields can light up truthful per-account balance proof from persisted state
 - the packaged `pnpm smoke:finance-twin-balance-proof-lineage:local` path proves proof-bearing account rows can drill directly to the persisted balance-proof row and lineage from persisted state
 - the packaged `pnpm smoke:finance-twin-bank-account-summary:local` path proves stored raw bank-summary CSV bytes sync into persisted bank-account inventory and truthful cash-posture state
+- the packaged `pnpm smoke:finance-twin-receivables-aging:local` path proves stored raw receivables-aging CSV bytes sync into persisted receivables-aging inventory and truthful collections-posture state
 - the packaged `pnpm smoke:finance-twin-account-catalog:local` path proves persisted account-catalog state
 - the packaged `pnpm smoke:finance-twin-general-ledger:local` path proves persisted general-ledger journal state from stored raw bytes
 - the packaged `pnpm smoke:finance-twin-snapshot:local` path proves mixed-slice snapshot and lineage drill behavior from persisted state
@@ -104,6 +107,8 @@ The active finance-twin read surface is currently backend-first:
 - general-ledger balance-proof lineage drill
 - bank-account inventory
 - cash posture
+- receivables-aging
+- collections posture
 - general-ledger account activity lineage
 
 ## GitHub setup is optional

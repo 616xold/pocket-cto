@@ -5,12 +5,15 @@ import type {
   FinanceBankAccountSummaryRecord,
   FinanceBankBalanceType,
   FinanceCompanyRecord,
+  FinanceCustomerRecord,
   FinanceGeneralLedgerEntryView,
   FinanceGeneralLedgerBalanceProofRecord,
   FinanceJournalEntryRecord,
   FinanceJournalLineRecord,
   FinanceJournalLineView,
   FinanceLedgerAccountRecord,
+  FinanceReceivablesAgingBucketValue,
+  FinanceReceivablesAgingRowRecord,
   FinanceReportingPeriodRecord,
   FinanceTrialBalanceLineRecord,
   FinanceTwinExtractorKey,
@@ -54,6 +57,13 @@ export type UpsertFinanceBankAccountInput = {
   institutionName: string | null;
   externalAccountId: string | null;
   accountNumberLast4: string | null;
+};
+
+export type UpsertFinanceCustomerInput = {
+  companyId: string;
+  identityKey: string;
+  customerLabel: string;
+  externalCustomerId: string | null;
 };
 
 export type StartFinanceTwinSyncRunInput = {
@@ -145,6 +155,20 @@ export type UpsertFinanceBankAccountSummaryInput = {
   observedAt: string;
 };
 
+export type UpsertFinanceReceivablesAgingRowInput = {
+  companyId: string;
+  customerId: string;
+  syncRunId: string;
+  rowScopeKey: string;
+  lineNumber: number;
+  sourceLineNumbers: number[];
+  currencyCode: string | null;
+  asOfDate: string | null;
+  asOfDateSourceColumn: string | null;
+  bucketValues: FinanceReceivablesAgingBucketValue[];
+  observedAt: string;
+};
+
 export type CreateFinanceTwinLineageInput = {
   companyId: string;
   syncRunId: string;
@@ -164,6 +188,11 @@ export type FinanceTrialBalanceLineView = {
 export type FinanceBankAccountSummaryView = {
   bankAccount: FinanceBankAccountRecord;
   summary: FinanceBankAccountSummaryRecord;
+};
+
+export type FinanceReceivablesAgingRowView = {
+  customer: FinanceCustomerRecord;
+  receivablesAgingRow: FinanceReceivablesAgingRowRecord;
 };
 
 export type ListFinanceTwinLineageByTargetInput = {
@@ -206,6 +235,10 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     input: UpsertFinanceBankAccountInput,
     session?: PersistenceSession,
   ): Promise<FinanceBankAccountRecord>;
+  upsertCustomer(
+    input: UpsertFinanceCustomerInput,
+    session?: PersistenceSession,
+  ): Promise<FinanceCustomerRecord>;
   startSyncRun(
     input: StartFinanceTwinSyncRunInput,
     session?: PersistenceSession,
@@ -276,6 +309,10 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     input: UpsertFinanceBankAccountSummaryInput,
     session?: PersistenceSession,
   ): Promise<FinanceBankAccountSummaryRecord>;
+  upsertReceivablesAgingRow(
+    input: UpsertFinanceReceivablesAgingRowInput,
+    session?: PersistenceSession,
+  ): Promise<FinanceReceivablesAgingRowRecord>;
   listJournalLineViewsBySyncRunId(
     syncRunId: string,
     session?: PersistenceSession,
@@ -284,6 +321,10 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     syncRunId: string,
     session?: PersistenceSession,
   ): Promise<FinanceBankAccountSummaryView[]>;
+  listReceivablesAgingRowViewsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceReceivablesAgingRowView[]>;
   listGeneralLedgerEntriesBySyncRunId(
     syncRunId: string,
     session?: PersistenceSession,
@@ -325,6 +366,8 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
   private readonly ledgerAccountsByScope = new Map<string, string>();
   private readonly bankAccounts = new Map<string, FinanceBankAccountRecord>();
   private readonly bankAccountsByScope = new Map<string, string>();
+  private readonly customers = new Map<string, FinanceCustomerRecord>();
+  private readonly customersByScope = new Map<string, string>();
   private readonly syncRuns = new Map<string, FinanceTwinSyncRunRecord>();
   private readonly trialBalanceLines = new Map<
     string,
@@ -356,6 +399,11 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     FinanceBankAccountSummaryRecord
   >();
   private readonly bankAccountSummariesByScope = new Map<string, string>();
+  private readonly receivablesAgingRows = new Map<
+    string,
+    FinanceReceivablesAgingRowRecord
+  >();
+  private readonly receivablesAgingRowsByScope = new Map<string, string>();
   private readonly lineage = new Map<string, FinanceTwinLineageRecord>();
   private readonly lineageByScope = new Map<string, string>();
 
@@ -512,6 +560,36 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
       bankAccount.id,
     );
     return bankAccount;
+  }
+
+  async upsertCustomer(input: UpsertFinanceCustomerInput) {
+    const existingId =
+      this.customersByScope.get(`${input.companyId}::${input.identityKey}`) ??
+      null;
+    const existing = existingId ? (this.customers.get(existingId) ?? null) : null;
+    const now = new Date().toISOString();
+    const customer: FinanceCustomerRecord = existing
+      ? {
+          ...existing,
+          customerLabel: input.customerLabel,
+          externalCustomerId: input.externalCustomerId,
+          updatedAt: now,
+        }
+      : {
+          id: crypto.randomUUID(),
+          companyId: input.companyId,
+          customerLabel: input.customerLabel,
+          externalCustomerId: input.externalCustomerId,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+    this.customers.set(customer.id, customer);
+    this.customersByScope.set(
+      `${input.companyId}::${input.identityKey}`,
+      customer.id,
+    );
+    return customer;
   }
 
   async startSyncRun(input: StartFinanceTwinSyncRunInput) {
@@ -915,6 +993,49 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     return summary;
   }
 
+  async upsertReceivablesAgingRow(input: UpsertFinanceReceivablesAgingRowInput) {
+    const existing = this.receivablesAgingRows.get(
+      this.receivablesAgingRowsByScope.get(
+        `${input.syncRunId}::${input.customerId}::${input.rowScopeKey}`,
+      ) ?? "",
+    );
+    const now = new Date().toISOString();
+    const row: FinanceReceivablesAgingRowRecord = existing
+      ? {
+          ...existing,
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers.slice(),
+          currencyCode: input.currencyCode,
+          asOfDate: input.asOfDate,
+          asOfDateSourceColumn: input.asOfDateSourceColumn,
+          bucketValues: input.bucketValues.slice(),
+          observedAt: input.observedAt,
+          updatedAt: now,
+        }
+      : {
+          id: crypto.randomUUID(),
+          companyId: input.companyId,
+          customerId: input.customerId,
+          syncRunId: input.syncRunId,
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers.slice(),
+          currencyCode: input.currencyCode,
+          asOfDate: input.asOfDate,
+          asOfDateSourceColumn: input.asOfDateSourceColumn,
+          bucketValues: input.bucketValues.slice(),
+          observedAt: input.observedAt,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+    this.receivablesAgingRows.set(row.id, row);
+    this.receivablesAgingRowsByScope.set(
+      `${input.syncRunId}::${input.customerId}::${input.rowScopeKey}`,
+      row.id,
+    );
+    return row;
+  }
+
   async listJournalLineViewsBySyncRunId(syncRunId: string) {
     return [...this.journalLines.values()]
       .filter((line) => line.syncRunId === syncRunId)
@@ -958,6 +1079,37 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
         return {
           bankAccount,
           summary,
+        };
+      });
+  }
+
+  async listReceivablesAgingRowViewsBySyncRunId(syncRunId: string) {
+    return [...this.receivablesAgingRows.values()]
+      .filter((row) => row.syncRunId === syncRunId)
+      .sort((left, right) => {
+        const leftCustomer = this.customers.get(left.customerId);
+        const rightCustomer = this.customers.get(right.customerId);
+        return (
+          (leftCustomer?.customerLabel ?? "").localeCompare(
+            rightCustomer?.customerLabel ?? "",
+          ) ||
+          (left.currencyCode ?? "").localeCompare(right.currencyCode ?? "") ||
+          (left.asOfDate ?? "").localeCompare(right.asOfDate ?? "") ||
+          left.lineNumber - right.lineNumber
+        );
+      })
+      .map((receivablesAgingRow) => {
+        const customer = this.customers.get(receivablesAgingRow.customerId);
+
+        if (!customer) {
+          throw new Error(
+            `Customer ${receivablesAgingRow.customerId} missing for receivables-aging row ${receivablesAgingRow.id}`,
+          );
+        }
+
+        return {
+          customer,
+          receivablesAgingRow,
         };
       });
   }

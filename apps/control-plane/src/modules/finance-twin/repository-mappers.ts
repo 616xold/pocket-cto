@@ -3,30 +3,35 @@ import type {
   financeBankAccounts,
   financeBankAccountSummaries,
   financeCompanies,
+  financeCustomers,
   financeGeneralLedgerBalanceProofs,
   financeJournalEntries,
   financeJournalLines,
   financeLedgerAccounts,
+  financeReceivablesAgingRows,
   financeReportingPeriods,
   financeTrialBalanceLines,
   financeTwinLineage,
   financeTwinSyncRuns,
 } from "@pocket-cto/db";
-import type {
-  FinanceAccountCatalogEntryRecord,
-  FinanceAccountCatalogEntryView,
-  FinanceBankAccountRecord,
-  FinanceBankAccountSummaryRecord,
-  FinanceCompanyRecord,
-  FinanceGeneralLedgerBalanceProofRecord,
-  FinanceJournalEntryRecord,
-  FinanceJournalLineRecord,
-  FinanceJournalLineView,
-  FinanceLedgerAccountRecord,
-  FinanceReportingPeriodRecord,
-  FinanceTrialBalanceLineRecord,
-  FinanceTwinLineageRecord,
-  FinanceTwinSyncRunRecord,
+import {
+  FinanceReceivablesAgingBucketValueSchema,
+  type FinanceAccountCatalogEntryRecord,
+  type FinanceAccountCatalogEntryView,
+  type FinanceBankAccountRecord,
+  type FinanceBankAccountSummaryRecord,
+  type FinanceCompanyRecord,
+  type FinanceCustomerRecord,
+  type FinanceGeneralLedgerBalanceProofRecord,
+  type FinanceJournalEntryRecord,
+  type FinanceJournalLineRecord,
+  type FinanceJournalLineView,
+  type FinanceLedgerAccountRecord,
+  type FinanceReceivablesAgingRowRecord,
+  type FinanceReportingPeriodRecord,
+  type FinanceTrialBalanceLineRecord,
+  type FinanceTwinLineageRecord,
+  type FinanceTwinSyncRunRecord,
 } from "@pocket-cto/domain";
 
 type FinanceAccountCatalogEntryRow =
@@ -34,12 +39,14 @@ type FinanceAccountCatalogEntryRow =
 type FinanceBankAccountRow = typeof financeBankAccounts.$inferSelect;
 type FinanceBankAccountSummaryRow = typeof financeBankAccountSummaries.$inferSelect;
 type FinanceCompanyRow = typeof financeCompanies.$inferSelect;
+type FinanceCustomerRow = typeof financeCustomers.$inferSelect;
 type FinanceGeneralLedgerBalanceProofRow =
   typeof financeGeneralLedgerBalanceProofs.$inferSelect;
 type FinanceJournalEntryRow = typeof financeJournalEntries.$inferSelect;
 type FinanceJournalLineRow = typeof financeJournalLines.$inferSelect;
 type FinanceReportingPeriodRow = typeof financeReportingPeriods.$inferSelect;
 type FinanceLedgerAccountRow = typeof financeLedgerAccounts.$inferSelect;
+type FinanceReceivablesAgingRow = typeof financeReceivablesAgingRows.$inferSelect;
 type FinanceTwinSyncRunRow = typeof financeTwinSyncRuns.$inferSelect;
 type FinanceTrialBalanceLineRow = typeof financeTrialBalanceLines.$inferSelect;
 type FinanceTwinLineageRow = typeof financeTwinLineage.$inferSelect;
@@ -105,6 +112,41 @@ export function mapFinanceBankAccountSummaryRow(
     asOfDate: row.asOfDate,
     asOfDateSourceColumn: row.asOfDateSourceColumn,
     balanceSourceColumn: row.balanceSourceColumn,
+    observedAt: row.observedAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export function mapFinanceCustomerRow(
+  row: FinanceCustomerRow,
+): FinanceCustomerRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    customerLabel: row.customerLabel,
+    externalCustomerId: row.externalCustomerId,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export function mapFinanceReceivablesAgingRow(
+  row: FinanceReceivablesAgingRow,
+): FinanceReceivablesAgingRowRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    customerId: row.customerId,
+    syncRunId: row.syncRunId,
+    lineNumber: row.lineNumber,
+    sourceLineNumbers: row.sourceLineNumbers,
+    currencyCode: row.currencyCode,
+    asOfDate: row.asOfDate,
+    asOfDateSourceColumn: row.asOfDateSourceColumn,
+    bucketValues: row.bucketValues.map((bucketValue) =>
+      FinanceReceivablesAgingBucketValueSchema.parse(bucketValue),
+    ),
     observedAt: row.observedAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -267,6 +309,16 @@ export function mapFinanceBankAccountSummaryViewRow(input: {
   return {
     bankAccount: mapFinanceBankAccountRow(input.bankAccount),
     summary: mapFinanceBankAccountSummaryRow(input.summary),
+  };
+}
+
+export function mapFinanceReceivablesAgingRowViewRow(input: {
+  customer: FinanceCustomerRow;
+  row: FinanceReceivablesAgingRow;
+}) {
+  return {
+    customer: mapFinanceCustomerRow(input.customer),
+    receivablesAgingRow: mapFinanceReceivablesAgingRow(input.row),
   };
 }
 

@@ -29,12 +29,13 @@ Today the merged backbone is:
 - F2H additive balance-bridge-prerequisites reads for trial-balance-versus-general-ledger account scope, explicit account-level proof diagnostics, and diagnostic-versus-limitation hardening without fake bridge numbers or variance
 - F2I additive source-backed general-ledger opening-balance and ending-balance proof support from explicit persisted fields only, plus snapshot diagnostic-versus-limitation polish
 - F2J additive backend-first balance-proof lineage drill and read behavior on top of persisted proof rows and lineage
+- F2K additive deterministic `bank_account_summary_csv` extraction plus backend-first bank-account inventory and cash-posture reads without fake FX conversion, transaction detail, or bank reconciliation
 
-The active next slice is F2K:
+The active next slice is F2L:
 
-- additive deterministic `bank_account_summary_csv` extraction from stored raw source bytes
-- persisted bank-account summary state plus backend-first bank-account inventory and cash-posture reads
-- truthful cash-posture limits around currencies, balance semantics, known-versus-unknown dates, and raw-source-backed provenance
+- additive deterministic `receivables_aging_csv` extraction from stored raw source bytes
+- persisted customer and receivables-aging state plus backend-first receivables-aging and collections-posture reads
+- truthful collections-posture limits around currencies, bucket semantics, known-versus-unknown dates, and raw-source-backed provenance without invoice detail, expected cash timing, reserve logic, or DSO
 
 ## Product boundary for v1
 
@@ -132,7 +133,7 @@ Pocket CFO v1 is intentionally narrow:
 4. Read `PLANS.md`.
 5. Read `plans/ROADMAP.md`.
 6. Read the current active `plans/FP-*.md` file for the next narrow slice instead of restarting from `FP-0001`.
-7. The current active plan is `plans/FP-0019-bank-account-summary-and-cash-posture.md`.
+7. The current active plan is `plans/FP-0020-receivables-aging-and-collections-posture.md`.
 8. Keep progress updates inside the active Finance Plan while working.
 9. Do not delete legacy engineering modules until the finance replacement path exists and a smoke proves it.
 
@@ -160,6 +161,7 @@ pnpm smoke:finance-twin-balance-bridge-prerequisites:local
 pnpm smoke:finance-twin-source-backed-balance-proof:local
 pnpm smoke:finance-twin-balance-proof-lineage:local
 pnpm smoke:finance-twin-bank-account-summary:local
+pnpm smoke:finance-twin-receivables-aging:local
 pnpm smoke:finance-twin-account-catalog:local
 pnpm smoke:finance-twin-general-ledger:local
 pnpm smoke:finance-twin-snapshot:local
@@ -181,6 +183,8 @@ The current backend-first finance-twin read surface is:
 - general-ledger balance-proof lineage drill
 - bank-account inventory
 - cash posture
+- receivables-aging
+- collections posture
 - general-ledger account activity lineage
 
 The current success condition is no longer an F0 guidance reset.

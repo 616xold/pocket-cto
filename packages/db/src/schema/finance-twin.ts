@@ -22,6 +22,7 @@ export const financeTwinExtractorKeyEnum = pgEnum(
     "chart_of_accounts_csv",
     "general_ledger_csv",
     "bank_account_summary_csv",
+    "receivables_aging_csv",
   ],
 );
 
@@ -37,6 +38,8 @@ export const financeTwinLineageTargetKindEnum = pgEnum(
     "ledger_account",
     "bank_account",
     "bank_account_summary",
+    "customer",
+    "receivables_aging_row",
     "trial_balance_line",
     "account_catalog_entry",
     "journal_entry",
@@ -49,6 +52,13 @@ export const financeBankBalanceTypeEnum = pgEnum(
   "finance_bank_balance_type",
   ["statement_or_ledger", "available", "unspecified"],
 );
+
+type FinanceReceivablesAgingBucketValueJson = {
+  amount: string;
+  bucketClass: string;
+  bucketKey: string;
+  sourceColumn: string;
+};
 
 export const financeCompanies = pgTable(
   "finance_companies",
@@ -138,6 +148,29 @@ export const financeBankAccounts = pgTable(
   }),
 );
 
+export const financeCustomers = pgTable(
+  "finance_customers",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    identityKey: text("identity_key").notNull(),
+    customerLabel: text("customer_label").notNull(),
+    externalCustomerId: text("external_customer_id"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    companyIdentityUnique: uniqueIndex(
+      "finance_customers_company_identity_key_key",
+    ).on(table.companyId, table.identityKey),
+    companyCustomerLabelIndex: index(
+      "finance_customers_company_customer_label_idx",
+    ).on(table.companyId, table.customerLabel),
+  }),
+);
+
 export const financeTwinSyncRuns = pgTable(
   "finance_twin_sync_runs",
   {
@@ -216,6 +249,45 @@ export const financeBankAccountSummaries = pgTable(
     bankAccountIndex: index(
       "finance_bank_account_summaries_bank_account_id_idx",
     ).on(table.bankAccountId),
+  }),
+);
+
+export const financeReceivablesAgingRows = pgTable(
+  "finance_receivables_aging_rows",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    customerId: uuid("customer_id")
+      .references(() => financeCustomers.id, { onDelete: "cascade" })
+      .notNull(),
+    syncRunId: uuid("sync_run_id")
+      .references(() => financeTwinSyncRuns.id, { onDelete: "cascade" })
+      .notNull(),
+    rowScopeKey: text("row_scope_key").notNull(),
+    lineNumber: integer("line_number").notNull(),
+    sourceLineNumbers: jsonb("source_line_numbers").$type<number[]>().notNull(),
+    currencyCode: text("currency_code"),
+    asOfDate: date("as_of_date"),
+    asOfDateSourceColumn: text("as_of_date_source_column"),
+    bucketValues: jsonb("bucket_values")
+      .$type<FinanceReceivablesAgingBucketValueJson[]>()
+      .notNull(),
+    observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    syncRunCustomerScopeUnique: uniqueIndex(
+      "finance_receivables_aging_rows_sync_run_customer_scope_key",
+    ).on(table.syncRunId, table.customerId, table.rowScopeKey),
+    companySyncIndex: index(
+      "finance_receivables_aging_rows_company_sync_idx",
+    ).on(table.companyId, table.syncRunId),
+    customerIndex: index("finance_receivables_aging_rows_customer_id_idx").on(
+      table.customerId,
+    ),
   }),
 );
 
