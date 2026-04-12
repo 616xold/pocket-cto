@@ -15,6 +15,8 @@ import {
 export const EMPTY_FINANCE_LINEAGE_TARGET_COUNTS: FinanceLineageTargetCounts = {
   reportingPeriodCount: 0,
   ledgerAccountCount: 0,
+  bankAccountCount: 0,
+  bankAccountSummaryCount: 0,
   trialBalanceLineCount: 0,
   accountCatalogEntryCount: 0,
   journalEntryCount: 0,
@@ -34,6 +36,12 @@ export function buildLineageTargetCounts(
         break;
       case "ledger_account":
         counts.ledgerAccountCount += 1;
+        break;
+      case "bank_account":
+        counts.bankAccountCount += 1;
+        break;
+      case "bank_account_summary":
+        counts.bankAccountSummaryCount += 1;
         break;
       case "trial_balance_line":
         counts.trialBalanceLineCount += 1;

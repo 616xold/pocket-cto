@@ -60,6 +60,8 @@ export type FinanceTwinServicePort = Pick<
   | "getBalanceBridgePrerequisites"
   | "getAccountBridgeReadiness"
   | "getAccountCatalog"
+  | "getBankAccounts"
+  | "getCashPosture"
   | "getGeneralLedgerAccountBalanceProof"
   | "getGeneralLedgerAccountActivityLineage"
   | "getCompanySnapshot"

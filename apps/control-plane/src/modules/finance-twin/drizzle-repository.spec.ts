@@ -255,13 +255,145 @@ describe("DrizzleFinanceTwinRepository", () => {
       },
     ]);
     expect(await repository.countLineageBySyncRunId(syncRun.id)).toBe(1);
-    expect(
+  expect(
       await repository.getLatestSyncRunByCompanyIdAndExtractorKey(
         company.id,
         "chart_of_accounts_csv",
       ),
     ).toMatchObject({
       id: finalized.id,
+      status: "succeeded",
+    });
+  });
+
+  it("persists bank-account summaries and returns joined bank-account views", async () => {
+    const source = await sourceRepository.createSource({
+      kind: "dataset",
+      originKind: "manual",
+      name: "Bank account summary export",
+      description: "Daily cash position",
+      createdBy: "finance-operator",
+    });
+    const snapshot = await sourceRepository.createSnapshot({
+      sourceId: source.id,
+      version: 1,
+      originalFileName: "bank-account-summary.csv",
+      mediaType: "text/csv",
+      sizeBytes: 512,
+      checksumSha256:
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      storageKind: "object_store",
+      storageRef: "s3://bucket/sources/bank-account-summary.csv",
+      capturedAt: "2026-04-12T00:00:00.000Z",
+      ingestStatus: "ready",
+    });
+    const sourceFile = await sourceRepository.createSourceFile({
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      originalFileName: "bank-account-summary.csv",
+      mediaType: "text/csv",
+      sizeBytes: 512,
+      checksumSha256:
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      storageKind: "object_store",
+      storageRef: "s3://bucket/sources/bank-account-summary.csv",
+      createdBy: "finance-operator",
+      capturedAt: "2026-04-12T00:00:00.000Z",
+    });
+    const company = await repository.upsertCompany({
+      companyKey: "acme",
+      displayName: "Acme Holdings",
+    });
+    const bankAccount = await repository.upsertBankAccount({
+      companyId: company.id,
+      identityKey: "label_last4:operating_checking|1234",
+      accountLabel: "Operating Checking",
+      institutionName: "First National",
+      externalAccountId: null,
+      accountNumberLast4: "1234",
+    });
+    const syncRun = await repository.startSyncRun({
+      companyId: company.id,
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      sourceFileId: sourceFile.id,
+      extractorKey: "bank_account_summary_csv",
+      startedAt: "2026-04-12T00:10:00.000Z",
+    });
+    const summary = await repository.upsertBankAccountSummary({
+      companyId: company.id,
+      bankAccountId: bankAccount.id,
+      syncRunId: syncRun.id,
+      lineNumber: 2,
+      balanceType: "statement_or_ledger",
+      balanceAmount: "1200.00",
+      currencyCode: "USD",
+      asOfDate: "2026-04-10",
+      asOfDateSourceColumn: "as_of",
+      balanceSourceColumn: "statement_balance",
+      observedAt: "2026-04-12T00:10:01.000Z",
+    });
+    await repository.createLineage({
+      companyId: company.id,
+      syncRunId: syncRun.id,
+      targetKind: "bank_account",
+      targetId: bankAccount.id,
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      sourceFileId: sourceFile.id,
+      recordedAt: "2026-04-12T00:10:01.000Z",
+    });
+    await repository.createLineage({
+      companyId: company.id,
+      syncRunId: syncRun.id,
+      targetKind: "bank_account_summary",
+      targetId: summary.id,
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      sourceFileId: sourceFile.id,
+      recordedAt: "2026-04-12T00:10:01.000Z",
+    });
+    const finalized = await repository.finishSyncRun({
+      syncRunId: syncRun.id,
+      reportingPeriodId: null,
+      status: "succeeded",
+      completedAt: "2026-04-12T00:10:03.000Z",
+      stats: {
+        bankAccountCount: 1,
+        bankAccountSummaryCount: 1,
+      },
+      errorSummary: null,
+    });
+
+    expect(
+      await repository.listBankAccountSummaryViewsBySyncRunId(syncRun.id),
+    ).toMatchObject([
+      {
+        bankAccount: {
+          id: bankAccount.id,
+          accountLabel: "Operating Checking",
+          institutionName: "First National",
+          accountNumberLast4: "1234",
+        },
+        summary: {
+          id: summary.id,
+          balanceType: "statement_or_ledger",
+          balanceAmount: "1200.00",
+          currencyCode: "USD",
+          asOfDate: "2026-04-10",
+          balanceSourceColumn: "statement_balance",
+        },
+      },
+    ]);
+    expect(await repository.countLineageBySyncRunId(syncRun.id)).toBe(2);
+    expect(
+      await repository.getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "bank_account_summary_csv",
+      ),
+    ).toMatchObject({
+      id: finalized.id,
+      extractorKey: "bank_account_summary_csv",
       status: "succeeded",
     });
   });

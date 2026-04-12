@@ -1,4 +1,6 @@
 import {
+  FinanceBankAccountInventoryViewSchema,
+  FinanceCashPostureViewSchema,
   FinanceBalanceBridgePrerequisitesViewSchema,
   FinanceAccountBridgeReadinessViewSchema,
   FinanceAccountCatalogViewSchema,
@@ -56,6 +58,8 @@ export const financeTwinGeneralLedgerBalanceProofQuerySchema = z.object({
 });
 
 export {
+  FinanceBankAccountInventoryViewSchema,
+  FinanceCashPostureViewSchema,
   FinanceBalanceBridgePrerequisitesViewSchema,
   FinanceAccountBridgeReadinessViewSchema,
   FinanceAccountCatalogViewSchema,

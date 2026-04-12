@@ -17,17 +17,17 @@ export function buildFinanceFreshnessView(input: {
   now: Date;
   trialBalance: SliceRuns;
 }): FinanceFreshnessView {
-  const trialBalance = buildSliceFreshnessSummary({
+  const trialBalance = buildFinanceSliceFreshnessSummary({
     now: input.now,
     ...input.trialBalance,
     sliceLabel: "trial-balance",
   });
-  const chartOfAccounts = buildSliceFreshnessSummary({
+  const chartOfAccounts = buildFinanceSliceFreshnessSummary({
     now: input.now,
     ...input.chartOfAccounts,
     sliceLabel: "chart-of-accounts",
   });
-  const generalLedger = buildSliceFreshnessSummary({
+  const generalLedger = buildFinanceSliceFreshnessSummary({
     now: input.now,
     ...input.generalLedger,
     sliceLabel: "general-ledger",
@@ -47,7 +47,7 @@ export function buildFinanceFreshnessView(input: {
   };
 }
 
-function buildSliceFreshnessSummary(
+export function buildFinanceSliceFreshnessSummary(
   input: SliceRuns & { now: Date; sliceLabel: string },
 ) {
   const latestCompletedAt = input.latestRun?.completedAt ?? null;

@@ -35,6 +35,7 @@ Suggested thread naming:
 - `F2H-balance-bridge-prerequisites-and-diagnostic-hardening`
 - `F2I-source-backed-balance-proof-and-snapshot-polish`
 - `F2J-balance-proof-lineage-and-f2i-polish`
+- `F2K-bank-account-summary-and-cash-posture`
 - `F3-cfo-wiki-compiler`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`

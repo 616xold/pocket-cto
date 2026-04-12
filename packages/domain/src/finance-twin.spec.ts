@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  FinanceBankAccountInventoryViewSchema,
+  FinanceCashPostureViewSchema,
   FinanceBalanceBridgePrerequisitesViewSchema,
   FinanceAccountBridgeReadinessViewSchema,
   FinanceAccountCatalogViewSchema,
@@ -274,6 +276,161 @@ describe("finance twin domain schemas", () => {
     });
 
     expect(parsed.accounts).toHaveLength(0);
+  });
+
+  it("parses a bank-account inventory view", () => {
+    const parsed = FinanceBankAccountInventoryViewSchema.parse({
+      company: {
+        id: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        displayName: "Acme",
+        createdAt: "2026-04-09T00:00:00.000Z",
+        updatedAt: "2026-04-09T00:00:00.000Z",
+      },
+      latestAttemptedSyncRun: null,
+      latestSuccessfulSlice: {
+        latestSource: null,
+        latestSyncRun: null,
+        coverage: {
+          bankAccountCount: 0,
+          summaryRowCount: 0,
+          lineageCount: 0,
+        },
+        summary: null,
+      },
+      freshness: {
+        state: "missing",
+        latestSyncRunId: null,
+        latestSyncStatus: null,
+        latestCompletedAt: null,
+        latestSuccessfulSyncRunId: null,
+        latestSuccessfulCompletedAt: null,
+        ageSeconds: null,
+        staleAfterSeconds: 86400,
+        reasonCode: "not_synced",
+        reasonSummary:
+          "No finance twin sync has been recorded yet for the bank-account-summary slice.",
+      },
+      accountCount: 1,
+      accounts: [
+        {
+          bankAccount: {
+            id: "22222222-2222-4222-8222-222222222222",
+            companyId: "11111111-1111-4111-8111-111111111111",
+            accountLabel: "Operating Checking",
+            institutionName: "First National",
+            externalAccountId: null,
+            accountNumberLast4: "1234",
+            createdAt: "2026-04-09T00:00:00.000Z",
+            updatedAt: "2026-04-09T00:00:00.000Z",
+          },
+          reportedBalances: [
+            {
+              summary: {
+                id: "33333333-3333-4333-8333-333333333333",
+                companyId: "11111111-1111-4111-8111-111111111111",
+                bankAccountId: "22222222-2222-4222-8222-222222222222",
+                syncRunId: "44444444-4444-4444-8444-444444444444",
+                lineNumber: 2,
+                balanceType: "statement_or_ledger",
+                balanceAmount: "1200.00",
+                currencyCode: "USD",
+                asOfDate: "2026-04-10",
+                asOfDateSourceColumn: "as_of",
+                balanceSourceColumn: "statement_balance",
+                observedAt: "2026-04-10T00:00:00.000Z",
+                createdAt: "2026-04-10T00:00:00.000Z",
+                updatedAt: "2026-04-10T00:00:00.000Z",
+              },
+              lineageRef: {
+                targetKind: "bank_account_summary",
+                targetId: "33333333-3333-4333-8333-333333333333",
+                syncRunId: "44444444-4444-4444-8444-444444444444",
+              },
+            },
+          ],
+          currencyCodes: ["USD"],
+          knownAsOfDates: ["2026-04-10"],
+          unknownAsOfDateBalanceCount: 0,
+          hasMixedAsOfDates: false,
+        },
+      ],
+      diagnostics: [],
+      limitations: [
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+      ],
+    });
+
+    expect(parsed.accounts[0]?.reportedBalances[0]?.lineageRef.targetKind).toBe(
+      "bank_account_summary",
+    );
+  });
+
+  it("parses a cash-posture view with per-currency balance buckets", () => {
+    const parsed = FinanceCashPostureViewSchema.parse({
+      company: {
+        id: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        displayName: "Acme",
+        createdAt: "2026-04-09T00:00:00.000Z",
+        updatedAt: "2026-04-09T00:00:00.000Z",
+      },
+      latestAttemptedSyncRun: null,
+      latestSuccessfulBankSummarySlice: {
+        latestSource: null,
+        latestSyncRun: null,
+        coverage: {
+          bankAccountCount: 0,
+          summaryRowCount: 0,
+          lineageCount: 0,
+        },
+        summary: null,
+      },
+      freshness: {
+        state: "missing",
+        latestSyncRunId: null,
+        latestSyncStatus: null,
+        latestCompletedAt: null,
+        latestSuccessfulSyncRunId: null,
+        latestSuccessfulCompletedAt: null,
+        ageSeconds: null,
+        staleAfterSeconds: 86400,
+        reasonCode: "not_synced",
+        reasonSummary:
+          "No finance twin sync has been recorded yet for the bank-account-summary slice.",
+      },
+      currencyBuckets: [
+        {
+          currency: "USD",
+          statementOrLedgerBalanceTotal: "1200.00",
+          availableBalanceTotal: "1000.00",
+          unspecifiedBalanceTotal: "250.00",
+          accountCount: 2,
+          datedAccountCount: 1,
+          undatedAccountCount: 1,
+          mixedAsOfDates: false,
+          earliestAsOfDate: "2026-04-10",
+          latestAsOfDate: "2026-04-10",
+        },
+      ],
+      coverageSummary: {
+        bankAccountCount: 2,
+        reportedBalanceCount: 3,
+        statementOrLedgerBalanceCount: 1,
+        availableBalanceCount: 1,
+        unspecifiedBalanceCount: 1,
+        datedBalanceCount: 2,
+        undatedBalanceCount: 1,
+        currencyBucketCount: 1,
+        mixedAsOfDateCurrencyBucketCount: 0,
+      },
+      diagnostics: [],
+      limitations: [
+        "Cash posture is grouped by reported currency only; this route does not perform FX conversion or emit one company-wide cash total.",
+      ],
+    });
+
+    expect(parsed.currencyBuckets[0]?.unspecifiedBalanceTotal).toBe("250.00");
   });
 
   it("parses a general-ledger latest-snapshot view", () => {
@@ -712,7 +869,7 @@ describe("finance twin domain schemas", () => {
         },
       ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
       ],
     });
 
@@ -1386,7 +1543,7 @@ describe("finance twin domain schemas", () => {
         },
       ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
       ],
     });
@@ -1731,7 +1888,7 @@ describe("finance twin domain schemas", () => {
         "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "No successful chart-of-accounts slice exists yet for this balance-bridge-prerequisites view, so chart-of-accounts enrichment is unavailable.",
         "This route does not compute a direct balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals, and general-ledger activity totals do not prove opening or ending balances.",
@@ -1931,7 +2088,7 @@ describe("finance twin domain schemas", () => {
       },
       diagnostics: [],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route returns persisted balance-proof rows and lineage only; it does not compute a balance bridge or variance.",
       ],

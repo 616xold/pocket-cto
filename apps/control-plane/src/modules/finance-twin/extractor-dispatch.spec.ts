@@ -53,4 +53,21 @@ describe("finance twin extractor dispatch", () => {
 
     expect(extracted?.extractorKey).toBe("general_ledger_csv");
   });
+
+  it("detects bank-account-summary CSV before generic balance columns can be mistaken for other finance slices", () => {
+    const extracted = extractFinanceTwinSource({
+      body: Buffer.from(
+        [
+          "account_name,bank,last4,statement_balance,available_balance,currency,as_of",
+          "Operating Checking,First National,1234,1200.00,1000.00,USD,2026-04-10",
+        ].join("\n"),
+      ),
+      sourceFile: {
+        mediaType: "text/csv",
+        originalFileName: "bank-account-summary.csv",
+      },
+    });
+
+    expect(extracted?.extractorKey).toBe("bank_account_summary_csv");
+  });
 });

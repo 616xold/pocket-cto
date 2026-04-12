@@ -1,5 +1,11 @@
 import type { SourceFileRecord } from "@pocket-cto/domain";
 import {
+  extractBankAccountSummaryCsv,
+  looksLikeBankAccountSummaryCsv,
+  supportsBankAccountSummaryCsvSource,
+  type BankAccountSummaryExtractionResult,
+} from "./bank-account-summary-csv";
+import {
   extractChartOfAccountsCsv,
   looksLikeChartOfAccountsCsv,
   supportsChartOfAccountsCsvSource,
@@ -24,6 +30,10 @@ export type FinanceTwinExtraction =
       trialBalance: TrialBalanceExtractionResult;
     }
   | {
+      extractorKey: "bank_account_summary_csv";
+      bankAccountSummary: BankAccountSummaryExtractionResult;
+    }
+  | {
       extractorKey: "general_ledger_csv";
       generalLedger: GeneralLedgerExtractionResult;
     }
@@ -38,7 +48,8 @@ export function supportsFinanceTwinSourceFile(
   return (
     supportsTrialBalanceCsvSource(sourceFile) ||
     supportsGeneralLedgerCsvSource(sourceFile) ||
-    supportsChartOfAccountsCsvSource(sourceFile)
+    supportsChartOfAccountsCsvSource(sourceFile) ||
+    supportsBankAccountSummaryCsvSource(sourceFile)
   );
 }
 
@@ -50,6 +61,13 @@ export function extractFinanceTwinSource(input: {
     return {
       extractorKey: "general_ledger_csv",
       generalLedger: extractGeneralLedgerCsv(input),
+    };
+  }
+
+  if (looksLikeBankAccountSummaryCsv(input)) {
+    return {
+      extractorKey: "bank_account_summary_csv",
+      bankAccountSummary: extractBankAccountSummaryCsv(input),
     };
   }
 

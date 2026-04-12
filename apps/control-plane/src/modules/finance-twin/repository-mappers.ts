@@ -1,5 +1,7 @@
 import type {
   financeAccountCatalogEntries,
+  financeBankAccounts,
+  financeBankAccountSummaries,
   financeCompanies,
   financeGeneralLedgerBalanceProofs,
   financeJournalEntries,
@@ -13,6 +15,8 @@ import type {
 import type {
   FinanceAccountCatalogEntryRecord,
   FinanceAccountCatalogEntryView,
+  FinanceBankAccountRecord,
+  FinanceBankAccountSummaryRecord,
   FinanceCompanyRecord,
   FinanceGeneralLedgerBalanceProofRecord,
   FinanceJournalEntryRecord,
@@ -27,6 +31,8 @@ import type {
 
 type FinanceAccountCatalogEntryRow =
   typeof financeAccountCatalogEntries.$inferSelect;
+type FinanceBankAccountRow = typeof financeBankAccounts.$inferSelect;
+type FinanceBankAccountSummaryRow = typeof financeBankAccountSummaries.$inferSelect;
 type FinanceCompanyRow = typeof financeCompanies.$inferSelect;
 type FinanceGeneralLedgerBalanceProofRow =
   typeof financeGeneralLedgerBalanceProofs.$inferSelect;
@@ -64,6 +70,42 @@ export function mapFinanceCompanyRow(
     id: row.id,
     companyKey: row.companyKey,
     displayName: row.displayName,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export function mapFinanceBankAccountRow(
+  row: FinanceBankAccountRow,
+): FinanceBankAccountRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    accountLabel: row.accountLabel,
+    institutionName: row.institutionName,
+    externalAccountId: row.externalAccountId,
+    accountNumberLast4: row.accountNumberLast4,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export function mapFinanceBankAccountSummaryRow(
+  row: FinanceBankAccountSummaryRow,
+): FinanceBankAccountSummaryRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    bankAccountId: row.bankAccountId,
+    syncRunId: row.syncRunId,
+    lineNumber: row.lineNumber,
+    balanceType: row.balanceType,
+    balanceAmount: row.balanceAmount,
+    currencyCode: row.currencyCode,
+    asOfDate: row.asOfDate,
+    asOfDateSourceColumn: row.asOfDateSourceColumn,
+    balanceSourceColumn: row.balanceSourceColumn,
+    observedAt: row.observedAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -215,6 +257,16 @@ export function mapFinanceTrialBalanceLineViewRow(input: {
   return {
     trialBalanceLine: mapFinanceTrialBalanceLineRow(input.trialBalanceLine),
     ledgerAccount: mapFinanceLedgerAccountRow(input.ledgerAccount),
+  };
+}
+
+export function mapFinanceBankAccountSummaryViewRow(input: {
+  bankAccount: FinanceBankAccountRow;
+  summary: FinanceBankAccountSummaryRow;
+}) {
+  return {
+    bankAccount: mapFinanceBankAccountRow(input.bankAccount),
+    summary: mapFinanceBankAccountSummaryRow(input.summary),
   };
 }
 

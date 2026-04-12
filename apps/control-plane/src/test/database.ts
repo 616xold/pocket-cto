@@ -10,6 +10,8 @@ import {
 } from "@pocket-cto/db";
 import type {
   financeAccountCatalogEntries,
+  financeBankAccounts,
+  financeBankAccountSummaries,
   financeCompanies,
   financeGeneralLedgerBalanceProofs,
   financeJournalEntries,
@@ -44,12 +46,14 @@ export async function resetTestDatabase() {
   await db.execute(sql`
     TRUNCATE TABLE
       finance_twin_lineage,
+      finance_bank_account_summaries,
       finance_general_ledger_balance_proofs,
       finance_journal_lines,
       finance_journal_entries,
       finance_trial_balance_lines,
       finance_account_catalog_entries,
       finance_twin_sync_runs,
+      finance_bank_accounts,
       finance_ledger_accounts,
       finance_reporting_periods,
       finance_companies,
@@ -120,6 +124,8 @@ async function selectCount(
     | typeof sourceIngestRuns
     | typeof provenanceRecords
     | typeof financeAccountCatalogEntries
+    | typeof financeBankAccounts
+    | typeof financeBankAccountSummaries
     | typeof financeCompanies
     | typeof financeReportingPeriods
     | typeof financeLedgerAccounts

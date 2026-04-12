@@ -28,12 +28,13 @@ Today the merged backbone is:
 - F2G additive matched-period account-bridge-readiness reads plus chart-of-accounts-backed unmatched diagnostics without inventing a numeric bridge
 - F2H additive balance-bridge-prerequisites reads for trial-balance-versus-general-ledger account scope, explicit account-level proof diagnostics, and diagnostic-versus-limitation hardening without fake bridge numbers or variance
 - F2I additive source-backed general-ledger opening-balance and ending-balance proof support from explicit persisted fields only, plus snapshot diagnostic-versus-limitation polish
+- F2J additive backend-first balance-proof lineage drill and read behavior on top of persisted proof rows and lineage
 
-The active next slice is F2J:
+The active next slice is F2K:
 
-- additive backend-first balance-proof lineage drill and read behavior on top of persisted proof rows and lineage
-- direct drill from proof-bearing account rows to the actual persisted proof row without guessing target IDs manually
-- merged-doc truthfulness cleanup now that F2I is already on `main`
+- additive deterministic `bank_account_summary_csv` extraction from stored raw source bytes
+- persisted bank-account summary state plus backend-first bank-account inventory and cash-posture reads
+- truthful cash-posture limits around currencies, balance semantics, known-versus-unknown dates, and raw-source-backed provenance
 
 ## Product boundary for v1
 
@@ -116,6 +117,8 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0015-account-bridge-readiness-and-f2f-polish.md
 │   ├── FP-0016-balance-bridge-prerequisites-and-diagnostic-hardening.md
 │   ├── FP-0017-source-backed-balance-proof-and-snapshot-polish.md
+│   ├── FP-0018-balance-proof-lineage-and-f2i-polish.md
+│   ├── FP-0019-bank-account-summary-and-cash-posture.md
 │   └── templates
 └── .agents
     └── skills
@@ -129,7 +132,7 @@ Pocket CFO v1 is intentionally narrow:
 4. Read `PLANS.md`.
 5. Read `plans/ROADMAP.md`.
 6. Read the current active `plans/FP-*.md` file for the next narrow slice instead of restarting from `FP-0001`.
-7. The current active plan is `plans/FP-0018-balance-proof-lineage-and-f2i-polish.md`.
+7. The current active plan is `plans/FP-0019-bank-account-summary-and-cash-posture.md`.
 8. Keep progress updates inside the active Finance Plan while working.
 9. Do not delete legacy engineering modules until the finance replacement path exists and a smoke proves it.
 
@@ -156,6 +159,7 @@ pnpm smoke:finance-twin-account-bridge:local
 pnpm smoke:finance-twin-balance-bridge-prerequisites:local
 pnpm smoke:finance-twin-source-backed-balance-proof:local
 pnpm smoke:finance-twin-balance-proof-lineage:local
+pnpm smoke:finance-twin-bank-account-summary:local
 pnpm smoke:finance-twin-account-catalog:local
 pnpm smoke:finance-twin-general-ledger:local
 pnpm smoke:finance-twin-snapshot:local
@@ -175,6 +179,8 @@ The current backend-first finance-twin read surface is:
 - trial-balance-versus-general-ledger balance-bridge prerequisites
 - truthful source-backed general-ledger balance proof inside balance-bridge prerequisites
 - general-ledger balance-proof lineage drill
+- bank-account inventory
+- cash posture
 - general-ledger account activity lineage
 
 The current success condition is no longer an F0 guidance reset.
