@@ -1,14 +1,14 @@
 import type {
-  FinanceReceivablesAgingBucketClass,
-  FinanceReceivablesAgingBucketKey,
+  FinancePayablesAgingBucketClass,
+  FinancePayablesAgingBucketKey,
 } from "@pocket-cto/domain";
 import { describe, expect, it } from "vitest";
-import { buildFinanceCollectionsPostureView } from "./collections-posture";
-import type { FinanceReceivablesAgingRowView } from "./repository";
+import { buildFinancePayablesPostureView } from "./payables-posture";
+import type { FinancePayablesAgingRowView } from "./repository";
 
-describe("collections posture", () => {
-  it("summarizes per-currency collections truthfully across mixed dates and mixed bucket semantics", () => {
-    const view = buildFinanceCollectionsPostureView({
+describe("payables posture", () => {
+  it("summarizes per-currency payables truthfully across mixed dates and mixed bucket semantics", () => {
+    const view = buildFinancePayablesPostureView({
       company: {
         id: "11111111-1111-4111-8111-111111111111",
         companyKey: "acme",
@@ -27,7 +27,7 @@ describe("collections posture", () => {
         staleAfterSeconds: 86400,
         reasonCode: "latest_successful_sync_fresh",
         reasonSummary:
-          "The latest successful receivables-aging sync is within the 24 hour freshness window.",
+          "The latest successful payables-aging sync is within the 24 hour freshness window.",
       },
       latestAttemptedSyncRun: {
         id: "77777777-7777-4777-8777-777777777777",
@@ -36,7 +36,7 @@ describe("collections posture", () => {
         sourceId: "22222222-2222-4222-8222-222222222222",
         sourceSnapshotId: "33333333-3333-4333-8333-333333333333",
         sourceFileId: "44444444-4444-4444-8444-444444444444",
-        extractorKey: "receivables_aging_csv",
+        extractorKey: "payables_aging_csv",
         status: "succeeded",
         startedAt: "2026-04-12T08:59:00.000Z",
         completedAt: "2026-04-12T09:00:00.000Z",
@@ -46,11 +46,11 @@ describe("collections posture", () => {
         errorSummary: null,
         createdAt: "2026-04-12T08:59:00.000Z",
       },
-      latestSuccessfulReceivablesAgingSlice: {
+      latestSuccessfulPayablesAgingSlice: {
         latestSource: null,
         latestSyncRun: null,
         coverage: {
-          customerCount: 0,
+          vendorCount: 0,
           rowCount: 0,
           lineageCount: 0,
           lineageTargetCounts: {
@@ -59,8 +59,8 @@ describe("collections posture", () => {
             bankAccountCount: 0,
             bankAccountSummaryCount: 0,
             customerCount: 0,
-            receivablesAgingRowCount: 0,
             vendorCount: 0,
+            receivablesAgingRowCount: 0,
             payablesAgingRowCount: 0,
             trialBalanceLineCount: 0,
             accountCatalogEntryCount: 0,
@@ -75,8 +75,8 @@ describe("collections posture", () => {
       rows: [
         buildRow({
           rowId: "aaaaaaa1-1111-4111-8111-111111111111",
-          customerId: "c1111111-1111-4111-8111-111111111111",
-          customerLabel: "Alpha Co",
+          vendorId: "v1111111-1111-4111-8111-111111111111",
+          vendorLabel: "Paper Supply Co",
           currencyCode: "USD",
           asOfDate: "2026-04-30",
           bucketValues: [
@@ -87,8 +87,8 @@ describe("collections posture", () => {
         }),
         buildRow({
           rowId: "aaaaaaa2-1111-4111-8111-111111111111",
-          customerId: "c2222222-1111-4111-8111-111111111111",
-          customerLabel: "Beta Co",
+          vendorId: "v2222222-1111-4111-8111-111111111111",
+          vendorLabel: "Cloud Hosting",
           currencyCode: "USD",
           asOfDate: null,
           bucketValues: [
@@ -98,16 +98,29 @@ describe("collections posture", () => {
         }),
         buildRow({
           rowId: "aaaaaaa3-1111-4111-8111-111111111111",
-          customerId: "c3333333-1111-4111-8111-111111111111",
-          customerLabel: "Gamma Co",
+          vendorId: "v3333333-1111-4111-8111-111111111111",
+          vendorLabel: "Payroll Processor",
           currencyCode: "USD",
           asOfDate: "2026-05-01",
           bucketValues: [["over_90", "past_due_partial_rollup", "15.00"]],
         }),
         buildRow({
           rowId: "aaaaaaa4-1111-4111-8111-111111111111",
-          customerId: "c4444444-1111-4111-8111-111111111111",
-          customerLabel: "Delta Co",
+          vendorId: "v4444444-1111-4111-8111-111111111111",
+          vendorLabel: "Freight Partner",
+          currencyCode: "USD",
+          asOfDate: "2026-04-28",
+          bucketValues: [
+            ["current", "current", "10.00"],
+            ["31_60", "past_due_detail", "5.00"],
+            ["past_due", "past_due_total", "7.00"],
+            ["total", "total", "17.00"],
+          ],
+        }),
+        buildRow({
+          rowId: "aaaaaaa5-1111-4111-8111-111111111111",
+          vendorId: "v5555555-1111-4111-8111-111111111111",
+          vendorLabel: "Office Lease",
           currencyCode: "EUR",
           asOfDate: "2026-04-29",
           bucketValues: [
@@ -120,20 +133,20 @@ describe("collections posture", () => {
     });
 
     expect(view.coverageSummary).toMatchObject({
-      customerCount: 4,
-      rowCount: 4,
+      vendorCount: 5,
+      rowCount: 5,
       currencyBucketCount: 2,
-      datedRowCount: 3,
+      datedRowCount: 4,
       undatedRowCount: 1,
-      rowsWithExplicitTotalCount: 3,
-      rowsWithCurrentBucketCount: 2,
+      rowsWithExplicitTotalCount: 4,
+      rowsWithCurrentBucketCount: 3,
       rowsWithComputablePastDueCount: 3,
       rowsWithPartialPastDueOnlyCount: 1,
     });
     expect(view.currencyBuckets).toEqual([
       {
         currency: "EUR",
-        totalReceivables: "60.00",
+        totalPayables: "60.00",
         currentBucketTotal: "50.00",
         pastDueBucketTotal: "10.00",
         exactBucketTotals: [
@@ -153,28 +166,28 @@ describe("collections posture", () => {
             totalAmount: "60.00",
           },
         ],
-        customerCount: 1,
-        datedCustomerCount: 1,
-        undatedCustomerCount: 0,
+        vendorCount: 1,
+        datedVendorCount: 1,
+        undatedVendorCount: 0,
         mixedAsOfDates: false,
         earliestAsOfDate: "2026-04-29",
         latestAsOfDate: "2026-04-29",
       },
       {
         currency: "USD",
-        totalReceivables: "200.00",
-        currentBucketTotal: "100.00",
+        totalPayables: "217.00",
+        currentBucketTotal: "110.00",
         pastDueBucketTotal: "100.00",
         exactBucketTotals: [
           {
             bucketKey: "current",
             bucketClass: "current",
-            totalAmount: "100.00",
+            totalAmount: "110.00",
           },
           {
             bucketKey: "31_60",
             bucketClass: "past_due_detail",
-            totalAmount: "20.00",
+            totalAmount: "25.00",
           },
           {
             bucketKey: "over_90",
@@ -184,36 +197,37 @@ describe("collections posture", () => {
           {
             bucketKey: "past_due",
             bucketClass: "past_due_total",
-            totalAmount: "80.00",
+            totalAmount: "87.00",
           },
           {
             bucketKey: "total",
             bucketClass: "total",
-            totalAmount: "200.00",
+            totalAmount: "217.00",
           },
         ],
-        customerCount: 3,
-        datedCustomerCount: 2,
-        undatedCustomerCount: 1,
+        vendorCount: 4,
+        datedVendorCount: 3,
+        undatedVendorCount: 1,
         mixedAsOfDates: true,
-        earliestAsOfDate: "2026-04-30",
+        earliestAsOfDate: "2026-04-28",
         latestAsOfDate: "2026-05-01",
       },
     ]);
     expect(view.diagnostics).toEqual(
       expect.arrayContaining([
-        "One or more persisted receivables-aging rows do not include an explicit as-of date.",
-        "One or more collections-posture currency buckets span multiple explicit as-of dates.",
-        "One or more collections-posture currency buckets include both dated and undated customer aging rows.",
-        "One or more persisted receivables-aging rows only expose partial past-due rollups such as over_90 or over_120, so those rows are excluded from the convenience pastDueBucketTotal.",
-        "The latest successful receivables-aging slice mixes explicit past_due totals and detailed overdue bucket rows; exact bucket totals stay source-labeled while the convenience pastDueBucketTotal uses only non-overlapping row-level bases.",
-        "One or more persisted receivables-aging rows do not expose a full total receivables basis, so the convenience totalReceivables field remains partial to rows with explicit totals or explicit current-plus-past-due coverage.",
+        "One or more persisted payables-aging rows do not include an explicit as-of date.",
+        "One or more payables-posture currency buckets span multiple explicit as-of dates.",
+        "One or more payables-posture currency buckets include both dated and undated vendor aging rows.",
+        "One or more persisted payables-aging rows only expose partial past-due rollups such as over_90 or over_120, so those rows are excluded from the convenience pastDueBucketTotal.",
+        "One or more persisted payables-aging rows report both explicit past_due totals and detailed overdue buckets that disagree, so those rows are excluded from the convenience pastDueBucketTotal.",
+        "The latest successful payables-aging slice mixes explicit past_due totals and detailed overdue bucket rows; exact bucket totals stay source-labeled while the convenience pastDueBucketTotal uses only non-overlapping row-level bases.",
+        "One or more persisted payables-aging rows do not expose a full total payables basis, so the convenience totalPayables field remains partial to rows with explicit totals or explicit current-plus-past-due coverage.",
       ]),
     );
     expect(view.limitations).toEqual(
       expect.arrayContaining([
-        "Collections posture stays grouped by reported currency only; this route does not perform FX conversion or emit one company-wide receivables total.",
-        "This route does not include invoice-level detail, expected collection timing, DSO, reserve logic, or bad-debt forecasting.",
+        "Payables posture stays grouped by reported currency only; this route does not perform FX conversion or emit one company-wide payables total.",
+        "This route does not include bill-level detail, expected payment timing, DPO, reserve logic, or accrual logic.",
       ]),
     );
   });
@@ -222,26 +236,26 @@ describe("collections posture", () => {
 function buildRow(input: {
   asOfDate: string | null;
   bucketValues: Array<
-    [FinanceReceivablesAgingBucketKey, FinanceReceivablesAgingBucketClass, string]
+    [FinancePayablesAgingBucketKey, FinancePayablesAgingBucketClass, string]
   >;
   currencyCode: string | null;
-  customerId: string;
-  customerLabel: string;
   rowId: string;
-}): FinanceReceivablesAgingRowView {
+  vendorId: string;
+  vendorLabel: string;
+}): FinancePayablesAgingRowView {
   return {
-    customer: {
-      id: input.customerId,
+    vendor: {
+      id: input.vendorId,
       companyId: "11111111-1111-4111-8111-111111111111",
-      customerLabel: input.customerLabel,
-      externalCustomerId: null,
+      vendorLabel: input.vendorLabel,
+      externalVendorId: null,
       createdAt: "2026-04-12T00:00:00.000Z",
       updatedAt: "2026-04-12T00:00:00.000Z",
     },
-    receivablesAgingRow: {
+    payablesAgingRow: {
       id: input.rowId,
       companyId: "11111111-1111-4111-8111-111111111111",
-      customerId: input.customerId,
+      vendorId: input.vendorId,
       syncRunId: "77777777-7777-4777-8777-777777777777",
       lineNumber: 2,
       sourceLineNumbers: [2],

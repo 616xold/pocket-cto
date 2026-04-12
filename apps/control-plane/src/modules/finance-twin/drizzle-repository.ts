@@ -9,11 +9,13 @@ import {
   financeJournalEntries,
   financeJournalLines,
   financeLedgerAccounts,
+  financePayablesAgingRows,
   financeReceivablesAgingRows,
   financeReportingPeriods,
   financeTrialBalanceLines,
   financeTwinLineage,
   financeTwinSyncRuns,
+  financeVendors,
   type Db,
   type DbTransaction,
 } from "@pocket-cto/db";
@@ -36,6 +38,8 @@ import {
   mapFinanceJournalLineRow,
   mapFinanceJournalLineViewRow,
   mapFinanceLedgerAccountRow,
+  mapFinancePayablesAgingRow,
+  mapFinancePayablesAgingRowViewRow,
   mapFinanceReceivablesAgingRow,
   mapFinanceReceivablesAgingRowViewRow,
   mapFinanceReportingPeriodRow,
@@ -43,6 +47,7 @@ import {
   mapFinanceTrialBalanceLineViewRow,
   mapFinanceTwinLineageRow,
   mapFinanceTwinSyncRunRow,
+  mapFinanceVendorRow,
 } from "./repository-mappers";
 import type {
   CreateFinanceTwinLineageInput,
@@ -59,9 +64,11 @@ import type {
   UpsertFinanceJournalEntryInput,
   UpsertFinanceJournalLineInput,
   UpsertFinanceLedgerAccountInput,
+  UpsertFinancePayablesAgingRowInput,
   UpsertFinanceReceivablesAgingRowInput,
   UpsertFinanceReportingPeriodInput,
   UpsertFinanceTrialBalanceLineInput,
+  UpsertFinanceVendorInput,
 } from "./repository";
 
 export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
@@ -313,6 +320,36 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
     }
 
     return mapFinanceCustomerRow(row);
+  }
+
+  async upsertVendor(
+    input: UpsertFinanceVendorInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(financeVendors)
+      .values({
+        companyId: input.companyId,
+        identityKey: input.identityKey,
+        vendorLabel: input.vendorLabel,
+        externalVendorId: input.externalVendorId,
+      })
+      .onConflictDoUpdate({
+        target: [financeVendors.companyId, financeVendors.identityKey],
+        set: {
+          vendorLabel: input.vendorLabel,
+          externalVendorId: input.externalVendorId,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Finance vendor upsert did not return a row");
+    }
+
+    return mapFinanceVendorRow(row);
   }
 
   async startSyncRun(
@@ -842,6 +879,52 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
     return mapFinanceReceivablesAgingRow(row);
   }
 
+  async upsertPayablesAgingRow(
+    input: UpsertFinancePayablesAgingRowInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(financePayablesAgingRows)
+      .values({
+        companyId: input.companyId,
+        vendorId: input.vendorId,
+        syncRunId: input.syncRunId,
+        rowScopeKey: input.rowScopeKey,
+        lineNumber: input.lineNumber,
+        sourceLineNumbers: input.sourceLineNumbers,
+        currencyCode: input.currencyCode,
+        asOfDate: input.asOfDate,
+        asOfDateSourceColumn: input.asOfDateSourceColumn,
+        bucketValues: input.bucketValues,
+        observedAt: new Date(input.observedAt),
+      })
+      .onConflictDoUpdate({
+        target: [
+          financePayablesAgingRows.syncRunId,
+          financePayablesAgingRows.vendorId,
+          financePayablesAgingRows.rowScopeKey,
+        ],
+        set: {
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers,
+          currencyCode: input.currencyCode,
+          asOfDate: input.asOfDate,
+          asOfDateSourceColumn: input.asOfDateSourceColumn,
+          bucketValues: input.bucketValues,
+          observedAt: new Date(input.observedAt),
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Finance payables-aging row upsert did not return a row");
+    }
+
+    return mapFinancePayablesAgingRow(row);
+  }
+
   async listJournalLineViewsBySyncRunId(
     syncRunId: string,
     session?: PersistenceSession,
@@ -914,6 +997,32 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
       );
 
     return rows.map(mapFinanceReceivablesAgingRowViewRow);
+  }
+
+  async listPayablesAgingRowViewsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select({
+        vendor: financeVendors,
+        row: financePayablesAgingRows,
+      })
+      .from(financePayablesAgingRows)
+      .innerJoin(
+        financeVendors,
+        eq(financePayablesAgingRows.vendorId, financeVendors.id),
+      )
+      .where(eq(financePayablesAgingRows.syncRunId, syncRunId))
+      .orderBy(
+        asc(financeVendors.vendorLabel),
+        asc(financePayablesAgingRows.currencyCode),
+        asc(financePayablesAgingRows.asOfDate),
+        asc(financePayablesAgingRows.lineNumber),
+      );
+
+    return rows.map(mapFinancePayablesAgingRowViewRow);
   }
 
   async listGeneralLedgerEntriesBySyncRunId(

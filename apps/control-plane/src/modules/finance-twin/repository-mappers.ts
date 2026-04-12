@@ -8,13 +8,16 @@ import type {
   financeJournalEntries,
   financeJournalLines,
   financeLedgerAccounts,
+  financePayablesAgingRows,
   financeReceivablesAgingRows,
   financeReportingPeriods,
   financeTrialBalanceLines,
   financeTwinLineage,
   financeTwinSyncRuns,
+  financeVendors,
 } from "@pocket-cto/db";
 import {
+  FinancePayablesAgingBucketValueSchema,
   FinanceReceivablesAgingBucketValueSchema,
   type FinanceAccountCatalogEntryRecord,
   type FinanceAccountCatalogEntryView,
@@ -27,11 +30,13 @@ import {
   type FinanceJournalLineRecord,
   type FinanceJournalLineView,
   type FinanceLedgerAccountRecord,
+  type FinancePayablesAgingRowRecord,
   type FinanceReceivablesAgingRowRecord,
   type FinanceReportingPeriodRecord,
   type FinanceTrialBalanceLineRecord,
   type FinanceTwinLineageRecord,
   type FinanceTwinSyncRunRecord,
+  type FinanceVendorRecord,
 } from "@pocket-cto/domain";
 
 type FinanceAccountCatalogEntryRow =
@@ -46,10 +51,12 @@ type FinanceJournalEntryRow = typeof financeJournalEntries.$inferSelect;
 type FinanceJournalLineRow = typeof financeJournalLines.$inferSelect;
 type FinanceReportingPeriodRow = typeof financeReportingPeriods.$inferSelect;
 type FinanceLedgerAccountRow = typeof financeLedgerAccounts.$inferSelect;
+type FinancePayablesAgingRow = typeof financePayablesAgingRows.$inferSelect;
 type FinanceReceivablesAgingRow = typeof financeReceivablesAgingRows.$inferSelect;
 type FinanceTwinSyncRunRow = typeof financeTwinSyncRuns.$inferSelect;
 type FinanceTrialBalanceLineRow = typeof financeTrialBalanceLines.$inferSelect;
 type FinanceTwinLineageRow = typeof financeTwinLineage.$inferSelect;
+type FinanceVendorRow = typeof financeVendors.$inferSelect;
 
 export function mapFinanceAccountCatalogEntryRow(
   row: FinanceAccountCatalogEntryRow,
@@ -131,6 +138,19 @@ export function mapFinanceCustomerRow(
   };
 }
 
+export function mapFinanceVendorRow(
+  row: FinanceVendorRow,
+): FinanceVendorRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    vendorLabel: row.vendorLabel,
+    externalVendorId: row.externalVendorId,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
 export function mapFinanceReceivablesAgingRow(
   row: FinanceReceivablesAgingRow,
 ): FinanceReceivablesAgingRowRecord {
@@ -146,6 +166,28 @@ export function mapFinanceReceivablesAgingRow(
     asOfDateSourceColumn: row.asOfDateSourceColumn,
     bucketValues: row.bucketValues.map((bucketValue) =>
       FinanceReceivablesAgingBucketValueSchema.parse(bucketValue),
+    ),
+    observedAt: row.observedAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export function mapFinancePayablesAgingRow(
+  row: FinancePayablesAgingRow,
+): FinancePayablesAgingRowRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    vendorId: row.vendorId,
+    syncRunId: row.syncRunId,
+    lineNumber: row.lineNumber,
+    sourceLineNumbers: row.sourceLineNumbers,
+    currencyCode: row.currencyCode,
+    asOfDate: row.asOfDate,
+    asOfDateSourceColumn: row.asOfDateSourceColumn,
+    bucketValues: row.bucketValues.map((bucketValue) =>
+      FinancePayablesAgingBucketValueSchema.parse(bucketValue),
     ),
     observedAt: row.observedAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
@@ -319,6 +361,16 @@ export function mapFinanceReceivablesAgingRowViewRow(input: {
   return {
     customer: mapFinanceCustomerRow(input.customer),
     receivablesAgingRow: mapFinanceReceivablesAgingRow(input.row),
+  };
+}
+
+export function mapFinancePayablesAgingRowViewRow(input: {
+  vendor: FinanceVendorRow;
+  row: FinancePayablesAgingRow;
+}) {
+  return {
+    vendor: mapFinanceVendorRow(input.vendor),
+    payablesAgingRow: mapFinancePayablesAgingRow(input.row),
   };
 }
 

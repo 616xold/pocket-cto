@@ -2725,6 +2725,12 @@ async function createHarness(options?: {
         async getCollectionsPosture() {
           throw new Error("Not implemented in orchestrator harness");
         },
+        async getPayablesAging() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getPayablesPosture() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
         async getCompanySnapshot() {
           throw new Error("Not implemented in orchestrator harness");
         },

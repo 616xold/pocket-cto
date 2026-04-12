@@ -37,6 +37,7 @@ Suggested thread naming:
 - `F2J-balance-proof-lineage-and-f2i-polish`
 - `F2K-bank-account-summary-and-cash-posture`
 - `F2L-receivables-aging-and-collections-posture`
+- `F2M-payables-aging-and-payables-posture`
 - `F3-cfo-wiki-compiler`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`

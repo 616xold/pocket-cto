@@ -9,11 +9,13 @@ import {
   financeJournalEntries,
   financeJournalLines,
   financeLedgerAccounts,
+  financePayablesAgingRows,
   financeReceivablesAgingRows,
   financeReportingPeriods,
   financeTrialBalanceLines,
   financeTwinLineage,
   financeTwinSyncRuns,
+  financeVendors,
   missionTasks,
   missions,
   provenanceRecords,
@@ -39,6 +41,8 @@ describe("db schema exports", () => {
     expect(financeCustomers).toBeDefined();
     expect(financeReportingPeriods).toBeDefined();
     expect(financeLedgerAccounts).toBeDefined();
+    expect(financeVendors).toBeDefined();
+    expect(financePayablesAgingRows).toBeDefined();
     expect(financeReceivablesAgingRows).toBeDefined();
     expect(financeGeneralLedgerBalanceProofs).toBeDefined();
     expect(financeJournalEntries).toBeDefined();

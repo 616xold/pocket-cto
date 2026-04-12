@@ -18,11 +18,13 @@ import type {
   financeJournalEntries,
   financeJournalLines,
   financeLedgerAccounts,
+  financePayablesAgingRows,
   financeReceivablesAgingRows,
   financeReportingPeriods,
   financeTrialBalanceLines,
   financeTwinLineage,
   financeTwinSyncRuns,
+  financeVendors,
   provenanceRecords,
   sourceFiles,
   sourceIngestRuns,
@@ -48,6 +50,7 @@ export async function resetTestDatabase() {
   await db.execute(sql`
     TRUNCATE TABLE
       finance_twin_lineage,
+      finance_payables_aging_rows,
       finance_receivables_aging_rows,
       finance_bank_account_summaries,
       finance_general_ledger_balance_proofs,
@@ -56,6 +59,7 @@ export async function resetTestDatabase() {
       finance_trial_balance_lines,
       finance_account_catalog_entries,
       finance_twin_sync_runs,
+      finance_vendors,
       finance_customers,
       finance_bank_accounts,
       finance_ledger_accounts,
@@ -134,6 +138,8 @@ async function selectCount(
     | typeof financeCustomers
     | typeof financeReportingPeriods
     | typeof financeLedgerAccounts
+    | typeof financeVendors
+    | typeof financePayablesAgingRows
     | typeof financeReceivablesAgingRows
     | typeof financeGeneralLedgerBalanceProofs
     | typeof financeJournalEntries

@@ -903,6 +903,218 @@ describe("FinanceTwinService", () => {
     });
   });
 
+  it("syncs one uploaded payables-aging CSV into persisted payables and truthful payables-posture reads", async () => {
+    const now = () => new Date("2026-04-12T12:00:00.000Z");
+    const sourceRepository = new InMemorySourceRepository();
+    const sourceStorage = new InMemorySourceFileStorage();
+    const sourceService = new SourceRegistryService(
+      sourceRepository,
+      sourceStorage,
+      now,
+    );
+    const financeRepository = new InMemoryFinanceTwinRepository();
+    const financeTwinService = new FinanceTwinService({
+      financeTwinRepository: financeRepository,
+      sourceFileStorage: sourceStorage,
+      sourceRepository,
+      now,
+    });
+    const created = await sourceService.createSource({
+      kind: "dataset",
+      name: "Payables aging",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "payables-aging-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+        storageKind: "external_url",
+        storageRef: "https://example.com/payables-aging",
+        ingestStatus: "registered",
+      },
+    });
+    const registered = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "payables-aging.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "vendor_name,vendor_id,currency,as_of,current,31_60,past_due,total",
+          "Paper Supply Co,V-100,USD,2026-04-30,100.00,20.00,,120.00",
+          "Paper Supply Co,V-100,USD,2026-04-30,100.00,20.00,,120.00",
+          "Cloud Hosting,V-200,USD,,,,80.00,80.00",
+          "Office Lease,V-300,EUR,2026-04-29,50.00,,,50.00",
+        ].join("\n"),
+      ),
+    );
+
+    const synced = await financeTwinService.syncCompanySourceFile(
+      "acme",
+      registered.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
+    const payablesAging = await financeTwinService.getPayablesAging("acme");
+    const payablesPosture = await financeTwinService.getPayablesPosture("acme");
+    const paperSupplyRow = payablesAging.rows.find(
+      (row) => row.vendor.vendorLabel === "Paper Supply Co",
+    );
+    const lineage = await financeTwinService.getLineageDrill({
+      companyKey: "acme",
+      targetKind: "payables_aging_row",
+      targetId: paperSupplyRow?.payablesAgingRow.id ?? "",
+      syncRunId: synced.syncRun.id,
+    });
+
+    expect(synced).toMatchObject({
+      syncRun: {
+        extractorKey: "payables_aging_csv",
+        status: "succeeded",
+      },
+    });
+    expect(payablesAging).toMatchObject({
+      company: {
+        companyKey: "acme",
+        displayName: "Acme Holdings",
+      },
+      latestAttemptedSyncRun: {
+        id: synced.syncRun.id,
+        extractorKey: "payables_aging_csv",
+      },
+      latestSuccessfulSlice: {
+        coverage: {
+          vendorCount: 3,
+          rowCount: 3,
+          lineageCount: 6,
+          lineageTargetCounts: {
+            vendorCount: 3,
+            payablesAgingRowCount: 3,
+          },
+        },
+        summary: {
+          vendorCount: 3,
+          rowCount: 3,
+          datedRowCount: 2,
+          undatedRowCount: 1,
+          currencyCount: 2,
+          reportedBucketKeys: ["current", "31_60", "past_due", "total"],
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      vendorCount: 3,
+    });
+    expect(paperSupplyRow).toMatchObject({
+      vendor: {
+        vendorLabel: "Paper Supply Co",
+        externalVendorId: "V-100",
+      },
+      payablesAgingRow: {
+        currencyCode: "USD",
+        asOfDate: "2026-04-30",
+        sourceLineNumbers: [2, 3],
+      },
+      reportedTotalAmount: "120.00",
+      lineageRef: {
+        targetKind: "payables_aging_row",
+        syncRunId: synced.syncRun.id,
+      },
+    });
+    expect(payablesPosture).toMatchObject({
+      company: {
+        companyKey: "acme",
+      },
+      latestAttemptedSyncRun: {
+        id: synced.syncRun.id,
+        extractorKey: "payables_aging_csv",
+      },
+      latestSuccessfulPayablesAgingSlice: {
+        coverage: {
+          vendorCount: 3,
+          rowCount: 3,
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      coverageSummary: {
+        vendorCount: 3,
+        rowCount: 3,
+        currencyBucketCount: 2,
+        datedRowCount: 2,
+        undatedRowCount: 1,
+        rowsWithExplicitTotalCount: 3,
+        rowsWithCurrentBucketCount: 2,
+        rowsWithComputablePastDueCount: 2,
+        rowsWithPartialPastDueOnlyCount: 0,
+      },
+      currencyBuckets: [
+        {
+          currency: "EUR",
+          totalPayables: "50.00",
+          currentBucketTotal: "50.00",
+          pastDueBucketTotal: "0.00",
+          vendorCount: 1,
+          datedVendorCount: 1,
+          undatedVendorCount: 0,
+          mixedAsOfDates: false,
+          earliestAsOfDate: "2026-04-29",
+          latestAsOfDate: "2026-04-29",
+        },
+        {
+          currency: "USD",
+          totalPayables: "200.00",
+          currentBucketTotal: "100.00",
+          pastDueBucketTotal: "100.00",
+          vendorCount: 2,
+          datedVendorCount: 1,
+          undatedVendorCount: 1,
+          mixedAsOfDates: false,
+          earliestAsOfDate: "2026-04-30",
+          latestAsOfDate: "2026-04-30",
+        },
+      ],
+    });
+    expect(payablesPosture.diagnostics).toEqual(
+      expect.arrayContaining([
+        "One or more persisted payables-aging rows do not include an explicit as-of date.",
+        "One or more payables-posture currency buckets include both dated and undated vendor aging rows.",
+        "The latest successful payables-aging slice mixes explicit past_due totals and detailed overdue bucket rows; exact bucket totals stay source-labeled while the convenience pastDueBucketTotal uses only non-overlapping row-level bases.",
+      ]),
+    );
+    expect(payablesPosture.limitations).toEqual(
+      expect.arrayContaining([
+        "Payables posture stays grouped by reported currency only; this route does not perform FX conversion or emit one company-wide payables total.",
+      ]),
+    );
+    expect(lineage).toMatchObject({
+      target: {
+        targetKind: "payables_aging_row",
+        targetId: paperSupplyRow?.payablesAgingRow.id,
+        syncRunId: synced.syncRun.id,
+      },
+      recordCount: 1,
+      records: [
+        {
+          syncRun: {
+            extractorKey: "payables_aging_csv",
+            id: synced.syncRun.id,
+          },
+          sourceFile: {
+            originalFileName: "payables-aging.csv",
+          },
+        },
+      ],
+    });
+  });
+
   it("builds a cross-slice company snapshot and scoped lineage drill truthfully", async () => {
     const now = () => new Date("2026-04-11T11:30:00.000Z");
     const sourceRepository = new InMemorySourceRepository();

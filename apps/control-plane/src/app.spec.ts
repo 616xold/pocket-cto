@@ -921,6 +921,128 @@ describe("control-plane app", () => {
     });
   });
 
+  it("GET /finance-twin/companies/:companyKey/payables-aging and /payables-posture return truthful persisted payables reads", async () => {
+    const app = await createTestApp(apps);
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/sources",
+      payload: {
+        kind: "dataset",
+        name: "Payables aging export",
+        createdBy: "finance-operator",
+        snapshot: {
+          originalFileName: "payables-aging-link.txt",
+          mediaType: "text/plain",
+          sizeBytes: 18,
+          checksumSha256:
+            "cdabefcdabefcdabefcdabefcdabefcdabefcdabefcdabefcdabefcdabefcdab",
+          storageKind: "external_url",
+          storageRef: "https://example.com/payables-aging",
+          capturedAt: "2026-04-12T00:00:00.000Z",
+        },
+      },
+    });
+    const created = createResponse.json() as { source: { id: string } };
+    const uploadResponse = await app.inject({
+      method: "POST",
+      url: `/sources/${created.source.id}/files?originalFileName=payables-aging.csv&mediaType=text%2Fcsv&createdBy=finance-operator&capturedAt=2026-04-12T00:05:00.000Z`,
+      headers: {
+        "content-type": "application/octet-stream",
+      },
+      payload: Buffer.from(
+        [
+          "vendor_name,vendor_id,currency,as_of,current,31_60,past_due,total",
+          "Paper Supply Co,V-100,USD,2026-04-30,100.00,20.00,,120.00",
+          "Paper Supply Co,V-100,USD,2026-04-30,100.00,20.00,,120.00",
+          "Cloud Hosting,V-200,USD,,,,80.00,80.00",
+          "Office Lease,V-300,EUR,2026-04-29,50.00,,,50.00",
+        ].join("\n"),
+      ),
+    });
+    const uploaded = uploadResponse.json() as { sourceFile: { id: string } };
+
+    const syncResponse = await app.inject({
+      method: "POST",
+      url: `/finance-twin/companies/acme/source-files/${uploaded.sourceFile.id}/sync`,
+      payload: {
+        companyName: "Acme Holdings",
+      },
+    });
+
+    expect(syncResponse.statusCode).toBe(201);
+    expect(syncResponse.json()).toMatchObject({
+      syncRun: {
+        extractorKey: "payables_aging_csv",
+        status: "succeeded",
+      },
+    });
+
+    const payablesAgingResponse = await app.inject({
+      method: "GET",
+      url: "/finance-twin/companies/acme/payables-aging",
+    });
+    const payablesPostureResponse = await app.inject({
+      method: "GET",
+      url: "/finance-twin/companies/acme/payables-posture",
+    });
+
+    expect(payablesAgingResponse.statusCode).toBe(200);
+    expect(payablesAgingResponse.json()).toMatchObject({
+      company: {
+        companyKey: "acme",
+        displayName: "Acme Holdings",
+      },
+      latestSuccessfulSlice: {
+        coverage: {
+          vendorCount: 3,
+          rowCount: 3,
+          lineageTargetCounts: {
+            vendorCount: 3,
+            payablesAgingRowCount: 3,
+          },
+        },
+        summary: {
+          reportedBucketKeys: ["current", "31_60", "past_due", "total"],
+        },
+      },
+      vendorCount: 3,
+    });
+    expect(payablesPostureResponse.statusCode).toBe(200);
+    expect(payablesPostureResponse.json()).toMatchObject({
+      company: {
+        companyKey: "acme",
+      },
+      coverageSummary: {
+        vendorCount: 3,
+        rowCount: 3,
+        currencyBucketCount: 2,
+      },
+      currencyBuckets: [
+        {
+          currency: "EUR",
+          totalPayables: "50.00",
+          currentBucketTotal: "50.00",
+          pastDueBucketTotal: "0.00",
+        },
+        {
+          currency: "USD",
+          totalPayables: "200.00",
+          currentBucketTotal: "100.00",
+          pastDueBucketTotal: "100.00",
+        },
+      ],
+      diagnostics: [
+        "One or more persisted payables-aging rows do not include an explicit as-of date.",
+        "One or more payables-posture currency buckets include both dated and undated vendor aging rows.",
+        "The latest successful payables-aging slice mixes explicit past_due totals and detailed overdue bucket rows; exact bucket totals stay source-labeled while the convenience pastDueBucketTotal uses only non-overlapping row-level bases.",
+      ],
+      limitations: expect.arrayContaining([
+        "Payables posture stays grouped by reported currency only; this route does not perform FX conversion or emit one company-wide payables total.",
+      ]),
+    });
+  });
+
   it("GET /finance-twin/companies/:companyKey/snapshot and lineage expose cross-slice alignment and drill-through", async () => {
     const app = await createTestApp(apps);
 
@@ -1105,7 +1227,7 @@ describe("control-plane app", () => {
         },
       },
       limitations: [
-        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, and receivables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, receivables-aging CSV, and payables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, payables-aging, payables-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed across different registered sources.",
       ],
@@ -1347,7 +1469,7 @@ describe("control-plane app", () => {
         "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       ],
       limitations: [
-        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, and receivables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, receivables-aging CSV, and payables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, payables-aging, payables-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
         "The observed general-ledger activity window fits inside the latest trial-balance reporting window, but the general-ledger slice does not include explicit source-declared period context.",
@@ -1531,7 +1653,7 @@ describe("control-plane app", () => {
         "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       ],
       limitations: [
-        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, and receivables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, receivables-aging CSV, and payables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, payables-aging, payables-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route does not compute a direct account balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
       ],
@@ -1616,7 +1738,7 @@ describe("control-plane app", () => {
         "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       ],
       limitations: [
-        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, and receivables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, receivables-aging CSV, and payables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, payables-aging, payables-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route does not compute a direct balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals, and general-ledger activity totals do not prove opening or ending balances.",
         "Matched-period account overlap exists, but none of those accounts include source-backed general-ledger opening-balance or ending-balance proof in the persisted Finance Twin state, so this route stops at blocked prerequisites rather than inventing a balance bridge.",

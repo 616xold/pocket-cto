@@ -105,6 +105,22 @@ export async function registerFinanceTwinRoutes(
   );
 
   app.get(
+    "/finance-twin/companies/:companyKey/payables-aging",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getPayablesAging(params.companyKey);
+    },
+  );
+
+  app.get(
+    "/finance-twin/companies/:companyKey/payables-posture",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getPayablesPosture(params.companyKey);
+    },
+  );
+
+  app.get(
     "/finance-twin/companies/:companyKey/account-catalog",
     async (request) => {
       const params = financeTwinCompanyKeyParamsSchema.parse(request.params);

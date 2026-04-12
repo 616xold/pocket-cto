@@ -162,6 +162,13 @@
       "when": 1776021411428,
       "tag": "0022_wide_doorman",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1776026605786,
+      "tag": "0023_odd_shadowcat",
+      "breakpoints": true
     }
   ]
 }

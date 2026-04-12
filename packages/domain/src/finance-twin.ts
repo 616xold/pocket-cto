@@ -33,6 +33,7 @@ export const FinanceTwinExtractorKeySchema = z.enum([
   "general_ledger_csv",
   "bank_account_summary_csv",
   "receivables_aging_csv",
+  "payables_aging_csv",
 ]);
 
 export const FinanceTwinSyncRunStatusSchema = z.enum([
@@ -48,6 +49,8 @@ export const FinanceTwinLineageTargetKindSchema = z.enum([
   "bank_account_summary",
   "customer",
   "receivables_aging_row",
+  "vendor",
+  "payables_aging_row",
   "trial_balance_line",
   "account_catalog_entry",
   "journal_entry",
@@ -215,6 +218,15 @@ export const FinanceCustomerRecordSchema = z.object({
   updatedAt: z.string().datetime({ offset: true }),
 });
 
+export const FinanceVendorRecordSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  vendorLabel: z.string().min(1),
+  externalVendorId: z.string().min(1).nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+});
+
 export const FinanceReceivablesAgingBucketKeySchema = z.enum([
   "current",
   "0_30",
@@ -244,6 +256,19 @@ export const FinanceReceivablesAgingBucketValueSchema = z.object({
   sourceColumn: z.string().min(1),
 });
 
+export const FinancePayablesAgingBucketKeySchema =
+  FinanceReceivablesAgingBucketKeySchema;
+
+export const FinancePayablesAgingBucketClassSchema =
+  FinanceReceivablesAgingBucketClassSchema;
+
+export const FinancePayablesAgingBucketValueSchema = z.object({
+  bucketKey: FinancePayablesAgingBucketKeySchema,
+  bucketClass: FinancePayablesAgingBucketClassSchema,
+  amount: FinanceAmountSchema,
+  sourceColumn: z.string().min(1),
+});
+
 export const FinanceReceivablesAgingRowRecordSchema = z.object({
   id: z.string().uuid(),
   companyId: z.string().uuid(),
@@ -255,6 +280,22 @@ export const FinanceReceivablesAgingRowRecordSchema = z.object({
   asOfDate: FinanceIsoDateSchema.nullable(),
   asOfDateSourceColumn: z.string().min(1).nullable(),
   bucketValues: z.array(FinanceReceivablesAgingBucketValueSchema).min(1),
+  observedAt: z.string().datetime({ offset: true }),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+});
+
+export const FinancePayablesAgingRowRecordSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  vendorId: z.string().uuid(),
+  syncRunId: z.string().uuid(),
+  lineNumber: z.number().int().positive(),
+  sourceLineNumbers: z.array(z.number().int().positive()).min(1),
+  currencyCode: z.string().min(1).nullable(),
+  asOfDate: FinanceIsoDateSchema.nullable(),
+  asOfDateSourceColumn: z.string().min(1).nullable(),
+  bucketValues: z.array(FinancePayablesAgingBucketValueSchema).min(1),
   observedAt: z.string().datetime({ offset: true }),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
@@ -307,6 +348,8 @@ const FinanceEmptyLineageTargetCounts = {
   bankAccountSummaryCount: 0,
   customerCount: 0,
   receivablesAgingRowCount: 0,
+  vendorCount: 0,
+  payablesAgingRowCount: 0,
   trialBalanceLineCount: 0,
   accountCatalogEntryCount: 0,
   journalEntryCount: 0,
@@ -321,6 +364,8 @@ export const FinanceLineageTargetCountsSchema = z.object({
   bankAccountSummaryCount: z.number().int().nonnegative().default(0),
   customerCount: z.number().int().nonnegative().default(0),
   receivablesAgingRowCount: z.number().int().nonnegative().default(0),
+  vendorCount: z.number().int().nonnegative().default(0),
+  payablesAgingRowCount: z.number().int().nonnegative().default(0),
   trialBalanceLineCount: z.number().int().nonnegative().default(0),
   accountCatalogEntryCount: z.number().int().nonnegative().default(0),
   journalEntryCount: z.number().int().nonnegative().default(0),
@@ -522,6 +567,31 @@ export const FinanceLatestSuccessfulReceivablesAgingSliceSchema = z.object({
   summary: FinanceReceivablesAgingSliceSummarySchema.nullable(),
 });
 
+export const FinancePayablesAgingSliceSummarySchema = z.object({
+  vendorCount: z.number().int().nonnegative(),
+  rowCount: z.number().int().nonnegative(),
+  datedRowCount: z.number().int().nonnegative(),
+  undatedRowCount: z.number().int().nonnegative(),
+  currencyCount: z.number().int().nonnegative(),
+  reportedBucketKeys: z.array(FinancePayablesAgingBucketKeySchema),
+});
+
+export const FinancePayablesAgingCoverageSchema = z.object({
+  vendorCount: z.number().int().nonnegative(),
+  rowCount: z.number().int().nonnegative(),
+  lineageCount: z.number().int().nonnegative(),
+  lineageTargetCounts: FinanceLineageTargetCountsSchema.optional().default(
+    FinanceEmptyLineageTargetCounts,
+  ),
+});
+
+export const FinanceLatestSuccessfulPayablesAgingSliceSchema = z.object({
+  latestSource: FinanceTwinSourceRefSchema.nullable(),
+  latestSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  coverage: FinancePayablesAgingCoverageSchema,
+  summary: FinancePayablesAgingSliceSummarySchema.nullable(),
+});
+
 export const FinanceLatestAttemptedSlicesSchema = z.object({
   trialBalance: FinanceLatestAttemptedSliceSchema,
   chartOfAccounts: FinanceLatestAttemptedSliceSchema,
@@ -614,6 +684,27 @@ export const FinanceReceivablesAgingViewSchema = z.object({
   freshness: FinanceFreshnessSummarySchema,
   customerCount: z.number().int().nonnegative(),
   rows: z.array(FinanceReceivablesAgingInventoryRowSchema),
+  diagnostics: z.array(z.string().min(1)).default([]),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinancePayablesAgingLineageRefSchema =
+  FinanceLineageLookupRefSchema;
+
+export const FinancePayablesAgingInventoryRowSchema = z.object({
+  vendor: FinanceVendorRecordSchema,
+  payablesAgingRow: FinancePayablesAgingRowRecordSchema,
+  reportedTotalAmount: FinanceAmountSchema.nullable(),
+  lineageRef: FinancePayablesAgingLineageRefSchema,
+});
+
+export const FinancePayablesAgingViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  latestSuccessfulSlice: FinanceLatestSuccessfulPayablesAgingSliceSchema,
+  freshness: FinanceFreshnessSummarySchema,
+  vendorCount: z.number().int().nonnegative(),
+  rows: z.array(FinancePayablesAgingInventoryRowSchema),
   diagnostics: z.array(z.string().min(1)).default([]),
   limitations: z.array(z.string().min(1)),
 });
@@ -1112,6 +1203,50 @@ export const FinanceCollectionsPostureViewSchema = z.object({
   limitations: z.array(z.string().min(1)),
 });
 
+export const FinancePayablesPostureExactBucketTotalSchema = z.object({
+  bucketKey: FinancePayablesAgingBucketKeySchema,
+  bucketClass: FinancePayablesAgingBucketClassSchema,
+  totalAmount: FinanceAmountSchema,
+});
+
+export const FinancePayablesPostureCurrencyBucketSchema = z.object({
+  currency: z.string().min(1).nullable(),
+  totalPayables: FinanceAmountSchema,
+  currentBucketTotal: FinanceAmountSchema,
+  pastDueBucketTotal: FinanceAmountSchema,
+  exactBucketTotals: z.array(FinancePayablesPostureExactBucketTotalSchema),
+  vendorCount: z.number().int().nonnegative(),
+  datedVendorCount: z.number().int().nonnegative(),
+  undatedVendorCount: z.number().int().nonnegative(),
+  mixedAsOfDates: z.boolean(),
+  earliestAsOfDate: FinanceIsoDateSchema.nullable(),
+  latestAsOfDate: FinanceIsoDateSchema.nullable(),
+});
+
+export const FinancePayablesPostureCoverageSummarySchema = z.object({
+  vendorCount: z.number().int().nonnegative(),
+  rowCount: z.number().int().nonnegative(),
+  currencyBucketCount: z.number().int().nonnegative(),
+  datedRowCount: z.number().int().nonnegative(),
+  undatedRowCount: z.number().int().nonnegative(),
+  rowsWithExplicitTotalCount: z.number().int().nonnegative(),
+  rowsWithCurrentBucketCount: z.number().int().nonnegative(),
+  rowsWithComputablePastDueCount: z.number().int().nonnegative(),
+  rowsWithPartialPastDueOnlyCount: z.number().int().nonnegative(),
+});
+
+export const FinancePayablesPostureViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  latestSuccessfulPayablesAgingSlice:
+    FinanceLatestSuccessfulPayablesAgingSliceSchema,
+  freshness: FinanceFreshnessSummarySchema,
+  currencyBuckets: z.array(FinancePayablesPostureCurrencyBucketSchema),
+  coverageSummary: FinancePayablesPostureCoverageSummarySchema,
+  diagnostics: z.array(z.string().min(1)).default([]),
+  limitations: z.array(z.string().min(1)),
+});
+
 export type FinanceCompanyKey = z.infer<typeof FinanceCompanyKeySchema>;
 export type FinanceIsoDate = z.infer<typeof FinanceIsoDateSchema>;
 export type FinanceAmount = z.infer<typeof FinanceAmountSchema>;
@@ -1160,6 +1295,7 @@ export type FinanceBankAccountSummaryRecord = z.infer<
   typeof FinanceBankAccountSummaryRecordSchema
 >;
 export type FinanceCustomerRecord = z.infer<typeof FinanceCustomerRecordSchema>;
+export type FinanceVendorRecord = z.infer<typeof FinanceVendorRecordSchema>;
 export type FinanceReceivablesAgingBucketKey = z.infer<
   typeof FinanceReceivablesAgingBucketKeySchema
 >;
@@ -1169,8 +1305,20 @@ export type FinanceReceivablesAgingBucketClass = z.infer<
 export type FinanceReceivablesAgingBucketValue = z.infer<
   typeof FinanceReceivablesAgingBucketValueSchema
 >;
+export type FinancePayablesAgingBucketKey = z.infer<
+  typeof FinancePayablesAgingBucketKeySchema
+>;
+export type FinancePayablesAgingBucketClass = z.infer<
+  typeof FinancePayablesAgingBucketClassSchema
+>;
+export type FinancePayablesAgingBucketValue = z.infer<
+  typeof FinancePayablesAgingBucketValueSchema
+>;
 export type FinanceReceivablesAgingRowRecord = z.infer<
   typeof FinanceReceivablesAgingRowRecordSchema
+>;
+export type FinancePayablesAgingRowRecord = z.infer<
+  typeof FinancePayablesAgingRowRecordSchema
 >;
 export type FinanceTwinSyncRunRecord = z.infer<
   typeof FinanceTwinSyncRunRecordSchema
@@ -1251,6 +1399,15 @@ export type FinanceReceivablesAgingCoverage = z.infer<
 export type FinanceLatestSuccessfulReceivablesAgingSlice = z.infer<
   typeof FinanceLatestSuccessfulReceivablesAgingSliceSchema
 >;
+export type FinancePayablesAgingSliceSummary = z.infer<
+  typeof FinancePayablesAgingSliceSummarySchema
+>;
+export type FinancePayablesAgingCoverage = z.infer<
+  typeof FinancePayablesAgingCoverageSchema
+>;
+export type FinanceLatestSuccessfulPayablesAgingSlice = z.infer<
+  typeof FinanceLatestSuccessfulPayablesAgingSliceSchema
+>;
 export type FinanceLatestAttemptedSlices = z.infer<
   typeof FinanceLatestAttemptedSlicesSchema
 >;
@@ -1287,6 +1444,15 @@ export type FinanceReceivablesAgingInventoryRow = z.infer<
 >;
 export type FinanceReceivablesAgingView = z.infer<
   typeof FinanceReceivablesAgingViewSchema
+>;
+export type FinancePayablesAgingLineageRef = z.infer<
+  typeof FinancePayablesAgingLineageRefSchema
+>;
+export type FinancePayablesAgingInventoryRow = z.infer<
+  typeof FinancePayablesAgingInventoryRowSchema
+>;
+export type FinancePayablesAgingView = z.infer<
+  typeof FinancePayablesAgingViewSchema
 >;
 export type FinanceJournalLineView = z.infer<
   typeof FinanceJournalLineViewSchema
@@ -1423,4 +1589,16 @@ export type FinanceCollectionsPostureCoverageSummary = z.infer<
 >;
 export type FinanceCollectionsPostureView = z.infer<
   typeof FinanceCollectionsPostureViewSchema
+>;
+export type FinancePayablesPostureExactBucketTotal = z.infer<
+  typeof FinancePayablesPostureExactBucketTotalSchema
+>;
+export type FinancePayablesPostureCurrencyBucket = z.infer<
+  typeof FinancePayablesPostureCurrencyBucketSchema
+>;
+export type FinancePayablesPostureCoverageSummary = z.infer<
+  typeof FinancePayablesPostureCoverageSummarySchema
+>;
+export type FinancePayablesPostureView = z.infer<
+  typeof FinancePayablesPostureViewSchema
 >;

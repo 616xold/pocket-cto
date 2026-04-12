@@ -87,4 +87,21 @@ describe("finance twin extractor dispatch", () => {
 
     expect(extracted?.extractorKey).toBe("receivables_aging_csv");
   });
+
+  it("detects payables-aging CSV before generic vendor balance fields can be mistaken for bank, trial balance, or chart data", () => {
+    const extracted = extractFinanceTwinSource({
+      body: Buffer.from(
+        [
+          "account_name,currency,report_date,current,31_60,past_due,total",
+          "Paper Supply Co,USD,2026-04-30,100.00,20.00,20.00,120.00",
+        ].join("\n"),
+      ),
+      sourceFile: {
+        mediaType: "text/csv",
+        originalFileName: "accounts-payable-aging.csv",
+      },
+    });
+
+    expect(extracted?.extractorKey).toBe("payables_aging_csv");
+  });
 });

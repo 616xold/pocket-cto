@@ -68,6 +68,8 @@ export type FinanceTwinServicePort = Pick<
   | "getCompanySnapshot"
   | "getCompanySummary"
   | "getGeneralLedger"
+  | "getPayablesAging"
+  | "getPayablesPosture"
   | "getReceivablesAging"
   | "getLineageDrill"
   | "getReconciliationReadiness"

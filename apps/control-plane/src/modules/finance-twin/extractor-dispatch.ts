@@ -18,6 +18,12 @@ import {
   type GeneralLedgerExtractionResult,
 } from "./general-ledger-csv";
 import {
+  extractPayablesAgingCsv,
+  looksLikePayablesAgingCsv,
+  supportsPayablesAgingCsvSource,
+  type PayablesAgingExtractionResult,
+} from "./payables-aging-csv";
+import {
   extractReceivablesAgingCsv,
   looksLikeReceivablesAgingCsv,
   supportsReceivablesAgingCsvSource,
@@ -44,6 +50,10 @@ export type FinanceTwinExtraction =
       receivablesAging: ReceivablesAgingExtractionResult;
     }
   | {
+      extractorKey: "payables_aging_csv";
+      payablesAging: PayablesAgingExtractionResult;
+    }
+  | {
       extractorKey: "general_ledger_csv";
       generalLedger: GeneralLedgerExtractionResult;
     }
@@ -60,7 +70,8 @@ export function supportsFinanceTwinSourceFile(
     supportsGeneralLedgerCsvSource(sourceFile) ||
     supportsChartOfAccountsCsvSource(sourceFile) ||
     supportsBankAccountSummaryCsvSource(sourceFile) ||
-    supportsReceivablesAgingCsvSource(sourceFile)
+    supportsReceivablesAgingCsvSource(sourceFile) ||
+    supportsPayablesAgingCsvSource(sourceFile)
   );
 }
 
@@ -79,6 +90,13 @@ export function extractFinanceTwinSource(input: {
     return {
       extractorKey: "bank_account_summary_csv",
       bankAccountSummary: extractBankAccountSummaryCsv(input),
+    };
+  }
+
+  if (looksLikePayablesAgingCsv(input)) {
+    return {
+      extractorKey: "payables_aging_csv",
+      payablesAging: extractPayablesAgingCsv(input),
     };
   }
 

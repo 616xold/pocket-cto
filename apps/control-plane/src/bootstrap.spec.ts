@@ -281,6 +281,14 @@ function createAppContainer(
           "getCollectionsPosture should not be called in this test",
         );
       },
+      async getPayablesAging() {
+        throw new Error("getPayablesAging should not be called in this test");
+      },
+      async getPayablesPosture() {
+        throw new Error(
+          "getPayablesPosture should not be called in this test",
+        );
+      },
       async getCompanySnapshot() {
         throw new Error("getCompanySnapshot should not be called in this test");
       },

@@ -1,6 +1,6 @@
 import type {
-  FinanceReceivablesAgingBucketKey,
-  FinanceReceivablesAgingBucketValue,
+  FinancePayablesAgingBucketKey,
+  FinancePayablesAgingBucketValue,
   SourceFileRecord,
 } from "@pocket-cto/domain";
 import {
@@ -12,65 +12,71 @@ import {
 } from "./csv-utils";
 import { FinanceTwinExtractionError } from "./errors";
 import {
-  getReceivablesAgingBucketDefinition,
-  RECEIVABLES_AGING_BUCKET_ORDER,
-  sortReceivablesAgingBucketValues,
-} from "./receivables-aging-buckets";
+  getPayablesAgingBucketDefinition,
+  PAYABLES_AGING_BUCKET_ORDER,
+  sortPayablesAgingBucketValues,
+} from "./payables-aging-buckets";
 
-const CUSTOMER_SPECIFIC_LABEL_HEADERS = ["customer", "customer_name"];
+const VENDOR_SPECIFIC_LABEL_HEADERS = [
+  "vendor",
+  "vendor_name",
+  "supplier",
+  "supplier_name",
+];
 const SHARED_LABEL_HEADERS = ["account_name", "account"];
-const CUSTOMER_LABEL_HEADERS = [
-  ...CUSTOMER_SPECIFIC_LABEL_HEADERS,
+const VENDOR_LABEL_HEADERS = [
+  ...VENDOR_SPECIFIC_LABEL_HEADERS,
   ...SHARED_LABEL_HEADERS,
 ];
-const CUSTOMER_ID_HEADERS = ["customer_id"];
+const VENDOR_ID_HEADERS = ["vendor_id"];
 const DATE_HEADERS = ["as_of", "aging_date", "report_date", "snapshot_date"];
 const CURRENCY_HEADERS = ["currency", "currency_code"];
-const RECEIVABLES_FILENAME_HINTS = [
-  "accounts receivable",
-  "accounts-receivable",
-  "accounts_receivable",
-  "ar aging",
-  "ar-aging",
-  "ar_aging",
-  "customer",
-  "receivable",
+const PAYABLES_FILENAME_HINTS = [
+  "accounts payable",
+  "accounts-payable",
+  "accounts_payable",
+  "ap aging",
+  "ap-aging",
+  "ap_aging",
+  "payable",
+  "vendor",
+  "supplier",
 ];
 
-type ExtractedCustomer = {
-  customerLabel: string;
-  externalCustomerId: string | null;
+type ExtractedVendor = {
+  externalVendorId: string | null;
   identityKey: string;
+  vendorLabel: string;
 };
 
-export type ExtractedReceivablesAgingRow = {
+export type ExtractedPayablesAgingRow = {
   asOfDate: string | null;
   asOfDateSourceColumn: string | null;
-  bucketValues: FinanceReceivablesAgingBucketValue[];
+  bucketValues: FinancePayablesAgingBucketValue[];
   currencyCode: string | null;
-  customerIdentityKey: string;
   lineNumber: number;
   rowScopeKey: string;
   sourceLineNumbers: number[];
+  vendorIdentityKey: string;
 };
 
-export type ReceivablesAgingExtractionResult = {
-  customers: ExtractedCustomer[];
-  reportedBucketKeys: FinanceReceivablesAgingBucketKey[];
-  rows: ExtractedReceivablesAgingRow[];
+export type PayablesAgingExtractionResult = {
+  reportedBucketKeys: FinancePayablesAgingBucketKey[];
+  rows: ExtractedPayablesAgingRow[];
+  vendors: ExtractedVendor[];
 };
 
-export function supportsReceivablesAgingCsvSource(
+export function supportsPayablesAgingCsvSource(
   sourceFile: Pick<SourceFileRecord, "mediaType" | "originalFileName">,
 ) {
   return supportsCsvLikeSource(sourceFile);
 }
 
-export function looksLikeReceivablesAgingCsv(input: {
+export function looksLikePayablesAgingCsv(input: {
   body: Buffer;
   sourceFile: Pick<SourceFileRecord, "mediaType" | "originalFileName">;
 }) {
-  if (!supportsReceivablesAgingCsvSource(input.sourceFile)) {
+  if (!supportsPayablesAgingCsvSource(input.sourceFile)) {
     return false;
   }
 
@@ -81,32 +87,31 @@ export function looksLikeReceivablesAgingCsv(input: {
   }
 
   const headerLookup = buildHeaderLookup(header);
-  const hasCustomerSpecificIdentity =
-    getOptionalHeaderIndex(headerLookup, CUSTOMER_SPECIFIC_LABEL_HEADERS) !== null ||
-    getOptionalHeaderIndex(headerLookup, CUSTOMER_ID_HEADERS) !== null;
+  const hasVendorSpecificIdentity =
+    getOptionalHeaderIndex(headerLookup, VENDOR_SPECIFIC_LABEL_HEADERS) !== null ||
+    getOptionalHeaderIndex(headerLookup, VENDOR_ID_HEADERS) !== null;
   const hasSharedIdentity =
     getOptionalHeaderIndex(headerLookup, SHARED_LABEL_HEADERS) !== null;
-  const hasBucket =
-    RECEIVABLES_AGING_BUCKET_ORDER.some(
-      (bucketKey) => getOptionalHeaderIndex(headerLookup, [bucketKey]) !== null,
-    );
+  const hasBucket = PAYABLES_AGING_BUCKET_ORDER.some(
+    (bucketKey) => getOptionalHeaderIndex(headerLookup, [bucketKey]) !== null,
+  );
 
   return (
     hasBucket &&
-    (hasCustomerSpecificIdentity ||
+    (hasVendorSpecificIdentity ||
       (hasSharedIdentity &&
-        fileNameSuggestsReceivables(input.sourceFile.originalFileName)))
+        fileNameSuggestsPayables(input.sourceFile.originalFileName)))
   );
 }
 
-export function extractReceivablesAgingCsv(input: {
+export function extractPayablesAgingCsv(input: {
   body: Buffer;
   sourceFile: Pick<SourceFileRecord, "mediaType" | "originalFileName">;
-}): ReceivablesAgingExtractionResult {
-  if (!supportsReceivablesAgingCsvSource(input.sourceFile)) {
+}): PayablesAgingExtractionResult {
+  if (!supportsPayablesAgingCsvSource(input.sourceFile)) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_not_csv",
-      "The receivables-aging extractor only supports CSV-like source files in F2L.",
+      "payables_aging_not_csv",
+      "The payables-aging extractor only supports CSV-like source files in F2M.",
     );
   }
 
@@ -115,42 +120,42 @@ export function extractReceivablesAgingCsv(input: {
 
   if (!header) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_empty_csv",
-      "Receivables-aging CSV did not include a header row.",
+      "payables_aging_empty_csv",
+      "Payables-aging CSV did not include a header row.",
     );
   }
 
   const headerLookup = buildHeaderLookup(header);
-  const labelColumns = collectColumns(headerLookup, CUSTOMER_LABEL_HEADERS);
-  const customerIdIndex = getOptionalHeaderIndex(headerLookup, CUSTOMER_ID_HEADERS);
+  const labelColumns = collectColumns(headerLookup, VENDOR_LABEL_HEADERS);
+  const vendorIdIndex = getOptionalHeaderIndex(headerLookup, VENDOR_ID_HEADERS);
   const dateColumns = collectColumns(headerLookup, DATE_HEADERS);
   const currencyColumns = collectColumns(headerLookup, CURRENCY_HEADERS);
-  const bucketColumns = RECEIVABLES_AGING_BUCKET_ORDER.flatMap((bucketKey) => {
+  const bucketColumns = PAYABLES_AGING_BUCKET_ORDER.flatMap((bucketKey) => {
     const index = getOptionalHeaderIndex(headerLookup, [bucketKey]);
     return index === null ? [] : [{ bucketKey, index }];
   });
 
-  if (labelColumns.length === 0 && customerIdIndex === null) {
+  if (labelColumns.length === 0 && vendorIdIndex === null) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_missing_customer",
-      "Receivables-aging CSV must include at least one customer identity column.",
+      "payables_aging_missing_vendor",
+      "Payables-aging CSV must include at least one vendor identity column.",
     );
   }
 
   if (bucketColumns.length === 0) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_missing_bucket",
-      "Receivables-aging CSV must include at least one recognized aging bucket column.",
+      "payables_aging_missing_bucket",
+      "Payables-aging CSV must include at least one recognized aging bucket column.",
     );
   }
 
-  const customersByIdentity = new Map<string, ExtractedCustomer>();
+  const vendorsByIdentity = new Map<string, ExtractedVendor>();
   const rowsByScope = new Map<
     string,
-    ExtractedReceivablesAgingRow & {
+    ExtractedPayablesAgingRow & {
       bucketValuesByKey: Map<
-        FinanceReceivablesAgingBucketKey,
-        FinanceReceivablesAgingBucketValue
+        FinancePayablesAgingBucketKey,
+        FinancePayablesAgingBucketValue
       >;
     }
   >();
@@ -163,11 +168,11 @@ export function extractReceivablesAgingCsv(input: {
       continue;
     }
 
-    const customer = readCustomer({
-      customerId: indexCell(row, customerIdIndex),
+    const vendor = readVendor({
       labelColumns,
       lineNumber,
       row,
+      vendorId: indexCell(row, vendorIdIndex),
     });
     const bucketValues = readBucketValues({
       bucketColumns,
@@ -177,16 +182,16 @@ export function extractReceivablesAgingCsv(input: {
 
     if (bucketValues.length === 0) {
       throw new FinanceTwinExtractionError(
-        "receivables_aging_missing_amount",
-        `Receivables-aging CSV row ${lineNumber} must include at least one recognized aging bucket amount.`,
+        "payables_aging_missing_amount",
+        `Payables-aging CSV row ${lineNumber} must include at least one recognized aging bucket amount.`,
       );
     }
 
-    customersByIdentity.set(
-      customer.identityKey,
-      mergeCustomer({
-        existing: customersByIdentity.get(customer.identityKey) ?? null,
-        incoming: customer,
+    vendorsByIdentity.set(
+      vendor.identityKey,
+      mergeVendor({
+        existing: vendorsByIdentity.get(vendor.identityKey) ?? null,
+        incoming: vendor,
         lineNumber,
       }),
     );
@@ -202,7 +207,7 @@ export function extractReceivablesAgingCsv(input: {
       row,
     });
     const rowScopeKey = `${currency.value ?? "__unknown__"}::${asOf.value ?? "__unknown__"}`;
-    const scopeKey = `${customer.identityKey}::${rowScopeKey}`;
+    const scopeKey = `${vendor.identityKey}::${rowScopeKey}`;
     const existing = rowsByScope.get(scopeKey);
 
     if (!existing) {
@@ -214,15 +219,15 @@ export function extractReceivablesAgingCsv(input: {
           bucketValues.map((bucketValue) => [bucketValue.bucketKey, bucketValue]),
         ),
         currencyCode: currency.value,
-        customerIdentityKey: customer.identityKey,
         lineNumber,
         rowScopeKey,
         sourceLineNumbers: [lineNumber],
+        vendorIdentityKey: vendor.identityKey,
       });
       continue;
     }
 
-    mergeReceivablesAgingRow({
+    mergePayablesAgingRow({
       existing,
       incoming: bucketValues,
       lineNumber,
@@ -231,18 +236,16 @@ export function extractReceivablesAgingCsv(input: {
 
   if (rowsByScope.size === 0) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_no_rows",
-      "Receivables-aging CSV did not include any usable non-empty customer aging rows.",
+      "payables_aging_no_rows",
+      "Payables-aging CSV did not include any usable non-empty vendor aging rows.",
     );
   }
 
   return {
-    customers: Array.from(customersByIdentity.values()).sort((left, right) => {
+    vendors: Array.from(vendorsByIdentity.values()).sort((left, right) => {
       return (
-        left.customerLabel.localeCompare(right.customerLabel) ||
-        (left.externalCustomerId ?? "").localeCompare(
-          right.externalCustomerId ?? "",
-        ) ||
+        left.vendorLabel.localeCompare(right.vendorLabel) ||
+        (left.externalVendorId ?? "").localeCompare(right.externalVendorId ?? "") ||
         left.identityKey.localeCompare(right.identityKey)
       );
     }),
@@ -250,15 +253,15 @@ export function extractReceivablesAgingCsv(input: {
     rows: Array.from(rowsByScope.values())
       .map(({ bucketValuesByKey: _bucketValuesByKey, ...row }) => ({
         ...row,
-        bucketValues: sortReceivablesAgingBucketValues(row.bucketValues),
-        sourceLineNumbers: row.sourceLineNumbers.slice().sort((left, right) => {
-          return left - right;
-        }),
+        bucketValues: sortPayablesAgingBucketValues(row.bucketValues),
+        sourceLineNumbers: row.sourceLineNumbers
+          .slice()
+          .sort((left, right) => left - right),
       }))
       .sort((left, right) => {
         return (
           left.lineNumber - right.lineNumber ||
-          left.customerIdentityKey.localeCompare(right.customerIdentityKey)
+          left.vendorIdentityKey.localeCompare(right.vendorIdentityKey)
         );
       }),
   };
@@ -274,8 +277,8 @@ function readCsvRows(body: Buffer) {
   } catch (error) {
     if (error instanceof Error) {
       throw new FinanceTwinExtractionError(
-        "receivables_aging_unterminated_quote",
-        "Receivables-aging CSV ended while a quoted field was still open.",
+        "payables_aging_unterminated_quote",
+        "Payables-aging CSV ended while a quoted field was still open.",
       );
     }
 
@@ -294,12 +297,12 @@ function indexCell(row: string[], index: number | null) {
   return index === null ? undefined : row[index];
 }
 
-function readCustomer(input: {
-  customerId: string | undefined;
+function readVendor(input: {
   labelColumns: { header: string; index: number }[];
   lineNumber: number;
   row: string[];
-}): ExtractedCustomer {
+  vendorId: string | undefined;
+}): ExtractedVendor {
   const labelEntries = input.labelColumns.flatMap((column) => {
     const value = readOptionalCell(input.row[column.index]);
     return value === null ? [] : [{ header: column.header, value }];
@@ -307,39 +310,39 @@ function readCustomer(input: {
   const distinctLabels = Array.from(
     new Map(labelEntries.map((entry) => [normalizeIdentityValue(entry.value), entry])),
   ).map(([, entry]) => entry);
-  const externalCustomerId = readOptionalCell(input.customerId);
+  const externalVendorId = readOptionalCell(input.vendorId);
 
   if (distinctLabels.length > 1) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_customer_conflict",
-      `Receivables-aging CSV row ${input.lineNumber} includes conflicting customer label columns.`,
+      "payables_aging_vendor_conflict",
+      `Payables-aging CSV row ${input.lineNumber} includes conflicting vendor label columns.`,
     );
   }
 
-  const customerLabel = distinctLabels[0]?.value ?? externalCustomerId;
+  const vendorLabel = distinctLabels[0]?.value ?? externalVendorId;
 
-  if (!customerLabel) {
+  if (!vendorLabel) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_missing_customer",
-      `Receivables-aging CSV row ${input.lineNumber} is missing customer identity.`,
+      "payables_aging_missing_vendor",
+      `Payables-aging CSV row ${input.lineNumber} is missing vendor identity.`,
     );
   }
 
   return {
-    customerLabel,
-    externalCustomerId,
-    identityKey: externalCustomerId
-      ? `customer_id:${normalizeIdentityValue(externalCustomerId)}`
-      : `customer_label:${normalizeIdentityValue(customerLabel)}`,
+    externalVendorId,
+    identityKey: externalVendorId
+      ? `vendor_id:${normalizeIdentityValue(externalVendorId)}`
+      : `vendor_label:${normalizeIdentityValue(vendorLabel)}`,
+    vendorLabel,
   };
 }
 
 function readBucketValues(input: {
-  bucketColumns: { bucketKey: FinanceReceivablesAgingBucketKey; index: number }[];
+  bucketColumns: { bucketKey: FinancePayablesAgingBucketKey; index: number }[];
   lineNumber: number;
   row: string[];
 }) {
-  const bucketValues: FinanceReceivablesAgingBucketValue[] = [];
+  const bucketValues: FinancePayablesAgingBucketValue[] = [];
 
   for (const column of input.bucketColumns) {
     const rawValue = readOptionalCell(input.row[column.index]);
@@ -350,14 +353,16 @@ function readBucketValues(input: {
 
     bucketValues.push({
       bucketKey: column.bucketKey,
-      bucketClass: getReceivablesAgingBucketDefinition(column.bucketKey)
+      bucketClass: getPayablesAgingBucketDefinition(column.bucketKey)
         .bucketClass,
-      amount: formatMoney(parseMoney(rawValue, column.bucketKey, input.lineNumber)),
+      amount: formatMoney(
+        parseMoney(rawValue, column.bucketKey, input.lineNumber),
+      ),
       sourceColumn: column.bucketKey,
     });
   }
 
-  return sortReceivablesAgingBucketValues(bucketValues);
+  return sortPayablesAgingBucketValues(bucketValues);
 }
 
 function readOptionalDate(input: {
@@ -367,11 +372,11 @@ function readOptionalDate(input: {
 }) {
   return readConsistentOptionalValue({
     columns: input.columns,
+    conflictCode: "payables_aging_date_conflict",
+    conflictLabel: "date",
     lineNumber: input.lineNumber,
     parse: (value, header, lineNumber) => parseIsoDate(value, header, lineNumber),
     row: input.row,
-    conflictCode: "receivables_aging_date_conflict",
-    conflictLabel: "date",
   });
 }
 
@@ -382,11 +387,11 @@ function readOptionalCurrency(input: {
 }) {
   return readConsistentOptionalValue({
     columns: input.columns,
+    conflictCode: "payables_aging_currency_conflict",
+    conflictLabel: "currency",
     lineNumber: input.lineNumber,
     parse: (value) => normalizeCurrency(value),
     row: input.row,
-    conflictCode: "receivables_aging_currency_conflict",
-    conflictLabel: "currency",
   });
 }
 
@@ -402,7 +407,12 @@ function readConsistentOptionalValue<T>(input: {
     const value = readOptionalCell(input.row[column.index]);
     return value === null
       ? []
-      : [{ parsed: input.parse(value, column.header, input.lineNumber), sourceColumn: column.header }];
+      : [
+          {
+            parsed: input.parse(value, column.header, input.lineNumber),
+            sourceColumn: column.header,
+          },
+        ];
   });
   const distinctValues = Array.from(
     new Map(values.map((entry) => [String(entry.parsed), entry])),
@@ -411,7 +421,7 @@ function readConsistentOptionalValue<T>(input: {
   if (distinctValues.length > 1) {
     throw new FinanceTwinExtractionError(
       input.conflictCode,
-      `Receivables-aging CSV row ${input.lineNumber} includes conflicting ${input.conflictLabel} columns.`,
+      `Payables-aging CSV row ${input.lineNumber} includes conflicting ${input.conflictLabel} columns.`,
     );
   }
 
@@ -421,9 +431,9 @@ function readConsistentOptionalValue<T>(input: {
   };
 }
 
-function mergeCustomer(input: {
-  existing: ExtractedCustomer | null;
-  incoming: ExtractedCustomer;
+function mergeVendor(input: {
+  existing: ExtractedVendor | null;
+  incoming: ExtractedVendor;
   lineNumber: number;
 }) {
   if (!input.existing) {
@@ -431,26 +441,26 @@ function mergeCustomer(input: {
   }
 
   if (
-    input.existing.customerLabel !== input.incoming.customerLabel ||
-    input.existing.externalCustomerId !== input.incoming.externalCustomerId
+    input.existing.vendorLabel !== input.incoming.vendorLabel ||
+    input.existing.externalVendorId !== input.incoming.externalVendorId
   ) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_customer_conflict",
-      `Receivables-aging CSV row ${input.lineNumber} conflicts with the earlier customer identity for the same customer key.`,
+      "payables_aging_vendor_conflict",
+      `Payables-aging CSV row ${input.lineNumber} conflicts with the earlier vendor identity for the same vendor key.`,
     );
   }
 
   return input.existing;
 }
 
-function mergeReceivablesAgingRow(input: {
-  existing: ExtractedReceivablesAgingRow & {
+function mergePayablesAgingRow(input: {
+  existing: ExtractedPayablesAgingRow & {
     bucketValuesByKey: Map<
-      FinanceReceivablesAgingBucketKey,
-      FinanceReceivablesAgingBucketValue
+      FinancePayablesAgingBucketKey,
+      FinancePayablesAgingBucketValue
     >;
   };
-  incoming: FinanceReceivablesAgingBucketValue[];
+  incoming: FinancePayablesAgingBucketValue[];
   lineNumber: number;
 }) {
   for (const bucketValue of input.incoming) {
@@ -458,7 +468,7 @@ function mergeReceivablesAgingRow(input: {
 
     if (!existingValue) {
       input.existing.bucketValuesByKey.set(bucketValue.bucketKey, bucketValue);
-      input.existing.bucketValues = sortReceivablesAgingBucketValues([
+      input.existing.bucketValues = sortPayablesAgingBucketValues([
         ...input.existing.bucketValuesByKey.values(),
       ]);
       continue;
@@ -469,8 +479,8 @@ function mergeReceivablesAgingRow(input: {
       existingValue.sourceColumn !== bucketValue.sourceColumn
     ) {
       throw new FinanceTwinExtractionError(
-        "receivables_aging_row_conflict",
-        `Receivables-aging CSV row ${input.lineNumber} conflicts with another row for the same customer, currency, as-of date, and bucket.`,
+        "payables_aging_row_conflict",
+        `Payables-aging CSV row ${input.lineNumber} conflicts with another row for the same vendor, currency, as-of date, and bucket.`,
       );
     }
   }
@@ -492,8 +502,8 @@ function normalizeIdentityValue(value: string) {
 function parseIsoDate(value: string, label: string, lineNumber: number) {
   if (!/^\d{4}-\d{2}-\d{2}$/u.test(value)) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_invalid_date",
-      `Receivables-aging CSV row ${lineNumber} has an invalid ${label}: ${value}.`,
+      "payables_aging_invalid_date",
+      `Payables-aging CSV row ${lineNumber} has an invalid ${label}: ${value}.`,
     );
   }
 
@@ -504,8 +514,8 @@ function parseIsoDate(value: string, label: string, lineNumber: number) {
     parsed.toISOString().slice(0, 10) !== value
   ) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_invalid_date",
-      `Receivables-aging CSV row ${lineNumber} has an invalid ${label}: ${value}.`,
+      "payables_aging_invalid_date",
+      `Payables-aging CSV row ${lineNumber} has an invalid ${label}: ${value}.`,
     );
   }
 
@@ -521,8 +531,8 @@ function parseMoney(value: string, label: string, lineNumber: number) {
 
   if (!/^-?\d+(?:\.\d{1,2})?$/u.test(normalized)) {
     throw new FinanceTwinExtractionError(
-      "receivables_aging_invalid_amount",
-      `Receivables-aging CSV row ${lineNumber} has an invalid ${label} amount: ${value}.`,
+      "payables_aging_invalid_amount",
+      `Payables-aging CSV row ${lineNumber} has an invalid ${label} amount: ${value}.`,
     );
   }
 
@@ -542,7 +552,7 @@ function formatMoney(cents: bigint) {
   return `${cents < 0n ? "-" : ""}${whole.toString()}.${fraction}`;
 }
 
-function fileNameSuggestsReceivables(fileName: string) {
+function fileNameSuggestsPayables(fileName: string) {
   const normalized = fileName.trim().toLowerCase().replace(/[^a-z0-9]+/gu, " ");
-  return RECEIVABLES_FILENAME_HINTS.some((hint) => normalized.includes(hint));
+  return PAYABLES_FILENAME_HINTS.some((hint) => normalized.includes(hint));
 }

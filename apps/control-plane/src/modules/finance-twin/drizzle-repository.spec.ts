@@ -545,6 +545,153 @@ describe("DrizzleFinanceTwinRepository", () => {
     });
   });
 
+  it("persists payables-aging vendors and rows with joined latest-snapshot reads", async () => {
+    const source = await sourceRepository.createSource({
+      kind: "dataset",
+      originKind: "manual",
+      name: "Payables aging export",
+      description: "Payables posture",
+      createdBy: "finance-operator",
+    });
+    const snapshot = await sourceRepository.createSnapshot({
+      sourceId: source.id,
+      version: 1,
+      originalFileName: "payables-aging.csv",
+      mediaType: "text/csv",
+      sizeBytes: 512,
+      checksumSha256:
+        "edededededededededededededededededededededededededededededededed",
+      storageKind: "object_store",
+      storageRef: "s3://bucket/sources/payables-aging.csv",
+      capturedAt: "2026-04-12T00:00:00.000Z",
+      ingestStatus: "ready",
+    });
+    const sourceFile = await sourceRepository.createSourceFile({
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      originalFileName: "payables-aging.csv",
+      mediaType: "text/csv",
+      sizeBytes: 512,
+      checksumSha256:
+        "edededededededededededededededededededededededededededededededed",
+      storageKind: "object_store",
+      storageRef: "s3://bucket/sources/payables-aging.csv",
+      createdBy: "finance-operator",
+      capturedAt: "2026-04-12T00:00:00.000Z",
+    });
+    const company = await repository.upsertCompany({
+      companyKey: "acme",
+      displayName: "Acme Holdings",
+    });
+    const vendor = await repository.upsertVendor({
+      companyId: company.id,
+      identityKey: "vendor_id:v-100",
+      vendorLabel: "Paper Supply Co",
+      externalVendorId: "V-100",
+    });
+    const syncRun = await repository.startSyncRun({
+      companyId: company.id,
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      sourceFileId: sourceFile.id,
+      extractorKey: "payables_aging_csv",
+      startedAt: "2026-04-12T00:10:00.000Z",
+    });
+    const row = await repository.upsertPayablesAgingRow({
+      companyId: company.id,
+      vendorId: vendor.id,
+      syncRunId: syncRun.id,
+      rowScopeKey: "USD::2026-04-30",
+      lineNumber: 2,
+      sourceLineNumbers: [2, 3],
+      currencyCode: "USD",
+      asOfDate: "2026-04-30",
+      asOfDateSourceColumn: "as_of",
+      bucketValues: [
+        {
+          bucketKey: "current",
+          bucketClass: "current",
+          amount: "100.00",
+          sourceColumn: "current",
+        },
+        {
+          bucketKey: "past_due",
+          bucketClass: "past_due_total",
+          amount: "20.00",
+          sourceColumn: "past_due",
+        },
+        {
+          bucketKey: "total",
+          bucketClass: "total",
+          amount: "120.00",
+          sourceColumn: "total",
+        },
+      ],
+      observedAt: "2026-04-12T00:10:01.000Z",
+    });
+    await repository.createLineage({
+      companyId: company.id,
+      syncRunId: syncRun.id,
+      targetKind: "vendor",
+      targetId: vendor.id,
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      sourceFileId: sourceFile.id,
+      recordedAt: "2026-04-12T00:10:01.000Z",
+    });
+    await repository.createLineage({
+      companyId: company.id,
+      syncRunId: syncRun.id,
+      targetKind: "payables_aging_row",
+      targetId: row.id,
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      sourceFileId: sourceFile.id,
+      recordedAt: "2026-04-12T00:10:01.000Z",
+    });
+    const finalized = await repository.finishSyncRun({
+      syncRunId: syncRun.id,
+      reportingPeriodId: null,
+      status: "succeeded",
+      completedAt: "2026-04-12T00:10:03.000Z",
+      stats: {
+        payablesAgingVendorCount: 1,
+        payablesAgingRowCount: 1,
+        reportedBucketKeys: ["current", "past_due", "total"],
+      },
+      errorSummary: null,
+    });
+
+    expect(
+      await repository.listPayablesAgingRowViewsBySyncRunId(syncRun.id),
+    ).toMatchObject([
+      {
+        vendor: {
+          id: vendor.id,
+          vendorLabel: "Paper Supply Co",
+          externalVendorId: "V-100",
+        },
+        payablesAgingRow: {
+          id: row.id,
+          currencyCode: "USD",
+          asOfDate: "2026-04-30",
+          sourceLineNumbers: [2, 3],
+        },
+      },
+    ]);
+    expect(await repository.countLineageBySyncRunId(syncRun.id)).toBe(2);
+    expect(
+      await repository.getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "payables_aging_csv",
+      ),
+    ).toMatchObject({
+      id: finalized.id,
+      extractorKey: "payables_aging_csv",
+      status: "succeeded",
+    });
+  });
+
   it("persists general-ledger journal entries and lines with joined latest-snapshot reads", async () => {
     const source = await sourceRepository.createSource({
       kind: "dataset",
