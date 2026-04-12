@@ -695,6 +695,214 @@ describe("FinanceTwinService", () => {
     );
   });
 
+  it("syncs one uploaded receivables-aging CSV into persisted receivables and truthful collections-posture reads", async () => {
+    const now = () => new Date("2026-04-12T12:00:00.000Z");
+    const sourceRepository = new InMemorySourceRepository();
+    const sourceStorage = new InMemorySourceFileStorage();
+    const sourceService = new SourceRegistryService(
+      sourceRepository,
+      sourceStorage,
+      now,
+    );
+    const financeRepository = new InMemoryFinanceTwinRepository();
+    const financeTwinService = new FinanceTwinService({
+      financeTwinRepository: financeRepository,
+      sourceFileStorage: sourceStorage,
+      sourceRepository,
+      now,
+    });
+    const created = await sourceService.createSource({
+      kind: "dataset",
+      name: "Receivables aging",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "receivables-aging-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        storageKind: "external_url",
+        storageRef: "https://example.com/receivables-aging",
+        ingestStatus: "registered",
+      },
+    });
+    const registered = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "receivables-aging.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "customer_name,customer_id,currency,as_of,current,31_60,past_due,total",
+          "Alpha Co,C-100,USD,2026-04-30,100.00,20.00,20.00,120.00",
+          "Alpha Co,C-100,USD,2026-04-30,100.00,20.00,20.00,120.00",
+          "Beta Co,C-200,USD,,,,80.00,80.00",
+          "Gamma Co,C-300,EUR,2026-04-29,50.00,,,50.00",
+        ].join("\n"),
+      ),
+    );
+
+    const synced = await financeTwinService.syncCompanySourceFile(
+      "acme",
+      registered.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
+    const receivablesAging =
+      await financeTwinService.getReceivablesAging("acme");
+    const collectionsPosture =
+      await financeTwinService.getCollectionsPosture("acme");
+    const alphaRow = receivablesAging.rows.find(
+      (row) => row.customer.customerLabel === "Alpha Co",
+    );
+    const lineage = await financeTwinService.getLineageDrill({
+      companyKey: "acme",
+      targetKind: "receivables_aging_row",
+      targetId: alphaRow?.receivablesAgingRow.id ?? "",
+      syncRunId: synced.syncRun.id,
+    });
+
+    expect(synced).toMatchObject({
+      syncRun: {
+        extractorKey: "receivables_aging_csv",
+        status: "succeeded",
+      },
+    });
+    expect(receivablesAging).toMatchObject({
+      company: {
+        companyKey: "acme",
+        displayName: "Acme Holdings",
+      },
+      latestAttemptedSyncRun: {
+        id: synced.syncRun.id,
+        extractorKey: "receivables_aging_csv",
+      },
+      latestSuccessfulSlice: {
+        coverage: {
+          customerCount: 3,
+          rowCount: 3,
+          lineageCount: 6,
+          lineageTargetCounts: {
+            customerCount: 3,
+            receivablesAgingRowCount: 3,
+          },
+        },
+        summary: {
+          customerCount: 3,
+          rowCount: 3,
+          datedRowCount: 2,
+          undatedRowCount: 1,
+          currencyCount: 2,
+          reportedBucketKeys: ["current", "31_60", "past_due", "total"],
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      customerCount: 3,
+    });
+    expect(alphaRow).toMatchObject({
+      customer: {
+        customerLabel: "Alpha Co",
+        externalCustomerId: "C-100",
+      },
+      receivablesAgingRow: {
+        currencyCode: "USD",
+        asOfDate: "2026-04-30",
+        sourceLineNumbers: [2, 3],
+      },
+      reportedTotalAmount: "120.00",
+      lineageRef: {
+        targetKind: "receivables_aging_row",
+        syncRunId: synced.syncRun.id,
+      },
+    });
+    expect(collectionsPosture).toMatchObject({
+      company: {
+        companyKey: "acme",
+      },
+      latestAttemptedSyncRun: {
+        id: synced.syncRun.id,
+        extractorKey: "receivables_aging_csv",
+      },
+      latestSuccessfulReceivablesAgingSlice: {
+        coverage: {
+          customerCount: 3,
+          rowCount: 3,
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      coverageSummary: {
+        customerCount: 3,
+        rowCount: 3,
+        currencyBucketCount: 2,
+        datedRowCount: 2,
+        undatedRowCount: 1,
+        rowsWithExplicitTotalCount: 3,
+        rowsWithCurrentBucketCount: 2,
+        rowsWithComputablePastDueCount: 2,
+        rowsWithPartialPastDueOnlyCount: 0,
+      },
+      currencyBuckets: [
+        {
+          currency: "EUR",
+          totalReceivables: "50.00",
+          currentBucketTotal: "50.00",
+          pastDueBucketTotal: "0.00",
+          customerCount: 1,
+          datedCustomerCount: 1,
+          undatedCustomerCount: 0,
+          mixedAsOfDates: false,
+          earliestAsOfDate: "2026-04-29",
+          latestAsOfDate: "2026-04-29",
+        },
+        {
+          currency: "USD",
+          totalReceivables: "200.00",
+          currentBucketTotal: "100.00",
+          pastDueBucketTotal: "100.00",
+          customerCount: 2,
+          datedCustomerCount: 1,
+          undatedCustomerCount: 1,
+          mixedAsOfDates: false,
+          earliestAsOfDate: "2026-04-30",
+          latestAsOfDate: "2026-04-30",
+        },
+      ],
+    });
+    expect(collectionsPosture.diagnostics).toEqual(
+      expect.arrayContaining([
+        "One or more persisted receivables-aging rows do not include an explicit as-of date.",
+        "One or more collections-posture currency buckets include both dated and undated customer aging rows.",
+      ]),
+    );
+    expect(lineage).toMatchObject({
+      target: {
+        targetKind: "receivables_aging_row",
+        targetId: alphaRow?.receivablesAgingRow.id,
+        syncRunId: synced.syncRun.id,
+      },
+      recordCount: 1,
+      records: [
+        {
+          syncRun: {
+            extractorKey: "receivables_aging_csv",
+            id: synced.syncRun.id,
+          },
+          sourceFile: {
+            originalFileName: "receivables-aging.csv",
+          },
+        },
+      ],
+    });
+  });
+
   it("builds a cross-slice company snapshot and scoped lineage drill truthfully", async () => {
     const now = () => new Date("2026-04-11T11:30:00.000Z");
     const sourceRepository = new InMemorySourceRepository();

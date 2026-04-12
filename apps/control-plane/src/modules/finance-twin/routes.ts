@@ -89,6 +89,22 @@ export async function registerFinanceTwinRoutes(
   );
 
   app.get(
+    "/finance-twin/companies/:companyKey/receivables-aging",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getReceivablesAging(params.companyKey);
+    },
+  );
+
+  app.get(
+    "/finance-twin/companies/:companyKey/collections-posture",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getCollectionsPosture(params.companyKey);
+    },
+  );
+
+  app.get(
     "/finance-twin/companies/:companyKey/account-catalog",
     async (request) => {
       const params = financeTwinCompanyKeyParamsSchema.parse(request.params);

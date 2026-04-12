@@ -5,10 +5,12 @@ import {
   FinanceBalanceBridgePrerequisitesViewSchema,
   FinanceAccountBridgeReadinessViewSchema,
   FinanceAccountCatalogViewSchema,
+  FinanceCollectionsPostureViewSchema,
   FinanceGeneralLedgerActivityLineageViewSchema,
   FinanceGeneralLedgerBalanceProofViewSchema,
   FinanceGeneralLedgerViewSchema,
   FinanceLineageDrillViewSchema,
+  FinanceReceivablesAgingViewSchema,
   FinanceReconciliationReadinessViewSchema,
   FinanceSnapshotViewSchema,
   FinanceTwinCompanySummarySchema,
@@ -357,7 +359,7 @@ describe("finance twin domain schemas", () => {
       ],
       diagnostics: [],
       limitations: [
-        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, and receivables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
       ],
     });
 
@@ -869,7 +871,7 @@ describe("finance twin domain schemas", () => {
         },
       ],
       limitations: [
-        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, and receivables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
       ],
     });
 
@@ -1543,7 +1545,7 @@ describe("finance twin domain schemas", () => {
         },
       ],
       limitations: [
-        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, and receivables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
       ],
     });
@@ -1888,7 +1890,7 @@ describe("finance twin domain schemas", () => {
         "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       ],
       limitations: [
-        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, and receivables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "No successful chart-of-accounts slice exists yet for this balance-bridge-prerequisites view, so chart-of-accounts enrichment is unavailable.",
         "This route does not compute a direct balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals, and general-ledger activity totals do not prove opening or ending balances.",
@@ -2088,7 +2090,7 @@ describe("finance twin domain schemas", () => {
       },
       diagnostics: [],
       limitations: [
-        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, and receivables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route returns persisted balance-proof rows and lineage only; it does not compute a balance bridge or variance.",
       ],
@@ -2162,5 +2164,68 @@ describe("finance twin domain schemas", () => {
     expect(parsed.records[0]?.journalLineLineage.targetKind).toBe(
       "journal_line",
     );
+  });
+
+  it("parses receivables-aging and collections-posture views", () => {
+    const receivablesAging = FinanceReceivablesAgingViewSchema.parse({
+      company: {
+        id: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        displayName: "Acme",
+        createdAt: "2026-04-09T00:00:00.000Z",
+        updatedAt: "2026-04-09T00:00:00.000Z",
+      },
+      latestAttemptedSyncRun: null,
+      latestSuccessfulSlice: {
+        latestSource: null,
+        latestSyncRun: null,
+        coverage: {
+          customerCount: 0,
+          rowCount: 0,
+          lineageCount: 0,
+        },
+        summary: null,
+      },
+      freshness: {
+        state: "missing",
+        latestSyncRunId: null,
+        latestSyncStatus: null,
+        latestCompletedAt: null,
+        latestSuccessfulSyncRunId: null,
+        latestSuccessfulCompletedAt: null,
+        ageSeconds: null,
+        staleAfterSeconds: 86400,
+        reasonCode: "not_synced",
+        reasonSummary:
+          "No finance twin sync has been recorded yet for the receivables-aging slice.",
+      },
+      customerCount: 0,
+      rows: [],
+      diagnostics: [],
+      limitations: [],
+    });
+    const collectionsPosture = FinanceCollectionsPostureViewSchema.parse({
+      company: receivablesAging.company,
+      latestAttemptedSyncRun: null,
+      latestSuccessfulReceivablesAgingSlice: receivablesAging.latestSuccessfulSlice,
+      freshness: receivablesAging.freshness,
+      currencyBuckets: [],
+      coverageSummary: {
+        customerCount: 0,
+        rowCount: 0,
+        currencyBucketCount: 0,
+        datedRowCount: 0,
+        undatedRowCount: 0,
+        rowsWithExplicitTotalCount: 0,
+        rowsWithCurrentBucketCount: 0,
+        rowsWithComputablePastDueCount: 0,
+        rowsWithPartialPastDueOnlyCount: 0,
+      },
+      diagnostics: [],
+      limitations: [],
+    });
+
+    expect(receivablesAging.rows).toHaveLength(0);
+    expect(collectionsPosture.currencyBuckets).toHaveLength(0);
   });
 });

@@ -276,6 +276,11 @@ function createAppContainer(
       async getCashPosture() {
         throw new Error("getCashPosture should not be called in this test");
       },
+      async getCollectionsPosture() {
+        throw new Error(
+          "getCollectionsPosture should not be called in this test",
+        );
+      },
       async getCompanySnapshot() {
         throw new Error("getCompanySnapshot should not be called in this test");
       },
@@ -297,6 +302,11 @@ function createAppContainer(
       },
       async getLineageDrill() {
         throw new Error("getLineageDrill should not be called in this test");
+      },
+      async getReceivablesAging() {
+        throw new Error(
+          "getReceivablesAging should not be called in this test",
+        );
       },
       async getReconciliationReadiness() {
         throw new Error(

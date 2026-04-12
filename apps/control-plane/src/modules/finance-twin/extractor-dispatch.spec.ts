@@ -70,4 +70,21 @@ describe("finance twin extractor dispatch", () => {
 
     expect(extracted?.extractorKey).toBe("bank_account_summary_csv");
   });
+
+  it("detects receivables-aging CSV before generic customer balance fields can be mistaken for trial balance or chart data", () => {
+    const extracted = extractFinanceTwinSource({
+      body: Buffer.from(
+        [
+          "customer_name,customer_id,as_of,current,past_due,total,currency",
+          "Alpha Co,C-100,2026-04-30,100.00,20.00,120.00,USD",
+        ].join("\n"),
+      ),
+      sourceFile: {
+        mediaType: "text/csv",
+        originalFileName: "receivables-aging.csv",
+      },
+    });
+
+    expect(extracted?.extractorKey).toBe("receivables_aging_csv");
+  });
 });

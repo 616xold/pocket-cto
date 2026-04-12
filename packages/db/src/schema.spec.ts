@@ -4,10 +4,12 @@ import {
   financeBankAccounts,
   financeBankAccountSummaries,
   financeCompanies,
+  financeCustomers,
   financeGeneralLedgerBalanceProofs,
   financeJournalEntries,
   financeJournalLines,
   financeLedgerAccounts,
+  financeReceivablesAgingRows,
   financeReportingPeriods,
   financeTrialBalanceLines,
   financeTwinLineage,
@@ -34,8 +36,10 @@ describe("db schema exports", () => {
     expect(financeBankAccounts).toBeDefined();
     expect(financeBankAccountSummaries).toBeDefined();
     expect(financeCompanies).toBeDefined();
+    expect(financeCustomers).toBeDefined();
     expect(financeReportingPeriods).toBeDefined();
     expect(financeLedgerAccounts).toBeDefined();
+    expect(financeReceivablesAgingRows).toBeDefined();
     expect(financeGeneralLedgerBalanceProofs).toBeDefined();
     expect(financeJournalEntries).toBeDefined();
     expect(financeJournalLines).toBeDefined();
