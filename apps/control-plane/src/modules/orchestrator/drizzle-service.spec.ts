@@ -2707,6 +2707,9 @@ async function createHarness(options?: {
         },
       },
       financeTwinService: {
+        async getBalanceBridgePrerequisites() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
         async getAccountBridgeReadiness() {
           throw new Error("Not implemented in orchestrator harness");
         },

@@ -5,11 +5,13 @@ import type {
 } from "@pocket-cto/domain";
 
 export const FINANCE_TWIN_LIMITATIONS = [
-  "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, and period-context read models.",
+  "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, and period-context read models.",
   "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
 ];
 
-export function buildTrialBalanceSummary(lines: FinanceTrialBalanceLineRecord[]) {
+export function buildTrialBalanceSummary(
+  lines: FinanceTrialBalanceLineRecord[],
+) {
   let totalDebit = 0n;
   let totalCredit = 0n;
   let totalNet = 0n;
@@ -86,7 +88,9 @@ export function buildGeneralLedgerSummary(
   }
 
   if (!earliestEntryDate || !latestEntryDate) {
-    throw new Error("General-ledger summary requires at least one journal entry");
+    throw new Error(
+      "General-ledger summary requires at least one journal entry",
+    );
   }
 
   return {

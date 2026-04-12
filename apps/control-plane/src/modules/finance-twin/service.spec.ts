@@ -576,9 +576,13 @@ describe("FinanceTwinService", () => {
       ),
     );
 
-    await financeTwinService.syncCompanySourceFile("acme", chartFile.sourceFile.id, {
-      companyName: "Acme Holdings",
-    });
+    await financeTwinService.syncCompanySourceFile(
+      "acme",
+      chartFile.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
     await financeTwinService.syncCompanySourceFile(
       "acme",
       trialBalanceFile.sourceFile.id,
@@ -627,16 +631,20 @@ describe("FinanceTwinService", () => {
       inactiveAccountCount: 1,
       inactiveWithGeneralLedgerActivityCount: 1,
     });
-    expect(snapshot.latestSuccessfulSlices.trialBalance.coverage).toMatchObject({
-      lineCount: 3,
-      lineageCount: 7,
-      lineageTargetCounts: {
-        reportingPeriodCount: 1,
-        ledgerAccountCount: 3,
-        trialBalanceLineCount: 3,
+    expect(snapshot.latestSuccessfulSlices.trialBalance.coverage).toMatchObject(
+      {
+        lineCount: 3,
+        lineageCount: 7,
+        lineageTargetCounts: {
+          reportingPeriodCount: 1,
+          ledgerAccountCount: 3,
+          trialBalanceLineCount: 3,
+        },
       },
-    });
-    expect(snapshot.latestSuccessfulSlices.chartOfAccounts.coverage).toMatchObject({
+    );
+    expect(
+      snapshot.latestSuccessfulSlices.chartOfAccounts.coverage,
+    ).toMatchObject({
       accountCatalogEntryCount: 3,
       lineageCount: 6,
       lineageTargetCounts: {
@@ -644,7 +652,9 @@ describe("FinanceTwinService", () => {
         accountCatalogEntryCount: 3,
       },
     });
-    expect(snapshot.latestSuccessfulSlices.generalLedger.coverage).toMatchObject({
+    expect(
+      snapshot.latestSuccessfulSlices.generalLedger.coverage,
+    ).toMatchObject({
       journalEntryCount: 2,
       journalLineCount: 4,
       lineageCount: 9,
@@ -866,9 +876,13 @@ describe("FinanceTwinService", () => {
       ),
     );
 
-    await financeTwinService.syncCompanySourceFile("acme", chartFile.sourceFile.id, {
-      companyName: "Acme Holdings",
-    });
+    await financeTwinService.syncCompanySourceFile(
+      "acme",
+      chartFile.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
     await financeTwinService.syncCompanySourceFile(
       "acme",
       trialBalanceFile.sourceFile.id,
@@ -910,7 +924,9 @@ describe("FinanceTwinService", () => {
       sharedSourceId: created.source.id,
       reasonCode: "shared_source",
     });
-    expect(snapshot.latestSuccessfulSlices.generalLedger.periodContext).toMatchObject({
+    expect(
+      snapshot.latestSuccessfulSlices.generalLedger.periodContext,
+    ).toMatchObject({
       basis: "activity_window_only",
       sourceDeclaredPeriod: null,
       activityWindowEarliestEntryDate: "2026-03-15",
@@ -947,7 +963,10 @@ describe("FinanceTwinService", () => {
     expect(reconciliation.limitations).toContain(
       "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
     );
-    expect(reconciliation.limitations).toContain(
+    expect(reconciliation.diagnostics).toContain(
+      "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+    );
+    expect(reconciliation.limitations).not.toContain(
       "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
     );
     expect(cashRow).toMatchObject({
@@ -1153,9 +1172,13 @@ describe("FinanceTwinService", () => {
       ),
     );
 
-    await financeTwinService.syncCompanySourceFile("acme", chartFile.sourceFile.id, {
-      companyName: "Acme Holdings",
-    });
+    await financeTwinService.syncCompanySourceFile(
+      "acme",
+      chartFile.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
     await financeTwinService.syncCompanySourceFile(
       "acme",
       trialBalanceFile.sourceFile.id,
@@ -1167,9 +1190,10 @@ describe("FinanceTwinService", () => {
       {},
     );
 
-    const accountBridge = await financeTwinService.getAccountBridgeReadiness(
-      "acme",
-    );
+    const accountBridge =
+      await financeTwinService.getAccountBridgeReadiness("acme");
+    const balanceBridgePrerequisites =
+      await financeTwinService.getBalanceBridgePrerequisites("acme");
     const archivedClearingRow = accountBridge.accounts.find(
       (account) => account.ledgerAccount.accountCode === "3000",
     );
@@ -1204,8 +1228,38 @@ describe("FinanceTwinService", () => {
     expect(accountBridge.limitations).toContain(
       "This route does not compute a direct account balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
     );
-    expect(accountBridge.limitations).toContain(
+    expect(accountBridge.diagnostics).toContain(
       "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+    );
+    expect(accountBridge.limitations).not.toContain(
+      "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+    );
+    expect(balanceBridgePrerequisites.balanceBridgePrerequisites).toMatchObject(
+      {
+        state: "not_prereq_ready",
+        reasonCode: "balance_bridge_missing_balance_proof",
+        basis: "source_declared_period",
+        windowRelation: "exact_match",
+        sameSource: true,
+        sameSourceSnapshot: false,
+        sameSyncRun: false,
+        sharedSourceId: created.source.id,
+        prerequisites: {
+          hasSuccessfulTrialBalanceSlice: true,
+          hasSuccessfulGeneralLedgerSlice: true,
+          matchedPeriodAccountBridgeReady: true,
+          anySourceBackedGeneralLedgerBalanceProof: false,
+        },
+      },
+    );
+    expect(balanceBridgePrerequisites.diagnostics).toContain(
+      "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+    );
+    expect(balanceBridgePrerequisites.limitations).toContain(
+      "This route does not compute a direct balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals, and general-ledger activity totals do not prove opening or ending balances.",
+    );
+    expect(balanceBridgePrerequisites.limitations).toContain(
+      "Matched-period account overlap exists, but none of those accounts include source-backed general-ledger opening-balance or ending-balance proof in the persisted Finance Twin state, so this route stops at blocked prerequisites rather than inventing a balance bridge.",
     );
     expect(archivedClearingRow).toMatchObject({
       presentInChartOfAccounts: true,
@@ -1235,6 +1289,38 @@ describe("FinanceTwinService", () => {
         ledgerAccountId: productRevenueRow?.ledgerAccount.id,
         syncRunId: generalLedgerSync.syncRun.id,
       },
+    });
+    expect(
+      balanceBridgePrerequisites.accounts.find(
+        (account) => account.ledgerAccount.accountCode === "1000",
+      ),
+    ).toMatchObject({
+      matchedPeriodAccountBridgeReady: true,
+      balanceBridgePrereqReady: false,
+      blockedReasonCode: "balance_bridge_missing_balance_proof",
+      generalLedgerBalanceProof: {
+        proofBasis: "activity_only_no_balance_proof",
+        openingBalanceEvidencePresent: false,
+        endingBalanceEvidencePresent: false,
+      },
+    });
+    expect(
+      balanceBridgePrerequisites.accounts.find(
+        (account) => account.ledgerAccount.accountCode === "4000",
+      ),
+    ).toMatchObject({
+      matchedPeriodAccountBridgeReady: false,
+      balanceBridgePrereqReady: false,
+      blockedReasonCode: "balance_bridge_missing_general_ledger_overlap",
+    });
+    expect(
+      balanceBridgePrerequisites.accounts.find(
+        (account) => account.ledgerAccount.accountCode === "5000",
+      ),
+    ).toMatchObject({
+      matchedPeriodAccountBridgeReady: false,
+      balanceBridgePrereqReady: false,
+      blockedReasonCode: "balance_bridge_missing_trial_balance_overlap",
     });
   });
 
@@ -1299,12 +1385,22 @@ describe("FinanceTwinService", () => {
       ),
     );
 
-    await financeTwinService.syncCompanySourceFile("acme", firstFile.sourceFile.id, {
-      companyName: "Acme Holdings",
-    });
-    await financeTwinService.syncCompanySourceFile("acme", secondFile.sourceFile.id, {});
+    await financeTwinService.syncCompanySourceFile(
+      "acme",
+      firstFile.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
+    await financeTwinService.syncCompanySourceFile(
+      "acme",
+      secondFile.sourceFile.id,
+      {},
+    );
 
-    await expect(financeTwinService.getCompanySummary("acme")).resolves.toMatchObject({
+    await expect(
+      financeTwinService.getCompanySummary("acme"),
+    ).resolves.toMatchObject({
       company: {
         companyKey: "acme",
         displayName: "Acme Holdings",
@@ -1354,10 +1450,14 @@ describe("FinanceTwinService", () => {
     );
 
     await expect(
-      financeTwinService.syncCompanySourceFile("acme", registered.sourceFile.id, {}),
+      financeTwinService.syncCompanySourceFile(
+        "acme",
+        registered.sourceFile.id,
+        {},
+      ),
     ).rejects.toBeInstanceOf(FinanceTwinUnsupportedSourceError);
-    await expect(financeTwinService.getCompanySummary("acme")).rejects.toBeInstanceOf(
-      FinanceCompanyNotFoundError,
-    );
+    await expect(
+      financeTwinService.getCompanySummary("acme"),
+    ).rejects.toBeInstanceOf(FinanceCompanyNotFoundError);
   });
 });

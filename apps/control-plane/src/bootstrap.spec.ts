@@ -257,25 +257,24 @@ function createAppContainer(
       },
     } as AppContainer["githubWebhookService"],
     financeTwinService: {
+      async getBalanceBridgePrerequisites() {
+        throw new Error(
+          "getBalanceBridgePrerequisites should not be called in this test",
+        );
+      },
       async getAccountBridgeReadiness() {
         throw new Error(
           "getAccountBridgeReadiness should not be called in this test",
         );
       },
       async getAccountCatalog() {
-        throw new Error(
-          "getAccountCatalog should not be called in this test",
-        );
+        throw new Error("getAccountCatalog should not be called in this test");
       },
       async getCompanySnapshot() {
-        throw new Error(
-          "getCompanySnapshot should not be called in this test",
-        );
+        throw new Error("getCompanySnapshot should not be called in this test");
       },
       async getGeneralLedger() {
-        throw new Error(
-          "getGeneralLedger should not be called in this test",
-        );
+        throw new Error("getGeneralLedger should not be called in this test");
       },
       async getGeneralLedgerAccountActivityLineage() {
         throw new Error(
@@ -283,14 +282,10 @@ function createAppContainer(
         );
       },
       async getCompanySummary() {
-        throw new Error(
-          "getCompanySummary should not be called in this test",
-        );
+        throw new Error("getCompanySummary should not be called in this test");
       },
       async getLineageDrill() {
-        throw new Error(
-          "getLineageDrill should not be called in this test",
-        );
+        throw new Error("getLineageDrill should not be called in this test");
       },
       async getReconciliationReadiness() {
         throw new Error(

@@ -16,6 +16,7 @@ import {
   buildGeneralLedgerActivityByAccountId,
   type GeneralLedgerActivityByAccount,
 } from "./general-ledger-activity";
+import { buildSharedSourceDiagnostics, dedupeMessages } from "./diagnostics";
 import { buildFinanceSliceAlignment } from "./slice-alignment";
 
 export function buildFinanceReconciliationReadinessView(input: {
@@ -36,9 +37,8 @@ export function buildFinanceReconciliationReadinessView(input: {
     subjectLabel: "trial-balance and general-ledger slices",
     viewLabel: "reconciliation-readiness view",
   });
-  const generalLedgerActivityByAccountId = buildGeneralLedgerActivityByAccountId(
-    input.generalLedgerEntries,
-  );
+  const generalLedgerActivityByAccountId =
+    buildGeneralLedgerActivityByAccountId(input.generalLedgerEntries);
   const accounts = buildReconciliationAccounts({
     generalLedgerActivityByAccountId,
     generalLedgerSlice: input.generalLedgerSlice,
@@ -56,6 +56,7 @@ export function buildFinanceReconciliationReadinessView(input: {
     sliceAlignment,
     trialBalanceSlice: input.trialBalanceSlice,
   });
+  const diagnostics = buildSharedSourceDiagnostics(sliceAlignment);
 
   return FinanceReconciliationReadinessViewSchema.parse({
     company: input.company,
@@ -66,6 +67,7 @@ export function buildFinanceReconciliationReadinessView(input: {
     comparability,
     coverageSummary: buildCoverageSummary(accounts),
     accounts,
+    diagnostics,
     limitations,
   });
 }
@@ -76,7 +78,10 @@ function buildReconciliationAccounts(input: {
   trialBalanceLineViews: FinanceTrialBalanceLineView[];
 }) {
   const trialBalanceByAccountId = new Map(
-    input.trialBalanceLineViews.map((lineView) => [lineView.ledgerAccount.id, lineView]),
+    input.trialBalanceLineViews.map((lineView) => [
+      lineView.ledgerAccount.id,
+      lineView,
+    ]),
   );
   const ledgerAccountsById = new Map<string, FinanceLedgerAccountRecord>();
 
@@ -84,16 +89,21 @@ function buildReconciliationAccounts(input: {
     ledgerAccountsById.set(lineView.ledgerAccount.id, lineView.ledgerAccount);
   }
 
-  for (const [ledgerAccountId, activity] of input.generalLedgerActivityByAccountId) {
+  for (const [
+    ledgerAccountId,
+    activity,
+  ] of input.generalLedgerActivityByAccountId) {
     ledgerAccountsById.set(ledgerAccountId, activity.ledgerAccount);
   }
 
   return Array.from(ledgerAccountsById.values())
     .sort((left, right) => left.accountCode.localeCompare(right.accountCode))
     .map((ledgerAccount) => {
-      const trialBalanceLineView = trialBalanceByAccountId.get(ledgerAccount.id) ?? null;
+      const trialBalanceLineView =
+        trialBalanceByAccountId.get(ledgerAccount.id) ?? null;
       const generalLedgerActivity =
-        input.generalLedgerActivityByAccountId.get(ledgerAccount.id)?.activity ?? null;
+        input.generalLedgerActivityByAccountId.get(ledgerAccount.id)
+          ?.activity ?? null;
       const presentInTrialBalance = trialBalanceLineView !== null;
       const presentInGeneralLedger = generalLedgerActivity !== null;
 
@@ -126,12 +136,15 @@ function buildCoverageSummary(accounts: FinanceReconciliationAccountRow[]) {
       (account) => account.presentInGeneralLedger,
     ).length,
     overlapCount: accounts.filter(
-      (account) => account.presentInTrialBalance && account.presentInGeneralLedger,
+      (account) =>
+        account.presentInTrialBalance && account.presentInGeneralLedger,
     ).length,
-    trialBalanceOnlyCount: accounts.filter((account) => account.trialBalanceOnly)
-      .length,
-    generalLedgerOnlyCount: accounts.filter((account) => account.generalLedgerOnly)
-      .length,
+    trialBalanceOnlyCount: accounts.filter(
+      (account) => account.trialBalanceOnly,
+    ).length,
+    generalLedgerOnlyCount: accounts.filter(
+      (account) => account.generalLedgerOnly,
+    ).length,
   };
 }
 
@@ -297,8 +310,7 @@ function buildComparability(input: {
 function resolveWindowRelation(input: {
   basis: FinanceReconciliationComparabilityView["basis"];
   generalLedgerWindow: FinanceReconciliationComparabilityView["generalLedgerWindow"];
-  sourceDeclaredGeneralLedgerPeriod:
-    FinanceReconciliationComparabilityView["sourceDeclaredGeneralLedgerPeriod"];
+  sourceDeclaredGeneralLedgerPeriod: FinanceReconciliationComparabilityView["sourceDeclaredGeneralLedgerPeriod"];
   trialBalanceWindow: FinanceReconciliationComparabilityView["trialBalanceWindow"];
 }): FinanceReconciliationComparabilityView["windowRelation"] {
   if (!input.trialBalanceWindow) {
@@ -357,7 +369,11 @@ function compareWindowBounds(input: {
   trialBalanceEnd: string;
   trialBalanceStart: string | null;
 }): FinanceReconciliationComparabilityView["windowRelation"] {
-  if (!input.comparisonStart || !input.comparisonEnd || !input.trialBalanceStart) {
+  if (
+    !input.comparisonStart ||
+    !input.comparisonEnd ||
+    !input.trialBalanceStart
+  ) {
     return "unknown";
   }
 
@@ -405,8 +421,10 @@ function buildReconciliationFreshnessView(
   const generalLedger = freshness.generalLedger;
   const overallState = selectCombinedState([trialBalance, generalLedger]);
   const latestCompletedAt =
-    selectLatestIso([trialBalance.latestCompletedAt, generalLedger.latestCompletedAt]) ??
-    null;
+    selectLatestIso([
+      trialBalance.latestCompletedAt,
+      generalLedger.latestCompletedAt,
+    ]) ?? null;
   const latestSuccessfulCompletedAt =
     selectLatestIso([
       trialBalance.latestSuccessfulCompletedAt,
@@ -486,13 +504,6 @@ function buildReconciliationLimitations(input: {
     "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
   );
 
-  if (
-    input.sliceAlignment.state === "shared_source" &&
-    (!input.sliceAlignment.sameSourceSnapshot || !input.sliceAlignment.sameSyncRun)
-  ) {
-    limitations.push(input.sliceAlignment.reasonSummary);
-  }
-
   if (input.sliceAlignment.state === "mixed") {
     limitations.push(
       "Do not treat this reconciliation view as single-source proof because the latest successful trial-balance and general-ledger slices come from different registered sources.",
@@ -507,7 +518,7 @@ function buildReconciliationLimitations(input: {
     limitations.push(input.comparability.reasonSummary);
   }
 
-  return Array.from(new Set(limitations));
+  return dedupeMessages(limitations);
 }
 
 function selectCombinedState(summaries: FinanceFreshnessSummary[]) {
@@ -564,12 +575,16 @@ function selectLatestIso(values: Array<string | null>) {
     .sort((left, right) => right.localeCompare(left))[0];
 }
 
-function selectLatestId(values: Array<{ id: string | null; iso: string | null }>) {
-  return values
-    .filter((value): value is { id: string; iso: string } => {
-      return value.id !== null && value.iso !== null;
-    })
-    .sort((left, right) => right.iso.localeCompare(left.iso))[0]?.id ?? null;
+function selectLatestId(
+  values: Array<{ id: string | null; iso: string | null }>,
+) {
+  return (
+    values
+      .filter((value): value is { id: string; iso: string } => {
+        return value.id !== null && value.iso !== null;
+      })
+      .sort((left, right) => right.iso.localeCompare(left.iso))[0]?.id ?? null
+  );
 }
 
 function selectLatestStatus(
@@ -578,9 +593,19 @@ function selectLatestStatus(
     status: FinanceFreshnessSummary["latestSyncStatus"];
   }>,
 ) {
-  return values
-    .filter((value): value is { iso: string; status: FinanceFreshnessSummary["latestSyncStatus"] } => value.iso !== null)
-    .sort((left, right) => right.iso.localeCompare(left.iso))[0]?.status ?? null;
+  return (
+    values
+      .filter(
+        (
+          value,
+        ): value is {
+          iso: string;
+          status: FinanceFreshnessSummary["latestSyncStatus"];
+        } => value.iso !== null,
+      )
+      .sort((left, right) => right.iso.localeCompare(left.iso))[0]?.status ??
+    null
+  );
 }
 
 function selectCombinedAgeSeconds(summaries: FinanceFreshnessSummary[]) {

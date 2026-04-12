@@ -275,7 +275,8 @@ export const FinanceGeneralLedgerSourceDeclaredPeriodSchema = z.object({
 
 export const FinanceGeneralLedgerPeriodContextViewSchema = z.object({
   basis: FinanceGeneralLedgerPeriodContextBasisSchema,
-  sourceDeclaredPeriod: FinanceGeneralLedgerSourceDeclaredPeriodSchema.nullable(),
+  sourceDeclaredPeriod:
+    FinanceGeneralLedgerSourceDeclaredPeriodSchema.nullable(),
   activityWindowEarliestEntryDate: FinanceIsoDateSchema.nullable(),
   activityWindowLatestEntryDate: FinanceIsoDateSchema.nullable(),
   reasonCode: z.string().min(1),
@@ -581,6 +582,7 @@ export const FinanceReconciliationReadinessViewSchema = z.object({
   comparability: FinanceReconciliationComparabilityViewSchema,
   coverageSummary: FinanceReconciliationCoverageSummarySchema,
   accounts: z.array(FinanceReconciliationAccountRowSchema),
+  diagnostics: z.array(z.string().min(1)).default([]),
   limitations: z.array(z.string().min(1)),
 });
 
@@ -640,6 +642,102 @@ export const FinanceAccountBridgeReadinessViewSchema = z.object({
   bridgeReadiness: FinanceAccountBridgeReadinessStatusSchema,
   coverageSummary: FinanceAccountBridgeCoverageSummarySchema,
   accounts: z.array(FinanceAccountBridgeAccountRowSchema),
+  diagnostics: z.array(z.string().min(1)).default([]),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceGeneralLedgerBalanceProofBasisSchema = z.enum([
+  "no_general_ledger_activity",
+  "activity_only_no_balance_proof",
+  "source_backed_balance_field",
+]);
+
+export const FinanceGeneralLedgerBalanceProofSchema = z.object({
+  openingBalanceAmount: FinanceAmountSchema.nullable(),
+  endingBalanceAmount: FinanceAmountSchema.nullable(),
+  openingBalanceEvidencePresent: z.boolean(),
+  endingBalanceEvidencePresent: z.boolean(),
+  proofBasis: FinanceGeneralLedgerBalanceProofBasisSchema,
+  proofSource: z.string().min(1).nullable(),
+  reasonCode: z.string().min(1),
+  reasonSummary: z.string().min(1),
+});
+
+export const FinanceBalanceBridgePrerequisitesStateSchema = z.enum([
+  "missing_slice",
+  "not_prereq_ready",
+  "source_backed_balance_prereq_ready",
+]);
+
+export const FinanceBalanceBridgePrerequisitesStatusSchema = z.object({
+  state: FinanceBalanceBridgePrerequisitesStateSchema,
+  reasonCode: z.string().min(1),
+  reasonSummary: z.string().min(1),
+  basis: FinanceGeneralLedgerPeriodContextBasisSchema,
+  windowRelation: FinanceReconciliationWindowRelationSchema,
+  sameSource: z.boolean(),
+  sameSourceSnapshot: z.boolean(),
+  sameSyncRun: z.boolean(),
+  sharedSourceId: z.string().uuid().nullable(),
+  prerequisites: z.object({
+    hasSuccessfulTrialBalanceSlice: z.boolean(),
+    hasSuccessfulGeneralLedgerSlice: z.boolean(),
+    matchedPeriodAccountBridgeReady: z.boolean(),
+    anySourceBackedGeneralLedgerBalanceProof: z.boolean(),
+  }),
+});
+
+export const FinanceBalanceBridgePrerequisitesCoverageSummarySchema = z.object({
+  accountRowCount: z.number().int().nonnegative(),
+  presentInChartOfAccountsCount: z.number().int().nonnegative(),
+  presentInTrialBalanceCount: z.number().int().nonnegative(),
+  presentInGeneralLedgerCount: z.number().int().nonnegative(),
+  overlapCount: z.number().int().nonnegative(),
+  trialBalanceOnlyCount: z.number().int().nonnegative(),
+  generalLedgerOnlyCount: z.number().int().nonnegative(),
+  missingFromChartOfAccountsCount: z.number().int().nonnegative(),
+  inactiveWithGeneralLedgerActivityCount: z.number().int().nonnegative(),
+  matchedPeriodAccountBridgeReadyCount: z.number().int().nonnegative(),
+  accountsWithOpeningBalanceProofCount: z.number().int().nonnegative(),
+  accountsWithEndingBalanceProofCount: z.number().int().nonnegative(),
+  accountsBlockedByMissingOverlapCount: z.number().int().nonnegative(),
+  accountsBlockedByMissingBalanceProofCount: z.number().int().nonnegative(),
+  prereqReadyAccountCount: z.number().int().nonnegative(),
+});
+
+export const FinanceBalanceBridgePrerequisitesAccountRowSchema = z.object({
+  ledgerAccount: FinanceLedgerAccountRecordSchema,
+  chartOfAccountsEntry: FinanceAccountCatalogEntryRecordSchema.nullable(),
+  trialBalanceLine: FinanceTrialBalanceLineRecordSchema.nullable(),
+  generalLedgerActivity: FinanceGeneralLedgerActivitySchema.nullable(),
+  generalLedgerBalanceProof: FinanceGeneralLedgerBalanceProofSchema,
+  presentInChartOfAccounts: z.boolean(),
+  presentInTrialBalance: z.boolean(),
+  presentInGeneralLedger: z.boolean(),
+  trialBalanceOnly: z.boolean(),
+  generalLedgerOnly: z.boolean(),
+  missingFromChartOfAccounts: z.boolean(),
+  inactiveWithGeneralLedgerActivity: z.boolean(),
+  matchedPeriodAccountBridgeReady: z.boolean(),
+  balanceBridgePrereqReady: z.boolean(),
+  blockedReasonCode: z.string().min(1).nullable(),
+  blockedReasonSummary: z.string().min(1).nullable(),
+  activityLineageRef: FinanceGeneralLedgerActivityLineageRefSchema.nullable(),
+});
+
+export const FinanceBalanceBridgePrerequisitesViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  chartOfAccountsSlice: FinanceLatestSuccessfulChartOfAccountsSliceSchema,
+  trialBalanceSlice: FinanceLatestSuccessfulTrialBalanceSliceSchema,
+  generalLedgerSlice: FinanceLatestSuccessfulGeneralLedgerSliceSchema,
+  freshness: FinanceFreshnessViewSchema,
+  sliceAlignment: FinanceSliceAlignmentViewSchema,
+  comparability: FinanceReconciliationComparabilityViewSchema,
+  accountBridgeReadiness: FinanceAccountBridgeReadinessStatusSchema,
+  balanceBridgePrerequisites: FinanceBalanceBridgePrerequisitesStatusSchema,
+  coverageSummary: FinanceBalanceBridgePrerequisitesCoverageSummarySchema,
+  accounts: z.array(FinanceBalanceBridgePrerequisitesAccountRowSchema),
+  diagnostics: z.array(z.string().min(1)).default([]),
   limitations: z.array(z.string().min(1)),
 });
 
@@ -678,9 +776,7 @@ export type FinanceTwinSyncRunStatus = z.infer<
 export type FinanceTwinLineageTargetKind = z.infer<
   typeof FinanceTwinLineageTargetKindSchema
 >;
-export type FinanceFreshnessState = z.infer<
-  typeof FinanceFreshnessStateSchema
->;
+export type FinanceFreshnessState = z.infer<typeof FinanceFreshnessStateSchema>;
 export type FinanceFreshnessSliceName = z.infer<
   typeof FinanceFreshnessSliceNameSchema
 >;
@@ -849,6 +945,27 @@ export type FinanceAccountBridgeAccountRow = z.infer<
 >;
 export type FinanceAccountBridgeReadinessView = z.infer<
   typeof FinanceAccountBridgeReadinessViewSchema
+>;
+export type FinanceGeneralLedgerBalanceProofBasis = z.infer<
+  typeof FinanceGeneralLedgerBalanceProofBasisSchema
+>;
+export type FinanceGeneralLedgerBalanceProof = z.infer<
+  typeof FinanceGeneralLedgerBalanceProofSchema
+>;
+export type FinanceBalanceBridgePrerequisitesState = z.infer<
+  typeof FinanceBalanceBridgePrerequisitesStateSchema
+>;
+export type FinanceBalanceBridgePrerequisitesStatus = z.infer<
+  typeof FinanceBalanceBridgePrerequisitesStatusSchema
+>;
+export type FinanceBalanceBridgePrerequisitesCoverageSummary = z.infer<
+  typeof FinanceBalanceBridgePrerequisitesCoverageSummarySchema
+>;
+export type FinanceBalanceBridgePrerequisitesAccountRow = z.infer<
+  typeof FinanceBalanceBridgePrerequisitesAccountRowSchema
+>;
+export type FinanceBalanceBridgePrerequisitesView = z.infer<
+  typeof FinanceBalanceBridgePrerequisitesViewSchema
 >;
 export type FinanceGeneralLedgerActivityLineageTarget = z.infer<
   typeof FinanceGeneralLedgerActivityLineageTargetSchema

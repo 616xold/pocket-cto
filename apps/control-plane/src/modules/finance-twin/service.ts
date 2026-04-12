@@ -1,4 +1,5 @@
 import {
+  FinanceBalanceBridgePrerequisitesViewSchema,
   FinanceAccountBridgeReadinessViewSchema,
   FinanceAccountCatalogViewSchema,
   FinanceGeneralLedgerActivityLineageViewSchema,
@@ -10,6 +11,7 @@ import {
   FinanceTwinSyncInputSchema,
   FinanceTwinSyncResultSchema,
   type FinanceAccountCatalogEntryView,
+  type FinanceBalanceBridgePrerequisitesView,
   type FinanceAccountBridgeReadinessView,
   type FinanceAccountCatalogView,
   type FinanceCompanyRecord,
@@ -48,9 +50,13 @@ import {
   buildFinanceGeneralLedgerPeriodContext,
   buildPersistedGeneralLedgerPeriodContextStats,
 } from "./general-ledger-period-context";
-import { buildFinanceLineageDrillView, buildLineageTargetCounts } from "./lineage";
+import {
+  buildFinanceLineageDrillView,
+  buildLineageTargetCounts,
+} from "./lineage";
 import type { GeneralLedgerExtractionResult } from "./general-ledger-csv";
 import { buildFinanceAccountBridgeReadinessView } from "./account-bridge";
+import { buildFinanceBalanceBridgePrerequisitesView } from "./balance-bridge-prerequisites";
 import { buildFinanceReconciliationReadinessView } from "./reconciliation";
 import type {
   FinanceTrialBalanceLineView,
@@ -107,9 +113,8 @@ export class FinanceTwinService {
     input: FinanceTwinSyncInput,
   ): Promise<FinanceTwinSyncResult> {
     const parsedInput = FinanceTwinSyncInputSchema.parse(input);
-    const sourceFile = await this.input.sourceRepository.getSourceFileById(
-      sourceFileId,
-    );
+    const sourceFile =
+      await this.input.sourceRepository.getSourceFileById(sourceFileId);
 
     if (!sourceFile) {
       throw new SourceFileNotFoundError(sourceFileId);
@@ -215,10 +220,11 @@ export class FinanceTwinService {
     }
   }
 
-  async getCompanySummary(companyKey: string): Promise<FinanceTwinCompanySummary> {
-    const company = await this.input.financeTwinRepository.getCompanyByKey(
-      companyKey,
-    );
+  async getCompanySummary(
+    companyKey: string,
+  ): Promise<FinanceTwinCompanySummary> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
 
     if (!company) {
       throw new FinanceCompanyNotFoundError(companyKey);
@@ -238,10 +244,11 @@ export class FinanceTwinService {
     });
   }
 
-  async getAccountCatalog(companyKey: string): Promise<FinanceAccountCatalogView> {
-    const company = await this.input.financeTwinRepository.getCompanyByKey(
-      companyKey,
-    );
+  async getAccountCatalog(
+    companyKey: string,
+  ): Promise<FinanceAccountCatalogView> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
 
     if (!company) {
       throw new FinanceCompanyNotFoundError(companyKey);
@@ -259,10 +266,11 @@ export class FinanceTwinService {
     });
   }
 
-  async getGeneralLedger(companyKey: string): Promise<FinanceGeneralLedgerView> {
-    const company = await this.input.financeTwinRepository.getCompanyByKey(
-      companyKey,
-    );
+  async getGeneralLedger(
+    companyKey: string,
+  ): Promise<FinanceGeneralLedgerView> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
 
     if (!company) {
       throw new FinanceCompanyNotFoundError(companyKey);
@@ -281,9 +289,8 @@ export class FinanceTwinService {
   }
 
   async getCompanySnapshot(companyKey: string): Promise<FinanceSnapshotView> {
-    const company = await this.input.financeTwinRepository.getCompanyByKey(
-      companyKey,
-    );
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
 
     if (!company) {
       throw new FinanceCompanyNotFoundError(companyKey);
@@ -309,27 +316,43 @@ export class FinanceTwinService {
   async getAccountBridgeReadiness(
     companyKey: string,
   ): Promise<FinanceAccountBridgeReadinessView> {
-    const company = await this.input.financeTwinRepository.getCompanyByKey(
-      companyKey,
-    );
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
 
     if (!company) {
       throw new FinanceCompanyNotFoundError(companyKey);
     }
 
     const readState = await this.readCompanyState(company);
-    const reconciliation = buildFinanceReconciliationReadinessView({
+    return this.buildAccountBridgeReadinessView({
       company,
-      trialBalanceSlice: readState.latestSuccessfulSlices.trialBalance,
-      generalLedgerSlice: readState.latestSuccessfulSlices.generalLedger,
-      freshness: readState.freshness,
-      trialBalanceLineViews: readState.latestTrialBalanceLineViews,
-      generalLedgerEntries: readState.latestGeneralLedgerEntries,
-      limitations: FINANCE_TWIN_LIMITATIONS,
+      readState,
+    });
+  }
+
+  async getBalanceBridgePrerequisites(
+    companyKey: string,
+  ): Promise<FinanceBalanceBridgePrerequisitesView> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(companyKey);
+    }
+
+    const readState = await this.readCompanyState(company);
+    const reconciliation = this.buildReconciliationReadinessView({
+      company,
+      readState,
+    });
+    const accountBridge = this.buildAccountBridgeReadinessView({
+      company,
+      readState,
+      reconciliation,
     });
 
-    return FinanceAccountBridgeReadinessViewSchema.parse(
-      buildFinanceAccountBridgeReadinessView({
+    return FinanceBalanceBridgePrerequisitesViewSchema.parse(
+      buildFinanceBalanceBridgePrerequisitesView({
         company,
         chartOfAccountsSlice: readState.latestSuccessfulSlices.chartOfAccounts,
         chartOfAccountsEntries: readState.latestAccountCatalogEntries,
@@ -340,6 +363,7 @@ export class FinanceTwinService {
         generalLedgerEntries: readState.latestGeneralLedgerEntries,
         sliceAlignment: reconciliation.sliceAlignment,
         comparability: reconciliation.comparability,
+        accountBridgeReadiness: accountBridge.bridgeReadiness,
         limitations: FINANCE_TWIN_LIMITATIONS,
       }),
     );
@@ -348,9 +372,8 @@ export class FinanceTwinService {
   async getReconciliationReadiness(
     companyKey: string,
   ): Promise<FinanceReconciliationReadinessView> {
-    const company = await this.input.financeTwinRepository.getCompanyByKey(
-      companyKey,
-    );
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
 
     if (!company) {
       throw new FinanceCompanyNotFoundError(companyKey);
@@ -358,17 +381,10 @@ export class FinanceTwinService {
 
     const readState = await this.readCompanyState(company);
 
-    return FinanceReconciliationReadinessViewSchema.parse(
-      buildFinanceReconciliationReadinessView({
-        company,
-        trialBalanceSlice: readState.latestSuccessfulSlices.trialBalance,
-        generalLedgerSlice: readState.latestSuccessfulSlices.generalLedger,
-        freshness: readState.freshness,
-        trialBalanceLineViews: readState.latestTrialBalanceLineViews,
-        generalLedgerEntries: readState.latestGeneralLedgerEntries,
-        limitations: FINANCE_TWIN_LIMITATIONS,
-      }),
-    );
+    return this.buildReconciliationReadinessView({
+      company,
+      readState,
+    });
   }
 
   async getGeneralLedgerAccountActivityLineage(input: {
@@ -401,7 +417,8 @@ export class FinanceTwinService {
     const entries =
       syncRun === null
         ? []
-        : input.syncRunId === undefined || syncRun.id === latestSuccessfulRun?.id
+        : input.syncRunId === undefined ||
+            syncRun.id === latestSuccessfulRun?.id
           ? latestSuccessfulEntries
           : await this.input.financeTwinRepository.listGeneralLedgerEntriesBySyncRunId(
               syncRun.id,
@@ -423,7 +440,9 @@ export class FinanceTwinService {
     if (
       syncRun !== null &&
       !entries.some((entry) =>
-        entry.lines.some((line) => line.ledgerAccount.id === input.ledgerAccountId),
+        entry.lines.some(
+          (line) => line.ledgerAccount.id === input.ledgerAccountId,
+        ),
       )
     ) {
       limitations.push(
@@ -477,6 +496,55 @@ export class FinanceTwinService {
         sourcesById: metadata.sourcesById,
         sourceSnapshotsById: metadata.sourceSnapshotsById,
         sourceFilesById: metadata.sourceFilesById,
+        limitations: FINANCE_TWIN_LIMITATIONS,
+      }),
+    );
+  }
+
+  private buildReconciliationReadinessView(input: {
+    company: FinanceCompanyRecord;
+    readState: CompanyReadState;
+  }) {
+    return FinanceReconciliationReadinessViewSchema.parse(
+      buildFinanceReconciliationReadinessView({
+        company: input.company,
+        trialBalanceSlice: input.readState.latestSuccessfulSlices.trialBalance,
+        generalLedgerSlice:
+          input.readState.latestSuccessfulSlices.generalLedger,
+        freshness: input.readState.freshness,
+        trialBalanceLineViews: input.readState.latestTrialBalanceLineViews,
+        generalLedgerEntries: input.readState.latestGeneralLedgerEntries,
+        limitations: FINANCE_TWIN_LIMITATIONS,
+      }),
+    );
+  }
+
+  private buildAccountBridgeReadinessView(input: {
+    company: FinanceCompanyRecord;
+    readState: CompanyReadState;
+    reconciliation?: FinanceReconciliationReadinessView;
+  }) {
+    const reconciliation =
+      input.reconciliation ??
+      this.buildReconciliationReadinessView({
+        company: input.company,
+        readState: input.readState,
+      });
+
+    return FinanceAccountBridgeReadinessViewSchema.parse(
+      buildFinanceAccountBridgeReadinessView({
+        company: input.company,
+        chartOfAccountsSlice:
+          input.readState.latestSuccessfulSlices.chartOfAccounts,
+        chartOfAccountsEntries: input.readState.latestAccountCatalogEntries,
+        trialBalanceSlice: input.readState.latestSuccessfulSlices.trialBalance,
+        generalLedgerSlice:
+          input.readState.latestSuccessfulSlices.generalLedger,
+        freshness: input.readState.freshness,
+        trialBalanceLineViews: input.readState.latestTrialBalanceLineViews,
+        generalLedgerEntries: input.readState.latestGeneralLedgerEntries,
+        sliceAlignment: reconciliation.sliceAlignment,
+        comparability: reconciliation.comparability,
         limitations: FINANCE_TWIN_LIMITATIONS,
       }),
     );
@@ -734,16 +802,17 @@ export class FinanceTwinService {
       let journalLineCount = 0;
 
       for (const entry of input.extracted.entries) {
-        const storedEntry = await this.input.financeTwinRepository.upsertJournalEntry(
-          {
-            companyId: input.company.id,
-            syncRunId: input.syncRun.id,
-            externalEntryId: entry.externalEntryId,
-            transactionDate: entry.transactionDate,
-            entryDescription: entry.entryDescription,
-          },
-          session,
-        );
+        const storedEntry =
+          await this.input.financeTwinRepository.upsertJournalEntry(
+            {
+              companyId: input.company.id,
+              syncRunId: input.syncRun.id,
+              externalEntryId: entry.externalEntryId,
+              transactionDate: entry.transactionDate,
+              entryDescription: entry.entryDescription,
+            },
+            session,
+          );
 
         await this.input.financeTwinRepository.createLineage(
           {
@@ -794,20 +863,21 @@ export class FinanceTwinService {
             lineagedLedgerAccountIds.add(storedAccount.id);
           }
 
-          const storedLine = await this.input.financeTwinRepository.upsertJournalLine(
-            {
-              companyId: input.company.id,
-              journalEntryId: storedEntry.id,
-              ledgerAccountId: storedAccount.id,
-              syncRunId: input.syncRun.id,
-              lineNumber: line.lineNumber,
-              debitAmount: line.debitAmount,
-              creditAmount: line.creditAmount,
-              currencyCode: line.currencyCode,
-              lineDescription: line.lineDescription,
-            },
-            session,
-          );
+          const storedLine =
+            await this.input.financeTwinRepository.upsertJournalLine(
+              {
+                companyId: input.company.id,
+                journalEntryId: storedEntry.id,
+                ledgerAccountId: storedAccount.id,
+                syncRunId: input.syncRun.id,
+                lineNumber: line.lineNumber,
+                debitAmount: line.debitAmount,
+                creditAmount: line.creditAmount,
+                currencyCode: line.currencyCode,
+                lineDescription: line.lineDescription,
+              },
+              session,
+            );
 
           await this.input.financeTwinRepository.createLineage(
             {
@@ -902,8 +972,12 @@ export class FinanceTwinService {
         company.id,
         "general_ledger_csv",
       ),
-      this.input.financeTwinRepository.countLedgerAccountsByCompanyId(company.id),
-      this.input.financeTwinRepository.countReportingPeriodsByCompanyId(company.id),
+      this.input.financeTwinRepository.countLedgerAccountsByCompanyId(
+        company.id,
+      ),
+      this.input.financeTwinRepository.countReportingPeriodsByCompanyId(
+        company.id,
+      ),
     ]);
 
     const [trialBalanceSlice, chartOfAccountsSlice, generalLedgerSlice] =
@@ -959,99 +1033,115 @@ export class FinanceTwinService {
     };
   }
 
-  private async readLineageMetadata(records: {
-    sourceFileId: string;
-    sourceId: string;
-    sourceSnapshotId: string;
-    syncRunId: string;
-  }[]) {
-    const syncRunIds = Array.from(new Set(records.map((record) => record.syncRunId)));
-    const sourceIds = Array.from(new Set(records.map((record) => record.sourceId)));
+  private async readLineageMetadata(
+    records: {
+      sourceFileId: string;
+      sourceId: string;
+      sourceSnapshotId: string;
+      syncRunId: string;
+    }[],
+  ) {
+    const syncRunIds = Array.from(
+      new Set(records.map((record) => record.syncRunId)),
+    );
+    const sourceIds = Array.from(
+      new Set(records.map((record) => record.sourceId)),
+    );
     const sourceSnapshotIds = Array.from(
       new Set(records.map((record) => record.sourceSnapshotId)),
     );
     const sourceFileIds = Array.from(
       new Set(records.map((record) => record.sourceFileId)),
     );
-    const [syncRuns, sources, sourceSnapshots, sourceFiles] = await Promise.all([
-      Promise.all(
-        syncRunIds.map(async (syncRunId) => {
-          const syncRun = await this.input.financeTwinRepository.getSyncRunById(
-            syncRunId,
-          );
+    const [syncRuns, sources, sourceSnapshots, sourceFiles] = await Promise.all(
+      [
+        Promise.all(
+          syncRunIds.map(async (syncRunId) => {
+            const syncRun =
+              await this.input.financeTwinRepository.getSyncRunById(syncRunId);
 
-          if (!syncRun) {
-            throw new Error(`Finance twin sync run ${syncRunId} was not found`);
-          }
+            if (!syncRun) {
+              throw new Error(
+                `Finance twin sync run ${syncRunId} was not found`,
+              );
+            }
 
-          return syncRun;
-        }),
-      ),
-      Promise.all(
-        sourceIds.map(async (sourceId) => {
-          const source = await this.input.sourceRepository.getSourceById(sourceId);
+            return syncRun;
+          }),
+        ),
+        Promise.all(
+          sourceIds.map(async (sourceId) => {
+            const source =
+              await this.input.sourceRepository.getSourceById(sourceId);
 
-          if (!source) {
-            throw new Error(`Finance twin lineage source ${sourceId} was not found`);
-          }
+            if (!source) {
+              throw new Error(
+                `Finance twin lineage source ${sourceId} was not found`,
+              );
+            }
 
-          return source;
-        }),
-      ),
-      Promise.all(
-        sourceSnapshotIds.map(async (sourceSnapshotId) => {
-          const sourceSnapshot =
-            await this.input.sourceRepository.getSnapshotById(sourceSnapshotId);
+            return source;
+          }),
+        ),
+        Promise.all(
+          sourceSnapshotIds.map(async (sourceSnapshotId) => {
+            const sourceSnapshot =
+              await this.input.sourceRepository.getSnapshotById(
+                sourceSnapshotId,
+              );
 
-          if (!sourceSnapshot) {
-            throw new Error(
-              `Finance twin lineage snapshot ${sourceSnapshotId} was not found`,
-            );
-          }
+            if (!sourceSnapshot) {
+              throw new Error(
+                `Finance twin lineage snapshot ${sourceSnapshotId} was not found`,
+              );
+            }
 
-          return sourceSnapshot;
-        }),
-      ),
-      Promise.all(
-        sourceFileIds.map(async (sourceFileId) => {
-          const sourceFile =
-            await this.input.sourceRepository.getSourceFileById(sourceFileId);
+            return sourceSnapshot;
+          }),
+        ),
+        Promise.all(
+          sourceFileIds.map(async (sourceFileId) => {
+            const sourceFile =
+              await this.input.sourceRepository.getSourceFileById(sourceFileId);
 
-          if (!sourceFile) {
-            throw new Error(
-              `Finance twin lineage source file ${sourceFileId} was not found`,
-            );
-          }
+            if (!sourceFile) {
+              throw new Error(
+                `Finance twin lineage source file ${sourceFileId} was not found`,
+              );
+            }
 
-          return sourceFile;
-        }),
-      ),
-    ]);
+            return sourceFile;
+          }),
+        ),
+      ],
+    );
 
     return {
       syncRunsById: new Map(
-        syncRuns.map((syncRun) => [syncRun.id, syncRun] satisfies [
-          string,
-          FinanceTwinSyncRunRecord,
-        ]),
+        syncRuns.map(
+          (syncRun) =>
+            [syncRun.id, syncRun] satisfies [string, FinanceTwinSyncRunRecord],
+        ),
       ),
       sourcesById: new Map(
-        sources.map((source) => [source.id, source] satisfies [
-          string,
-          SourceRecord,
-        ]),
+        sources.map(
+          (source) => [source.id, source] satisfies [string, SourceRecord],
+        ),
       ),
       sourceSnapshotsById: new Map(
-        sourceSnapshots.map((sourceSnapshot) => [
-          sourceSnapshot.id,
-          sourceSnapshot,
-        ] satisfies [string, SourceSnapshotRecord]),
+        sourceSnapshots.map(
+          (sourceSnapshot) =>
+            [sourceSnapshot.id, sourceSnapshot] satisfies [
+              string,
+              SourceSnapshotRecord,
+            ],
+        ),
       ),
       sourceFilesById: new Map(
-        sourceFiles.map((sourceFile) => [sourceFile.id, sourceFile] satisfies [
-          string,
-          SourceFileRecord,
-        ]),
+        sourceFiles.map(
+          (sourceFile) =>
+            [sourceFile.id, sourceFile] satisfies [string, SourceFileRecord],
+        ),
       ),
     };
   }
@@ -1185,7 +1275,8 @@ export class FinanceTwinService {
       (count, entry) => count + entry.lines.length,
       0,
     );
-    const summary = entries.length > 0 ? buildGeneralLedgerSummary(entries) : null;
+    const summary =
+      entries.length > 0 ? buildGeneralLedgerSummary(entries) : null;
 
     return {
       entries,

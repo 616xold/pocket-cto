@@ -20,6 +20,7 @@ import {
   buildGeneralLedgerActivityByAccountId,
   type GeneralLedgerActivityByAccount,
 } from "./general-ledger-activity";
+import { buildSharedSourceDiagnostics, dedupeMessages } from "./diagnostics";
 
 export function buildFinanceAccountBridgeReadinessView(input: {
   chartOfAccountsEntries: FinanceAccountCatalogEntryView[];
@@ -34,9 +35,8 @@ export function buildFinanceAccountBridgeReadinessView(input: {
   trialBalanceLineViews: FinanceTrialBalanceLineView[];
   trialBalanceSlice: FinanceLatestSuccessfulTrialBalanceSlice;
 }): FinanceAccountBridgeReadinessView {
-  const generalLedgerActivityByAccountId = buildGeneralLedgerActivityByAccountId(
-    input.generalLedgerEntries,
-  );
+  const generalLedgerActivityByAccountId =
+    buildGeneralLedgerActivityByAccountId(input.generalLedgerEntries);
   const accounts = buildAccountBridgeRows({
     chartOfAccountsEntries: input.chartOfAccountsEntries,
     chartOfAccountsSlice: input.chartOfAccountsSlice,
@@ -56,10 +56,12 @@ export function buildFinanceAccountBridgeReadinessView(input: {
     existing: input.limitations,
     sliceAlignment: input.sliceAlignment,
     sharedSourceId: input.sliceAlignment.sharedSourceId,
-    chartOfAccountsSourceId: input.chartOfAccountsSlice.latestSource?.sourceId ?? null,
+    chartOfAccountsSourceId:
+      input.chartOfAccountsSlice.latestSource?.sourceId ?? null,
     trialBalanceSlice: input.trialBalanceSlice,
     generalLedgerSlice: input.generalLedgerSlice,
   });
+  const diagnostics = buildSharedSourceDiagnostics(input.sliceAlignment);
 
   return FinanceAccountBridgeReadinessViewSchema.parse({
     company: input.company,
@@ -72,6 +74,7 @@ export function buildFinanceAccountBridgeReadinessView(input: {
     bridgeReadiness,
     coverageSummary: buildCoverageSummary(accounts),
     accounts,
+    diagnostics,
     limitations,
   });
 }
@@ -84,10 +87,16 @@ function buildAccountBridgeRows(input: {
   trialBalanceLineViews: FinanceTrialBalanceLineView[];
 }) {
   const chartOfAccountsByAccountId = new Map(
-    input.chartOfAccountsEntries.map((entry) => [entry.ledgerAccount.id, entry]),
+    input.chartOfAccountsEntries.map((entry) => [
+      entry.ledgerAccount.id,
+      entry,
+    ]),
   );
   const trialBalanceByAccountId = new Map(
-    input.trialBalanceLineViews.map((lineView) => [lineView.ledgerAccount.id, lineView]),
+    input.trialBalanceLineViews.map((lineView) => [
+      lineView.ledgerAccount.id,
+      lineView,
+    ]),
   );
   const ledgerAccountsById = new Map<string, FinanceLedgerAccountRecord>();
   const chartOfAccountsAvailable =
@@ -101,7 +110,10 @@ function buildAccountBridgeRows(input: {
     ledgerAccountsById.set(lineView.ledgerAccount.id, lineView.ledgerAccount);
   }
 
-  for (const [ledgerAccountId, activity] of input.generalLedgerActivityByAccountId) {
+  for (const [
+    ledgerAccountId,
+    activity,
+  ] of input.generalLedgerActivityByAccountId) {
     ledgerAccountsById.set(ledgerAccountId, activity.ledgerAccount);
   }
 
@@ -110,9 +122,11 @@ function buildAccountBridgeRows(input: {
     .map((ledgerAccount) => {
       const chartOfAccountsEntry =
         chartOfAccountsByAccountId.get(ledgerAccount.id) ?? null;
-      const trialBalanceLineView = trialBalanceByAccountId.get(ledgerAccount.id) ?? null;
+      const trialBalanceLineView =
+        trialBalanceByAccountId.get(ledgerAccount.id) ?? null;
       const generalLedgerActivity =
-        input.generalLedgerActivityByAccountId.get(ledgerAccount.id)?.activity ?? null;
+        input.generalLedgerActivityByAccountId.get(ledgerAccount.id)
+          ?.activity ?? null;
       const presentInChartOfAccounts = chartOfAccountsEntry !== null;
       const presentInTrialBalance = trialBalanceLineView !== null;
       const presentInGeneralLedger = generalLedgerActivity !== null;
@@ -158,12 +172,15 @@ function buildCoverageSummary(
       (account) => account.presentInGeneralLedger,
     ).length,
     overlapCount: accounts.filter(
-      (account) => account.presentInTrialBalance && account.presentInGeneralLedger,
+      (account) =>
+        account.presentInTrialBalance && account.presentInGeneralLedger,
     ).length,
-    trialBalanceOnlyCount: accounts.filter((account) => account.trialBalanceOnly)
-      .length,
-    generalLedgerOnlyCount: accounts.filter((account) => account.generalLedgerOnly)
-      .length,
+    trialBalanceOnlyCount: accounts.filter(
+      (account) => account.trialBalanceOnly,
+    ).length,
+    generalLedgerOnlyCount: accounts.filter(
+      (account) => account.generalLedgerOnly,
+    ).length,
     missingFromChartOfAccountsCount: accounts.filter(
       (account) => account.missingFromChartOfAccounts,
     ).length,
@@ -241,7 +258,9 @@ function buildBridgeReadiness(input: {
   if (input.comparability.windowRelation !== "exact_match") {
     return {
       state: "not_bridge_ready",
-      reasonCode: buildWindowRelationReasonCode(input.comparability.windowRelation),
+      reasonCode: buildWindowRelationReasonCode(
+        input.comparability.windowRelation,
+      ),
       reasonSummary: buildWindowRelationReasonSummary(
         input.comparability.windowRelation,
       ),
@@ -322,13 +341,6 @@ function buildAccountBridgeLimitations(input: {
     "This route does not compute a direct account balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
   );
 
-  if (
-    input.sliceAlignment.state === "shared_source" &&
-    (!input.sliceAlignment.sameSourceSnapshot || !input.sliceAlignment.sameSyncRun)
-  ) {
-    limitations.push(input.sliceAlignment.reasonSummary);
-  }
-
   if (input.sliceAlignment.state === "mixed") {
     limitations.push(
       "Do not treat this account-bridge view as single-source proof because the latest successful trial-balance and general-ledger slices come from different registered sources.",
@@ -349,5 +361,5 @@ function buildAccountBridgeLimitations(input: {
     limitations.push(input.bridgeReadiness.reasonSummary);
   }
 
-  return Array.from(new Set(limitations));
+  return dedupeMessages(limitations);
 }

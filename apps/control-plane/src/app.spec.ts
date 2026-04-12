@@ -4,7 +4,10 @@ import type { ProofBundleManifest } from "@pocket-cto/domain";
 import { buildApp } from "./app";
 import { createInMemoryContainer } from "./bootstrap";
 import type { AppContainer } from "./lib/types";
-import { ApprovalNotFoundError, ApprovalNotPendingError } from "./modules/approvals/errors";
+import {
+  ApprovalNotFoundError,
+  ApprovalNotPendingError,
+} from "./modules/approvals/errors";
 import {
   GitHubInstallationNotFoundError,
   GitHubIssueIntakeNonIssueDeliveryError,
@@ -124,9 +127,7 @@ describe("control-plane app", () => {
         spec: {
           repos: ["616xold/pocket-cto"],
           constraints: {
-            allowedPaths: [
-              "apps/control-plane/src/modules/github-app/auth.ts",
-            ],
+            allowedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
           },
           input: {
             discoveryQuestion: {
@@ -364,8 +365,7 @@ describe("control-plane app", () => {
       originalFileName: "april-board-deck.pdf",
     });
     expect(sourceDetail.snapshots.map((snapshot) => snapshot.version)).toEqual([
-      2,
-      1,
+      2, 1,
     ]);
   });
 
@@ -984,7 +984,7 @@ describe("control-plane app", () => {
         },
       },
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, and period-context read models.",
+        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, and period-context read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed across different registered sources.",
       ],
@@ -992,7 +992,10 @@ describe("control-plane app", () => {
 
     const snapshot = snapshotResponse.json() as {
       accounts: Array<{
-        activityLineageRef: { ledgerAccountId: string; syncRunId: string } | null;
+        activityLineageRef: {
+          ledgerAccountId: string;
+          syncRunId: string;
+        } | null;
         ledgerAccount: { accountCode: string; id: string };
         lineageTargets: {
           chartOfAccountsEntry: { targetId: string; syncRunId: string } | null;
@@ -1022,9 +1025,11 @@ describe("control-plane app", () => {
 
     const activityLineageResponse = await app.inject({
       method: "GET",
-      url: `/finance-twin/companies/acme/general-ledger/accounts/${cashRow?.ledgerAccount.id ?? ""}/lineage?${new URLSearchParams({
-        syncRunId: generalLedgerSync.syncRun.id,
-      }).toString()}`,
+      url: `/finance-twin/companies/acme/general-ledger/accounts/${cashRow?.ledgerAccount.id ?? ""}/lineage?${new URLSearchParams(
+        {
+          syncRunId: generalLedgerSync.syncRun.id,
+        },
+      ).toString()}`,
     });
 
     expect(activityLineageResponse.statusCode).toBe(200);
@@ -1037,7 +1042,9 @@ describe("control-plane app", () => {
       journalEntryCount: 2,
       journalLineCount: 2,
     });
-    expect((activityLineageResponse.json() as { records: unknown[] }).records).toEqual(
+    expect(
+      (activityLineageResponse.json() as { records: unknown[] }).records,
+    ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           journalEntryLineage: {
@@ -1061,9 +1068,11 @@ describe("control-plane app", () => {
     };
     const journalLineLineageResponse = await app.inject({
       method: "GET",
-      url: `/finance-twin/companies/acme/lineage/journal_line/${activityLineage.records[0]?.journalLineLineage.targetId ?? ""}?${new URLSearchParams({
-        syncRunId: generalLedgerSync.syncRun.id,
-      }).toString()}`,
+      url: `/finance-twin/companies/acme/lineage/journal_line/${activityLineage.records[0]?.journalLineLineage.targetId ?? ""}?${new URLSearchParams(
+        {
+          syncRunId: generalLedgerSync.syncRun.id,
+        },
+      ).toString()}`,
     });
 
     expect(journalLineLineageResponse.statusCode).toBe(200);
@@ -1213,11 +1222,13 @@ describe("control-plane app", () => {
         trialBalanceOnlyCount: 0,
         generalLedgerOnlyCount: 0,
       },
+      diagnostics: [
+        "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+      ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, and period-context read models.",
+        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, and period-context read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
-        "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
         "The observed general-ledger activity window fits inside the latest trial-balance reporting window, but the general-ledger slice does not include explicit source-declared period context.",
       ],
     });
@@ -1352,7 +1363,10 @@ describe("control-plane app", () => {
         generalLedgerOnly: boolean;
         missingFromChartOfAccounts: boolean;
         inactiveWithGeneralLedgerActivity: boolean;
-        activityLineageRef: { ledgerAccountId: string; syncRunId: string } | null;
+        activityLineageRef: {
+          ledgerAccountId: string;
+          syncRunId: string;
+        } | null;
       }>;
       limitations: string[];
     };
@@ -1392,11 +1406,13 @@ describe("control-plane app", () => {
         missingFromChartOfAccountsCount: 2,
         inactiveWithGeneralLedgerActivityCount: 1,
       },
+      diagnostics: [
+        "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+      ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, and period-context read models.",
+        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, and period-context read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route does not compute a direct account balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
-        "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       ],
     });
     expect(archivedClearingRow).toMatchObject({
@@ -1427,6 +1443,95 @@ describe("control-plane app", () => {
         ledgerAccountId: productRevenueRow?.ledgerAccount.id,
         syncRunId: generalLedgerSync.syncRun.id,
       },
+    });
+
+    const balanceBridgeResponse = await app.inject({
+      method: "GET",
+      url: "/finance-twin/companies/acme/reconciliation/trial-balance-vs-general-ledger/balance-bridge-prerequisites",
+    });
+
+    expect(balanceBridgeResponse.statusCode).toBe(200);
+
+    const balanceBridge = balanceBridgeResponse.json() as {
+      accounts: Array<{
+        blockedReasonCode: string | null;
+        balanceBridgePrereqReady: boolean;
+        generalLedgerBalanceProof: {
+          endingBalanceEvidencePresent: boolean;
+          openingBalanceEvidencePresent: boolean;
+          proofBasis: string;
+        };
+        ledgerAccount: { accountCode: string };
+        matchedPeriodAccountBridgeReady: boolean;
+      }>;
+    };
+
+    expect(balanceBridge).toMatchObject({
+      accountBridgeReadiness: {
+        state: "matched_period_ready",
+        reasonCode: "account_bridge_matched_period_ready",
+      },
+      balanceBridgePrerequisites: {
+        state: "not_prereq_ready",
+        reasonCode: "balance_bridge_missing_balance_proof",
+        basis: "source_declared_period",
+        windowRelation: "exact_match",
+        prerequisites: {
+          hasSuccessfulTrialBalanceSlice: true,
+          hasSuccessfulGeneralLedgerSlice: true,
+          matchedPeriodAccountBridgeReady: true,
+          anySourceBackedGeneralLedgerBalanceProof: false,
+        },
+      },
+      coverageSummary: {
+        matchedPeriodAccountBridgeReadyCount: 1,
+        accountsWithOpeningBalanceProofCount: 0,
+        accountsWithEndingBalanceProofCount: 0,
+        accountsBlockedByMissingOverlapCount: 4,
+        accountsBlockedByMissingBalanceProofCount: 1,
+        prereqReadyAccountCount: 0,
+      },
+      diagnostics: [
+        "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+      ],
+      limitations: [
+        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, and period-context read models.",
+        "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
+        "This route does not compute a direct balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals, and general-ledger activity totals do not prove opening or ending balances.",
+        "Matched-period account overlap exists, but none of those accounts include source-backed general-ledger opening-balance or ending-balance proof in the persisted Finance Twin state, so this route stops at blocked prerequisites rather than inventing a balance bridge.",
+      ],
+    });
+    expect(
+      balanceBridge.accounts.find(
+        (account) => account.ledgerAccount.accountCode === "1000",
+      ),
+    ).toMatchObject({
+      matchedPeriodAccountBridgeReady: true,
+      balanceBridgePrereqReady: false,
+      blockedReasonCode: "balance_bridge_missing_balance_proof",
+      generalLedgerBalanceProof: {
+        proofBasis: "activity_only_no_balance_proof",
+        openingBalanceEvidencePresent: false,
+        endingBalanceEvidencePresent: false,
+      },
+    });
+    expect(
+      balanceBridge.accounts.find(
+        (account) => account.ledgerAccount.accountCode === "4000",
+      ),
+    ).toMatchObject({
+      matchedPeriodAccountBridgeReady: false,
+      balanceBridgePrereqReady: false,
+      blockedReasonCode: "balance_bridge_missing_general_ledger_overlap",
+    });
+    expect(
+      balanceBridge.accounts.find(
+        (account) => account.ledgerAccount.accountCode === "5000",
+      ),
+    ).toMatchObject({
+      matchedPeriodAccountBridgeReady: false,
+      balanceBridgePrereqReady: false,
+      blockedReasonCode: "balance_bridge_missing_trial_balance_overlap",
     });
   });
 
@@ -1633,7 +1738,8 @@ describe("control-plane app", () => {
                   updatedAt: "2026-03-14T10:01:00.000Z",
                 },
                 replayEventCount: 12,
-                riskSummary: "Action controls still require embedded-worker mode.",
+                riskSummary:
+                  "Action controls still require embedded-worker mode.",
                 status: "incomplete",
                 timestamps: {
                   missionCreatedAt: "2026-03-14T10:00:00.000Z",
@@ -1643,7 +1749,8 @@ describe("control-plane app", () => {
                   latestApprovalAt: "2026-03-14T10:01:00.000Z",
                   latestArtifactAt: "2026-03-14T10:04:00.000Z",
                 },
-                validationSummary: "Pending local executor validation evidence.",
+                validationSummary:
+                  "Pending local executor validation evidence.",
                 verificationSummary:
                   "A runtime approval is still pending, so the proof bundle is not final yet.",
               }),
@@ -1702,7 +1809,8 @@ describe("control-plane app", () => {
                 createdAt: "2026-03-14T10:04:00.000Z",
                 id: "77777777-7777-4777-8777-777777777777",
                 kind: "diff_summary",
-                summary: "Workspace changes touched apps/web and apps/control-plane.",
+                summary:
+                  "Workspace changes touched apps/web and apps/control-plane.",
                 taskId: unknownTaskId,
                 uri: "pocket-cto://missions/11111111-1111-4111-8111-111111111111/tasks/33333333-3333-4333-8333-333333333333/diff-summary",
               },
@@ -3040,7 +3148,9 @@ async function createStubApp(
   overrides: {
     financeTwinService?: Partial<AppContainer["financeTwinService"]>;
     githubAppService?: Partial<AppContainer["githubAppService"]>;
-    githubIssueIntakeService?: Partial<AppContainer["githubIssueIntakeService"]>;
+    githubIssueIntakeService?: Partial<
+      AppContainer["githubIssueIntakeService"]
+    >;
     githubWebhookService?: Partial<AppContainer["githubWebhookService"]>;
     missionService?: Partial<AppContainer["missionService"]>;
     operatorControl?: Partial<AppContainer["operatorControl"]>;
@@ -3066,11 +3176,10 @@ async function createStubApp(
         ...base.githubIssueIntakeService,
         ...overrides.githubIssueIntakeService,
       },
-      githubWebhookService:
-        {
-          ...base.githubWebhookService,
-          ...overrides.githubWebhookService,
-        },
+      githubWebhookService: {
+        ...base.githubWebhookService,
+        ...overrides.githubWebhookService,
+      },
       missionService: {
         ...base.missionService,
         ...overrides.missionService,

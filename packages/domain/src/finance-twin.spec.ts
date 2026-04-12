@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  FinanceBalanceBridgePrerequisitesViewSchema,
   FinanceAccountBridgeReadinessViewSchema,
   FinanceAccountCatalogViewSchema,
   FinanceGeneralLedgerActivityLineageViewSchema,
@@ -230,9 +231,9 @@ describe("finance twin domain schemas", () => {
     });
 
     expect(parsed.freshness.generalLedger.state).toBe("fresh");
-    expect(parsed.latestAttemptedSlices.generalLedger.latestSyncRun?.extractorKey).toBe(
-      "general_ledger_csv",
-    );
+    expect(
+      parsed.latestAttemptedSlices.generalLedger.latestSyncRun?.extractorKey,
+    ).toBe("general_ledger_csv");
   });
 
   it("parses an account catalog view", () => {
@@ -710,11 +711,13 @@ describe("finance twin domain schemas", () => {
         },
       ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, and period-context read models.",
+        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, and period-context read models.",
       ],
     });
 
-    expect(parsed.accounts[0]?.generalLedgerActivity?.journalEntryCount).toBe(1);
+    expect(parsed.accounts[0]?.generalLedgerActivity?.journalEntryCount).toBe(
+      1,
+    );
   });
 
   it("parses a finance lineage drill view", () => {
@@ -1382,13 +1385,362 @@ describe("finance twin domain schemas", () => {
         },
       ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, and period-context read models.",
+        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, and period-context read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
       ],
     });
 
     expect(parsed.bridgeReadiness.state).toBe("matched_period_ready");
-    expect(parsed.coverageSummary.inactiveWithGeneralLedgerActivityCount).toBe(1);
+    expect(parsed.coverageSummary.inactiveWithGeneralLedgerActivityCount).toBe(
+      1,
+    );
+  });
+
+  it("parses a finance balance-bridge-prerequisites view", () => {
+    const parsed = FinanceBalanceBridgePrerequisitesViewSchema.parse({
+      company: {
+        id: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        displayName: "Acme",
+        createdAt: "2026-04-09T00:00:00.000Z",
+        updatedAt: "2026-04-09T00:00:00.000Z",
+      },
+      chartOfAccountsSlice: {
+        latestSource: null,
+        latestSyncRun: null,
+        coverage: {
+          accountCatalogEntryCount: 0,
+          lineageCount: 0,
+        },
+        summary: null,
+      },
+      trialBalanceSlice: {
+        latestSource: {
+          sourceId: "22222222-2222-4222-8222-222222222222",
+          sourceSnapshotId: "bbbbbbbb-3333-4333-8333-bbbbbbbbbbbb",
+          sourceFileId: "bbbbbbbb-4444-4444-8444-bbbbbbbbbbbb",
+          syncRunId: "bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb",
+        },
+        latestSyncRun: {
+          id: "bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          reportingPeriodId: "66666666-6666-4666-8666-666666666666",
+          sourceId: "22222222-2222-4222-8222-222222222222",
+          sourceSnapshotId: "bbbbbbbb-3333-4333-8333-bbbbbbbbbbbb",
+          sourceFileId: "bbbbbbbb-4444-4444-8444-bbbbbbbbbbbb",
+          extractorKey: "trial_balance_csv",
+          status: "succeeded",
+          startedAt: "2026-04-11T00:05:00.000Z",
+          completedAt: "2026-04-11T00:05:03.000Z",
+          stats: {},
+          errorSummary: null,
+          createdAt: "2026-04-11T00:05:00.000Z",
+        },
+        reportingPeriod: {
+          id: "66666666-6666-4666-8666-666666666666",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          periodKey: "2026-03",
+          label: "March 2026",
+          periodStart: "2026-03-01",
+          periodEnd: "2026-03-31",
+          createdAt: "2026-04-11T00:05:00.000Z",
+          updatedAt: "2026-04-11T00:05:00.000Z",
+        },
+        coverage: {
+          lineCount: 1,
+          lineageCount: 2,
+        },
+        summary: {
+          accountCount: 1,
+          lineCount: 1,
+          totalDebitAmount: "120.00",
+          totalCreditAmount: "0.00",
+          totalNetAmount: "120.00",
+          currencyCode: "USD",
+        },
+      },
+      generalLedgerSlice: {
+        latestSource: {
+          sourceId: "22222222-2222-4222-8222-222222222222",
+          sourceSnapshotId: "cccccccc-3333-4333-8333-cccccccccccc",
+          sourceFileId: "cccccccc-4444-4444-8444-cccccccccccc",
+          syncRunId: "cccccccc-5555-4555-8555-cccccccccccc",
+        },
+        latestSyncRun: {
+          id: "cccccccc-5555-4555-8555-cccccccccccc",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          reportingPeriodId: null,
+          sourceId: "22222222-2222-4222-8222-222222222222",
+          sourceSnapshotId: "cccccccc-3333-4333-8333-cccccccccccc",
+          sourceFileId: "cccccccc-4444-4444-8444-cccccccccccc",
+          extractorKey: "general_ledger_csv",
+          status: "succeeded",
+          startedAt: "2026-04-11T00:10:00.000Z",
+          completedAt: "2026-04-11T00:10:03.000Z",
+          stats: {},
+          errorSummary: null,
+          createdAt: "2026-04-11T00:10:00.000Z",
+        },
+        coverage: {
+          journalEntryCount: 1,
+          journalLineCount: 1,
+          lineageCount: 2,
+        },
+        periodContext: {
+          basis: "source_declared_period",
+          sourceDeclaredPeriod: {
+            contextKind: "period_window",
+            periodKey: "2026-03",
+            periodStart: "2026-03-01",
+            periodEnd: "2026-03-31",
+            asOf: null,
+          },
+          activityWindowEarliestEntryDate: "2026-03-15",
+          activityWindowLatestEntryDate: "2026-03-15",
+          reasonCode: "source_declared_period_window",
+          reasonSummary:
+            "The latest successful general-ledger slice includes explicit source-declared period start and period end fields.",
+        },
+        summary: {
+          journalEntryCount: 1,
+          journalLineCount: 1,
+          ledgerAccountCount: 1,
+          totalDebitAmount: "120.00",
+          totalCreditAmount: "0.00",
+          earliestEntryDate: "2026-03-15",
+          latestEntryDate: "2026-03-15",
+          currencyCode: "USD",
+        },
+      },
+      freshness: {
+        overall: {
+          state: "fresh",
+          latestSyncRunId: "cccccccc-5555-4555-8555-cccccccccccc",
+          latestSyncStatus: "succeeded",
+          latestCompletedAt: "2026-04-11T00:10:03.000Z",
+          latestSuccessfulSyncRunId: "cccccccc-5555-4555-8555-cccccccccccc",
+          latestSuccessfulCompletedAt: "2026-04-11T00:10:03.000Z",
+          ageSeconds: 1,
+          staleAfterSeconds: 86400,
+          reasonCode: "implemented_slices_fresh",
+          reasonSummary:
+            "The implemented finance slices are within the 24 hour freshness window.",
+        },
+        trialBalance: {
+          state: "fresh",
+          latestSyncRunId: "bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb",
+          latestSyncStatus: "succeeded",
+          latestCompletedAt: "2026-04-11T00:05:03.000Z",
+          latestSuccessfulSyncRunId: "bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb",
+          latestSuccessfulCompletedAt: "2026-04-11T00:05:03.000Z",
+          ageSeconds: 2,
+          staleAfterSeconds: 86400,
+          reasonCode: "latest_successful_sync_fresh",
+          reasonSummary:
+            "The latest successful trial-balance sync is within the 24 hour freshness window.",
+        },
+        chartOfAccounts: {
+          state: "missing",
+          latestSyncRunId: null,
+          latestSyncStatus: null,
+          latestCompletedAt: null,
+          latestSuccessfulSyncRunId: null,
+          latestSuccessfulCompletedAt: null,
+          ageSeconds: null,
+          staleAfterSeconds: 86400,
+          reasonCode: "not_synced",
+          reasonSummary:
+            "No finance twin sync has been recorded yet for the chart-of-accounts slice.",
+        },
+        generalLedger: {
+          state: "fresh",
+          latestSyncRunId: "cccccccc-5555-4555-8555-cccccccccccc",
+          latestSyncStatus: "succeeded",
+          latestCompletedAt: "2026-04-11T00:10:03.000Z",
+          latestSuccessfulSyncRunId: "cccccccc-5555-4555-8555-cccccccccccc",
+          latestSuccessfulCompletedAt: "2026-04-11T00:10:03.000Z",
+          ageSeconds: 1,
+          staleAfterSeconds: 86400,
+          reasonCode: "latest_successful_sync_fresh",
+          reasonSummary:
+            "The latest successful general-ledger sync is within the 24 hour freshness window.",
+        },
+      },
+      sliceAlignment: {
+        state: "shared_source",
+        implementedSliceCount: 2,
+        availableSliceCount: 2,
+        distinctSourceCount: 1,
+        distinctSyncRunCount: 2,
+        distinctSourceSnapshotCount: 2,
+        sameSource: true,
+        sameSyncRun: false,
+        sameSourceSnapshot: false,
+        sharedSourceId: "22222222-2222-4222-8222-222222222222",
+        sharedSyncRunId: null,
+        sharedSourceSnapshotId: null,
+        reasonCode: "shared_source",
+        reasonSummary:
+          "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+      },
+      comparability: {
+        state: "window_comparable",
+        basis: "source_declared_period",
+        windowRelation: "exact_match",
+        reasonCode: "source_declared_period_exact_match",
+        reasonSummary:
+          "The latest successful general-ledger slice includes explicit source-declared period context that exactly matches the latest trial-balance reporting window.",
+        trialBalanceWindow: {
+          periodKey: "2026-03",
+          label: "March 2026",
+          periodStart: "2026-03-01",
+          periodEnd: "2026-03-31",
+        },
+        sourceDeclaredGeneralLedgerPeriod: {
+          contextKind: "period_window",
+          periodKey: "2026-03",
+          periodStart: "2026-03-01",
+          periodEnd: "2026-03-31",
+          asOf: null,
+        },
+        generalLedgerWindow: {
+          earliestEntryDate: "2026-03-15",
+          latestEntryDate: "2026-03-15",
+        },
+        sameSource: true,
+        sameSourceSnapshot: false,
+        sameSyncRun: false,
+        sharedSourceId: "22222222-2222-4222-8222-222222222222",
+        sharedSourceSnapshotId: null,
+        sharedSyncRunId: null,
+      },
+      accountBridgeReadiness: {
+        state: "matched_period_ready",
+        reasonCode: "account_bridge_matched_period_ready",
+        reasonSummary:
+          "The latest successful trial-balance and general-ledger slices share one registered source and an exact matching source-declared period window, so account-level overlap and unmatched diagnostics can be discussed safely without claiming a numeric bridge or variance.",
+        basis: "source_declared_period",
+        windowRelation: "exact_match",
+        sameSource: true,
+        sameSourceSnapshot: false,
+        sameSyncRun: false,
+        sharedSourceId: "22222222-2222-4222-8222-222222222222",
+      },
+      balanceBridgePrerequisites: {
+        state: "not_prereq_ready",
+        reasonCode: "balance_bridge_missing_balance_proof",
+        reasonSummary:
+          "Matched-period account overlap exists, but none of those accounts include source-backed general-ledger opening-balance or ending-balance proof in the persisted Finance Twin state, so this route stops at blocked prerequisites rather than inventing a balance bridge.",
+        basis: "source_declared_period",
+        windowRelation: "exact_match",
+        sameSource: true,
+        sameSourceSnapshot: false,
+        sameSyncRun: false,
+        sharedSourceId: "22222222-2222-4222-8222-222222222222",
+        prerequisites: {
+          hasSuccessfulTrialBalanceSlice: true,
+          hasSuccessfulGeneralLedgerSlice: true,
+          matchedPeriodAccountBridgeReady: true,
+          anySourceBackedGeneralLedgerBalanceProof: false,
+        },
+      },
+      coverageSummary: {
+        accountRowCount: 1,
+        presentInChartOfAccountsCount: 0,
+        presentInTrialBalanceCount: 1,
+        presentInGeneralLedgerCount: 1,
+        overlapCount: 1,
+        trialBalanceOnlyCount: 0,
+        generalLedgerOnlyCount: 0,
+        missingFromChartOfAccountsCount: 0,
+        inactiveWithGeneralLedgerActivityCount: 0,
+        matchedPeriodAccountBridgeReadyCount: 1,
+        accountsWithOpeningBalanceProofCount: 0,
+        accountsWithEndingBalanceProofCount: 0,
+        accountsBlockedByMissingOverlapCount: 0,
+        accountsBlockedByMissingBalanceProofCount: 1,
+        prereqReadyAccountCount: 0,
+      },
+      accounts: [
+        {
+          ledgerAccount: {
+            id: "77777777-7777-4777-8777-777777777777",
+            companyId: "11111111-1111-4111-8111-111111111111",
+            accountCode: "1000",
+            accountName: "Cash",
+            accountType: "asset",
+            createdAt: "2026-04-11T00:05:00.000Z",
+            updatedAt: "2026-04-11T00:05:00.000Z",
+          },
+          chartOfAccountsEntry: null,
+          trialBalanceLine: {
+            id: "99999999-9999-4999-8999-999999999999",
+            companyId: "11111111-1111-4111-8111-111111111111",
+            reportingPeriodId: "66666666-6666-4666-8666-666666666666",
+            ledgerAccountId: "77777777-7777-4777-8777-777777777777",
+            syncRunId: "bbbbbbbb-5555-4555-8555-bbbbbbbbbbbb",
+            lineNumber: 2,
+            debitAmount: "120.00",
+            creditAmount: "0.00",
+            netAmount: "120.00",
+            currencyCode: "USD",
+            observedAt: "2026-04-11T00:05:03.000Z",
+            createdAt: "2026-04-11T00:05:03.000Z",
+            updatedAt: "2026-04-11T00:05:03.000Z",
+          },
+          generalLedgerActivity: {
+            journalEntryCount: 1,
+            journalLineCount: 1,
+            totalDebitAmount: "120.00",
+            totalCreditAmount: "0.00",
+            earliestEntryDate: "2026-03-15",
+            latestEntryDate: "2026-03-15",
+          },
+          generalLedgerBalanceProof: {
+            openingBalanceAmount: null,
+            endingBalanceAmount: null,
+            openingBalanceEvidencePresent: false,
+            endingBalanceEvidencePresent: false,
+            proofBasis: "activity_only_no_balance_proof",
+            proofSource: null,
+            reasonCode: "activity_only_no_balance_proof",
+            reasonSummary:
+              "The latest successful general-ledger slice only provides activity totals for this account; it does not expose source-backed opening-balance or ending-balance proof.",
+          },
+          presentInChartOfAccounts: false,
+          presentInTrialBalance: true,
+          presentInGeneralLedger: true,
+          trialBalanceOnly: false,
+          generalLedgerOnly: false,
+          missingFromChartOfAccounts: false,
+          inactiveWithGeneralLedgerActivity: false,
+          matchedPeriodAccountBridgeReady: true,
+          balanceBridgePrereqReady: false,
+          blockedReasonCode: "balance_bridge_missing_balance_proof",
+          blockedReasonSummary:
+            "The latest successful general-ledger slice only provides activity totals for this account; it does not expose source-backed opening-balance or ending-balance proof.",
+          activityLineageRef: {
+            ledgerAccountId: "77777777-7777-4777-8777-777777777777",
+            syncRunId: "cccccccc-5555-4555-8555-cccccccccccc",
+          },
+        },
+      ],
+      diagnostics: [
+        "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
+      ],
+      limitations: [
+        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, and period-context read models.",
+        "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
+        "No successful chart-of-accounts slice exists yet for this balance-bridge-prerequisites view, so chart-of-accounts enrichment is unavailable.",
+        "This route does not compute a direct balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals, and general-ledger activity totals do not prove opening or ending balances.",
+        "Matched-period account overlap exists, but none of those accounts include source-backed general-ledger opening-balance or ending-balance proof in the persisted Finance Twin state, so this route stops at blocked prerequisites rather than inventing a balance bridge.",
+      ],
+    });
+
+    expect(parsed.balanceBridgePrerequisites.state).toBe("not_prereq_ready");
+    expect(parsed.accounts[0]?.generalLedgerBalanceProof.proofBasis).toBe(
+      "activity_only_no_balance_proof",
+    );
   });
 
   it("parses a general-ledger activity lineage drill view", () => {
@@ -1452,6 +1804,8 @@ describe("finance twin domain schemas", () => {
       limitations: [],
     });
 
-    expect(parsed.records[0]?.journalLineLineage.targetKind).toBe("journal_line");
+    expect(parsed.records[0]?.journalLineLineage.targetKind).toBe(
+      "journal_line",
+    );
   });
 });
