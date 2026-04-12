@@ -89,6 +89,22 @@ export async function registerFinanceTwinRoutes(
   );
 
   app.get(
+    "/finance-twin/companies/:companyKey/contracts",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getContracts!(params.companyKey);
+    },
+  );
+
+  app.get(
+    "/finance-twin/companies/:companyKey/obligation-calendar",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getObligationCalendar!(params.companyKey);
+    },
+  );
+
+  app.get(
     "/finance-twin/companies/:companyKey/receivables-aging",
     async (request) => {
       const params = financeTwinCompanyKeyParamsSchema.parse(request.params);

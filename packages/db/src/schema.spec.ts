@@ -4,6 +4,8 @@ import {
   financeBankAccounts,
   financeBankAccountSummaries,
   financeCompanies,
+  financeContractObligations,
+  financeContracts,
   financeCustomers,
   financeGeneralLedgerBalanceProofs,
   financeJournalEntries,
@@ -38,6 +40,8 @@ describe("db schema exports", () => {
     expect(financeBankAccounts).toBeDefined();
     expect(financeBankAccountSummaries).toBeDefined();
     expect(financeCompanies).toBeDefined();
+    expect(financeContractObligations).toBeDefined();
+    expect(financeContracts).toBeDefined();
     expect(financeCustomers).toBeDefined();
     expect(financeReportingPeriods).toBeDefined();
     expect(financeLedgerAccounts).toBeDefined();

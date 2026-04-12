@@ -6,10 +6,12 @@ import {
   FinanceAccountBridgeReadinessViewSchema,
   FinanceAccountCatalogViewSchema,
   FinanceCollectionsPostureViewSchema,
+  FinanceContractsViewSchema,
   FinanceGeneralLedgerActivityLineageViewSchema,
   FinanceGeneralLedgerBalanceProofViewSchema,
   FinanceGeneralLedgerViewSchema,
   FinanceLineageDrillViewSchema,
+  FinanceObligationCalendarViewSchema,
   FinancePayablesAgingViewSchema,
   FinancePayablesPostureViewSchema,
   FinanceReceivablesAgingViewSchema,
@@ -2284,5 +2286,64 @@ describe("finance twin domain schemas", () => {
 
     expect(payablesAging.rows).toHaveLength(0);
     expect(payablesPosture.currencyBuckets).toHaveLength(0);
+
+    const contracts = FinanceContractsViewSchema.parse({
+      company: receivablesAging.company,
+      latestAttemptedSyncRun: null,
+      latestSuccessfulSlice: {
+        latestSource: null,
+        latestSyncRun: null,
+        coverage: {
+          contractCount: 0,
+          obligationCount: 0,
+          lineageCount: 0,
+        },
+        summary: null,
+      },
+      freshness: {
+        state: "missing",
+        latestSyncRunId: null,
+        latestSyncStatus: null,
+        latestCompletedAt: null,
+        latestSuccessfulSyncRunId: null,
+        latestSuccessfulCompletedAt: null,
+        ageSeconds: null,
+        staleAfterSeconds: 86400,
+        reasonCode: "not_synced",
+        reasonSummary:
+          "No finance twin sync has been recorded yet for the contract-metadata slice.",
+      },
+      contractCount: 0,
+      contracts: [],
+      diagnostics: [],
+      limitations: [],
+    });
+    const obligationCalendar = FinanceObligationCalendarViewSchema.parse({
+      company: contracts.company,
+      latestAttemptedSyncRun: null,
+      latestSuccessfulContractMetadataSlice: contracts.latestSuccessfulSlice,
+      freshness: contracts.freshness,
+      upcomingObligations: [],
+      currencyBuckets: [],
+      coverageSummary: {
+        contractCount: 0,
+        obligationCount: 0,
+        currencyBucketCount: 0,
+        datedContractCount: 0,
+        undatedContractCount: 0,
+        obligationsWithExplicitAmountCount: 0,
+        obligationsWithoutExplicitAmountCount: 0,
+        contractsWithRenewalDateCount: 0,
+        contractsWithExpirationDateCount: 0,
+        contractsWithEndDateCount: 0,
+        contractsWithNoticeDeadlineCount: 0,
+        contractsWithScheduledPaymentDateCount: 0,
+      },
+      diagnostics: [],
+      limitations: [],
+    });
+
+    expect(contracts.contracts).toHaveLength(0);
+    expect(obligationCalendar.upcomingObligations).toHaveLength(0);
   });
 });

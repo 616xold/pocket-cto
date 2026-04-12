@@ -169,6 +169,13 @@
       "when": 1776026605786,
       "tag": "0023_odd_shadowcat",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1776031351270,
+      "tag": "0024_awesome_kang",
+      "breakpoints": true
     }
   ]
 }

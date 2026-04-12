@@ -38,6 +38,7 @@ Suggested thread naming:
 - `F2K-bank-account-summary-and-cash-posture`
 - `F2L-receivables-aging-and-collections-posture`
 - `F2M-payables-aging-and-payables-posture`
+- `F2N-contract-metadata-and-obligation-calendar`
 - `F3-cfo-wiki-compiler`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`

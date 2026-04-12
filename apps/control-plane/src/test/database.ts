@@ -13,6 +13,8 @@ import type {
   financeBankAccounts,
   financeBankAccountSummaries,
   financeCompanies,
+  financeContractObligations,
+  financeContracts,
   financeCustomers,
   financeGeneralLedgerBalanceProofs,
   financeJournalEntries,
@@ -50,6 +52,8 @@ export async function resetTestDatabase() {
   await db.execute(sql`
     TRUNCATE TABLE
       finance_twin_lineage,
+      finance_contract_obligations,
+      finance_contracts,
       finance_payables_aging_rows,
       finance_receivables_aging_rows,
       finance_bank_account_summaries,
@@ -135,6 +139,8 @@ async function selectCount(
     | typeof financeBankAccounts
     | typeof financeBankAccountSummaries
     | typeof financeCompanies
+    | typeof financeContractObligations
+    | typeof financeContracts
     | typeof financeCustomers
     | typeof financeReportingPeriods
     | typeof financeLedgerAccounts

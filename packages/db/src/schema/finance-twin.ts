@@ -24,6 +24,7 @@ export const financeTwinExtractorKeyEnum = pgEnum(
     "bank_account_summary_csv",
     "receivables_aging_csv",
     "payables_aging_csv",
+    "contract_metadata_csv",
   ],
 );
 
@@ -43,12 +44,19 @@ export const financeTwinLineageTargetKindEnum = pgEnum(
     "receivables_aging_row",
     "vendor",
     "payables_aging_row",
+    "contract",
+    "contract_obligation",
     "trial_balance_line",
     "account_catalog_entry",
     "journal_entry",
     "journal_line",
     "general_ledger_balance_proof",
   ],
+);
+
+export const financeContractObligationTypeEnum = pgEnum(
+  "finance_contract_obligation_type",
+  ["renewal", "expiration", "end_date", "notice_deadline", "scheduled_payment"],
 );
 
 export const financeBankBalanceTypeEnum = pgEnum(
@@ -68,6 +76,26 @@ type FinancePayablesAgingBucketValueJson = {
   bucketClass: string;
   bucketKey: string;
   sourceColumn: string;
+};
+
+type FinanceContractSourceFieldMapJson = {
+  agreementType: string | null;
+  amount: string | null;
+  asOfDate: string | null;
+  autoRenew: string | null;
+  contractIdentity: string | null;
+  contractType: string | null;
+  counterparty: string | null;
+  currencyCode: string | null;
+  effectiveDate: string | null;
+  endDate: string | null;
+  expirationDate: string | null;
+  nextPaymentDate: string | null;
+  noticeDeadline: string | null;
+  paymentAmount: string | null;
+  renewalDate: string | null;
+  startDate: string | null;
+  status: string | null;
 };
 
 export const financeCompanies = pgTable(
@@ -243,6 +271,111 @@ export const financeTwinSyncRuns = pgTable(
     sourceFileCreatedAtIndex: index(
       "finance_twin_sync_runs_source_file_id_idx",
     ).on(table.sourceFileId, table.createdAt),
+  }),
+);
+
+export const financeContracts = pgTable(
+  "finance_contracts",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    syncRunId: uuid("sync_run_id")
+      .references(() => financeTwinSyncRuns.id, { onDelete: "cascade" })
+      .notNull(),
+    contractIdentityKey: text("contract_identity_key").notNull(),
+    lineNumber: integer("line_number").notNull(),
+    sourceLineNumbers: jsonb("source_line_numbers").$type<number[]>().notNull(),
+    contractLabel: text("contract_label").notNull(),
+    externalContractId: text("external_contract_id"),
+    counterpartyLabel: text("counterparty_label"),
+    contractType: text("contract_type"),
+    agreementType: text("agreement_type"),
+    status: text("status"),
+    startDate: date("start_date"),
+    effectiveDate: date("effective_date"),
+    endDate: date("end_date"),
+    expirationDate: date("expiration_date"),
+    renewalDate: date("renewal_date"),
+    noticeDeadline: date("notice_deadline"),
+    nextPaymentDate: date("next_payment_date"),
+    knownAsOfDates: jsonb("known_as_of_dates").$type<string[]>().notNull(),
+    unknownAsOfObservationCount: integer("unknown_as_of_observation_count")
+      .notNull()
+      .default(0),
+    amount: numeric("amount", {
+      precision: 18,
+      scale: 2,
+    }),
+    paymentAmount: numeric("payment_amount", {
+      precision: 18,
+      scale: 2,
+    }),
+    currencyCode: text("currency_code"),
+    autoRenew: boolean("auto_renew"),
+    sourceFieldMap: jsonb("source_field_map")
+      .$type<FinanceContractSourceFieldMapJson>()
+      .notNull(),
+    observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    syncRunContractIdentityUnique: uniqueIndex(
+      "finance_contracts_sync_run_contract_identity_key",
+    ).on(table.syncRunId, table.contractIdentityKey),
+    companySyncIndex: index("finance_contracts_company_sync_idx").on(
+      table.companyId,
+      table.syncRunId,
+    ),
+    contractLabelIndex: index("finance_contracts_contract_label_idx").on(
+      table.companyId,
+      table.contractLabel,
+    ),
+  }),
+);
+
+export const financeContractObligations = pgTable(
+  "finance_contract_obligations",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    contractId: uuid("contract_id")
+      .references(() => financeContracts.id, { onDelete: "cascade" })
+      .notNull(),
+    syncRunId: uuid("sync_run_id")
+      .references(() => financeTwinSyncRuns.id, { onDelete: "cascade" })
+      .notNull(),
+    obligationScopeKey: text("obligation_scope_key").notNull(),
+    lineNumber: integer("line_number").notNull(),
+    sourceLineNumbers: jsonb("source_line_numbers").$type<number[]>().notNull(),
+    obligationType: financeContractObligationTypeEnum("obligation_type")
+      .notNull(),
+    dueDate: date("due_date").notNull(),
+    amount: numeric("amount", {
+      precision: 18,
+      scale: 2,
+    }),
+    currencyCode: text("currency_code"),
+    sourceField: text("source_field").notNull(),
+    observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    syncRunContractScopeUnique: uniqueIndex(
+      "finance_contract_obligations_sync_run_contract_scope_key",
+    ).on(table.syncRunId, table.contractId, table.obligationScopeKey),
+    companySyncIndex: index("finance_contract_obligations_company_sync_idx").on(
+      table.companyId,
+      table.syncRunId,
+    ),
+    contractDueDateIndex: index(
+      "finance_contract_obligations_contract_due_date_idx",
+    ).on(table.contractId, table.dueDate),
   }),
 );
 

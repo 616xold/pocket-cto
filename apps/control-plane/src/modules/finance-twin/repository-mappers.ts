@@ -3,6 +3,8 @@ import type {
   financeBankAccounts,
   financeBankAccountSummaries,
   financeCompanies,
+  financeContractObligations,
+  financeContracts,
   financeCustomers,
   financeGeneralLedgerBalanceProofs,
   financeJournalEntries,
@@ -17,6 +19,8 @@ import type {
   financeVendors,
 } from "@pocket-cto/db";
 import {
+  FinanceContractObligationRecordSchema,
+  FinanceContractSourceFieldMapSchema,
   FinancePayablesAgingBucketValueSchema,
   FinanceReceivablesAgingBucketValueSchema,
   type FinanceAccountCatalogEntryRecord,
@@ -24,6 +28,7 @@ import {
   type FinanceBankAccountRecord,
   type FinanceBankAccountSummaryRecord,
   type FinanceCompanyRecord,
+  type FinanceContractObligationRecord,
   type FinanceCustomerRecord,
   type FinanceGeneralLedgerBalanceProofRecord,
   type FinanceJournalEntryRecord,
@@ -37,6 +42,7 @@ import {
   type FinanceTwinLineageRecord,
   type FinanceTwinSyncRunRecord,
   type FinanceVendorRecord,
+  type FinanceContractRecord,
 } from "@pocket-cto/domain";
 
 type FinanceAccountCatalogEntryRow =
@@ -44,6 +50,8 @@ type FinanceAccountCatalogEntryRow =
 type FinanceBankAccountRow = typeof financeBankAccounts.$inferSelect;
 type FinanceBankAccountSummaryRow = typeof financeBankAccountSummaries.$inferSelect;
 type FinanceCompanyRow = typeof financeCompanies.$inferSelect;
+type FinanceContractObligationRow = typeof financeContractObligations.$inferSelect;
+type FinanceContractRow = typeof financeContracts.$inferSelect;
 type FinanceCustomerRow = typeof financeCustomers.$inferSelect;
 type FinanceGeneralLedgerBalanceProofRow =
   typeof financeGeneralLedgerBalanceProofs.$inferSelect;
@@ -149,6 +157,62 @@ export function mapFinanceVendorRow(
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+export function mapFinanceContractRow(
+  row: FinanceContractRow,
+): FinanceContractRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    syncRunId: row.syncRunId,
+    lineNumber: row.lineNumber,
+    sourceLineNumbers: row.sourceLineNumbers,
+    contractLabel: row.contractLabel,
+    externalContractId: row.externalContractId,
+    counterpartyLabel: row.counterpartyLabel,
+    contractType: row.contractType,
+    agreementType: row.agreementType,
+    status: row.status,
+    startDate: row.startDate,
+    effectiveDate: row.effectiveDate,
+    endDate: row.endDate,
+    expirationDate: row.expirationDate,
+    renewalDate: row.renewalDate,
+    noticeDeadline: row.noticeDeadline,
+    nextPaymentDate: row.nextPaymentDate,
+    knownAsOfDates: row.knownAsOfDates,
+    unknownAsOfObservationCount: row.unknownAsOfObservationCount,
+    amount: row.amount,
+    paymentAmount: row.paymentAmount,
+    currencyCode: row.currencyCode,
+    autoRenew: row.autoRenew,
+    sourceFieldMap: FinanceContractSourceFieldMapSchema.parse(row.sourceFieldMap),
+    observedAt: row.observedAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export function mapFinanceContractObligationRow(
+  row: FinanceContractObligationRow,
+): FinanceContractObligationRecord {
+  return FinanceContractObligationRecordSchema.parse({
+    id: row.id,
+    companyId: row.companyId,
+    contractId: row.contractId,
+    syncRunId: row.syncRunId,
+    lineNumber: row.lineNumber,
+    sourceLineNumbers: row.sourceLineNumbers,
+    obligationType: row.obligationType,
+    dueDate: row.dueDate,
+    amount: row.amount,
+    currencyCode: row.currencyCode,
+    sourceField: row.sourceField,
+    observedAt: row.observedAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  });
 }
 
 export function mapFinanceReceivablesAgingRow(
@@ -371,6 +435,16 @@ export function mapFinancePayablesAgingRowViewRow(input: {
   return {
     vendor: mapFinanceVendorRow(input.vendor),
     payablesAgingRow: mapFinancePayablesAgingRow(input.row),
+  };
+}
+
+export function mapFinanceContractObligationViewRow(input: {
+  contract: FinanceContractRow;
+  obligation: FinanceContractObligationRow;
+}) {
+  return {
+    contract: mapFinanceContractRow(input.contract),
+    obligation: mapFinanceContractObligationRow(input.obligation),
   };
 }
 

@@ -104,4 +104,21 @@ describe("finance twin extractor dispatch", () => {
 
     expect(extracted?.extractorKey).toBe("payables_aging_csv");
   });
+
+  it("detects contract-metadata CSV without colliding with other finance families", () => {
+    const extracted = extractFinanceTwinSource({
+      body: Buffer.from(
+        [
+          "contract_id,contract_name,counterparty,status,renewal_date,next_payment_date,payment_amount,currency",
+          "C-100,Master Services Agreement,Acme Customer,active,2026-11-01,2026-05-15,500.00,USD",
+        ].join("\n"),
+      ),
+      sourceFile: {
+        mediaType: "text/csv",
+        originalFileName: "contract-metadata.csv",
+      },
+    });
+
+    expect(extracted?.extractorKey).toBe("contract_metadata_csv");
+  });
 });

@@ -5,6 +5,10 @@ import type {
   FinanceBankAccountSummaryRecord,
   FinanceBankBalanceType,
   FinanceCompanyRecord,
+  FinanceContractObligationRecord,
+  FinanceContractObligationType,
+  FinanceContractRecord,
+  FinanceContractSourceFieldMap,
   FinanceCustomerRecord,
   FinanceGeneralLedgerEntryView,
   FinanceGeneralLedgerBalanceProofRecord,
@@ -74,6 +78,50 @@ export type UpsertFinanceVendorInput = {
   identityKey: string;
   vendorLabel: string;
   externalVendorId: string | null;
+};
+
+export type UpsertFinanceContractInput = {
+  companyId: string;
+  syncRunId: string;
+  contractIdentityKey: string;
+  lineNumber: number;
+  sourceLineNumbers: number[];
+  contractLabel: string;
+  externalContractId: string | null;
+  counterpartyLabel: string | null;
+  contractType: string | null;
+  agreementType: string | null;
+  status: string | null;
+  startDate: string | null;
+  effectiveDate: string | null;
+  endDate: string | null;
+  expirationDate: string | null;
+  renewalDate: string | null;
+  noticeDeadline: string | null;
+  nextPaymentDate: string | null;
+  knownAsOfDates: string[];
+  unknownAsOfObservationCount: number;
+  amount: string | null;
+  paymentAmount: string | null;
+  currencyCode: string | null;
+  autoRenew: boolean | null;
+  sourceFieldMap: FinanceContractSourceFieldMap;
+  observedAt: string;
+};
+
+export type UpsertFinanceContractObligationInput = {
+  companyId: string;
+  contractId: string;
+  syncRunId: string;
+  obligationScopeKey: string;
+  lineNumber: number;
+  sourceLineNumbers: number[];
+  obligationType: FinanceContractObligationType;
+  dueDate: string;
+  amount: string | null;
+  currencyCode: string | null;
+  sourceField: string;
+  observedAt: string;
 };
 
 export type StartFinanceTwinSyncRunInput = {
@@ -224,6 +272,11 @@ export type FinancePayablesAgingRowView = {
   payablesAgingRow: FinancePayablesAgingRowRecord;
 };
 
+export type FinanceContractObligationView = {
+  contract: FinanceContractRecord;
+  obligation: FinanceContractObligationRecord;
+};
+
 export type ListFinanceTwinLineageByTargetInput = {
   companyId: string;
   targetKind: FinanceTwinLineageTargetKind;
@@ -272,6 +325,14 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     input: UpsertFinanceVendorInput,
     session?: PersistenceSession,
   ): Promise<FinanceVendorRecord>;
+  upsertContract(
+    input: UpsertFinanceContractInput,
+    session?: PersistenceSession,
+  ): Promise<FinanceContractRecord>;
+  upsertContractObligation(
+    input: UpsertFinanceContractObligationInput,
+    session?: PersistenceSession,
+  ): Promise<FinanceContractObligationRecord>;
   startSyncRun(
     input: StartFinanceTwinSyncRunInput,
     session?: PersistenceSession,
@@ -366,6 +427,14 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     syncRunId: string,
     session?: PersistenceSession,
   ): Promise<FinancePayablesAgingRowView[]>;
+  listContractsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceContractRecord[]>;
+  listContractObligationViewsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceContractObligationView[]>;
   listGeneralLedgerEntriesBySyncRunId(
     syncRunId: string,
     session?: PersistenceSession,
@@ -411,6 +480,13 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
   private readonly customersByScope = new Map<string, string>();
   private readonly vendors = new Map<string, FinanceVendorRecord>();
   private readonly vendorsByScope = new Map<string, string>();
+  private readonly contracts = new Map<string, FinanceContractRecord>();
+  private readonly contractsByScope = new Map<string, string>();
+  private readonly contractObligations = new Map<
+    string,
+    FinanceContractObligationRecord
+  >();
+  private readonly contractObligationsByScope = new Map<string, string>();
   private readonly syncRuns = new Map<string, FinanceTwinSyncRunRecord>();
   private readonly trialBalanceLines = new Map<
     string,
@@ -664,6 +740,125 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
       vendor.id,
     );
     return vendor;
+  }
+
+  async upsertContract(input: UpsertFinanceContractInput) {
+    const existing = this.contracts.get(
+      this.contractsByScope.get(
+        `${input.syncRunId}::${input.contractIdentityKey}`,
+      ) ?? "",
+    );
+    const now = new Date().toISOString();
+    const contract: FinanceContractRecord = existing
+      ? {
+          ...existing,
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers.slice(),
+          contractLabel: input.contractLabel,
+          externalContractId: input.externalContractId,
+          counterpartyLabel: input.counterpartyLabel,
+          contractType: input.contractType,
+          agreementType: input.agreementType,
+          status: input.status,
+          startDate: input.startDate,
+          effectiveDate: input.effectiveDate,
+          endDate: input.endDate,
+          expirationDate: input.expirationDate,
+          renewalDate: input.renewalDate,
+          noticeDeadline: input.noticeDeadline,
+          nextPaymentDate: input.nextPaymentDate,
+          knownAsOfDates: input.knownAsOfDates.slice(),
+          unknownAsOfObservationCount: input.unknownAsOfObservationCount,
+          amount: input.amount,
+          paymentAmount: input.paymentAmount,
+          currencyCode: input.currencyCode,
+          autoRenew: input.autoRenew,
+          sourceFieldMap: { ...input.sourceFieldMap },
+          observedAt: input.observedAt,
+          updatedAt: now,
+        }
+      : {
+          id: crypto.randomUUID(),
+          companyId: input.companyId,
+          syncRunId: input.syncRunId,
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers.slice(),
+          contractLabel: input.contractLabel,
+          externalContractId: input.externalContractId,
+          counterpartyLabel: input.counterpartyLabel,
+          contractType: input.contractType,
+          agreementType: input.agreementType,
+          status: input.status,
+          startDate: input.startDate,
+          effectiveDate: input.effectiveDate,
+          endDate: input.endDate,
+          expirationDate: input.expirationDate,
+          renewalDate: input.renewalDate,
+          noticeDeadline: input.noticeDeadline,
+          nextPaymentDate: input.nextPaymentDate,
+          knownAsOfDates: input.knownAsOfDates.slice(),
+          unknownAsOfObservationCount: input.unknownAsOfObservationCount,
+          amount: input.amount,
+          paymentAmount: input.paymentAmount,
+          currencyCode: input.currencyCode,
+          autoRenew: input.autoRenew,
+          sourceFieldMap: { ...input.sourceFieldMap },
+          observedAt: input.observedAt,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+    this.contracts.set(contract.id, contract);
+    this.contractsByScope.set(
+      `${input.syncRunId}::${input.contractIdentityKey}`,
+      contract.id,
+    );
+    return contract;
+  }
+
+  async upsertContractObligation(input: UpsertFinanceContractObligationInput) {
+    const existing = this.contractObligations.get(
+      this.contractObligationsByScope.get(
+        `${input.syncRunId}::${input.contractId}::${input.obligationScopeKey}`,
+      ) ?? "",
+    );
+    const now = new Date().toISOString();
+    const obligation: FinanceContractObligationRecord = existing
+      ? {
+          ...existing,
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers.slice(),
+          obligationType: input.obligationType,
+          dueDate: input.dueDate,
+          amount: input.amount,
+          currencyCode: input.currencyCode,
+          sourceField: input.sourceField,
+          observedAt: input.observedAt,
+          updatedAt: now,
+        }
+      : {
+          id: crypto.randomUUID(),
+          companyId: input.companyId,
+          contractId: input.contractId,
+          syncRunId: input.syncRunId,
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers.slice(),
+          obligationType: input.obligationType,
+          dueDate: input.dueDate,
+          amount: input.amount,
+          currencyCode: input.currencyCode,
+          sourceField: input.sourceField,
+          observedAt: input.observedAt,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+    this.contractObligations.set(obligation.id, obligation);
+    this.contractObligationsByScope.set(
+      `${input.syncRunId}::${input.contractId}::${input.obligationScopeKey}`,
+      obligation.id,
+    );
+    return obligation;
   }
 
   async startSyncRun(input: StartFinanceTwinSyncRunInput) {
@@ -1258,6 +1453,50 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
         return {
           vendor,
           payablesAgingRow,
+        };
+      });
+  }
+
+  async listContractsBySyncRunId(syncRunId: string) {
+    return [...this.contracts.values()]
+      .filter((contract) => contract.syncRunId === syncRunId)
+      .sort((left, right) => {
+        return (
+          left.contractLabel.localeCompare(right.contractLabel) ||
+          (left.externalContractId ?? "").localeCompare(
+            right.externalContractId ?? "",
+          ) ||
+          left.lineNumber - right.lineNumber
+        );
+      });
+  }
+
+  async listContractObligationViewsBySyncRunId(syncRunId: string) {
+    return [...this.contractObligations.values()]
+      .filter((obligation) => obligation.syncRunId === syncRunId)
+      .sort((left, right) => {
+        const leftContract = this.contracts.get(left.contractId);
+        const rightContract = this.contracts.get(right.contractId);
+        return (
+          left.dueDate.localeCompare(right.dueDate) ||
+          (leftContract?.contractLabel ?? "").localeCompare(
+            rightContract?.contractLabel ?? "",
+          ) ||
+          left.lineNumber - right.lineNumber
+        );
+      })
+      .map((obligation) => {
+        const contract = this.contracts.get(obligation.contractId);
+
+        if (!contract) {
+          throw new Error(
+            `Contract ${obligation.contractId} missing for contract obligation ${obligation.id}`,
+          );
+        }
+
+        return {
+          contract,
+          obligation,
         };
       });
   }

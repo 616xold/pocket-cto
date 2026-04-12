@@ -74,7 +74,10 @@ export type FinanceTwinServicePort = Pick<
   | "getLineageDrill"
   | "getReconciliationReadiness"
   | "syncCompanySourceFile"
->;
+> &
+  Partial<
+    Pick<FinanceTwinService, "getContracts" | "getObligationCalendar">
+  >;
 
 export type TwinServicePort = Pick<
   TwinService,

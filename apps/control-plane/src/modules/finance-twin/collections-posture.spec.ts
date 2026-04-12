@@ -62,6 +62,8 @@ describe("collections posture", () => {
             receivablesAgingRowCount: 0,
             vendorCount: 0,
             payablesAgingRowCount: 0,
+            contractCount: 0,
+            contractObligationCount: 0,
             trialBalanceLineCount: 0,
             accountCatalogEntryCount: 0,
             journalEntryCount: 0,

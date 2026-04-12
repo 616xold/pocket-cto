@@ -12,6 +12,12 @@ import {
   type ChartOfAccountsExtractionResult,
 } from "./chart-of-accounts-csv";
 import {
+  extractContractMetadataCsv,
+  looksLikeContractMetadataCsv,
+  supportsContractMetadataCsvSource,
+  type ContractMetadataExtractionResult,
+} from "./contract-metadata-csv";
+import {
   extractGeneralLedgerCsv,
   looksLikeGeneralLedgerCsv,
   supportsGeneralLedgerCsvSource,
@@ -54,6 +60,10 @@ export type FinanceTwinExtraction =
       payablesAging: PayablesAgingExtractionResult;
     }
   | {
+      extractorKey: "contract_metadata_csv";
+      contractMetadata: ContractMetadataExtractionResult;
+    }
+  | {
       extractorKey: "general_ledger_csv";
       generalLedger: GeneralLedgerExtractionResult;
     }
@@ -71,7 +81,8 @@ export function supportsFinanceTwinSourceFile(
     supportsChartOfAccountsCsvSource(sourceFile) ||
     supportsBankAccountSummaryCsvSource(sourceFile) ||
     supportsReceivablesAgingCsvSource(sourceFile) ||
-    supportsPayablesAgingCsvSource(sourceFile)
+    supportsPayablesAgingCsvSource(sourceFile) ||
+    supportsContractMetadataCsvSource(sourceFile)
   );
 }
 
@@ -97,6 +108,13 @@ export function extractFinanceTwinSource(input: {
     return {
       extractorKey: "payables_aging_csv",
       payablesAging: extractPayablesAgingCsv(input),
+    };
+  }
+
+  if (looksLikeContractMetadataCsv(input)) {
+    return {
+      extractorKey: "contract_metadata_csv",
+      contractMetadata: extractContractMetadataCsv(input),
     };
   }
 

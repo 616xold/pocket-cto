@@ -4,6 +4,8 @@ import {
   financeBankAccounts,
   financeBankAccountSummaries,
   financeCompanies,
+  financeContractObligations,
+  financeContracts,
   financeCustomers,
   financeGeneralLedgerBalanceProofs,
   financeJournalEntries,
@@ -32,6 +34,9 @@ import {
   mapFinanceBankAccountSummaryRow,
   mapFinanceBankAccountSummaryViewRow,
   mapFinanceCompanyRow,
+  mapFinanceContractObligationRow,
+  mapFinanceContractObligationViewRow,
+  mapFinanceContractRow,
   mapFinanceCustomerRow,
   mapFinanceGeneralLedgerBalanceProofRow,
   mapFinanceJournalEntryRow,
@@ -59,6 +64,8 @@ import type {
   UpsertFinanceBankAccountInput,
   UpsertFinanceBankAccountSummaryInput,
   UpsertFinanceCompanyInput,
+  UpsertFinanceContractInput,
+  UpsertFinanceContractObligationInput,
   UpsertFinanceCustomerInput,
   UpsertFinanceGeneralLedgerBalanceProofInput,
   UpsertFinanceJournalEntryInput,
@@ -350,6 +357,127 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
     }
 
     return mapFinanceVendorRow(row);
+  }
+
+  async upsertContract(
+    input: UpsertFinanceContractInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(financeContracts)
+      .values({
+        companyId: input.companyId,
+        syncRunId: input.syncRunId,
+        contractIdentityKey: input.contractIdentityKey,
+        lineNumber: input.lineNumber,
+        sourceLineNumbers: input.sourceLineNumbers,
+        contractLabel: input.contractLabel,
+        externalContractId: input.externalContractId,
+        counterpartyLabel: input.counterpartyLabel,
+        contractType: input.contractType,
+        agreementType: input.agreementType,
+        status: input.status,
+        startDate: input.startDate,
+        effectiveDate: input.effectiveDate,
+        endDate: input.endDate,
+        expirationDate: input.expirationDate,
+        renewalDate: input.renewalDate,
+        noticeDeadline: input.noticeDeadline,
+        nextPaymentDate: input.nextPaymentDate,
+        knownAsOfDates: input.knownAsOfDates,
+        unknownAsOfObservationCount: input.unknownAsOfObservationCount,
+        amount: input.amount,
+        paymentAmount: input.paymentAmount,
+        currencyCode: input.currencyCode,
+        autoRenew: input.autoRenew,
+        sourceFieldMap: input.sourceFieldMap,
+        observedAt: new Date(input.observedAt),
+      })
+      .onConflictDoUpdate({
+        target: [financeContracts.syncRunId, financeContracts.contractIdentityKey],
+        set: {
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers,
+          contractLabel: input.contractLabel,
+          externalContractId: input.externalContractId,
+          counterpartyLabel: input.counterpartyLabel,
+          contractType: input.contractType,
+          agreementType: input.agreementType,
+          status: input.status,
+          startDate: input.startDate,
+          effectiveDate: input.effectiveDate,
+          endDate: input.endDate,
+          expirationDate: input.expirationDate,
+          renewalDate: input.renewalDate,
+          noticeDeadline: input.noticeDeadline,
+          nextPaymentDate: input.nextPaymentDate,
+          knownAsOfDates: input.knownAsOfDates,
+          unknownAsOfObservationCount: input.unknownAsOfObservationCount,
+          amount: input.amount,
+          paymentAmount: input.paymentAmount,
+          currencyCode: input.currencyCode,
+          autoRenew: input.autoRenew,
+          sourceFieldMap: input.sourceFieldMap,
+          observedAt: new Date(input.observedAt),
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Finance contract upsert did not return a row");
+    }
+
+    return mapFinanceContractRow(row);
+  }
+
+  async upsertContractObligation(
+    input: UpsertFinanceContractObligationInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(financeContractObligations)
+      .values({
+        companyId: input.companyId,
+        contractId: input.contractId,
+        syncRunId: input.syncRunId,
+        obligationScopeKey: input.obligationScopeKey,
+        lineNumber: input.lineNumber,
+        sourceLineNumbers: input.sourceLineNumbers,
+        obligationType: input.obligationType,
+        dueDate: input.dueDate,
+        amount: input.amount,
+        currencyCode: input.currencyCode,
+        sourceField: input.sourceField,
+        observedAt: new Date(input.observedAt),
+      })
+      .onConflictDoUpdate({
+        target: [
+          financeContractObligations.syncRunId,
+          financeContractObligations.contractId,
+          financeContractObligations.obligationScopeKey,
+        ],
+        set: {
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers,
+          obligationType: input.obligationType,
+          dueDate: input.dueDate,
+          amount: input.amount,
+          currencyCode: input.currencyCode,
+          sourceField: input.sourceField,
+          observedAt: new Date(input.observedAt),
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Finance contract obligation upsert did not return a row");
+    }
+
+    return mapFinanceContractObligationRow(row);
   }
 
   async startSyncRun(
@@ -1023,6 +1151,49 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
       );
 
     return rows.map(mapFinancePayablesAgingRowViewRow);
+  }
+
+  async listContractsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(financeContracts)
+      .where(eq(financeContracts.syncRunId, syncRunId))
+      .orderBy(
+        asc(financeContracts.contractLabel),
+        asc(financeContracts.externalContractId),
+        asc(financeContracts.lineNumber),
+      );
+
+    return rows.map(mapFinanceContractRow);
+  }
+
+  async listContractObligationViewsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select({
+        contract: financeContracts,
+        obligation: financeContractObligations,
+      })
+      .from(financeContractObligations)
+      .innerJoin(
+        financeContracts,
+        eq(financeContractObligations.contractId, financeContracts.id),
+      )
+      .where(eq(financeContractObligations.syncRunId, syncRunId))
+      .orderBy(
+        asc(financeContractObligations.dueDate),
+        asc(financeContracts.contractLabel),
+        asc(financeContractObligations.lineNumber),
+      );
+
+    return rows.map(mapFinanceContractObligationViewRow);
   }
 
   async listGeneralLedgerEntriesBySyncRunId(

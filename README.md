@@ -31,12 +31,13 @@ Today the merged backbone is:
 - F2J additive backend-first balance-proof lineage drill and read behavior on top of persisted proof rows and lineage
 - F2K additive deterministic `bank_account_summary_csv` extraction plus backend-first bank-account inventory and cash-posture reads without fake FX conversion, transaction detail, or bank reconciliation
 - F2L additive deterministic `receivables_aging_csv` extraction plus backend-first receivables-aging and collections-posture reads without fake invoice detail, expected cash timing, reserve logic, or DSO
+- F2M additive deterministic `payables_aging_csv` extraction plus backend-first payables-aging and payables-posture reads without fake bill detail, expected payment timing, reserve logic, or DPO
 
-The active next slice is F2M:
+The active next slice is F2N:
 
-- additive deterministic `payables_aging_csv` extraction from stored raw source bytes
-- persisted vendor and payables-aging state plus backend-first payables-aging and payables-posture reads
-- truthful payables-posture limits around currencies, bucket semantics, known-versus-unknown dates, and raw-source-backed provenance without bill detail, expected payment timing, reserve logic, or DPO
+- additive deterministic `contract_metadata_csv` extraction from stored raw source bytes
+- persisted contract and explicit obligation state plus backend-first contract inventory and obligation-calendar reads
+- truthful contract-posture limits around dates, obligation semantics, currencies, weak source labels, and raw-source-backed provenance without clause parsing, legal interpretation, payment forecasting, or covenant logic
 
 ## Product boundary for v1
 
@@ -136,7 +137,7 @@ Pocket CFO v1 is intentionally narrow:
 4. Read `PLANS.md`.
 5. Read `plans/ROADMAP.md`.
 6. Read the current active `plans/FP-*.md` file for the next narrow slice instead of restarting from `FP-0001`.
-7. The current active plan is `plans/FP-0021-payables-aging-and-payables-posture.md`.
+7. The current active plan is `plans/FP-0022-contract-metadata-and-obligation-calendar.md`.
 8. Keep progress updates inside the active Finance Plan while working.
 9. Do not delete legacy engineering modules until the finance replacement path exists and a smoke proves it.
 
@@ -164,6 +165,7 @@ pnpm smoke:finance-twin-balance-bridge-prerequisites:local
 pnpm smoke:finance-twin-source-backed-balance-proof:local
 pnpm smoke:finance-twin-balance-proof-lineage:local
 pnpm smoke:finance-twin-bank-account-summary:local
+pnpm smoke:finance-twin-contract-metadata:local
 pnpm smoke:finance-twin-payables-aging:local
 pnpm smoke:finance-twin-receivables-aging:local
 pnpm smoke:finance-twin-account-catalog:local
@@ -187,6 +189,8 @@ The current backend-first finance-twin read surface is:
 - general-ledger balance-proof lineage drill
 - bank-account inventory
 - cash posture
+- contract inventory
+- obligation calendar
 - payables-aging
 - payables posture
 - receivables-aging

@@ -1,16 +1,18 @@
 import {
   FinanceBankAccountInventoryViewSchema,
-  FinancePayablesAgingViewSchema,
-  FinancePayablesPostureViewSchema,
-  FinanceCashPostureViewSchema,
-  FinanceBalanceBridgePrerequisitesViewSchema,
-  FinanceAccountBridgeReadinessViewSchema,
   FinanceAccountCatalogViewSchema,
+  FinanceAccountBridgeReadinessViewSchema,
+  FinanceBalanceBridgePrerequisitesViewSchema,
+  FinanceCashPostureViewSchema,
   FinanceCollectionsPostureViewSchema,
+  FinanceContractsViewSchema,
   FinanceGeneralLedgerActivityLineageViewSchema,
   type FinanceGeneralLedgerBalanceProofView,
   FinanceGeneralLedgerViewSchema,
   FinanceLineageDrillViewSchema,
+  FinanceObligationCalendarViewSchema,
+  FinancePayablesAgingViewSchema,
+  FinancePayablesPostureViewSchema,
   FinanceReceivablesAgingViewSchema,
   FinanceReconciliationReadinessViewSchema,
   FinanceSnapshotViewSchema,
@@ -24,7 +26,9 @@ import {
   type FinanceAccountBridgeReadinessView,
   type FinanceAccountCatalogView,
   type FinanceCompanyRecord,
+  type FinanceContractRecord,
   type FinanceCollectionsPostureView,
+  type FinanceContractsView,
   type FinanceFreshnessSummary,
   type FinanceGeneralLedgerActivityLineageView,
   type FinanceGeneralLedgerBalanceProofRecord,
@@ -32,9 +36,11 @@ import {
   type FinanceGeneralLedgerEntryView,
   type FinanceGeneralLedgerView,
   type FinanceLatestSuccessfulBankAccountSummarySlice,
+  type FinanceLatestSuccessfulContractMetadataSlice,
   type FinanceLatestSuccessfulPayablesAgingSlice,
   type FinanceLatestSuccessfulReceivablesAgingSlice,
   type FinanceLatestAttemptedSlices,
+  type FinanceObligationCalendarView,
   type FinancePayablesAgingBucketKey,
   type FinancePayablesAgingView,
   type FinancePayablesPostureView,
@@ -59,6 +65,11 @@ import {
 import type { SourceRepository } from "../sources/repository";
 import type { SourceFileStorage } from "../sources/storage";
 import type { ChartOfAccountsExtractionResult } from "./chart-of-accounts-csv";
+import type { ContractMetadataExtractionResult } from "./contract-metadata-csv";
+import {
+  buildContractMetadataSliceSummary,
+  buildFinanceContractsView,
+} from "./contracts";
 import {
   FinanceCompanyNotFoundError,
   FinanceTwinUnsupportedSourceError,
@@ -85,9 +96,11 @@ import type { GeneralLedgerExtractionResult } from "./general-ledger-csv";
 import { buildFinanceAccountBridgeReadinessView } from "./account-bridge";
 import { buildFinanceBalanceBridgePrerequisitesView } from "./balance-bridge-prerequisites";
 import { buildFinanceCollectionsPostureView } from "./collections-posture";
+import { buildFinanceObligationCalendarView } from "./obligation-calendar";
 import { buildFinanceReconciliationReadinessView } from "./reconciliation";
 import type {
   FinanceBankAccountSummaryView,
+  FinanceContractObligationView,
   FinancePayablesAgingRowView,
   FinanceReceivablesAgingRowView,
   FinanceTrialBalanceLineView,
@@ -155,6 +168,14 @@ type PayablesAgingReadState = {
   latestAttemptedSyncRun: FinanceTwinSyncRunRecord | null;
   latestSuccessfulSlice: FinanceLatestSuccessfulPayablesAgingSlice;
   rows: FinancePayablesAgingRowView[];
+};
+
+type ContractMetadataReadState = {
+  contracts: FinanceContractRecord[];
+  freshness: FinanceFreshnessSummary;
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecord | null;
+  latestSuccessfulSlice: FinanceLatestSuccessfulContractMetadataSlice;
+  obligations: FinanceContractObligationView[];
 };
 
 export class FinanceTwinService {
@@ -261,6 +282,15 @@ export class FinanceTwinService {
                   sourceId: source.id,
                   syncRun,
                 })
+              : extracted.extractorKey === "contract_metadata_csv"
+                ? await this.persistContractMetadataSync({
+                    company,
+                    extracted: extracted.contractMetadata,
+                    snapshotId: snapshot.id,
+                    sourceFileId: sourceFile.id,
+                    sourceId: source.id,
+                    syncRun,
+                  })
               : extracted.extractorKey === "payables_aging_csv"
                 ? await this.persistPayablesAgingSync({
                     company,
@@ -733,6 +763,54 @@ export class FinanceTwinService {
         latestSuccessfulBankSummarySlice: readState.latestSuccessfulSlice,
         limitations: FINANCE_TWIN_LIMITATIONS,
         summaries: readState.summaries,
+      }),
+    );
+  }
+
+  async getContracts(companyKey: string): Promise<FinanceContractsView> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(companyKey);
+    }
+
+    const readState = await this.readContractMetadataState(company);
+
+    return FinanceContractsViewSchema.parse(
+      buildFinanceContractsView({
+        company,
+        contracts: readState.contracts,
+        freshness: readState.freshness,
+        latestAttemptedSyncRun: readState.latestAttemptedSyncRun,
+        latestSuccessfulSlice: readState.latestSuccessfulSlice,
+        limitations: FINANCE_TWIN_LIMITATIONS,
+        obligations: readState.obligations,
+      }),
+    );
+  }
+
+  async getObligationCalendar(
+    companyKey: string,
+  ): Promise<FinanceObligationCalendarView> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(companyKey);
+    }
+
+    const readState = await this.readContractMetadataState(company);
+
+    return FinanceObligationCalendarViewSchema.parse(
+      buildFinanceObligationCalendarView({
+        company,
+        contracts: readState.contracts,
+        freshness: readState.freshness,
+        latestAttemptedSyncRun: readState.latestAttemptedSyncRun,
+        latestSuccessfulContractMetadataSlice: readState.latestSuccessfulSlice,
+        limitations: FINANCE_TWIN_LIMITATIONS,
+        obligations: readState.obligations,
       }),
     );
   }
@@ -1436,6 +1514,158 @@ export class FinanceTwinService {
     });
   }
 
+  private async persistContractMetadataSync(input: {
+    company: FinanceCompanyRecord;
+    extracted: ContractMetadataExtractionResult;
+    snapshotId: string;
+    sourceFileId: string;
+    sourceId: string;
+    syncRun: FinanceTwinSyncRunRecord;
+  }) {
+    const recordedAt = this.now().toISOString();
+    const currencyCodes = new Set(
+      input.extracted.contracts
+        .map((contract) => contract.currencyCode)
+        .filter((currencyCode): currencyCode is string => currencyCode !== null),
+    );
+
+    return this.input.financeTwinRepository.transaction(async (session) => {
+      const contractsByIdentity = new Map<string, { id: string }>();
+
+      for (const contract of input.extracted.contracts) {
+        const storedContract = await this.input.financeTwinRepository.upsertContract(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            contractIdentityKey: contract.contractIdentityKey,
+            lineNumber: contract.lineNumber,
+            sourceLineNumbers: contract.sourceLineNumbers
+              .slice()
+              .sort((left, right) => left - right),
+            contractLabel: contract.contractLabel,
+            externalContractId: contract.externalContractId,
+            counterpartyLabel: contract.counterpartyLabel,
+            contractType: contract.contractType,
+            agreementType: contract.agreementType,
+            status: contract.status,
+            startDate: contract.startDate,
+            effectiveDate: contract.effectiveDate,
+            endDate: contract.endDate,
+            expirationDate: contract.expirationDate,
+            renewalDate: contract.renewalDate,
+            noticeDeadline: contract.noticeDeadline,
+            nextPaymentDate: contract.nextPaymentDate,
+            knownAsOfDates: contract.knownAsOfDates.slice(),
+            unknownAsOfObservationCount:
+              contract.unknownAsOfObservationCount,
+            amount: contract.amount,
+            paymentAmount: contract.paymentAmount,
+            currencyCode: contract.currencyCode,
+            autoRenew: contract.autoRenew,
+            sourceFieldMap: contract.sourceFieldMap,
+            observedAt: recordedAt,
+          },
+          session,
+        );
+
+        contractsByIdentity.set(contract.contractIdentityKey, storedContract);
+        await this.input.financeTwinRepository.createLineage(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            targetKind: "contract",
+            targetId: storedContract.id,
+            sourceId: input.sourceId,
+            sourceSnapshotId: input.snapshotId,
+            sourceFileId: input.sourceFileId,
+            recordedAt,
+          },
+          session,
+        );
+      }
+
+      for (const obligation of input.extracted.obligations) {
+        const contract = contractsByIdentity.get(obligation.contractIdentityKey);
+
+        if (!contract) {
+          throw new Error(
+            `Contract ${obligation.contractIdentityKey} was not available for obligation persistence`,
+          );
+        }
+
+        const storedObligation =
+          await this.input.financeTwinRepository.upsertContractObligation(
+            {
+              companyId: input.company.id,
+              contractId: contract.id,
+              syncRunId: input.syncRun.id,
+              obligationScopeKey: obligation.obligationScopeKey,
+              lineNumber: obligation.lineNumber,
+              sourceLineNumbers: obligation.sourceLineNumbers
+                .slice()
+                .sort((left, right) => left - right),
+              obligationType: obligation.obligationType,
+              dueDate: obligation.dueDate,
+              amount: obligation.amount,
+              currencyCode: obligation.currencyCode,
+              sourceField: obligation.sourceField,
+              observedAt: recordedAt,
+            },
+            session,
+          );
+
+        await this.input.financeTwinRepository.createLineage(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            targetKind: "contract_obligation",
+            targetId: storedObligation.id,
+            sourceId: input.sourceId,
+            sourceSnapshotId: input.snapshotId,
+            sourceFileId: input.sourceFileId,
+            recordedAt,
+          },
+          session,
+        );
+      }
+
+      const [reportingPeriodCount, ledgerAccountCount] = await Promise.all([
+        this.input.financeTwinRepository.countReportingPeriodsByCompanyId(
+          input.company.id,
+          session,
+        ),
+        this.input.financeTwinRepository.countLedgerAccountsByCompanyId(
+          input.company.id,
+          session,
+        ),
+      ]);
+
+      return this.input.financeTwinRepository.finishSyncRun(
+        {
+          syncRunId: input.syncRun.id,
+          reportingPeriodId: null,
+          status: "succeeded",
+          completedAt: recordedAt,
+          stats: {
+            contractCount: input.extracted.contracts.length,
+            contractObligationCount: input.extracted.obligations.length,
+            contractCurrencyCount: currencyCodes.size,
+            datedContractCount: input.extracted.contracts.filter(
+              (contract) => contract.knownAsOfDates.length > 0,
+            ).length,
+            undatedContractCount: input.extracted.contracts.filter(
+              (contract) => contract.knownAsOfDates.length === 0,
+            ).length,
+            ledgerAccountCount,
+            reportingPeriodCount,
+          },
+          errorSummary: null,
+        },
+        session,
+      );
+    });
+  }
+
   private async persistPayablesAgingSync(input: {
     company: FinanceCompanyRecord;
     extracted: PayablesAgingExtractionResult;
@@ -1886,6 +2116,38 @@ export class FinanceTwinService {
       }),
       latestSuccessfulSlice: latestSuccessfulSlice.snapshot,
       rows: latestSuccessfulSlice.rows,
+    };
+  }
+
+  private async readContractMetadataState(
+    company: FinanceCompanyRecord,
+  ): Promise<ContractMetadataReadState> {
+    const [latestAttemptedSyncRun, latestSuccessfulSyncRun] = await Promise.all([
+      this.input.financeTwinRepository.getLatestSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "contract_metadata_csv",
+      ),
+      this.input.financeTwinRepository.getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "contract_metadata_csv",
+      ),
+    ]);
+    const latestSuccessfulSlice =
+      await this.readLatestSuccessfulContractMetadataSlice(
+        latestSuccessfulSyncRun,
+      );
+
+    return {
+      contracts: latestSuccessfulSlice.contracts,
+      latestAttemptedSyncRun,
+      freshness: buildFinanceSliceFreshnessSummary({
+        latestRun: latestAttemptedSyncRun,
+        latestSuccessfulRun: latestSuccessfulSyncRun,
+        now: this.now(),
+        sliceLabel: "contract-metadata",
+      }),
+      latestSuccessfulSlice: latestSuccessfulSlice.snapshot,
+      obligations: latestSuccessfulSlice.obligations,
     };
   }
 
@@ -2365,6 +2627,62 @@ export class FinanceTwinService {
                   latestSuccessfulRun.stats,
                 ),
                 rows,
+              })
+            : null,
+      },
+    };
+  }
+
+  private async readLatestSuccessfulContractMetadataSlice(
+    latestSuccessfulRun: FinanceTwinSyncRunRecord | null,
+  ) {
+    if (!latestSuccessfulRun) {
+      return {
+        contracts: [] as FinanceContractRecord[],
+        obligations: [] as FinanceContractObligationView[],
+        snapshot: {
+          latestSource: null,
+          latestSyncRun: null,
+          coverage: {
+            contractCount: 0,
+            obligationCount: 0,
+            lineageCount: 0,
+            lineageTargetCounts: buildLineageTargetCounts([]),
+          },
+          summary: null,
+        },
+      };
+    }
+
+    const [contracts, obligations, lineages] = await Promise.all([
+      this.input.financeTwinRepository.listContractsBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+      this.input.financeTwinRepository.listContractObligationViewsBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+      this.input.financeTwinRepository.listLineageBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+    ]);
+
+    return {
+      contracts,
+      obligations,
+      snapshot: {
+        latestSource: buildSourceRef(latestSuccessfulRun),
+        latestSyncRun: latestSuccessfulRun,
+        coverage: {
+          contractCount: contracts.length,
+          obligationCount: obligations.length,
+          lineageCount: lineages.length,
+          lineageTargetCounts: buildLineageTargetCounts(lineages),
+        },
+        summary:
+          contracts.length > 0
+            ? buildContractMetadataSliceSummary({
+                contracts,
+                obligations,
               })
             : null,
       },

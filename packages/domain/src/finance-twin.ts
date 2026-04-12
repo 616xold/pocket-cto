@@ -34,6 +34,7 @@ export const FinanceTwinExtractorKeySchema = z.enum([
   "bank_account_summary_csv",
   "receivables_aging_csv",
   "payables_aging_csv",
+  "contract_metadata_csv",
 ]);
 
 export const FinanceTwinSyncRunStatusSchema = z.enum([
@@ -51,6 +52,8 @@ export const FinanceTwinLineageTargetKindSchema = z.enum([
   "receivables_aging_row",
   "vendor",
   "payables_aging_row",
+  "contract",
+  "contract_obligation",
   "trial_balance_line",
   "account_catalog_entry",
   "journal_entry",
@@ -227,6 +230,82 @@ export const FinanceVendorRecordSchema = z.object({
   updatedAt: z.string().datetime({ offset: true }),
 });
 
+export const FinanceContractSourceFieldMapSchema = z.object({
+  agreementType: z.string().min(1).nullable().default(null),
+  amount: z.string().min(1).nullable().default(null),
+  asOfDate: z.string().min(1).nullable().default(null),
+  autoRenew: z.string().min(1).nullable().default(null),
+  contractIdentity: z.string().min(1).nullable().default(null),
+  contractType: z.string().min(1).nullable().default(null),
+  counterparty: z.string().min(1).nullable().default(null),
+  currencyCode: z.string().min(1).nullable().default(null),
+  effectiveDate: z.string().min(1).nullable().default(null),
+  endDate: z.string().min(1).nullable().default(null),
+  expirationDate: z.string().min(1).nullable().default(null),
+  nextPaymentDate: z.string().min(1).nullable().default(null),
+  noticeDeadline: z.string().min(1).nullable().default(null),
+  paymentAmount: z.string().min(1).nullable().default(null),
+  renewalDate: z.string().min(1).nullable().default(null),
+  startDate: z.string().min(1).nullable().default(null),
+  status: z.string().min(1).nullable().default(null),
+});
+
+export const FinanceContractRecordSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  syncRunId: z.string().uuid(),
+  lineNumber: z.number().int().positive(),
+  sourceLineNumbers: z.array(z.number().int().positive()).min(1),
+  contractLabel: z.string().min(1),
+  externalContractId: z.string().min(1).nullable(),
+  counterpartyLabel: z.string().min(1).nullable(),
+  contractType: z.string().min(1).nullable(),
+  agreementType: z.string().min(1).nullable(),
+  status: z.string().min(1).nullable(),
+  startDate: FinanceIsoDateSchema.nullable(),
+  effectiveDate: FinanceIsoDateSchema.nullable(),
+  endDate: FinanceIsoDateSchema.nullable(),
+  expirationDate: FinanceIsoDateSchema.nullable(),
+  renewalDate: FinanceIsoDateSchema.nullable(),
+  noticeDeadline: FinanceIsoDateSchema.nullable(),
+  nextPaymentDate: FinanceIsoDateSchema.nullable(),
+  knownAsOfDates: z.array(FinanceIsoDateSchema),
+  unknownAsOfObservationCount: z.number().int().nonnegative(),
+  amount: FinanceAmountSchema.nullable(),
+  paymentAmount: FinanceAmountSchema.nullable(),
+  currencyCode: z.string().min(1).nullable(),
+  autoRenew: z.boolean().nullable(),
+  sourceFieldMap: FinanceContractSourceFieldMapSchema,
+  observedAt: z.string().datetime({ offset: true }),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+});
+
+export const FinanceContractObligationTypeSchema = z.enum([
+  "renewal",
+  "expiration",
+  "end_date",
+  "notice_deadline",
+  "scheduled_payment",
+]);
+
+export const FinanceContractObligationRecordSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  contractId: z.string().uuid(),
+  syncRunId: z.string().uuid(),
+  lineNumber: z.number().int().positive(),
+  sourceLineNumbers: z.array(z.number().int().positive()).min(1),
+  obligationType: FinanceContractObligationTypeSchema,
+  dueDate: FinanceIsoDateSchema,
+  amount: FinanceAmountSchema.nullable(),
+  currencyCode: z.string().min(1).nullable(),
+  sourceField: z.string().min(1),
+  observedAt: z.string().datetime({ offset: true }),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+});
+
 export const FinanceReceivablesAgingBucketKeySchema = z.enum([
   "current",
   "0_30",
@@ -350,6 +429,8 @@ const FinanceEmptyLineageTargetCounts = {
   receivablesAgingRowCount: 0,
   vendorCount: 0,
   payablesAgingRowCount: 0,
+  contractCount: 0,
+  contractObligationCount: 0,
   trialBalanceLineCount: 0,
   accountCatalogEntryCount: 0,
   journalEntryCount: 0,
@@ -366,6 +447,8 @@ export const FinanceLineageTargetCountsSchema = z.object({
   receivablesAgingRowCount: z.number().int().nonnegative().default(0),
   vendorCount: z.number().int().nonnegative().default(0),
   payablesAgingRowCount: z.number().int().nonnegative().default(0),
+  contractCount: z.number().int().nonnegative().default(0),
+  contractObligationCount: z.number().int().nonnegative().default(0),
   trialBalanceLineCount: z.number().int().nonnegative().default(0),
   accountCatalogEntryCount: z.number().int().nonnegative().default(0),
   journalEntryCount: z.number().int().nonnegative().default(0),
@@ -592,6 +675,37 @@ export const FinanceLatestSuccessfulPayablesAgingSliceSchema = z.object({
   summary: FinancePayablesAgingSliceSummarySchema.nullable(),
 });
 
+export const FinanceContractMetadataSliceSummarySchema = z.object({
+  contractCount: z.number().int().nonnegative(),
+  obligationCount: z.number().int().nonnegative(),
+  datedContractCount: z.number().int().nonnegative(),
+  undatedContractCount: z.number().int().nonnegative(),
+  currencyCount: z.number().int().nonnegative(),
+  contractsWithExplicitAmountCount: z.number().int().nonnegative(),
+  contractsWithExplicitPaymentAmountCount: z.number().int().nonnegative(),
+  contractsWithEndDateCount: z.number().int().nonnegative(),
+  contractsWithExpirationDateCount: z.number().int().nonnegative(),
+  contractsWithNoticeDeadlineCount: z.number().int().nonnegative(),
+  contractsWithRenewalDateCount: z.number().int().nonnegative(),
+  contractsWithScheduledPaymentDateCount: z.number().int().nonnegative(),
+});
+
+export const FinanceContractMetadataCoverageSchema = z.object({
+  contractCount: z.number().int().nonnegative(),
+  obligationCount: z.number().int().nonnegative(),
+  lineageCount: z.number().int().nonnegative(),
+  lineageTargetCounts: FinanceLineageTargetCountsSchema.optional().default(
+    FinanceEmptyLineageTargetCounts,
+  ),
+});
+
+export const FinanceLatestSuccessfulContractMetadataSliceSchema = z.object({
+  latestSource: FinanceTwinSourceRefSchema.nullable(),
+  latestSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  coverage: FinanceContractMetadataCoverageSchema,
+  summary: FinanceContractMetadataSliceSummarySchema.nullable(),
+});
+
 export const FinanceLatestAttemptedSlicesSchema = z.object({
   trialBalance: FinanceLatestAttemptedSliceSchema,
   chartOfAccounts: FinanceLatestAttemptedSliceSchema,
@@ -705,6 +819,85 @@ export const FinancePayablesAgingViewSchema = z.object({
   freshness: FinanceFreshnessSummarySchema,
   vendorCount: z.number().int().nonnegative(),
   rows: z.array(FinancePayablesAgingInventoryRowSchema),
+  diagnostics: z.array(z.string().min(1)).default([]),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceContractLineageRefSchema = FinanceLineageLookupRefSchema;
+
+export const FinanceContractInventoryRowSchema = z.object({
+  contract: FinanceContractRecordSchema,
+  explicitObligationCount: z.number().int().nonnegative(),
+  lineageRef: FinanceContractLineageRefSchema,
+});
+
+export const FinanceContractsViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  latestSuccessfulSlice: FinanceLatestSuccessfulContractMetadataSliceSchema,
+  freshness: FinanceFreshnessSummarySchema,
+  contractCount: z.number().int().nonnegative(),
+  contracts: z.array(FinanceContractInventoryRowSchema),
+  diagnostics: z.array(z.string().min(1)).default([]),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceContractObligationLineageRefSchema =
+  FinanceLineageLookupRefSchema;
+
+export const FinanceObligationCalendarContractRefSchema = z.object({
+  contractId: z.string().uuid(),
+  contractLabel: z.string().min(1),
+  externalContractId: z.string().min(1).nullable(),
+  counterpartyLabel: z.string().min(1).nullable(),
+  knownAsOfDates: z.array(FinanceIsoDateSchema),
+  unknownAsOfObservationCount: z.number().int().nonnegative(),
+});
+
+export const FinanceObligationCalendarRowSchema = z.object({
+  contract: FinanceObligationCalendarContractRefSchema,
+  obligationType: FinanceContractObligationTypeSchema,
+  dueDate: FinanceIsoDateSchema,
+  amount: FinanceAmountSchema.nullable(),
+  currency: z.string().min(1).nullable(),
+  sourceField: z.string().min(1),
+  lineageRef: FinanceContractObligationLineageRefSchema,
+});
+
+export const FinanceObligationCalendarCurrencyBucketSchema = z.object({
+  currency: z.string().min(1).nullable(),
+  obligationCount: z.number().int().nonnegative(),
+  obligationsWithExplicitAmountCount: z.number().int().nonnegative(),
+  obligationsWithoutExplicitAmountCount: z.number().int().nonnegative(),
+  explicitAmountTotal: FinanceAmountSchema,
+  earliestDueDate: FinanceIsoDateSchema.nullable(),
+  latestDueDate: FinanceIsoDateSchema.nullable(),
+});
+
+export const FinanceObligationCalendarCoverageSummarySchema = z.object({
+  contractCount: z.number().int().nonnegative(),
+  obligationCount: z.number().int().nonnegative(),
+  currencyBucketCount: z.number().int().nonnegative(),
+  datedContractCount: z.number().int().nonnegative(),
+  undatedContractCount: z.number().int().nonnegative(),
+  obligationsWithExplicitAmountCount: z.number().int().nonnegative(),
+  obligationsWithoutExplicitAmountCount: z.number().int().nonnegative(),
+  contractsWithRenewalDateCount: z.number().int().nonnegative(),
+  contractsWithExpirationDateCount: z.number().int().nonnegative(),
+  contractsWithEndDateCount: z.number().int().nonnegative(),
+  contractsWithNoticeDeadlineCount: z.number().int().nonnegative(),
+  contractsWithScheduledPaymentDateCount: z.number().int().nonnegative(),
+});
+
+export const FinanceObligationCalendarViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  latestSuccessfulContractMetadataSlice:
+    FinanceLatestSuccessfulContractMetadataSliceSchema,
+  freshness: FinanceFreshnessSummarySchema,
+  upcomingObligations: z.array(FinanceObligationCalendarRowSchema),
+  currencyBuckets: z.array(FinanceObligationCalendarCurrencyBucketSchema),
+  coverageSummary: FinanceObligationCalendarCoverageSummarySchema,
   diagnostics: z.array(z.string().min(1)).default([]),
   limitations: z.array(z.string().min(1)),
 });
@@ -1296,6 +1489,16 @@ export type FinanceBankAccountSummaryRecord = z.infer<
 >;
 export type FinanceCustomerRecord = z.infer<typeof FinanceCustomerRecordSchema>;
 export type FinanceVendorRecord = z.infer<typeof FinanceVendorRecordSchema>;
+export type FinanceContractSourceFieldMap = z.infer<
+  typeof FinanceContractSourceFieldMapSchema
+>;
+export type FinanceContractRecord = z.infer<typeof FinanceContractRecordSchema>;
+export type FinanceContractObligationType = z.infer<
+  typeof FinanceContractObligationTypeSchema
+>;
+export type FinanceContractObligationRecord = z.infer<
+  typeof FinanceContractObligationRecordSchema
+>;
 export type FinanceReceivablesAgingBucketKey = z.infer<
   typeof FinanceReceivablesAgingBucketKeySchema
 >;
@@ -1408,6 +1611,15 @@ export type FinancePayablesAgingCoverage = z.infer<
 export type FinanceLatestSuccessfulPayablesAgingSlice = z.infer<
   typeof FinanceLatestSuccessfulPayablesAgingSliceSchema
 >;
+export type FinanceContractMetadataSliceSummary = z.infer<
+  typeof FinanceContractMetadataSliceSummarySchema
+>;
+export type FinanceContractMetadataCoverage = z.infer<
+  typeof FinanceContractMetadataCoverageSchema
+>;
+export type FinanceLatestSuccessfulContractMetadataSlice = z.infer<
+  typeof FinanceLatestSuccessfulContractMetadataSliceSchema
+>;
 export type FinanceLatestAttemptedSlices = z.infer<
   typeof FinanceLatestAttemptedSlicesSchema
 >;
@@ -1453,6 +1665,31 @@ export type FinancePayablesAgingInventoryRow = z.infer<
 >;
 export type FinancePayablesAgingView = z.infer<
   typeof FinancePayablesAgingViewSchema
+>;
+export type FinanceContractLineageRef = z.infer<
+  typeof FinanceContractLineageRefSchema
+>;
+export type FinanceContractInventoryRow = z.infer<
+  typeof FinanceContractInventoryRowSchema
+>;
+export type FinanceContractsView = z.infer<typeof FinanceContractsViewSchema>;
+export type FinanceContractObligationLineageRef = z.infer<
+  typeof FinanceContractObligationLineageRefSchema
+>;
+export type FinanceObligationCalendarContractRef = z.infer<
+  typeof FinanceObligationCalendarContractRefSchema
+>;
+export type FinanceObligationCalendarRow = z.infer<
+  typeof FinanceObligationCalendarRowSchema
+>;
+export type FinanceObligationCalendarCurrencyBucket = z.infer<
+  typeof FinanceObligationCalendarCurrencyBucketSchema
+>;
+export type FinanceObligationCalendarCoverageSummary = z.infer<
+  typeof FinanceObligationCalendarCoverageSummarySchema
+>;
+export type FinanceObligationCalendarView = z.infer<
+  typeof FinanceObligationCalendarViewSchema
 >;
 export type FinanceJournalLineView = z.infer<
   typeof FinanceJournalLineViewSchema

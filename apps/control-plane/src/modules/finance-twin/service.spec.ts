@@ -1115,6 +1115,217 @@ describe("FinanceTwinService", () => {
     });
   });
 
+  it("syncs one uploaded contract-metadata CSV into persisted contracts and truthful obligation-calendar reads", async () => {
+    const now = () => new Date("2026-04-12T12:00:00.000Z");
+    const sourceRepository = new InMemorySourceRepository();
+    const sourceStorage = new InMemorySourceFileStorage();
+    const sourceService = new SourceRegistryService(
+      sourceRepository,
+      sourceStorage,
+      now,
+    );
+    const financeRepository = new InMemoryFinanceTwinRepository();
+    const financeTwinService = new FinanceTwinService({
+      financeTwinRepository: financeRepository,
+      sourceFileStorage: sourceStorage,
+      sourceRepository,
+      now,
+    });
+    const created = await sourceService.createSource({
+      kind: "dataset",
+      name: "Contract metadata",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "contract-metadata-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "abababababababababababababababababababababababababababababababab",
+        storageKind: "external_url",
+        storageRef: "https://example.com/contracts",
+        ingestStatus: "registered",
+      },
+    });
+    const registered = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "contract-metadata.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "contract_id,contract_name,counterparty,contract_type,status,renewal_date,notice_deadline,next_payment_date,payment_amount,amount,currency,as_of,end_date,auto_renew",
+          "C-100,Master Services Agreement,Acme Customer,msa,active,2026-11-01,2026-10-01,2026-05-15,500.00,12000.00,USD,2026-04-30,2026-12-31,true",
+          "C-100,Master Services Agreement,Acme Customer,msa,active,2026-11-01,2026-10-01,2026-05-15,500.00,12000.00,USD,2026-04-30,2026-12-31,true",
+          "L-200,Office Lease,Landlord LLC,lease,active,,,2026-06-01,,24000.00,EUR,2026-04-29,2027-01-31,false",
+          "S-300,Support Agreement,Service Partner,services,active,,,2026-05-20,250.00,3000.00,GBP,2026-04-28,,true",
+          "NDA-1,NDA,Partner Co,confidentiality,draft,,,,,,GBP,,,",
+        ].join("\n"),
+      ),
+    );
+
+    const synced = await financeTwinService.syncCompanySourceFile(
+      "acme",
+      registered.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
+    const contracts = await financeTwinService.getContracts("acme");
+    const obligationCalendar =
+      await financeTwinService.getObligationCalendar("acme");
+    const msaContract = contracts.contracts.find(
+      (row) => row.contract.externalContractId === "C-100",
+    );
+    const scheduledPayment = obligationCalendar.upcomingObligations.find(
+      (row) =>
+        row.contract.externalContractId === "L-200" &&
+        row.obligationType === "scheduled_payment",
+    );
+    const lineage = await financeTwinService.getLineageDrill({
+      companyKey: "acme",
+      targetKind: "contract_obligation",
+      targetId:
+        obligationCalendar.upcomingObligations.find(
+          (row) =>
+            row.contract.externalContractId === "C-100" &&
+            row.obligationType === "renewal",
+        )?.lineageRef.targetId ?? "",
+      syncRunId: synced.syncRun.id,
+    });
+
+    expect(synced).toMatchObject({
+      syncRun: {
+        extractorKey: "contract_metadata_csv",
+        status: "succeeded",
+      },
+    });
+    expect(contracts).toMatchObject({
+      company: {
+        companyKey: "acme",
+        displayName: "Acme Holdings",
+      },
+      latestSuccessfulSlice: {
+        coverage: {
+          contractCount: 4,
+          obligationCount: 7,
+          lineageCount: 11,
+          lineageTargetCounts: {
+            contractCount: 4,
+            contractObligationCount: 7,
+          },
+        },
+        summary: {
+          contractCount: 4,
+          obligationCount: 7,
+          datedContractCount: 3,
+          undatedContractCount: 1,
+          currencyCount: 3,
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      contractCount: 4,
+    });
+    expect(msaContract).toMatchObject({
+      contract: {
+        contractLabel: "Master Services Agreement",
+        externalContractId: "C-100",
+        knownAsOfDates: ["2026-04-30"],
+        sourceLineNumbers: [2, 3],
+        amount: "12000.00",
+        paymentAmount: "500.00",
+        autoRenew: true,
+      },
+      explicitObligationCount: 4,
+      lineageRef: {
+        targetKind: "contract",
+        syncRunId: synced.syncRun.id,
+      },
+    });
+    expect(obligationCalendar).toMatchObject({
+      company: {
+        companyKey: "acme",
+      },
+      latestSuccessfulContractMetadataSlice: {
+        coverage: {
+          contractCount: 4,
+          obligationCount: 7,
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      coverageSummary: {
+        contractCount: 4,
+        obligationCount: 7,
+        currencyBucketCount: 3,
+        obligationsWithExplicitAmountCount: 2,
+        obligationsWithoutExplicitAmountCount: 5,
+      },
+      currencyBuckets: [
+        {
+          currency: null,
+          obligationCount: 5,
+          obligationsWithExplicitAmountCount: 0,
+          obligationsWithoutExplicitAmountCount: 5,
+        },
+        {
+          currency: "GBP",
+          obligationCount: 1,
+          obligationsWithExplicitAmountCount: 1,
+          obligationsWithoutExplicitAmountCount: 0,
+          explicitAmountTotal: "250.00",
+        },
+        {
+          currency: "USD",
+          obligationCount: 1,
+          obligationsWithExplicitAmountCount: 1,
+          obligationsWithoutExplicitAmountCount: 0,
+          explicitAmountTotal: "500.00",
+        },
+      ],
+    });
+    expect(scheduledPayment).toMatchObject({
+      contract: {
+        externalContractId: "L-200",
+      },
+      obligationType: "scheduled_payment",
+      amount: null,
+      currency: null,
+      sourceField: "next_payment_date",
+    });
+    expect(obligationCalendar.diagnostics).toEqual(
+      expect.arrayContaining([
+        "One or more persisted contracts do not include an explicit observation date.",
+        "One or more explicit contract obligations do not include an explicit amount.",
+        "One or more contracts report a generic amount alongside next_payment_date, so the obligation calendar leaves that scheduled-payment amount null unless payment_amount is explicit.",
+        "One or more persisted contracts include a generic end_date field that remains labeled as end_date rather than being upgraded into expiration semantics.",
+      ]),
+    );
+    expect(lineage).toMatchObject({
+      target: {
+        targetKind: "contract_obligation",
+        syncRunId: synced.syncRun.id,
+      },
+      recordCount: 1,
+      records: [
+        {
+          syncRun: {
+            extractorKey: "contract_metadata_csv",
+            id: synced.syncRun.id,
+          },
+          sourceFile: {
+            originalFileName: "contract-metadata.csv",
+          },
+        },
+      ],
+    });
+  });
+
   it("builds a cross-slice company snapshot and scoped lineage drill truthfully", async () => {
     const now = () => new Date("2026-04-11T11:30:00.000Z");
     const sourceRepository = new InMemorySourceRepository();

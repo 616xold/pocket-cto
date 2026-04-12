@@ -5,7 +5,7 @@ import type {
 } from "@pocket-cto/domain";
 
 export const FINANCE_TWIN_LIMITATIONS = [
-  "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, receivables-aging CSV, and payables-aging CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, payables-aging, payables-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+  "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, bank-account-summary CSV, receivables-aging CSV, payables-aging CSV, and contract-metadata CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, receivables-aging, collections-posture, payables-aging, payables-posture, contract inventory, obligation-calendar, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
   "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
 ];
 

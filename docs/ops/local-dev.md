@@ -1,6 +1,6 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, and through the merged F2A, F2B, F2C, F2D, F2E, F2F, F2G, F2H, F2I, F2J, F2K, and F2L finance-twin slices.
+This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, and through the merged F2A, F2B, F2C, F2D, F2E, F2F, F2G, F2H, F2I, F2J, F2K, F2L, and F2M finance-twin slices.
 
 That means two things are true at once:
 
@@ -36,6 +36,7 @@ pnpm smoke:finance-twin-balance-bridge-prerequisites:local
 pnpm smoke:finance-twin-source-backed-balance-proof:local
 pnpm smoke:finance-twin-balance-proof-lineage:local
 pnpm smoke:finance-twin-bank-account-summary:local
+pnpm smoke:finance-twin-contract-metadata:local
 pnpm smoke:finance-twin-payables-aging:local
 pnpm smoke:finance-twin-receivables-aging:local
 pnpm smoke:finance-twin-account-catalog:local
@@ -78,13 +79,15 @@ Today, steps 1 through 4 exist in a narrow form:
 - F2J adds direct balance-proof lineage drill behavior on top of persisted proof rows and proof lineage
 - F2K shipped deterministic bank-account-summary ingest plus backend-first bank-account inventory and cash-posture reads without fake FX conversion, transaction detail, or bank reconciliation
 - F2L shipped deterministic receivables-aging ingest plus backend-first receivables-aging and collections-posture reads without fake invoice detail, expected cash timing, reserve logic, or DSO
-- F2M is the active next slice and adds deterministic payables-aging ingest plus backend-first payables-aging and payables-posture reads without fake bill detail, expected payment timing, reserve logic, or DPO
+- F2M shipped deterministic payables-aging ingest plus backend-first payables-aging and payables-posture reads without fake bill detail, expected payment timing, reserve logic, or DPO
+- F2N is the active next slice and adds deterministic contract-metadata ingest plus backend-first contract inventory and obligation-calendar reads without clause parsing, legal interpretation, payment forecasting, or covenant logic
 - the packaged `pnpm smoke:finance-twin:local` path proves the trial-balance sync from stored raw bytes
 - the packaged `pnpm smoke:finance-twin-account-bridge:local` path proves matched-period account-bridge readiness, explicit unmatched diagnostics, and activity-lineage drill-through from persisted state
 - the packaged `pnpm smoke:finance-twin-balance-bridge-prerequisites:local` path proves blocked balance-bridge prerequisites, explicit missing-proof diagnostics, and no-fake-variance behavior from persisted state
 - the packaged `pnpm smoke:finance-twin-source-backed-balance-proof:local` path proves explicit opening-balance or ending-balance fields can light up truthful per-account balance proof from persisted state
 - the packaged `pnpm smoke:finance-twin-balance-proof-lineage:local` path proves proof-bearing account rows can drill directly to the persisted balance-proof row and lineage from persisted state
 - the packaged `pnpm smoke:finance-twin-bank-account-summary:local` path proves stored raw bank-summary CSV bytes sync into persisted bank-account inventory and truthful cash-posture state
+- the packaged `pnpm smoke:finance-twin-contract-metadata:local` path proves stored raw contract-metadata CSV bytes sync into persisted contract inventory and truthful obligation-calendar state
 - the packaged `pnpm smoke:finance-twin-payables-aging:local` path proves stored raw payables-aging CSV bytes sync into persisted payables-aging inventory and truthful payables-posture state
 - the packaged `pnpm smoke:finance-twin-receivables-aging:local` path proves stored raw receivables-aging CSV bytes sync into persisted receivables-aging inventory and truthful collections-posture state
 - the packaged `pnpm smoke:finance-twin-account-catalog:local` path proves persisted account-catalog state
@@ -110,6 +113,8 @@ The active finance-twin read surface is currently backend-first:
 - general-ledger balance-proof lineage drill
 - bank-account inventory
 - cash posture
+- contract inventory
+- obligation calendar
 - payables-aging
 - payables posture
 - receivables-aging
