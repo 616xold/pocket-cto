@@ -16,6 +16,8 @@ import {
   FinancePayablesPostureViewSchema,
   FinanceReceivablesAgingViewSchema,
   FinanceReconciliationReadinessViewSchema,
+  FinanceSpendItemsViewSchema,
+  FinanceSpendPostureViewSchema,
   FinanceSnapshotViewSchema,
   FinanceTwinCompanySummarySchema,
   FinanceTwinSyncInputSchema,
@@ -2345,5 +2347,48 @@ describe("finance twin domain schemas", () => {
 
     expect(contracts.contracts).toHaveLength(0);
     expect(obligationCalendar.upcomingObligations).toHaveLength(0);
+
+    const spendItems = FinanceSpendItemsViewSchema.parse({
+      company: contracts.company,
+      latestAttemptedSyncRun: null,
+      latestSuccessfulSlice: {
+        latestSource: null,
+        latestSyncRun: null,
+        coverage: {
+          rowCount: 0,
+          lineageCount: 0,
+        },
+        summary: null,
+      },
+      freshness: contracts.freshness,
+      rowCount: 0,
+      rows: [],
+      diagnostics: [],
+      limitations: [],
+    });
+    const spendPosture = FinanceSpendPostureViewSchema.parse({
+      company: spendItems.company,
+      latestAttemptedSyncRun: null,
+      latestSuccessfulCardExpenseSlice: spendItems.latestSuccessfulSlice,
+      freshness: spendItems.freshness,
+      currencyBuckets: [],
+      coverageSummary: {
+        rowCount: 0,
+        currencyBucketCount: 0,
+        datedRowCount: 0,
+        undatedRowCount: 0,
+        rowsWithExplicitRowIdentityCount: 0,
+        rowsWithReportedAmountCount: 0,
+        rowsWithPostedAmountCount: 0,
+        rowsWithTransactionAmountCount: 0,
+        rowsWithMerchantOrVendorCount: 0,
+        rowsWithEmployeeOrCardholderCount: 0,
+      },
+      diagnostics: [],
+      limitations: [],
+    });
+
+    expect(spendItems.rows).toHaveLength(0);
+    expect(spendPosture.currencyBuckets).toHaveLength(0);
   });
 });

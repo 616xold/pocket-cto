@@ -14,6 +14,7 @@ import {
   financePayablesAgingRows,
   financeReceivablesAgingRows,
   financeReportingPeriods,
+  financeSpendRows,
   financeTrialBalanceLines,
   financeTwinLineage,
   financeTwinSyncRuns,
@@ -48,6 +49,7 @@ import {
   mapFinanceReceivablesAgingRow,
   mapFinanceReceivablesAgingRowViewRow,
   mapFinanceReportingPeriodRow,
+  mapFinanceSpendRow,
   mapFinanceTrialBalanceLineRow,
   mapFinanceTrialBalanceLineViewRow,
   mapFinanceTwinLineageRow,
@@ -74,6 +76,7 @@ import type {
   UpsertFinancePayablesAgingRowInput,
   UpsertFinanceReceivablesAgingRowInput,
   UpsertFinanceReportingPeriodInput,
+  UpsertFinanceSpendRowInput,
   UpsertFinanceTrialBalanceLineInput,
   UpsertFinanceVendorInput,
 } from "./repository";
@@ -478,6 +481,91 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
     }
 
     return mapFinanceContractObligationRow(row);
+  }
+
+  async upsertSpendRow(
+    input: UpsertFinanceSpendRowInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(financeSpendRows)
+      .values({
+        companyId: input.companyId,
+        syncRunId: input.syncRunId,
+        rowScopeKey: input.rowScopeKey,
+        lineNumber: input.lineNumber,
+        sourceLineNumbers: input.sourceLineNumbers,
+        explicitRowIdentity: input.explicitRowIdentity,
+        explicitRowIdentitySourceField: input.explicitRowIdentitySourceField,
+        merchantLabel: input.merchantLabel,
+        vendorLabel: input.vendorLabel,
+        employeeLabel: input.employeeLabel,
+        cardholderLabel: input.cardholderLabel,
+        categoryLabel: input.categoryLabel,
+        memo: input.memo,
+        description: input.description,
+        department: input.department,
+        cardLabel: input.cardLabel,
+        cardLast4: input.cardLast4,
+        amount: input.amount,
+        postedAmount: input.postedAmount,
+        transactionAmount: input.transactionAmount,
+        currencyCode: input.currencyCode,
+        transactionDate: input.transactionDate,
+        postedDate: input.postedDate,
+        expenseDate: input.expenseDate,
+        reportDate: input.reportDate,
+        asOfDate: input.asOfDate,
+        status: input.status,
+        state: input.state,
+        reimbursable: input.reimbursable,
+        pending: input.pending,
+        sourceFieldMap: input.sourceFieldMap,
+        observedAt: new Date(input.observedAt),
+      })
+      .onConflictDoUpdate({
+        target: [financeSpendRows.syncRunId, financeSpendRows.rowScopeKey],
+        set: {
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers,
+          explicitRowIdentity: input.explicitRowIdentity,
+          explicitRowIdentitySourceField: input.explicitRowIdentitySourceField,
+          merchantLabel: input.merchantLabel,
+          vendorLabel: input.vendorLabel,
+          employeeLabel: input.employeeLabel,
+          cardholderLabel: input.cardholderLabel,
+          categoryLabel: input.categoryLabel,
+          memo: input.memo,
+          description: input.description,
+          department: input.department,
+          cardLabel: input.cardLabel,
+          cardLast4: input.cardLast4,
+          amount: input.amount,
+          postedAmount: input.postedAmount,
+          transactionAmount: input.transactionAmount,
+          currencyCode: input.currencyCode,
+          transactionDate: input.transactionDate,
+          postedDate: input.postedDate,
+          expenseDate: input.expenseDate,
+          reportDate: input.reportDate,
+          asOfDate: input.asOfDate,
+          status: input.status,
+          state: input.state,
+          reimbursable: input.reimbursable,
+          pending: input.pending,
+          sourceFieldMap: input.sourceFieldMap,
+          observedAt: new Date(input.observedAt),
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Finance spend row upsert did not return a row");
+    }
+
+    return mapFinanceSpendRow(row);
   }
 
   async startSyncRun(
@@ -1194,6 +1282,25 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
       );
 
     return rows.map(mapFinanceContractObligationViewRow);
+  }
+
+  async listSpendRowsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(financeSpendRows)
+      .where(eq(financeSpendRows.syncRunId, syncRunId))
+      .orderBy(
+        asc(financeSpendRows.currencyCode),
+        asc(financeSpendRows.postedDate),
+        asc(financeSpendRows.transactionDate),
+        asc(financeSpendRows.lineNumber),
+      );
+
+    return rows.map(mapFinanceSpendRow);
   }
 
   async listGeneralLedgerEntriesBySyncRunId(

@@ -36,6 +36,12 @@ import {
   type ReceivablesAgingExtractionResult,
 } from "./receivables-aging-csv";
 import {
+  extractCardExpenseCsv,
+  looksLikeCardExpenseCsv,
+  supportsCardExpenseCsvSource,
+  type CardExpenseExtractionResult,
+} from "./card-expense-csv";
+import {
   extractTrialBalanceCsv,
   looksLikeTrialBalanceCsv,
   supportsTrialBalanceCsvSource,
@@ -64,6 +70,10 @@ export type FinanceTwinExtraction =
       contractMetadata: ContractMetadataExtractionResult;
     }
   | {
+      extractorKey: "card_expense_csv";
+      cardExpense: CardExpenseExtractionResult;
+    }
+  | {
       extractorKey: "general_ledger_csv";
       generalLedger: GeneralLedgerExtractionResult;
     }
@@ -82,7 +92,8 @@ export function supportsFinanceTwinSourceFile(
     supportsBankAccountSummaryCsvSource(sourceFile) ||
     supportsReceivablesAgingCsvSource(sourceFile) ||
     supportsPayablesAgingCsvSource(sourceFile) ||
-    supportsContractMetadataCsvSource(sourceFile)
+    supportsContractMetadataCsvSource(sourceFile) ||
+    supportsCardExpenseCsvSource(sourceFile)
   );
 }
 
@@ -115,6 +126,13 @@ export function extractFinanceTwinSource(input: {
     return {
       extractorKey: "contract_metadata_csv",
       contractMetadata: extractContractMetadataCsv(input),
+    };
+  }
+
+  if (looksLikeCardExpenseCsv(input)) {
+    return {
+      extractorKey: "card_expense_csv",
+      cardExpense: extractCardExpenseCsv(input),
     };
   }
 

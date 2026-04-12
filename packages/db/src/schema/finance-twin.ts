@@ -25,6 +25,7 @@ export const financeTwinExtractorKeyEnum = pgEnum(
     "receivables_aging_csv",
     "payables_aging_csv",
     "contract_metadata_csv",
+    "card_expense_csv",
   ],
 );
 
@@ -46,6 +47,7 @@ export const financeTwinLineageTargetKindEnum = pgEnum(
     "payables_aging_row",
     "contract",
     "contract_obligation",
+    "spend_row",
     "trial_balance_line",
     "account_catalog_entry",
     "journal_entry",
@@ -96,6 +98,33 @@ type FinanceContractSourceFieldMapJson = {
   renewalDate: string | null;
   startDate: string | null;
   status: string | null;
+};
+
+type FinanceSpendSourceFieldMapJson = {
+  explicitRowIdentity: string | null;
+  merchantLabel: string | null;
+  vendorLabel: string | null;
+  employeeLabel: string | null;
+  cardholderLabel: string | null;
+  categoryLabel: string | null;
+  memo: string | null;
+  description: string | null;
+  department: string | null;
+  cardLabel: string | null;
+  cardLast4: string | null;
+  amount: string | null;
+  postedAmount: string | null;
+  transactionAmount: string | null;
+  currencyCode: string | null;
+  transactionDate: string | null;
+  postedDate: string | null;
+  expenseDate: string | null;
+  reportDate: string | null;
+  asOfDate: string | null;
+  status: string | null;
+  state: string | null;
+  reimbursable: string | null;
+  pending: string | null;
 };
 
 export const financeCompanies = pgTable(
@@ -376,6 +405,78 @@ export const financeContractObligations = pgTable(
     contractDueDateIndex: index(
       "finance_contract_obligations_contract_due_date_idx",
     ).on(table.contractId, table.dueDate),
+  }),
+);
+
+export const financeSpendRows = pgTable(
+  "finance_spend_rows",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    syncRunId: uuid("sync_run_id")
+      .references(() => financeTwinSyncRuns.id, { onDelete: "cascade" })
+      .notNull(),
+    rowScopeKey: text("row_scope_key").notNull(),
+    lineNumber: integer("line_number").notNull(),
+    sourceLineNumbers: jsonb("source_line_numbers").$type<number[]>().notNull(),
+    explicitRowIdentity: text("explicit_row_identity"),
+    explicitRowIdentitySourceField: text("explicit_row_identity_source_field"),
+    merchantLabel: text("merchant_label"),
+    vendorLabel: text("vendor_label"),
+    employeeLabel: text("employee_label"),
+    cardholderLabel: text("cardholder_label"),
+    categoryLabel: text("category_label"),
+    memo: text("memo"),
+    description: text("description"),
+    department: text("department"),
+    cardLabel: text("card_label"),
+    cardLast4: text("card_last4"),
+    amount: numeric("amount", {
+      precision: 18,
+      scale: 2,
+    }),
+    postedAmount: numeric("posted_amount", {
+      precision: 18,
+      scale: 2,
+    }),
+    transactionAmount: numeric("transaction_amount", {
+      precision: 18,
+      scale: 2,
+    }),
+    currencyCode: text("currency_code"),
+    transactionDate: date("transaction_date"),
+    postedDate: date("posted_date"),
+    expenseDate: date("expense_date"),
+    reportDate: date("report_date"),
+    asOfDate: date("as_of_date"),
+    status: text("status"),
+    state: text("state"),
+    reimbursable: boolean("reimbursable"),
+    pending: boolean("pending"),
+    sourceFieldMap: jsonb("source_field_map")
+      .$type<FinanceSpendSourceFieldMapJson>()
+      .notNull(),
+    observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    syncRunScopeUnique: uniqueIndex(
+      "finance_spend_rows_sync_run_row_scope_key",
+    ).on(table.syncRunId, table.rowScopeKey),
+    companySyncIndex: index("finance_spend_rows_company_sync_idx").on(
+      table.companyId,
+      table.syncRunId,
+    ),
+    postedDateIndex: index("finance_spend_rows_posted_date_idx").on(
+      table.companyId,
+      table.postedDate,
+    ),
+    transactionDateIndex: index(
+      "finance_spend_rows_transaction_date_idx",
+    ).on(table.companyId, table.transactionDate),
   }),
 );
 

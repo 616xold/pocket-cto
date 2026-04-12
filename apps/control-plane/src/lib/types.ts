@@ -76,7 +76,13 @@ export type FinanceTwinServicePort = Pick<
   | "syncCompanySourceFile"
 > &
   Partial<
-    Pick<FinanceTwinService, "getContracts" | "getObligationCalendar">
+    Pick<
+      FinanceTwinService,
+      | "getContracts"
+      | "getObligationCalendar"
+      | "getSpendItems"
+      | "getSpendPosture"
+    >
   >;
 
 export type TwinServicePort = Pick<

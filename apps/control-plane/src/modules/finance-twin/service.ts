@@ -11,6 +11,8 @@ import {
   FinanceGeneralLedgerViewSchema,
   FinanceLineageDrillViewSchema,
   FinanceObligationCalendarViewSchema,
+  FinanceSpendItemsViewSchema,
+  FinanceSpendPostureViewSchema,
   FinancePayablesAgingViewSchema,
   FinancePayablesPostureViewSchema,
   FinanceReceivablesAgingViewSchema,
@@ -36,6 +38,7 @@ import {
   type FinanceGeneralLedgerEntryView,
   type FinanceGeneralLedgerView,
   type FinanceLatestSuccessfulBankAccountSummarySlice,
+  type FinanceLatestSuccessfulCardExpenseSlice,
   type FinanceLatestSuccessfulContractMetadataSlice,
   type FinanceLatestSuccessfulPayablesAgingSlice,
   type FinanceLatestSuccessfulReceivablesAgingSlice,
@@ -49,6 +52,9 @@ import {
   type FinanceReconciliationReadinessView,
   type FinanceLatestSuccessfulSlices,
   type FinanceSnapshotView,
+  type FinanceSpendItemsView,
+  type FinanceSpendPostureView,
+  type FinanceSpendRowRecord,
   type FinanceTwinLineageTargetKind,
   type FinanceTwinCompanySummary,
   type FinanceTwinSyncInput,
@@ -66,6 +72,7 @@ import type { SourceRepository } from "../sources/repository";
 import type { SourceFileStorage } from "../sources/storage";
 import type { ChartOfAccountsExtractionResult } from "./chart-of-accounts-csv";
 import type { ContractMetadataExtractionResult } from "./contract-metadata-csv";
+import type { CardExpenseExtractionResult } from "./card-expense-csv";
 import {
   buildContractMetadataSliceSummary,
   buildFinanceContractsView,
@@ -107,6 +114,11 @@ import type {
   FinanceTwinRepository,
 } from "./repository";
 import { buildFinanceSnapshotView } from "./snapshot";
+import {
+  buildCardExpenseSliceSummary,
+  buildFinanceSpendItemsView,
+} from "./spend-items";
+import { buildFinanceSpendPostureView } from "./spend-posture";
 import {
   buildBankAccountSummarySliceSummary,
   buildFinanceBankAccountInventoryView,
@@ -176,6 +188,13 @@ type ContractMetadataReadState = {
   latestAttemptedSyncRun: FinanceTwinSyncRunRecord | null;
   latestSuccessfulSlice: FinanceLatestSuccessfulContractMetadataSlice;
   obligations: FinanceContractObligationView[];
+};
+
+type CardExpenseReadState = {
+  freshness: FinanceFreshnessSummary;
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecord | null;
+  latestSuccessfulSlice: FinanceLatestSuccessfulCardExpenseSlice;
+  rows: FinanceSpendRowRecord[];
 };
 
 export class FinanceTwinService {
@@ -286,6 +305,15 @@ export class FinanceTwinService {
                 ? await this.persistContractMetadataSync({
                     company,
                     extracted: extracted.contractMetadata,
+                    snapshotId: snapshot.id,
+                    sourceFileId: sourceFile.id,
+                    sourceId: source.id,
+                    syncRun,
+                  })
+              : extracted.extractorKey === "card_expense_csv"
+                ? await this.persistCardExpenseSync({
+                    company,
+                    extracted: extracted.cardExpense,
                     snapshotId: snapshot.id,
                     sourceFileId: sourceFile.id,
                     sourceId: source.id,
@@ -811,6 +839,50 @@ export class FinanceTwinService {
         latestSuccessfulContractMetadataSlice: readState.latestSuccessfulSlice,
         limitations: FINANCE_TWIN_LIMITATIONS,
         obligations: readState.obligations,
+      }),
+    );
+  }
+
+  async getSpendItems(companyKey: string): Promise<FinanceSpendItemsView> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(companyKey);
+    }
+
+    const readState = await this.readCardExpenseState(company);
+
+    return FinanceSpendItemsViewSchema.parse(
+      buildFinanceSpendItemsView({
+        company,
+        freshness: readState.freshness,
+        latestAttemptedSyncRun: readState.latestAttemptedSyncRun,
+        latestSuccessfulSlice: readState.latestSuccessfulSlice,
+        limitations: FINANCE_TWIN_LIMITATIONS,
+        rows: readState.rows,
+      }),
+    );
+  }
+
+  async getSpendPosture(companyKey: string): Promise<FinanceSpendPostureView> {
+    const company =
+      await this.input.financeTwinRepository.getCompanyByKey(companyKey);
+
+    if (!company) {
+      throw new FinanceCompanyNotFoundError(companyKey);
+    }
+
+    const readState = await this.readCardExpenseState(company);
+
+    return FinanceSpendPostureViewSchema.parse(
+      buildFinanceSpendPostureView({
+        company,
+        freshness: readState.freshness,
+        latestAttemptedSyncRun: readState.latestAttemptedSyncRun,
+        latestSuccessfulCardExpenseSlice: readState.latestSuccessfulSlice,
+        limitations: FINANCE_TWIN_LIMITATIONS,
+        rows: readState.rows,
       }),
     );
   }
@@ -1666,6 +1738,116 @@ export class FinanceTwinService {
     });
   }
 
+  private async persistCardExpenseSync(input: {
+    company: FinanceCompanyRecord;
+    extracted: CardExpenseExtractionResult;
+    snapshotId: string;
+    sourceFileId: string;
+    sourceId: string;
+    syncRun: FinanceTwinSyncRunRecord;
+  }) {
+    const recordedAt = this.now().toISOString();
+    const currencyCodes = new Set(
+      input.extracted.rows
+        .map((row) => row.currencyCode)
+        .filter((currencyCode): currencyCode is string => currencyCode !== null),
+    );
+
+    return this.input.financeTwinRepository.transaction(async (session) => {
+      for (const row of input.extracted.rows) {
+        const storedRow = await this.input.financeTwinRepository.upsertSpendRow(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            rowScopeKey: row.rowScopeKey,
+            lineNumber: row.lineNumber,
+            sourceLineNumbers: row.sourceLineNumbers
+              .slice()
+              .sort((left, right) => left - right),
+            explicitRowIdentity: row.explicitRowIdentity,
+            explicitRowIdentitySourceField: row.explicitRowIdentitySourceField,
+            merchantLabel: row.merchantLabel,
+            vendorLabel: row.vendorLabel,
+            employeeLabel: row.employeeLabel,
+            cardholderLabel: row.cardholderLabel,
+            categoryLabel: row.categoryLabel,
+            memo: row.memo,
+            description: row.description,
+            department: row.department,
+            cardLabel: row.cardLabel,
+            cardLast4: row.cardLast4,
+            amount: row.amount,
+            postedAmount: row.postedAmount,
+            transactionAmount: row.transactionAmount,
+            currencyCode: row.currencyCode,
+            transactionDate: row.transactionDate,
+            postedDate: row.postedDate,
+            expenseDate: row.expenseDate,
+            reportDate: row.reportDate,
+            asOfDate: row.asOfDate,
+            status: row.status,
+            state: row.state,
+            reimbursable: row.reimbursable,
+            pending: row.pending,
+            sourceFieldMap: row.sourceFieldMap,
+            observedAt: recordedAt,
+          },
+          session,
+        );
+
+        await this.input.financeTwinRepository.createLineage(
+          {
+            companyId: input.company.id,
+            syncRunId: input.syncRun.id,
+            targetKind: "spend_row",
+            targetId: storedRow.id,
+            sourceId: input.sourceId,
+            sourceSnapshotId: input.snapshotId,
+            sourceFileId: input.sourceFileId,
+            recordedAt,
+          },
+          session,
+        );
+      }
+
+      const [reportingPeriodCount, ledgerAccountCount] = await Promise.all([
+        this.input.financeTwinRepository.countReportingPeriodsByCompanyId(
+          input.company.id,
+          session,
+        ),
+        this.input.financeTwinRepository.countLedgerAccountsByCompanyId(
+          input.company.id,
+          session,
+        ),
+      ]);
+
+      return this.input.financeTwinRepository.finishSyncRun(
+        {
+          syncRunId: input.syncRun.id,
+          reportingPeriodId: null,
+          status: "succeeded",
+          completedAt: recordedAt,
+          stats: {
+            spendRowCount: input.extracted.rows.length,
+            spendCurrencyCount: currencyCodes.size,
+            datedSpendRowCount: input.extracted.rows.filter(hasAnySpendDate)
+              .length,
+            undatedSpendRowCount: input.extracted.rows.filter(
+              (row) => !hasAnySpendDate(row),
+            ).length,
+            rowsWithExplicitRowIdentityCount: input.extracted.rows.filter(
+              (row) => row.explicitRowIdentity !== null,
+            ).length,
+            ledgerAccountCount,
+            reportingPeriodCount,
+          },
+          errorSummary: null,
+        },
+        session,
+      );
+    });
+  }
+
   private async persistPayablesAgingSync(input: {
     company: FinanceCompanyRecord;
     extracted: PayablesAgingExtractionResult;
@@ -2148,6 +2330,35 @@ export class FinanceTwinService {
       }),
       latestSuccessfulSlice: latestSuccessfulSlice.snapshot,
       obligations: latestSuccessfulSlice.obligations,
+    };
+  }
+
+  private async readCardExpenseState(
+    company: FinanceCompanyRecord,
+  ): Promise<CardExpenseReadState> {
+    const [latestAttemptedSyncRun, latestSuccessfulSyncRun] = await Promise.all([
+      this.input.financeTwinRepository.getLatestSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "card_expense_csv",
+      ),
+      this.input.financeTwinRepository.getLatestSuccessfulSyncRunByCompanyIdAndExtractorKey(
+        company.id,
+        "card_expense_csv",
+      ),
+    ]);
+    const latestSuccessfulSlice =
+      await this.readLatestSuccessfulCardExpenseSlice(latestSuccessfulSyncRun);
+
+    return {
+      latestAttemptedSyncRun,
+      freshness: buildFinanceSliceFreshnessSummary({
+        latestRun: latestAttemptedSyncRun,
+        latestSuccessfulRun: latestSuccessfulSyncRun,
+        now: this.now(),
+        sliceLabel: "card-expense",
+      }),
+      latestSuccessfulSlice: latestSuccessfulSlice.snapshot,
+      rows: latestSuccessfulSlice.rows,
     };
   }
 
@@ -2688,6 +2899,54 @@ export class FinanceTwinService {
       },
     };
   }
+
+  private async readLatestSuccessfulCardExpenseSlice(
+    latestSuccessfulRun: FinanceTwinSyncRunRecord | null,
+  ) {
+    if (!latestSuccessfulRun) {
+      return {
+        rows: [] as FinanceSpendRowRecord[],
+        snapshot: {
+          latestSource: null,
+          latestSyncRun: null,
+          coverage: {
+            rowCount: 0,
+            lineageCount: 0,
+            lineageTargetCounts: buildLineageTargetCounts([]),
+          },
+          summary: null,
+        },
+      };
+    }
+
+    const [rows, lineages] = await Promise.all([
+      this.input.financeTwinRepository.listSpendRowsBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+      this.input.financeTwinRepository.listLineageBySyncRunId(
+        latestSuccessfulRun.id,
+      ),
+    ]);
+
+    return {
+      rows,
+      snapshot: {
+        latestSource: buildSourceRef(latestSuccessfulRun),
+        latestSyncRun: latestSuccessfulRun,
+        coverage: {
+          rowCount: rows.length,
+          lineageCount: lineages.length,
+          lineageTargetCounts: buildLineageTargetCounts(lineages),
+        },
+        summary:
+          rows.length > 0
+            ? buildCardExpenseSliceSummary({
+                rows,
+              })
+            : null,
+      },
+    };
+  }
 }
 
 function buildAttemptedSlice(syncRun: FinanceTwinSyncRunRecord | null) {
@@ -2767,6 +3026,21 @@ function isPayablesAgingBucketKey(
     value === "over_120" ||
     value === "past_due" ||
     value === "total"
+  );
+}
+
+function hasAnySpendDate(
+  row: Pick<
+    FinanceSpendRowRecord,
+    "transactionDate" | "postedDate" | "expenseDate" | "reportDate" | "asOfDate"
+  >,
+) {
+  return (
+    row.transactionDate !== null ||
+    row.postedDate !== null ||
+    row.expenseDate !== null ||
+    row.reportDate !== null ||
+    row.asOfDate !== null
   );
 }
 

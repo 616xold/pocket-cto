@@ -39,6 +39,7 @@ Suggested thread naming:
 - `F2L-receivables-aging-and-collections-posture`
 - `F2M-payables-aging-and-payables-posture`
 - `F2N-contract-metadata-and-obligation-calendar`
+- `F2O-card-expense-and-spend-posture`
 - `F3-cfo-wiki-compiler`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`

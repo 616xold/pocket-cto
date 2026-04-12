@@ -14,6 +14,7 @@ import {
   financePayablesAgingRows,
   financeReceivablesAgingRows,
   financeReportingPeriods,
+  financeSpendRows,
   financeTrialBalanceLines,
   financeTwinLineage,
   financeTwinSyncRuns,
@@ -48,6 +49,7 @@ describe("db schema exports", () => {
     expect(financeVendors).toBeDefined();
     expect(financePayablesAgingRows).toBeDefined();
     expect(financeReceivablesAgingRows).toBeDefined();
+    expect(financeSpendRows).toBeDefined();
     expect(financeGeneralLedgerBalanceProofs).toBeDefined();
     expect(financeJournalEntries).toBeDefined();
     expect(financeJournalLines).toBeDefined();
