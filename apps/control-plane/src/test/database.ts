@@ -23,6 +23,7 @@ import type {
   financePayablesAgingRows,
   financeReceivablesAgingRows,
   financeReportingPeriods,
+  financeSpendRows,
   financeTrialBalanceLines,
   financeTwinLineage,
   financeTwinSyncRuns,
@@ -54,6 +55,7 @@ export async function resetTestDatabase() {
       finance_twin_lineage,
       finance_contract_obligations,
       finance_contracts,
+      finance_spend_rows,
       finance_payables_aging_rows,
       finance_receivables_aging_rows,
       finance_bank_account_summaries,
@@ -147,6 +149,7 @@ async function selectCount(
     | typeof financeVendors
     | typeof financePayablesAgingRows
     | typeof financeReceivablesAgingRows
+    | typeof financeSpendRows
     | typeof financeGeneralLedgerBalanceProofs
     | typeof financeJournalEntries
     | typeof financeJournalLines

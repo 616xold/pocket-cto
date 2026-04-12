@@ -23,6 +23,7 @@ export const EMPTY_FINANCE_LINEAGE_TARGET_COUNTS: FinanceLineageTargetCounts = {
   payablesAgingRowCount: 0,
   contractCount: 0,
   contractObligationCount: 0,
+  spendRowCount: 0,
   trialBalanceLineCount: 0,
   accountCatalogEntryCount: 0,
   journalEntryCount: 0,
@@ -66,6 +67,9 @@ export function buildLineageTargetCounts(
         break;
       case "contract_obligation":
         counts.contractObligationCount += 1;
+        break;
+      case "spend_row":
+        counts.spendRowCount += 1;
         break;
       case "trial_balance_line":
         counts.trialBalanceLineCount += 1;

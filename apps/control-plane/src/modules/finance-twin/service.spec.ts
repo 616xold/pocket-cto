@@ -1326,6 +1326,209 @@ describe("FinanceTwinService", () => {
     });
   });
 
+  it("syncs one uploaded card-expense CSV into persisted spend items and truthful spend-posture reads", async () => {
+    const now = () => new Date("2026-04-12T12:30:00.000Z");
+    const sourceRepository = new InMemorySourceRepository();
+    const sourceStorage = new InMemorySourceFileStorage();
+    const sourceService = new SourceRegistryService(
+      sourceRepository,
+      sourceStorage,
+      now,
+    );
+    const financeRepository = new InMemoryFinanceTwinRepository();
+    const financeTwinService = new FinanceTwinService({
+      financeTwinRepository: financeRepository,
+      sourceFileStorage: sourceStorage,
+      sourceRepository,
+      now,
+    });
+    const created = await sourceService.createSource({
+      kind: "dataset",
+      name: "Card expense export",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "card-expense-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 20,
+        checksumSha256:
+          "dededededededededededededededededededededededededededededededede",
+        storageKind: "external_url",
+        storageRef: "https://example.com/card-expense",
+        ingestStatus: "registered",
+      },
+    });
+    const registered = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "card-expense.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "transaction_id,merchant,vendor,employee,card_name,card_last4,category,memo,amount,posted_amount,transaction_amount,currency,transaction_date,posted_date,expense_date,status,state,reimbursable,pending",
+          "TX-100,Delta Air,,Alex Jones,Corporate Travel,1234,travel,Flight to NYC,500.00,505.00,495.00,USD,2026-04-01,2026-04-03,,submitted,in_review,true,false",
+          "TX-100,Delta Air,,Alex Jones,Corporate Travel,1234,travel,Flight to NYC,500.00,505.00,495.00,USD,2026-04-01,2026-04-03,,submitted,in_review,true,false",
+          ",Coffee House,,Alex Jones,Team Card,9876,meals,Team coffee,12.50,,,USD,2026-04-01,,,pending,,false,true",
+          "TX-200,Restaurant,,Alex Jones,Team Card,9876,meals,Client dinner,,40.00,39.00,USD,2026-04-02,2026-04-04,,submitted,posted,false,false",
+          "EX-300,,Hilton Hotels,,,,travel,Conference stay,200.00,,,EUR,,2026-04-05,2026-04-04,submitted,,false,false",
+          "TX-400,Office Depot,,Alex Jones,Office Card,4567,office,Supplies,30.00,,,,,,,,false,false",
+        ].join("\n"),
+      ),
+    );
+
+    const synced = await financeTwinService.syncCompanySourceFile(
+      "acme",
+      registered.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
+    const spendItems = await financeTwinService.getSpendItems("acme");
+    const spendPosture = await financeTwinService.getSpendPosture("acme");
+    const deltaRow = spendItems.rows.find(
+      (row) => row.spendRow.explicitRowIdentity === "TX-100",
+    );
+    const unknownCurrencyBucket = spendPosture.currencyBuckets.find(
+      (bucket) => bucket.currency === null,
+    );
+    const usdBucket = spendPosture.currencyBuckets.find(
+      (bucket) => bucket.currency === "USD",
+    );
+    const lineage = await financeTwinService.getLineageDrill({
+      companyKey: "acme",
+      targetKind: "spend_row",
+      targetId: deltaRow?.lineageRef.targetId ?? "",
+      syncRunId: synced.syncRun.id,
+    });
+
+    expect(synced).toMatchObject({
+      syncRun: {
+        extractorKey: "card_expense_csv",
+        status: "succeeded",
+      },
+    });
+    expect(spendItems).toMatchObject({
+      company: {
+        companyKey: "acme",
+        displayName: "Acme Holdings",
+      },
+      latestSuccessfulSlice: {
+        coverage: {
+          rowCount: 5,
+          lineageCount: 5,
+          lineageTargetCounts: {
+            spendRowCount: 5,
+          },
+        },
+        summary: {
+          rowCount: 5,
+          datedRowCount: 4,
+          undatedRowCount: 1,
+          currencyCount: 2,
+          rowsWithExplicitRowIdentityCount: 4,
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      rowCount: 5,
+    });
+    expect(deltaRow).toMatchObject({
+      spendRow: {
+        explicitRowIdentity: "TX-100",
+        explicitRowIdentitySourceField: "transaction_id",
+        merchantLabel: "Delta Air",
+        employeeLabel: "Alex Jones",
+        cardLabel: "Corporate Travel",
+        cardLast4: "1234",
+        amount: "500.00",
+        postedAmount: "505.00",
+        transactionAmount: "495.00",
+        transactionDate: "2026-04-01",
+        postedDate: "2026-04-03",
+        sourceLineNumbers: [2, 3],
+        status: "submitted",
+        state: "in_review",
+        reimbursable: true,
+        pending: false,
+      },
+      lineageRef: {
+        targetKind: "spend_row",
+        syncRunId: synced.syncRun.id,
+      },
+    });
+    expect(spendPosture).toMatchObject({
+      latestSuccessfulCardExpenseSlice: {
+        coverage: {
+          rowCount: 5,
+        },
+      },
+      coverageSummary: {
+        rowCount: 5,
+        currencyBucketCount: 3,
+        datedRowCount: 4,
+        undatedRowCount: 1,
+        rowsWithExplicitRowIdentityCount: 4,
+        rowsWithReportedAmountCount: 4,
+        rowsWithPostedAmountCount: 2,
+        rowsWithTransactionAmountCount: 2,
+      },
+    });
+    expect(unknownCurrencyBucket).toMatchObject({
+      currency: null,
+      reportedAmountTotal: "30.00",
+      postedAmountTotal: "0.00",
+      transactionAmountTotal: "0.00",
+      rowCount: 1,
+      datedRowCount: 0,
+      undatedRowCount: 1,
+    });
+    expect(usdBucket).toMatchObject({
+      currency: "USD",
+      reportedAmountTotal: "512.50",
+      postedAmountTotal: "545.00",
+      transactionAmountTotal: "534.00",
+      rowCount: 3,
+      datedRowCount: 3,
+      undatedRowCount: 0,
+      mixedPostedDates: true,
+      mixedTransactionDates: true,
+      earliestPostedDate: "2026-04-03",
+      latestPostedDate: "2026-04-04",
+      earliestTransactionDate: "2026-04-01",
+      latestTransactionDate: "2026-04-02",
+    });
+    expect(spendPosture.diagnostics).toEqual(
+      expect.arrayContaining([
+        "One or more persisted spend rows are grouped into an unknown-currency bucket because the source did not include a currency code.",
+        "One or more persisted spend rows do not include any explicit source date.",
+        "One or more spend-posture currency buckets span multiple explicit posted dates.",
+        "One or more spend-posture currency buckets span multiple explicit transaction dates.",
+        "One or more persisted spend rows only expose a generic amount field, so those values stay in reportedAmountTotal rather than being upgraded into posted or transaction totals.",
+      ]),
+    );
+    expect(lineage).toMatchObject({
+      target: {
+        targetKind: "spend_row",
+        syncRunId: synced.syncRun.id,
+      },
+      recordCount: 1,
+      records: [
+        {
+          syncRun: {
+            extractorKey: "card_expense_csv",
+            id: synced.syncRun.id,
+          },
+          sourceFile: {
+            originalFileName: "card-expense.csv",
+          },
+        },
+      ],
+    });
+  });
+
   it("builds a cross-slice company snapshot and scoped lineage drill truthfully", async () => {
     const now = () => new Date("2026-04-11T11:30:00.000Z");
     const sourceRepository = new InMemorySourceRepository();

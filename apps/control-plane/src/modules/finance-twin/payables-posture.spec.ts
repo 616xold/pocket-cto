@@ -64,6 +64,7 @@ describe("payables posture", () => {
             payablesAgingRowCount: 0,
             contractCount: 0,
             contractObligationCount: 0,
+            spendRowCount: 0,
             trialBalanceLineCount: 0,
             accountCatalogEntryCount: 0,
             journalEntryCount: 0,

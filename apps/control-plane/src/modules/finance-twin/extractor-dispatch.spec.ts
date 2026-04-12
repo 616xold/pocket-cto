@@ -121,4 +121,21 @@ describe("finance twin extractor dispatch", () => {
 
     expect(extracted?.extractorKey).toBe("contract_metadata_csv");
   });
+
+  it("detects card-expense CSV without colliding with contract or aging slices", () => {
+    const extracted = extractFinanceTwinSource({
+      body: Buffer.from(
+        [
+          "transaction_id,merchant,employee,amount,posted_amount,transaction_date,posted_date,status,currency",
+          "TX-100,Delta Air,Alex Jones,500.00,505.00,2026-04-01,2026-04-03,submitted,USD",
+        ].join("\n"),
+      ),
+      sourceFile: {
+        mediaType: "text/csv",
+        originalFileName: "card-expense.csv",
+      },
+    });
+
+    expect(extracted?.extractorKey).toBe("card_expense_csv");
+  });
 });

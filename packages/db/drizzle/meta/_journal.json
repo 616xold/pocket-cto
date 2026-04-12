@@ -176,6 +176,13 @@
       "when": 1776031351270,
       "tag": "0024_awesome_kang",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1776035520571,
+      "tag": "0025_clear_hairball",
+      "breakpoints": true
     }
   ]
 }

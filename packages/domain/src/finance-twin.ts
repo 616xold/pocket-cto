@@ -35,6 +35,7 @@ export const FinanceTwinExtractorKeySchema = z.enum([
   "receivables_aging_csv",
   "payables_aging_csv",
   "contract_metadata_csv",
+  "card_expense_csv",
 ]);
 
 export const FinanceTwinSyncRunStatusSchema = z.enum([
@@ -54,6 +55,7 @@ export const FinanceTwinLineageTargetKindSchema = z.enum([
   "payables_aging_row",
   "contract",
   "contract_obligation",
+  "spend_row",
   "trial_balance_line",
   "account_catalog_entry",
   "journal_entry",
@@ -306,6 +308,70 @@ export const FinanceContractObligationRecordSchema = z.object({
   updatedAt: z.string().datetime({ offset: true }),
 });
 
+export const FinanceSpendSourceFieldMapSchema = z.object({
+  explicitRowIdentity: z.string().min(1).nullable().default(null),
+  merchantLabel: z.string().min(1).nullable().default(null),
+  vendorLabel: z.string().min(1).nullable().default(null),
+  employeeLabel: z.string().min(1).nullable().default(null),
+  cardholderLabel: z.string().min(1).nullable().default(null),
+  categoryLabel: z.string().min(1).nullable().default(null),
+  memo: z.string().min(1).nullable().default(null),
+  description: z.string().min(1).nullable().default(null),
+  department: z.string().min(1).nullable().default(null),
+  cardLabel: z.string().min(1).nullable().default(null),
+  cardLast4: z.string().min(1).nullable().default(null),
+  amount: z.string().min(1).nullable().default(null),
+  postedAmount: z.string().min(1).nullable().default(null),
+  transactionAmount: z.string().min(1).nullable().default(null),
+  currencyCode: z.string().min(1).nullable().default(null),
+  transactionDate: z.string().min(1).nullable().default(null),
+  postedDate: z.string().min(1).nullable().default(null),
+  expenseDate: z.string().min(1).nullable().default(null),
+  reportDate: z.string().min(1).nullable().default(null),
+  asOfDate: z.string().min(1).nullable().default(null),
+  status: z.string().min(1).nullable().default(null),
+  state: z.string().min(1).nullable().default(null),
+  reimbursable: z.string().min(1).nullable().default(null),
+  pending: z.string().min(1).nullable().default(null),
+});
+
+export const FinanceSpendRowRecordSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  syncRunId: z.string().uuid(),
+  lineNumber: z.number().int().positive(),
+  sourceLineNumbers: z.array(z.number().int().positive()).min(1),
+  explicitRowIdentity: z.string().min(1).nullable(),
+  explicitRowIdentitySourceField: z.string().min(1).nullable(),
+  merchantLabel: z.string().min(1).nullable(),
+  vendorLabel: z.string().min(1).nullable(),
+  employeeLabel: z.string().min(1).nullable(),
+  cardholderLabel: z.string().min(1).nullable(),
+  categoryLabel: z.string().min(1).nullable(),
+  memo: z.string().min(1).nullable(),
+  description: z.string().min(1).nullable(),
+  department: z.string().min(1).nullable(),
+  cardLabel: z.string().min(1).nullable(),
+  cardLast4: z.string().min(1).nullable(),
+  amount: FinanceAmountSchema.nullable(),
+  postedAmount: FinanceAmountSchema.nullable(),
+  transactionAmount: FinanceAmountSchema.nullable(),
+  currencyCode: z.string().min(1).nullable(),
+  transactionDate: FinanceIsoDateSchema.nullable(),
+  postedDate: FinanceIsoDateSchema.nullable(),
+  expenseDate: FinanceIsoDateSchema.nullable(),
+  reportDate: FinanceIsoDateSchema.nullable(),
+  asOfDate: FinanceIsoDateSchema.nullable(),
+  status: z.string().min(1).nullable(),
+  state: z.string().min(1).nullable(),
+  reimbursable: z.boolean().nullable(),
+  pending: z.boolean().nullable(),
+  sourceFieldMap: FinanceSpendSourceFieldMapSchema,
+  observedAt: z.string().datetime({ offset: true }),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+});
+
 export const FinanceReceivablesAgingBucketKeySchema = z.enum([
   "current",
   "0_30",
@@ -431,6 +497,7 @@ const FinanceEmptyLineageTargetCounts = {
   payablesAgingRowCount: 0,
   contractCount: 0,
   contractObligationCount: 0,
+  spendRowCount: 0,
   trialBalanceLineCount: 0,
   accountCatalogEntryCount: 0,
   journalEntryCount: 0,
@@ -449,6 +516,7 @@ export const FinanceLineageTargetCountsSchema = z.object({
   payablesAgingRowCount: z.number().int().nonnegative().default(0),
   contractCount: z.number().int().nonnegative().default(0),
   contractObligationCount: z.number().int().nonnegative().default(0),
+  spendRowCount: z.number().int().nonnegative().default(0),
   trialBalanceLineCount: z.number().int().nonnegative().default(0),
   accountCatalogEntryCount: z.number().int().nonnegative().default(0),
   journalEntryCount: z.number().int().nonnegative().default(0),
@@ -706,6 +774,34 @@ export const FinanceLatestSuccessfulContractMetadataSliceSchema = z.object({
   summary: FinanceContractMetadataSliceSummarySchema.nullable(),
 });
 
+export const FinanceCardExpenseSliceSummarySchema = z.object({
+  rowCount: z.number().int().nonnegative(),
+  datedRowCount: z.number().int().nonnegative(),
+  undatedRowCount: z.number().int().nonnegative(),
+  currencyCount: z.number().int().nonnegative(),
+  rowsWithExplicitRowIdentityCount: z.number().int().nonnegative(),
+  rowsWithReportedAmountCount: z.number().int().nonnegative(),
+  rowsWithPostedAmountCount: z.number().int().nonnegative(),
+  rowsWithTransactionAmountCount: z.number().int().nonnegative(),
+  rowsWithTransactionDateCount: z.number().int().nonnegative(),
+  rowsWithPostedDateCount: z.number().int().nonnegative(),
+});
+
+export const FinanceCardExpenseCoverageSchema = z.object({
+  rowCount: z.number().int().nonnegative(),
+  lineageCount: z.number().int().nonnegative(),
+  lineageTargetCounts: FinanceLineageTargetCountsSchema.optional().default(
+    FinanceEmptyLineageTargetCounts,
+  ),
+});
+
+export const FinanceLatestSuccessfulCardExpenseSliceSchema = z.object({
+  latestSource: FinanceTwinSourceRefSchema.nullable(),
+  latestSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  coverage: FinanceCardExpenseCoverageSchema,
+  summary: FinanceCardExpenseSliceSummarySchema.nullable(),
+});
+
 export const FinanceLatestAttemptedSlicesSchema = z.object({
   trialBalance: FinanceLatestAttemptedSliceSchema,
   chartOfAccounts: FinanceLatestAttemptedSliceSchema,
@@ -898,6 +994,65 @@ export const FinanceObligationCalendarViewSchema = z.object({
   upcomingObligations: z.array(FinanceObligationCalendarRowSchema),
   currencyBuckets: z.array(FinanceObligationCalendarCurrencyBucketSchema),
   coverageSummary: FinanceObligationCalendarCoverageSummarySchema,
+  diagnostics: z.array(z.string().min(1)).default([]),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceSpendItemLineageRefSchema = FinanceLineageLookupRefSchema;
+
+export const FinanceSpendItemRowSchema = z.object({
+  spendRow: FinanceSpendRowRecordSchema,
+  lineageRef: FinanceSpendItemLineageRefSchema,
+});
+
+export const FinanceSpendItemsViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  latestSuccessfulSlice: FinanceLatestSuccessfulCardExpenseSliceSchema,
+  freshness: FinanceFreshnessSummarySchema,
+  rowCount: z.number().int().nonnegative(),
+  rows: z.array(FinanceSpendItemRowSchema),
+  diagnostics: z.array(z.string().min(1)).default([]),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const FinanceSpendPostureCurrencyBucketSchema = z.object({
+  currency: z.string().min(1).nullable(),
+  reportedAmountTotal: FinanceAmountSchema,
+  postedAmountTotal: FinanceAmountSchema,
+  transactionAmountTotal: FinanceAmountSchema,
+  rowCount: z.number().int().nonnegative(),
+  datedRowCount: z.number().int().nonnegative(),
+  undatedRowCount: z.number().int().nonnegative(),
+  mixedPostedDates: z.boolean(),
+  mixedTransactionDates: z.boolean(),
+  earliestPostedDate: FinanceIsoDateSchema.nullable(),
+  latestPostedDate: FinanceIsoDateSchema.nullable(),
+  earliestTransactionDate: FinanceIsoDateSchema.nullable(),
+  latestTransactionDate: FinanceIsoDateSchema.nullable(),
+});
+
+export const FinanceSpendPostureCoverageSummarySchema = z.object({
+  rowCount: z.number().int().nonnegative(),
+  currencyBucketCount: z.number().int().nonnegative(),
+  datedRowCount: z.number().int().nonnegative(),
+  undatedRowCount: z.number().int().nonnegative(),
+  rowsWithExplicitRowIdentityCount: z.number().int().nonnegative(),
+  rowsWithReportedAmountCount: z.number().int().nonnegative(),
+  rowsWithPostedAmountCount: z.number().int().nonnegative(),
+  rowsWithTransactionAmountCount: z.number().int().nonnegative(),
+  rowsWithMerchantOrVendorCount: z.number().int().nonnegative(),
+  rowsWithEmployeeOrCardholderCount: z.number().int().nonnegative(),
+});
+
+export const FinanceSpendPostureViewSchema = z.object({
+  company: FinanceCompanyRecordSchema,
+  latestAttemptedSyncRun: FinanceTwinSyncRunRecordSchema.nullable(),
+  latestSuccessfulCardExpenseSlice:
+    FinanceLatestSuccessfulCardExpenseSliceSchema,
+  freshness: FinanceFreshnessSummarySchema,
+  currencyBuckets: z.array(FinanceSpendPostureCurrencyBucketSchema),
+  coverageSummary: FinanceSpendPostureCoverageSummarySchema,
   diagnostics: z.array(z.string().min(1)).default([]),
   limitations: z.array(z.string().min(1)),
 });
@@ -1499,6 +1654,10 @@ export type FinanceContractObligationType = z.infer<
 export type FinanceContractObligationRecord = z.infer<
   typeof FinanceContractObligationRecordSchema
 >;
+export type FinanceSpendSourceFieldMap = z.infer<
+  typeof FinanceSpendSourceFieldMapSchema
+>;
+export type FinanceSpendRowRecord = z.infer<typeof FinanceSpendRowRecordSchema>;
 export type FinanceReceivablesAgingBucketKey = z.infer<
   typeof FinanceReceivablesAgingBucketKeySchema
 >;
@@ -1620,6 +1779,15 @@ export type FinanceContractMetadataCoverage = z.infer<
 export type FinanceLatestSuccessfulContractMetadataSlice = z.infer<
   typeof FinanceLatestSuccessfulContractMetadataSliceSchema
 >;
+export type FinanceCardExpenseSliceSummary = z.infer<
+  typeof FinanceCardExpenseSliceSummarySchema
+>;
+export type FinanceCardExpenseCoverage = z.infer<
+  typeof FinanceCardExpenseCoverageSchema
+>;
+export type FinanceLatestSuccessfulCardExpenseSlice = z.infer<
+  typeof FinanceLatestSuccessfulCardExpenseSliceSchema
+>;
 export type FinanceLatestAttemptedSlices = z.infer<
   typeof FinanceLatestAttemptedSlicesSchema
 >;
@@ -1690,6 +1858,20 @@ export type FinanceObligationCalendarCoverageSummary = z.infer<
 >;
 export type FinanceObligationCalendarView = z.infer<
   typeof FinanceObligationCalendarViewSchema
+>;
+export type FinanceSpendItemLineageRef = z.infer<
+  typeof FinanceSpendItemLineageRefSchema
+>;
+export type FinanceSpendItemRow = z.infer<typeof FinanceSpendItemRowSchema>;
+export type FinanceSpendItemsView = z.infer<typeof FinanceSpendItemsViewSchema>;
+export type FinanceSpendPostureCurrencyBucket = z.infer<
+  typeof FinanceSpendPostureCurrencyBucketSchema
+>;
+export type FinanceSpendPostureCoverageSummary = z.infer<
+  typeof FinanceSpendPostureCoverageSummarySchema
+>;
+export type FinanceSpendPostureView = z.infer<
+  typeof FinanceSpendPostureViewSchema
 >;
 export type FinanceJournalLineView = z.infer<
   typeof FinanceJournalLineViewSchema

@@ -13,6 +13,7 @@ import type {
   financePayablesAgingRows,
   financeReceivablesAgingRows,
   financeReportingPeriods,
+  financeSpendRows,
   financeTrialBalanceLines,
   financeTwinLineage,
   financeTwinSyncRuns,
@@ -23,6 +24,7 @@ import {
   FinanceContractSourceFieldMapSchema,
   FinancePayablesAgingBucketValueSchema,
   FinanceReceivablesAgingBucketValueSchema,
+  FinanceSpendSourceFieldMapSchema,
   type FinanceAccountCatalogEntryRecord,
   type FinanceAccountCatalogEntryView,
   type FinanceBankAccountRecord,
@@ -38,6 +40,7 @@ import {
   type FinancePayablesAgingRowRecord,
   type FinanceReceivablesAgingRowRecord,
   type FinanceReportingPeriodRecord,
+  type FinanceSpendRowRecord,
   type FinanceTrialBalanceLineRecord,
   type FinanceTwinLineageRecord,
   type FinanceTwinSyncRunRecord,
@@ -61,6 +64,7 @@ type FinanceReportingPeriodRow = typeof financeReportingPeriods.$inferSelect;
 type FinanceLedgerAccountRow = typeof financeLedgerAccounts.$inferSelect;
 type FinancePayablesAgingRow = typeof financePayablesAgingRows.$inferSelect;
 type FinanceReceivablesAgingRow = typeof financeReceivablesAgingRows.$inferSelect;
+type FinanceSpendRow = typeof financeSpendRows.$inferSelect;
 type FinanceTwinSyncRunRow = typeof financeTwinSyncRuns.$inferSelect;
 type FinanceTrialBalanceLineRow = typeof financeTrialBalanceLines.$inferSelect;
 type FinanceTwinLineageRow = typeof financeTwinLineage.$inferSelect;
@@ -253,6 +257,45 @@ export function mapFinancePayablesAgingRow(
     bucketValues: row.bucketValues.map((bucketValue) =>
       FinancePayablesAgingBucketValueSchema.parse(bucketValue),
     ),
+    observedAt: row.observedAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+export function mapFinanceSpendRow(row: FinanceSpendRow): FinanceSpendRowRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    syncRunId: row.syncRunId,
+    lineNumber: row.lineNumber,
+    sourceLineNumbers: row.sourceLineNumbers,
+    explicitRowIdentity: row.explicitRowIdentity,
+    explicitRowIdentitySourceField: row.explicitRowIdentitySourceField,
+    merchantLabel: row.merchantLabel,
+    vendorLabel: row.vendorLabel,
+    employeeLabel: row.employeeLabel,
+    cardholderLabel: row.cardholderLabel,
+    categoryLabel: row.categoryLabel,
+    memo: row.memo,
+    description: row.description,
+    department: row.department,
+    cardLabel: row.cardLabel,
+    cardLast4: row.cardLast4,
+    amount: row.amount,
+    postedAmount: row.postedAmount,
+    transactionAmount: row.transactionAmount,
+    currencyCode: row.currencyCode,
+    transactionDate: row.transactionDate,
+    postedDate: row.postedDate,
+    expenseDate: row.expenseDate,
+    reportDate: row.reportDate,
+    asOfDate: row.asOfDate,
+    status: row.status,
+    state: row.state,
+    reimbursable: row.reimbursable,
+    pending: row.pending,
+    sourceFieldMap: FinanceSpendSourceFieldMapSchema.parse(row.sourceFieldMap),
     observedAt: row.observedAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),

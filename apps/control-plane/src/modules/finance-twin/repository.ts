@@ -21,6 +21,8 @@ import type {
   FinanceReceivablesAgingBucketValue,
   FinanceReceivablesAgingRowRecord,
   FinanceReportingPeriodRecord,
+  FinanceSpendRowRecord,
+  FinanceSpendSourceFieldMap,
   FinanceTrialBalanceLineRecord,
   FinanceTwinExtractorKey,
   FinanceTwinLineageRecord,
@@ -241,6 +243,41 @@ export type UpsertFinancePayablesAgingRowInput = {
   observedAt: string;
 };
 
+export type UpsertFinanceSpendRowInput = {
+  companyId: string;
+  syncRunId: string;
+  rowScopeKey: string;
+  lineNumber: number;
+  sourceLineNumbers: number[];
+  explicitRowIdentity: string | null;
+  explicitRowIdentitySourceField: string | null;
+  merchantLabel: string | null;
+  vendorLabel: string | null;
+  employeeLabel: string | null;
+  cardholderLabel: string | null;
+  categoryLabel: string | null;
+  memo: string | null;
+  description: string | null;
+  department: string | null;
+  cardLabel: string | null;
+  cardLast4: string | null;
+  amount: string | null;
+  postedAmount: string | null;
+  transactionAmount: string | null;
+  currencyCode: string | null;
+  transactionDate: string | null;
+  postedDate: string | null;
+  expenseDate: string | null;
+  reportDate: string | null;
+  asOfDate: string | null;
+  status: string | null;
+  state: string | null;
+  reimbursable: boolean | null;
+  pending: boolean | null;
+  sourceFieldMap: FinanceSpendSourceFieldMap;
+  observedAt: string;
+};
+
 export type CreateFinanceTwinLineageInput = {
   companyId: string;
   syncRunId: string;
@@ -333,6 +370,10 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     input: UpsertFinanceContractObligationInput,
     session?: PersistenceSession,
   ): Promise<FinanceContractObligationRecord>;
+  upsertSpendRow(
+    input: UpsertFinanceSpendRowInput,
+    session?: PersistenceSession,
+  ): Promise<FinanceSpendRowRecord>;
   startSyncRun(
     input: StartFinanceTwinSyncRunInput,
     session?: PersistenceSession,
@@ -435,6 +476,10 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     syncRunId: string,
     session?: PersistenceSession,
   ): Promise<FinanceContractObligationView[]>;
+  listSpendRowsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceSpendRowRecord[]>;
   listGeneralLedgerEntriesBySyncRunId(
     syncRunId: string,
     session?: PersistenceSession,
@@ -487,6 +532,8 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     FinanceContractObligationRecord
   >();
   private readonly contractObligationsByScope = new Map<string, string>();
+  private readonly spendRows = new Map<string, FinanceSpendRowRecord>();
+  private readonly spendRowsByScope = new Map<string, string>();
   private readonly syncRuns = new Map<string, FinanceTwinSyncRunRecord>();
   private readonly trialBalanceLines = new Map<
     string,
@@ -859,6 +906,90 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
       obligation.id,
     );
     return obligation;
+  }
+
+  async upsertSpendRow(input: UpsertFinanceSpendRowInput) {
+    const existing = this.spendRows.get(
+      this.spendRowsByScope.get(`${input.syncRunId}::${input.rowScopeKey}`) ?? "",
+    );
+    const now = new Date().toISOString();
+    const spendRow: FinanceSpendRowRecord = existing
+      ? {
+          ...existing,
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers.slice(),
+          explicitRowIdentity: input.explicitRowIdentity,
+          explicitRowIdentitySourceField: input.explicitRowIdentitySourceField,
+          merchantLabel: input.merchantLabel,
+          vendorLabel: input.vendorLabel,
+          employeeLabel: input.employeeLabel,
+          cardholderLabel: input.cardholderLabel,
+          categoryLabel: input.categoryLabel,
+          memo: input.memo,
+          description: input.description,
+          department: input.department,
+          cardLabel: input.cardLabel,
+          cardLast4: input.cardLast4,
+          amount: input.amount,
+          postedAmount: input.postedAmount,
+          transactionAmount: input.transactionAmount,
+          currencyCode: input.currencyCode,
+          transactionDate: input.transactionDate,
+          postedDate: input.postedDate,
+          expenseDate: input.expenseDate,
+          reportDate: input.reportDate,
+          asOfDate: input.asOfDate,
+          status: input.status,
+          state: input.state,
+          reimbursable: input.reimbursable,
+          pending: input.pending,
+          sourceFieldMap: { ...input.sourceFieldMap },
+          observedAt: input.observedAt,
+          updatedAt: now,
+        }
+      : {
+          id: crypto.randomUUID(),
+          companyId: input.companyId,
+          syncRunId: input.syncRunId,
+          lineNumber: input.lineNumber,
+          sourceLineNumbers: input.sourceLineNumbers.slice(),
+          explicitRowIdentity: input.explicitRowIdentity,
+          explicitRowIdentitySourceField: input.explicitRowIdentitySourceField,
+          merchantLabel: input.merchantLabel,
+          vendorLabel: input.vendorLabel,
+          employeeLabel: input.employeeLabel,
+          cardholderLabel: input.cardholderLabel,
+          categoryLabel: input.categoryLabel,
+          memo: input.memo,
+          description: input.description,
+          department: input.department,
+          cardLabel: input.cardLabel,
+          cardLast4: input.cardLast4,
+          amount: input.amount,
+          postedAmount: input.postedAmount,
+          transactionAmount: input.transactionAmount,
+          currencyCode: input.currencyCode,
+          transactionDate: input.transactionDate,
+          postedDate: input.postedDate,
+          expenseDate: input.expenseDate,
+          reportDate: input.reportDate,
+          asOfDate: input.asOfDate,
+          status: input.status,
+          state: input.state,
+          reimbursable: input.reimbursable,
+          pending: input.pending,
+          sourceFieldMap: { ...input.sourceFieldMap },
+          observedAt: input.observedAt,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+    this.spendRows.set(spendRow.id, spendRow);
+    this.spendRowsByScope.set(
+      `${input.syncRunId}::${input.rowScopeKey}`,
+      spendRow.id,
+    );
+    return spendRow;
   }
 
   async startSyncRun(input: StartFinanceTwinSyncRunInput) {
@@ -1498,6 +1629,21 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
           contract,
           obligation,
         };
+      });
+  }
+
+  async listSpendRowsBySyncRunId(syncRunId: string) {
+    return [...this.spendRows.values()]
+      .filter((spendRow) => spendRow.syncRunId === syncRunId)
+      .sort((left, right) => {
+        return (
+          (left.currencyCode ?? "").localeCompare(right.currencyCode ?? "") ||
+          (left.postedDate ?? "").localeCompare(right.postedDate ?? "") ||
+          (left.transactionDate ?? "").localeCompare(
+            right.transactionDate ?? "",
+          ) ||
+          left.lineNumber - right.lineNumber
+        );
       });
   }
 
