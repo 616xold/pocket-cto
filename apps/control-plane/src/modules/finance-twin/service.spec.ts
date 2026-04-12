@@ -462,6 +462,239 @@ describe("FinanceTwinService", () => {
     });
   });
 
+  it("syncs one uploaded bank-account-summary CSV into persisted bank inventory and truthful cash-posture reads", async () => {
+    const now = () => new Date("2026-04-12T10:00:00.000Z");
+    const sourceRepository = new InMemorySourceRepository();
+    const sourceStorage = new InMemorySourceFileStorage();
+    const sourceService = new SourceRegistryService(
+      sourceRepository,
+      sourceStorage,
+      now,
+    );
+    const financeRepository = new InMemoryFinanceTwinRepository();
+    const financeTwinService = new FinanceTwinService({
+      financeTwinRepository: financeRepository,
+      sourceFileStorage: sourceStorage,
+      sourceRepository,
+      now,
+    });
+    const created = await sourceService.createSource({
+      kind: "dataset",
+      name: "Bank account summary",
+      createdBy: "finance-operator",
+      originKind: "manual",
+      snapshot: {
+        originalFileName: "bank-account-summary-link.txt",
+        mediaType: "text/plain",
+        sizeBytes: 18,
+        checksumSha256:
+          "abababababababababababababababababababababababababababababababab",
+        storageKind: "external_url",
+        storageRef: "https://example.com/bank-account-summary",
+        ingestStatus: "registered",
+      },
+    });
+    const registered = await sourceService.registerSourceFile(
+      created.source.id,
+      {
+        originalFileName: "bank-account-summary.csv",
+        mediaType: "text/csv",
+        createdBy: "finance-operator",
+      },
+      Buffer.from(
+        [
+          "account_name,bank,last4,statement_balance,available_balance,current_balance,currency,as_of",
+          "Operating Checking,First National,1234,1200.00,1000.00,,USD,2026-04-10",
+          "Payroll Reserve,First National,5678,,,250.00,USD,",
+          "Treasury Sweep,First National,9012,,400.00,,USD,2026-04-11",
+          "Euro Operating,Euro Bank,9999,300.00,,,EUR,2026-04-09",
+        ].join("\n"),
+      ),
+    );
+
+    const synced = await financeTwinService.syncCompanySourceFile(
+      "acme",
+      registered.sourceFile.id,
+      {
+        companyName: "Acme Holdings",
+      },
+    );
+    const bankAccounts = await financeTwinService.getBankAccounts("acme");
+    const cashPosture = await financeTwinService.getCashPosture("acme");
+
+    expect(synced).toMatchObject({
+      syncRun: {
+        extractorKey: "bank_account_summary_csv",
+        status: "succeeded",
+      },
+    });
+    expect(bankAccounts).toMatchObject({
+      company: {
+        companyKey: "acme",
+        displayName: "Acme Holdings",
+      },
+      latestAttemptedSyncRun: {
+        id: synced.syncRun.id,
+        extractorKey: "bank_account_summary_csv",
+      },
+      latestSuccessfulSlice: {
+        coverage: {
+          bankAccountCount: 4,
+          summaryRowCount: 5,
+          lineageCount: 9,
+          lineageTargetCounts: {
+            bankAccountCount: 4,
+            bankAccountSummaryCount: 5,
+          },
+        },
+        summary: {
+          bankAccountCount: 4,
+          summaryRowCount: 5,
+          statementOrLedgerBalanceCount: 2,
+          availableBalanceCount: 2,
+          unspecifiedBalanceCount: 1,
+          datedBalanceCount: 4,
+          undatedBalanceCount: 1,
+          currencyCount: 2,
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      accountCount: 4,
+    });
+    const operatingChecking = bankAccounts.accounts.find(
+      (account) => account.bankAccount.accountLabel === "Operating Checking",
+    );
+    const payrollReserve = bankAccounts.accounts.find(
+      (account) => account.bankAccount.accountLabel === "Payroll Reserve",
+    );
+
+    expect(operatingChecking).toMatchObject({
+      bankAccount: {
+        accountLabel: "Operating Checking",
+        institutionName: "First National",
+        accountNumberLast4: "1234",
+      },
+      currencyCodes: ["USD"],
+      knownAsOfDates: ["2026-04-10"],
+      unknownAsOfDateBalanceCount: 0,
+      hasMixedAsOfDates: false,
+    });
+    expect(operatingChecking?.reportedBalances).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          summary: expect.objectContaining({
+            balanceType: "statement_or_ledger",
+            balanceAmount: "1200.00",
+          }),
+          lineageRef: {
+            targetKind: "bank_account_summary",
+            targetId: expect.any(String),
+            syncRunId: synced.syncRun.id,
+          },
+        }),
+        expect.objectContaining({
+          summary: expect.objectContaining({
+            balanceType: "available",
+            balanceAmount: "1000.00",
+          }),
+          lineageRef: {
+            targetKind: "bank_account_summary",
+            targetId: expect.any(String),
+            syncRunId: synced.syncRun.id,
+          },
+        }),
+      ]),
+    );
+    expect(payrollReserve).toMatchObject({
+      bankAccount: {
+        accountLabel: "Payroll Reserve",
+      },
+      knownAsOfDates: [],
+      unknownAsOfDateBalanceCount: 1,
+    });
+    expect(payrollReserve?.reportedBalances).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          summary: expect.objectContaining({
+            balanceType: "unspecified",
+            balanceAmount: "250.00",
+          }),
+        }),
+      ]),
+    );
+    expect(cashPosture).toMatchObject({
+      company: {
+        companyKey: "acme",
+      },
+      latestAttemptedSyncRun: {
+        id: synced.syncRun.id,
+        extractorKey: "bank_account_summary_csv",
+      },
+      latestSuccessfulBankSummarySlice: {
+        coverage: {
+          bankAccountCount: 4,
+          summaryRowCount: 5,
+        },
+      },
+      freshness: {
+        state: "fresh",
+      },
+      coverageSummary: {
+        bankAccountCount: 4,
+        reportedBalanceCount: 5,
+        statementOrLedgerBalanceCount: 2,
+        availableBalanceCount: 2,
+        unspecifiedBalanceCount: 1,
+        datedBalanceCount: 4,
+        undatedBalanceCount: 1,
+        currencyBucketCount: 2,
+        mixedAsOfDateCurrencyBucketCount: 1,
+      },
+      currencyBuckets: [
+        {
+          currency: "EUR",
+          statementOrLedgerBalanceTotal: "300.00",
+          availableBalanceTotal: "0.00",
+          unspecifiedBalanceTotal: "0.00",
+          accountCount: 1,
+          datedAccountCount: 1,
+          undatedAccountCount: 0,
+          mixedAsOfDates: false,
+          earliestAsOfDate: "2026-04-09",
+          latestAsOfDate: "2026-04-09",
+        },
+        {
+          currency: "USD",
+          statementOrLedgerBalanceTotal: "1200.00",
+          availableBalanceTotal: "1400.00",
+          unspecifiedBalanceTotal: "250.00",
+          accountCount: 3,
+          datedAccountCount: 2,
+          undatedAccountCount: 1,
+          mixedAsOfDates: true,
+          earliestAsOfDate: "2026-04-10",
+          latestAsOfDate: "2026-04-11",
+        },
+      ],
+    });
+    expect(cashPosture.diagnostics).toEqual(
+      expect.arrayContaining([
+        "One or more persisted bank-summary balances came from ambiguous generic balance fields and remain in the unspecified bucket.",
+        "One or more persisted bank-summary balances do not include an explicit as-of date.",
+        "One or more cash-posture currency buckets span multiple explicit as-of dates.",
+        "One or more cash-posture currency buckets include both dated and undated bank balances.",
+      ]),
+    );
+    expect(cashPosture.limitations).toEqual(
+      expect.arrayContaining([
+        "Cash posture is grouped by reported currency only; this route does not perform FX conversion or emit one company-wide cash total.",
+        "Statement-or-ledger, available, and unspecified balances are kept in separate totals and are not merged into one unlabeled cash figure.",
+      ]),
+    );
+  });
+
   it("builds a cross-slice company snapshot and scoped lineage drill truthfully", async () => {
     const now = () => new Date("2026-04-11T11:30:00.000Z");
     const sourceRepository = new InMemorySourceRepository();

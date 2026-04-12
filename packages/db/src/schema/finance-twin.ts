@@ -17,7 +17,12 @@ import { createdAt, id, updatedAt } from "./shared";
 
 export const financeTwinExtractorKeyEnum = pgEnum(
   "finance_twin_extractor_key",
-  ["trial_balance_csv", "chart_of_accounts_csv", "general_ledger_csv"],
+  [
+    "trial_balance_csv",
+    "chart_of_accounts_csv",
+    "general_ledger_csv",
+    "bank_account_summary_csv",
+  ],
 );
 
 export const financeTwinSyncRunStatusEnum = pgEnum(
@@ -30,12 +35,19 @@ export const financeTwinLineageTargetKindEnum = pgEnum(
   [
     "reporting_period",
     "ledger_account",
+    "bank_account",
+    "bank_account_summary",
     "trial_balance_line",
     "account_catalog_entry",
     "journal_entry",
     "journal_line",
     "general_ledger_balance_proof",
   ],
+);
+
+export const financeBankBalanceTypeEnum = pgEnum(
+  "finance_bank_balance_type",
+  ["statement_or_ledger", "available", "unspecified"],
 );
 
 export const financeCompanies = pgTable(
@@ -101,6 +113,31 @@ export const financeLedgerAccounts = pgTable(
   }),
 );
 
+export const financeBankAccounts = pgTable(
+  "finance_bank_accounts",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    identityKey: text("identity_key").notNull(),
+    accountLabel: text("account_label").notNull(),
+    institutionName: text("institution_name"),
+    externalAccountId: text("external_account_id"),
+    accountNumberLast4: text("account_number_last4"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    companyIdentityUnique: uniqueIndex(
+      "finance_bank_accounts_company_identity_key_key",
+    ).on(table.companyId, table.identityKey),
+    companyAccountLabelIndex: index(
+      "finance_bank_accounts_company_account_label_idx",
+    ).on(table.companyId, table.accountLabel),
+  }),
+);
+
 export const financeTwinSyncRuns = pgTable(
   "finance_twin_sync_runs",
   {
@@ -139,6 +176,46 @@ export const financeTwinSyncRuns = pgTable(
     sourceFileCreatedAtIndex: index(
       "finance_twin_sync_runs_source_file_id_idx",
     ).on(table.sourceFileId, table.createdAt),
+  }),
+);
+
+export const financeBankAccountSummaries = pgTable(
+  "finance_bank_account_summaries",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    bankAccountId: uuid("bank_account_id")
+      .references(() => financeBankAccounts.id, { onDelete: "cascade" })
+      .notNull(),
+    syncRunId: uuid("sync_run_id")
+      .references(() => financeTwinSyncRuns.id, { onDelete: "cascade" })
+      .notNull(),
+    lineNumber: integer("line_number").notNull(),
+    balanceType: financeBankBalanceTypeEnum("balance_type").notNull(),
+    balanceAmount: numeric("balance_amount", {
+      precision: 18,
+      scale: 2,
+    }).notNull(),
+    currencyCode: text("currency_code"),
+    asOfDate: date("as_of_date"),
+    asOfDateSourceColumn: text("as_of_date_source_column"),
+    balanceSourceColumn: text("balance_source_column").notNull(),
+    observedAt: timestamp("observed_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    syncRunBankAccountBalanceTypeUnique: uniqueIndex(
+      "finance_bank_account_summaries_sync_run_account_balance_type_key",
+    ).on(table.syncRunId, table.bankAccountId, table.balanceType),
+    companySyncIndex: index(
+      "finance_bank_account_summaries_company_sync_idx",
+    ).on(table.companyId, table.syncRunId),
+    bankAccountIndex: index(
+      "finance_bank_account_summaries_bank_account_id_idx",
+    ).on(table.bankAccountId),
   }),
 );
 

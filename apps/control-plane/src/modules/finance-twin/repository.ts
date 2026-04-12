@@ -1,6 +1,9 @@
 import type {
   FinanceAccountCatalogEntryRecord,
   FinanceAccountCatalogEntryView,
+  FinanceBankAccountRecord,
+  FinanceBankAccountSummaryRecord,
+  FinanceBankBalanceType,
   FinanceCompanyRecord,
   FinanceGeneralLedgerEntryView,
   FinanceGeneralLedgerBalanceProofRecord,
@@ -42,6 +45,15 @@ export type UpsertFinanceLedgerAccountInput = {
   accountName: string | null;
   accountType: string | null;
   extractorKey: FinanceTwinExtractorKey;
+};
+
+export type UpsertFinanceBankAccountInput = {
+  companyId: string;
+  identityKey: string;
+  accountLabel: string;
+  institutionName: string | null;
+  externalAccountId: string | null;
+  accountNumberLast4: string | null;
 };
 
 export type StartFinanceTwinSyncRunInput = {
@@ -119,6 +131,20 @@ export type UpsertFinanceGeneralLedgerBalanceProofInput = {
   endingBalanceLineNumber: number | null;
 };
 
+export type UpsertFinanceBankAccountSummaryInput = {
+  companyId: string;
+  bankAccountId: string;
+  syncRunId: string;
+  lineNumber: number;
+  balanceType: FinanceBankBalanceType;
+  balanceAmount: string;
+  currencyCode: string | null;
+  asOfDate: string | null;
+  asOfDateSourceColumn: string | null;
+  balanceSourceColumn: string;
+  observedAt: string;
+};
+
 export type CreateFinanceTwinLineageInput = {
   companyId: string;
   syncRunId: string;
@@ -133,6 +159,11 @@ export type CreateFinanceTwinLineageInput = {
 export type FinanceTrialBalanceLineView = {
   ledgerAccount: FinanceLedgerAccountRecord;
   trialBalanceLine: FinanceTrialBalanceLineRecord;
+};
+
+export type FinanceBankAccountSummaryView = {
+  bankAccount: FinanceBankAccountRecord;
+  summary: FinanceBankAccountSummaryRecord;
 };
 
 export type ListFinanceTwinLineageByTargetInput = {
@@ -171,6 +202,10 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     companyId: string,
     session?: PersistenceSession,
   ): Promise<number>;
+  upsertBankAccount(
+    input: UpsertFinanceBankAccountInput,
+    session?: PersistenceSession,
+  ): Promise<FinanceBankAccountRecord>;
   startSyncRun(
     input: StartFinanceTwinSyncRunInput,
     session?: PersistenceSession,
@@ -237,10 +272,18 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     input: UpsertFinanceGeneralLedgerBalanceProofInput,
     session?: PersistenceSession,
   ): Promise<FinanceGeneralLedgerBalanceProofRecord>;
+  upsertBankAccountSummary(
+    input: UpsertFinanceBankAccountSummaryInput,
+    session?: PersistenceSession,
+  ): Promise<FinanceBankAccountSummaryRecord>;
   listJournalLineViewsBySyncRunId(
     syncRunId: string,
     session?: PersistenceSession,
   ): Promise<FinanceJournalLineView[]>;
+  listBankAccountSummaryViewsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceBankAccountSummaryView[]>;
   listGeneralLedgerEntriesBySyncRunId(
     syncRunId: string,
     session?: PersistenceSession,
@@ -280,6 +323,8 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     FinanceLedgerAccountRecord
   >();
   private readonly ledgerAccountsByScope = new Map<string, string>();
+  private readonly bankAccounts = new Map<string, FinanceBankAccountRecord>();
+  private readonly bankAccountsByScope = new Map<string, string>();
   private readonly syncRuns = new Map<string, FinanceTwinSyncRunRecord>();
   private readonly trialBalanceLines = new Map<
     string,
@@ -306,6 +351,11 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     string,
     string
   >();
+  private readonly bankAccountSummaries = new Map<
+    string,
+    FinanceBankAccountSummaryRecord
+  >();
+  private readonly bankAccountSummariesByScope = new Map<string, string>();
   private readonly lineage = new Map<string, FinanceTwinLineageRecord>();
   private readonly lineageByScope = new Map<string, string>();
 
@@ -426,6 +476,42 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     return [...this.ledgerAccounts.values()].filter(
       (account) => account.companyId === companyId,
     ).length;
+  }
+
+  async upsertBankAccount(input: UpsertFinanceBankAccountInput) {
+    const existingId =
+      this.bankAccountsByScope.get(`${input.companyId}::${input.identityKey}`) ??
+      null;
+    const existing = existingId
+      ? (this.bankAccounts.get(existingId) ?? null)
+      : null;
+    const now = new Date().toISOString();
+    const bankAccount: FinanceBankAccountRecord = existing
+      ? {
+          ...existing,
+          accountLabel: input.accountLabel,
+          institutionName: input.institutionName,
+          externalAccountId: input.externalAccountId,
+          accountNumberLast4: input.accountNumberLast4,
+          updatedAt: now,
+        }
+      : {
+          id: crypto.randomUUID(),
+          companyId: input.companyId,
+          accountLabel: input.accountLabel,
+          institutionName: input.institutionName,
+          externalAccountId: input.externalAccountId,
+          accountNumberLast4: input.accountNumberLast4,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+    this.bankAccounts.set(bankAccount.id, bankAccount);
+    this.bankAccountsByScope.set(
+      `${input.companyId}::${input.identityKey}`,
+      bankAccount.id,
+    );
+    return bankAccount;
   }
 
   async startSyncRun(input: StartFinanceTwinSyncRunInput) {
@@ -785,6 +871,50 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
     return balanceProof;
   }
 
+  async upsertBankAccountSummary(input: UpsertFinanceBankAccountSummaryInput) {
+    const existing = this.bankAccountSummaries.get(
+      this.bankAccountSummariesByScope.get(
+        `${input.syncRunId}::${input.bankAccountId}::${input.balanceType}`,
+      ) ?? "",
+    );
+    const now = new Date().toISOString();
+    const summary: FinanceBankAccountSummaryRecord = existing
+      ? {
+          ...existing,
+          lineNumber: input.lineNumber,
+          balanceAmount: input.balanceAmount,
+          currencyCode: input.currencyCode,
+          asOfDate: input.asOfDate,
+          asOfDateSourceColumn: input.asOfDateSourceColumn,
+          balanceSourceColumn: input.balanceSourceColumn,
+          observedAt: input.observedAt,
+          updatedAt: now,
+        }
+      : {
+          id: crypto.randomUUID(),
+          companyId: input.companyId,
+          bankAccountId: input.bankAccountId,
+          syncRunId: input.syncRunId,
+          lineNumber: input.lineNumber,
+          balanceType: input.balanceType,
+          balanceAmount: input.balanceAmount,
+          currencyCode: input.currencyCode,
+          asOfDate: input.asOfDate,
+          asOfDateSourceColumn: input.asOfDateSourceColumn,
+          balanceSourceColumn: input.balanceSourceColumn,
+          observedAt: input.observedAt,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+    this.bankAccountSummaries.set(summary.id, summary);
+    this.bankAccountSummariesByScope.set(
+      `${input.syncRunId}::${input.bankAccountId}::${input.balanceType}`,
+      summary.id,
+    );
+    return summary;
+  }
+
   async listJournalLineViewsBySyncRunId(syncRunId: string) {
     return [...this.journalLines.values()]
       .filter((line) => line.syncRunId === syncRunId)
@@ -803,6 +933,31 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
         return {
           journalLine,
           ledgerAccount,
+        };
+      });
+  }
+
+  async listBankAccountSummaryViewsBySyncRunId(syncRunId: string) {
+    return [...this.bankAccountSummaries.values()]
+      .filter((summary) => summary.syncRunId === syncRunId)
+      .sort((left, right) => {
+        return (
+          left.lineNumber - right.lineNumber ||
+          left.balanceType.localeCompare(right.balanceType)
+        );
+      })
+      .map((summary) => {
+        const bankAccount = this.bankAccounts.get(summary.bankAccountId);
+
+        if (!bankAccount) {
+          throw new Error(
+            `Bank account ${summary.bankAccountId} missing for bank summary ${summary.id}`,
+          );
+        }
+
+        return {
+          bankAccount,
+          summary,
         };
       });
   }

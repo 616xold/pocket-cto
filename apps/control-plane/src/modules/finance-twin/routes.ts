@@ -73,6 +73,22 @@ export async function registerFinanceTwinRoutes(
   );
 
   app.get(
+    "/finance-twin/companies/:companyKey/bank-accounts",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getBankAccounts(params.companyKey);
+    },
+  );
+
+  app.get(
+    "/finance-twin/companies/:companyKey/cash-posture",
+    async (request) => {
+      const params = financeTwinCompanyKeyParamsSchema.parse(request.params);
+      return deps.financeTwinService.getCashPosture(params.companyKey);
+    },
+  );
+
+  app.get(
     "/finance-twin/companies/:companyKey/account-catalog",
     async (request) => {
       const params = financeTwinCompanyKeyParamsSchema.parse(request.params);

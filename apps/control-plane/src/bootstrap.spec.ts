@@ -270,6 +270,12 @@ function createAppContainer(
       async getAccountCatalog() {
         throw new Error("getAccountCatalog should not be called in this test");
       },
+      async getBankAccounts() {
+        throw new Error("getBankAccounts should not be called in this test");
+      },
+      async getCashPosture() {
+        throw new Error("getCashPosture should not be called in this test");
+      },
       async getCompanySnapshot() {
         throw new Error("getCompanySnapshot should not be called in this test");
       },

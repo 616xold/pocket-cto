@@ -984,7 +984,7 @@ describe("control-plane app", () => {
         },
       },
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "Do not treat this company snapshot as one coherent close package because the latest successful slices are mixed across different registered sources.",
       ],
@@ -1226,7 +1226,7 @@ describe("control-plane app", () => {
         "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route does not compute a balance variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
         "The observed general-ledger activity window fits inside the latest trial-balance reporting window, but the general-ledger slice does not include explicit source-declared period context.",
@@ -1410,7 +1410,7 @@ describe("control-plane app", () => {
         "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route does not compute a direct account balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals.",
       ],
@@ -1495,7 +1495,7 @@ describe("control-plane app", () => {
         "The latest successful trial-balance and general-ledger slices share one registered source, but span different uploaded file snapshots and sync runs. Under the current per-file upload flow, sameSourceSnapshot and sameSyncRun are diagnostic fields rather than expected positive comparison signals.",
       ],
       limitations: [
-        "The current finance-twin surface only covers deterministic trial-balance CSV, chart-of-accounts CSV, and general-ledger CSV extraction, plus additive summary, snapshot, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
+        "The current finance-twin surface covers deterministic trial-balance CSV, chart-of-accounts CSV, general-ledger CSV, and bank-account-summary CSV extraction, plus additive summary, snapshot, bank-account inventory, cash-posture, reconciliation, account-bridge, balance-bridge-prerequisites, period-context, source-backed general-ledger balance-proof, and balance-proof lineage drill read models.",
         "CFO Wiki, finance discovery answers, reports, monitoring, and close/control flows are not implemented in this slice.",
         "This route does not compute a direct balance bridge or variance because trial-balance ending balances are not equivalent to general-ledger activity totals, and general-ledger activity totals do not prove opening or ending balances.",
         "Matched-period account overlap exists, but none of those accounts include source-backed general-ledger opening-balance or ending-balance proof in the persisted Finance Twin state, so this route stops at blocked prerequisites rather than inventing a balance bridge.",

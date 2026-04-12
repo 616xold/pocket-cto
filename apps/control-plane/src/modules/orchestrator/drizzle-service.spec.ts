@@ -2716,6 +2716,12 @@ async function createHarness(options?: {
         async getAccountCatalog() {
           throw new Error("Not implemented in orchestrator harness");
         },
+        async getBankAccounts() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getCashPosture() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
         async getCompanySnapshot() {
           throw new Error("Not implemented in orchestrator harness");
         },

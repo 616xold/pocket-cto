@@ -1,6 +1,8 @@
 import { and, asc, count, desc, eq } from "drizzle-orm";
 import {
   financeAccountCatalogEntries,
+  financeBankAccounts,
+  financeBankAccountSummaries,
   financeCompanies,
   financeGeneralLedgerBalanceProofs,
   financeJournalEntries,
@@ -22,6 +24,9 @@ import { mergeLedgerAccountMasterState } from "./account-master";
 import {
   mapFinanceAccountCatalogEntryRow,
   mapFinanceAccountCatalogEntryViewRow,
+  mapFinanceBankAccountRow,
+  mapFinanceBankAccountSummaryRow,
+  mapFinanceBankAccountSummaryViewRow,
   mapFinanceCompanyRow,
   mapFinanceGeneralLedgerBalanceProofRow,
   mapFinanceJournalEntryRow,
@@ -41,6 +46,8 @@ import type {
   ListFinanceTwinLineageByTargetInput,
   StartFinanceTwinSyncRunInput,
   UpsertFinanceAccountCatalogEntryInput,
+  UpsertFinanceBankAccountInput,
+  UpsertFinanceBankAccountSummaryInput,
   UpsertFinanceCompanyInput,
   UpsertFinanceGeneralLedgerBalanceProofInput,
   UpsertFinanceJournalEntryInput,
@@ -235,6 +242,40 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
       .where(eq(financeLedgerAccounts.companyId, companyId));
 
     return result?.count ?? 0;
+  }
+
+  async upsertBankAccount(
+    input: UpsertFinanceBankAccountInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(financeBankAccounts)
+      .values({
+        companyId: input.companyId,
+        identityKey: input.identityKey,
+        accountLabel: input.accountLabel,
+        institutionName: input.institutionName,
+        externalAccountId: input.externalAccountId,
+        accountNumberLast4: input.accountNumberLast4,
+      })
+      .onConflictDoUpdate({
+        target: [financeBankAccounts.companyId, financeBankAccounts.identityKey],
+        set: {
+          accountLabel: input.accountLabel,
+          institutionName: input.institutionName,
+          externalAccountId: input.externalAccountId,
+          accountNumberLast4: input.accountNumberLast4,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Finance bank account upsert did not return a row");
+    }
+
+    return mapFinanceBankAccountRow(row);
   }
 
   async startSyncRun(
@@ -670,6 +711,52 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
     return mapFinanceGeneralLedgerBalanceProofRow(row);
   }
 
+  async upsertBankAccountSummary(
+    input: UpsertFinanceBankAccountSummaryInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(financeBankAccountSummaries)
+      .values({
+        companyId: input.companyId,
+        bankAccountId: input.bankAccountId,
+        syncRunId: input.syncRunId,
+        lineNumber: input.lineNumber,
+        balanceType: input.balanceType,
+        balanceAmount: input.balanceAmount,
+        currencyCode: input.currencyCode,
+        asOfDate: input.asOfDate,
+        asOfDateSourceColumn: input.asOfDateSourceColumn,
+        balanceSourceColumn: input.balanceSourceColumn,
+        observedAt: new Date(input.observedAt),
+      })
+      .onConflictDoUpdate({
+        target: [
+          financeBankAccountSummaries.syncRunId,
+          financeBankAccountSummaries.bankAccountId,
+          financeBankAccountSummaries.balanceType,
+        ],
+        set: {
+          lineNumber: input.lineNumber,
+          balanceAmount: input.balanceAmount,
+          currencyCode: input.currencyCode,
+          asOfDate: input.asOfDate,
+          asOfDateSourceColumn: input.asOfDateSourceColumn,
+          balanceSourceColumn: input.balanceSourceColumn,
+          observedAt: new Date(input.observedAt),
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("Finance bank account summary upsert did not return a row");
+    }
+
+    return mapFinanceBankAccountSummaryRow(row);
+  }
+
   async listJournalLineViewsBySyncRunId(
     syncRunId: string,
     session?: PersistenceSession,
@@ -689,6 +776,33 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
       .orderBy(asc(financeJournalLines.lineNumber));
 
     return rows.map(mapFinanceJournalLineViewRow);
+  }
+
+  async listBankAccountSummaryViewsBySyncRunId(
+    syncRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select({
+        bankAccount: financeBankAccounts,
+        summary: financeBankAccountSummaries,
+      })
+      .from(financeBankAccountSummaries)
+      .innerJoin(
+        financeBankAccounts,
+        eq(
+          financeBankAccountSummaries.bankAccountId,
+          financeBankAccounts.id,
+        ),
+      )
+      .where(eq(financeBankAccountSummaries.syncRunId, syncRunId))
+      .orderBy(
+        asc(financeBankAccountSummaries.lineNumber),
+        asc(financeBankAccountSummaries.balanceType),
+      );
+
+    return rows.map(mapFinanceBankAccountSummaryViewRow);
   }
 
   async listGeneralLedgerEntriesBySyncRunId(
