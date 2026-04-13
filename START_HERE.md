@@ -47,6 +47,7 @@ Suggested thread naming:
 - `F3A-cfo-wiki-foundation-and-page-registry`
 - `F3B-cfo-wiki-document-page-compiler-and-backlinks`
 - `F3C-cfo-wiki-lint-export-and-durable-filing`
+- `F3D-cfo-wiki-concept-metric-and-policy-pages`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`
 - `F6-monitoring-and-controls`
@@ -56,7 +57,8 @@ Broad F2 Finance Twin work now runs through F2O.
 The first F3 thread is the master-plan and active-doc refresh slice.
 `F3A-cfo-wiki-foundation-and-page-registry` is now the shipped CFO Wiki foundation slice.
 `F3B-cfo-wiki-document-page-compiler-and-backlinks` is now the shipped first document-aware wiki slice.
-The next new implementation thread after that is `F3C-cfo-wiki-lint-export-and-durable-filing`.
+`F3C-cfo-wiki-lint-export-and-durable-filing` is now the shipped wiki quality, export, and filed-artifact slice.
+The next new implementation thread after that should be `F3D-cfo-wiki-concept-metric-and-policy-pages`.
 
 ## Review ritual
 

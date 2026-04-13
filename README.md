@@ -36,11 +36,12 @@ Today the merged backbone is:
 - F2O additive deterministic `card_expense_csv` extraction plus backend-first spend-item inventory and spend-posture reads without fake policy scores, reimbursement inference, accrual logic, or payment forecasting
 - F3A additive deterministic CFO Wiki foundation with persisted compile runs, compiler-owned pages, page links, and page refs for one company, compiled only from stored source-inventory metadata plus Finance Twin state
 - F3B additive company-scoped CFO Wiki document bindings, deterministic markdown or plain-text document extracts from stored raw bytes, compiler-owned source digest pages, and route-backed backlinks while unsupported PDFs or fileless snapshots remain visible as gaps
+- F3C additive persisted CFO Wiki lint runs and findings, deterministic markdown-first export runs, and ownership-safe filed artifact pages preserved across later compiler-owned compiles
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
-F3A and the first narrow F3B document-page slice are now shipped.
-The next new implementation phase is F3C CFO Wiki lint, export, and durable filing work rather than another broad F2 extractor slice.
+F3A, the first narrow F3B document-page slice, and the narrow F3C lint/export/filed-artifact slice are now shipped.
+The next new implementation phase should stay inside F3 and add deterministic concept, metric-definition, and policy page families rather than jumping ahead to F4/F5/F6.
 
 ## Product boundary for v1
 
@@ -133,6 +134,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0025-final-f2-handoff-and-plan-chain-polish.md
 │   ├── FP-0026-cfo-wiki-foundation-and-page-registry.md
 │   ├── FP-0027-cfo-wiki-document-page-compiler-and-backlinks.md
+│   ├── FP-0028-cfo-wiki-lint-export-and-durable-filing.md
 │   └── templates
 └── .agents
     └── skills
@@ -186,6 +188,7 @@ pnpm smoke:finance-twin-contract-metadata:local
 pnpm smoke:finance-twin-card-expense:local
 pnpm smoke:cfo-wiki-foundation:local
 pnpm smoke:cfo-wiki-document-pages:local
+pnpm smoke:cfo-wiki-lint-export:local
 ```
 
 The current backend-first finance-twin read surface is:
@@ -215,9 +218,16 @@ The current backend-first finance-twin read surface is:
 The current backend-first CFO Wiki read surface is:
 
 - `POST /cfo-wiki/companies/:companyKey/compile`
+- `POST /cfo-wiki/companies/:companyKey/lint`
+- `GET /cfo-wiki/companies/:companyKey/lint`
+- `POST /cfo-wiki/companies/:companyKey/export`
+- `GET /cfo-wiki/companies/:companyKey/exports`
+- `GET /cfo-wiki/companies/:companyKey/exports/:exportRunId`
 - `GET /cfo-wiki/companies/:companyKey`
 - `POST /cfo-wiki/companies/:companyKey/sources/:sourceId/bind`
 - `GET /cfo-wiki/companies/:companyKey/sources`
+- `POST /cfo-wiki/companies/:companyKey/filed-pages`
+- `GET /cfo-wiki/companies/:companyKey/filed-pages`
 - `GET /cfo-wiki/companies/:companyKey/index`
 - `GET /cfo-wiki/companies/:companyKey/log`
 - `GET /cfo-wiki/companies/:companyKey/pages/*`

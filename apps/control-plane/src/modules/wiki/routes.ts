@@ -4,6 +4,10 @@ import {
   cfoWikiBindSourceBodySchema,
   cfoWikiCompanyKeyParamsSchema,
   cfoWikiCompileBodySchema,
+  cfoWikiCreateFiledPageBodySchema,
+  cfoWikiExportBodySchema,
+  cfoWikiExportRunParamsSchema,
+  cfoWikiLintBodySchema,
   cfoWikiSourceParamsSchema,
   cfoWikiWildcardPageParamsSchema,
   parseWildcardPageKey,
@@ -24,6 +28,51 @@ export async function registerCfoWikiRoutes(
     reply.code(201);
     return compiled;
   });
+
+  app.post("/cfo-wiki/companies/:companyKey/lint", async (request, reply) => {
+    const params = cfoWikiCompanyKeyParamsSchema.parse(request.params);
+    const body = cfoWikiLintBodySchema.parse(request.body ?? {});
+    const linted = await deps.cfoWikiService.runCompanyLint(
+      params.companyKey,
+      body,
+    );
+
+    reply.code(201);
+    return linted;
+  });
+
+  app.get("/cfo-wiki/companies/:companyKey/lint", async (request) => {
+    const params = cfoWikiCompanyKeyParamsSchema.parse(request.params);
+    return deps.cfoWikiService.getLatestLint(params.companyKey);
+  });
+
+  app.post("/cfo-wiki/companies/:companyKey/export", async (request, reply) => {
+    const params = cfoWikiCompanyKeyParamsSchema.parse(request.params);
+    const body = cfoWikiExportBodySchema.parse(request.body ?? {});
+    const exported = await deps.cfoWikiService.exportCompanyWiki(
+      params.companyKey,
+      body,
+    );
+
+    reply.code(201);
+    return exported;
+  });
+
+  app.get("/cfo-wiki/companies/:companyKey/exports", async (request) => {
+    const params = cfoWikiCompanyKeyParamsSchema.parse(request.params);
+    return deps.cfoWikiService.listCompanyExports(params.companyKey);
+  });
+
+  app.get(
+    "/cfo-wiki/companies/:companyKey/exports/:exportRunId",
+    async (request) => {
+      const params = cfoWikiExportRunParamsSchema.parse(request.params);
+      return deps.cfoWikiService.getCompanyExport(
+        params.companyKey,
+        params.exportRunId,
+      );
+    },
+  );
 
   app.get("/cfo-wiki/companies/:companyKey", async (request) => {
     const params = cfoWikiCompanyKeyParamsSchema.parse(request.params);
@@ -49,6 +98,20 @@ export async function registerCfoWikiRoutes(
   app.get("/cfo-wiki/companies/:companyKey/sources", async (request) => {
     const params = cfoWikiCompanyKeyParamsSchema.parse(request.params);
     return deps.cfoWikiService.listCompanySources(params.companyKey);
+  });
+
+  app.post("/cfo-wiki/companies/:companyKey/filed-pages", async (request, reply) => {
+    const params = cfoWikiCompanyKeyParamsSchema.parse(request.params);
+    const body = cfoWikiCreateFiledPageBodySchema.parse(request.body ?? {});
+    const page = await deps.cfoWikiService.createFiledPage(params.companyKey, body);
+
+    reply.code(201);
+    return page;
+  });
+
+  app.get("/cfo-wiki/companies/:companyKey/filed-pages", async (request) => {
+    const params = cfoWikiCompanyKeyParamsSchema.parse(request.params);
+    return deps.cfoWikiService.listFiledPages(params.companyKey);
   });
 
   app.get("/cfo-wiki/companies/:companyKey/index", async (request) => {

@@ -60,11 +60,18 @@ export type CfoWikiServicePort = Pick<
   CfoWikiService,
   | "bindCompanySource"
   | "compileCompanyWiki"
+  | "createFiledPage"
+  | "exportCompanyWiki"
   | "getCompanySummary"
+  | "getCompanyExport"
   | "getIndexPage"
+  | "getLatestLint"
   | "getLogPage"
   | "listCompanySources"
+  | "listCompanyExports"
+  | "listFiledPages"
   | "getPage"
+  | "runCompanyLint"
 >;
 
 export type FinanceTwinServicePort = Pick<

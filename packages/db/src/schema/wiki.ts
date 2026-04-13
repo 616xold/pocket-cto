@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  integer,
   index,
   jsonb,
   pgEnum,
@@ -23,8 +24,23 @@ const cfoWikiPageKinds = [
   "period_index",
   "source_coverage",
   "source_digest",
+  "filed_artifact",
 ] as const;
-const cfoWikiPageOwnershipKinds = ["compiler_owned"] as const;
+const cfoWikiPageOwnershipKinds = [
+  "compiler_owned",
+  "filed_artifact",
+] as const;
+const cfoWikiLintRunStatuses = ["running", "succeeded", "failed"] as const;
+const cfoWikiExportRunStatuses = ["running", "succeeded", "failed"] as const;
+const cfoWikiLintFindingKinds = [
+  "missing_refs",
+  "uncited_numeric_claim",
+  "orphan_page",
+  "stale_page",
+  "broken_link",
+  "unsupported_document_gap",
+  "duplicate_title",
+] as const;
 const cfoWikiDocumentRoles = [
   "general_document",
   "policy_document",
@@ -65,6 +81,9 @@ type CfoWikiCompileRunStatus = (typeof cfoWikiCompileRunStatuses)[number];
 type CfoWikiCompileTriggerKind = (typeof cfoWikiCompileTriggerKinds)[number];
 type CfoWikiPageKind = (typeof cfoWikiPageKinds)[number];
 type CfoWikiPageOwnershipKind = (typeof cfoWikiPageOwnershipKinds)[number];
+type CfoWikiLintRunStatus = (typeof cfoWikiLintRunStatuses)[number];
+type CfoWikiExportRunStatus = (typeof cfoWikiExportRunStatuses)[number];
+type CfoWikiLintFindingKind = (typeof cfoWikiLintFindingKinds)[number];
 type CfoWikiDocumentRole = (typeof cfoWikiDocumentRoles)[number];
 type CfoWikiDocumentExtractStatus =
   (typeof cfoWikiDocumentExtractStatuses)[number];
@@ -93,6 +112,40 @@ type CfoWikiExcerptBlock = {
   heading: string | null;
   text: string;
 };
+type CfoWikiFiledArtifactMetadata = {
+  filedAt: string;
+  filedBy: string;
+  provenanceKind: "manual_markdown_artifact";
+  provenanceSummary: string;
+};
+type CfoWikiLintFindingDetails = Record<string, unknown>;
+type CfoWikiExportFile = {
+  path: string;
+  contentType: "text/markdown" | "application/json";
+  sha256: string;
+  sizeBytes: number;
+  body: string;
+};
+type CfoWikiExportManifestPage = {
+  pageKey: string;
+  markdownPath: string;
+  pageKind: CfoWikiPageKind;
+  ownershipKind: CfoWikiPageOwnershipKind;
+  temporalStatus: CfoWikiPageTemporalStatus;
+  title: string;
+};
+type CfoWikiExportManifest = {
+  bundleRootPath: string;
+  generatedAt: string;
+  companyKey: string;
+  companyDisplayName: string;
+  indexPath: string;
+  logPath: string;
+  pageCount: number;
+  fileCount: number;
+  limitations: string[];
+  pages: CfoWikiExportManifestPage[];
+};
 
 export const cfoWikiCompileRunStatusEnum = pgEnum(
   "cfo_wiki_compile_run_status",
@@ -109,6 +162,21 @@ export const cfoWikiPageKindEnum = pgEnum("cfo_wiki_page_kind", cfoWikiPageKinds
 export const cfoWikiPageOwnershipKindEnum = pgEnum(
   "cfo_wiki_page_ownership_kind",
   cfoWikiPageOwnershipKinds,
+);
+
+export const cfoWikiLintRunStatusEnum = pgEnum(
+  "cfo_wiki_lint_run_status",
+  cfoWikiLintRunStatuses,
+);
+
+export const cfoWikiExportRunStatusEnum = pgEnum(
+  "cfo_wiki_export_run_status",
+  cfoWikiExportRunStatuses,
+);
+
+export const cfoWikiLintFindingKindEnum = pgEnum(
+  "cfo_wiki_lint_finding_kind",
+  cfoWikiLintFindingKinds,
 );
 
 export const cfoWikiDocumentRoleEnum = pgEnum(
@@ -187,8 +255,7 @@ export const cfoWikiPages = pgTable(
       .references(() => financeCompanies.id, { onDelete: "cascade" })
       .notNull(),
     compileRunId: uuid("compile_run_id")
-      .references(() => cfoWikiCompileRuns.id, { onDelete: "cascade" })
-      .notNull(),
+      .references(() => cfoWikiCompileRuns.id, { onDelete: "set null" }),
     pageKey: text("page_key").notNull(),
     pageKind: cfoWikiPageKindEnum("page_kind").$type<CfoWikiPageKind>().notNull(),
     ownershipKind: cfoWikiPageOwnershipKindEnum("ownership_kind")
@@ -206,6 +273,7 @@ export const cfoWikiPages = pgTable(
       .notNull(),
     limitations: jsonb("limitations").$type<string[]>().notNull().default([]),
     lastCompiledAt: timestamp("last_compiled_at", { withTimezone: true }).notNull(),
+    filedMetadata: jsonb("filed_metadata").$type<CfoWikiFiledArtifactMetadata>(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -217,6 +285,10 @@ export const cfoWikiPages = pgTable(
     companyPageKindIndex: index("cfo_wiki_pages_company_page_kind_idx").on(
       table.companyId,
       table.pageKind,
+    ),
+    companyOwnershipIndex: index("cfo_wiki_pages_company_ownership_idx").on(
+      table.companyId,
+      table.ownershipKind,
     ),
     companyTemporalStatusIndex: index(
       "cfo_wiki_pages_company_temporal_status_idx",
@@ -379,5 +451,105 @@ export const cfoWikiPageRefs = pgTable(
       table.targetKind,
       table.targetId,
     ),
+  }),
+);
+
+export const cfoWikiLintRuns = pgTable(
+  "cfo_wiki_lint_runs",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    status: cfoWikiLintRunStatusEnum("status").$type<CfoWikiLintRunStatus>().notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    triggeredBy: text("triggered_by").notNull().default("operator"),
+    linterVersion: text("linter_version").notNull(),
+    stats: jsonb("stats").$type<CfoWikiCompileRunStats>().notNull().default({}),
+    errorSummary: text("error_summary"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    companyStartedAtIndex: index("cfo_wiki_lint_runs_company_started_idx").on(
+      table.companyId,
+      table.startedAt,
+    ),
+    companyRunningUnique: uniqueIndex("cfo_wiki_lint_runs_company_running_key")
+      .on(table.companyId)
+      .where(sql`${table.status} = 'running'`),
+  }),
+);
+
+export const cfoWikiLintFindings = pgTable(
+  "cfo_wiki_lint_findings",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    lintRunId: uuid("lint_run_id")
+      .references(() => cfoWikiLintRuns.id, { onDelete: "cascade" })
+      .notNull(),
+    pageId: uuid("page_id").references(() => cfoWikiPages.id, {
+      onDelete: "set null",
+    }),
+    pageKey: text("page_key"),
+    pageTitle: text("page_title"),
+    findingKind: cfoWikiLintFindingKindEnum("finding_kind")
+      .$type<CfoWikiLintFindingKind>()
+      .notNull(),
+    message: text("message").notNull(),
+    details: jsonb("details").$type<CfoWikiLintFindingDetails>().notNull().default({}),
+    createdAt: createdAt(),
+  },
+  (table) => ({
+    companyRunIndex: index("cfo_wiki_lint_findings_company_run_idx").on(
+      table.companyId,
+      table.lintRunId,
+    ),
+    companyKindIndex: index("cfo_wiki_lint_findings_company_kind_idx").on(
+      table.companyId,
+      table.findingKind,
+    ),
+    companyPageKeyIndex: index("cfo_wiki_lint_findings_company_page_key_idx").on(
+      table.companyId,
+      table.pageKey,
+    ),
+  }),
+);
+
+export const cfoWikiExportRuns = pgTable(
+  "cfo_wiki_export_runs",
+  {
+    id: id(),
+    companyId: uuid("company_id")
+      .references(() => financeCompanies.id, { onDelete: "cascade" })
+      .notNull(),
+    status: cfoWikiExportRunStatusEnum("status")
+      .$type<CfoWikiExportRunStatus>()
+      .notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    triggeredBy: text("triggered_by").notNull().default("operator"),
+    exporterVersion: text("exporter_version").notNull(),
+    bundleRootPath: text("bundle_root_path").notNull(),
+    pageCount: integer("page_count").notNull().default(0),
+    fileCount: integer("file_count").notNull().default(0),
+    manifest: jsonb("manifest").$type<CfoWikiExportManifest>(),
+    files: jsonb("files").$type<CfoWikiExportFile[]>().notNull().default([]),
+    errorSummary: text("error_summary"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    companyStartedAtIndex: index("cfo_wiki_export_runs_company_started_idx").on(
+      table.companyId,
+      table.startedAt,
+    ),
+    companyRunningUnique: uniqueIndex("cfo_wiki_export_runs_company_running_key")
+      .on(table.companyId)
+      .where(sql`${table.status} = 'running'`),
   }),
 );

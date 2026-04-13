@@ -8,9 +8,18 @@ import type {
   CfoWikiCompileRunStatus,
   CfoWikiCompileTriggerKind,
   CfoWikiCompileRunStats,
+  CfoWikiExportFile,
+  CfoWikiExportManifest,
+  CfoWikiExportRunRecord,
+  CfoWikiExportRunStatus,
+  CfoWikiFiledArtifactMetadata,
   CfoWikiFreshnessSummary,
   CfoWikiHeadingOutlineEntry,
   CfoWikiLinkKind,
+  CfoWikiLintFindingKind,
+  CfoWikiLintFindingRecord,
+  CfoWikiLintRunRecord,
+  CfoWikiLintRunStatus,
   CfoWikiPageKind,
   CfoWikiPageLinkRecord,
   CfoWikiPageOwnershipKind,
@@ -56,6 +65,7 @@ export type PersistCfoWikiPageInput = {
   freshnessSummary: CfoWikiFreshnessSummary;
   limitations: string[];
   lastCompiledAt: string;
+  filedMetadata?: CfoWikiFiledArtifactMetadata | null;
 };
 
 export type PersistCfoWikiPageLinkInput = {
@@ -102,6 +112,51 @@ export type PersistCfoWikiDocumentExtractInput = {
   extractedAt: string;
 };
 
+export type StartCfoWikiLintRunInput = {
+  companyId: string;
+  companyKey: string;
+  startedAt: string;
+  triggeredBy: string;
+  linterVersion: string;
+};
+
+export type FinishCfoWikiLintRunInput = {
+  lintRunId: string;
+  completedAt: string;
+  status: CfoWikiLintRunStatus;
+  stats: CfoWikiCompileRunStats;
+  errorSummary: string | null;
+};
+
+export type PersistCfoWikiLintFindingInput = {
+  pageId: string | null;
+  pageKey: string | null;
+  pageTitle: string | null;
+  findingKind: CfoWikiLintFindingKind;
+  message: string;
+  details: Record<string, unknown>;
+};
+
+export type StartCfoWikiExportRunInput = {
+  companyId: string;
+  companyKey: string;
+  startedAt: string;
+  triggeredBy: string;
+  exporterVersion: string;
+  bundleRootPath: string;
+};
+
+export type FinishCfoWikiExportRunInput = {
+  exportRunId: string;
+  completedAt: string;
+  status: CfoWikiExportRunStatus;
+  pageCount: number;
+  fileCount: number;
+  manifest: CfoWikiExportManifest | null;
+  files: CfoWikiExportFile[];
+  errorSummary: string | null;
+};
+
 export interface CfoWikiRepository extends TransactionalRepository {
   startCompileRun(
     input: StartCfoWikiCompileRunInput,
@@ -119,6 +174,46 @@ export interface CfoWikiRepository extends TransactionalRepository {
     companyId: string,
     session?: PersistenceSession,
   ): Promise<CfoWikiCompileRunRecord | null>;
+  startLintRun(
+    input: StartCfoWikiLintRunInput,
+    session?: PersistenceSession,
+  ): Promise<CfoWikiLintRunRecord>;
+  finishLintRun(
+    input: FinishCfoWikiLintRunInput,
+    session?: PersistenceSession,
+  ): Promise<CfoWikiLintRunRecord>;
+  getLatestLintRunByCompanyId(
+    companyId: string,
+    session?: PersistenceSession,
+  ): Promise<CfoWikiLintRunRecord | null>;
+  listLintFindingsByRunId(
+    lintRunId: string,
+    session?: PersistenceSession,
+  ): Promise<CfoWikiLintFindingRecord[]>;
+  replaceLintFindings(
+    input: {
+      companyId: string;
+      lintRunId: string;
+      findings: PersistCfoWikiLintFindingInput[];
+    },
+    session?: PersistenceSession,
+  ): Promise<CfoWikiLintFindingRecord[]>;
+  startExportRun(
+    input: StartCfoWikiExportRunInput,
+    session?: PersistenceSession,
+  ): Promise<CfoWikiExportRunRecord>;
+  finishExportRun(
+    input: FinishCfoWikiExportRunInput,
+    session?: PersistenceSession,
+  ): Promise<CfoWikiExportRunRecord>;
+  listExportRunsByCompanyId(
+    companyId: string,
+    session?: PersistenceSession,
+  ): Promise<CfoWikiExportRunRecord[]>;
+  getExportRunById(
+    exportRunId: string,
+    session?: PersistenceSession,
+  ): Promise<CfoWikiExportRunRecord | null>;
   upsertSourceBinding(
     input: UpsertCfoWikiSourceBindingInput,
     session?: PersistenceSession,
@@ -162,6 +257,13 @@ export interface CfoWikiRepository extends TransactionalRepository {
     pageKey: string,
     session?: PersistenceSession,
   ): Promise<CfoWikiPageRecord | null>;
+  createFiledPage(
+    input: {
+      companyId: string;
+      page: PersistCfoWikiPageInput;
+    },
+    session?: PersistenceSession,
+  ): Promise<CfoWikiPageRecord>;
   listPagesByCompanyId(
     companyId: string,
     session?: PersistenceSession,
@@ -182,6 +284,9 @@ export interface CfoWikiRepository extends TransactionalRepository {
 
 export class InMemoryCfoWikiRepository implements CfoWikiRepository {
   private readonly compileRuns = new Map<string, CfoWikiCompileRunRecord>();
+  private readonly lintRuns = new Map<string, CfoWikiLintRunRecord>();
+  private readonly lintFindings = new Map<string, CfoWikiLintFindingRecord>();
+  private readonly exportRuns = new Map<string, CfoWikiExportRunRecord>();
   private readonly sourceBindings = new Map<string, CfoWikiSourceBindingRecord>();
   private readonly sourceBindingsByScope = new Map<string, string>();
   private readonly documentExtracts = new Map<string, CfoWikiDocumentExtractRecord>();
@@ -256,6 +361,167 @@ export class InMemoryCfoWikiRepository implements CfoWikiRepository {
         .sort((left, right) => right.startedAt.localeCompare(left.startedAt))[0] ??
       null
     );
+  }
+
+  async startLintRun(input: StartCfoWikiLintRunInput) {
+    const running = [...this.lintRuns.values()].find(
+      (run) => run.companyId === input.companyId && run.status === "running",
+    );
+
+    if (running) {
+      throw new Error(`A CFO Wiki lint run is already running for ${input.companyKey}`);
+    }
+
+    const now = input.startedAt;
+    const lintRun: CfoWikiLintRunRecord = {
+      id: crypto.randomUUID(),
+      companyId: input.companyId,
+      status: "running",
+      startedAt: input.startedAt,
+      completedAt: null,
+      triggeredBy: input.triggeredBy,
+      linterVersion: input.linterVersion,
+      stats: {},
+      errorSummary: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    this.lintRuns.set(lintRun.id, lintRun);
+    return lintRun;
+  }
+
+  async finishLintRun(input: FinishCfoWikiLintRunInput) {
+    const existing = this.lintRuns.get(input.lintRunId);
+
+    if (!existing) {
+      throw new Error(`CFO Wiki lint run ${input.lintRunId} was not found`);
+    }
+
+    const lintRun: CfoWikiLintRunRecord = {
+      ...existing,
+      completedAt: input.completedAt,
+      errorSummary: input.errorSummary,
+      stats: input.stats,
+      status: input.status,
+      updatedAt: input.completedAt,
+    };
+
+    this.lintRuns.set(lintRun.id, lintRun);
+    return lintRun;
+  }
+
+  async getLatestLintRunByCompanyId(companyId: string) {
+    return (
+      [...this.lintRuns.values()]
+        .filter((run) => run.companyId === companyId)
+        .sort((left, right) => right.startedAt.localeCompare(left.startedAt))[0] ??
+      null
+    );
+  }
+
+  async listLintFindingsByRunId(lintRunId: string) {
+    return [...this.lintFindings.values()]
+      .filter((finding) => finding.lintRunId === lintRunId)
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+  }
+
+  async replaceLintFindings(input: {
+    companyId: string;
+    lintRunId: string;
+    findings: PersistCfoWikiLintFindingInput[];
+  }) {
+    for (const finding of [...this.lintFindings.values()]) {
+      if (finding.lintRunId === input.lintRunId) {
+        this.lintFindings.delete(finding.id);
+      }
+    }
+
+    const createdAt = new Date().toISOString();
+    const records = input.findings.map((finding) => {
+      const record: CfoWikiLintFindingRecord = {
+        id: crypto.randomUUID(),
+        companyId: input.companyId,
+        lintRunId: input.lintRunId,
+        pageId: finding.pageId,
+        pageKey: finding.pageKey,
+        pageTitle: finding.pageTitle,
+        findingKind: finding.findingKind,
+        message: finding.message,
+        details: finding.details,
+        createdAt,
+      };
+
+      this.lintFindings.set(record.id, record);
+      return record;
+    });
+
+    return records;
+  }
+
+  async startExportRun(input: StartCfoWikiExportRunInput) {
+    const running = [...this.exportRuns.values()].find(
+      (run) => run.companyId === input.companyId && run.status === "running",
+    );
+
+    if (running) {
+      throw new Error(`A CFO Wiki export run is already running for ${input.companyKey}`);
+    }
+
+    const now = input.startedAt;
+    const exportRun: CfoWikiExportRunRecord = {
+      id: crypto.randomUUID(),
+      companyId: input.companyId,
+      status: "running",
+      startedAt: input.startedAt,
+      completedAt: null,
+      triggeredBy: input.triggeredBy,
+      exporterVersion: input.exporterVersion,
+      bundleRootPath: input.bundleRootPath,
+      pageCount: 0,
+      fileCount: 0,
+      manifest: null,
+      files: [],
+      errorSummary: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    this.exportRuns.set(exportRun.id, exportRun);
+    return exportRun;
+  }
+
+  async finishExportRun(input: FinishCfoWikiExportRunInput) {
+    const existing = this.exportRuns.get(input.exportRunId);
+
+    if (!existing) {
+      throw new Error(`CFO Wiki export run ${input.exportRunId} was not found`);
+    }
+
+    const exportRun: CfoWikiExportRunRecord = {
+      ...existing,
+      completedAt: input.completedAt,
+      status: input.status,
+      pageCount: input.pageCount,
+      fileCount: input.fileCount,
+      manifest: input.manifest,
+      files: input.files,
+      errorSummary: input.errorSummary,
+      updatedAt: input.completedAt,
+    };
+
+    this.exportRuns.set(exportRun.id, exportRun);
+    return exportRun;
+  }
+
+  async listExportRunsByCompanyId(companyId: string) {
+    return [...this.exportRuns.values()]
+      .filter((run) => run.companyId === companyId)
+      .sort((left, right) => left.startedAt.localeCompare(right.startedAt));
+  }
+
+  async getExportRunById(exportRunId: string) {
+    return this.exportRuns.get(exportRunId) ?? null;
   }
 
   async upsertSourceBinding(input: UpsertCfoWikiSourceBindingInput) {
@@ -365,7 +631,11 @@ export class InMemoryCfoWikiRepository implements CfoWikiRepository {
     refs: PersistCfoWikiPageRefInput[];
   }) {
     const pageIds = [...this.pages.values()]
-      .filter((page) => page.companyId === input.companyId)
+      .filter(
+        (page) =>
+          page.companyId === input.companyId &&
+          page.ownershipKind === "compiler_owned",
+      )
       .map((page) => page.id);
     const pageIdSet = new Set(pageIds);
 
@@ -382,7 +652,10 @@ export class InMemoryCfoWikiRepository implements CfoWikiRepository {
     }
 
     for (const page of [...this.pages.values()]) {
-      if (page.companyId === input.companyId) {
+      if (
+        page.companyId === input.companyId &&
+        page.ownershipKind === "compiler_owned"
+      ) {
         this.pages.delete(page.id);
       }
     }
@@ -402,6 +675,7 @@ export class InMemoryCfoWikiRepository implements CfoWikiRepository {
         freshnessSummary: page.freshnessSummary,
         limitations: page.limitations,
         lastCompiledAt: page.lastCompiledAt,
+        filedMetadata: page.filedMetadata ?? null,
         createdAt: page.lastCompiledAt,
         updatedAt: page.lastCompiledAt,
       };
@@ -463,7 +737,9 @@ export class InMemoryCfoWikiRepository implements CfoWikiRepository {
       this.refs.set(record.id, record);
     }
 
-    return insertedPages.sort((left, right) => left.pageKey.localeCompare(right.pageKey));
+    return [...this.pages.values()]
+      .filter((page) => page.companyId === input.companyId)
+      .sort((left, right) => left.pageKey.localeCompare(right.pageKey));
   }
 
   async getPageByCompanyIdAndPageKey(companyId: string, pageKey: string) {
@@ -472,6 +748,34 @@ export class InMemoryCfoWikiRepository implements CfoWikiRepository {
         (page) => page.companyId === companyId && page.pageKey === pageKey,
       ) ?? null
     );
+  }
+
+  async createFiledPage(input: {
+    companyId: string;
+    page: PersistCfoWikiPageInput;
+  }) {
+    const now = input.page.lastCompiledAt;
+    const record: CfoWikiPageRecord = {
+      id: crypto.randomUUID(),
+      companyId: input.companyId,
+      compileRunId: null,
+      pageKey: input.page.pageKey,
+      pageKind: input.page.pageKind,
+      ownershipKind: input.page.ownershipKind,
+      temporalStatus: input.page.temporalStatus,
+      title: input.page.title,
+      summary: input.page.summary,
+      markdownBody: input.page.markdownBody,
+      freshnessSummary: input.page.freshnessSummary,
+      limitations: input.page.limitations,
+      lastCompiledAt: input.page.lastCompiledAt,
+      filedMetadata: input.page.filedMetadata ?? null,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    this.pages.set(record.id, record);
+    return record;
   }
 
   async listPagesByCompanyId(companyId: string) {

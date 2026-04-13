@@ -47,6 +47,7 @@ pnpm smoke:finance-twin-contract-metadata:local
 pnpm smoke:finance-twin-card-expense:local
 pnpm smoke:cfo-wiki-foundation:local
 pnpm smoke:cfo-wiki-document-pages:local
+pnpm smoke:cfo-wiki-lint-export:local
 ```
 
 ## Pivot-foundation baseline
@@ -105,10 +106,12 @@ Today, steps 1 through 5 exist in a narrow form:
 - the packaged `pnpm smoke:cfo-wiki-foundation:local` path proves a trial-balance-backed Finance Twin sync can compile and read back the deterministic F3A wiki surface without runtime-codex, document-body parsing, or vector search
 - F3B shipped explicit company-scoped document bindings plus deterministic markdown or plain-text source digest pages, persisted document extracts, and route-backed backlinks while unsupported PDFs or fileless snapshots remain visible as gaps
 - the packaged `pnpm smoke:cfo-wiki-document-pages:local` path proves one company can bind document sources, compile current plus superseded source digest pages, and read back extracted versus unsupported coverage without runtime-codex, OCR, or vector search
+- F3C adds persisted wiki lint runs and findings, deterministic markdown-first export runs, and an ownership-safe filed artifact seam that preserves filed pages across later compiler-owned refreshes
+- the packaged `pnpm smoke:cfo-wiki-lint-export:local` path proves one company can preserve a filed artifact page across recompile, persist deterministic lint findings from stored wiki state, and read back a deterministic markdown export bundle without runtime-codex, vector search, or OCR
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-If none exists, the first narrow F3B document-page slice is already shipped and the next new implementation phase is F3C CFO Wiki lint, export, and durable filing work, so create the next F3 plan before code changes.
+If none exists, the next new implementation phase after the shipped F3C lint/export slice is the next narrow F3 page-family slice for concept, metric-definition, and policy pages, so create that next F3 plan before code changes.
 Use the docs to guide what gets built next.
 
 The active finance-twin read surface is currently backend-first:

@@ -37,8 +37,8 @@ GitHub connector work is explicitly out of scope for this slice.
 - Observation: existing page views expose outgoing links only, so route-backed backlinks need a small additive extension to the persisted-view contract.
   Evidence: `packages/domain/src/cfo-wiki.ts`, `apps/control-plane/src/modules/wiki/formatter.ts`, and `routes.ts` currently return `links` but no incoming-link view even though `cfo_wiki_page_links` already persists a directed graph.
 
-- Observation: the requested `pnpm --filter @pocket-cto/control-plane exec vitest run 'src/modules/wiki/**/*.spec.ts' src/app.spec.ts` form does not expand the wiki glob under `pnpm exec`, so the exact command only exercised `src/app.spec.ts`.
-  Evidence: the command repeatedly reported only `src/app.spec.ts`, while `cd apps/control-plane && pnpm exec vitest run src/modules/wiki/**/*.spec.ts` ran the full wiki spec set and passed.
+- Observation: the requested `pnpm --filter @pocket-cto/control-plane exec vitest run 'src/modules/wiki/**/*.spec.ts' src/app.spec.ts` form did not expand the wiki glob under `pnpm exec` during implementation, so the final F3B validation used both the quoted command and a direct in-package wiki-spec invocation.
+  Evidence: the quoted command repeatedly reported only `src/app.spec.ts`, while `cd apps/control-plane && pnpm exec vitest run src/modules/wiki/**/*.spec.ts` ran the full wiki spec set and passed before the slice shipped.
 
 - Observation: repeated F3B smoke runs can collide if the smoke tool reuses a fixed company key.
   Evidence: the first draft of `tools/cfo-wiki-document-pages-smoke.mjs` reused `acme-docs`, which caused a uniqueness conflict on rerun; suffixing the fixture company key with the per-run tag restored deterministic local reruns without mutating prior state.
@@ -315,8 +315,24 @@ Key dependencies and seams:
 
 ## Outcomes & Retrospective
 
-Not yet complete.
+F3B shipped in the narrow backend-first shape this plan targeted.
 
-The intended shipped outcome is a truthful first F3B slice that adds explicit company-scoped document bindings, deterministic document extracts, source digest pages, and backlink-aware wiki reads while keeping the F3A foundation and broad F2 backbone intact.
+- Explicit company-scoped wiki source bindings now live inside the wiki bounded context and are exposed through bind plus list routes.
+- Deterministic markdown and plain-text extracts now persist separately from raw-source storage, keyed by company plus snapshot, with parser-version and checksum-based cache reuse.
+- Compiler-owned `source_digest` pages now persist for bound document snapshots, expose current versus superseded temporal status, and surface evidence, freshness posture, limitations, unsupported coverage, related links, and backlinks through the existing page route.
+- F3A foundation pages and compile behavior remain intact, failed recompiles do not erase prior successful wiki output, and the single-running-compile-per-company guard remains in place.
+- PDFs, scans, image-only files, and other unreadable documents remain visible as unsupported coverage rather than fake digests in this slice.
+
+Validation completed green for the requested bar:
+
+- focused domain, DB, wiki, route, repository, and engineering-twin Vitest coverage
+- the full local smoke ladder, including `pnpm smoke:cfo-wiki-document-pages:local`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm ci:repro:current`
+
+Remaining work is intentionally deferred.
+The next F3 slice should move to F3C wiki lint, export, and durable filing on top of the now-shipped document-aware compiler layer rather than widening this historical F3B slice.
 
 If implementation proves that deterministic PDF text extraction is not safely supportable with the current repo dependencies, this slice should still ship by marking PDFs unsupported explicitly and recommending the next narrow continuation or F3C follow-up from a truthful baseline rather than widening the scope.

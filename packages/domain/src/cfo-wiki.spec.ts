@@ -6,8 +6,12 @@ import {
   CfoWikiCompileRequestSchema,
   CfoWikiCompanySourceListViewSchema,
   CfoWikiDocumentExtractRecordSchema,
+  CfoWikiCreateFiledPageRequestSchema,
   CfoWikiPageKeySchema,
+  CfoWikiLintSummarySchema,
+  CfoWikiExportDetailViewSchema,
   buildCfoWikiSourceDigestPageKey,
+  buildCfoWikiFiledPageKey,
   buildCfoWikiMarkdownPath,
 } from "./cfo-wiki";
 
@@ -25,6 +29,9 @@ describe("cfo wiki domain schemas", () => {
         "sources/11111111-1111-4111-8111-111111111111/snapshots/2",
       ),
     ).toBe("sources/11111111-1111-4111-8111-111111111111/snapshots/2");
+    expect(CfoWikiPageKeySchema.parse("filed/board-deck-notes")).toBe(
+      "filed/board-deck-notes",
+    );
     expect(() => CfoWikiPageKeySchema.parse("company/overview.md")).toThrow();
   });
 
@@ -37,6 +44,9 @@ describe("cfo wiki domain schemas", () => {
     expect(buildCfoWikiMarkdownPath("index")).toBe("index.md");
     expect(buildCfoWikiMarkdownPath("sources/coverage")).toBe(
       "sources/coverage.md",
+    );
+    expect(buildCfoWikiMarkdownPath(buildCfoWikiFiledPageKey("board-deck-notes"))).toBe(
+      "filed/board-deck-notes.md",
     );
     expect(
       buildCfoWikiMarkdownPath(
@@ -52,6 +62,21 @@ describe("cfo wiki domain schemas", () => {
     expect(CfoWikiBindSourceRequestSchema.parse({})).toEqual({
       boundBy: "operator",
       includeInCompile: true,
+    });
+  });
+
+  it("requires explicit filed-page inputs and keeps provenance explicit", () => {
+    expect(
+      CfoWikiCreateFiledPageRequestSchema.parse({
+        title: "Board deck notes",
+        markdownBody: "Collections remain tight.",
+        filedBy: "finance-operator",
+      }),
+    ).toEqual({
+      title: "Board deck notes",
+      markdownBody: "Collections remain tight.",
+      filedBy: "finance-operator",
+      provenanceSummary: "Manually filed markdown artifact.",
     });
   });
 
@@ -196,6 +221,7 @@ describe("cfo wiki domain schemas", () => {
         period_index: 0,
         source_coverage: 0,
         source_digest: 0,
+        filed_artifact: 0,
       },
       freshnessSummary: {
         state: "mixed",
@@ -206,5 +232,114 @@ describe("cfo wiki domain schemas", () => {
 
     expect(parsed.compileRun.compilerVersion).toBe("f3a-deterministic-v1");
     expect(parsed.pageInventory[0]?.pageKey).toBe("index");
+  });
+
+  it("parses lint and export views with persisted route-backed state", () => {
+    const lintSummary = CfoWikiLintSummarySchema.parse({
+      companyId: "11111111-1111-4111-8111-111111111111",
+      companyKey: "acme",
+      companyDisplayName: "Acme Holdings",
+      latestLintRun: {
+        id: "22222222-2222-4222-8222-222222222222",
+        companyId: "11111111-1111-4111-8111-111111111111",
+        status: "succeeded",
+        startedAt: "2026-04-13T19:00:00.000Z",
+        completedAt: "2026-04-13T19:00:01.000Z",
+        triggeredBy: "finance-operator",
+        linterVersion: "f3c-wiki-lint-v1",
+        stats: { findingCount: 1 },
+        errorSummary: null,
+        createdAt: "2026-04-13T19:00:00.000Z",
+        updatedAt: "2026-04-13T19:00:01.000Z",
+      },
+      findingCount: 1,
+      findingCountsByKind: {
+        missing_refs: 1,
+        uncited_numeric_claim: 0,
+        orphan_page: 0,
+        stale_page: 0,
+        broken_link: 0,
+        unsupported_document_gap: 0,
+        duplicate_title: 0,
+      },
+      findings: [
+        {
+          id: "33333333-3333-4333-8333-333333333333",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          lintRunId: "22222222-2222-4222-8222-222222222222",
+          pageId: null,
+          pageKey: "index",
+          pageTitle: "Index",
+          findingKind: "missing_refs",
+          message: "Page has no refs.",
+          details: {},
+          createdAt: "2026-04-13T19:00:01.000Z",
+        },
+      ],
+      limitations: [],
+    });
+    const exportDetail = CfoWikiExportDetailViewSchema.parse({
+      companyId: "11111111-1111-4111-8111-111111111111",
+      companyKey: "acme",
+      companyDisplayName: "Acme Holdings",
+      exportRun: {
+        id: "44444444-4444-4444-8444-444444444444",
+        companyId: "11111111-1111-4111-8111-111111111111",
+        status: "succeeded",
+        startedAt: "2026-04-13T19:10:00.000Z",
+        completedAt: "2026-04-13T19:10:01.000Z",
+        triggeredBy: "finance-operator",
+        exporterVersion: "f3c-wiki-export-v1",
+        bundleRootPath: "acme-cfo-wiki",
+        pageCount: 1,
+        fileCount: 2,
+        manifest: {
+          bundleRootPath: "acme-cfo-wiki",
+          generatedAt: "2026-04-13T19:10:01.000Z",
+          companyKey: "acme",
+          companyDisplayName: "Acme Holdings",
+          indexPath: "index.md",
+          logPath: "log.md",
+          pageCount: 1,
+          fileCount: 2,
+          limitations: [],
+          pages: [
+            {
+              pageKey: "index",
+              markdownPath: "index.md",
+              pageKind: "index",
+              ownershipKind: "compiler_owned",
+              temporalStatus: "current",
+              title: "Index",
+            },
+          ],
+        },
+        files: [
+          {
+            path: "index.md",
+            contentType: "text/markdown",
+            sha256:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            sizeBytes: 8,
+            body: "# Index\n",
+          },
+          {
+            path: "manifest.json",
+            contentType: "application/json",
+            sha256:
+              "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            sizeBytes: 2,
+            body: "{}",
+          },
+        ],
+        errorSummary: null,
+        createdAt: "2026-04-13T19:10:00.000Z",
+        updatedAt: "2026-04-13T19:10:01.000Z",
+      },
+      limitations: [],
+    });
+
+    expect(lintSummary.findingCountsByKind.missing_refs).toBe(1);
+    expect(exportDetail.exportRun.bundleRootPath).toBe("acme-cfo-wiki");
   });
 });

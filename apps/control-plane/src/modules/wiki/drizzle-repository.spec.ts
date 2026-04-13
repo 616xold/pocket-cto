@@ -217,4 +217,157 @@ describe("DrizzleCfoWikiRepository", () => {
     expect(links).toHaveLength(1);
     expect(refs).toHaveLength(1);
   });
+
+  it("preserves filed pages across compiler-owned replacement and persists lint/export runs", async () => {
+    const db = createTestDb();
+    const financeRepository = new DrizzleFinanceTwinRepository(db);
+    const wikiRepository = new DrizzleCfoWikiRepository(db);
+    const company = await financeRepository.upsertCompany({
+      companyKey: "acme",
+      displayName: "Acme Holdings",
+    });
+    const compileRun = await wikiRepository.startCompileRun({
+      companyId: company.id,
+      companyKey: company.companyKey,
+      startedAt: "2026-04-13T12:10:00.000Z",
+      triggeredBy: "operator",
+      triggerKind: "manual",
+      compilerVersion: "test",
+    });
+
+    await wikiRepository.createFiledPage({
+      companyId: company.id,
+      page: {
+        pageKey: "filed/board-deck-notes",
+        pageKind: "filed_artifact",
+        ownershipKind: "filed_artifact",
+        temporalStatus: "current",
+        title: "Board deck notes",
+        summary: "Collections remain tight.",
+        markdownBody: "# Board deck notes",
+        freshnessSummary: {
+          state: "missing",
+          summary: "Filed pages do not carry compiler freshness.",
+        },
+        limitations: [],
+        lastCompiledAt: "2026-04-13T12:09:00.000Z",
+        filedMetadata: {
+          filedAt: "2026-04-13T12:09:00.000Z",
+          filedBy: "finance-operator",
+          provenanceKind: "manual_markdown_artifact",
+          provenanceSummary: "Filed after board review.",
+        },
+      },
+    });
+
+    const pagesAfterCompile = await wikiRepository.transaction(async (session) => {
+      const pages = await wikiRepository.replaceCompiledState(
+        {
+          companyId: company.id,
+          compileRunId: compileRun.id,
+          pages: [
+            {
+              pageKey: "index",
+              pageKind: "index",
+              ownershipKind: "compiler_owned",
+              temporalStatus: "current",
+              title: "Index",
+              summary: "Index summary",
+              markdownBody: "# Index",
+              freshnessSummary: {
+                state: "fresh",
+                summary: "Fresh",
+              },
+              limitations: [],
+              lastCompiledAt: "2026-04-13T12:10:01.000Z",
+            },
+          ],
+          links: [],
+          refs: [],
+        },
+        session,
+      );
+      await wikiRepository.finishCompileRun(
+        {
+          compileRunId: compileRun.id,
+          completedAt: "2026-04-13T12:10:01.000Z",
+          status: "succeeded",
+          stats: { pageCount: 1 },
+          errorSummary: null,
+        },
+        session,
+      );
+
+      return pages;
+    });
+    const lintRun = await wikiRepository.startLintRun({
+      companyId: company.id,
+      companyKey: company.companyKey,
+      startedAt: "2026-04-13T12:11:00.000Z",
+      triggeredBy: "finance-operator",
+      linterVersion: "test",
+    });
+    await wikiRepository.replaceLintFindings({
+      companyId: company.id,
+      lintRunId: lintRun.id,
+      findings: [
+        {
+          pageId: null,
+          pageKey: "index",
+          pageTitle: "Index",
+          findingKind: "missing_refs",
+          message: "Page has no refs.",
+          details: {},
+        },
+      ],
+    });
+    await wikiRepository.finishLintRun({
+      lintRunId: lintRun.id,
+      completedAt: "2026-04-13T12:11:01.000Z",
+      status: "succeeded",
+      stats: { findingCount: 1 },
+      errorSummary: null,
+    });
+    const exportRun = await wikiRepository.startExportRun({
+      companyId: company.id,
+      companyKey: company.companyKey,
+      startedAt: "2026-04-13T12:12:00.000Z",
+      triggeredBy: "finance-operator",
+      exporterVersion: "test",
+      bundleRootPath: "acme-cfo-wiki",
+    });
+    await wikiRepository.finishExportRun({
+      exportRunId: exportRun.id,
+      completedAt: "2026-04-13T12:12:01.000Z",
+      status: "succeeded",
+      pageCount: 2,
+      fileCount: 3,
+      manifest: {
+        bundleRootPath: "acme-cfo-wiki",
+        generatedAt: "2026-04-13T12:12:01.000Z",
+        companyKey: "acme",
+        companyDisplayName: "Acme Holdings",
+        indexPath: "index.md",
+        logPath: "log.md",
+        pageCount: 2,
+        fileCount: 3,
+        limitations: [],
+        pages: [],
+      },
+      files: [],
+      errorSummary: null,
+    });
+
+    expect(
+      pagesAfterCompile.some((page) => page.pageKey === "filed/board-deck-notes"),
+    ).toBe(true);
+    expect(await wikiRepository.getLatestLintRunByCompanyId(company.id)).toMatchObject({
+      status: "succeeded",
+    });
+    expect(await wikiRepository.listLintFindingsByRunId(lintRun.id)).toHaveLength(1);
+    expect(await wikiRepository.getExportRunById(exportRun.id)).toMatchObject({
+      status: "succeeded",
+      bundleRootPath: "acme-cfo-wiki",
+    });
+  });
 });

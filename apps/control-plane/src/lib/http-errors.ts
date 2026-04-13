@@ -12,6 +12,7 @@ import {
 } from "../modules/finance-twin/errors";
 import {
   CfoWikiCompileAlreadyRunningError,
+  CfoWikiExportRunNotFoundError,
   CfoWikiPageNotFoundError,
   CfoWikiSourceBindingUnsupportedError,
 } from "../modules/wiki/errors";
@@ -52,6 +53,7 @@ export type ApiErrorCode =
   | "approval_conflict"
   | "approval_not_found"
   | "cfo_wiki_compile_conflict"
+  | "cfo_wiki_export_not_found"
   | "cfo_wiki_page_not_found"
   | "cfo_wiki_source_binding_unsupported"
   | "finance_company_not_found"
@@ -249,6 +251,18 @@ function mapHttpError(error: unknown): ErrorMapping {
       body: {
         error: {
           code: "cfo_wiki_page_not_found",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof CfoWikiExportRunNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        error: {
+          code: "cfo_wiki_export_not_found",
           message: error.message,
         },
       },

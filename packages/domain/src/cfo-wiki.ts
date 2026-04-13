@@ -13,9 +13,13 @@ export const CfoWikiPageKindSchema = z.enum([
   "period_index",
   "source_coverage",
   "source_digest",
+  "filed_artifact",
 ]);
 
-export const CfoWikiPageOwnershipKindSchema = z.enum(["compiler_owned"]);
+export const CfoWikiPageOwnershipKindSchema = z.enum([
+  "compiler_owned",
+  "filed_artifact",
+]);
 
 export const CfoWikiDocumentRoleSchema = z.enum([
   "general_document",
@@ -68,6 +72,28 @@ export const CfoWikiCompileRunStatusSchema = z.enum([
 
 export const CfoWikiCompileTriggerKindSchema = z.enum(["manual"]);
 
+export const CfoWikiLintRunStatusSchema = z.enum([
+  "running",
+  "succeeded",
+  "failed",
+]);
+
+export const CfoWikiExportRunStatusSchema = z.enum([
+  "running",
+  "succeeded",
+  "failed",
+]);
+
+export const CfoWikiLintFindingKindSchema = z.enum([
+  "missing_refs",
+  "uncited_numeric_claim",
+  "orphan_page",
+  "stale_page",
+  "broken_link",
+  "unsupported_document_gap",
+  "duplicate_title",
+]);
+
 export const CfoWikiFreshnessStateSchema = z.enum([
   "fresh",
   "stale",
@@ -80,7 +106,7 @@ export const CfoWikiPageKeySchema = z
   .string()
   .trim()
   .regex(
-    /^(?:index|log|company\/overview|sources\/coverage|periods\/[a-z0-9][a-z0-9._-]*\/index|sources\/[0-9a-f-]{8}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{12}\/snapshots\/[1-9]\d*)$/u,
+    /^(?:index|log|company\/overview|sources\/coverage|filed\/[a-z0-9][a-z0-9._-]*|periods\/[a-z0-9][a-z0-9._-]*\/index|sources\/[0-9a-f-]{8}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{12}\/snapshots\/[1-9]\d*)$/u,
     "Expected an F3 canonical CFO Wiki page key",
   );
 
@@ -101,6 +127,13 @@ export const CfoWikiCompileRunStatsSchema = z
 export const CfoWikiFreshnessSummarySchema = z.object({
   state: CfoWikiFreshnessStateSchema,
   summary: z.string().min(1),
+});
+
+export const CfoWikiFiledArtifactMetadataSchema = z.object({
+  filedAt: z.string().datetime({ offset: true }),
+  filedBy: z.string().min(1),
+  provenanceKind: z.literal("manual_markdown_artifact"),
+  provenanceSummary: z.string().min(1),
 });
 
 export const CfoWikiCompileRunRecordSchema = z.object({
@@ -154,7 +187,7 @@ export const CfoWikiDocumentExtractRecordSchema = z.object({
 export const CfoWikiPageRecordSchema = z.object({
   id: z.string().uuid(),
   companyId: z.string().uuid(),
-  compileRunId: z.string().uuid(),
+  compileRunId: z.string().uuid().nullable(),
   pageKey: CfoWikiPageKeySchema,
   pageKind: CfoWikiPageKindSchema,
   ownershipKind: CfoWikiPageOwnershipKindSchema,
@@ -165,6 +198,7 @@ export const CfoWikiPageRecordSchema = z.object({
   freshnessSummary: CfoWikiFreshnessSummarySchema,
   limitations: z.array(z.string().min(1)),
   lastCompiledAt: z.string().datetime({ offset: true }),
+  filedMetadata: CfoWikiFiledArtifactMetadataSchema.nullable(),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
 });
@@ -227,9 +261,18 @@ export const CfoWikiPageKindCountsSchema = z.object({
   period_index: z.number().int().nonnegative(),
   source_coverage: z.number().int().nonnegative(),
   source_digest: z.number().int().nonnegative(),
+  filed_artifact: z.number().int().nonnegative(),
 });
 
 export const CfoWikiCompileRequestSchema = z.object({
+  triggeredBy: z.string().trim().min(1).default("operator"),
+});
+
+export const CfoWikiLintRequestSchema = z.object({
+  triggeredBy: z.string().trim().min(1).default("operator"),
+});
+
+export const CfoWikiExportRequestSchema = z.object({
   triggeredBy: z.string().trim().min(1).default("operator"),
 });
 
@@ -237,6 +280,102 @@ export const CfoWikiBindSourceRequestSchema = z.object({
   boundBy: z.string().trim().min(1).default("operator"),
   includeInCompile: z.boolean().default(true),
   documentRole: CfoWikiDocumentRoleSchema.nullable().optional(),
+});
+
+export const CfoWikiCreateFiledPageRequestSchema = z.object({
+  title: z.string().trim().min(1),
+  markdownBody: z.string().trim().min(1),
+  filedBy: z.string().trim().min(1),
+  provenanceSummary: z
+    .string()
+    .trim()
+    .min(1)
+    .default("Manually filed markdown artifact."),
+});
+
+export const CfoWikiLintRunRecordSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  status: CfoWikiLintRunStatusSchema,
+  startedAt: z.string().datetime({ offset: true }),
+  completedAt: z.string().datetime({ offset: true }).nullable(),
+  triggeredBy: z.string().min(1),
+  linterVersion: z.string().min(1),
+  stats: CfoWikiCompileRunStatsSchema,
+  errorSummary: z.string().nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+});
+
+export const CfoWikiLintFindingRecordSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  lintRunId: z.string().uuid(),
+  pageId: z.string().uuid().nullable(),
+  pageKey: CfoWikiPageKeySchema.nullable(),
+  pageTitle: z.string().min(1).nullable(),
+  findingKind: CfoWikiLintFindingKindSchema,
+  message: z.string().min(1),
+  details: z.record(z.string(), z.unknown()),
+  createdAt: z.string().datetime({ offset: true }),
+});
+
+export const CfoWikiLintFindingCountsSchema = z.object({
+  missing_refs: z.number().int().nonnegative(),
+  uncited_numeric_claim: z.number().int().nonnegative(),
+  orphan_page: z.number().int().nonnegative(),
+  stale_page: z.number().int().nonnegative(),
+  broken_link: z.number().int().nonnegative(),
+  unsupported_document_gap: z.number().int().nonnegative(),
+  duplicate_title: z.number().int().nonnegative(),
+});
+
+export const CfoWikiExportFileSchema = z.object({
+  path: z.string().min(1),
+  contentType: z.enum(["text/markdown", "application/json"]),
+  sha256: SourceChecksumSha256Schema,
+  sizeBytes: z.number().int().nonnegative(),
+  body: z.string(),
+});
+
+export const CfoWikiExportManifestPageSchema = z.object({
+  pageKey: CfoWikiPageKeySchema,
+  markdownPath: z.string().min(1),
+  pageKind: CfoWikiPageKindSchema,
+  ownershipKind: CfoWikiPageOwnershipKindSchema,
+  temporalStatus: CfoWikiPageTemporalStatusSchema,
+  title: z.string().min(1),
+});
+
+export const CfoWikiExportManifestSchema = z.object({
+  bundleRootPath: z.string().min(1),
+  generatedAt: z.string().datetime({ offset: true }),
+  companyKey: z.string().min(1),
+  companyDisplayName: z.string().min(1),
+  indexPath: z.string().min(1),
+  logPath: z.string().min(1),
+  pageCount: z.number().int().nonnegative(),
+  fileCount: z.number().int().nonnegative(),
+  limitations: z.array(z.string().min(1)),
+  pages: z.array(CfoWikiExportManifestPageSchema),
+});
+
+export const CfoWikiExportRunRecordSchema = z.object({
+  id: z.string().uuid(),
+  companyId: z.string().uuid(),
+  status: CfoWikiExportRunStatusSchema,
+  startedAt: z.string().datetime({ offset: true }),
+  completedAt: z.string().datetime({ offset: true }).nullable(),
+  triggeredBy: z.string().min(1),
+  exporterVersion: z.string().min(1),
+  bundleRootPath: z.string().min(1),
+  pageCount: z.number().int().nonnegative(),
+  fileCount: z.number().int().nonnegative(),
+  manifest: CfoWikiExportManifestSchema.nullable(),
+  files: z.array(CfoWikiExportFileSchema),
+  errorSummary: z.string().nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
 });
 
 export const CfoWikiPageDetailSchema = CfoWikiPageRecordSchema.extend({
@@ -306,6 +445,43 @@ export const CfoWikiCompileResultSchema = z.object({
   limitations: z.array(z.string().min(1)),
 });
 
+export const CfoWikiLintSummarySchema = z.object({
+  companyId: z.string().uuid(),
+  companyKey: z.string().min(1),
+  companyDisplayName: z.string().min(1),
+  latestLintRun: CfoWikiLintRunRecordSchema.nullable(),
+  findingCount: z.number().int().nonnegative(),
+  findingCountsByKind: CfoWikiLintFindingCountsSchema,
+  findings: z.array(CfoWikiLintFindingRecordSchema),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const CfoWikiExportListViewSchema = z.object({
+  companyId: z.string().uuid(),
+  companyKey: z.string().min(1),
+  companyDisplayName: z.string().min(1),
+  exportCount: z.number().int().nonnegative(),
+  exports: z.array(CfoWikiExportRunRecordSchema),
+  limitations: z.array(z.string().min(1)),
+});
+
+export const CfoWikiExportDetailViewSchema = z.object({
+  companyId: z.string().uuid(),
+  companyKey: z.string().min(1),
+  companyDisplayName: z.string().min(1),
+  exportRun: CfoWikiExportRunRecordSchema,
+  limitations: z.array(z.string().min(1)),
+});
+
+export const CfoWikiFiledPageListViewSchema = z.object({
+  companyId: z.string().uuid(),
+  companyKey: z.string().min(1),
+  companyDisplayName: z.string().min(1),
+  pageCount: z.number().int().nonnegative(),
+  pages: z.array(CfoWikiPageInventoryEntrySchema),
+  limitations: z.array(z.string().min(1)),
+});
+
 export function buildCfoWikiMarkdownPath(pageKey: CfoWikiPageKey) {
   return pageKey === "index" || pageKey === "log" ? `${pageKey}.md` : `${pageKey}.md`;
 }
@@ -315,6 +491,10 @@ export function buildCfoWikiSourceDigestPageKey(
   version: number,
 ): CfoWikiPageKey {
   return CfoWikiPageKeySchema.parse(`sources/${sourceId}/snapshots/${version}`);
+}
+
+export function buildCfoWikiFiledPageKey(slug: string): CfoWikiPageKey {
+  return CfoWikiPageKeySchema.parse(`filed/${slug}`);
 }
 
 export type CfoWikiPageKind = z.infer<typeof CfoWikiPageKindSchema>;
@@ -338,6 +518,13 @@ export type CfoWikiCompileRunStatus = z.infer<
 export type CfoWikiCompileTriggerKind = z.infer<
   typeof CfoWikiCompileTriggerKindSchema
 >;
+export type CfoWikiLintRunStatus = z.infer<typeof CfoWikiLintRunStatusSchema>;
+export type CfoWikiExportRunStatus = z.infer<
+  typeof CfoWikiExportRunStatusSchema
+>;
+export type CfoWikiLintFindingKind = z.infer<
+  typeof CfoWikiLintFindingKindSchema
+>;
 export type CfoWikiFreshnessState = z.infer<
   typeof CfoWikiFreshnessStateSchema
 >;
@@ -347,6 +534,9 @@ export type CfoWikiCompileRunStats = z.infer<
 >;
 export type CfoWikiFreshnessSummary = z.infer<
   typeof CfoWikiFreshnessSummarySchema
+>;
+export type CfoWikiFiledArtifactMetadata = z.infer<
+  typeof CfoWikiFiledArtifactMetadataSchema
 >;
 export type CfoWikiCompileRunRecord = z.infer<
   typeof CfoWikiCompileRunRecordSchema
@@ -375,8 +565,13 @@ export type CfoWikiPageKindCounts = z.infer<
   typeof CfoWikiPageKindCountsSchema
 >;
 export type CfoWikiCompileRequest = z.infer<typeof CfoWikiCompileRequestSchema>;
+export type CfoWikiLintRequest = z.infer<typeof CfoWikiLintRequestSchema>;
+export type CfoWikiExportRequest = z.infer<typeof CfoWikiExportRequestSchema>;
 export type CfoWikiBindSourceRequest = z.infer<
   typeof CfoWikiBindSourceRequestSchema
+>;
+export type CfoWikiCreateFiledPageRequest = z.infer<
+  typeof CfoWikiCreateFiledPageRequestSchema
 >;
 export type CfoWikiPageDetail = z.infer<typeof CfoWikiPageDetailSchema>;
 export type CfoWikiPageView = z.infer<typeof CfoWikiPageViewSchema>;
@@ -391,3 +586,30 @@ export type CfoWikiCompanySourceListView = z.infer<
   typeof CfoWikiCompanySourceListViewSchema
 >;
 export type CfoWikiCompileResult = z.infer<typeof CfoWikiCompileResultSchema>;
+export type CfoWikiLintRunRecord = z.infer<typeof CfoWikiLintRunRecordSchema>;
+export type CfoWikiLintFindingRecord = z.infer<
+  typeof CfoWikiLintFindingRecordSchema
+>;
+export type CfoWikiLintFindingCounts = z.infer<
+  typeof CfoWikiLintFindingCountsSchema
+>;
+export type CfoWikiLintSummary = z.infer<typeof CfoWikiLintSummarySchema>;
+export type CfoWikiExportFile = z.infer<typeof CfoWikiExportFileSchema>;
+export type CfoWikiExportManifestPage = z.infer<
+  typeof CfoWikiExportManifestPageSchema
+>;
+export type CfoWikiExportManifest = z.infer<
+  typeof CfoWikiExportManifestSchema
+>;
+export type CfoWikiExportRunRecord = z.infer<
+  typeof CfoWikiExportRunRecordSchema
+>;
+export type CfoWikiExportListView = z.infer<
+  typeof CfoWikiExportListViewSchema
+>;
+export type CfoWikiExportDetailView = z.infer<
+  typeof CfoWikiExportDetailViewSchema
+>;
+export type CfoWikiFiledPageListView = z.infer<
+  typeof CfoWikiFiledPageListViewSchema
+>;

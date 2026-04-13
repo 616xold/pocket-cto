@@ -2,6 +2,9 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import {
   cfoWikiDocumentExtracts,
   cfoWikiCompileRuns,
+  cfoWikiExportRuns,
+  cfoWikiLintFindings,
+  cfoWikiLintRuns,
   cfoWikiPages,
   cfoWikiPageLinks,
   cfoWikiPageRefs,
@@ -11,6 +14,9 @@ import {
 } from "@pocket-cto/db";
 import {
   type CfoWikiDocumentExtractRecord,
+  type CfoWikiExportRunRecord,
+  type CfoWikiLintFindingRecord,
+  type CfoWikiLintRunRecord,
   CfoWikiFreshnessSummarySchema,
   type CfoWikiCompileRunRecord,
   type CfoWikiPageLinkRecord,
@@ -26,12 +32,17 @@ import {
 import { CfoWikiCompileAlreadyRunningError } from "./errors";
 import type {
   CfoWikiRepository,
+  FinishCfoWikiExportRunInput,
   FinishCfoWikiCompileRunInput,
+  FinishCfoWikiLintRunInput,
   PersistCfoWikiDocumentExtractInput,
+  PersistCfoWikiLintFindingInput,
   PersistCfoWikiPageLinkInput,
   PersistCfoWikiPageRefInput,
   PersistCfoWikiPageInput,
+  StartCfoWikiExportRunInput,
   StartCfoWikiCompileRunInput,
+  StartCfoWikiLintRunInput,
   UpsertCfoWikiSourceBindingInput,
 } from "./repository";
 
@@ -138,6 +149,206 @@ export class DrizzleCfoWikiRepository implements CfoWikiRepository {
       .limit(1);
 
     return row ? mapCompileRunRow(row) : null;
+  }
+
+  async startLintRun(
+    input: StartCfoWikiLintRunInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(cfoWikiLintRuns)
+      .values({
+        companyId: input.companyId,
+        status: "running",
+        startedAt: new Date(input.startedAt),
+        completedAt: null,
+        triggeredBy: input.triggeredBy,
+        linterVersion: input.linterVersion,
+        stats: {},
+        errorSummary: null,
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("CFO Wiki lint run insert did not return a row");
+    }
+
+    return mapLintRunRow(row);
+  }
+
+  async finishLintRun(
+    input: FinishCfoWikiLintRunInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .update(cfoWikiLintRuns)
+      .set({
+        completedAt: new Date(input.completedAt),
+        errorSummary: input.errorSummary,
+        stats: input.stats,
+        status: input.status,
+        updatedAt: new Date(),
+      })
+      .where(eq(cfoWikiLintRuns.id, input.lintRunId))
+      .returning();
+
+    if (!row) {
+      throw new Error(`CFO Wiki lint run ${input.lintRunId} was not found`);
+    }
+
+    return mapLintRunRow(row);
+  }
+
+  async getLatestLintRunByCompanyId(
+    companyId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .select()
+      .from(cfoWikiLintRuns)
+      .where(eq(cfoWikiLintRuns.companyId, companyId))
+      .orderBy(desc(cfoWikiLintRuns.startedAt))
+      .limit(1);
+
+    return row ? mapLintRunRow(row) : null;
+  }
+
+  async listLintFindingsByRunId(
+    lintRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(cfoWikiLintFindings)
+      .where(eq(cfoWikiLintFindings.lintRunId, lintRunId))
+      .orderBy(asc(cfoWikiLintFindings.createdAt), asc(cfoWikiLintFindings.message));
+
+    return rows.map((row) => mapLintFindingRow(row));
+  }
+
+  async replaceLintFindings(
+    input: {
+      companyId: string;
+      lintRunId: string;
+      findings: PersistCfoWikiLintFindingInput[];
+    },
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    await executor
+      .delete(cfoWikiLintFindings)
+      .where(eq(cfoWikiLintFindings.lintRunId, input.lintRunId));
+
+    if (input.findings.length === 0) {
+      return [] satisfies CfoWikiLintFindingRecord[];
+    }
+
+    const rows = await executor
+      .insert(cfoWikiLintFindings)
+      .values(
+        input.findings.map((finding) => ({
+          companyId: input.companyId,
+          lintRunId: input.lintRunId,
+          pageId: finding.pageId,
+          pageKey: finding.pageKey,
+          pageTitle: finding.pageTitle,
+          findingKind: finding.findingKind,
+          message: finding.message,
+          details: finding.details,
+        })),
+      )
+      .returning();
+
+    return rows.map((row) => mapLintFindingRow(row));
+  }
+
+  async startExportRun(
+    input: StartCfoWikiExportRunInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(cfoWikiExportRuns)
+      .values({
+        companyId: input.companyId,
+        status: "running",
+        startedAt: new Date(input.startedAt),
+        completedAt: null,
+        triggeredBy: input.triggeredBy,
+        exporterVersion: input.exporterVersion,
+        bundleRootPath: input.bundleRootPath,
+        pageCount: 0,
+        fileCount: 0,
+        manifest: null,
+        files: [],
+        errorSummary: null,
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("CFO Wiki export run insert did not return a row");
+    }
+
+    return mapExportRunRow(row);
+  }
+
+  async finishExportRun(
+    input: FinishCfoWikiExportRunInput,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .update(cfoWikiExportRuns)
+      .set({
+        completedAt: new Date(input.completedAt),
+        status: input.status,
+        pageCount: input.pageCount,
+        fileCount: input.fileCount,
+        manifest: input.manifest,
+        files: input.files,
+        errorSummary: input.errorSummary,
+        updatedAt: new Date(),
+      })
+      .where(eq(cfoWikiExportRuns.id, input.exportRunId))
+      .returning();
+
+    if (!row) {
+      throw new Error(`CFO Wiki export run ${input.exportRunId} was not found`);
+    }
+
+    return mapExportRunRow(row);
+  }
+
+  async listExportRunsByCompanyId(
+    companyId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(cfoWikiExportRuns)
+      .where(eq(cfoWikiExportRuns.companyId, companyId))
+      .orderBy(desc(cfoWikiExportRuns.startedAt));
+
+    return rows.map((row) => mapExportRunRow(row));
+  }
+
+  async getExportRunById(
+    exportRunId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .select()
+      .from(cfoWikiExportRuns)
+      .where(eq(cfoWikiExportRuns.id, exportRunId))
+      .limit(1);
+
+    return row ? mapExportRunRow(row) : null;
   }
 
   async upsertSourceBinding(
@@ -317,31 +528,38 @@ export class DrizzleCfoWikiRepository implements CfoWikiRepository {
 
     await executor
       .delete(cfoWikiPages)
-      .where(eq(cfoWikiPages.companyId, input.companyId));
+      .where(
+        and(
+          eq(cfoWikiPages.companyId, input.companyId),
+          eq(cfoWikiPages.ownershipKind, "compiler_owned"),
+        ),
+      );
 
-    const pageRows = input.pages.length
-      ? await executor
-          .insert(cfoWikiPages)
-          .values(
-            input.pages.map((page) => ({
-              companyId: input.companyId,
-              compileRunId: input.compileRunId,
-              pageKey: page.pageKey,
-              pageKind: page.pageKind,
-              ownershipKind: page.ownershipKind,
-              temporalStatus: page.temporalStatus,
-              title: page.title,
-              summary: page.summary,
-              markdownBody: page.markdownBody,
-              freshnessSummary: page.freshnessSummary,
-              limitations: page.limitations,
-              lastCompiledAt: new Date(page.lastCompiledAt),
-            })),
-          )
-          .returning()
-      : [];
-    const pages = pageRows.map((row) => mapPageRow(row));
-    const pageIdByKey = new Map(pages.map((page) => [page.pageKey, page.id] as const));
+    if (input.pages.length > 0) {
+      await executor
+        .insert(cfoWikiPages)
+        .values(
+          input.pages.map((page) => ({
+            companyId: input.companyId,
+            compileRunId: input.compileRunId,
+            pageKey: page.pageKey,
+            pageKind: page.pageKind,
+            ownershipKind: page.ownershipKind,
+            temporalStatus: page.temporalStatus,
+            title: page.title,
+            summary: page.summary,
+            markdownBody: page.markdownBody,
+            freshnessSummary: page.freshnessSummary,
+            limitations: page.limitations,
+            lastCompiledAt: new Date(page.lastCompiledAt),
+            filedMetadata: page.filedMetadata ?? null,
+          })),
+        );
+    }
+    const allPages = await this.listPagesByCompanyId(input.companyId, session);
+    const pageIdByKey = new Map(
+      allPages.map((page) => [page.pageKey, page.id] as const),
+    );
 
     if (input.links.length > 0) {
       await executor.insert(cfoWikiPageLinks).values(
@@ -373,7 +591,7 @@ export class DrizzleCfoWikiRepository implements CfoWikiRepository {
       );
     }
 
-    return pages.sort((left, right) => left.pageKey.localeCompare(right.pageKey));
+    return allPages.sort((left, right) => left.pageKey.localeCompare(right.pageKey));
   }
 
   async getPageByCompanyIdAndPageKey(
@@ -394,6 +612,40 @@ export class DrizzleCfoWikiRepository implements CfoWikiRepository {
       .limit(1);
 
     return row ? mapPageRow(row) : null;
+  }
+
+  async createFiledPage(
+    input: {
+      companyId: string;
+      page: PersistCfoWikiPageInput;
+    },
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [row] = await executor
+      .insert(cfoWikiPages)
+      .values({
+        companyId: input.companyId,
+        compileRunId: null,
+        pageKey: input.page.pageKey,
+        pageKind: input.page.pageKind,
+        ownershipKind: input.page.ownershipKind,
+        temporalStatus: input.page.temporalStatus,
+        title: input.page.title,
+        summary: input.page.summary,
+        markdownBody: input.page.markdownBody,
+        freshnessSummary: input.page.freshnessSummary,
+        limitations: input.page.limitations,
+        lastCompiledAt: new Date(input.page.lastCompiledAt),
+        filedMetadata: input.page.filedMetadata ?? null,
+      })
+      .returning();
+
+    if (!row) {
+      throw new Error("CFO Wiki filed page insert did not return a row");
+    }
+
+    return mapPageRow(row);
   }
 
   async listPagesByCompanyId(companyId: string, session?: PersistenceSession) {
@@ -464,6 +716,46 @@ function mapCompileRunRow(
   };
 }
 
+function mapLintRunRow(
+  row: typeof cfoWikiLintRuns.$inferSelect,
+): CfoWikiLintRunRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    status: row.status,
+    startedAt: row.startedAt.toISOString(),
+    completedAt: row.completedAt?.toISOString() ?? null,
+    triggeredBy: row.triggeredBy,
+    linterVersion: row.linterVersion,
+    stats: row.stats,
+    errorSummary: row.errorSummary,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function mapExportRunRow(
+  row: typeof cfoWikiExportRuns.$inferSelect,
+): CfoWikiExportRunRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    status: row.status,
+    startedAt: row.startedAt.toISOString(),
+    completedAt: row.completedAt?.toISOString() ?? null,
+    triggeredBy: row.triggeredBy,
+    exporterVersion: row.exporterVersion,
+    bundleRootPath: row.bundleRootPath,
+    pageCount: row.pageCount,
+    fileCount: row.fileCount,
+    manifest: row.manifest ?? null,
+    files: row.files,
+    errorSummary: row.errorSummary,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
 function mapPageRow(row: typeof cfoWikiPages.$inferSelect): CfoWikiPageRecord {
   return {
     id: row.id,
@@ -479,6 +771,7 @@ function mapPageRow(row: typeof cfoWikiPages.$inferSelect): CfoWikiPageRecord {
     freshnessSummary: CfoWikiFreshnessSummarySchema.parse(row.freshnessSummary),
     limitations: row.limitations,
     lastCompiledAt: row.lastCompiledAt.toISOString(),
+    filedMetadata: row.filedMetadata ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -536,6 +829,23 @@ function mapPageLinkRow(
     toPageId: row.toPageId,
     linkKind: row.linkKind,
     label: row.label,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function mapLintFindingRow(
+  row: typeof cfoWikiLintFindings.$inferSelect,
+): CfoWikiLintFindingRecord {
+  return {
+    id: row.id,
+    companyId: row.companyId,
+    lintRunId: row.lintRunId,
+    pageId: row.pageId,
+    pageKey: row.pageKey,
+    pageTitle: row.pageTitle,
+    findingKind: row.findingKind,
+    message: row.message,
+    details: row.details,
     createdAt: row.createdAt.toISOString(),
   };
 }

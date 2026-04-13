@@ -67,7 +67,7 @@ export type WikiCompileState = {
 export type WikiRegistryEntry = {
   documentSnapshot: WikiDocumentSnapshotState | null;
   pageKey: CfoWikiPageKey;
-  pageKind: CfoWikiPageKind;
+  pageKind: Exclude<CfoWikiPageKind, "filed_artifact">;
   period: FinanceReportingPeriodRecord | null;
   temporalStatus: CfoWikiPageTemporalStatus;
   title: string;

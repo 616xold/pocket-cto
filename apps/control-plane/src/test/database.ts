@@ -10,6 +10,9 @@ import {
 } from "@pocket-cto/db";
 import type {
   cfoWikiCompileRuns,
+  cfoWikiExportRuns,
+  cfoWikiLintFindings,
+  cfoWikiLintRuns,
   cfoWikiPageLinks,
   cfoWikiPageRefs,
   cfoWikiPages,
@@ -56,6 +59,9 @@ export async function resetTestDatabase() {
 
   await db.execute(sql`
     TRUNCATE TABLE
+      cfo_wiki_export_runs,
+      cfo_wiki_lint_findings,
+      cfo_wiki_lint_runs,
       cfo_wiki_page_refs,
       cfo_wiki_page_links,
       cfo_wiki_pages,
@@ -165,6 +171,9 @@ async function selectCount(
     | typeof financeTrialBalanceLines
     | typeof financeTwinLineage
     | typeof cfoWikiCompileRuns
+    | typeof cfoWikiLintRuns
+    | typeof cfoWikiLintFindings
+    | typeof cfoWikiExportRuns
     | typeof cfoWikiPages
     | typeof cfoWikiPageLinks
     | typeof cfoWikiPageRefs,

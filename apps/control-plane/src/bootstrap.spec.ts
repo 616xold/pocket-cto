@@ -263,11 +263,23 @@ function createAppContainer(
       async compileCompanyWiki() {
         throw new Error("compileCompanyWiki should not be called in this test");
       },
+      async createFiledPage() {
+        throw new Error("createFiledPage should not be called in this test");
+      },
+      async exportCompanyWiki() {
+        throw new Error("exportCompanyWiki should not be called in this test");
+      },
+      async getCompanyExport() {
+        throw new Error("getCompanyExport should not be called in this test");
+      },
       async getCompanySummary() {
         throw new Error("getCompanySummary should not be called in this test");
       },
       async getIndexPage() {
         throw new Error("getIndexPage should not be called in this test");
+      },
+      async getLatestLint() {
+        throw new Error("getLatestLint should not be called in this test");
       },
       async getLogPage() {
         throw new Error("getLogPage should not be called in this test");
@@ -275,8 +287,17 @@ function createAppContainer(
       async getPage() {
         throw new Error("getPage should not be called in this test");
       },
+      async listCompanyExports() {
+        throw new Error("listCompanyExports should not be called in this test");
+      },
       async listCompanySources() {
         throw new Error("listCompanySources should not be called in this test");
+      },
+      async listFiledPages() {
+        throw new Error("listFiledPages should not be called in this test");
+      },
+      async runCompanyLint() {
+        throw new Error("runCompanyLint should not be called in this test");
       },
     } as AppContainer["cfoWikiService"],
     financeTwinService: {

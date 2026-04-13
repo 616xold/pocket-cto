@@ -4,6 +4,13 @@ import {
   CfoWikiCompanySummarySchema,
   CfoWikiCompileRequestSchema,
   CfoWikiCompileResultSchema,
+  CfoWikiCreateFiledPageRequestSchema,
+  CfoWikiExportDetailViewSchema,
+  CfoWikiExportListViewSchema,
+  CfoWikiExportRequestSchema,
+  CfoWikiFiledPageListViewSchema,
+  CfoWikiLintRequestSchema,
+  CfoWikiLintSummarySchema,
   CfoWikiPageKeySchema,
   CfoWikiPageViewSchema,
   CfoWikiSourceBindingViewSchema,
@@ -16,7 +23,10 @@ export const cfoWikiCompanyKeyParamsSchema = z.object({
 });
 
 export const cfoWikiCompileBodySchema = CfoWikiCompileRequestSchema;
+export const cfoWikiLintBodySchema = CfoWikiLintRequestSchema;
+export const cfoWikiExportBodySchema = CfoWikiExportRequestSchema;
 export const cfoWikiBindSourceBodySchema = CfoWikiBindSourceRequestSchema;
+export const cfoWikiCreateFiledPageBodySchema = CfoWikiCreateFiledPageRequestSchema;
 
 export const cfoWikiSourceParamsSchema = cfoWikiCompanyKeyParamsSchema.extend({
   sourceId: z.string().uuid(),
@@ -24,6 +34,10 @@ export const cfoWikiSourceParamsSchema = cfoWikiCompanyKeyParamsSchema.extend({
 
 export const cfoWikiWildcardPageParamsSchema = cfoWikiCompanyKeyParamsSchema.extend({
   "*": z.string().min(1),
+});
+
+export const cfoWikiExportRunParamsSchema = cfoWikiCompanyKeyParamsSchema.extend({
+  exportRunId: z.string().uuid(),
 });
 
 export function parseWildcardPageKey(rawPageKey: string) {
@@ -42,6 +56,10 @@ export {
   CfoWikiCompanySourceListViewSchema,
   CfoWikiCompanySummarySchema,
   CfoWikiCompileResultSchema,
+  CfoWikiExportDetailViewSchema,
+  CfoWikiExportListViewSchema,
+  CfoWikiFiledPageListViewSchema,
+  CfoWikiLintSummarySchema,
   CfoWikiPageViewSchema,
   CfoWikiSourceBindingViewSchema,
 };

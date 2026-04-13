@@ -20,3 +20,12 @@ export class CfoWikiSourceBindingUnsupportedError extends Error {
     this.name = "CfoWikiSourceBindingUnsupportedError";
   }
 }
+
+export class CfoWikiExportRunNotFoundError extends Error {
+  constructor(companyKey: string, exportRunId: string) {
+    super(
+      `CFO Wiki export run ${exportRunId} was not found for company ${companyKey}`,
+    );
+    this.name = "CfoWikiExportRunNotFoundError";
+  }
+}

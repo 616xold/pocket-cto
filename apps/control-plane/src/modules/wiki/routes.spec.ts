@@ -5,6 +5,10 @@ import type {
   CfoWikiCompanySummary,
   CfoWikiCompileResult,
   CfoWikiCompileRunRecord,
+  CfoWikiExportDetailView,
+  CfoWikiExportListView,
+  CfoWikiFiledPageListView,
+  CfoWikiLintSummary,
   CfoWikiSourceBindingView,
   CfoWikiPageView,
 } from "@pocket-cto/domain";
@@ -39,6 +43,52 @@ describe("CFO Wiki routes", () => {
       companyKey: "acme",
       pageCount: 4,
       compileRun: {
+        status: "succeeded",
+      },
+    });
+  });
+
+  it("POST /cfo-wiki/companies/:companyKey/lint defaults the lint request and returns 201", async () => {
+    const runCompanyLint = vi.fn(async () => buildLintSummary());
+    const app = await createTestApp(apps, {
+      runCompanyLint,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/cfo-wiki/companies/acme/lint",
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(runCompanyLint).toHaveBeenCalledWith("acme", {
+      triggeredBy: "operator",
+    });
+    expect(response.json()).toMatchObject({
+      companyKey: "acme",
+      findingCount: 0,
+    });
+  });
+
+  it("POST /cfo-wiki/companies/:companyKey/export defaults the export request and returns 201", async () => {
+    const exportCompanyWiki = vi.fn(async () => buildExportDetailView());
+    const app = await createTestApp(apps, {
+      exportCompanyWiki,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/cfo-wiki/companies/acme/export",
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(exportCompanyWiki).toHaveBeenCalledWith("acme", {
+      triggeredBy: "operator",
+    });
+    expect(response.json()).toMatchObject({
+      companyKey: "acme",
+      exportRun: {
         status: "succeeded",
       },
     });
@@ -114,6 +164,31 @@ describe("CFO Wiki routes", () => {
     });
   });
 
+  it("POST /cfo-wiki/companies/:companyKey/filed-pages validates the filing body and returns 201", async () => {
+    const createFiledPage = vi.fn(async () => buildPageView());
+    const app = await createTestApp(apps, {
+      createFiledPage,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/cfo-wiki/companies/acme/filed-pages",
+      payload: {
+        title: "Board deck notes",
+        markdownBody: "Collections remain tight.",
+        filedBy: "finance-operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(createFiledPage).toHaveBeenCalledWith("acme", {
+      title: "Board deck notes",
+      markdownBody: "Collections remain tight.",
+      filedBy: "finance-operator",
+      provenanceSummary: "Manually filed markdown artifact.",
+    });
+  });
+
   it("returns 400 when the wildcard page key is not a valid canonical F3A key", async () => {
     const getPage = vi.fn(async () => buildPageView());
     const app = await createTestApp(apps, {
@@ -159,11 +234,18 @@ function createWikiServiceMock() {
   return {
     bindCompanySource: vi.fn(async () => buildSourceBindingView()),
     compileCompanyWiki: vi.fn(async () => buildCompileResult()),
+    createFiledPage: vi.fn(async () => buildPageView()),
+    exportCompanyWiki: vi.fn(async () => buildExportDetailView()),
     getCompanySummary: vi.fn(async () => buildCompanySummary()),
+    getCompanyExport: vi.fn(async () => buildExportDetailView()),
     getIndexPage: vi.fn(async () => buildPageView()),
+    getLatestLint: vi.fn(async () => buildLintSummary()),
     getLogPage: vi.fn(async () => buildPageView()),
     getPage: vi.fn(async () => buildPageView()),
+    listCompanyExports: vi.fn(async () => buildExportListView()),
     listCompanySources: vi.fn(async () => buildCompanySourcesView()),
+    listFiledPages: vi.fn(async () => buildFiledPageListView()),
+    runCompanyLint: vi.fn(async () => buildLintSummary()),
   } satisfies CfoWikiServicePort;
 }
 
@@ -200,6 +282,7 @@ function buildCompanySummary(): CfoWikiCompanySummary {
       period_index: 0,
       source_coverage: 1,
       source_digest: 0,
+      filed_artifact: 0,
     },
     pages: [],
     freshnessSummary: {
@@ -226,6 +309,7 @@ function buildCompileResult(): CfoWikiCompileResult {
       period_index: 0,
       source_coverage: 1,
       source_digest: 0,
+      filed_artifact: 0,
     },
     freshnessSummary: {
       state: "missing",
@@ -257,6 +341,7 @@ function buildPageView(): CfoWikiPageView {
       },
       limitations: [],
       lastCompiledAt: "2026-04-13T12:00:01.000Z",
+      filedMetadata: null,
       createdAt: "2026-04-13T12:00:01.000Z",
       updatedAt: "2026-04-13T12:00:01.000Z",
       markdownPath: "periods/2026-03/index.md",
@@ -314,6 +399,86 @@ function buildCompanySourcesView(): CfoWikiCompanySourceListView {
     companyDisplayName: "Acme Holdings",
     sourceCount: 1,
     sources: [buildSourceBindingView().source],
+    limitations: [],
+  };
+}
+
+function buildLintSummary(): CfoWikiLintSummary {
+  return {
+    companyId: "22222222-2222-4222-8222-222222222222",
+    companyKey: "acme",
+    companyDisplayName: "Acme Holdings",
+    latestLintRun: null,
+    findingCount: 0,
+    findingCountsByKind: {
+      missing_refs: 0,
+      uncited_numeric_claim: 0,
+      orphan_page: 0,
+      stale_page: 0,
+      broken_link: 0,
+      unsupported_document_gap: 0,
+      duplicate_title: 0,
+    },
+    findings: [],
+    limitations: [],
+  };
+}
+
+function buildExportDetailView(): CfoWikiExportDetailView {
+  return {
+    companyId: "22222222-2222-4222-8222-222222222222",
+    companyKey: "acme",
+    companyDisplayName: "Acme Holdings",
+    exportRun: {
+      id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      companyId: "22222222-2222-4222-8222-222222222222",
+      status: "succeeded",
+      startedAt: "2026-04-13T12:00:00.000Z",
+      completedAt: "2026-04-13T12:00:01.000Z",
+      triggeredBy: "operator",
+      exporterVersion: "test",
+      bundleRootPath: "acme-cfo-wiki",
+      pageCount: 1,
+      fileCount: 2,
+      manifest: {
+        bundleRootPath: "acme-cfo-wiki",
+        generatedAt: "2026-04-13T12:00:01.000Z",
+        companyKey: "acme",
+        companyDisplayName: "Acme Holdings",
+        indexPath: "index.md",
+        logPath: "log.md",
+        pageCount: 1,
+        fileCount: 2,
+        limitations: [],
+        pages: [],
+      },
+      files: [],
+      errorSummary: null,
+      createdAt: "2026-04-13T12:00:00.000Z",
+      updatedAt: "2026-04-13T12:00:01.000Z",
+    },
+    limitations: [],
+  };
+}
+
+function buildExportListView(): CfoWikiExportListView {
+  return {
+    companyId: "22222222-2222-4222-8222-222222222222",
+    companyKey: "acme",
+    companyDisplayName: "Acme Holdings",
+    exportCount: 1,
+    exports: [buildExportDetailView().exportRun],
+    limitations: [],
+  };
+}
+
+function buildFiledPageListView(): CfoWikiFiledPageListView {
+  return {
+    companyId: "22222222-2222-4222-8222-222222222222",
+    companyKey: "acme",
+    companyDisplayName: "Acme Holdings",
+    pageCount: 0,
+    pages: [],
     limitations: [],
   };
 }

@@ -183,6 +183,67 @@ describe("CfoWikiService", () => {
     expect(indexPage.latestCompileRun?.status).toBe("failed");
     expect(indexPage.limitations.some((limitation) => limitation.includes("latest CFO Wiki compile failed"))).toBe(true);
   });
+
+  it("persists deterministic lint findings and export bundle metadata from stored wiki state", async () => {
+    const context = createWikiTestContext();
+
+    await seedTrialBalanceSlice(context, {
+      companyKey: "acme",
+      companyName: "Acme Holdings",
+      createdBy: "finance-operator",
+    });
+    await context.wikiService.compileCompanyWiki("acme", {
+      triggeredBy: "operator",
+    });
+
+    const linted = await context.wikiService.runCompanyLint("acme", {
+      triggeredBy: "finance-operator",
+    });
+    const exported = await context.wikiService.exportCompanyWiki("acme", {
+      triggeredBy: "finance-operator",
+    });
+
+    expect(linted.latestLintRun?.status).toBe("succeeded");
+    expect(linted.findingCount).toBeGreaterThanOrEqual(0);
+    expect(exported.exportRun.status).toBe("succeeded");
+    expect(exported.exportRun.fileCount).toBeGreaterThan(0);
+    expect(exported.exportRun.manifest?.bundleRootPath).toBe("acme-cfo-wiki");
+  });
+
+  it("preserves filed artifact pages across later compiler-owned replacement", async () => {
+    const context = createWikiTestContext();
+
+    await seedTrialBalanceSlice(context, {
+      companyKey: "acme",
+      companyName: "Acme Holdings",
+      createdBy: "finance-operator",
+    });
+    await context.wikiService.compileCompanyWiki("acme", {
+      triggeredBy: "operator",
+    });
+    await context.wikiService.createFiledPage("acme", {
+      title: "Board deck notes",
+      markdownBody: "Collections remain tight.",
+      filedBy: "finance-operator",
+      provenanceSummary: "Filed after board review.",
+    });
+
+    await context.wikiService.compileCompanyWiki("acme", {
+      triggeredBy: "operator",
+    });
+
+    const filedPage = await context.wikiService.getPage(
+      "acme",
+      "filed/board-deck-notes",
+    );
+    const summary = await context.wikiService.getCompanySummary("acme");
+
+    expect(filedPage.page.ownershipKind).toBe("filed_artifact");
+    expect(filedPage.page.filedMetadata?.filedBy).toBe("finance-operator");
+    expect(
+      summary.pages.some((page) => page.pageKey === "filed/board-deck-notes"),
+    ).toBe(true);
+  });
 });
 
 function createWikiTestContext() {

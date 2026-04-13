@@ -122,14 +122,14 @@ The compiler must not:
 Compiled pages are **compiler-owned**.
 They are derived artifacts and should be reproducible from stored state.
 
-Later, Pocket CFO may also support separate page kinds such as:
+Pocket CFO now also supports a separate filed artifact page kind for durable operator-filed markdown.
+Later slices may still add:
 
-- filed operator notes
 - filed mission outputs
 - durable memo or report pages
 
-Those future page kinds are not the same thing as compiler-owned pages.
-They must keep explicit provenance so humans can tell whether a page is compiled state or a later filed artifact.
+Those filed page kinds are not the same thing as compiler-owned pages.
+They keep explicit provenance so humans can tell whether a page is compiled state or a later filed artifact.
 
 The initial compiler-owned page kinds for F3A are:
 
@@ -139,9 +139,13 @@ The initial compiler-owned page kinds for F3A are:
 - `period_index`
 - `source_coverage`
 
-The first shipped F3B page kind adds:
+The current shipped F3B page kind adds:
 
 - `source_digest`
+
+The current shipped F3C filed page kind adds:
+
+- `filed_artifact`
 
 The first required deterministic pages are:
 
@@ -151,12 +155,11 @@ The first required deterministic pages are:
 - `periods/<periodKey>/index.md`
 - `sources/coverage.md`
 
-Later F3B page kinds can add:
+Later wiki slices may still add:
 
 - policy pages
 - metric pages
 - concept pages
-- source digest pages
 
 ## Evidence and ref classes
 
@@ -258,6 +261,7 @@ Current shipped state:
 - it does not parse broad document bodies, call runtime-codex, or add vector search
 - the first narrow F3B slice now adds explicit company-scoped document bindings by `sourceId`, persisted deterministic markdown or plain-text extracts from stored raw bytes, compiler-owned source digest pages, and route-backed backlinks
 - unsupported PDFs, scans, unreadable files, or snapshots without stored raw source bytes remain visible as unsupported coverage instead of fake digests
+- F3C now adds persisted lint runs and findings over stored wiki state, deterministic markdown-first export runs with manifest-backed bundle contents, and an explicit filed artifact ownership seam that survives later compiler-owned replacement
 
 ## Ingest flow
 
@@ -284,16 +288,15 @@ A trustworthy query flow should look like this:
 
 ## Lint flow
 
-A wiki lint pass should look for:
+The current shipped deterministic F3C lint pass looks for:
 
 - missing evidence refs
 - uncited numeric claims
 - stale pages
-- duplicate pages
-- broken backlinks
-- missing definitions for important concepts
-- inconsistent figures across related pages
-- mission outputs that should have been filed back but were not
+- orphan pages
+- broken links
+- unsupported document gaps
+- duplicate visible titles
 
 ## F3A scope
 
@@ -333,21 +336,19 @@ The shipped F3A routes are intentionally narrow:
 
 ## Later F3 support
 
-F3B is where Pocket CFO should add document-aware page compilers.
-That later slice can handle:
+F3A, the first narrow F3B document-page slice, and the F3C lint or export or filed-artifact slice are now shipped.
+Later F3 slices can still add:
 
-- markdown or text documents
-- extractable PDFs
+- extractable PDF deep-read support when it is deterministic enough to stay truthful
 - policy pages
 - metric pages
 - concept pages
-- source digest pages
-- constrained synthesis inside deterministic templates
-- explicit backlinks and related-page graph
+- constrained synthesis inside deterministic templates for those page families
+- broader related-page graph behavior once those page families exist
 
 Unsupported scans or image-only documents should stay visible as gaps until a later capability can handle them truthfully.
 
-Long-document deep read for PDF-heavy finance packets should be planned explicitly as later F3 work, after the F3A page registry exists.
+Long-document deep read for PDF-heavy finance packets should be planned explicitly as a later F3 slice, after the shipped page registry, lint, export, and filed-artifact seams.
 It is important, but it is not a day-one dependency for starting the CFO Wiki.
 
 ## Non-negotiable rules

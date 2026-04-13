@@ -2767,10 +2767,22 @@ async function createHarness(options?: {
         async compileCompanyWiki() {
           throw new Error("Not implemented in orchestrator harness");
         },
+        async createFiledPage() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async exportCompanyWiki() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getCompanyExport() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
         async getCompanySummary() {
           throw new Error("Not implemented in orchestrator harness");
         },
         async getIndexPage() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getLatestLint() {
           throw new Error("Not implemented in orchestrator harness");
         },
         async getLogPage() {
@@ -2779,7 +2791,16 @@ async function createHarness(options?: {
         async getPage() {
           throw new Error("Not implemented in orchestrator harness");
         },
+        async listCompanyExports() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
         async listCompanySources() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async listFiledPages() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async runCompanyLint() {
           throw new Error("Not implemented in orchestrator harness");
         },
       } as AppContainer["cfoWikiService"],
