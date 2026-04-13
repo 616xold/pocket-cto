@@ -144,7 +144,7 @@ Use them deliberately:
 - `START_HERE.md`
 - `PLANS.md`
 - `plans/ROADMAP.md`
-- current active `plans/FP-*.md`
+- the unfinished `plans/FP-*.md` file if one exists; otherwise the latest closeout or handoff `plans/FP-*.md` record plus a new next-phase plan before code changes
 - `docs/ops/source-ingest-and-cfo-wiki.md`
 - `docs/ops/local-dev.md`
 - `docs/ops/codex-app-server.md`

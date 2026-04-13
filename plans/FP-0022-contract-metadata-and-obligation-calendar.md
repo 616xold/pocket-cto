@@ -15,7 +15,7 @@ This slice stays intentionally narrow and additive. It does not add clause parsi
 - [x] 2026-04-12T20:59:16Z Create the active F2N Finance Plan in `plans/FP-0022-contract-metadata-and-obligation-calendar.md` before code changes.
 - [x] 2026-04-12T22:10:55Z Implement additive contract-metadata contracts, schema, extractor dispatch, persistence, read models, targeted tests, packaged smoke coverage, and root-doc truthfulness fixes.
 - [x] 2026-04-12T22:10:55Z Run the required validation ladder in the requested order, fix only in-scope failures, and confirm every required command is green before commit, push, or PR work.
-- [ ] 2026-04-12T20:59:16Z Create the one requested local commit, push `codex/f2n-contract-metadata-and-obligation-calendar-local-v1`, verify the remote head, and create or report the PR into `main`.
+- [x] 2026-04-12T20:59:16Z Create the one requested local commit, push `codex/f2n-contract-metadata-and-obligation-calendar-local-v1`, verify the remote head, and create or report the PR into `main`.
 
 ## Surprises & Discoveries
 
@@ -335,4 +335,4 @@ Validation completed successfully with the full requested ladder, including:
 - `pnpm test`
 - `pnpm ci:repro:current`
 
-Remaining work at this stopping point is operational only: create the single requested commit, push the exact branch, verify the remote head, and create or report the PR into `main`.
+Remaining work inside this plan is complete; the requested publication flow is already reflected in merged repo history.

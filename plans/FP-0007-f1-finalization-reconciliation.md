@@ -16,7 +16,7 @@ It does not add Finance Twin work, CFO Wiki work, reports, monitoring, or broade
 - [x] 2026-04-09T17:50:40Z Reconcile the missing F1C1 smoke-alignment files onto this branch without duplicating the already-merged F1D UI slice.
 - [x] 2026-04-09T17:50:40Z Apply only the smallest remaining F1 truthfulness polish needed so local operator guidance stays source-ingest-first and does not read as F0-only or engineering-first.
 - [x] 2026-04-09T17:50:40Z Run the requested validation ladder and confirm a fully green result through targeted web tests, the focused smoke-helper spec, both packaged source smokes, the twin guard specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
-- [ ] 2026-04-09T17:50:40Z Create exactly one final reconciliation commit, push `codex/f1-finalization-reconciliation-local-v1`, and create or report the PR into `main`.
+- [x] 2026-04-09T17:50:40Z Create exactly one final reconciliation commit, push `codex/f1-finalization-reconciliation-local-v1`, and create or report the PR into `main`.
 
 ## Surprises & Discoveries
 
@@ -189,7 +189,7 @@ this slice is intended to make the F1 repo state a stable starting point for lat
 
 ## Outcomes & Retrospective
 
-This slice is in progress and the implementation-plus-validation work is complete.
+This slice shipped as the final F1 reconciliation pass.
 
 What now exists on this branch:
 `origin/main` already contained the full F1D operator source inventory UI, so this reconciliation did not duplicate it.
@@ -207,5 +207,4 @@ Validation results:
 - `pnpm test` passed.
 - `pnpm ci:repro:current` passed and reported `CI reproduction succeeded`.
 
-Remaining work:
-create the single requested final commit, push the existing reconciliation branch, and create or report the PR into `main`.
+Remaining work inside this plan is complete; the requested publication flow is already reflected in merged repo history.

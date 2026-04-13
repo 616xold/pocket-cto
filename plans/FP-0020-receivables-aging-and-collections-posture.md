@@ -17,7 +17,7 @@ This slice stays intentionally narrow and additive. It does not add AP aging, in
 - [x] 2026-04-12T20:19:00Z Generate and apply the additive receivables-aging DB migration for both the local development database and the derived test database before DB-backed specs.
 - [x] 2026-04-12T20:19:00Z Prove the new extractor, repository, service, and shared domain or schema seams with focused green tests before broader regression.
 - [x] 2026-04-12T20:29:10Z Run the required validation ladder in the requested order, fix only in-scope failures, and confirm every required command is green, including `pnpm ci:repro:current`.
-- [ ] 2026-04-12T20:29:10Z Create the one requested local commit, push `codex/f2l-receivables-aging-and-collections-posture-local-v1`, verify the remote head, and create or report the PR into `main`.
+- [x] 2026-04-12T20:29:10Z Create the one requested local commit, push `codex/f2l-receivables-aging-and-collections-posture-local-v1`, verify the remote head, and create or report the PR into `main`.
 
 ## Surprises & Discoveries
 
@@ -329,4 +329,4 @@ The main mid-slice surprise was operational rather than architectural: the deriv
 
 The full requested validation ladder is now green: targeted finance-twin specs, domain and DB specs, existing F2A through F2K smokes, the new receivables-aging smoke, engineering-twin regression specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 
-Remaining work is the requested git publication sequence only: one clean commit, push the existing branch, verify the remote head, and create or report the PR into `main`.
+Remaining work inside this plan is complete; the requested publication flow is already reflected in merged repo history.

@@ -15,7 +15,7 @@ This slice stays intentionally narrow and additive. It does not infer spend from
 - [x] 2026-04-12T22:56:54Z Create the active F2O Finance Plan in `plans/FP-0023-card-expense-and-spend-posture.md` before code changes.
 - [x] 2026-04-12T23:13:54Z Implement additive domain contracts, DB schema, extractor dispatch, persisted spend-row sync, spend-item inventory, spend-posture assembly, focused tests, packaged smoke coverage, and root-doc truthfulness fixes.
 - [x] 2026-04-12T23:20:48Z Run the required validation ladder in the requested order, fix only in-scope failures, and confirm every required command is green before commit, push, or PR work.
-- [ ] 2026-04-12T22:56:54Z Create the one requested local commit, push `codex/f2o-card-expense-and-spend-posture-local-v1`, verify the remote head, and create or report the PR into `main`.
+- [x] 2026-04-12T22:56:54Z Create the one requested local commit, push `codex/f2o-card-expense-and-spend-posture-local-v1`, verify the remote head, and create or report the PR into `main`.
 
 ## Surprises & Discoveries
 
@@ -296,5 +296,10 @@ No new external connector APIs, env vars, or GitHub-specific runtime seams shoul
 
 ## Outcomes & Retrospective
 
-Pending implementation.
-Update this section with what shipped, what changed from the original plan, validation status, and whether broad F2 should stop here or continue with one more tiny slice.
+Implemented F2O as one additive finance source family: deterministic `card_expense_csv` extraction from stored raw bytes, persisted `finance_spend_rows` state, backend-first `/spend-items` and `/spend-posture` reads, one packaged local smoke, and truthful root-doc updates for merged F2N baseline and active F2O guidance.
+
+The resulting spend posture stays intentionally conservative. It keeps amounts, dates, currencies, and weak status helpers explicit, preserves mixed or missing dates as diagnostics instead of flattening them into one fake company-wide spend date, and does not infer reimbursement state, approval state, policy scores, fraud posture, accrual logic, or forecasts.
+
+Validation completed successfully with the requested ladder, including targeted control-plane finance-twin specs, domain and DB specs, all earlier finance smokes plus `pnpm smoke:finance-twin-card-expense:local`, unchanged engineering-twin sync specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+
+Remaining work inside this plan is complete; the requested publication flow is already reflected in merged repo history.

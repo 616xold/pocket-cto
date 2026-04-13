@@ -13,7 +13,7 @@ Treat these as the active product and implementation guidance, in this order:
 4. `PLANS.md`
 5. `WORKFLOW.md`
 6. `plans/ROADMAP.md`
-7. the current active `plans/FP-*.md`
+7. the unfinished `plans/FP-*.md` file if one exists; otherwise the latest closeout or handoff `plans/FP-*.md` record and the next-phase plan you create before code changes
 8. `docs/ops/source-ingest-and-cfo-wiki.md`
 9. `docs/ops/local-dev.md`
 10. `docs/ops/codex-app-server.md`

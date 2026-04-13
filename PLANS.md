@@ -27,6 +27,8 @@ Existing `EP-*` files are Pocket CTO history and should be archived or treated a
 10. Every Finance Plan must describe evidence of success, not just code changes.
 11. Every Finance Plan must call out provenance, freshness, and limitation implications when relevant.
 12. Every Finance Plan must say whether GitHub connector work is in scope or explicitly out of scope.
+13. If no unfinished Finance Plan exists for the current repo phase, create the next-phase `plans/FP-*.md` plan before changing code.
+14. Once a plan is clearly merged or shipped, update stale final publication checkboxes and outcome notes instead of leaving the plan looking unfinished.
 
 ## Required sections
 
