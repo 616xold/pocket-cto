@@ -83,7 +83,7 @@ Today, steps 1 through 4 exist in a narrow form:
 - F2M shipped deterministic payables-aging ingest plus backend-first payables-aging and payables-posture reads without fake bill detail, expected payment timing, reserve logic, or DPO
 - F2N shipped deterministic contract-metadata ingest plus backend-first contract inventory and obligation-calendar reads without clause parsing, legal interpretation, payment forecasting, or covenant logic
 - F2O shipped deterministic card-expense ingest plus backend-first spend-item inventory and spend-posture reads without fake policy scores, reimbursement inference, accrual logic, or payment forecasting
-- broad F2 Finance Twin breadth is now shipped through F2O; the remaining closeout work is truthfulness polish before the next major phase begins
+- broad F2 Finance Twin breadth is now shipped through F2O, the final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`, and the next new implementation phase is F3 CFO Wiki compiler work
 - the packaged `pnpm smoke:finance-twin:local` path proves the trial-balance sync from stored raw bytes
 - the packaged `pnpm smoke:finance-twin-account-catalog:local` path proves persisted account-catalog state
 - the packaged `pnpm smoke:finance-twin-general-ledger:local` path proves persisted general-ledger journal state from stored raw bytes
@@ -101,7 +101,8 @@ Today, steps 1 through 4 exist in a narrow form:
 - the packaged `pnpm smoke:finance-twin-card-expense:local` path proves stored raw card-expense CSV bytes sync into persisted spend-item inventory and truthful spend-posture state
 
 Steps 5 and 6 remain later-phase work.
-The next major phase after the F2 closeout plan is F3 CFO Wiki compiler work.
+If an unfinished `plans/FP-*.md` file exists, continue that plan.
+If none exists, broad F2 is already closed and the next new implementation phase is F3 CFO Wiki compiler work, so create the first F3 plan before code changes.
 Use the docs to guide what gets built next.
 
 The active finance-twin read surface is currently backend-first:

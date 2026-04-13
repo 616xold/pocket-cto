@@ -11,9 +11,10 @@ Open the repository root in the Codex app.
 Then start a fresh thread and give Codex this prompt:
 
 ```text
-Read docs/ACTIVE_DOCS.md, README.md, AGENTS.md, PLANS.md, plans/ROADMAP.md, the current active plans/FP-*.md file, and docs/ops/source-ingest-and-cfo-wiki.md.
-Summarize the active phase, the archive boundary, and the next unchecked slice of the active Finance Plan.
-Then implement only that slice.
+Read docs/ACTIVE_DOCS.md, README.md, AGENTS.md, PLANS.md, plans/ROADMAP.md, and docs/ops/source-ingest-and-cfo-wiki.md.
+Determine whether an unfinished plans/FP-*.md file exists.
+If one exists, summarize the active phase, the archive boundary, and the next unchecked slice of that plan, then implement only that slice.
+If none exists, summarize the latest shipped phase, identify the next roadmap phase, create the next Finance Plan before code changes, and then implement only that plan.
 Keep internal package scope unchanged, preserve repo hygiene, update the Finance Plan Progress and Decision Log as you work, and run the narrowest meaningful validation after each step.
 ```
 
@@ -41,13 +42,15 @@ Suggested thread naming:
 - `F2N-contract-metadata-and-obligation-calendar`
 - `F2O-card-expense-and-spend-posture`
 - `F2P-final-f2-exit-audit-and-polish`
+- `F2Q-final-f2-handoff-and-plan-chain-polish`
 - `F3-cfo-wiki-compiler`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`
 - `F6-monitoring-and-controls`
 
 Broad F2 Finance Twin work now runs through F2O.
-Use `F2P-final-f2-exit-audit-and-polish` only for the final F2 closeout pass, and treat F3 as the next major implementation phase after that closeout.
+`F2P-final-f2-exit-audit-and-polish` and `F2Q-final-f2-handoff-and-plan-chain-polish` are the historical closeout and handoff threads for that completed breadth.
+The next new implementation phase is F3 CFO Wiki compiler work.
 
 ## Review ritual
 
@@ -96,6 +99,6 @@ The first success in a new thread is not guessing from stale plans or restarting
 
 The first success is:
 
-> Codex identifies the current active Finance Plan, respects the active-vs-archive boundary, and continues the next narrow shipped-unfinished slice without widening scope.
+> Codex identifies whether an unfinished Finance Plan exists, respects the active-vs-archive boundary, and either continues that narrow unfinished slice or creates the next-phase plan before coding.
 
 Once that is solid, the next active finance slice can proceed safely.

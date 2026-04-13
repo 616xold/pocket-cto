@@ -16,7 +16,7 @@ It does not start Finance Twin work, CFO Wiki work, reporting, monitoring, finan
 - [x] 2026-04-09T19:48:08Z Inspect the required source, web, smoke, shell-branding, and local-dev files against the F1 milestone checklist and record the audit verdict before any edits.
 - [x] 2026-04-09T19:48:08Z Apply the smallest in-scope polish needed: Pocket CFO shell metadata, a generic operator-safe not-found page, and local-dev wording that reflects an F1-complete source-ingest baseline.
 - [x] 2026-04-09T19:52:00Z Run the full requested validation ladder after the public-surface polish and confirm green results through focused web tests, both packaged source smokes, the twin guard specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
-- [ ] 2026-04-09T19:45:51Z If edits were required and every required validation is green, create one final polish commit, push the current branch, and create or report the PR into `main`.
+- [x] 2026-04-09T19:45:51Z If edits were required and every required validation is green, create one final polish commit, push the current branch, and create or report the PR into `main`.
 
 ## Surprises & Discoveries
 
@@ -191,7 +191,7 @@ this slice exists to determine whether F1 is truly done and whether F2 can begin
 
 ## Outcomes & Retrospective
 
-This slice is in progress.
+This slice shipped as the final F1 audit and polish pass.
 The audit verdict is now clear: fetched `origin/main` already satisfies the substantive F1 milestone, and the only remaining gap was stale Pocket CTO shell metadata plus slightly outdated local-dev framing.
 The diff is therefore limited to those truthfulness fixes.
 
@@ -206,5 +206,4 @@ Validation results are now complete and green:
 - `pnpm test`
 - `pnpm ci:repro:current`
 
-Remaining work is publication only:
-create the single requested commit, push the existing branch, and open or report the PR into `main`.
+Remaining work inside this plan is complete; the requested publication flow is already reflected in merged repo history.

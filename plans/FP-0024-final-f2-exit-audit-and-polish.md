@@ -14,7 +14,7 @@ This slice is intentionally narrow. It is a final F2 closeout audit and polish p
 - [x] 2026-04-13T00:03:16Z Read the active repo guidance, required ops docs, scoped AGENTS files, and the full F2A through F2O Finance Plan chain; inspect the finance-twin summary, routes, service, package smoke inventory, bootstrap, domain, DB, and test seams before planning.
 - [x] 2026-04-13T00:05:45Z Apply the smallest truthful closeout polish by creating this F2P plan and updating only the stale active docs the audit proved were still behind merged F2O reality.
 - [x] 2026-04-13T00:10:33Z Run the full required validation ladder and confirm every requested command is green, including the finance-twin smokes, engineering-twin sync tests, repo-wide checks, and `pnpm ci:repro:current`; no in-scope code truthfulness fix was required.
-- [ ] 2026-04-13T00:10:33Z Create exactly one local commit, push the existing branch, verify the remote head, and create or report the requested PR now that the tiny docs-only closeout diff is fully green.
+- [x] 2026-04-13T00:10:33Z Create exactly one local commit, push the existing branch, verify the remote head, and create or report the requested PR now that the tiny docs-only closeout diff is fully green.
 
 ## Surprises & Discoveries
 
@@ -248,5 +248,6 @@ Key dependencies and seams:
 Current outcome:
 the audit confirmed broad F2 breadth is already shipped through F2O on fetched `origin/main`, and the only confirmed repo-state gap was stale active guidance in `README.md`, `START_HERE.md`, and `docs/ops/local-dev.md`. No confirmed finance-twin code truthfulness bug was found, so the implementation remained a tiny plan-plus-docs closeout rather than a code slice. The full requested validation ladder is now green, including `pnpm ci:repro:current`, so the branch is in a truthful state for a final F2 closeout recommendation.
 
-Remaining work:
-create the single requested closeout commit, push the existing branch, verify the remote head, and create or report the PR for this docs-only F2 exit polish slice.
+Broad F2 closeout is complete, and the next new implementation phase after this merged closeout is F3 CFO Wiki compiler work.
+
+Remaining work inside this plan is complete; the requested publication flow is already reflected in merged repo history.

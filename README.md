@@ -36,7 +36,8 @@ Today the merged backbone is:
 - F2O additive deterministic `card_expense_csv` extraction plus backend-first spend-item inventory and spend-posture reads without fake policy scores, reimbursement inference, accrual logic, or payment forecasting
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
-The active closeout plan is `plans/FP-0024-final-f2-exit-audit-and-polish.md`, and the next major phase after that closeout is F3 CFO Wiki compiler work rather than another broad F2 extractor slice.
+The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
+The next new implementation phase is F3 CFO Wiki compiler work rather than another broad F2 extractor slice.
 
 ## Product boundary for v1
 
@@ -126,6 +127,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0022-contract-metadata-and-obligation-calendar.md
 │   ├── FP-0023-card-expense-and-spend-posture.md
 │   ├── FP-0024-final-f2-exit-audit-and-polish.md
+│   ├── FP-0025-final-f2-handoff-and-plan-chain-polish.md
 │   └── templates
 └── .agents
     └── skills
@@ -138,10 +140,11 @@ Pocket CFO v1 is intentionally narrow:
 3. Read `AGENTS.md`.
 4. Read `PLANS.md`.
 5. Read `plans/ROADMAP.md`.
-6. Read the current active `plans/FP-*.md` file instead of restarting from `FP-0001`.
-7. The current active plan is `plans/FP-0024-final-f2-exit-audit-and-polish.md`.
-8. Keep progress updates inside the active Finance Plan while working.
-9. Do not delete legacy engineering modules until the finance replacement path exists and a smoke proves it.
+6. Check whether an unfinished `plans/FP-*.md` file exists instead of restarting from `FP-0001`.
+7. If one exists, read it and continue only that slice.
+8. If none exists, read the latest closeout or handoff record, then create the next-phase Finance Plan before code changes.
+9. Keep progress updates inside the Finance Plan you are actively executing.
+10. Do not delete legacy engineering modules until the finance replacement path exists and a smoke proves it.
 
 ## Local development
 
