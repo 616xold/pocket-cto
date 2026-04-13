@@ -43,14 +43,18 @@ Suggested thread naming:
 - `F2O-card-expense-and-spend-posture`
 - `F2P-final-f2-exit-audit-and-polish`
 - `F2Q-final-f2-handoff-and-plan-chain-polish`
-- `F3-cfo-wiki-compiler`
+- `F3-cfo-wiki-master-plan-and-doc-refresh`
+- `F3A-cfo-wiki-foundation-and-page-registry`
+- `F3B-cfo-wiki-document-page-compiler-and-backlinks`
+- `F3C-cfo-wiki-lint-export-and-durable-filing`
 - `F4-finance-discovery-answer`
 - `F5-memo-and-packet-compiler`
 - `F6-monitoring-and-controls`
 
 Broad F2 Finance Twin work now runs through F2O.
 `F2P-final-f2-exit-audit-and-polish` and `F2Q-final-f2-handoff-and-plan-chain-polish` are the historical closeout and handoff threads for that completed breadth.
-The next new implementation phase is F3 CFO Wiki compiler work.
+The first F3 thread is the master-plan and active-doc refresh slice.
+The first new implementation thread after that is `F3A-cfo-wiki-foundation-and-page-registry`.
 
 ## Review ritual
 
