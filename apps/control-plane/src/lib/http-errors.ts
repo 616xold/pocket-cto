@@ -11,6 +11,10 @@ import {
   FinanceTwinUnsupportedSourceError,
 } from "../modules/finance-twin/errors";
 import {
+  CfoWikiCompileAlreadyRunningError,
+  CfoWikiPageNotFoundError,
+} from "../modules/wiki/errors";
+import {
   GitHubAppConfigurationError,
   GitHubInstallationNotFoundError,
   GitHubAppNotConfiguredError,
@@ -46,6 +50,8 @@ export type ApiErrorCode =
   | "invalid_request"
   | "approval_conflict"
   | "approval_not_found"
+  | "cfo_wiki_compile_conflict"
+  | "cfo_wiki_page_not_found"
   | "finance_company_not_found"
   | "finance_twin_extraction_failed"
   | "finance_twin_source_unsupported"
@@ -218,6 +224,30 @@ function mapHttpError(error: unknown): ErrorMapping {
         error: {
           code: "finance_company_not_found",
           message: "Finance company not found",
+        },
+      },
+    };
+  }
+
+  if (error instanceof CfoWikiCompileAlreadyRunningError) {
+    return {
+      statusCode: 409,
+      body: {
+        error: {
+          code: "cfo_wiki_compile_conflict",
+          message: error.message,
+        },
+      },
+    };
+  }
+
+  if (error instanceof CfoWikiPageNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        error: {
+          code: "cfo_wiki_page_not_found",
+          message: error.message,
         },
       },
     };

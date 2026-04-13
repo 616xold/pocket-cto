@@ -183,6 +183,13 @@
       "when": 1776035520571,
       "tag": "0025_clear_hairball",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1776111261432,
+      "tag": "0026_natural_crusher_hogan",
+      "breakpoints": true
     }
   ]
 }

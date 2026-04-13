@@ -61,6 +61,7 @@
     "smoke:finance-twin-reconciliation:local": "tsx tools/finance-twin-reconciliation-smoke.mjs",
     "smoke:finance-twin-snapshot:local": "tsx tools/finance-twin-snapshot-smoke.mjs",
     "smoke:finance-twin:local": "tsx tools/finance-twin-smoke.mjs",
+    "smoke:cfo-wiki-foundation:local": "tsx tools/cfo-wiki-foundation-smoke.mjs",
     "smoke:source-ingest:local": "tsx tools/source-ingest-smoke.mjs --mode ingest",
     "smoke:source-registry:local": "tsx tools/source-ingest-smoke.mjs --mode registry",
     "smoke:m3-discovery:live": "tsx tools/m3-discovery-mission-smoke.mjs",

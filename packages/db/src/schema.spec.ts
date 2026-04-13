@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  cfoWikiCompileRuns,
+  cfoWikiPageLinks,
+  cfoWikiPageRefs,
+  cfoWikiPages,
   financeAccountCatalogEntries,
   financeBankAccounts,
   financeBankAccountSummaries,
@@ -56,5 +60,9 @@ describe("db schema exports", () => {
     expect(financeTwinSyncRuns).toBeDefined();
     expect(financeTrialBalanceLines).toBeDefined();
     expect(financeTwinLineage).toBeDefined();
+    expect(cfoWikiCompileRuns).toBeDefined();
+    expect(cfoWikiPages).toBeDefined();
+    expect(cfoWikiPageLinks).toBeDefined();
+    expect(cfoWikiPageRefs).toBeDefined();
   });
 });

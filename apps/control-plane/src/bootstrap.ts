@@ -18,6 +18,12 @@ import {
   type FinanceTwinRepository,
 } from "./modules/finance-twin/repository";
 import { FinanceTwinService } from "./modules/finance-twin/service";
+import { DrizzleCfoWikiRepository } from "./modules/wiki/drizzle-repository";
+import {
+  InMemoryCfoWikiRepository,
+  type CfoWikiRepository,
+} from "./modules/wiki/repository";
+import { CfoWikiService } from "./modules/wiki/service";
 import { GitHubAppAuth } from "./modules/github-app/auth";
 import {
   resolveGitHubAppConfig,
@@ -103,6 +109,7 @@ type ServerContainerFactories = {
 
 type SharedKernel = {
   approvalService: ApprovalService;
+  cfoWikiService: CfoWikiService;
   financeTwinService: FinanceTwinService;
   githubAppService: GitHubAppService;
   githubIssueIntakeService: GitHubIssueIntakeService;
@@ -211,6 +218,7 @@ export function createInMemoryContainer(): AppContainer {
     sourceRepository: new InMemorySourceRepository(),
     sourceFileStorage: new InMemorySourceFileStorage(),
     twinRepository: new InMemoryTwinRepository(),
+    wikiRepository: new InMemoryCfoWikiRepository(),
   });
 
   return toAppContainer(kernel, {
@@ -254,6 +262,7 @@ async function buildDrizzleKernel(input: {
     sourceRepository: new DrizzleSourceRepository(input.db),
     sourceFileStorage: new S3SourceFileStorage(input.env),
     twinRepository: new DrizzleTwinRepository(input.db),
+    wikiRepository: new DrizzleCfoWikiRepository(input.db),
   });
 
   if (input.mode === "api_only") {
@@ -292,6 +301,7 @@ function buildSharedKernel(input: {
   sourceRepository: SourceRepository;
   sourceFileStorage: SourceFileStorage;
   twinRepository: TwinRepository;
+  wikiRepository: CfoWikiRepository;
 }): SharedKernel {
   const githubAppConfig = resolveGitHubAppConfig({
     GITHUB_APP_ID: input.env.GITHUB_APP_ID,
@@ -359,6 +369,11 @@ function buildSharedKernel(input: {
     sourceFileStorage: input.sourceFileStorage,
     sourceRepository: input.sourceRepository,
   });
+  const cfoWikiService = new CfoWikiService({
+    financeTwinRepository: input.financeTwinRepository,
+    sourceRepository: input.sourceRepository,
+    wikiRepository: input.wikiRepository,
+  });
   const githubIssueIntakeService = new GitHubIssueIntakeService({
     bindingRepository: input.githubIssueIntakeRepository,
     missionRepository: input.missionRepository,
@@ -377,6 +392,7 @@ function buildSharedKernel(input: {
 
   return {
     approvalService,
+    cfoWikiService,
     financeTwinService,
     githubAppService,
     githubIssueIntakeService,
@@ -454,6 +470,7 @@ function toAppContainer(
   liveControl: OperatorControlAvailability,
 ): AppContainer {
   return {
+    cfoWikiService: kernel.cfoWikiService,
     financeTwinService: kernel.financeTwinService,
     githubAppService: kernel.githubAppService,
     githubIssueIntakeService: kernel.githubIssueIntakeService,

@@ -34,10 +34,11 @@ Today the merged backbone is:
 - F2M additive deterministic `payables_aging_csv` extraction plus backend-first payables-aging and payables-posture reads without fake bill detail, expected payment timing, reserve logic, or DPO
 - F2N additive deterministic `contract_metadata_csv` extraction plus backend-first contract inventory and obligation-calendar reads without clause parsing, legal interpretation, payment forecasting, or covenant logic
 - F2O additive deterministic `card_expense_csv` extraction plus backend-first spend-item inventory and spend-posture reads without fake policy scores, reimbursement inference, accrual logic, or payment forecasting
+- F3A additive deterministic CFO Wiki foundation with persisted compile runs, compiler-owned pages, page links, and page refs for one company, compiled only from stored source-inventory metadata plus Finance Twin state
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
-The next new implementation phase is F3 CFO Wiki compiler work rather than another broad F2 extractor slice.
+F3A is now shipped, and the next new implementation phase is F3B CFO Wiki document-page compiler work rather than another broad F2 extractor slice.
 
 ## Product boundary for v1
 
@@ -128,6 +129,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0023-card-expense-and-spend-posture.md
 │   ├── FP-0024-final-f2-exit-audit-and-polish.md
 │   ├── FP-0025-final-f2-handoff-and-plan-chain-polish.md
+│   ├── FP-0026-cfo-wiki-foundation-and-page-registry.md
 │   └── templates
 └── .agents
     └── skills
@@ -179,6 +181,7 @@ pnpm smoke:finance-twin-receivables-aging:local
 pnpm smoke:finance-twin-payables-aging:local
 pnpm smoke:finance-twin-contract-metadata:local
 pnpm smoke:finance-twin-card-expense:local
+pnpm smoke:cfo-wiki-foundation:local
 ```
 
 The current backend-first finance-twin read surface is:
@@ -204,6 +207,14 @@ The current backend-first finance-twin read surface is:
 - receivables-aging
 - collections posture
 - general-ledger account activity lineage
+
+The current backend-first CFO Wiki read surface is:
+
+- `POST /cfo-wiki/companies/:companyKey/compile`
+- `GET /cfo-wiki/companies/:companyKey`
+- `GET /cfo-wiki/companies/:companyKey/index`
+- `GET /cfo-wiki/companies/:companyKey/log`
+- `GET /cfo-wiki/companies/:companyKey/pages/*`
 
 The current success condition is no longer an F0 guidance reset.
 It is preserving the authoritative raw-source ingest spine while extending the deterministic Finance Twin additively and truthfully.

@@ -1,4 +1,5 @@
 export * from "./approval";
+export * from "./cfo-wiki";
 export * from "./discovery-mission";
 export * from "./finance-twin";
 export * from "./github-issue-intake";

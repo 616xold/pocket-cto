@@ -179,6 +179,20 @@ export class DrizzleFinanceTwinRepository implements FinanceTwinRepository {
     return row ? mapFinanceReportingPeriodRow(row) : null;
   }
 
+  async listReportingPeriodsByCompanyId(
+    companyId: string,
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const rows = await executor
+      .select()
+      .from(financeReportingPeriods)
+      .where(eq(financeReportingPeriods.companyId, companyId))
+      .orderBy(asc(financeReportingPeriods.periodEnd));
+
+    return rows.map((row) => mapFinanceReportingPeriodRow(row));
+  }
+
   async countReportingPeriodsByCompanyId(
     companyId: string,
     session?: PersistenceSession,

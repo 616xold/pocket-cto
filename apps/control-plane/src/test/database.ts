@@ -9,6 +9,10 @@ import {
   replayEvents,
 } from "@pocket-cto/db";
 import type {
+  cfoWikiCompileRuns,
+  cfoWikiPageLinks,
+  cfoWikiPageRefs,
+  cfoWikiPages,
   financeAccountCatalogEntries,
   financeBankAccounts,
   financeBankAccountSummaries,
@@ -52,6 +56,10 @@ export async function resetTestDatabase() {
 
   await db.execute(sql`
     TRUNCATE TABLE
+      cfo_wiki_page_refs,
+      cfo_wiki_page_links,
+      cfo_wiki_pages,
+      cfo_wiki_compile_runs,
       finance_twin_lineage,
       finance_contract_obligations,
       finance_contracts,
@@ -155,7 +163,11 @@ async function selectCount(
     | typeof financeJournalLines
     | typeof financeTwinSyncRuns
     | typeof financeTrialBalanceLines
-    | typeof financeTwinLineage,
+    | typeof financeTwinLineage
+    | typeof cfoWikiCompileRuns
+    | typeof cfoWikiPages
+    | typeof cfoWikiPageLinks
+    | typeof cfoWikiPageRefs,
 ) {
   const [result] = await db.select({ count: count() }).from(table);
   return result?.count ?? 0;

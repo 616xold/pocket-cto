@@ -2,15 +2,14 @@
 
 ## Purpose / Big Picture
 
-This plan defines the first real **F3 CFO Wiki** implementation contract for Pocket CFO.
+This plan defines and executes the first real **F3 CFO Wiki** implementation slice for Pocket CFO.
 
 The user-visible goal is to make the first F3 code slice straightforward for a fresh contributor: add a backend-first, twin-grounded CFO Wiki foundation that can compile a small deterministic markdown knowledge layer for one company without inventing a second truth graph, a generic RAG system, or a freeform document summarizer.
 
 F3A matters now because broad F2 Finance Twin breadth is already shipped through F2O. The next product gain is not another extractor family. It is a durable compiled wiki layer that turns authoritative raw-source inventory plus Finance Twin state into reviewable markdown pages with explicit provenance, freshness posture, and visible gaps.
 
 GitHub connector work is explicitly out of scope for this slice.
-This plan is the active F3A contract, but this thread only creates the plan and refreshes the active docs.
-No wiki code, routes, schema, migrations, scripts, smoke aliases, or UI ship in this planning slice.
+This plan is the active F3A implementation contract and must stay current while the wiki domain, schema, routes, compile flow, tests, smoke path, and narrow active-doc polish land.
 
 ## Progress
 
@@ -18,8 +17,9 @@ No wiki code, routes, schema, migrations, scripts, smoke aliases, or UI ship in 
 - [x] 2026-04-13T18:34:13Z Create `plans/FP-0026-cfo-wiki-foundation-and-page-registry.md` and refresh the smallest truthful doc set so a fresh F3A implementation thread can start without ambiguity.
 - [x] 2026-04-13T18:40:53Z Run the required docs-and-plan validation ladder for this master-plan slice and confirm `pnpm smoke:source-ingest:local`, every requested finance-twin smoke, the engineering-twin Vitest trio, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all pass without needing in-scope code changes.
 - [x] 2026-04-13T18:49:31Z Complete the strict QA pass for this planning slice, correct the one stale present-tense context statement inside `FP-0026`, and rerun `pnpm ci:repro:current` after the plan-only polish.
-- [ ] 2026-04-13T18:34:13Z Implement the F3A wiki bounded context, additive schema, backend-first compile routes, and deterministic compiler-owned page registry described in this plan.
-- [ ] 2026-04-13T18:34:13Z Run the F3A validation ladder, add the future F3A smoke path, and publish the implementation slice once the new wiki surface is fully green.
+- [x] 2026-04-13T19:52:48Z Start the implementation thread against fetched `origin/main`, confirm the required branch, clean repo state, Docker-backed dependencies, and active-skill loadout, then tighten this plan for canonical page keys, partial-state compile rules, single-running-compile semantics, no-runtime-codex or no-freeform-LLM enforcement, and the minimal deterministic link or ref enums before code edits.
+- [x] 2026-04-13T21:28:44Z Implement the F3A wiki bounded context, additive schema, backend-first compile routes, deterministic compiler-owned page registry, and minimal active-doc refresh described in this plan.
+- [x] 2026-04-13T21:28:44Z Run the F3A validation ladder, add `pnpm smoke:cfo-wiki-foundation:local`, and confirm the new wiki surface plus the required reproducibility path are fully green before publish.
 
 ## Surprises & Discoveries
 
@@ -34,6 +34,15 @@ No wiki code, routes, schema, migrations, scripts, smoke aliases, or UI ship in 
 
 - Observation: there is no current unfinished F2 implementation plan that should block F3 planning.
   Evidence: the active F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`, and the remaining unchecked boxes in older plans are historical publication remnants rather than a live F3 blocker.
+
+- Observation: company-linked source coverage is not modeled directly in the source-registry tables today.
+  Evidence: `sources`, `source_snapshots`, and `source_files` are authoritative and immutable but do not carry `companyId`, so F3A must derive company-specific source coverage from finance-twin sync runs plus linked source, snapshot, and file records instead of inventing a second ownership graph.
+
+- Observation: the DB package cannot import `packages/domain/src` directly during declaration bootstrap without breaking the repo typecheck boundary.
+  Evidence: the first F3A typecheck failed when `packages/db/src/schema/wiki.ts` imported wiki string-union types from `@pocket-cto/domain`, so the additive schema now keeps local DB-only type annotations while the authoritative runtime and route contracts remain in `packages/domain/src/cfo-wiki.ts`.
+
+- Observation: wildcard page routing needed explicit decoding plus canonical page-key validation to preserve slash-delimited keys truthfully.
+  Evidence: F3A page reads now accept encoded keys like `periods%2F2026-03-31%2Findex` and reject non-canonical keys instead of flattening routes or silently accepting invalid page identities.
 
 ## Decision Log
 
@@ -52,14 +61,35 @@ No wiki code, routes, schema, migrations, scripts, smoke aliases, or UI ship in 
 - Decision: F3A compiles only from Finance Twin state and source inventory, not from broad document text synthesis.
   Rationale: the first implementation slice should be deterministic, additive, and grounded in already-shipped evidence layers before introducing constrained synthesis or deeper document extraction.
 
+- Decision: canonical F3A page keys are slash-delimited keys without `.md`, specifically `index`, `log`, `company/overview`, `periods/<periodKey>/index`, and `sources/coverage`.
+  Rationale: page keys must stay stable for persisted reads, links, refs, and route-backed retrieval while the markdown file path remains a deterministic derived view.
+
+- Decision: F3A must still compile when the company exists but Finance Twin state is partial or absent.
+  Rationale: the truthful behavior is to persist `index`, `log`, `company/overview`, and `sources/coverage` with visible gaps and limitations, while compiling `periods/<periodKey>/index` only for reporting periods that actually exist in stored Finance Twin state.
+
+- Decision: allow only one `running` wiki compile per company at a time and fail a competing request truthfully with a conflict.
+  Rationale: overlapping compile runs would race the compiler-owned page layer and violate the reviewable, deterministic F3A contract.
+
+- Decision: F3A is fully deterministic and may not invoke runtime-codex, prompt assembly, model calls, or any freeform LLM synthesis path.
+  Rationale: this slice exists to ship the evidence spine first, and the authority boundary becomes blurry if freeform generation enters before the persisted wiki foundation exists.
+
+- Decision: keep the first link taxonomy and ref target taxonomy intentionally narrow.
+  Rationale: F3A only needs deterministic navigation plus a small, reviewable reference model, so `navigation` and optional `related` are sufficient link kinds, and `company`, `reporting_period`, `source_snapshot`, `source_file`, and `finance_slice` are sufficient ref target kinds for this slice.
+
 - Decision: explicitly defer vector search, vector databases, PageIndex or QMD dependencies, and PDF-heavy deep read to later F3 work.
   Rationale: none of those are required to land the first reviewable wiki foundation, and making them day-one dependencies would slow F3 without improving the authoritative evidence spine.
 
 - Decision: keep GitHub connector work out of scope and forbid repo semantics from leaking into the new wiki bounded context.
   Rationale: the user requested it, and the active product center is finance evidence rather than repository metadata.
 
-- Decision: leave `README.md`, `docs/ACTIVE_DOCS.md`, `PLANS.md`, `WORKFLOW.md`, `docs/ops/local-dev.md`, `docs/ops/codex-app-server.md`, `package.json`, and all TypeScript files unchanged in this slice.
-  Rationale: the audit found them materially truthful already, and this thread is a smallest-additive docs-and-plan refresh rather than a broader wording sweep or implementation slice.
+- Decision: derive F3A company source coverage from persisted Finance Twin sync runs rather than inventing a company edge inside the raw source registry.
+  Rationale: the raw source layer remains authoritative and immutable today, but it is not company-keyed, so the wiki must compile visible company coverage from the already-persisted sync lineage it actually has.
+
+- Decision: make persisted compile runs, pages, links, and refs the explicit F3A review surface while leaving replay-event emission deferred.
+  Rationale: the slice needs a reviewable evidence spine now, and the persisted wiki artifacts plus compile-run summary are enough to reconstruct what changed without overcommitting to a replay shape that is not yet ready.
+
+- Decision: refresh only the smallest active-doc surface that becomes stale as F3A lands.
+  Rationale: `FP-0026` needs implementation-tightening now, `README.md` still omits this active plan from the repo map, and later doc touch points should stay limited to the explicit F3A shipped-state clarifications requested by the user.
 
 - Decision: polish `FP-0026` during QA so its context describes the refreshed repo state truthfully instead of preserving one stale present-tense statement from the pre-refresh audit.
   Rationale: the active plan is now part of the active-doc surface, so its orientation needs to match the repo state after the doc refresh lands.
@@ -237,14 +267,21 @@ Fifth, prove the slice with targeted tests, the existing finance smoke ladder, a
    - parse broad document bodies for synthesis
    - introduce a second extraction pipeline
    - fetch from vector infrastructure
+   - invoke runtime-codex or any LLM API
+   - use prompt-built or freeform summary generation
    - depend on GitHub repository metadata
 
-6. Build the F3A deterministic page registry with exactly these initial compiler-owned pages:
-   - `index.md`
-   - `log.md`
-   - `company/overview.md`
-   - `periods/<periodKey>/index.md` for each reporting period present in Finance Twin state
-   - `sources/coverage.md`
+6. Build the F3A deterministic page registry with exactly these initial compiler-owned page keys:
+   - `index`
+   - `log`
+   - `company/overview`
+   - `periods/<periodKey>/index` for each reporting period present in Finance Twin state
+   - `sources/coverage`
+
+   The rendered markdown file path must be derived deterministically from the canonical page key:
+   - `index` -> `index.md`
+   - `log` -> `log.md`
+   - every other key -> `<pageKey>.md`
 
    The plan for each page is:
    - `index.md`: top-level navigation, coverage summary, freshness posture, and links to deterministic child pages
@@ -253,24 +290,35 @@ Fifth, prove the slice with targeted tests, the existing finance smoke ladder, a
    - `periods/<periodKey>/index.md`: period-specific inventory of available Finance Twin slices, freshness posture, and current versus historical context
    - `sources/coverage.md`: authoritative source inventory coverage, missing-source gaps, unsupported-source visibility, and links back to relevant periods or overview pages
 
-7. Make the first compile pipeline explicit in code:
+7. Keep the first page-graph taxonomy minimal and deterministic.
+   - link kinds should stay at `navigation` plus optional `related`
+   - ref target kinds should stay at `company`, `reporting_period`, `source_snapshot`, `source_file`, and `finance_slice`
+   - broad relationship taxonomies or generic entity-resolution layers are out of scope for F3A
+
+8. Make the first compile pipeline explicit in code:
    - create a compile run row
+   - reject a competing compile truthfully if the company already has a `running` wiki compile
    - load the company, source inventory, Finance Twin state, and reporting periods
    - derive deterministic page registry entries
    - render markdown skeletons from deterministic templates
    - attach page refs and page links
-   - upsert pages, links, and refs transactionally
+   - replace pages, links, and refs transactionally only after the deterministic render succeeds
    - append the new compile entry into `log.md`
    - mark the compile run `succeeded` or `failed`
 
-8. Treat evidence refs as first-class from day one.
+   If the company exists but Finance Twin state is partial or absent:
+   - still compile `index`, `log`, `company/overview`, and `sources/coverage`
+   - compile `periods/<periodKey>/index` only for stored reporting periods
+   - surface missing periods and missing slice coverage as limitations instead of raising a hard error
+
+9. Treat evidence refs as first-class from day one.
    F3A should primarily emit:
    - `twin_fact` refs for structured Finance Twin facts
    - `ambiguous` refs where coverage or evidence is missing or conflicting
 
    `source_excerpt` and `compiled_inference` must exist in the contract now so F3B can extend them later, but F3A should only use them where the source inventory already supports truthful deterministic labeling.
 
-9. Make temporal state explicit.
+10. Make temporal state explicit.
    Every compiler-owned page must choose one of:
    - `current`
    - `historical`
@@ -279,29 +327,32 @@ Fifth, prove the slice with targeted tests, the existing finance smoke ladder, a
    F3A must not hide older periods or prior compiled understanding by deleting them.
    If the page changes meaning over time, preserve the status rather than inventing “forgetting” semantics.
 
-10. Add the first backend-first route surface in `apps/control-plane/src/modules/wiki/routes.ts`:
+11. Add the first backend-first route surface in `apps/control-plane/src/modules/wiki/routes.ts`:
    - `POST /cfo-wiki/companies/:companyKey/compile`
    - `GET /cfo-wiki/companies/:companyKey`
    - `GET /cfo-wiki/companies/:companyKey/index`
    - `GET /cfo-wiki/companies/:companyKey/log`
-   - `GET /cfo-wiki/companies/:companyKey/pages/:pageKey`
+   - `GET /cfo-wiki/companies/:companyKey/pages/<wildcard-or-encoded-pageKey>`
 
-    The route contract should return page metadata, markdown content, refs, links, compile-run summary, freshness posture, and visible limitations.
+    The route contract should preserve canonical page keys with slash delimiters rather than flattening them, and should return page metadata, markdown content, refs, links, compile-run summary, freshness posture, and visible limitations.
 
-11. Wire replay or explicit compile evidence in `apps/control-plane/src/modules/wiki/events.ts`.
+12. Wire replay or explicit compile evidence in `apps/control-plane/src/modules/wiki/events.ts`.
     A successful F3A compile should be reconstructable by a human.
     If the first implementation cannot emit the final replay shape safely, it must at least persist compile-run identity, operator trigger, timestamps, stats, and page-change summary explicitly enough for later replay integration.
 
-12. Add targeted tests near the new module boundaries and keep them deterministic.
+13. Add targeted tests near the new module boundaries and keep them deterministic.
     Minimum expected test areas for F3A are:
     - domain schemas for the new wiki contract
     - DB schema registration and repository behavior
     - deterministic page-registry generation
     - compile service behavior for a seeded company
+    - compile service behavior for partial or absent Finance Twin state
+    - concurrent running compile rejection
+    - failure does not erase prior successful pages
     - route validation and serialization
+    - wildcard or encoded page-key handling
 
-13. Add a future local smoke command during the F3A implementation slice, but do not add it in this planning slice.
-    The intended shape is:
+14. Add a local smoke command during this F3A implementation slice with the shape:
 
 ```bash
 pnpm smoke:cfo-wiki-foundation:local
@@ -311,9 +362,12 @@ pnpm smoke:cfo-wiki-foundation:local
 
 ## Validation and Acceptance
 
-The later F3A code slice should validate in this order:
+This F3A code slice must validate in this order:
 
 ```bash
+pnpm --filter @pocket-cto/domain exec vitest run src/cfo-wiki.spec.ts
+pnpm --filter @pocket-cto/db exec vitest run src/schema.spec.ts
+pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/wiki/**/*.spec.ts src/app.spec.ts
 pnpm smoke:source-ingest:local
 pnpm smoke:finance-twin:local
 pnpm smoke:finance-twin-account-catalog:local
@@ -330,17 +384,18 @@ pnpm smoke:finance-twin-receivables-aging:local
 pnpm smoke:finance-twin-payables-aging:local
 pnpm smoke:finance-twin-contract-metadata:local
 pnpm smoke:finance-twin-card-expense:local
-pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/wiki/**/*.spec.ts
 pnpm smoke:cfo-wiki-foundation:local
+pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts
 pnpm lint
 pnpm typecheck
 pnpm test
 pnpm ci:repro:current
 ```
 
-Acceptance for the future F3A implementation slice is met when all of the following are true:
+Acceptance for this F3A implementation slice is met when all of the following are true:
 
 - one company can run a deterministic CFO Wiki compile from stored source inventory plus Finance Twin state
+- compile runs persist status, timestamps, stats, and visible failure summaries
 - `index.md` and `log.md` always exist after a successful compile
 - `company/overview.md`, `periods/<periodKey>/index.md`, and `sources/coverage.md` compile deterministically from current stored state
 - pages are clearly marked `compiler_owned`
@@ -349,6 +404,8 @@ Acceptance for the future F3A implementation slice is met when all of the follow
 - backlinks or page links are persisted for the deterministic page graph
 - freshness posture and limitations are visible in the read surface
 - unsupported or missing evidence stays visible rather than being summarized away
+- a competing compile request for the same company while one run is `running` fails truthfully with a conflict
+- a failed compile leaves the prior successful pages readable
 - no vector DB, no PageIndex or QMD dependency, no PDF-heavy deep read dependency, no wiki UI, and no F4 discovery implementation are required for acceptance
 
 Provenance, freshness, replay, and evidence posture:
@@ -367,19 +424,16 @@ F3A should be safe to retry.
 
 ## Artifacts and Notes
 
-Artifacts expected from this planning slice:
+Artifacts expected from this F3A implementation slice:
 
-- this active F3A Finance Plan
-- active-doc updates that describe the wiki design truthfully and concretely
-
-Artifacts expected from the future F3A implementation slice:
-
+- this active F3A Finance Plan, kept current as implementation proceeds
 - `packages/domain/src/cfo-wiki.ts`
 - `packages/db/src/schema/wiki.ts`
 - additive DB generation and migration artifacts
 - `apps/control-plane/src/modules/wiki/**`
 - deterministic F3A compiler-owned markdown pages and their persisted metadata
-- a future `pnpm smoke:cfo-wiki-foundation:local` proof
+- `tools/cfo-wiki-foundation-smoke.mjs`
+- `pnpm smoke:cfo-wiki-foundation:local`
 
 Evidence-bundle note:
 the wiki itself is a durable evidence-facing artifact layer, so its pages must always expose source or twin grounding, freshness posture, limitations, and ambiguity clearly enough that another operator can review them outside chat.
@@ -411,7 +465,7 @@ Route surface planned for F3A:
 - `GET /cfo-wiki/companies/:companyKey`
 - `GET /cfo-wiki/companies/:companyKey/index`
 - `GET /cfo-wiki/companies/:companyKey/log`
-- `GET /cfo-wiki/companies/:companyKey/pages/:pageKey`
+- `GET /cfo-wiki/companies/:companyKey/pages/<wildcard-or-encoded-pageKey>`
 
 Expected out-of-scope items for F3A:
 
@@ -423,36 +477,19 @@ Expected out-of-scope items for F3A:
 - no new Finance Twin extractor
 - no deletion of GitHub or engineering-twin modules
 
-No new environment variables are expected for the planning slice.
-If the future F3A implementation introduces any, it must document them in the active docs during that slice.
+No new environment variables are expected for F3A.
+If implementation proves otherwise, document them in the active docs during this slice.
 
 ## Outcomes & Retrospective
 
 Current outcome:
-this docs-and-plan slice creates the first concrete F3 implementation contract and refreshes the active docs so a fresh Codex thread can implement the CFO Wiki cleanly.
+the initial planning and doc-refresh work is complete, and this plan is now the live execution record for the implementation thread that adds the deterministic F3A wiki foundation.
 
 What changed from the pre-existing repo state:
 
-- F3 is now defined as a twin-grounded compiled wiki rather than a generic roadmap placeholder.
-- the three-slice `F3A` / `F3B` / `F3C` map is locked in explicitly
-- the first implementation slice now has named files, module boundaries, data-model targets, route targets, validation expectations, and out-of-scope guardrails
-
-What did not ship in this slice:
-
-- no wiki code
-- no DB schema or migrations
-- no routes
-- no package scripts
-- no smoke aliases
-- no wiki UI
-- no F4, F5, or F6 work
-
-Validation status for this slice:
-
-- the full requested docs-and-plan ladder passed, including all listed source-ingest and finance-twin smokes
-- the engineering-twin reproducibility trio passed unchanged
-- `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all passed
-- the strict QA pass corrected one stale present-tense context note in this plan and reran `pnpm ci:repro:current`
+- F3 is defined as a twin-grounded compiled wiki rather than a generic roadmap placeholder.
+- the three-slice `F3A` / `F3B` / `F3C` map is locked in explicitly.
+- the active plan now carries the concrete implementation contract for canonical page keys, partial-state compile behavior, single-running-compile safety, route shape, and the no-LLM rule.
 
 What remains:
-the next fresh implementation thread should execute this plan directly by building the new wiki domain, schema, bounded context, deterministic compile flow, and backend-first route surface for F3A.
+finish the additive wiki domain, schema, bounded context, deterministic compile flow, backend-first route surface, smoke path, validation ladder, and publication steps for F3A.

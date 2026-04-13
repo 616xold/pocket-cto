@@ -9,6 +9,7 @@ import { registerGitHubWebhookRoutes } from "./modules/github-app/webhook-routes
 import { registerMissionRoutes } from "./modules/missions/routes";
 import { registerReplayRoutes } from "./modules/replay/routes";
 import { registerApprovalRoutes } from "./modules/approvals/routes";
+import { registerCfoWikiRoutes } from "./modules/wiki/routes";
 import { createServerContainer } from "./bootstrap";
 import type { AppContainer } from "./lib/types";
 import { registerRuntimeControlRoutes } from "./modules/runtime-codex/routes";
@@ -25,6 +26,9 @@ export async function buildApp(options?: { container?: AppContainer }) {
   await registerHealthRoutes(app);
   await registerFinanceTwinRoutes(app, {
     financeTwinService: container.financeTwinService,
+  });
+  await registerCfoWikiRoutes(app, {
+    cfoWikiService: container.cfoWikiService,
   });
   await registerGitHubAppRoutes(app, {
     githubAppService: container.githubAppService,

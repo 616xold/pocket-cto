@@ -338,6 +338,10 @@ export interface FinanceTwinRepository extends TransactionalRepository {
     reportingPeriodId: string,
     session?: PersistenceSession,
   ): Promise<FinanceReportingPeriodRecord | null>;
+  listReportingPeriodsByCompanyId(
+    companyId: string,
+    session?: PersistenceSession,
+  ): Promise<FinanceReportingPeriodRecord[]>;
   countReportingPeriodsByCompanyId(
     companyId: string,
     session?: PersistenceSession,
@@ -638,6 +642,12 @@ export class InMemoryFinanceTwinRepository implements FinanceTwinRepository {
 
   async getReportingPeriodById(reportingPeriodId: string) {
     return this.reportingPeriods.get(reportingPeriodId) ?? null;
+  }
+
+  async listReportingPeriodsByCompanyId(companyId: string) {
+    return [...this.reportingPeriods.values()]
+      .filter((period) => period.companyId === companyId)
+      .sort((left, right) => left.periodEnd.localeCompare(right.periodEnd));
   }
 
   async countReportingPeriodsByCompanyId(companyId: string) {

@@ -256,6 +256,23 @@ function createAppContainer(
         };
       },
     } as AppContainer["githubWebhookService"],
+    cfoWikiService: {
+      async compileCompanyWiki() {
+        throw new Error("compileCompanyWiki should not be called in this test");
+      },
+      async getCompanySummary() {
+        throw new Error("getCompanySummary should not be called in this test");
+      },
+      async getIndexPage() {
+        throw new Error("getIndexPage should not be called in this test");
+      },
+      async getLogPage() {
+        throw new Error("getLogPage should not be called in this test");
+      },
+      async getPage() {
+        throw new Error("getPage should not be called in this test");
+      },
+    } as AppContainer["cfoWikiService"],
     financeTwinService: {
       async getBalanceBridgePrerequisites() {
         throw new Error(

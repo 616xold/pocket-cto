@@ -45,6 +45,7 @@ pnpm smoke:finance-twin-receivables-aging:local
 pnpm smoke:finance-twin-payables-aging:local
 pnpm smoke:finance-twin-contract-metadata:local
 pnpm smoke:finance-twin-card-expense:local
+pnpm smoke:cfo-wiki-foundation:local
 ```
 
 ## Pivot-foundation baseline
@@ -65,7 +66,7 @@ For Pocket CFO, local development should move toward a source-registry-to-financ
 5. refresh the CFO Wiki
 6. run discovery or reporting missions against stored state
 
-Today, steps 1 through 4 exist in a narrow form:
+Today, steps 1 through 5 exist in a narrow form:
 
 - F1 source registration and raw-file ingest are implemented
 - F2A trial-balance CSV sync is implemented
@@ -83,7 +84,7 @@ Today, steps 1 through 4 exist in a narrow form:
 - F2M shipped deterministic payables-aging ingest plus backend-first payables-aging and payables-posture reads without fake bill detail, expected payment timing, reserve logic, or DPO
 - F2N shipped deterministic contract-metadata ingest plus backend-first contract inventory and obligation-calendar reads without clause parsing, legal interpretation, payment forecasting, or covenant logic
 - F2O shipped deterministic card-expense ingest plus backend-first spend-item inventory and spend-posture reads without fake policy scores, reimbursement inference, accrual logic, or payment forecasting
-- broad F2 Finance Twin breadth is now shipped through F2O, the final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`, and the next new implementation phase is F3 CFO Wiki compiler work
+- broad F2 Finance Twin breadth is now shipped through F2O, the final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`
 - the packaged `pnpm smoke:finance-twin:local` path proves the trial-balance sync from stored raw bytes
 - the packaged `pnpm smoke:finance-twin-account-catalog:local` path proves persisted account-catalog state
 - the packaged `pnpm smoke:finance-twin-general-ledger:local` path proves persisted general-ledger journal state from stored raw bytes
@@ -99,10 +100,12 @@ Today, steps 1 through 4 exist in a narrow form:
 - the packaged `pnpm smoke:finance-twin-payables-aging:local` path proves stored raw payables-aging CSV bytes sync into persisted payables-aging inventory and truthful payables-posture state
 - the packaged `pnpm smoke:finance-twin-contract-metadata:local` path proves stored raw contract-metadata CSV bytes sync into persisted contract inventory and truthful obligation-calendar state
 - the packaged `pnpm smoke:finance-twin-card-expense:local` path proves stored raw card-expense CSV bytes sync into persisted spend-item inventory and truthful spend-posture state
+- F3A shipped the backend-first CFO Wiki foundation for one company: deterministic compile runs, compiler-owned pages, page links, page refs, and route-backed reads for `index.md`, `log.md`, `company/overview.md`, `periods/<periodKey>/index.md`, and `sources/coverage.md`
+- the packaged `pnpm smoke:cfo-wiki-foundation:local` path proves a trial-balance-backed Finance Twin sync can compile and read back the deterministic F3A wiki surface without runtime-codex, document-body parsing, or vector search
 
-Steps 5 and 6 remain later-phase work.
+Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-If none exists, broad F2 is already closed and the next new implementation phase is F3 CFO Wiki compiler work, so create the first F3 plan before code changes.
+If none exists, F3A is already shipped and the next new implementation phase is F3B CFO Wiki document-page compiler work, so create the next F3 plan before code changes.
 Use the docs to guide what gets built next.
 
 The active finance-twin read surface is currently backend-first:

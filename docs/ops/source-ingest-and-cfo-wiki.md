@@ -244,6 +244,15 @@ The initial compile pipeline should look like this:
 The first implementation slice should compile from Finance Twin state and source inventory only.
 It should not begin with broad document-body synthesis.
 
+Current shipped state:
+
+- F3A is now implemented as a backend-first, one-company compile and read surface in the control-plane
+- the compile runs synchronously and inline for now
+- it reads only stored source-inventory metadata plus stored Finance Twin state
+- it persists compile runs, compiler-owned pages, page links, and page refs additively
+- it always produces `index.md` and `log.md` on successful compile
+- it does not parse broad document bodies, call runtime-codex, or add vector search
+
 ## Ingest flow
 
 A trustworthy ingest flow should look like this:
@@ -307,6 +316,14 @@ F3A should not do any of the following:
 - no wiki UI
 - no F4 discovery implementation
 - no new Finance Twin extractor
+
+The shipped F3A routes are intentionally narrow:
+
+- `POST /cfo-wiki/companies/:companyKey/compile`
+- `GET /cfo-wiki/companies/:companyKey`
+- `GET /cfo-wiki/companies/:companyKey/index`
+- `GET /cfo-wiki/companies/:companyKey/log`
+- `GET /cfo-wiki/companies/:companyKey/pages/*`
 
 ## Later F3 support
 

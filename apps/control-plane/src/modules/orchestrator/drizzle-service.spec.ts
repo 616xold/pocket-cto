@@ -24,6 +24,7 @@ import { and, count, eq } from "drizzle-orm";
 import { approvals, artifacts, missions, workspaces } from "@pocket-cto/db";
 import type { MissionRecord, ReplayEvent } from "@pocket-cto/domain";
 import { buildApp } from "../../app";
+import type { AppContainer } from "../../lib/types";
 import { DrizzleApprovalRepository } from "../approvals/drizzle-repository";
 import { ApprovalService } from "../approvals/service";
 import {
@@ -2759,6 +2760,23 @@ async function createHarness(options?: {
           throw new Error("Not implemented in orchestrator harness");
         },
       },
+      cfoWikiService: {
+        async compileCompanyWiki() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getCompanySummary() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getIndexPage() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getLogPage() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+        async getPage() {
+          throw new Error("Not implemented in orchestrator harness");
+        },
+      } as AppContainer["cfoWikiService"],
       missionService,
       operatorControl: {
         approvalService,
