@@ -17,6 +17,7 @@ No wiki code, routes, schema, migrations, scripts, smoke aliases, or UI ship in 
 - [x] 2026-04-13T18:34:13Z Audit the active docs, roadmap, prior F2 closeout and handoff plans, and the legacy engineering-twin docs surfaces before drafting the first concrete F3 contract.
 - [x] 2026-04-13T18:34:13Z Create `plans/FP-0026-cfo-wiki-foundation-and-page-registry.md` and refresh the smallest truthful doc set so a fresh F3A implementation thread can start without ambiguity.
 - [x] 2026-04-13T18:40:53Z Run the required docs-and-plan validation ladder for this master-plan slice and confirm `pnpm smoke:source-ingest:local`, every requested finance-twin smoke, the engineering-twin Vitest trio, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all pass without needing in-scope code changes.
+- [x] 2026-04-13T18:49:31Z Complete the strict QA pass for this planning slice, correct the one stale present-tense context statement inside `FP-0026`, and rerun `pnpm ci:repro:current` after the plan-only polish.
 - [ ] 2026-04-13T18:34:13Z Implement the F3A wiki bounded context, additive schema, backend-first compile routes, and deterministic compiler-owned page registry described in this plan.
 - [ ] 2026-04-13T18:34:13Z Run the F3A validation ladder, add the future F3A smoke path, and publish the implementation slice once the new wiki surface is fully green.
 
@@ -60,10 +61,13 @@ No wiki code, routes, schema, migrations, scripts, smoke aliases, or UI ship in 
 - Decision: leave `README.md`, `docs/ACTIVE_DOCS.md`, `PLANS.md`, `WORKFLOW.md`, `docs/ops/local-dev.md`, `docs/ops/codex-app-server.md`, `package.json`, and all TypeScript files unchanged in this slice.
   Rationale: the audit found them materially truthful already, and this thread is a smallest-additive docs-and-plan refresh rather than a broader wording sweep or implementation slice.
 
+- Decision: polish `FP-0026` during QA so its context describes the refreshed repo state truthfully instead of preserving one stale present-tense statement from the pre-refresh audit.
+  Rationale: the active plan is now part of the active-doc surface, so its orientation needs to match the repo state after the doc refresh lands.
+
 ## Context and Orientation
 
 Pocket CFO has already shipped F1 raw-source ingest and broad F2 Finance Twin breadth through F2O.
-The next new implementation phase is F3, but the active docs still describe that phase too generically for a clean handoff.
+The next new implementation phase is F3, and this plan plus the accompanying doc refresh now make that phase concrete enough for a clean handoff.
 This plan turns F3 into a concrete execution contract while preserving the active-doc boundary and leaving current code truthful.
 
 The relevant repo truths for F3A are:
@@ -71,7 +75,7 @@ The relevant repo truths for F3A are:
 - `packages/domain/src/source-registry.ts` and `packages/db/src/schema/sources.ts` already define immutable source identity, snapshot identity, checksums, storage refs, and ingest runs.
 - `packages/domain/src/finance-twin.ts`, `packages/db/src/schema/finance-twin.ts`, and `apps/control-plane/src/modules/finance-twin/**` already define the structured finance truth layer and the backend-first read surface.
 - `apps/control-plane/src/modules/twin/docs-sync.ts`, `docs-discovery.ts`, `docs-parser.ts`, and `runbook-sync.ts` are legacy structural references only. Reuse their additive run and parser patterns where useful, but do not import repository or GitHub product assumptions into the wiki design.
-- No active doc currently gives an implementation-ready F3A contract for compile runs, page registry storage, evidence refs, or route boundaries.
+- `plans/FP-0026-cfo-wiki-foundation-and-page-registry.md`, `plans/ROADMAP.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, and `START_HERE.md` now define the implementation-ready F3A contract, slice map, and handoff rules for the first wiki build slice.
 
 The full F3 slice map is locked as follows:
 
@@ -448,6 +452,7 @@ Validation status for this slice:
 - the full requested docs-and-plan ladder passed, including all listed source-ingest and finance-twin smokes
 - the engineering-twin reproducibility trio passed unchanged
 - `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all passed
+- the strict QA pass corrected one stale present-tense context note in this plan and reran `pnpm ci:repro:current`
 
 What remains:
 the next fresh implementation thread should execute this plan directly by building the new wiki domain, schema, bounded context, deterministic compile flow, and backend-first route surface for F3A.
