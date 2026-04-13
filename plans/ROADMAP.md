@@ -77,19 +77,87 @@ Exit criteria:
 ## F3 — CFO Wiki compiler
 
 Goal:
-Add the compiled markdown knowledge layer beside the Finance Twin.
+Add a twin-grounded compiled markdown knowledge layer beside the Finance Twin.
+
+Pocket CFO F3 is **not** a generic RAG layer and **not** a second truth graph.
+The authority model stays fixed:
+
+- raw sources remain authoritative for document claims
+- the Finance Twin remains authoritative for structured finance facts
+- the CFO Wiki is compiled and derived from those two layers
+
+The wiki contract for F3 is:
+
+- compiler-owned pages, not freely edited source-of-truth pages
+- mandatory `index.md` and `log.md`
+- explicit page refs and backlinks
+- explicit evidence classes:
+  - `twin_fact`
+  - `source_excerpt`
+  - `compiled_inference`
+  - `ambiguous`
+- explicit temporal status:
+  - `current`
+  - `historical`
+  - `superseded`
+- deterministic page skeletons and evidence gathering first, constrained synthesis second
+
+Long-document deep read for PDF-heavy finance documents is planned later inside F3, not as a day-one dependency.
+Vector search and a vector DB are also later concerns, not first-slice requirements.
 
 Focus:
 
-- wiki page generation
+- twin-grounded wiki page generation
+- compiler-owned page registry and compile runs
 - index and log maintenance
-- backlinks and page linting
-- filing durable mission outputs back into the wiki
+- backlinks, page refs, and later wiki linting
+- deterministic export and later filing of durable mission outputs back into the wiki
+
+Slice map:
+
+- `F3A — CFO Wiki foundation and page registry`
+  - new wiki bounded context
+  - compile runs
+  - page registry
+  - page links
+  - page refs
+  - deterministic pages:
+    - `index.md`
+    - `log.md`
+    - `company/overview.md`
+    - `periods/<periodKey>/index.md`
+    - `sources/coverage.md`
+  - compile from Finance Twin state and source inventory only
+  - no broad document synthesis yet
+
+- `F3B — document page compiler, backlinks, and doc-aware pages`
+  - markdown or text and extractable PDF document handling
+  - policy pages
+  - metric pages
+  - concept pages
+  - source digest pages
+  - constrained synthesis inside deterministic templates
+  - explicit backlinks and related-page graph
+  - unsupported scans or images stay visible as gaps
+
+- `F3C — wiki lint, export, and durable filing`
+  - lint runs and findings
+  - missing refs
+  - uncited numbers
+  - stale pages
+  - broken backlinks
+  - duplicate concepts
+  - missing definitions
+  - conflicts against twin facts
+  - deterministic export to Obsidian-friendly layout
+  - later durable filing of markdown artifacts back into the wiki
 
 Exit criteria:
 
-- one company can refresh a reproducible CFO Wiki
-- the wiki is linked, readable, and evidence-aware
+- one company can refresh a reproducible CFO Wiki from stored source inventory plus Finance Twin state
+- compiler-owned pages stay linked, readable, and evidence-aware
+- `index.md` and `log.md` are always maintained
+- later F3 slices add doc-aware pages, lint, and export without changing the authority boundary
 
 ## F4 — Finance discovery and analysis missions
 

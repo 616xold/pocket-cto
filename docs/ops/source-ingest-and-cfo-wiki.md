@@ -47,14 +47,16 @@ The Finance Twin is the machine-queryable layer.
 
 This is the human-readable compiled markdown layer.
 
-It should turn raw documents plus twin facts into durable pages such as:
+It should turn raw-source inventory plus twin facts into durable pages such as:
 
 - company overviews
 - reporting-period indexes
+- source coverage pages
 - policy pages
 - metric definition pages
 - runway and concentration concept pages
-- memo and report pages that are worth keeping
+- source digest pages
+- later filed notes or filed outputs that are worth keeping
 
 The CFO Wiki is derived, not authoritative over raw sources.
 
@@ -72,6 +74,18 @@ The wiki is for operator-readable synthesis, navigation, and durable knowledge c
 
 That combination is much stronger than “just use chat” and stronger than “just use a graph.”
 
+Pocket CFO F3 is therefore:
+
+- not a generic RAG layer
+- not a second authoritative graph
+- not a freeform editable markdown folder
+
+The authority contract stays fixed:
+
+- raw sources remain authoritative for document claims
+- the Finance Twin remains authoritative for structured finance facts
+- the CFO Wiki is compiled and derived from those two layers
+
 ## Required special files
 
 The compiled wiki should always maintain:
@@ -83,6 +97,97 @@ The compiled wiki should always maintain:
 `log.md` is the append-only change ledger for ingest, compilation, and filing activity.
 
 These are mandatory, even at small scale.
+
+## Compiler contract
+
+The wiki compiler must:
+
+1. read only from stored raw-source metadata, stored source-derived evidence, and stored Finance Twin state
+2. produce compiler-owned markdown pages plus persisted page metadata
+3. attach page refs and page links explicitly
+4. surface freshness posture, limitations, and ambiguity in the page body
+5. preserve `current`, `historical`, and `superseded` states rather than “forgetting” prior finance understanding
+6. keep deterministic structure first and constrained synthesis second
+
+The compiler must not:
+
+- treat generated text as the source of truth
+- silently overwrite raw sources
+- silently collapse conflicting evidence into one confident answer
+- require vector search or a vector DB for the first slice
+- make PDF-heavy deep read a day-one dependency
+
+## Page ownership and page kinds
+
+Compiled pages are **compiler-owned**.
+They are derived artifacts and should be reproducible from stored state.
+
+Later, Pocket CFO may also support separate page kinds such as:
+
+- filed operator notes
+- filed mission outputs
+- durable memo or report pages
+
+Those future page kinds are not the same thing as compiler-owned pages.
+They must keep explicit provenance so humans can tell whether a page is compiled state or a later filed artifact.
+
+The initial compiler-owned page kinds for F3A are:
+
+- `index`
+- `log`
+- `company_overview`
+- `period_index`
+- `source_coverage`
+
+The first required deterministic pages are:
+
+- `index.md`
+- `log.md`
+- `company/overview.md`
+- `periods/<periodKey>/index.md`
+- `sources/coverage.md`
+
+Later F3B page kinds can add:
+
+- policy pages
+- metric pages
+- concept pages
+- source digest pages
+
+## Evidence and ref classes
+
+Every wiki page should attach explicit refs using finance-friendly evidence classes:
+
+- `twin_fact`
+  Structured fact grounded in Finance Twin state.
+
+- `source_excerpt`
+  A quote, excerpt, or source locator grounded in raw-source evidence or a stored deterministic document extract.
+
+- `compiled_inference`
+  A constrained compiler synthesis that is derived from other refs and labeled as an inference rather than a raw fact.
+
+- `ambiguous`
+  A known conflict, coverage gap, unsupported source type, or unresolved interpretation that the compiler must keep visible.
+
+Numeric claims should resolve to `twin_fact` or `source_excerpt` refs whenever possible.
+If they cannot, the page should explicitly show the limitation rather than inventing certainty.
+
+## Current, historical, and superseded
+
+The wiki should not use generic “forgetting” semantics.
+It should distinguish:
+
+- `current`
+  The best current compiled view for the company or the relevant reporting period.
+
+- `historical`
+  A still-useful page that reflects a prior period or prior state and remains intentionally reviewable.
+
+- `superseded`
+  A page or interpretation that has been replaced by a newer compiled understanding but must remain visible for audit or context.
+
+Older periods and prior compile states should remain understandable without pretending they are current.
 
 ## Suggested target layout
 
@@ -117,8 +222,27 @@ A good compiled page should make room for:
 - key facts or definitions
 - contradictions or caveats
 - links to related pages
+- freshness posture
+- visible limitations
 
 Do not hide the evidence posture only in frontmatter.
+
+## Compile pipeline
+
+The initial compile pipeline should look like this:
+
+1. create a compile run for one company
+2. read source inventory, snapshot metadata, and authoritative Finance Twin state
+3. build a deterministic page registry for the required compiler-owned pages
+4. render deterministic markdown skeletons
+5. attach page refs and page links
+6. upsert pages, refs, and links
+7. refresh `index.md`
+8. append a new entry to `log.md`
+9. persist compile stats and replay-relevant metadata
+
+The first implementation slice should compile from Finance Twin state and source inventory only.
+It should not begin with broad document-body synthesis.
 
 ## Ingest flow
 
@@ -156,9 +280,59 @@ A wiki lint pass should look for:
 - inconsistent figures across related pages
 - mission outputs that should have been filed back but were not
 
+## F3A scope
+
+The first F3 implementation slice should focus on:
+
+- a new wiki bounded context
+- compile runs
+- page registry state
+- page links
+- page refs
+- deterministic pages:
+  - `index.md`
+  - `log.md`
+  - `company/overview.md`
+  - `periods/<periodKey>/index.md`
+  - `sources/coverage.md`
+- compile from Finance Twin state and source inventory only
+
+F3A should not do any of the following:
+
+- no vector DB
+- no generic retrieval layer
+- no PageIndex or QMD dependency
+- no broad document-page synthesis yet
+- no PDF-heavy deep read as a hard dependency
+- no wiki UI
+- no F4 discovery implementation
+- no new Finance Twin extractor
+
+## Later F3 support
+
+F3B is where Pocket CFO should add document-aware page compilers.
+That later slice can handle:
+
+- markdown or text documents
+- extractable PDFs
+- policy pages
+- metric pages
+- concept pages
+- source digest pages
+- constrained synthesis inside deterministic templates
+- explicit backlinks and related-page graph
+
+Unsupported scans or image-only documents should stay visible as gaps until a later capability can handle them truthfully.
+
+Long-document deep read for PDF-heavy finance packets should be planned explicitly as later F3 work, after the F3A page registry exists.
+It is important, but it is not a day-one dependency for starting the CFO Wiki.
+
 ## Non-negotiable rules
 
 - raw sources are immutable
+- raw sources remain authoritative for document claims
+- the Finance Twin remains authoritative for structured finance facts
+- the wiki stays derived rather than becoming a second truth layer
 - derived pages must stay traceable
 - conflicting evidence stays visible
 - stale or partial coverage must remain visible
