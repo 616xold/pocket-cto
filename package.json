@@ -64,6 +64,7 @@
     "smoke:cfo-wiki-foundation:local": "tsx tools/cfo-wiki-foundation-smoke.mjs",
     "smoke:cfo-wiki-document-pages:local": "tsx tools/cfo-wiki-document-pages-smoke.mjs",
     "smoke:cfo-wiki-lint-export:local": "tsx tools/cfo-wiki-lint-export-smoke.mjs",
+    "smoke:cfo-wiki-concept-metric-policy:local": "tsx tools/cfo-wiki-concept-metric-policy-smoke.mjs",
     "smoke:source-ingest:local": "tsx tools/source-ingest-smoke.mjs --mode ingest",
     "smoke:source-registry:local": "tsx tools/source-ingest-smoke.mjs --mode registry",
     "smoke:m3-discovery:live": "tsx tools/m3-discovery-mission-smoke.mjs",

@@ -8,17 +8,16 @@ export function buildWikiPageRefs(input: {
   state: WikiCompileState;
 }) {
   const refs: PersistCfoWikiPageRefInput[] = [];
-  const documentSourceById = new Map(
-    input.state.compiledDocumentSources.map((source) => [source.source.id, source] as const),
-  );
 
   for (const entry of input.registry) {
-    refs.push(
-      buildCompanyRef(entry.pageKey, input.state),
-      ...buildSharedSliceRefs(entry.pageKey, input.state.slices),
-    );
+    refs.push(buildCompanyRef(entry.pageKey, input.state));
+
+    if (entry.pageKey === "index" || entry.pageKey === "log") {
+      refs.push(...buildSharedSliceRefs(entry.pageKey, input.state.slices));
+    }
 
     if (entry.period) {
+      refs.push(...buildSharedSliceRefs(entry.pageKey, input.state.slices));
       refs.push({
         pageKey: entry.pageKey,
         refKind: "twin_fact",
@@ -40,7 +39,44 @@ export function buildWikiPageRefs(input: {
       continue;
     }
 
+    if (entry.conceptDefinition) {
+      const relevantSlices = input.state.slices.filter((slice) =>
+        entry.conceptDefinition?.extractorKeys.includes(
+          slice.descriptor.extractorKey,
+        ),
+      );
+
+      refs.push(...buildDefinitionSliceRefs(entry.pageKey, relevantSlices));
+
+      if (entry.conceptDefinition.includeAllPolicyPages) {
+        refs.push(
+          ...input.state.compiledDocumentSources.flatMap((documentSource) =>
+            buildCurrentPolicySourceRefs(entry.pageKey, documentSource),
+          ),
+        );
+      }
+
+      continue;
+    }
+
+    if (entry.metricDefinition) {
+      const relevantSlices = input.state.slices.filter((slice) =>
+        entry.metricDefinition?.extractorKeys.includes(
+          slice.descriptor.extractorKey,
+        ),
+      );
+
+      refs.push(...buildDefinitionSliceRefs(entry.pageKey, relevantSlices));
+      refs.push(
+        ...relevantSlices.flatMap((slice) =>
+          buildSourceCoverageRefs(entry.pageKey, slice),
+        ),
+      );
+      continue;
+    }
+
     if (entry.pageKey === "company/overview") {
+      refs.push(...buildSharedSliceRefs(entry.pageKey, input.state.slices));
       refs.push(
         ...input.state.reportingPeriods.map((period) => ({
           pageKey: entry.pageKey,
@@ -58,26 +94,21 @@ export function buildWikiPageRefs(input: {
     }
 
     if (entry.pageKey === "sources/coverage") {
+      refs.push(...buildSharedSliceRefs(entry.pageKey, input.state.slices));
       refs.push(
         ...input.state.slices.flatMap((slice) => buildSourceCoverageRefs(entry.pageKey, slice)),
       );
     }
 
-    if (entry.pageKind === "source_digest" && entry.documentSnapshot) {
-      const documentSource = documentSourceById.get(
-        entry.documentSnapshot.extract.sourceId,
-      );
-
-      if (!documentSource) {
-        throw new Error(
-          `Missing compiled document source state for source digest page ${entry.pageKey}`,
-        );
-      }
-
+    if (
+      (entry.pageKind === "source_digest" || entry.pageKind === "policy") &&
+      entry.documentSource &&
+      entry.documentSnapshot
+    ) {
       refs.push(
         ...buildSourceDigestPageRefs(
           entry.pageKey,
-          documentSource,
+          entry.documentSource,
           entry.documentSnapshot,
         ),
       );
@@ -137,7 +168,7 @@ function buildSliceCoverageRef(
       excerpt: `Latest attempted sync status is ${slice.latestAttemptedRun.status}.`,
       notes:
         slice.latestAttemptedRun.errorSummary ??
-        `F3A exposes the missing ${slice.descriptor.pageLabel} coverage instead of synthesizing a replacement.`,
+        `The CFO Wiki compiler exposes the missing ${slice.descriptor.pageLabel} coverage instead of synthesizing a replacement.`,
     };
   }
 
@@ -150,7 +181,7 @@ function buildSliceCoverageRef(
     locator: slice.descriptor.extractorKey,
     excerpt: "No sync attempt is stored for this finance slice.",
     notes:
-      "F3A compiles a visible gap when no source-linked Finance Twin slice has been recorded yet.",
+      "The CFO Wiki compiler surfaces a visible gap when no source-linked Finance Twin slice has been recorded yet.",
   };
 }
 
@@ -184,6 +215,30 @@ function buildSourceCoverageRefs(
   }
 
   return refs;
+}
+
+function buildDefinitionSliceRefs(
+  pageKey: CfoWikiPageKey,
+  slices: WikiSliceState[],
+) {
+  return slices.map((slice) => buildSliceCoverageRef(pageKey, slice));
+}
+
+function buildCurrentPolicySourceRefs(
+  pageKey: CfoWikiPageKey,
+  documentSource: WikiCompileState["compiledDocumentSources"][number],
+) {
+  if (documentSource.binding.documentRole !== "policy_document") {
+    return [] as PersistCfoWikiPageRefInput[];
+  }
+
+  const latestSnapshot = documentSource.snapshots[0];
+
+  if (!latestSnapshot) {
+    return [] as PersistCfoWikiPageRefInput[];
+  }
+
+  return buildSourceDigestPageRefs(pageKey, documentSource, latestSnapshot);
 }
 
 function buildPeriodSpecificRefs(
@@ -227,7 +282,7 @@ function buildSourceFileRef(
     locator: source.sourceFile.originalFileName,
     excerpt: `Registered raw file ${source.sourceFile.originalFileName} captured ${source.sourceFile.capturedAt}.`,
     notes:
-      "F3A uses stored source inventory metadata only here; it does not parse the document body.",
+      "This compiler-owned ref uses stored source inventory metadata only here; it does not parse the document body.",
   };
 }
 

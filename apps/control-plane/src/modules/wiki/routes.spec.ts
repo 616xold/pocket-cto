@@ -114,6 +114,74 @@ describe("CFO Wiki routes", () => {
     });
   });
 
+  it("GET /cfo-wiki/companies/:companyKey/pages/* preserves canonical concept, metric, and policy keys", async () => {
+    const getPage = vi
+      .fn()
+      .mockImplementationOnce(async () =>
+        buildPageView({
+          pageKey: "concepts/cash",
+          pageKind: "concept",
+        }),
+      )
+      .mockImplementationOnce(async () =>
+        buildPageView({
+          pageKey: "metrics/cash-posture",
+          pageKind: "metric_definition",
+        }),
+      )
+      .mockImplementationOnce(async () =>
+        buildPageView({
+          pageKey: "policies/11111111-1111-4111-8111-111111111111",
+          pageKind: "policy",
+        }),
+      );
+    const app = await createTestApp(apps, {
+      getPage,
+    });
+
+    const conceptResponse = await app.inject({
+      method: "GET",
+      url: "/cfo-wiki/companies/acme/pages/concepts%2Fcash",
+    });
+    const metricResponse = await app.inject({
+      method: "GET",
+      url: "/cfo-wiki/companies/acme/pages/metrics%2Fcash-posture",
+    });
+    const policyResponse = await app.inject({
+      method: "GET",
+      url: "/cfo-wiki/companies/acme/pages/policies%2F11111111-1111-4111-8111-111111111111",
+    });
+
+    expect(conceptResponse.statusCode).toBe(200);
+    expect(metricResponse.statusCode).toBe(200);
+    expect(policyResponse.statusCode).toBe(200);
+    expect(getPage).toHaveBeenNthCalledWith(1, "acme", "concepts/cash");
+    expect(getPage).toHaveBeenNthCalledWith(2, "acme", "metrics/cash-posture");
+    expect(getPage).toHaveBeenNthCalledWith(
+      3,
+      "acme",
+      "policies/11111111-1111-4111-8111-111111111111",
+    );
+    expect(conceptResponse.json()).toMatchObject({
+      page: {
+        pageKey: "concepts/cash",
+        pageKind: "concept",
+      },
+    });
+    expect(metricResponse.json()).toMatchObject({
+      page: {
+        pageKey: "metrics/cash-posture",
+        pageKind: "metric_definition",
+      },
+    });
+    expect(policyResponse.json()).toMatchObject({
+      page: {
+        pageKey: "policies/11111111-1111-4111-8111-111111111111",
+        pageKind: "policy",
+      },
+    });
+  });
+
   it("POST /cfo-wiki/companies/:companyKey/sources/:sourceId/bind defaults the binding body and returns 201", async () => {
     const bindCompanySource = vi.fn(async () => buildSourceBindingView());
     const app = await createTestApp(apps, {
@@ -189,7 +257,7 @@ describe("CFO Wiki routes", () => {
     });
   });
 
-  it("returns 400 when the wildcard page key is not a valid canonical F3A key", async () => {
+  it("returns 400 when the wildcard page key is not a valid canonical F3 key", async () => {
     const getPage = vi.fn(async () => buildPageView());
     const app = await createTestApp(apps, {
       getPage,
@@ -282,6 +350,9 @@ function buildCompanySummary(): CfoWikiCompanySummary {
       period_index: 0,
       source_coverage: 1,
       source_digest: 0,
+      concept: 0,
+      metric_definition: 0,
+      policy: 0,
       filed_artifact: 0,
     },
     pages: [],
@@ -309,6 +380,9 @@ function buildCompileResult(): CfoWikiCompileResult {
       period_index: 0,
       source_coverage: 1,
       source_digest: 0,
+      concept: 0,
+      metric_definition: 0,
+      policy: 0,
       filed_artifact: 0,
     },
     freshnessSummary: {
@@ -319,7 +393,10 @@ function buildCompileResult(): CfoWikiCompileResult {
   };
 }
 
-function buildPageView(): CfoWikiPageView {
+function buildPageView(input?: {
+  pageKey?: string;
+  pageKind?: CfoWikiPageView["page"]["pageKind"];
+}): CfoWikiPageView {
   return {
     companyId: "22222222-2222-4222-8222-222222222222",
     companyKey: "acme",
@@ -328,8 +405,8 @@ function buildPageView(): CfoWikiPageView {
       id: "33333333-3333-4333-8333-333333333333",
       companyId: "22222222-2222-4222-8222-222222222222",
       compileRunId: "11111111-1111-4111-8111-111111111111",
-      pageKey: "periods/2026-03/index",
-      pageKind: "period_index",
+      pageKey: input?.pageKey ?? "periods/2026-03/index",
+      pageKind: input?.pageKind ?? "period_index",
       ownershipKind: "compiler_owned",
       temporalStatus: "current",
       title: "Acme March 2026",

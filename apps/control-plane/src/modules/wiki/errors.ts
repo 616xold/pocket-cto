@@ -15,7 +15,7 @@ export class CfoWikiPageNotFoundError extends Error {
 export class CfoWikiSourceBindingUnsupportedError extends Error {
   constructor(sourceId: string, sourceKind: string) {
     super(
-      `Source ${sourceId} has kind ${sourceKind} and cannot be bound into F3B document compilation`,
+      `Source ${sourceId} has kind ${sourceKind} and cannot be bound into CFO Wiki document-derived compilation`,
     );
     this.name = "CfoWikiSourceBindingUnsupportedError";
   }

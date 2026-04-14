@@ -82,8 +82,8 @@ export async function loadBoundSourceSummaries(input: {
 
 export function buildBoundSourceListLimitations(sourceCount: number) {
   const limitations = [
-    "Company-scoped wiki document bindings are explicit and manual in F3B; the compiler does not infer company scope from filenames, creators, or source names.",
-    "F3B currently supports deterministic markdown and plain-text extraction only; unsupported PDFs, scans, and unreadable files remain visible as gaps.",
+    "Company-scoped wiki document bindings are explicit and manual across F3B and F3D; the compiler does not infer company scope from filenames, creators, or source names.",
+    "F3 document-derived pages currently support deterministic markdown and plain-text extraction only; unsupported PDFs, scans, and unreadable files remain visible as gaps.",
   ];
 
   if (sourceCount === 0) {
@@ -106,7 +106,7 @@ function buildBoundSourceLimitations(input: {
 
   if (input.sourceKind !== "document") {
     limitations.push(
-      "This source is not a `document` source kind, so it cannot compile into F3B document pages truthfully.",
+      "This source is not a `document` source kind, so it cannot compile into CFO Wiki document-derived pages truthfully.",
     );
   }
 

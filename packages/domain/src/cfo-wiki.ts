@@ -13,6 +13,9 @@ export const CfoWikiPageKindSchema = z.enum([
   "period_index",
   "source_coverage",
   "source_digest",
+  "concept",
+  "metric_definition",
+  "policy",
   "filed_artifact",
 ]);
 
@@ -106,7 +109,7 @@ export const CfoWikiPageKeySchema = z
   .string()
   .trim()
   .regex(
-    /^(?:index|log|company\/overview|sources\/coverage|filed\/[a-z0-9][a-z0-9._-]*|periods\/[a-z0-9][a-z0-9._-]*\/index|sources\/[0-9a-f-]{8}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{12}\/snapshots\/[1-9]\d*)$/u,
+    /^(?:index|log|company\/overview|sources\/coverage|filed\/[a-z0-9][a-z0-9._-]*|concepts\/[a-z0-9][a-z0-9._-]*|metrics\/[a-z0-9][a-z0-9._-]*|policies\/[0-9a-f-]{8}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{12}|periods\/[a-z0-9][a-z0-9._-]*\/index|sources\/[0-9a-f-]{8}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{4}-[0-9a-f-]{12}\/snapshots\/[1-9]\d*)$/u,
     "Expected an F3 canonical CFO Wiki page key",
   );
 
@@ -261,6 +264,9 @@ export const CfoWikiPageKindCountsSchema = z.object({
   period_index: z.number().int().nonnegative(),
   source_coverage: z.number().int().nonnegative(),
   source_digest: z.number().int().nonnegative(),
+  concept: z.number().int().nonnegative(),
+  metric_definition: z.number().int().nonnegative(),
+  policy: z.number().int().nonnegative(),
   filed_artifact: z.number().int().nonnegative(),
 });
 
@@ -491,6 +497,20 @@ export function buildCfoWikiSourceDigestPageKey(
   version: number,
 ): CfoWikiPageKey {
   return CfoWikiPageKeySchema.parse(`sources/${sourceId}/snapshots/${version}`);
+}
+
+export function buildCfoWikiConceptPageKey(conceptKey: string): CfoWikiPageKey {
+  return CfoWikiPageKeySchema.parse(`concepts/${conceptKey}`);
+}
+
+export function buildCfoWikiMetricDefinitionPageKey(
+  metricKey: string,
+): CfoWikiPageKey {
+  return CfoWikiPageKeySchema.parse(`metrics/${metricKey}`);
+}
+
+export function buildCfoWikiPolicyPageKey(sourceId: string): CfoWikiPageKey {
+  return CfoWikiPageKeySchema.parse(`policies/${sourceId}`);
 }
 
 export function buildCfoWikiFiledPageKey(slug: string): CfoWikiPageKey {

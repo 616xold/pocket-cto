@@ -139,6 +139,9 @@ export function buildPageKindCounts(
     period_index: 0,
     source_coverage: 0,
     source_digest: 0,
+    concept: 0,
+    metric_definition: 0,
+    policy: 0,
     filed_artifact: 0,
   };
 

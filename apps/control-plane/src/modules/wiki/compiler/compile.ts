@@ -88,6 +88,8 @@ function buildCompileStats(input: {
       (slice) => slice.latestAttemptedRun !== null,
     ).length,
     boundDocumentSourceCount: input.state.compiledDocumentSources.length,
+    conceptPageCount: input.registry.filter((entry) => entry.pageKind === "concept")
+      .length,
     extractedDocumentCount: countDocumentExtracts(
       input.state.compiledDocumentSources,
       "extracted",
@@ -100,7 +102,12 @@ function buildCompileStats(input: {
       "failed",
     ),
     linkCount: input.links.length,
+    metricDefinitionPageCount: input.registry.filter(
+      (entry) => entry.pageKind === "metric_definition",
+    ).length,
     pageCount: input.registry.length,
+    policyPageCount: input.registry.filter((entry) => entry.pageKind === "policy")
+      .length,
     refCount: input.refs.length,
     reportingPeriodCount: input.state.reportingPeriods.length,
     sourceDigestPageCount: input.registry.filter(

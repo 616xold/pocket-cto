@@ -16,6 +16,12 @@ import {
   buildSourceDigestPageSummary,
   renderSourceDigestSections,
 } from "./source-digest-render";
+import {
+  buildKnowledgePageFreshnessSummary,
+  buildKnowledgePageLimitations,
+  buildKnowledgePageSummary,
+  renderKnowledgePageSections,
+} from "./knowledge-render";
 
 type RenderCurrentRun = {
   completedAt: string;
@@ -116,6 +122,12 @@ function renderPageMarkdown(input: {
 }
 
 function buildPageSummary(entry: WikiRegistryEntry, state: WikiCompileState) {
+  const knowledgeSummary = buildKnowledgePageSummary(entry, state);
+
+  if (knowledgeSummary) {
+    return knowledgeSummary;
+  }
+
   if (entry.pageKind === "source_digest" && entry.documentSnapshot) {
     const documentSource = getRequiredDocumentSource(state, entry);
     return buildSourceDigestPageSummary({
@@ -126,7 +138,7 @@ function buildPageSummary(entry: WikiRegistryEntry, state: WikiCompileState) {
 
   switch (entry.pageKind) {
     case "index":
-      return `Deterministic entrypoint for ${state.company.displayName} covering company overview, source coverage, compile history, and ${state.reportingPeriods.length} stored reporting period page(s).`;
+      return `Deterministic entrypoint for ${state.company.displayName} covering company overview, knowledge pages, source coverage, compile history, and ${state.reportingPeriods.length} stored reporting period page(s).`;
     case "log":
       return `Compiler-owned compile history for ${state.company.displayName}, preserving prior completed runs while keeping the current wiki state tied to the latest successful compile.`;
     case "company_overview":
@@ -138,12 +150,23 @@ function buildPageSummary(entry: WikiRegistryEntry, state: WikiCompileState) {
     case "source_digest":
       return `Deterministic source digest for ${state.company.displayName}.`;
   }
+
+  throw new Error(`Unhandled CFO Wiki page kind ${entry.pageKind}`);
 }
 
 function buildPageFreshnessSummary(
   entry: WikiRegistryEntry,
   state: WikiCompileState,
 ): CfoWikiFreshnessSummary {
+  const knowledgeFreshnessSummary = buildKnowledgePageFreshnessSummary(
+    entry,
+    state,
+  );
+
+  if (knowledgeFreshnessSummary) {
+    return knowledgeFreshnessSummary;
+  }
+
   if (entry.pageKind === "source_digest" && entry.documentSnapshot) {
     const documentSource = getRequiredDocumentSource(state, entry);
 
@@ -183,7 +206,12 @@ function buildPageFreshnessSummary(
 }
 
 function buildPageLimitations(entry: WikiRegistryEntry, state: WikiCompileState) {
+  const knowledgeLimitations = buildKnowledgePageLimitations(entry, state);
   const limitations = [...state.generalLimitations];
+
+  if (knowledgeLimitations.length > 0) {
+    limitations.push(...knowledgeLimitations);
+  }
 
   if (entry.pageKind === "source_digest" && entry.documentSnapshot) {
     const documentSource = getRequiredDocumentSource(state, entry);
@@ -228,6 +256,12 @@ function renderPageSpecificSection(input: {
   state: WikiCompileState;
   registry: WikiRegistryEntry[];
 }) {
+  const knowledgeSections = renderKnowledgePageSections(input);
+
+  if (knowledgeSections) {
+    return knowledgeSections;
+  }
+
   switch (input.entry.pageKind) {
     case "index":
       return [
@@ -279,6 +313,8 @@ function renderPageSpecificSection(input: {
         snapshotState: input.entry.documentSnapshot!,
       });
   }
+
+  throw new Error(`Unhandled CFO Wiki page kind ${input.entry.pageKind}`);
 }
 
 function renderCompileRuns(

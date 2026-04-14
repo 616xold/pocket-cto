@@ -24,6 +24,9 @@ const cfoWikiPageKinds = [
   "period_index",
   "source_coverage",
   "source_digest",
+  "concept",
+  "metric_definition",
+  "policy",
   "filed_artifact",
 ] as const;
 const cfoWikiPageOwnershipKinds = [

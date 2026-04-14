@@ -9,7 +9,7 @@ import { InMemoryCfoWikiRepository } from "./repository";
 import { CfoWikiService } from "./service";
 
 describe("CfoWikiService", () => {
-  it("compiles the deterministic F3A wiki foundation for one company", async () => {
+  it("compiles the deterministic F3 wiki foundation plus F3D knowledge pages for one company", async () => {
     const context = createWikiTestContext();
 
     await seedTrialBalanceSlice(context, {
@@ -33,7 +33,7 @@ describe("CfoWikiService", () => {
     expect(periodPageKey).toBeDefined();
     expect(compiled).toMatchObject({
       companyKey: "acme",
-      pageCount: 5,
+      pageCount: 18,
       pageCountsByKind: {
         index: 1,
         log: 1,
@@ -41,6 +41,9 @@ describe("CfoWikiService", () => {
         period_index: 1,
         source_coverage: 1,
         source_digest: 0,
+        concept: 6,
+        metric_definition: 7,
+        policy: 0,
       },
       compileRun: {
         status: "succeeded",
@@ -57,10 +60,13 @@ describe("CfoWikiService", () => {
     );
     expect(companySummary).toMatchObject({
       companyKey: "acme",
-      pageCount: 5,
+      pageCount: 18,
       pageCountsByKind: {
         period_index: 1,
         source_digest: 0,
+        concept: 6,
+        metric_definition: 7,
+        policy: 0,
       },
       latestSuccessfulCompileRun: {
         status: "succeeded",
@@ -84,7 +90,7 @@ describe("CfoWikiService", () => {
     );
   });
 
-  it("still compiles the non-period pages when Finance Twin state is absent", async () => {
+  it("still compiles the non-period pages and fixed knowledge pages when Finance Twin state is absent", async () => {
     const context = createWikiTestContext();
 
     await context.financeRepository.upsertCompany({
@@ -102,18 +108,23 @@ describe("CfoWikiService", () => {
 
     expect(compiled).toMatchObject({
       companyKey: "partial-co",
-      pageCount: 4,
+      pageCount: 17,
       pageCountsByKind: {
         period_index: 0,
         source_digest: 0,
+        concept: 6,
+        metric_definition: 7,
+        policy: 0,
       },
-      changedPageKeys: [
+    });
+    expect(compiled.changedPageKeys).toEqual(
+      expect.arrayContaining([
         "company/overview",
         "index",
         "log",
         "sources/coverage",
-      ],
-    });
+      ]),
+    );
     expect(overviewPage.limitations).toContain(
       "No Finance Twin slice has completed successfully for this company yet, so the wiki surfaces missing coverage instead of synthesized facts.",
     );
@@ -179,7 +190,7 @@ describe("CfoWikiService", () => {
     const summary = await context.wikiService.getCompanySummary("acme");
     const indexPage = await context.wikiService.getIndexPage("acme");
 
-    expect(summary.pageCount).toBe(5);
+    expect(summary.pageCount).toBe(18);
     expect(indexPage.latestCompileRun?.status).toBe("failed");
     expect(indexPage.limitations.some((limitation) => limitation.includes("latest CFO Wiki compile failed"))).toBe(true);
   });

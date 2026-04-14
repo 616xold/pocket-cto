@@ -44,7 +44,7 @@ import { buildCfoWikiExportBundle } from "./export-bundle";
 import { buildFiledPageInput } from "./filed-pages";
 import { emptyLintFindingCounts, lintCfoWikiState } from "./lint";
 
-const DEFAULT_COMPILER_VERSION = "f3c-lint-export-v1";
+const DEFAULT_COMPILER_VERSION = "f3d-knowledge-pages-v1";
 const DEFAULT_LINTER_VERSION = "f3c-wiki-lint-v1";
 const DEFAULT_EXPORTER_VERSION = "f3c-wiki-export-v1";
 const MAX_ERROR_SUMMARY_LENGTH = 500;

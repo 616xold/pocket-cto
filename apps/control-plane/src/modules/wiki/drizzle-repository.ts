@@ -424,7 +424,13 @@ export class DrizzleCfoWikiRepository implements CfoWikiRepository {
     },
     session?: PersistenceSession,
   ) {
-    if (input.extracts.length === 0) {
+    const dedupedExtracts = [
+      ...new Map(
+        input.extracts.map((extract) => [extract.sourceSnapshotId, extract] as const),
+      ).values(),
+    ];
+
+    if (dedupedExtracts.length === 0) {
       return [] satisfies CfoWikiDocumentExtractRecord[];
     }
 
@@ -432,7 +438,7 @@ export class DrizzleCfoWikiRepository implements CfoWikiRepository {
     const rows = await executor
       .insert(cfoWikiDocumentExtracts)
       .values(
-        input.extracts.map((extract) => ({
+        dedupedExtracts.map((extract) => ({
           companyId: input.companyId,
           sourceId: extract.sourceId,
           sourceSnapshotId: extract.sourceSnapshotId,

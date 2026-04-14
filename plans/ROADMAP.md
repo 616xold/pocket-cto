@@ -102,8 +102,8 @@ The wiki contract for F3 is:
   - `superseded`
 - deterministic page skeletons and evidence gathering first, constrained synthesis second
 
-Long-document deep read for PDF-heavy finance documents is planned later inside F3, not as a day-one dependency.
-Vector search and a vector DB are also later concerns, not first-slice requirements.
+Long-document deep read for PDF-heavy finance documents is intentionally deferred beyond the shipped F3A-through-F3D backbone, not treated as a day-one dependency or a blocker before F4.
+Vector search and a vector DB are also deferred concerns, not first-slice requirements.
 
 Focus:
 
@@ -131,14 +131,11 @@ Slice map:
   - no broad document synthesis yet
 
 - `F3B — document page compiler, backlinks, and doc-aware pages`
-  - markdown or text and extractable PDF document handling
-  - policy pages
-  - metric pages
-  - concept pages
+  - markdown or plain-text document handling from stored raw bytes
   - source digest pages
-  - constrained synthesis inside deterministic templates
+  - deterministic extract-backed document pages
   - explicit backlinks and related-page graph
-  - unsupported scans or images stay visible as gaps
+  - unsupported PDFs, scans, or image-only files stay visible as gaps
 
 - `F3C — wiki lint, export, and durable filing`
   - lint runs and findings
@@ -150,14 +147,21 @@ Slice map:
   - missing definitions
   - conflicts against twin facts
   - deterministic export to Obsidian-friendly layout
-  - later durable filing of markdown artifacts back into the wiki
+  - durable filing of markdown artifacts back into the wiki
+
+- `F3D — concept, metric-definition, and policy pages`
+  - deterministic concept hubs from fixed code-owned registries
+  - deterministic metric-definition pages for already-supported Finance Twin or wiki-backed measure families
+  - policy pages only for explicit `policy_document` bindings
+  - route-backed evidence, freshness, lifecycle, and limitations on higher-level wiki pages
+  - no generic RAG, vector search, OCR, or freeform authorship
 
 Exit criteria:
 
 - one company can refresh a reproducible CFO Wiki from stored source inventory plus Finance Twin state
 - compiler-owned pages stay linked, readable, and evidence-aware
 - `index.md` and `log.md` are always maintained
-- later F3 slices add doc-aware pages, lint, and export without changing the authority boundary
+- the reproducible wiki includes deterministic concept, metric-definition, and policy pages without changing the raw-source and Finance Twin authority boundary
 
 ## F4 — Finance discovery and analysis missions
 

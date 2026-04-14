@@ -10,13 +10,16 @@ import {
   CfoWikiPageKeySchema,
   CfoWikiLintSummarySchema,
   CfoWikiExportDetailViewSchema,
+  buildCfoWikiConceptPageKey,
   buildCfoWikiSourceDigestPageKey,
   buildCfoWikiFiledPageKey,
   buildCfoWikiMarkdownPath,
+  buildCfoWikiMetricDefinitionPageKey,
+  buildCfoWikiPolicyPageKey,
 } from "./cfo-wiki";
 
 describe("cfo wiki domain schemas", () => {
-  it("accepts canonical F3A page keys without markdown suffixes", () => {
+  it("accepts canonical F3 page keys without markdown suffixes", () => {
     expect(CfoWikiPageKeySchema.parse("index")).toBe("index");
     expect(CfoWikiPageKeySchema.parse("company/overview")).toBe(
       "company/overview",
@@ -29,6 +32,15 @@ describe("cfo wiki domain schemas", () => {
         "sources/11111111-1111-4111-8111-111111111111/snapshots/2",
       ),
     ).toBe("sources/11111111-1111-4111-8111-111111111111/snapshots/2");
+    expect(CfoWikiPageKeySchema.parse("concepts/cash")).toBe("concepts/cash");
+    expect(CfoWikiPageKeySchema.parse("metrics/cash-posture")).toBe(
+      "metrics/cash-posture",
+    );
+    expect(
+      CfoWikiPageKeySchema.parse(
+        "policies/11111111-1111-4111-8111-111111111111",
+      ),
+    ).toBe("policies/11111111-1111-4111-8111-111111111111");
     expect(CfoWikiPageKeySchema.parse("filed/board-deck-notes")).toBe(
       "filed/board-deck-notes",
     );
@@ -45,9 +57,22 @@ describe("cfo wiki domain schemas", () => {
     expect(buildCfoWikiMarkdownPath("sources/coverage")).toBe(
       "sources/coverage.md",
     );
-    expect(buildCfoWikiMarkdownPath(buildCfoWikiFiledPageKey("board-deck-notes"))).toBe(
-      "filed/board-deck-notes.md",
-    );
+    expect(
+      buildCfoWikiMarkdownPath(buildCfoWikiConceptPageKey("cash")),
+    ).toBe("concepts/cash.md");
+    expect(
+      buildCfoWikiMarkdownPath(
+        buildCfoWikiMetricDefinitionPageKey("cash-posture"),
+      ),
+    ).toBe("metrics/cash-posture.md");
+    expect(
+      buildCfoWikiMarkdownPath(
+        buildCfoWikiPolicyPageKey("11111111-1111-4111-8111-111111111111"),
+      ),
+    ).toBe("policies/11111111-1111-4111-8111-111111111111.md");
+    expect(
+      buildCfoWikiMarkdownPath(buildCfoWikiFiledPageKey("board-deck-notes")),
+    ).toBe("filed/board-deck-notes.md");
     expect(
       buildCfoWikiMarkdownPath(
         buildCfoWikiSourceDigestPageKey(
@@ -221,6 +246,9 @@ describe("cfo wiki domain schemas", () => {
         period_index: 0,
         source_coverage: 0,
         source_digest: 0,
+        concept: 0,
+        metric_definition: 0,
+        policy: 0,
         filed_artifact: 0,
       },
       freshnessSummary: {

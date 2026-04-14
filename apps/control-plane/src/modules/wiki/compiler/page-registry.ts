@@ -13,7 +13,20 @@ import type {
   SourceRecord,
   SourceSnapshotRecord,
 } from "@pocket-cto/domain";
-import { buildCfoWikiSourceDigestPageKey } from "@pocket-cto/domain";
+import {
+  buildCfoWikiConceptPageKey,
+  buildCfoWikiMetricDefinitionPageKey,
+  buildCfoWikiPolicyPageKey,
+  buildCfoWikiSourceDigestPageKey,
+} from "@pocket-cto/domain";
+import {
+  buildConceptPageTitle,
+  buildMetricDefinitionPageTitle,
+  type WikiConceptDefinition,
+  type WikiMetricDefinition,
+  WIKI_CONCEPT_DEFINITIONS,
+  WIKI_METRIC_DEFINITIONS,
+} from "./knowledge-registry";
 import type { WikiDocumentSourceState, WikiDocumentSnapshotState } from "./document-state";
 
 export type WikiSliceDescriptor = {
@@ -65,7 +78,10 @@ export type WikiCompileState = {
 };
 
 export type WikiRegistryEntry = {
+  conceptDefinition: WikiConceptDefinition | null;
+  documentSource: WikiDocumentSourceState | null;
   documentSnapshot: WikiDocumentSnapshotState | null;
+  metricDefinition: WikiMetricDefinition | null;
   pageKey: CfoWikiPageKey;
   pageKind: Exclude<CfoWikiPageKind, "filed_artifact">;
   period: FinanceReportingPeriodRecord | null;
@@ -139,39 +155,54 @@ export function buildWikiPageRegistry(
       ?.periodEnd ?? null;
   const pages: WikiRegistryEntry[] = [
     {
+      conceptDefinition: null,
+      documentSource: null,
       pageKey: "index",
       documentSnapshot: null,
+      metricDefinition: null,
       pageKind: "index",
       period: null,
       temporalStatus: "current",
       title: `${company.displayName} CFO Wiki Index`,
     },
     {
+      conceptDefinition: null,
+      documentSource: null,
       pageKey: "log",
       documentSnapshot: null,
+      metricDefinition: null,
       pageKind: "log",
       period: null,
       temporalStatus: "current",
       title: `${company.displayName} CFO Wiki Compile Log`,
     },
     {
+      conceptDefinition: null,
+      documentSource: null,
       pageKey: "company/overview",
       documentSnapshot: null,
+      metricDefinition: null,
       pageKind: "company_overview",
       period: null,
       temporalStatus: "current",
       title: `${company.displayName} Company Overview`,
     },
     {
+      conceptDefinition: null,
+      documentSource: null,
       pageKey: "sources/coverage",
       documentSnapshot: null,
+      metricDefinition: null,
       pageKind: "source_coverage",
       period: null,
       temporalStatus: "current",
       title: `${company.displayName} Source Coverage`,
     },
     ...reportingPeriods.map((period) => ({
+      conceptDefinition: null,
+      documentSource: null,
       documentSnapshot: null,
+      metricDefinition: null,
       pageKey: buildPeriodPageKey(period.periodKey),
       pageKind: "period_index" as const,
       period,
@@ -181,6 +212,9 @@ export function buildWikiPageRegistry(
           : ("current" as const),
       title: `${company.displayName} Period ${period.label}`,
     })),
+    ...buildConceptRegistryEntries(company),
+    ...buildMetricDefinitionRegistryEntries(company),
+    ...buildPolicyRegistryEntries(compiledDocumentSources),
     ...buildSourceDigestRegistryEntries(compiledDocumentSources),
   ];
 
@@ -192,7 +226,10 @@ function buildSourceDigestRegistryEntries(
 ) {
   return compiledDocumentSources.flatMap((documentSource) =>
     documentSource.snapshots.map((snapshotState) => ({
+      conceptDefinition: null,
+      documentSource,
       documentSnapshot: snapshotState,
+      metricDefinition: null,
       pageKey: buildCfoWikiSourceDigestPageKey(
         documentSource.source.id,
         snapshotState.snapshot.version,
@@ -203,6 +240,52 @@ function buildSourceDigestRegistryEntries(
       title: buildSourceDigestTitle(documentSource, snapshotState),
     })),
   );
+}
+
+function buildConceptRegistryEntries(company: FinanceCompanyRecord) {
+  return WIKI_CONCEPT_DEFINITIONS.map((definition) => ({
+    conceptDefinition: definition,
+    documentSource: null,
+    documentSnapshot: null,
+    metricDefinition: null,
+    pageKey: buildCfoWikiConceptPageKey(definition.conceptKey),
+    pageKind: "concept" as const,
+    period: null,
+    temporalStatus: "current" as const,
+    title: buildConceptPageTitle(company.displayName, definition),
+  }));
+}
+
+function buildMetricDefinitionRegistryEntries(company: FinanceCompanyRecord) {
+  return WIKI_METRIC_DEFINITIONS.map((definition) => ({
+    conceptDefinition: null,
+    documentSource: null,
+    documentSnapshot: null,
+    metricDefinition: definition,
+    pageKey: buildCfoWikiMetricDefinitionPageKey(definition.metricKey),
+    pageKind: "metric_definition" as const,
+    period: null,
+    temporalStatus: "current" as const,
+    title: buildMetricDefinitionPageTitle(company.displayName, definition),
+  }));
+}
+
+function buildPolicyRegistryEntries(
+  compiledDocumentSources: WikiDocumentSourceState[],
+) {
+  return compiledDocumentSources
+    .filter((documentSource) => documentSource.binding.documentRole === "policy_document")
+    .map((documentSource) => ({
+      conceptDefinition: null,
+      documentSource,
+      documentSnapshot: documentSource.snapshots[0] ?? null,
+      metricDefinition: null,
+      pageKey: buildCfoWikiPolicyPageKey(documentSource.source.id),
+      pageKind: "policy" as const,
+      period: null,
+      temporalStatus: "current" as const,
+      title: buildPolicyTitle(documentSource),
+    }));
 }
 
 function buildSourceDigestTitle(
@@ -219,6 +302,16 @@ function buildSourceDigestTitle(
   );
 
   return `${baseTitle} Snapshot v${snapshotState.snapshot.version}${statusSuffix}`;
+}
+
+function buildPolicyTitle(documentSource: WikiDocumentSourceState) {
+  const latestSnapshot = documentSource.snapshots[0];
+  const baseTitle =
+    latestSnapshot?.extract.title && latestSnapshot.extract.title.length > 0
+      ? latestSnapshot.extract.title
+      : documentSource.source.name;
+
+  return `Policy: ${baseTitle}`;
 }
 
 function buildSourceDigestStatusSuffix(

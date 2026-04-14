@@ -108,10 +108,12 @@ Today, steps 1 through 5 exist in a narrow form:
 - the packaged `pnpm smoke:cfo-wiki-document-pages:local` path proves one company can bind document sources, compile current plus superseded source digest pages, and read back extracted versus unsupported coverage without runtime-codex, OCR, or vector search
 - F3C adds persisted wiki lint runs and findings, deterministic markdown-first export runs, and an ownership-safe filed artifact seam that preserves filed pages across later compiler-owned refreshes
 - the packaged `pnpm smoke:cfo-wiki-lint-export:local` path proves one company can preserve a filed artifact page across recompile, persist deterministic lint findings from stored wiki state, and read back a deterministic markdown export bundle without runtime-codex, vector search, or OCR
+- F3D adds deterministic concept pages, metric-definition pages, and policy pages from fixed registries plus explicit `policy_document` bindings while unsupported policy extracts remain visible as gaps
+- the packaged `pnpm smoke:cfo-wiki-concept-metric-policy:local` path proves one company can sync supported cash coverage, compile deterministic concept and metric-definition pages, and read back supported plus unsupported policy pages without runtime-codex, OCR, or vector search
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-If none exists, the next new implementation phase after the shipped F3C lint/export slice is the next narrow F3 page-family slice for concept, metric-definition, and policy pages, so create that next F3 plan before code changes.
+If none exists, the next new major implementation phase should be F4 finance discovery answers rather than reopening completed wiki slices.
 Use the docs to guide what gets built next.
 
 The active finance-twin read surface is currently backend-first:

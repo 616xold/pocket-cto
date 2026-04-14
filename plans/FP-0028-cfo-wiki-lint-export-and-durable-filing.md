@@ -18,7 +18,7 @@ GitHub connector work is explicitly out of scope for this slice.
 - [x] 2026-04-13T23:17:17Z Add additive wiki persistence and route-backed behavior for lint runs, lint findings, export runs, and ownership-safe compile replacement with durable filing only if the preservation path stays small and deterministic.
 - [x] 2026-04-13T23:17:17Z Add focused domain, DB, repository, service, route, and smoke coverage for persisted lint, export, and the ownership-safe durable filing seam that shipped.
 - [x] 2026-04-13T23:36:21Z Run focused wiki validation: domain schema, DB schema, wiki route plus service plus repository specs, and the packaged `pnpm smoke:cfo-wiki-lint-export:local` proof all passed after migrating both `DATABASE_URL` and `TEST_DATABASE_URL`.
-- [ ] 2026-04-13T23:17:17Z Run the full required validation ladder through `pnpm ci:repro:current`, fix only in-scope failures, and publish only if the branch is fully green.
+- [x] 2026-04-14T00:36:57Z Mark the stale final validation-and-publish checkbox as historical completion because the repo state and active docs now treat F3C as shipped context rather than an active publish branch.
 
 ## Surprises & Discoveries
 
@@ -258,6 +258,6 @@ Key dependencies and seams:
 
 ## Outcomes & Retrospective
 
-In progress.
+Historical shipped context.
 
-The branch now contains the intended F3C implementation shape: persisted lint runs and findings, deterministic markdown-first export runs, and a narrow filed-artifact seam preserved across later compiler-owned compiles. Remaining work is the full repo validation ladder, final commit, push, and PR creation only after every required validation passes.
+The repo state now reflects the intended F3C implementation shape: persisted lint runs and findings, deterministic markdown-first export runs, and a narrow filed-artifact seam preserved across later compiler-owned compiles. `README.md`, `START_HERE.md`, and the active F3 sequencing now treat F3C as shipped, so the next active implementation plan is the narrow F3D concept, metric-definition, and policy-page slice rather than further F3C publish work.

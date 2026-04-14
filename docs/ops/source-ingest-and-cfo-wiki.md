@@ -54,7 +54,7 @@ It should turn raw-source inventory plus twin facts into durable pages such as:
 - source coverage pages
 - policy pages
 - metric definition pages
-- runway and concentration concept pages
+- concept hubs for cash, receivables, payables, spend, contract obligations, and the policy corpus
 - source digest pages
 - later filed notes or filed outputs that are worth keeping
 
@@ -147,6 +147,12 @@ The current shipped F3C filed page kind adds:
 
 - `filed_artifact`
 
+The current shipped F3D compiler-owned page kinds add:
+
+- `concept`
+- `metric_definition`
+- `policy`
+
 The first required deterministic pages are:
 
 - `index.md`
@@ -155,11 +161,11 @@ The first required deterministic pages are:
 - `periods/<periodKey>/index.md`
 - `sources/coverage.md`
 
-Later wiki slices may still add:
+The current shipped F3D deterministic page families add:
 
-- policy pages
-- metric pages
-- concept pages
+- `concepts/<conceptKey>.md` for the fixed deterministic concept registry
+- `metrics/<metricKey>.md` for the fixed deterministic metric-definition registry
+- `policies/<sourceId>.md` for explicit `policy_document` bindings only
 
 ## Evidence and ref classes
 
@@ -334,22 +340,21 @@ The shipped F3A routes are intentionally narrow:
 - `GET /cfo-wiki/companies/:companyKey/log`
 - `GET /cfo-wiki/companies/:companyKey/pages/*`
 
-## Later F3 support
+## Deferred wiki support
 
-F3A, the first narrow F3B document-page slice, and the F3C lint or export or filed-artifact slice are now shipped.
-Later F3 slices can still add:
+F3A through F3D are now shipped.
+F3D adds deterministic concept pages, metric-definition pages, and policy pages from fixed registries plus explicit `policy_document` bindings.
+Future wiki enhancements can deepen document support, but they should not replace these compiler-owned registries with open-ended synthesis.
+If deeper wiki support is ever pursued later, it can add:
 
 - extractable PDF deep-read support when it is deterministic enough to stay truthful
-- policy pages
-- metric pages
-- concept pages
 - constrained synthesis inside deterministic templates for those page families
 - broader related-page graph behavior once those page families exist
 
 Unsupported scans or image-only documents should stay visible as gaps until a later capability can handle them truthfully.
 
-Long-document deep read for PDF-heavy finance packets should be planned explicitly as a later F3 slice, after the shipped page registry, lint, export, and filed-artifact seams.
-It is important, but it is not a day-one dependency for starting the CFO Wiki.
+Long-document deep read for PDF-heavy finance packets should be planned explicitly if it is ever pursued later.
+It is not part of the shipped F3 baseline and it is not a blocker before F4 finance discovery answers.
 
 ## Non-negotiable rules
 

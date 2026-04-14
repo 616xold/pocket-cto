@@ -25,9 +25,13 @@ const SOURCE_COVERAGE_LIMITATION =
 const DETERMINISTIC_F3_LIMITATION =
   "F3 pages remain deterministic compiler-owned artifacts. They do not call runtime-codex, use freeform LLM synthesis, or treat generated prose as a source of truth.";
 const DOCUMENT_BINDING_LIMITATION =
-  "F3B only compiles document pages for sources explicitly bound to the company inside the wiki bounded context; unbound document sources are excluded.";
+  "F3 document-derived pages compile only for sources explicitly bound to the company inside the wiki bounded context; unbound document sources are excluded.";
 const DOCUMENT_EXTRACTION_LIMITATION =
-  "F3B currently supports deterministic markdown and plain-text extraction from stored raw bytes. Unsupported PDFs, scans, image-only files, or unreadable documents remain visible as gaps instead of synthesized digests.";
+  "F3 document-derived pages currently support deterministic markdown and plain-text extraction from stored raw bytes. Unsupported PDFs, scans, image-only files, or unreadable documents remain visible as gaps instead of synthesized digests.";
+const KNOWLEDGE_REGISTRY_LIMITATION =
+  "F3D concept and metric-definition pages come only from fixed code-owned registries; unsupported finance areas stay absent rather than being inferred heuristically.";
+const POLICY_SCOPE_LIMITATION =
+  "F3D policy pages compile only from explicit `policy_document` bindings and stored deterministic extracts; they do not infer policy scope from filenames or vague document names.";
 
 type LoadedSourceInventoryRecord = {
   source: SourceRecord;
@@ -232,12 +236,14 @@ function buildGeneralLimitations(input: {
     DETERMINISTIC_F3_LIMITATION,
     DOCUMENT_BINDING_LIMITATION,
     DOCUMENT_EXTRACTION_LIMITATION,
+    KNOWLEDGE_REGISTRY_LIMITATION,
+    POLICY_SCOPE_LIMITATION,
     SOURCE_COVERAGE_LIMITATION,
   ];
 
   if (input.reportingPeriods.length === 0) {
     limitations.push(
-      "No Finance Twin reporting periods are stored yet, so F3A cannot compile any period index pages for this company.",
+      "No Finance Twin reporting periods are stored yet, so the CFO Wiki compiler cannot compile any period index pages for this company.",
     );
   }
 
@@ -279,7 +285,7 @@ function buildGeneralLimitations(input: {
 
   if (input.compiledDocumentSources.length === 0) {
     limitations.push(
-      "No company-scoped wiki document bindings are currently included in compile for this company, so F3B source digest pages are absent.",
+      "No company-scoped wiki document bindings are currently included in compile for this company, so source digest and policy pages are absent.",
     );
   }
 
@@ -313,8 +319,8 @@ function buildOverallFreshnessSummary(
     state,
     summary:
       summary.length > 0
-        ? `F3A supports ${slices.length} finance slices; current coverage is ${summary}.`
-        : "F3A has not observed any supported finance slice state for this company yet.",
+        ? `The CFO Wiki compiler supports ${slices.length} finance slices; current coverage is ${summary}.`
+        : "The CFO Wiki compiler has not observed any supported finance slice state for this company yet.",
   };
 }
 

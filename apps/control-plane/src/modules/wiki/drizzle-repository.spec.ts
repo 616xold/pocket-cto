@@ -370,4 +370,102 @@ describe("DrizzleCfoWikiRepository", () => {
       bundleRootPath: "acme-cfo-wiki",
     });
   });
+
+  it("deduplicates document extracts that share one source snapshot within a single upsert batch", async () => {
+    const db = createTestDb();
+    const financeRepository = new DrizzleFinanceTwinRepository(db);
+    const sourceRepository = new DrizzleSourceRepository(db);
+    const wikiRepository = new DrizzleCfoWikiRepository(db);
+    const company = await financeRepository.upsertCompany({
+      companyKey: "acme",
+      displayName: "Acme Holdings",
+    });
+    const source = await sourceRepository.createSource({
+      kind: "document",
+      originKind: "manual",
+      name: "Policy",
+      description: null,
+      createdBy: "finance-operator",
+    });
+    const snapshot = await sourceRepository.createSnapshot({
+      sourceId: source.id,
+      version: 1,
+      originalFileName: "policy.md",
+      mediaType: "text/markdown",
+      sizeBytes: 128,
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      storageKind: "object_store",
+      storageRef: "s3://bucket/policy.md",
+      capturedAt: "2026-04-13T12:10:00.000Z",
+      ingestStatus: "ready",
+    });
+    const sourceFile = await sourceRepository.createSourceFile({
+      sourceId: source.id,
+      sourceSnapshotId: snapshot.id,
+      originalFileName: "policy.md",
+      mediaType: "text/markdown",
+      sizeBytes: 128,
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      storageKind: "object_store",
+      storageRef: "s3://bucket/policy.md",
+      createdBy: "finance-operator",
+      capturedAt: "2026-04-13T12:10:00.000Z",
+    });
+
+    const extracts = await wikiRepository.upsertDocumentExtracts({
+      companyId: company.id,
+      extracts: [
+        {
+          sourceId: source.id,
+          sourceSnapshotId: snapshot.id,
+          sourceFileId: sourceFile.id,
+          extractStatus: "extracted",
+          documentKind: "markdown_text",
+          title: "Policy",
+          headingOutline: [{ depth: 1, text: "Policy" }],
+          excerptBlocks: [{ heading: "Policy", text: "Initial extract." }],
+          extractedText: "# Policy\n\nInitial extract.",
+          renderedMarkdown: "# Policy\n\nInitial extract.",
+          warnings: [],
+          errorSummary: null,
+          parserVersion: "test",
+          inputChecksumSha256:
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          extractedAt: "2026-04-13T12:10:01.000Z",
+        },
+        {
+          sourceId: source.id,
+          sourceSnapshotId: snapshot.id,
+          sourceFileId: sourceFile.id,
+          extractStatus: "extracted",
+          documentKind: "markdown_text",
+          title: "Policy Current",
+          headingOutline: [{ depth: 1, text: "Policy Current" }],
+          excerptBlocks: [
+            { heading: "Policy Current", text: "Latest extract." },
+          ],
+          extractedText: "# Policy Current\n\nLatest extract.",
+          renderedMarkdown: "# Policy Current\n\nLatest extract.",
+          warnings: [],
+          errorSummary: null,
+          parserVersion: "test",
+          inputChecksumSha256:
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          extractedAt: "2026-04-13T12:10:02.000Z",
+        },
+      ],
+    });
+    const storedExtracts = await wikiRepository.listDocumentExtractsByCompanyId(
+      company.id,
+    );
+
+    expect(extracts).toHaveLength(1);
+    expect(storedExtracts).toHaveLength(1);
+    expect(storedExtracts[0]).toMatchObject({
+      sourceSnapshotId: snapshot.id,
+      title: "Policy Current",
+    });
+  });
 });

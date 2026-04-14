@@ -204,6 +204,13 @@
       "when": 1776123121641,
       "tag": "0028_classy_imperial_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1776128214351,
+      "tag": "0029_careless_stardust",
+      "breakpoints": true
     }
   ]
 }

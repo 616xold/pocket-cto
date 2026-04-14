@@ -37,11 +37,12 @@ Today the merged backbone is:
 - F3A additive deterministic CFO Wiki foundation with persisted compile runs, compiler-owned pages, page links, and page refs for one company, compiled only from stored source-inventory metadata plus Finance Twin state
 - F3B additive company-scoped CFO Wiki document bindings, deterministic markdown or plain-text document extracts from stored raw bytes, compiler-owned source digest pages, and route-backed backlinks while unsupported PDFs or fileless snapshots remain visible as gaps
 - F3C additive persisted CFO Wiki lint runs and findings, deterministic markdown-first export runs, and ownership-safe filed artifact pages preserved across later compiler-owned compiles
+- F3D additive deterministic concept pages, metric-definition pages, and policy pages compiled from fixed registries plus explicit `policy_document` bindings while unsupported policy extracts remain visible as gaps
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
-F3A, the first narrow F3B document-page slice, and the narrow F3C lint/export/filed-artifact slice are now shipped.
-The next new implementation phase should stay inside F3 and add deterministic concept, metric-definition, and policy page families rather than jumping ahead to F4/F5/F6.
+F3A through F3D are now shipped.
+The next new major implementation phase should be F4 finance discovery answers rather than reopening earlier wiki slices.
 
 ## Product boundary for v1
 
@@ -135,6 +136,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0026-cfo-wiki-foundation-and-page-registry.md
 │   ├── FP-0027-cfo-wiki-document-page-compiler-and-backlinks.md
 │   ├── FP-0028-cfo-wiki-lint-export-and-durable-filing.md
+│   ├── FP-0029-cfo-wiki-concept-metric-and-policy-pages.md
 │   └── templates
 └── .agents
     └── skills
@@ -189,6 +191,7 @@ pnpm smoke:finance-twin-card-expense:local
 pnpm smoke:cfo-wiki-foundation:local
 pnpm smoke:cfo-wiki-document-pages:local
 pnpm smoke:cfo-wiki-lint-export:local
+pnpm smoke:cfo-wiki-concept-metric-policy:local
 ```
 
 The current backend-first finance-twin read surface is:

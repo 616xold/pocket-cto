@@ -65,6 +65,8 @@ export async function resetTestDatabase() {
       cfo_wiki_page_refs,
       cfo_wiki_page_links,
       cfo_wiki_pages,
+      cfo_wiki_document_extracts,
+      cfo_wiki_source_bindings,
       cfo_wiki_compile_runs,
       finance_twin_lineage,
       finance_contract_obligations,
