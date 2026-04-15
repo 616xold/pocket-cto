@@ -1,6 +1,7 @@
 import type {
   FinanceDiscoveryEvidenceSection,
 } from "@pocket-cto/domain";
+import { readFreshnessLabel } from "@pocket-cto/domain";
 import type {
   FinanceDiscoveryAnswerFormatterInput,
   FinanceDiscoveryRouteState,
@@ -78,7 +79,7 @@ function buildRouteEvidenceSummary(
         bankAccounts.accountCount,
       )} with ${bankAccounts.accounts.flatMap((account) => account.reportedBalances).length} reported balance row${pluralize(
         bankAccounts.accounts.flatMap((account) => account.reportedBalances).length,
-      )}. Freshness is ${bankAccounts.freshness.state}: ${bankAccounts.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(bankAccounts.freshness)}`;
     }
     case "cashPosture": {
       const cashPosture = twinReads.cashPosture;
@@ -90,7 +91,7 @@ function buildRouteEvidenceSummary(
         cashPosture.coverageSummary.reportedBalanceCount,
       )} across ${cashPosture.coverageSummary.currencyBucketCount} currency bucket${pluralize(
         cashPosture.coverageSummary.currencyBucketCount,
-      )}. Freshness is ${cashPosture.freshness.state}: ${cashPosture.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(cashPosture.freshness)}`;
     }
     case "collectionsPosture": {
       const collectionsPosture = twinReads.collectionsPosture;
@@ -102,7 +103,7 @@ function buildRouteEvidenceSummary(
         collectionsPosture.coverageSummary.rowCount,
       )} across ${collectionsPosture.coverageSummary.currencyBucketCount} currency bucket${pluralize(
         collectionsPosture.coverageSummary.currencyBucketCount,
-      )}. Freshness is ${collectionsPosture.freshness.state}: ${collectionsPosture.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(collectionsPosture.freshness)}`;
     }
     case "contracts": {
       const contracts = twinReads.contracts;
@@ -112,7 +113,7 @@ function buildRouteEvidenceSummary(
 
       return `Read ${contracts.contractCount} persisted contract${pluralize(
         contracts.contractCount,
-      )}. Freshness is ${contracts.freshness.state}: ${contracts.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(contracts.freshness)}`;
     }
     case "obligationCalendar": {
       const obligationCalendar = twinReads.obligationCalendar;
@@ -124,7 +125,7 @@ function buildRouteEvidenceSummary(
         obligationCalendar.coverageSummary.obligationCount,
       )} across ${obligationCalendar.coverageSummary.currencyBucketCount} currency bucket${pluralize(
         obligationCalendar.coverageSummary.currencyBucketCount,
-      )}. Freshness is ${obligationCalendar.freshness.state}: ${obligationCalendar.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(obligationCalendar.freshness)}`;
     }
     case "payablesAging": {
       const payablesAging = twinReads.payablesAging;
@@ -136,7 +137,7 @@ function buildRouteEvidenceSummary(
         payablesAging.rows.length,
       )} across ${payablesAging.vendorCount} vendor${pluralize(
         payablesAging.vendorCount,
-      )}. Freshness is ${payablesAging.freshness.state}: ${payablesAging.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(payablesAging.freshness)}`;
     }
     case "payablesPosture": {
       const payablesPosture = twinReads.payablesPosture;
@@ -148,7 +149,7 @@ function buildRouteEvidenceSummary(
         payablesPosture.coverageSummary.rowCount,
       )} across ${payablesPosture.coverageSummary.currencyBucketCount} currency bucket${pluralize(
         payablesPosture.coverageSummary.currencyBucketCount,
-      )}. Freshness is ${payablesPosture.freshness.state}: ${payablesPosture.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(payablesPosture.freshness)}`;
     }
     case "receivablesAging": {
       const receivablesAging = twinReads.receivablesAging;
@@ -160,7 +161,7 @@ function buildRouteEvidenceSummary(
         receivablesAging.rows.length,
       )} across ${receivablesAging.customerCount} customer${pluralize(
         receivablesAging.customerCount,
-      )}. Freshness is ${receivablesAging.freshness.state}: ${receivablesAging.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(receivablesAging.freshness)}`;
     }
     case "spendItems": {
       const spendItems = twinReads.spendItems;
@@ -170,7 +171,7 @@ function buildRouteEvidenceSummary(
 
       return `Read ${spendItems.rowCount} persisted spend row${pluralize(
         spendItems.rowCount,
-      )}. Freshness is ${spendItems.freshness.state}: ${spendItems.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(spendItems.freshness)}`;
     }
     case "spendPosture": {
       const spendPosture = twinReads.spendPosture;
@@ -182,9 +183,16 @@ function buildRouteEvidenceSummary(
         spendPosture.coverageSummary.rowCount,
       )} across ${spendPosture.coverageSummary.currencyBucketCount} currency bucket${pluralize(
         spendPosture.coverageSummary.currencyBucketCount,
-      )}. Freshness is ${spendPosture.freshness.state}: ${spendPosture.freshness.reasonSummary}`;
+      )}. ${buildFreshnessSummary(spendPosture.freshness)}`;
     }
   }
+}
+
+function buildFreshnessSummary(freshness: {
+  reasonSummary: string;
+  state: string;
+}) {
+  return `Freshness: ${readFreshnessLabel(freshness.state)}. ${freshness.reasonSummary}`;
 }
 
 function summarizeTwinRead(

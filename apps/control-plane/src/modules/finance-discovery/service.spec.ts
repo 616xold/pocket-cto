@@ -159,6 +159,8 @@ describe("FinanceDiscoveryService", () => {
       "wiki_company_overview",
     ]);
     expect(answer.bodyMarkdown).toContain("## Freshness posture");
+    expect(answer.bodyMarkdown).toContain("- State: Fresh");
+    expect(answer.evidenceSections[0]?.summary).toContain("Freshness: Fresh.");
     expect(answer.bodyMarkdown).toContain("## Evidence sections");
   });
 
@@ -310,6 +312,42 @@ describe("FinanceDiscoveryService", () => {
     expect(answer.freshnessPosture.state).toBe("mixed");
     expect(answer.limitations).toContain(
       "Required Finance Twin read Receivables aging is missing for acme: No successful receivables-aging sync has completed yet for this company.",
+    );
+  });
+
+  it("adds an explicit limitation when a required supported-family read is stale", async () => {
+    const service = new FinanceDiscoveryService({
+      cfoWikiService: {
+        async getPage(companyKey, pageKey) {
+          return buildWikiPage({
+            companyKey,
+            pageKey: pageKey as TestWikiPageKey,
+            title: buildWikiTitle(pageKey as TestWikiPageKey),
+          });
+        },
+      },
+      financeTwinService: createFinanceTwinService({
+        async getReceivablesAging() {
+          return {
+            ...buildReceivablesAgingView(),
+            freshness: buildFreshnessSummary({
+              reasonSummary:
+                "Stored receivables-aging coverage is stale relative to the freshness threshold.",
+              state: "stale",
+            }),
+          };
+        },
+      }),
+    });
+
+    const answer = await service.answerQuestion({
+      companyKey: "acme",
+      questionKind: "collections_pressure",
+    });
+
+    expect(answer.freshnessPosture.state).toBe("mixed");
+    expect(answer.limitations).toContain(
+      "Required Finance Twin read Receivables aging is stale for acme: Stored receivables-aging coverage is stale relative to the freshness threshold.",
     );
   });
 

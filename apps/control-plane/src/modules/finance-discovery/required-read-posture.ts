@@ -44,10 +44,21 @@ export function buildRequiredReadGapLimitations(
   input: FinanceDiscoveryAnswerFormatterInput,
 ) {
   return collectRequiredReadPosture(input)
-    .filter((entry) => entry.state === "missing" || entry.state === "failed")
-    .map((entry) =>
-      entry.state === "missing"
-        ? `Required Finance Twin read ${entry.label} is missing for ${input.question.companyKey}: ${entry.reasonSummary}`
-        : `Required Finance Twin read ${entry.label} is in failed freshness posture for ${input.question.companyKey}: ${entry.reasonSummary}`,
-    );
+    .filter(
+      (entry) =>
+        entry.state === "missing" ||
+        entry.state === "failed" ||
+        entry.state === "stale",
+    )
+    .map((entry) => {
+      if (entry.state === "missing") {
+        return `Required Finance Twin read ${entry.label} is missing for ${input.question.companyKey}: ${entry.reasonSummary}`;
+      }
+
+      if (entry.state === "failed") {
+        return `Required Finance Twin read ${entry.label} is in failed freshness posture for ${input.question.companyKey}: ${entry.reasonSummary}`;
+      }
+
+      return `Required Finance Twin read ${entry.label} is stale for ${input.question.companyKey}: ${entry.reasonSummary}`;
+    });
 }

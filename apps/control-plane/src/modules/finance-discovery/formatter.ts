@@ -7,6 +7,7 @@ import type {
 import {
   FinanceDiscoveryAnswerArtifactMetadataSchema,
   readFinanceDiscoveryQuestionKindLabel,
+  readFreshnessLabel,
 } from "@pocket-cto/domain";
 import {
   buildFinanceDiscoveryEvidenceSections,
@@ -83,7 +84,7 @@ function buildBodyMarkdown(input: {
       : []),
     "",
     "## Freshness posture",
-    `- State: \`${input.freshnessPosture.state}\``,
+    `- State: ${readFreshnessLabel(input.freshnessPosture.state)}`,
     `- Reason: ${input.freshnessPosture.reasonSummary}`,
     "",
     "## Limitations",

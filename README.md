@@ -144,6 +144,8 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0030-finance-discovery-foundation-and-first-answer.md
 │   ├── FP-0031-finance-discovery-supported-posture-and-obligation-families.md
 │   ├── FP-0032-finance-discovery-polish-and-compatibility.md
+│   ├── FP-0033-finance-discovery-baseline-closeout-polish.md
+│   ├── FP-0034-finance-discovery-final-artifact-and-doc-polish.md
 │   └── templates
 └── .agents
     └── skills

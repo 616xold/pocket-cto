@@ -4,6 +4,7 @@ import {
   DiscoveryAnswerArtifactMetadataSchema,
   FINANCE_DISCOVERY_QUESTION_KINDS,
   readFinanceDiscoveryQuestionKindLabel,
+  readFreshnessLabel,
 } from "./discovery-mission";
 
 describe("Discovery mission domain schemas", () => {
@@ -32,6 +33,13 @@ describe("Discovery mission domain schemas", () => {
     expect(
       readFinanceDiscoveryQuestionKindLabel("obligation_calendar_review"),
     ).toBe("Obligation calendar review");
+  });
+
+  it("exposes human-readable freshness labels for finance artifact copy", () => {
+    expect(readFreshnessLabel("stale")).toBe("Stale");
+    expect(readFreshnessLabel("pending_answer")).toBe("Pending answer");
+    expect(readFreshnessLabel("never_synced")).toBe("Never synced");
+    expect(readFreshnessLabel(null)).toBe("Not recorded yet.");
   });
 
   it("rejects unsupported finance discovery families", () => {
