@@ -199,24 +199,70 @@ describe("web api module", () => {
       operatorPrompt: "Review spend posture from stored state.",
       requestedBy: "Local web operator",
     });
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
 
     expect(created.mission.type).toBe("discovery");
     expect(fetchMock).toHaveBeenCalledWith(
       `${mod.resolveControlPlaneUrl()}/missions/analysis`,
-      {
-        body: JSON.stringify({
-          companyKey: "acme",
-          questionKind: "spend_posture",
-          operatorPrompt: "Review spend posture from stored state.",
-          requestedBy: "Local web operator",
-        }),
+      expect.objectContaining({
         cache: "no-store",
         headers: {
           "content-type": "application/json",
         },
         method: "POST",
-      },
+      }),
     );
+    expect(JSON.parse(String(request.body))).toEqual({
+      companyKey: "acme",
+      operatorPrompt: "Review spend posture from stored state.",
+      questionKind: "spend_posture",
+      requestedBy: "Local web operator",
+    });
+  });
+
+  it("posts the source-scoped policy lookup mission-create route correctly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        return buildPolicyLookupDiscoveryMissionCreatePayload();
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const created = await mod.createDiscoveryMission({
+      companyKey: "acme",
+      operatorPrompt: "Which approval thresholds apply to travel spend?",
+      policySourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      questionKind: "policy_lookup",
+      requestedBy: "Local web operator",
+    });
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+
+    expect(created.mission.type).toBe("discovery");
+    expect(created.mission.spec.input?.discoveryQuestion).toMatchObject({
+      companyKey: "acme",
+      policySourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      questionKind: "policy_lookup",
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/missions/analysis`,
+      expect.objectContaining({
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      }),
+    );
+    expect(JSON.parse(String(request.body))).toEqual({
+      companyKey: "acme",
+      operatorPrompt: "Which approval thresholds apply to travel spend?",
+      policySourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      questionKind: "policy_lookup",
+      requestedBy: "Local web operator",
+    });
   });
 
   it("parses the source inventory and detail routes", async () => {
@@ -910,6 +956,129 @@ function buildDiscoveryMissionCreatePayload() {
       pullRequestNumber: null,
       pullRequestUrl: null,
       questionKind: "spend_posture",
+      replayEventCount: 0,
+      relatedRoutePaths: [],
+      relatedWikiPageKeys: [],
+      riskSummary: "",
+      rollbackSummary: "",
+      status: "placeholder",
+      targetRepoFullName: null,
+      timestamps: {
+        missionCreatedAt: "2026-03-20T03:00:00.000Z",
+        latestPlannerEvidenceAt: null,
+        latestExecutorEvidenceAt: null,
+        latestPullRequestAt: null,
+        latestApprovalAt: null,
+        latestArtifactAt: null,
+      },
+      validationSummary: "",
+      verificationSummary: "",
+    },
+    tasks: [
+      {
+        attemptCount: 0,
+        codexThreadId: null,
+        codexTurnId: null,
+        createdAt: "2026-03-20T03:00:00.000Z",
+        dependsOnTaskId: null,
+        id: taskId,
+        missionId,
+        role: "scout",
+        sequence: 0,
+        status: "pending",
+        summary: null,
+        updatedAt: "2026-03-20T03:00:00.000Z",
+        workspaceId: null,
+      },
+    ],
+  };
+}
+
+function buildPolicyLookupDiscoveryMissionCreatePayload() {
+  return {
+    mission: {
+      createdAt: "2026-03-20T03:00:00.000Z",
+      createdBy: "Local web operator",
+      id: missionId,
+      objective:
+        "Answer the stored policy lookup question for acme from scoped policy source only.",
+      primaryRepo: null,
+      sourceKind: "manual_discovery",
+      sourceRef: null,
+      spec: {
+        acceptance: [
+          "persist one durable discovery answer artifact",
+          "persist one finance-ready proof bundle",
+        ],
+        constraints: {
+          allowedPaths: [],
+          mustNot: [
+            "do not invoke the codex runtime",
+            "do not widen beyond the explicit policySourceId scope",
+          ],
+        },
+        deliverables: ["discovery_answer", "proof_bundle"],
+        evidenceRequirements: [
+          "scoped policy page",
+          "same-source digest history when useful",
+          "freshness and limitation posture",
+        ],
+        input: {
+          discoveryQuestion: {
+            companyKey: "acme",
+            operatorPrompt: "Which approval thresholds apply to travel spend?",
+            policySourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            questionKind: "policy_lookup",
+          },
+        },
+        objective:
+          "Answer the stored policy lookup question for acme from scoped policy source only.",
+        repos: [],
+        riskBudget: {
+          allowNetwork: false,
+          maxCostUsd: 1,
+          maxWallClockMinutes: 5,
+          requiresHumanApprovalFor: [],
+          sandboxMode: "read-only",
+        },
+        title:
+          "Review policy lookup for acme from aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        type: "discovery",
+      },
+      status: "queued",
+      title:
+        "Review policy lookup for acme from aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      type: "discovery",
+      updatedAt: "2026-03-20T03:00:00.000Z",
+    },
+    proofBundle: {
+      artifactIds: [],
+      artifacts: [],
+      branchName: null,
+      changeSummary: "",
+      companyKey: "acme",
+      decisionTrace: [],
+      evidenceCompleteness: {
+        status: "missing",
+        expectedArtifactKinds: ["discovery_answer"],
+        presentArtifactKinds: [],
+        missingArtifactKinds: ["discovery_answer"],
+        notes: ["Discovery answer evidence is missing."],
+      },
+      freshnessState: null,
+      freshnessSummary: "",
+      answerSummary: "",
+      latestApproval: null,
+      limitationsSummary: "",
+      missionId,
+      missionTitle:
+        "Review policy lookup for acme from aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      objective:
+        "Answer the stored policy lookup question for acme from scoped policy source only.",
+      policySourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      pullRequestNumber: null,
+      pullRequestUrl: null,
+      questionKind: "policy_lookup",
       replayEventCount: 0,
       relatedRoutePaths: [],
       relatedWikiPageKeys: [],

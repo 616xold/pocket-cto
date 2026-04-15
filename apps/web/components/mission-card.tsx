@@ -71,6 +71,12 @@ export function MissionCard({
                   )}
                 </dd>
               </div>
+              {financeDiscoveryQuestion.questionKind === "policy_lookup" ? (
+                <div>
+                  <dt>Policy source</dt>
+                  <dd>{financeDiscoveryQuestion.policySourceId}</dd>
+                </div>
+              ) : null}
             </>
           ) : (
             <>
@@ -201,6 +207,13 @@ export function MissionCard({
                     : "Not recorded yet."}
                 </dd>
               </div>
+              {proofBundle.questionKind === "policy_lookup" ||
+              proofBundle.policySourceId ? (
+                <div>
+                  <dt>Policy source</dt>
+                  <dd>{proofBundle.policySourceId ?? "Not recorded yet."}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Freshness</dt>
                 <dd>{readFreshnessLabel(proofBundle.freshnessState)}</dd>

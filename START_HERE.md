@@ -66,8 +66,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `F4-finance-discovery-master-plan-and-doc-refresh` is the planning and active-doc slice that creates the first implementation-ready F4 contract.
 `plans/FP-0030-finance-discovery-foundation-and-first-answer.md`, `plans/FP-0031-finance-discovery-supported-posture-and-obligation-families.md`, `plans/FP-0032-finance-discovery-polish-and-compatibility.md`, `plans/FP-0033-finance-discovery-baseline-closeout-polish.md`, and `plans/FP-0034-finance-discovery-final-artifact-and-doc-polish.md` are now shipped.
 `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` is now the active F4C execution contract.
-Continue that plan in the next `F4C1-finance-policy-lookup` implementation thread rather than creating a different F4 plan or widening into F5/F6 work.
-Reserve `F4C2-discovery-quality-hardening-and-evals` for the later hardening and eval-extension pass only after F4C1 is green.
+`F4C1-finance-policy-lookup` is now the shipped explicit-source policy lookup slice.
+Continue `FP-0035` in the next `F4C2-discovery-quality-hardening-and-evals` thread rather than creating a different F4 plan or widening into F5/F6 work.
 
 ## Review ritual
 

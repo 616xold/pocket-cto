@@ -22,6 +22,7 @@ type TestWikiPageKey =
   | "company/overview"
   | "concepts/contract-obligations"
   | "concepts/cash"
+  | "concepts/policy-corpus"
   | "concepts/payables"
   | "concepts/receivables"
   | "concepts/spend"
@@ -31,7 +32,9 @@ type TestWikiPageKey =
   | "metrics/payables-aging"
   | "metrics/payables-posture"
   | "metrics/receivables-aging"
-  | "metrics/spend-posture";
+  | "metrics/spend-posture"
+  | `policies/${string}`
+  | `sources/${string}/snapshots/${number}`;
 
 const SUPPORTED_FAMILY_CASES = [
   {
@@ -531,6 +534,177 @@ describe("FinanceDiscoveryService", () => {
       expect(answer.bodyMarkdown).toContain("## Limitations");
     },
   );
+
+  it("builds a deterministic scoped policy-lookup answer from stored wiki state and explicit bound-source metadata", async () => {
+    const policySourceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const service = new FinanceDiscoveryService({
+      cfoWikiService: {
+        async getPage(companyKey, pageKey) {
+          if (pageKey === `policies/${policySourceId}`) {
+            return buildWikiPage({
+              companyKey,
+              pageKey,
+              summary:
+                "Travel and expense policy sets explicit approval thresholds for higher-value spend.",
+              title: "Travel and expense policy",
+            });
+          }
+
+          if (pageKey === `sources/${policySourceId}/snapshots/2`) {
+            return buildWikiPage({
+              companyKey,
+              pageKey,
+              pageKind: "source_digest",
+              summary:
+                "Latest deterministic source digest confirms the current approved policy revision.",
+              title: "Travel policy source digest",
+            });
+          }
+
+          return buildWikiPage({
+            companyKey,
+            pageKey: pageKey as TestWikiPageKey,
+            summary:
+              "The policy corpus remains limited to explicit `policy_document` bindings and their deterministic extracts.",
+            title: "Policy corpus",
+          });
+        },
+        async listCompanySources(companyKey) {
+          return buildCompanySourceList(companyKey, [
+            buildBoundPolicySource({
+              latestExtract: {
+                extractStatus: "extracted",
+              },
+              latestSnapshotVersion: 2,
+              sourceId: policySourceId,
+              sourceName: "Travel and expense policy",
+            }),
+          ]) as never;
+        },
+      },
+      financeTwinService: createFinanceTwinService(),
+    });
+
+    const answer = await service.answerQuestion({
+      companyKey: "acme",
+      operatorPrompt: "Which approval thresholds are visible for this policy?",
+      policySourceId,
+      questionKind: "policy_lookup",
+    });
+
+    expect(answer.questionKind).toBe("policy_lookup");
+    expect(answer.policySourceId).toBe(policySourceId);
+    expect(answer.answerSummary).toContain(
+      `Stored policy lookup for acme is scoped to policy source ${policySourceId}.`,
+    );
+    expect(answer.relatedRoutes.map((route) => route.routePath)).toEqual([
+      `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+      `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`sources/${policySourceId}/snapshots/2`)}`,
+      `/cfo-wiki/companies/acme/pages/${encodeURIComponent("concepts/policy-corpus")}`,
+    ]);
+    expect(answer.relatedWikiPages.map((page) => page.pageKey)).toEqual([
+      `policies/${policySourceId}`,
+      `sources/${policySourceId}/snapshots/2`,
+      "concepts/policy-corpus",
+    ]);
+    expect(answer.evidenceSections.map((section) => section.key)).toEqual([
+      "scoped_policy_page",
+      "bound_source_status",
+      "scoped_source_digest",
+      "policy_corpus_boundary",
+    ]);
+    expect(answer.bodyMarkdown).toContain("## Question");
+    expect(answer.bodyMarkdown).toContain(`- Policy source id: \`${policySourceId}\``);
+    expect(answer.limitations).toContain(
+      `This answer is scoped only to policy source ${policySourceId}; it does not search across other policies or unrelated company documents.`,
+    );
+  });
+
+  it.each([
+    {
+      caseLabel: "missing extract",
+      expectedFreshnessState: "missing",
+      expectedLimitation:
+        "Policy source aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa has no persisted deterministic extract for latest snapshot version 2.",
+      latestExtract: null,
+    },
+    {
+      caseLabel: "failed extract",
+      expectedFreshnessState: "failed",
+      expectedLimitation: "The latest policy extract failed deterministically.",
+      latestExtract: {
+        errorSummary: "The latest policy extract failed deterministically.",
+        extractStatus: "failed" as const,
+      },
+    },
+    {
+      caseLabel: "unsupported extract",
+      expectedFreshnessState: "missing",
+      expectedLimitation:
+        "Policy source aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa has an unsupported deterministic extract for its latest stored snapshot, so this answer cannot rely on compiled policy prose for that snapshot.",
+      latestExtract: {
+        extractStatus: "unsupported" as const,
+      },
+    },
+  ])(
+    "persists a truthful limited policy-lookup answer for $caseLabel",
+    async ({ expectedFreshnessState, expectedLimitation, latestExtract }) => {
+      const policySourceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+      const service = new FinanceDiscoveryService({
+        cfoWikiService: {
+          async getPage(companyKey, pageKey) {
+            if (pageKey === "concepts/policy-corpus") {
+              return buildWikiPage({
+                companyKey,
+                pageKey,
+                summary:
+                  "The policy corpus remains limited to explicit `policy_document` bindings and their deterministic extracts.",
+                title: "Policy corpus",
+              });
+            }
+
+            throw new CfoWikiPageNotFoundError(companyKey, pageKey);
+          },
+          async listCompanySources(companyKey) {
+            return buildCompanySourceList(companyKey, [
+              buildBoundPolicySource({
+                latestExtract,
+                latestSnapshotVersion: 2,
+                sourceId: policySourceId,
+                sourceName: "Travel and expense policy",
+              }),
+            ]) as never;
+          },
+        },
+        financeTwinService: createFinanceTwinService(),
+      });
+
+      const answer = await service.answerQuestion({
+        companyKey: "acme",
+        policySourceId,
+        questionKind: "policy_lookup",
+      });
+
+      expect(answer.questionKind).toBe("policy_lookup");
+      expect(answer.policySourceId).toBe(policySourceId);
+      expect(answer.freshnessPosture.state).toBe(expectedFreshnessState);
+      expect(answer.answerSummary).toContain("is limited");
+      expect(answer.relatedRoutes.map((route) => route.routePath)).toContain(
+        "/cfo-wiki/companies/acme/sources",
+      );
+      expect(answer.relatedWikiPages.map((page) => page.pageKey)).toEqual([
+        "concepts/policy-corpus",
+      ]);
+      expect(answer.limitations).toContain(expectedLimitation);
+      expect(answer.limitations).toContain(
+        `CFO Wiki page policies/${policySourceId} is not available yet for acme.`,
+      );
+      expect(answer.evidenceSections[0]?.summary).toContain(
+        `Compiled policy page policies/${policySourceId} is not currently available`,
+      );
+      expect(answer.bodyMarkdown).toContain("## Limitations");
+    },
+  );
 });
 
 function createFinanceTwinService(
@@ -768,6 +942,14 @@ function buildBankAccountsView(input?: {
 function buildWikiPage(input: {
   companyKey: string;
   pageKey: TestWikiPageKey;
+  freshnessSummary?: {
+    state: "failed" | "fresh" | "missing" | "mixed" | "stale";
+    summary: string;
+  };
+  limitations?: string[];
+  markdownBody?: string;
+  pageKind?: "company_overview" | "concept" | "metric_definition" | "policy" | "source_digest";
+  summary?: string;
   title: string;
 }) {
   return CfoWikiPageViewSchema.parse({
@@ -779,21 +961,28 @@ function buildWikiPage(input: {
       companyId: "11111111-1111-4111-8111-111111111111",
       compileRunId: "66666666-6666-4666-8666-666666666666",
       pageKey: input.pageKey,
-      pageKind: input.pageKey.startsWith("metrics/")
-        ? "metric_definition"
-        : input.pageKey.startsWith("concepts/")
-          ? "concept"
-          : "company_overview",
+      pageKind:
+        input.pageKind ??
+        (input.pageKey.startsWith("metrics/")
+          ? "metric_definition"
+          : input.pageKey.startsWith("concepts/")
+            ? "concept"
+            : input.pageKey.startsWith("policies/")
+              ? "policy"
+              : input.pageKey.startsWith("sources/")
+                ? "source_digest"
+                : "company_overview"),
       ownershipKind: "compiler_owned",
       temporalStatus: "current",
       title: input.title,
-      summary: `${input.title} summary`,
-      markdownBody: `# ${input.title}`,
-      freshnessSummary: {
-        state: "fresh",
-        summary: "Page freshness is current.",
-      },
-      limitations: [],
+      summary: input.summary ?? `${input.title} summary`,
+      markdownBody: input.markdownBody ?? `# ${input.title}`,
+      freshnessSummary:
+        input.freshnessSummary ?? {
+          state: "fresh",
+          summary: "Page freshness is current.",
+        },
+      limitations: input.limitations ?? [],
       lastCompiledAt: "2026-04-15T00:00:00.000Z",
       filedMetadata: null,
       createdAt: "2026-04-15T00:00:00.000Z",
@@ -804,11 +993,12 @@ function buildWikiPage(input: {
     backlinks: [],
     refs: [],
     latestCompileRun: null,
-    freshnessSummary: {
-      state: "fresh",
-      summary: "Page freshness is current.",
-    },
-    limitations: [],
+    freshnessSummary:
+      input.freshnessSummary ?? {
+        state: "fresh",
+        summary: "Page freshness is current.",
+      },
+    limitations: input.limitations ?? [],
   });
 }
 
@@ -818,6 +1008,8 @@ function buildWikiTitle(pageKey: TestWikiPageKey) {
       return "Company overview";
     case "concepts/cash":
       return "Cash";
+    case "concepts/policy-corpus":
+      return "Policy corpus";
     case "concepts/contract-obligations":
       return "Contract Obligations";
     case "concepts/payables":
@@ -840,7 +1032,121 @@ function buildWikiTitle(pageKey: TestWikiPageKey) {
       return "Receivables aging";
     case "metrics/spend-posture":
       return "Spend posture";
+    default:
+      return "Wiki page";
   }
+}
+
+function buildCompanySourceList(companyKey: string, sources: unknown[]) {
+  return {
+    companyId: "11111111-1111-4111-8111-111111111111",
+    companyKey,
+    companyDisplayName: "Acme",
+    sourceCount: sources.length,
+    sources,
+    limitations: [],
+  };
+}
+
+function buildBoundPolicySource(input: {
+  latestExtract:
+    | null
+    | {
+        errorSummary?: string;
+        extractStatus: "extracted" | "failed" | "unsupported";
+      };
+  latestSnapshotVersion: number;
+  sourceId: string;
+  sourceName: string;
+}) {
+  return {
+    binding: {
+      id: "99999999-9999-4999-8999-999999999999",
+      companyId: "11111111-1111-4111-8111-111111111111",
+      sourceId: input.sourceId,
+      includeInCompile: true,
+      documentRole: "policy_document",
+      boundBy: "operator",
+      createdAt: "2026-04-15T00:00:00.000Z",
+      updatedAt: "2026-04-15T00:00:00.000Z",
+    },
+    source: {
+      id: input.sourceId,
+      kind: "document",
+      originKind: "manual",
+      name: input.sourceName,
+      description: "Scoped policy source",
+      createdBy: "operator",
+      createdAt: "2026-04-15T00:00:00.000Z",
+      updatedAt: "2026-04-15T00:00:00.000Z",
+    },
+    latestSnapshot: {
+      id: "88888888-8888-4888-8888-888888888888",
+      sourceId: input.sourceId,
+      version: input.latestSnapshotVersion,
+      originalFileName: "policy.md",
+      mediaType: "text/markdown",
+      sizeBytes: 512,
+      checksumSha256:
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      storageKind: "local_path",
+      storageRef: "/tmp/policy.md",
+      capturedAt: "2026-04-15T00:00:00.000Z",
+      ingestStatus: "registered",
+      createdAt: "2026-04-15T00:00:00.000Z",
+      updatedAt: "2026-04-15T00:00:00.000Z",
+    },
+    latestSourceFile: {
+      id: "77777777-7777-4777-8777-777777777777",
+      sourceId: input.sourceId,
+      snapshotId: "88888888-8888-4888-8888-888888888888",
+      storagePath: "/tmp/policy.md",
+      originalFileName: "policy.md",
+      mediaType: "text/markdown",
+      sizeBytes: 512,
+      checksumSha256:
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      createdBy: "operator",
+      capturedAt: "2026-04-15T00:00:00.000Z",
+      createdAt: "2026-04-15T00:00:00.000Z",
+      updatedAt: "2026-04-15T00:00:00.000Z",
+    },
+    latestExtract:
+      input.latestExtract === null
+        ? null
+        : {
+            id: "66666666-6666-4666-8666-666666666666",
+            companyId: "11111111-1111-4111-8111-111111111111",
+            sourceId: input.sourceId,
+            sourceSnapshotId: "88888888-8888-4888-8888-888888888888",
+            sourceFileId: "77777777-7777-4777-8777-777777777777",
+            extractStatus: input.latestExtract.extractStatus,
+            documentKind:
+              input.latestExtract.extractStatus === "unsupported"
+                ? "unsupported_document"
+                : "markdown_text",
+            title: input.sourceName,
+            headingOutline: [],
+            excerptBlocks: [],
+            extractedText:
+              input.latestExtract.extractStatus === "unsupported"
+                ? null
+                : "# Policy",
+            renderedMarkdown:
+              input.latestExtract.extractStatus === "unsupported"
+                ? null
+                : "# Policy",
+            warnings: [],
+            errorSummary: input.latestExtract.errorSummary ?? null,
+            parserVersion: "test",
+            inputChecksumSha256:
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            extractedAt: "2026-04-15T00:00:00.000Z",
+            createdAt: "2026-04-15T00:00:00.000Z",
+            updatedAt: "2026-04-15T00:00:00.000Z",
+          },
+    limitations: [],
+  };
 }
 
 function buildReceivablesAgingView(): FinanceReceivablesAgingView {

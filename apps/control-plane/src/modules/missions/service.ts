@@ -1,5 +1,6 @@
 import type {
   ApprovalRecord,
+  CfoWikiCompanySourceListView,
   CreateDiscoveryMissionInput,
   CreateMissionFromTextInput,
   MissionDetailView,
@@ -40,6 +41,11 @@ export class MissionService {
       approvalReader?: {
         listMissionApprovals(missionId: string): Promise<ApprovalRecord[]>;
       };
+      cfoWikiService?: {
+        listCompanySources(
+          companyKey: string,
+        ): Promise<CfoWikiCompanySourceListView>;
+      };
     } = {},
   ) {}
 
@@ -77,7 +83,9 @@ export class MissionService {
 
   async createAnalysis(rawInput: CreateDiscoveryMissionInput) {
     return this.createFromCompilation(
-      buildDiscoveryMissionCreationInput(rawInput),
+      await buildDiscoveryMissionCreationInput(rawInput, {
+        cfoWikiService: this.readModelDeps.cfoWikiService,
+      }),
       undefined,
     );
   }
@@ -354,6 +362,7 @@ function summarizeMission(input: {
     createdAt: input.mission.createdAt,
     answerSummary: input.proofBundle.answerSummary || null,
     freshnessState: input.proofBundle.freshnessState,
+    policySourceId: input.proofBundle.policySourceId,
     questionKind: input.proofBundle.questionKind,
     latestTask: latestTask
       ? {

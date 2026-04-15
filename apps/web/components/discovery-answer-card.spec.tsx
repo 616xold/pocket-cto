@@ -69,6 +69,7 @@ describe("DiscoveryAnswerCard", () => {
           summary: "Stored payables pressure is available with limitations.",
           companyKey: "acme",
           questionKind: "payables_pressure",
+          policySourceId: null,
           answerSummary:
             "Stored payables pressure is available with limitations.",
           freshnessPosture: {
@@ -164,6 +165,112 @@ describe("DiscoveryAnswerCard", () => {
     expect(html).toContain("Payables pressure");
     expect(html).toContain("Stale");
     expect(html).not.toContain(">stale<");
+    expect(html).not.toContain("/finance-twin/companies/acme/cash-posture");
+  });
+
+  it("renders explicit policy source scope for policy lookup answers", () => {
+    const policySourceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const html = renderToStaticMarkup(
+      <DiscoveryAnswerCard
+        answer={{
+          source: "stored_finance_twin_and_cfo_wiki",
+          summary:
+            "Stored policy lookup is scoped to the requested policy source.",
+          companyKey: "acme",
+          questionKind: "policy_lookup",
+          policySourceId,
+          answerSummary:
+            "Stored policy lookup is scoped to the requested policy source.",
+          freshnessPosture: {
+            state: "missing",
+            reasonSummary:
+              "Policy source has an unsupported deterministic extract for the latest stored snapshot.",
+          },
+          limitations: [
+            `This answer is scoped only to policy source ${policySourceId}; it does not search across other policies or unrelated company documents.`,
+          ],
+          relatedRoutes: [
+            {
+              label: "Scoped policy page",
+              routePath: `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+            },
+            {
+              label: "Company bound sources",
+              routePath: "/cfo-wiki/companies/acme/sources",
+            },
+          ],
+          relatedWikiPages: [
+            {
+              pageKey: `policies/${policySourceId}`,
+              title: "Travel and expense policy",
+            },
+          ],
+          evidenceSections: [
+            {
+              key: "scoped_policy_page",
+              title: "Scoped policy page",
+              summary: "Compiled policy page remains source-scoped.",
+              pageKey: `policies/${policySourceId}`,
+              routePath: `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+            },
+          ],
+          bodyMarkdown: "# Policy lookup answer\n\nStored policy answer.",
+          structuredData: {},
+        }}
+        mission={{
+          createdAt: "2026-04-15T00:00:00.000Z",
+          createdBy: "operator",
+          id: "11111111-1111-4111-8111-111111111111",
+          objective:
+            "Answer the stored policy lookup question for acme from scoped policy source only.",
+          primaryRepo: null,
+          sourceKind: "manual_discovery",
+          sourceRef: null,
+          spec: {
+            acceptance: [
+              "Persist one durable finance discovery answer artifact.",
+            ],
+            constraints: {
+              allowedPaths: [],
+              mustNot: [],
+            },
+            deliverables: ["discovery_answer", "proof_bundle"],
+            evidenceRequirements: ["stored scoped policy page"],
+            input: {
+              discoveryQuestion: {
+                companyKey: "acme",
+                questionKind: "policy_lookup",
+                policySourceId,
+              },
+            },
+            objective:
+              "Answer the stored policy lookup question for acme from scoped policy source only.",
+            repos: [],
+            riskBudget: {
+              allowNetwork: false,
+              maxCostUsd: 1,
+              maxWallClockMinutes: 5,
+              requiresHumanApprovalFor: [],
+              sandboxMode: "read-only",
+            },
+            title: "Review policy lookup for acme",
+            type: "discovery",
+          },
+          status: "succeeded",
+          title: "Review policy lookup for acme",
+          type: "discovery",
+          updatedAt: "2026-04-15T00:01:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("Policy source");
+    expect(html).toContain(policySourceId);
+    expect(html).toContain(
+      `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+    );
+    expect(html).toContain("/cfo-wiki/companies/acme/sources");
+    expect(html).toContain(`policies/${policySourceId}`);
     expect(html).not.toContain("/finance-twin/companies/acme/cash-posture");
   });
 });

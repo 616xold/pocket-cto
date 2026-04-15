@@ -47,6 +47,7 @@ export type ProofBundleAssemblyFacts = {
   pullRequestIsDraft: boolean | null;
   pullRequestNumber: number | null;
   pullRequestUrl: string | null;
+  policySourceId: string | null;
   questionKind: ProofBundleManifest["questionKind"];
   relatedRoutePaths: string[];
   relatedWikiPageKeys: CfoWikiPageKey[];
@@ -171,6 +172,15 @@ export function deriveProofBundleAssemblyFacts(input: {
     pullRequestIsDraft,
     pullRequestNumber,
     pullRequestUrl,
+    policySourceId:
+      (isFinanceDiscoveryAnswerMetadata(discoveryAnswerMetadata)
+        ? discoveryAnswerMetadata.policySourceId ?? null
+        : null) ??
+      (isPolicyLookupDiscoveryQuestion(discoveryQuestion)
+        ? discoveryQuestion.policySourceId
+        : null) ??
+      input.existingBundle?.policySourceId ??
+      null,
     questionKind:
       discoveryAnswerMetadata?.questionKind ??
       discoveryQuestion?.questionKind ??
@@ -259,6 +269,12 @@ function isFinanceDiscoveryQuestion(
   question: DiscoveryMissionQuestion | null,
 ): question is Extract<DiscoveryMissionQuestion, { companyKey: string }> {
   return typeof question === "object" && question !== null && "companyKey" in question;
+}
+
+function isPolicyLookupDiscoveryQuestion(
+  question: DiscoveryMissionQuestion | null,
+): question is Extract<DiscoveryMissionQuestion, { policySourceId: string }> {
+  return typeof question === "object" && question !== null && "policySourceId" in question;
 }
 
 function summarizeLimitations(limitations: string[]) {

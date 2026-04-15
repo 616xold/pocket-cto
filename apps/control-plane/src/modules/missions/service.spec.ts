@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  FINANCE_DISCOVERY_QUESTION_KINDS,
+  FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS,
   type ApprovalRecord,
+  type CfoWikiCompanySourceListView,
 } from "@pocket-cto/domain";
 import { InMemoryMissionRepository } from "./repository";
 import { StubMissionCompiler } from "./compiler";
@@ -11,6 +12,7 @@ import { EvidenceService } from "../evidence/service";
 import { MissionService } from "./service";
 
 function createService(options?: {
+  companySources?: CfoWikiCompanySourceListView;
   listMissionApprovals?: (missionId: string) => Promise<ApprovalRecord[]>;
 }) {
   const repository = new InMemoryMissionRepository();
@@ -31,6 +33,20 @@ function createService(options?: {
         approvalReader: {
           async listMissionApprovals(missionId) {
             return (await options?.listMissionApprovals?.(missionId)) ?? [];
+          },
+        },
+        cfoWikiService: {
+          async listCompanySources() {
+            return (
+              options?.companySources ?? {
+                companyId: "11111111-1111-4111-8111-111111111111",
+                companyKey: "acme",
+                companyDisplayName: "Acme",
+                sourceCount: 0,
+                sources: [],
+                limitations: [],
+              }
+            );
           },
         },
       },
@@ -109,7 +125,7 @@ describe("MissionService", () => {
   it("creates typed finance analysis missions for every supported family", async () => {
     const { replayService, service } = createService();
 
-    for (const questionKind of FINANCE_DISCOVERY_QUESTION_KINDS) {
+    for (const questionKind of FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS) {
       const created = await service.createDiscovery({
         companyKey: "acme",
         questionKind,
@@ -148,6 +164,158 @@ describe("MissionService", () => {
         "artifact.created",
       ]);
     }
+  });
+
+  it("creates scoped policy lookup missions only for explicitly bound policy_document sources", async () => {
+    const policySourceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const { replayService, service } = createService({
+      companySources: {
+        companyId: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        companyDisplayName: "Acme",
+        sourceCount: 1,
+        sources: [
+          {
+            binding: {
+              id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+              companyId: "11111111-1111-4111-8111-111111111111",
+              sourceId: policySourceId,
+              includeInCompile: true,
+              documentRole: "policy_document",
+              boundBy: "finance-operator",
+              createdAt: "2026-04-15T00:00:00.000Z",
+              updatedAt: "2026-04-15T00:00:00.000Z",
+            },
+            source: {
+              id: policySourceId,
+              kind: "document",
+              name: "Travel policy",
+              description: null,
+              originKind: "manual",
+              createdBy: "finance-operator",
+              createdAt: "2026-04-15T00:00:00.000Z",
+              updatedAt: "2026-04-15T00:00:00.000Z",
+            },
+            latestSnapshot: null,
+            latestSourceFile: null,
+            latestExtract: null,
+            limitations: [],
+          },
+        ],
+        limitations: [],
+      },
+    });
+
+    const created = await service.createDiscovery({
+      companyKey: "acme",
+      questionKind: "policy_lookup",
+      policySourceId,
+      operatorPrompt: "Review the scoped travel policy from stored state.",
+      requestedBy: "operator",
+    });
+
+    expect(created.mission.title).toContain(policySourceId);
+    expect(created.mission.spec.input?.discoveryQuestion).toEqual({
+      companyKey: "acme",
+      questionKind: "policy_lookup",
+      policySourceId,
+      operatorPrompt: "Review the scoped travel policy from stored state.",
+    });
+    expect(created.proofBundle.policySourceId).toBe(policySourceId);
+
+    const events = await replayService.listByMissionId(created.mission.id);
+    expect(events.slice(-4).map((event) => event.type)).toEqual([
+      "mission.created",
+      "task.created",
+      "mission.status_changed",
+      "artifact.created",
+    ]);
+  });
+
+  it("rejects policy lookup missions when the source is unknown or not policy_document", async () => {
+    const nonPolicySourceId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    const { service } = createService({
+      companySources: {
+        companyId: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        companyDisplayName: "Acme",
+        sourceCount: 1,
+        sources: [
+          {
+            binding: {
+              id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+              companyId: "11111111-1111-4111-8111-111111111111",
+              sourceId: nonPolicySourceId,
+              includeInCompile: true,
+              documentRole: "general_document",
+              boundBy: "finance-operator",
+              createdAt: "2026-04-15T00:00:00.000Z",
+              updatedAt: "2026-04-15T00:00:00.000Z",
+            },
+            source: {
+              id: nonPolicySourceId,
+              kind: "document",
+              name: "Operating memo",
+              description: null,
+              originKind: "manual",
+              createdBy: "finance-operator",
+              createdAt: "2026-04-15T00:00:00.000Z",
+              updatedAt: "2026-04-15T00:00:00.000Z",
+            },
+            latestSnapshot: null,
+            latestSourceFile: null,
+            latestExtract: null,
+            limitations: [],
+          },
+        ],
+        limitations: [],
+      },
+    });
+
+    await expect(
+      service.createDiscovery({
+        companyKey: "acme",
+        questionKind: "policy_lookup",
+        policySourceId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        requestedBy: "operator",
+      }),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          details: [
+            {
+              message:
+                "Policy source eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee is not bound for company acme.",
+              path: "policySourceId",
+            },
+          ],
+        },
+      },
+      message: "Invalid request",
+      statusCode: 400,
+    });
+
+    await expect(
+      service.createDiscovery({
+        companyKey: "acme",
+        questionKind: "policy_lookup",
+        policySourceId: nonPolicySourceId,
+        requestedBy: "operator",
+      }),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          details: [
+            {
+              message: `Policy source ${nonPolicySourceId} is bound for company acme, but not as a \`policy_document\`.`,
+              path: "policySourceId",
+            },
+          ],
+        },
+      },
+      message: "Invalid request",
+      statusCode: 400,
+    });
   });
 
   it("returns summary-shaped approvals, approval cards, and artifacts in mission detail", async () => {

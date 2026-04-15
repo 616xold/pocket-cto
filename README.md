@@ -40,15 +40,15 @@ Today the merged backbone is:
 - F3D additive deterministic concept pages, metric-definition pages, and policy pages compiled from fixed registries plus explicit `policy_document` bindings while unsupported policy extracts remain visible as gaps
 - F4A additive deterministic finance-discovery missions for one typed `cash_posture` question family, backed only by stored Finance Twin plus stored CFO Wiki state, with durable answer artifacts and finance-ready proof bundles
 - F4B additive deterministic finance-discovery missions for four more typed families already grounded in shipped Finance Twin plus CFO Wiki state: `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review`
+- F4C1 additive deterministic finance-discovery missions for one explicit-source `policy_lookup` family, requiring `policySourceId` and answering only from scoped `policy_document` wiki state plus bound-source extract posture
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
 F3A through F3D are now shipped.
-F4A is now the shipped first finance-discovery baseline.
-F4B now widens that baseline to the truthful stored-state posture, spend, and obligation families listed above while still excluding policy lookup, aging-review families, runtime-codex answer generation, and later F5 or F6 work.
-`plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` now defines the first real F4C execution contract.
-The next new implementation step is F4C1 `policy_lookup`: one explicit-source, deterministic, read-only policy family grounded only in `policy_document` bindings, stored deterministic extracts, compiler-owned policy pages, same-source digest history when useful, and `concepts/policy-corpus`.
-F4C2 should follow only after that slice is green and should focus on discovery-quality hardening and eval extension rather than widening into F5 or F6 work.
+F4A through F4C1 are now the shipped finance-discovery baseline.
+F4B widens the first answer path to the truthful stored-state posture, spend, and obligation families listed above.
+F4C1 adds explicit-source `policy_lookup`, grounded only in `policy_document` bindings, stored deterministic extracts, compiler-owned policy pages, same-source digest history when useful, and `concepts/policy-corpus`.
+`plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains the active F4C plan record because F4C2 discovery-quality hardening and eval extension still remain later work.
 
 ## Product boundary for v1
 
@@ -206,6 +206,7 @@ pnpm smoke:cfo-wiki-lint-export:local
 pnpm smoke:cfo-wiki-concept-metric-policy:local
 pnpm smoke:finance-discovery-answer:local
 pnpm smoke:finance-discovery-supported-families:local
+pnpm smoke:finance-policy-lookup:local
 ```
 
 The current backend-first finance-twin read surface is:

@@ -24,7 +24,14 @@ const githubIssueMissionCreateSchema = z.object({
 
 const discoveryMissionIntakeFormSchema = z.object({
   companyKey: z.string().trim().min(1),
-  operatorPrompt: z.string().trim().optional(),
+  operatorPrompt: z.preprocess(
+    (value) => (value === null ? undefined : value),
+    z.string().trim().optional(),
+  ),
+  policySourceId: z.preprocess(
+    (value) => (value === null ? undefined : value),
+    z.string().trim().optional(),
+  ),
   questionKind: z.enum(FINANCE_DISCOVERY_QUESTION_KINDS),
   requestedBy: z.string().trim().min(1),
 });
@@ -49,6 +56,7 @@ export async function submitDiscoveryMissionIntake(formData: FormData) {
   const rawInput = discoveryMissionIntakeFormSchema.parse({
     companyKey: formData.get("companyKey"),
     operatorPrompt: formData.get("operatorPrompt"),
+    policySourceId: formData.get("policySourceId"),
     questionKind: formData.get("questionKind"),
     requestedBy: formData.get("requestedBy"),
   });
@@ -56,6 +64,11 @@ export async function submitDiscoveryMissionIntake(formData: FormData) {
     companyKey: rawInput.companyKey,
     questionKind: rawInput.questionKind,
     operatorPrompt: rawInput.operatorPrompt?.trim() || undefined,
+    ...(rawInput.questionKind === "policy_lookup"
+      ? {
+          policySourceId: rawInput.policySourceId?.trim() || undefined,
+        }
+      : {}),
     requestedBy: rawInput.requestedBy,
   });
   const created = await createAnalysisMission(input);

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import {
-  FINANCE_DISCOVERY_QUESTION_KINDS,
+  FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS,
   type ProofBundleManifest,
   ProofBundleManifestSchema,
 } from "@pocket-cto/domain";
@@ -108,7 +108,7 @@ describe("control-plane app", () => {
   it("POST /missions/analysis returns 201 with one scout task and a finance discovery proof placeholder for every supported family", async () => {
     const app = await createTestApp(apps);
 
-    for (const questionKind of FINANCE_DISCOVERY_QUESTION_KINDS) {
+    for (const questionKind of FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS) {
       const response = await app.inject({
         method: "POST",
         url: "/missions/analysis",
@@ -197,6 +197,131 @@ describe("control-plane app", () => {
     });
   });
 
+  it("POST /missions/analysis accepts policy lookup only with explicit bound policy source scope", async () => {
+    const { app, companyKey, policySourceId } =
+      await createPolicyLookupTestApp(apps);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/analysis",
+      payload: {
+        companyKey,
+        questionKind: "policy_lookup",
+        policySourceId,
+        operatorPrompt: "Review the scoped travel policy from stored state.",
+        requestedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({
+      mission: {
+        type: "discovery",
+        status: "queued",
+        sourceKind: "manual_discovery",
+        spec: {
+          input: {
+            discoveryQuestion: {
+              companyKey,
+              questionKind: "policy_lookup",
+              policySourceId,
+              operatorPrompt:
+                "Review the scoped travel policy from stored state.",
+            },
+          },
+        },
+      },
+      tasks: [{ role: "scout", sequence: 0, status: "pending" }],
+      proofBundle: {
+        status: "placeholder",
+        companyKey,
+        questionKind: "policy_lookup",
+        policySourceId,
+      },
+    });
+  });
+
+  it("POST /missions/analysis rejects policy lookup when policySourceId is missing", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/analysis",
+      payload: {
+        companyKey: "acme",
+        questionKind: "policy_lookup",
+        requestedBy: "operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      error: {
+        code: "invalid_request",
+        message: "Invalid request",
+        details: [
+          {
+            path: "policySourceId",
+            message: "Required",
+          },
+        ],
+      },
+    });
+  });
+
+  it("POST /missions/analysis rejects unknown or non-policy_document policy sources clearly", async () => {
+    const { app, companyKey, nonPolicySourceId } =
+      await createPolicyLookupTestApp(apps);
+
+    const missingResponse = await app.inject({
+      method: "POST",
+      url: "/missions/analysis",
+      payload: {
+        companyKey,
+        questionKind: "policy_lookup",
+        policySourceId: "99999999-9999-4999-8999-999999999999",
+        requestedBy: "operator",
+      },
+    });
+    const wrongRoleResponse = await app.inject({
+      method: "POST",
+      url: "/missions/analysis",
+      payload: {
+        companyKey,
+        questionKind: "policy_lookup",
+        policySourceId: nonPolicySourceId,
+        requestedBy: "operator",
+      },
+    });
+
+    expect(missingResponse.statusCode).toBe(400);
+    expect(missingResponse.json()).toEqual({
+      error: {
+        code: "invalid_request",
+        message: "Invalid request",
+        details: [
+          {
+            path: "policySourceId",
+            message: `Policy source 99999999-9999-4999-8999-999999999999 is not bound for company ${companyKey}.`,
+          },
+        ],
+      },
+    });
+    expect(wrongRoleResponse.statusCode).toBe(400);
+    expect(wrongRoleResponse.json()).toEqual({
+      error: {
+        code: "invalid_request",
+        message: "Invalid request",
+        details: [
+          {
+            path: "policySourceId",
+            message: `Policy source ${nonPolicySourceId} is bound for company ${companyKey}, but not as a \`policy_document\`.`,
+          },
+        ],
+      },
+    });
+  });
+
   it("POST /missions/discovery rejects the legacy repo-scoped engineering payload truthfully", async () => {
     const app = await createTestApp(apps);
 
@@ -224,7 +349,7 @@ describe("control-plane app", () => {
           {
             path: "questionKind",
             message:
-              "Invalid enum value. Expected 'cash_posture' | 'collections_pressure' | 'payables_pressure' | 'spend_posture' | 'obligation_calendar_review', received 'auth_change'",
+              "Invalid enum value. Expected 'cash_posture' | 'collections_pressure' | 'payables_pressure' | 'spend_posture' | 'obligation_calendar_review' | 'policy_lookup', received 'auth_change'",
           },
           {
             path: "request",
@@ -3936,6 +4061,46 @@ async function createTestApp(apps: FastifyInstance[]) {
   return app;
 }
 
+async function createPolicyLookupTestApp(apps: FastifyInstance[]) {
+  const container = createInMemoryContainer();
+  const companyKey = "acme";
+
+  await seedPolicyLookupCompany(container, companyKey);
+  const policySource = await createBoundDocumentSource(container, {
+    companyKey,
+    createdBy: "finance-operator",
+    documentRole: "policy_document",
+    markdownBody: [
+      "# Travel and Expense Policy",
+      "",
+      "## Scope",
+      "Employees must submit travel expenses within 30 days.",
+    ].join("\n"),
+    sourceName: "Travel policy",
+  });
+  const nonPolicySource = await createBoundDocumentSource(container, {
+    companyKey,
+    createdBy: "finance-operator",
+    documentRole: "general_document",
+    markdownBody: [
+      "# Operating Memo",
+      "",
+      "This is a general memo, not a policy document.",
+    ].join("\n"),
+    sourceName: "Operating memo",
+  });
+  const app = await buildApp({ container });
+
+  apps.push(app);
+
+  return {
+    app,
+    companyKey,
+    nonPolicySourceId: nonPolicySource.source.id,
+    policySourceId: policySource.source.id,
+  };
+}
+
 async function createStubApp(
   apps: FastifyInstance[],
   overrides: {
@@ -3997,6 +4162,101 @@ async function createStubApp(
   });
   apps.push(app);
   return app;
+}
+
+async function seedPolicyLookupCompany(
+  container: AppContainer,
+  companyKey: string,
+) {
+  const created = await container.sourceService.createSource({
+    kind: "dataset",
+    originKind: "manual",
+    name: "Policy lookup seed bank summary",
+    createdBy: "finance-operator",
+    snapshot: {
+      originalFileName: "policy-lookup-seed-link.txt",
+      mediaType: "text/plain",
+      sizeBytes: 16,
+      checksumSha256:
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      ingestStatus: "registered",
+      storageKind: "external_url",
+      storageRef: "https://example.com/policy-lookup-seed",
+    },
+  });
+  const registered = await container.sourceService.registerSourceFile(
+    created.source.id,
+    {
+      originalFileName: "policy-lookup-bank-summary.csv",
+      mediaType: "text/csv",
+      createdBy: "finance-operator",
+    },
+    Buffer.from(
+      [
+        "account_name,bank,last4,statement_balance,available_balance,current_balance,currency,as_of",
+        "Operating Checking,First National,1234,1000.00,900.00,,USD,2026-04-15",
+      ].join("\n"),
+      "utf8",
+    ),
+  );
+
+  await container.financeTwinService.syncCompanySourceFile(
+    companyKey,
+    registered.sourceFile.id,
+    {
+      companyName: "Acme Holdings",
+    },
+  );
+}
+
+async function createBoundDocumentSource(
+  container: AppContainer,
+  input: {
+    companyKey: string;
+    createdBy: string;
+    documentRole: "general_document" | "policy_document";
+    markdownBody: string;
+    sourceName: string;
+  },
+) {
+  const created = await container.sourceService.createSource({
+    kind: "document",
+    originKind: "manual",
+    name: input.sourceName,
+    createdBy: input.createdBy,
+    snapshot: {
+      originalFileName: `${input.sourceName.toLowerCase().replaceAll(" ", "-")}-link.txt`,
+      mediaType: "text/plain",
+      sizeBytes: 16,
+      checksumSha256:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      ingestStatus: "registered",
+      storageKind: "external_url",
+      storageRef: `https://example.com/${encodeURIComponent(input.sourceName)}`,
+    },
+  });
+
+  await container.sourceService.registerSourceFile(
+    created.source.id,
+    {
+      originalFileName: `${input.sourceName.toLowerCase().replaceAll(" ", "-")}.md`,
+      mediaType: "text/markdown",
+      createdBy: input.createdBy,
+    },
+    Buffer.from(`${input.markdownBody}\n`, "utf8"),
+  );
+
+  await container.cfoWikiService.bindCompanySource(
+    input.companyKey,
+    created.source.id,
+    {
+      boundBy: input.createdBy,
+      documentRole: input.documentRole,
+      includeInCompile: true,
+    },
+  );
+
+  return created;
 }
 
 async function createMission(

@@ -1,5 +1,8 @@
 import { setTimeout as delay } from "node:timers/promises";
-import type { FinanceDiscoveryAnswerArtifactMetadata } from "@pocket-cto/domain";
+import type {
+  CfoWikiCompanySourceListView,
+  FinanceDiscoveryAnswerArtifactMetadata,
+} from "@pocket-cto/domain";
 import { describe, expect, it, vi } from "vitest";
 import { InMemoryApprovalRepository } from "../approvals/repository";
 import { ApprovalService } from "../approvals/service";
@@ -382,6 +385,85 @@ describe("OrchestratorWorker", () => {
     ).toEqual(["discovery_answer", "proof_bundle_manifest"]);
   });
 
+  it("executes source-scoped policy lookup missions through stored finance reads and preserves policy scope in persisted evidence", async () => {
+    const policySourceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const runtimeRunTurn = vi.fn(async () => {
+      throw new Error("runtime should not be called for discovery");
+    });
+    const answerQuestion = vi.fn(async () =>
+      createPolicyLookupDiscoveryAnswer(policySourceId),
+    );
+    const { missionRepository, missionService, worker } = createHarness({
+      companySources: [
+        createBoundPolicySource({
+          sourceId: policySourceId,
+          sourceName: "Travel and expense policy",
+        }),
+      ],
+      financeDiscoveryService: {
+        answerQuestion,
+      },
+      runtimeCodexService: {
+        runTurn: runtimeRunTurn,
+      },
+    });
+    const created = await missionService.createDiscovery({
+      companyKey: "acme",
+      policySourceId,
+      questionKind: "policy_lookup",
+      requestedBy: "operator",
+    });
+
+    const tick = await worker.run({
+      log: {
+        error: vi.fn(),
+        info: vi.fn(),
+      },
+      pollIntervalMs: 1,
+      runOnce: true,
+    });
+
+    expect(tick).toMatchObject({
+      kind: "task_completed",
+      task: {
+        role: "scout",
+        status: "succeeded",
+      },
+    });
+    expect(runtimeRunTurn).not.toHaveBeenCalled();
+    expect(answerQuestion).toHaveBeenCalledWith({
+      companyKey: "acme",
+      operatorPrompt: null,
+      policySourceId,
+      questionKind: "policy_lookup",
+    });
+
+    const artifacts = await missionRepository.listArtifactsByMissionId(
+      created.mission.id,
+    );
+    const discoveryArtifact =
+      artifacts.find((artifact) => artifact.kind === "discovery_answer") ?? null;
+    const metadata = readDiscoveryAnswerArtifactMetadata(discoveryArtifact);
+    const detail = await missionService.getMissionDetail(created.mission.id);
+
+    expect(metadata).toMatchObject({
+      companyKey: "acme",
+      questionKind: "policy_lookup",
+      policySourceId,
+    });
+    expect(detail.mission.spec.input?.discoveryQuestion).toMatchObject({
+      companyKey: "acme",
+      questionKind: "policy_lookup",
+      policySourceId,
+    });
+    expect(detail.discoveryAnswer).toMatchObject({
+      questionKind: "policy_lookup",
+      policySourceId,
+    });
+    expect(detail.proofBundle.policySourceId).toBe(policySourceId);
+    expect(detail.proofBundle.questionKind).toBe("policy_lookup");
+  });
+
   it("fails discovery missions explicitly when finance discovery raises an unexpected error", async () => {
     const runtimeRunTurn = vi.fn(async () => {
       throw new Error("runtime should not be called for discovery");
@@ -431,6 +513,7 @@ describe("OrchestratorWorker", () => {
 });
 
 function createHarness(options?: {
+  companySources?: CfoWikiCompanySourceListView["sources"];
   financeDiscoveryService?: Pick<FinanceDiscoveryService, "answerQuestion">;
   runtimeCodexService?: Pick<OrchestratorServiceRuntimeDeps, "runTurn">;
   validationService?: Pick<ExecutorValidationService, "validateExecutorTurn">;
@@ -445,6 +528,22 @@ function createHarness(options?: {
     missionRepository,
     replayService,
     evidenceService,
+    options?.companySources
+      ? {
+          cfoWikiService: {
+            async listCompanySources(companyKey) {
+              return {
+                companyId: "11111111-1111-4111-8111-111111111111",
+                companyKey,
+                companyDisplayName: "Acme",
+                sourceCount: options.companySources?.length ?? 0,
+                sources: options.companySources ?? [],
+                limitations: [],
+              };
+            },
+          },
+        }
+      : undefined,
   );
   const liveSessionRegistry = new InMemoryRuntimeSessionRegistry();
   const proofBundleAssembly = new ProofBundleAssemblyService({
@@ -555,6 +654,7 @@ function createFinanceDiscoveryAnswer(): FinanceDiscoveryAnswerArtifactMetadata 
       "Stored cash posture for acme covers 4 bank accounts across 2 currency buckets: USD statement or ledger 1200.00, available 1400.00, unspecified 250.00 (as of 2026-04-10 to 2026-04-11). 1 additional currency bucket is also present.",
     companyKey: "acme",
     questionKind: "cash_posture",
+    policySourceId: null,
     answerSummary:
       "Stored cash posture for acme covers 4 bank accounts across 2 currency buckets: USD statement or ledger 1200.00, available 1400.00, unspecified 250.00 (as of 2026-04-10 to 2026-04-11). 1 additional currency bucket is also present.",
     freshnessPosture: {
@@ -596,6 +696,81 @@ function createFinanceDiscoveryAnswer(): FinanceDiscoveryAnswerArtifactMetadata 
     ],
     bodyMarkdown: "# Cash posture answer\n\nStored cash posture for acme.",
     structuredData: {},
+  };
+}
+
+function createPolicyLookupDiscoveryAnswer(
+  policySourceId: string,
+): FinanceDiscoveryAnswerArtifactMetadata {
+  return {
+    source: "stored_finance_twin_and_cfo_wiki",
+    summary: `Stored policy lookup for acme is scoped to policy source ${policySourceId}. Travel and expense policy sets explicit approval thresholds for higher-value spend.`,
+    companyKey: "acme",
+    questionKind: "policy_lookup",
+    policySourceId,
+    answerSummary: `Stored policy lookup for acme is scoped to policy source ${policySourceId}. Travel and expense policy sets explicit approval thresholds for higher-value spend.`,
+    freshnessPosture: {
+      state: "fresh",
+      reasonSummary: "Compiled policy page freshness is current.",
+    },
+    limitations: [
+      `This answer is scoped only to policy source ${policySourceId}; it does not search across other policies or unrelated company documents.`,
+    ],
+    relatedRoutes: [
+      {
+        label: "Scoped policy page",
+        routePath: `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+      },
+    ],
+    relatedWikiPages: [
+      {
+        pageKey: `policies/${policySourceId}`,
+        title: "Travel and expense policy",
+      },
+    ],
+    evidenceSections: [
+      {
+        key: "scoped_policy_page",
+        title: "Scoped policy page",
+        summary: "Compiled policy page evidence remains source-scoped.",
+        routePath: `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+        pageKey: `policies/${policySourceId}`,
+      },
+    ],
+    bodyMarkdown: "# Policy lookup answer\n\nStored policy answer.",
+    structuredData: {},
+  };
+}
+
+function createBoundPolicySource(input: {
+  sourceId: string;
+  sourceName: string;
+}): CfoWikiCompanySourceListView["sources"][number] {
+  return {
+    binding: {
+      id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      companyId: "11111111-1111-4111-8111-111111111111",
+      sourceId: input.sourceId,
+      includeInCompile: true,
+      documentRole: "policy_document",
+      boundBy: "operator",
+      createdAt: "2026-04-15T00:00:00.000Z",
+      updatedAt: "2026-04-15T00:00:00.000Z",
+    },
+    source: {
+      id: input.sourceId,
+      kind: "document",
+      originKind: "manual",
+      name: input.sourceName,
+      description: "Scoped policy source",
+      createdBy: "operator",
+      createdAt: "2026-04-15T00:00:00.000Z",
+      updatedAt: "2026-04-15T00:00:00.000Z",
+    },
+    latestSnapshot: null,
+    latestSourceFile: null,
+    latestExtract: null,
+    limitations: [],
   };
 }
 

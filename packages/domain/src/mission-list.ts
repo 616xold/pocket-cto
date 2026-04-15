@@ -22,6 +22,7 @@ export const MissionListItemSchema = z.object({
   objectiveExcerpt: z.string().min(1),
   companyKey: FinanceCompanyKeySchema.nullable().default(null),
   questionKind: DiscoveryQuestionKindSchema.nullable().default(null),
+  policySourceId: z.string().uuid().nullable().default(null),
   answerSummary: z.string().nullable().default(null),
   freshnessState: FinanceDiscoveryFreshnessStateSchema.nullable().default(null),
   status: MissionStatusSchema,

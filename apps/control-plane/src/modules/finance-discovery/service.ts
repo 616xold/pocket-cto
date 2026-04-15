@@ -13,6 +13,7 @@ import {
   getFinanceDiscoveryFamily,
   type FinanceDiscoveryTwinReadKey,
 } from "./family-registry";
+import { answerPolicyLookupQuestion } from "./policy-lookup";
 import type { FinanceDiscoveryTwinReadMap } from "./types";
 
 const EMPTY_TWIN_READS: FinanceDiscoveryTwinReadMap = {
@@ -44,7 +45,8 @@ const TWIN_READ_LABELS: Record<FinanceDiscoveryTwinReadKey, string> = {
 export class FinanceDiscoveryService {
   constructor(
     private readonly deps: {
-      cfoWikiService: Pick<CfoWikiService, "getPage">;
+      cfoWikiService: Pick<CfoWikiService, "getPage"> &
+        Partial<Pick<CfoWikiService, "listCompanySources">>;
       financeTwinService: Pick<
         FinanceTwinService,
         | "getBankAccounts"
@@ -63,6 +65,24 @@ export class FinanceDiscoveryService {
 
   async answerQuestion(rawQuestion: FinanceDiscoveryQuestion) {
     const question = FinanceDiscoveryQuestionSchema.parse(rawQuestion);
+
+    if (question.questionKind === "policy_lookup") {
+      if (!this.deps.cfoWikiService.listCompanySources) {
+        throw new Error(
+          "Policy lookup requires CFO Wiki bound-source reads to be configured",
+        );
+      }
+
+      return answerPolicyLookupQuestion({
+        cfoWikiService: {
+          getPage: (...args) => this.deps.cfoWikiService.getPage(...args),
+          listCompanySources: (...args) =>
+            this.deps.cfoWikiService.listCompanySources!(...args),
+        },
+        question,
+      });
+    }
+
     const family = getFinanceDiscoveryFamily(question.questionKind);
     const extraLimitations: string[] = [];
     const twinReads = await this.readTwinState(question, family.relatedRoutes, extraLimitations);

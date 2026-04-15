@@ -1,4 +1,8 @@
-import type { CfoWikiPageKey, CfoWikiPageView, FinanceDiscoveryQuestion } from "@pocket-cto/domain";
+import type {
+  CfoWikiPageKey,
+  CfoWikiPageView,
+  FinanceStoredStateDiscoveryQuestion,
+} from "@pocket-cto/domain";
 import type {
   FinanceBankAccountInventoryView,
   FinanceCashPostureView,
@@ -40,7 +44,7 @@ export type FinanceDiscoveryAnswerFormatterInput = {
   extraLimitations: string[];
   family: FinanceDiscoveryFamilyDefinition;
   missingWikiPages: CfoWikiPageKey[];
-  question: FinanceDiscoveryQuestion;
+  question: FinanceStoredStateDiscoveryQuestion;
   relatedRoutes: FinanceDiscoveryRouteState[];
   twinReads: FinanceDiscoveryTwinReadMap;
   wikiPages: CfoWikiPageView[];

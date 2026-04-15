@@ -89,6 +89,7 @@ export const ProofBundleManifestSchema = z.object({
   objective: z.string(),
   companyKey: FinanceCompanyKeySchema.nullable().default(null),
   questionKind: DiscoveryQuestionKindSchema.nullable().default(null),
+  policySourceId: z.string().uuid().nullable().default(null),
   answerSummary: z.string().default(""),
   freshnessState: FinanceDiscoveryFreshnessStateSchema.nullable().default(null),
   freshnessSummary: z.string().default(""),

@@ -176,6 +176,7 @@ export function assembleProofBundleManifest(input: {
     objective: input.mission.objective,
     companyKey: facts.companyKey,
     questionKind: facts.questionKind,
+    policySourceId: facts.policySourceId,
     answerSummary: facts.discoveryAnswerSummary ?? "",
     freshnessState: facts.freshnessState,
     freshnessSummary: facts.freshnessSummary ?? "",
@@ -369,7 +370,9 @@ function buildVerificationSummary(
   if (isFinanceDiscoveryFacts(facts) && facts.latestScoutTask) {
     if (status === "ready" && facts.discoveryAnswerSummary) {
       return truncate(
-        `${facts.discoveryAnswerSummary} Review the stored freshness, route-backed evidence, and visible limitations before acting on the answer.`,
+        facts.policySourceId
+          ? `${facts.discoveryAnswerSummary} Review the stored policy page, extract-status posture, and visible limitations for source ${facts.policySourceId} before acting on the answer.`
+          : `${facts.discoveryAnswerSummary} Review the stored freshness, route-backed evidence, and visible limitations before acting on the answer.`,
         SUMMARY_MAX_LENGTH,
       );
     }

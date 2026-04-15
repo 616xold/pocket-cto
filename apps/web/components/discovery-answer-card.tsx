@@ -2,7 +2,7 @@ import React from "react";
 import type {
   DiscoveryAnswerArtifactMetadata,
   DiscoveryMissionQuestion,
-  FinanceDiscoveryQuestionKind,
+  FinanceDiscoveryQuestion,
   MissionDetailView,
   MissionRecord,
 } from "@pocket-cto/domain";
@@ -56,13 +56,18 @@ function FinanceDiscoveryAnswerCard(input: {
     : null;
   const companyKey = answer?.companyKey ?? question?.companyKey ?? null;
   const questionKind = answer?.questionKind ?? question?.questionKind ?? null;
+  const policySourceId =
+    answer?.policySourceId ??
+    (question?.questionKind === "policy_lookup"
+      ? question.policySourceId
+      : null);
   const questionKindLabel = questionKind
     ? readFinanceDiscoveryQuestionKindLabel(questionKind)
     : null;
   const relatedRoutes =
     answer?.relatedRoutes ??
-    (companyKey && questionKind
-      ? readFinanceFallbackRoutes(companyKey, questionKind)
+    (question
+      ? readFinanceFallbackRoutes(question)
       : []);
 
   return (
@@ -99,6 +104,12 @@ function FinanceDiscoveryAnswerCard(input: {
           <dt>Question kind</dt>
           <dd>{questionKindLabel ?? "Not recorded yet."}</dd>
         </div>
+        {questionKind === "policy_lookup" || policySourceId ? (
+          <div>
+            <dt>Policy source</dt>
+            <dd>{policySourceId ?? "Not recorded yet."}</dd>
+          </div>
+        ) : null}
         <div>
           <dt>Freshness</dt>
           <dd>
@@ -451,64 +462,72 @@ function isLegacyDiscoveryAnswer(
   return answer?.source === "stored_twin_blast_radius_query";
 }
 
-function readFinanceFallbackRoutes(
-  companyKey: string,
-  questionKind: FinanceDiscoveryQuestionKind,
-) {
-  switch (questionKind) {
+function readFinanceFallbackRoutes(question: FinanceDiscoveryQuestion) {
+  switch (question.questionKind) {
     case "cash_posture":
       return [
         {
           label: "Cash posture",
-          routePath: `/finance-twin/companies/${companyKey}/cash-posture`,
+          routePath: `/finance-twin/companies/${question.companyKey}/cash-posture`,
         },
         {
           label: "Bank account inventory",
-          routePath: `/finance-twin/companies/${companyKey}/bank-accounts`,
+          routePath: `/finance-twin/companies/${question.companyKey}/bank-accounts`,
         },
       ];
     case "collections_pressure":
       return [
         {
           label: "Collections posture",
-          routePath: `/finance-twin/companies/${companyKey}/collections-posture`,
+          routePath: `/finance-twin/companies/${question.companyKey}/collections-posture`,
         },
         {
           label: "Receivables aging",
-          routePath: `/finance-twin/companies/${companyKey}/receivables-aging`,
+          routePath: `/finance-twin/companies/${question.companyKey}/receivables-aging`,
         },
       ];
     case "payables_pressure":
       return [
         {
           label: "Payables posture",
-          routePath: `/finance-twin/companies/${companyKey}/payables-posture`,
+          routePath: `/finance-twin/companies/${question.companyKey}/payables-posture`,
         },
         {
           label: "Payables aging",
-          routePath: `/finance-twin/companies/${companyKey}/payables-aging`,
+          routePath: `/finance-twin/companies/${question.companyKey}/payables-aging`,
         },
       ];
     case "spend_posture":
       return [
         {
           label: "Spend posture",
-          routePath: `/finance-twin/companies/${companyKey}/spend-posture`,
+          routePath: `/finance-twin/companies/${question.companyKey}/spend-posture`,
         },
         {
           label: "Spend items",
-          routePath: `/finance-twin/companies/${companyKey}/spend-items`,
+          routePath: `/finance-twin/companies/${question.companyKey}/spend-items`,
         },
       ];
     case "obligation_calendar_review":
       return [
         {
           label: "Obligation calendar",
-          routePath: `/finance-twin/companies/${companyKey}/obligation-calendar`,
+          routePath: `/finance-twin/companies/${question.companyKey}/obligation-calendar`,
         },
         {
           label: "Contracts",
-          routePath: `/finance-twin/companies/${companyKey}/contracts`,
+          routePath: `/finance-twin/companies/${question.companyKey}/contracts`,
+        },
+      ];
+    case "policy_lookup":
+      return [
+        {
+          label: "Scoped policy page",
+          routePath: `/cfo-wiki/companies/${question.companyKey}/pages/${encodeURIComponent(`policies/${question.policySourceId}`)}`,
+        },
+        {
+          label: "Company bound sources",
+          routePath: `/cfo-wiki/companies/${question.companyKey}/sources`,
         },
       ];
   }

@@ -32,7 +32,7 @@ When using those commands during the pivot:
 
 ## Target finance eval families
 
-1. deterministic finance discovery answers for the shipped F4A/F4B families, with `cash_posture` as the first F4A family and `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review` shipped in F4B
+1. deterministic finance discovery answers for the shipped F4A through F4C1 families, with `cash_posture` as the first F4A family, `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review` shipped in F4B, and explicit-source `policy_lookup` shipped in F4C1
 2. later posture, aging, spend, and obligation answers that stay grounded in already-shipped Finance Twin reads
 3. source-scoped `policy_lookup` from explicit `policySourceId`, explicit `policy_document` bindings, and stored deterministic extracts
 4. finance memo or packet compilation
@@ -45,13 +45,13 @@ Early F4 evals should distinguish what the repo can truthfully support from what
 
 Shipped today:
 
-- discovery evals can cover `cash_posture`, `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review`
+- discovery evals can cover `cash_posture`, `collections_pressure`, `payables_pressure`, `spend_posture`, `obligation_calendar_review`, and source-scoped `policy_lookup`
 - eval prompts should require twin/wiki-grounded answers with explicit freshness and limitations
 - runtime-codex, vector retrieval, OCR, deep-read, and report compilation should stay out of scope
 
 During F4C and later finance-discovery hardening:
 
-- add `policy_lookup` only when the eval prompt includes explicit policy source scope and the repo can ground the answer from stored deterministic policy pages and extract status
+- keep `policy_lookup` eval prompts explicitly source-scoped and grounded in stored deterministic policy pages plus extract status
 - do not grade generic corpus-wide semantic policy search as if it already exists
 - add later discovery families only when the repo can already ground them deterministically
 

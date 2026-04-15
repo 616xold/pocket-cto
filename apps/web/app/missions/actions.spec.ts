@@ -85,6 +85,28 @@ describe("mission intake server action", () => {
     expect(revalidatePath).toHaveBeenNthCalledWith(2, "/missions");
     expect(redirect).toHaveBeenCalledWith(`/missions/${missionId}`);
   });
+
+  it("passes explicit policy source scope through the discovery intake action", async () => {
+    createAnalysisMission.mockResolvedValue({
+      mission: {
+        id: missionId,
+      },
+    });
+
+    const mod = await import("./actions");
+    await mod.submitDiscoveryMissionIntake(buildPolicyLookupDiscoveryFormData());
+
+    expect(createAnalysisMission).toHaveBeenCalledWith({
+      companyKey: "acme",
+      operatorPrompt: "Which approval thresholds apply to travel spend?",
+      policySourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      questionKind: "policy_lookup",
+      requestedBy: "Local web operator",
+    });
+    expect(revalidatePath).toHaveBeenNthCalledWith(1, "/");
+    expect(revalidatePath).toHaveBeenNthCalledWith(2, "/missions");
+    expect(redirect).toHaveBeenCalledWith(`/missions/${missionId}`);
+  });
 });
 
 function buildFormData() {
@@ -105,6 +127,19 @@ function buildDiscoveryFormData() {
   formData.set("companyKey", "acme");
   formData.set("questionKind", "collections_pressure");
   formData.set("operatorPrompt", "Review collections pressure from stored state.");
+  formData.set("requestedBy", "Local web operator");
+  return formData;
+}
+
+function buildPolicyLookupDiscoveryFormData() {
+  const formData = new FormData();
+  formData.set("companyKey", "acme");
+  formData.set("questionKind", "policy_lookup");
+  formData.set("policySourceId", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+  formData.set(
+    "operatorPrompt",
+    "Which approval thresholds apply to travel spend?",
+  );
   formData.set("requestedBy", "Local web operator");
   return formData;
 }

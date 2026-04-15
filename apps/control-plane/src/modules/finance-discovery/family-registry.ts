@@ -1,6 +1,6 @@
 import type {
   CfoWikiPageKey,
-  FinanceDiscoveryQuestionKind,
+  FinanceDiscoveryStoredStateQuestionKind,
 } from "@pocket-cto/domain";
 
 export type FinanceDiscoveryTwinReadKey =
@@ -27,7 +27,7 @@ export type FinanceDiscoveryFamilyDefinition = {
   answerTitle: string;
   baselineLimitations: string[];
   displayLabel: string;
-  questionKind: FinanceDiscoveryQuestionKind;
+  questionKind: FinanceDiscoveryStoredStateQuestionKind;
   relatedRoutes: FinanceDiscoveryRouteDefinition[];
   relatedWikiPageKeys: CfoWikiPageKey[];
   titleVerb: "Assess" | "Review";
@@ -187,12 +187,12 @@ export const FINANCE_DISCOVERY_FAMILY_REGISTRY = {
     titleVerb: "Review",
   },
 } satisfies Record<
-  FinanceDiscoveryQuestionKind,
+  FinanceDiscoveryStoredStateQuestionKind,
   FinanceDiscoveryFamilyDefinition
 >;
 
 export function getFinanceDiscoveryFamily(
-  questionKind: FinanceDiscoveryQuestionKind,
+  questionKind: FinanceDiscoveryStoredStateQuestionKind,
 ) {
   return FINANCE_DISCOVERY_FAMILY_REGISTRY[questionKind];
 }
@@ -202,7 +202,7 @@ export function listFinanceDiscoveryFamilies() {
 }
 
 export function buildFinanceDiscoveryMissionTitle(
-  questionKind: FinanceDiscoveryQuestionKind,
+  questionKind: FinanceDiscoveryStoredStateQuestionKind,
   companyKey: string,
 ) {
   const family = getFinanceDiscoveryFamily(questionKind);
@@ -210,7 +210,7 @@ export function buildFinanceDiscoveryMissionTitle(
 }
 
 export function buildFinanceDiscoveryMissionObjective(
-  questionKind: FinanceDiscoveryQuestionKind,
+  questionKind: FinanceDiscoveryStoredStateQuestionKind,
   companyKey: string,
 ) {
   const family = getFinanceDiscoveryFamily(questionKind);

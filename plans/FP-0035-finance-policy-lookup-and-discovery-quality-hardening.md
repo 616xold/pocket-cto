@@ -15,7 +15,8 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 - [x] 2026-04-15T17:59:02Z Create `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` and refresh the smallest active-doc set so F4C1 and F4C2 are described consistently.
 - [x] 2026-04-15T18:08:24Z Run the docs-and-plan validation ladder for this planning slice without starting F4C implementation.
 - [x] 2026-04-15T22:20:42Z Apply a tiny follow-on handoff-doc truthfulness polish so `START_HERE.md` and `docs/ops/local-dev.md` point cleanly at the shipped F4A/F4B baseline, the active `FP-0035` contract, the next `F4C1` implementation thread, and the later `F4C2` hardening pass.
-- [ ] Implement `policy_lookup` as the only new F4C1 family through the existing mission engine, discovery bounded context, proof-bundle path, and operator read models.
+- [x] 2026-04-15T22:34:18Z Preflight the clean `codex/f4c1-finance-policy-lookup-local-v1` branch against fetched `origin/main`, reload the active docs and required repo skills, and confirm this existing `FP-0035` contract is sufficient for F4C1 without creating a new Finance Plan.
+- [x] 2026-04-15T23:12:41Z Implement `policy_lookup` as the only new F4C1 family through the existing mission engine, discovery bounded context, proof-bundle path, and operator read models. The shipped slice keeps the five F4A/F4B families unchanged, requires explicit `policySourceId` scope, persists truthful limited answers plus finance-ready proof bundles, adds the local `smoke:finance-policy-lookup:local` alias, and refreshes only the small doc set made stale by the landed code.
 - [ ] Land F4C2 discovery-quality hardening and eval extension only after F4C1 proves which operator or evidence gaps are still real.
 
 ## Surprises & Discoveries
@@ -34,6 +35,12 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 
 - Observation: policy lookup can stay read-only and mission-based without involving runtime-codex or new Finance Twin extractors.
   Evidence: `apps/control-plane/src/modules/orchestrator/discovery-phase.ts` already runs finance discovery through the scout-only deterministic path, and the shipped wiki policy pages are derived from stored raw-source extracts rather than runtime-codex output.
+
+- Observation: the existing source-list read seam already exposes enough bound-source status to reject unknown or non-`policy_document` scope before answer assembly.
+  Evidence: `apps/control-plane/src/modules/wiki/service.ts` and `bound-sources.ts` already return each bound source with `documentRole`, latest snapshot metadata, latest extract status, latest source-file presence, and truthful limitations via `listCompanySources`.
+
+- Observation: the new packaged F4C1 smoke caught one real embedded-worker seam that focused unit batches did not exercise.
+  Evidence: `pnpm smoke:finance-policy-lookup:local` initially failed with `this.requireCompany is not a function` because the policy-lookup discovery path passed `CfoWikiService` instance methods unbound; the final implementation now wraps those reads so the embedded worker preserves the wiki service context cleanly.
 
 ## Decision Log
 
@@ -66,6 +73,12 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 
 - Decision: keep GitHub connector and engineering-twin modules intact and do not use GitHub Connector Guard here.
   Rationale: the user explicitly excluded that boundary from this slice, and F4C remains finance-centered.
+
+- Decision: execute F4C1 against the existing `FP-0035` document instead of creating a new Finance Plan.
+  Rationale: the active contract already names the exact scope, validation ladder, evidence posture, and out-of-scope boundaries for this implementation thread.
+
+- Decision: keep the F4C1 policy-lookup read seam inside the existing discovery service by binding the current wiki-service methods rather than widening the wiki module or adding a special policy route.
+  Rationale: the shipped `getPage` plus `listCompanySources` seam was already sufficient; the only extra hardening needed was to preserve method context in the embedded-worker path.
 
 ## Context and Orientation
 
@@ -251,6 +264,25 @@ The future F4C1 implementation ladder should run in this order:
    - `pnpm smoke:finance-twin-payables-aging:local`
    - `pnpm smoke:finance-twin-contract-metadata:local`
    - `pnpm smoke:finance-twin-card-expense:local`
+
+F4C1 implementation is now accepted on this branch after the required thread-level ladder ran green:
+
+- targeted domain, control-plane, and web `policy_lookup` test batches
+- `pnpm --filter @pocket-cto/domain exec vitest run src/discovery-mission.spec.ts src/proof-bundle.spec.ts src/mission-detail.spec.ts src/mission-list.spec.ts`
+- `zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/finance-discovery/**/*.spec.ts src/modules/missions/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/modules/orchestrator/**/*.spec.ts src/app.spec.ts"`
+- `zsh -lc "cd apps/web && pnpm exec vitest run app/**/*.spec.ts* components/**/*.spec.ts* lib/api.spec.ts"`
+- `pnpm smoke:finance-discovery-answer:local`
+- `pnpm smoke:finance-discovery-supported-families:local`
+- `pnpm smoke:finance-policy-lookup:local`
+- `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm ci:repro:current`
+
+Remaining planned work stays narrow:
+
+- `F4C2` only, for discovery-quality hardening and eval extension informed by the now-shipped `policy_lookup` slice
    - `pnpm smoke:cfo-wiki-foundation:local`
    - `pnpm smoke:cfo-wiki-document-pages:local`
    - `pnpm smoke:cfo-wiki-lint-export:local`

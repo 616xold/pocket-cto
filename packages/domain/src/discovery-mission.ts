@@ -19,9 +19,19 @@ export const FINANCE_DISCOVERY_QUESTION_KINDS = [
   "payables_pressure",
   "spend_posture",
   "obligation_calendar_review",
+  "policy_lookup",
+] as const;
+
+export const FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS = [
+  "cash_posture",
+  "collections_pressure",
+  "payables_pressure",
+  "spend_posture",
+  "obligation_calendar_review",
 ] as const;
 
 export const FINANCE_DISCOVERY_QUESTION_KIND_LABELS = {
+  policy_lookup: "Policy lookup",
   cash_posture: "Cash posture",
   collections_pressure: "Collections pressure",
   payables_pressure: "Payables pressure",
@@ -42,6 +52,9 @@ const FRESHNESS_LABELS = {
 export const FinanceDiscoveryQuestionKindSchema = z.enum(
   FINANCE_DISCOVERY_QUESTION_KINDS,
 );
+export const FinanceDiscoveryStoredStateQuestionKindSchema = z.enum(
+  FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS,
+);
 export const LegacyDiscoveryQuestionKindSchema =
   TwinBlastRadiusQuestionKindSchema;
 export const DiscoveryQuestionKindSchema = z.union([
@@ -57,18 +70,45 @@ export const LegacyDiscoveryMissionQuestionSchema = z
   })
   .strict();
 
-export const FinanceDiscoveryQuestionSchema = z
+const FinanceDiscoveryQuestionBaseShape = {
+  companyKey: FinanceCompanyKeySchema,
+  operatorPrompt: z.string().trim().min(1).nullable().optional(),
+} as const;
+
+export const FinanceStoredStateDiscoveryQuestionSchema = z
   .object({
-    companyKey: FinanceCompanyKeySchema,
-    questionKind: FinanceDiscoveryQuestionKindSchema,
-    operatorPrompt: z.string().trim().min(1).nullable().optional(),
+    ...FinanceDiscoveryQuestionBaseShape,
+    questionKind: FinanceDiscoveryStoredStateQuestionKindSchema,
   })
   .strict();
 
-export const CreateFinanceDiscoveryMissionInputSchema =
-  FinanceDiscoveryQuestionSchema.extend({
+export const FinancePolicyLookupQuestionSchema = z
+  .object({
+    ...FinanceDiscoveryQuestionBaseShape,
+    questionKind: z.literal("policy_lookup"),
+    policySourceId: z.string().uuid(),
+  })
+  .strict();
+
+export const FinanceDiscoveryQuestionSchema = z.union([
+  FinanceStoredStateDiscoveryQuestionSchema,
+  FinancePolicyLookupQuestionSchema,
+]);
+
+export const CreateFinanceStoredStateDiscoveryMissionInputSchema =
+  FinanceStoredStateDiscoveryQuestionSchema.extend({
     requestedBy: z.string().default("operator"),
   }).strict();
+
+export const CreateFinancePolicyLookupMissionInputSchema =
+  FinancePolicyLookupQuestionSchema.extend({
+    requestedBy: z.string().default("operator"),
+  }).strict();
+
+export const CreateFinanceDiscoveryMissionInputSchema = z.union([
+  CreateFinanceStoredStateDiscoveryMissionInputSchema,
+  CreateFinancePolicyLookupMissionInputSchema,
+]);
 
 export const FinanceDiscoveryFreshnessStateSchema = z.enum([
   "fresh",
@@ -109,22 +149,36 @@ export const FinanceDiscoveryEvidenceSectionSchema = z
   })
   .strict();
 
-export const FinanceDiscoveryAnswerArtifactMetadataSchema = z
-  .object({
-    source: z.literal("stored_finance_twin_and_cfo_wiki"),
-    summary: z.string().min(1),
-    companyKey: FinanceCompanyKeySchema,
-    questionKind: FinanceDiscoveryQuestionKindSchema,
-    answerSummary: z.string().min(1),
-    freshnessPosture: FinanceDiscoveryFreshnessPostureSchema,
-    limitations: z.array(z.string().min(1)),
-    relatedRoutes: z.array(FinanceDiscoveryRelatedRouteSchema),
-    relatedWikiPages: z.array(FinanceDiscoveryRelatedWikiPageSchema),
-    evidenceSections: z.array(FinanceDiscoveryEvidenceSectionSchema),
-    bodyMarkdown: z.string().min(1),
-    structuredData: z.record(z.string(), z.unknown()).default({}),
-  })
-  .strict();
+const FinanceDiscoveryAnswerArtifactMetadataBaseSchema = z.object({
+  source: z.literal("stored_finance_twin_and_cfo_wiki"),
+  summary: z.string().min(1),
+  companyKey: FinanceCompanyKeySchema,
+  answerSummary: z.string().min(1),
+  freshnessPosture: FinanceDiscoveryFreshnessPostureSchema,
+  limitations: z.array(z.string().min(1)),
+  relatedRoutes: z.array(FinanceDiscoveryRelatedRouteSchema),
+  relatedWikiPages: z.array(FinanceDiscoveryRelatedWikiPageSchema),
+  evidenceSections: z.array(FinanceDiscoveryEvidenceSectionSchema),
+  bodyMarkdown: z.string().min(1),
+  structuredData: z.record(z.string(), z.unknown()).default({}),
+});
+
+export const FinanceStoredStateDiscoveryAnswerArtifactMetadataSchema =
+  FinanceDiscoveryAnswerArtifactMetadataBaseSchema.extend({
+    questionKind: FinanceDiscoveryStoredStateQuestionKindSchema,
+    policySourceId: z.null().default(null),
+  }).strict();
+
+export const FinancePolicyLookupAnswerArtifactMetadataSchema =
+  FinanceDiscoveryAnswerArtifactMetadataBaseSchema.extend({
+    questionKind: z.literal("policy_lookup"),
+    policySourceId: z.string().uuid(),
+  }).strict();
+
+export const FinanceDiscoveryAnswerArtifactMetadataSchema = z.union([
+  FinanceStoredStateDiscoveryAnswerArtifactMetadataSchema,
+  FinancePolicyLookupAnswerArtifactMetadataSchema,
+]);
 
 export const LegacyDiscoveryAnswerArtifactMetadataSchema = z
   .object({
@@ -149,6 +203,7 @@ export const FinanceDiscoveryAnswerSummarySchema = z
   .object({
     companyKey: FinanceCompanyKeySchema,
     questionKind: FinanceDiscoveryQuestionKindSchema,
+    policySourceId: z.string().uuid().nullable().default(null),
     answerSummary: z.string().min(1),
     freshnessState: FinanceDiscoveryFreshnessStateSchema,
     limitationCount: z.number().int().nonnegative(),
@@ -193,6 +248,15 @@ export type FinanceDiscoveryQuestion = z.infer<
 >;
 export type FinanceDiscoveryQuestionKind = z.infer<
   typeof FinanceDiscoveryQuestionKindSchema
+>;
+export type FinanceDiscoveryStoredStateQuestionKind = z.infer<
+  typeof FinanceDiscoveryStoredStateQuestionKindSchema
+>;
+export type FinanceStoredStateDiscoveryQuestion = z.infer<
+  typeof FinanceStoredStateDiscoveryQuestionSchema
+>;
+export type FinancePolicyLookupQuestion = z.infer<
+  typeof FinancePolicyLookupQuestionSchema
 >;
 export type LegacyDiscoveryMissionQuestion = z.infer<
   typeof LegacyDiscoveryMissionQuestionSchema
@@ -256,6 +320,15 @@ export function isFinanceDiscoveryQuestion(
     typeof question === "object" &&
     question !== null &&
     "companyKey" in question
+  );
+}
+
+export function isFinancePolicyLookupQuestion(
+  question: DiscoveryMissionQuestion | null | undefined,
+): question is FinancePolicyLookupQuestion {
+  return (
+    isFinanceDiscoveryQuestion(question) &&
+    question.questionKind === "policy_lookup"
   );
 }
 

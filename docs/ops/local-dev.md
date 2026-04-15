@@ -1,6 +1,6 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, and through the shipped F4A/F4B finance-discovery baseline. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` is now the active next implementation contract for F4C1 `policy_lookup`, with F4C2 reserved for later discovery-quality hardening and eval extension.
+This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, and through the shipped F4A through F4C1 finance-discovery baseline. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains active because F4C2 discovery-quality hardening and eval extension still remain later work.
 
 That means two things are true at once:
 
@@ -51,6 +51,7 @@ pnpm smoke:cfo-wiki-lint-export:local
 pnpm smoke:cfo-wiki-concept-metric-policy:local
 pnpm smoke:finance-discovery-answer:local
 pnpm smoke:finance-discovery-supported-families:local
+pnpm smoke:finance-policy-lookup:local
 ```
 
 ## Pivot-foundation baseline
@@ -117,11 +118,13 @@ Today, steps 1 through 5 exist in a narrow form:
 - the packaged `pnpm smoke:finance-discovery-answer:local` path proves one company can sync bank-account-summary coverage, compile related wiki pages, run `POST /missions/analysis`, and read back the persisted finance answer plus finance-ready proof bundle without runtime-codex, vector search, OCR, or deep-read dependencies
 - F4B widens that deterministic finance-discovery path to the truthful stored-state families `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review` while keeping policy lookup, aging-review families, runtime-codex, OCR, vector search, and deep-read dependencies out of scope
 - the packaged `pnpm smoke:finance-discovery-supported-families:local` path proves one company can sync the existing cash, receivables-aging, payables-aging, card-expense, and contract-metadata source families, compile the related wiki pages, run `POST /missions/analysis` for each shipped supported family, and read back deterministic finance answers plus finance-ready proof bundles without runtime-codex, vector search, OCR, or deep-read dependencies
+- F4C1 adds one deterministic source-scoped `policy_lookup` family that requires explicit `policySourceId`, answers only from the scoped policy page plus related bound-source extract posture, and persists truthful limited answers when the latest bound policy extract is missing, unsupported, or failed
+- the packaged `pnpm smoke:finance-policy-lookup:local` path proves one company can bind policy-document sources, compile scoped policy pages, run `POST /missions/analysis` for both extracted and unsupported `policy_lookup` missions, and read back deterministic source-scoped answers plus finance-ready proof bundles without runtime-codex, generic retrieval, OCR, or deep-read dependencies
 - `POST /missions/discovery` may still exist as a deprecated finance-shaped alias for compatibility, but it is not a live repo-scoped engineering discovery create contract and legacy repo payloads should be treated as unsupported
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-If none exists, the next new major implementation phase should be F4C policy lookup and finance-discovery quality hardening rather than reopening completed wiki slices.
+If none exists, the next new major implementation phase should be F4C2 discovery-quality hardening and eval extension rather than reopening completed wiki slices.
 Use the docs to guide what gets built next.
 
 The active finance-twin read surface is currently backend-first:

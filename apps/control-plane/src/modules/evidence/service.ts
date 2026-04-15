@@ -45,6 +45,9 @@ export class EvidenceService {
       isFinanceDiscoveryQuestion(discoveryQuestion) ? discoveryQuestion.companyKey : null;
     const discoveryQuestionKind =
       discoveryQuestion?.questionKind ?? null;
+    const policySourceId = isPolicyLookupDiscoveryQuestion(discoveryQuestion)
+      ? discoveryQuestion.policySourceId
+      : null;
 
     return ProofBundleManifestSchema.parse({
       missionId: mission.id,
@@ -52,6 +55,7 @@ export class EvidenceService {
       objective: mission.objective,
       companyKey: financeCompanyKey,
       questionKind: discoveryQuestionKind,
+      policySourceId,
       answerSummary: "",
       freshnessState: null,
       freshnessSummary: "",
@@ -303,6 +307,16 @@ function isFinanceDiscoveryQuestion(
 ): question is Extract<DiscoveryMissionQuestion, { companyKey: string }> {
   return (
     typeof question === "object" && question !== null && "companyKey" in question
+  );
+}
+
+function isPolicyLookupDiscoveryQuestion(
+  question: DiscoveryMissionQuestion | null | undefined,
+): question is Extract<DiscoveryMissionQuestion, { policySourceId: string }> {
+  return (
+    typeof question === "object" &&
+    question !== null &&
+    "policySourceId" in question
   );
 }
 

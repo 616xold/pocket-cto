@@ -353,15 +353,6 @@ function buildSharedKernel(input: {
     liveSessionRegistry,
   );
   const evidenceService = new EvidenceService();
-  const missionService = new MissionService(
-    new StubMissionCompiler(),
-    input.missionRepository,
-    replayService,
-    evidenceService,
-    {
-      approvalReader: approvalService,
-    },
-  );
   const sourceService = new SourceRegistryService(
     input.sourceRepository,
     input.sourceFileStorage,
@@ -377,6 +368,16 @@ function buildSharedKernel(input: {
     sourceRepository: input.sourceRepository,
     wikiRepository: input.wikiRepository,
   });
+  const missionService = new MissionService(
+    new StubMissionCompiler(),
+    input.missionRepository,
+    replayService,
+    evidenceService,
+    {
+      approvalReader: approvalService,
+      cfoWikiService,
+    },
+  );
   const financeDiscoveryService = new FinanceDiscoveryService({
     cfoWikiService,
     financeTwinService,

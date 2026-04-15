@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  FINANCE_DISCOVERY_QUESTION_KINDS,
-  type FinanceDiscoveryQuestionKind,
+  FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS,
+  type FinanceDiscoveryStoredStateQuestionKind,
 } from "@pocket-cto/domain";
 import type {
   ApprovalRecord,
@@ -347,7 +347,7 @@ describe("assembleProofBundleManifest", () => {
     expect(manifest.rollbackSummary).toContain("No code, branch, pull request");
   });
 
-  it.each(FINANCE_DISCOVERY_QUESTION_KINDS)(
+  it.each(FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS)(
     "yields a finance-ready proof bundle for %s",
     (questionKind) => {
       const mission = buildFinanceDiscoveryMission(questionKind);
@@ -486,6 +486,49 @@ describe("assembleProofBundleManifest", () => {
       "Required Finance Twin read Payables aging is in failed freshness posture for acme",
     );
   });
+
+  it("yields a finance-ready proof bundle for source-scoped policy lookup", () => {
+    const policySourceId = "22222222-2222-4222-8222-222222222222";
+    const mission = buildPolicyLookupDiscoveryMission(policySourceId);
+    const manifest = assembleProofBundleManifest({
+      approvals: [],
+      artifacts: [
+        buildArtifact({
+          id: "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaa6",
+          kind: "discovery_answer",
+          taskId: scoutTaskId,
+          createdAt: "2026-04-15T09:07:00.000Z",
+          metadata: buildPolicyLookupDiscoveryAnswerMetadata(policySourceId),
+        }),
+      ],
+      existingBundle: buildPlaceholderBundle(mission),
+      mission,
+      replayEventCount: 10,
+      tasks: buildDiscoveryTasks("succeeded"),
+    });
+
+    expect(manifest.status).toBe("ready");
+    expect(manifest.companyKey).toBe("acme");
+    expect(manifest.questionKind).toBe("policy_lookup");
+    expect(manifest.policySourceId).toBe(policySourceId);
+    expect(manifest.relatedRoutePaths).toEqual([
+      `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+      `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`sources/${policySourceId}/snapshots/2`)}`,
+      `/cfo-wiki/companies/acme/pages/${encodeURIComponent("concepts/policy-corpus")}`,
+    ]);
+    expect(manifest.relatedWikiPageKeys).toEqual([
+      `policies/${policySourceId}`,
+      `sources/${policySourceId}/snapshots/2`,
+      "concepts/policy-corpus",
+    ]);
+    expect(manifest.answerSummary).toContain(policySourceId);
+    expect(manifest.verificationSummary).toContain(
+      `policy source ${policySourceId}`,
+    );
+    expect(manifest.verificationSummary).toContain(
+      "Review the stored policy page",
+    );
+  });
 });
 
 function buildMission(): MissionRecord {
@@ -570,7 +613,7 @@ function buildDiscoveryMission(): MissionRecord {
 }
 
 function buildFinanceDiscoveryMission(
-  questionKind: FinanceDiscoveryQuestionKind,
+  questionKind: FinanceDiscoveryStoredStateQuestionKind,
 ): MissionRecord {
   return {
     id: missionId,
@@ -614,7 +657,7 @@ function buildFinanceDiscoveryMission(
 }
 
 function buildFinanceDiscoveryAnswerMetadata(
-  questionKind: FinanceDiscoveryQuestionKind,
+  questionKind: FinanceDiscoveryStoredStateQuestionKind,
   freshnessPosture?: {
     reasonSummary: string;
     state: "failed" | "fresh" | "missing" | "mixed" | "stale";
@@ -622,7 +665,7 @@ function buildFinanceDiscoveryAnswerMetadata(
   limitations = ["Visible limitations remain preserved."],
 ) {
   const routesByQuestionKind: Record<
-    FinanceDiscoveryQuestionKind,
+    FinanceDiscoveryStoredStateQuestionKind,
     Array<{ label: string; routePath: string }>
   > = {
     cash_posture: [
@@ -708,7 +751,9 @@ function buildFinanceDiscoveryAnswerMetadata(
   };
 }
 
-function readFinanceArtifactId(questionKind: FinanceDiscoveryQuestionKind) {
+function readFinanceArtifactId(
+  questionKind: FinanceDiscoveryStoredStateQuestionKind,
+) {
   switch (questionKind) {
     case "cash_posture":
       return "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaa1";
@@ -721,6 +766,107 @@ function readFinanceArtifactId(questionKind: FinanceDiscoveryQuestionKind) {
     case "obligation_calendar_review":
       return "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaa5";
   }
+}
+
+function buildPolicyLookupDiscoveryMission(policySourceId: string): MissionRecord {
+  return {
+    id: missionId,
+    type: "discovery",
+    status: "succeeded",
+    title: `Review policy lookup for acme from ${policySourceId}`,
+    objective: `Answer the stored policy lookup question for acme from scoped policy source ${policySourceId}, persisted CFO Wiki state, and bound-source metadata only.`,
+    sourceKind: "manual_discovery",
+    sourceRef: null,
+    createdBy: "operator",
+    primaryRepo: null,
+    spec: {
+      type: "discovery",
+      title: `Review policy lookup for acme from ${policySourceId}`,
+      objective: `Answer the stored policy lookup question for acme from scoped policy source ${policySourceId}, persisted CFO Wiki state, and bound-source metadata only.`,
+      repos: [],
+      constraints: {
+        allowedPaths: [],
+        mustNot: [],
+      },
+      acceptance: ["Persist one durable discovery answer artifact."],
+      riskBudget: {
+        sandboxMode: "read-only",
+        maxWallClockMinutes: 5,
+        maxCostUsd: 1,
+        allowNetwork: false,
+        requiresHumanApprovalFor: [],
+      },
+      deliverables: ["discovery_answer", "proof_bundle"],
+      evidenceRequirements: ["stored finance discovery answer"],
+      input: {
+        discoveryQuestion: {
+          companyKey: "acme",
+          questionKind: "policy_lookup",
+          policySourceId,
+        },
+      },
+    },
+    createdAt: "2026-04-15T09:00:00.000Z",
+    updatedAt: "2026-04-15T09:03:00.000Z",
+  };
+}
+
+function buildPolicyLookupDiscoveryAnswerMetadata(policySourceId: string) {
+  return {
+    source: "stored_finance_twin_and_cfo_wiki",
+    summary: `Stored policy lookup for acme is scoped to policy source ${policySourceId}. Travel and expense policy sets explicit approval thresholds for higher-value spend.`,
+    companyKey: "acme",
+    questionKind: "policy_lookup",
+    policySourceId,
+    answerSummary: `Stored policy lookup for acme is scoped to policy source ${policySourceId}. Travel and expense policy sets explicit approval thresholds for higher-value spend.`,
+    freshnessPosture: {
+      state: "fresh" as const,
+      reasonSummary: "Compiled policy page freshness is current.",
+    },
+    limitations: [
+      `This answer is scoped only to policy source ${policySourceId}; it does not search across other policies or unrelated company documents.`,
+      "Visible limitations remain preserved.",
+    ],
+    relatedRoutes: [
+      {
+        label: "Scoped policy page",
+        routePath: `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+      },
+      {
+        label: "Scoped source digest page",
+        routePath: `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`sources/${policySourceId}/snapshots/2`)}`,
+      },
+      {
+        label: "Policy corpus concept page",
+        routePath: `/cfo-wiki/companies/acme/pages/${encodeURIComponent("concepts/policy-corpus")}`,
+      },
+    ],
+    relatedWikiPages: [
+      {
+        pageKey: `policies/${policySourceId}`,
+        title: "Travel and expense policy",
+      },
+      {
+        pageKey: `sources/${policySourceId}/snapshots/2`,
+        title: "Travel and expense policy digest",
+      },
+      {
+        pageKey: "concepts/policy-corpus",
+        title: "Policy corpus",
+      },
+    ],
+    evidenceSections: [
+      {
+        key: "scoped_policy_page",
+        title: "Scoped policy page",
+        summary: "Compiled policy page evidence remains source-scoped.",
+        routePath: `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+        pageKey: `policies/${policySourceId}`,
+      },
+    ],
+    bodyMarkdown: "# Policy lookup answer\n\nStored policy answer.",
+    structuredData: {},
+  };
 }
 
 function buildTasks(input: {

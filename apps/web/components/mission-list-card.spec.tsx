@@ -22,6 +22,7 @@ describe("MissionListCard", () => {
           },
           objectiveExcerpt: "Ship passkeys without breaking email login.",
           pendingApprovalCount: 1,
+          policySourceId: null,
           primaryRepo: "web",
           proofBundleStatus: "incomplete",
           pullRequestNumber: 19,
@@ -64,6 +65,7 @@ describe("MissionListCard", () => {
           objectiveExcerpt:
             "Answer the stored payables pressure question for acme.",
           pendingApprovalCount: 0,
+          policySourceId: null,
           primaryRepo: null,
           proofBundleStatus: "ready",
           pullRequestNumber: null,
@@ -86,6 +88,48 @@ describe("MissionListCard", () => {
     );
     expect(html).toContain("Stale");
     expect(html).not.toContain(">stale<");
+    expect(html).toContain("proof ready");
+  });
+
+  it("renders policy lookup mission summaries with explicit source scope", () => {
+    const html = renderToStaticMarkup(
+      <MissionListCard
+        mission={{
+          answerSummary:
+            "Stored policy lookup is scoped to the requested policy source.",
+          companyKey: "acme",
+          createdAt: "2026-04-15T01:00:00.000Z",
+          freshnessState: "missing",
+          id: "22222222-2222-4222-8222-222222222222",
+          latestTask: {
+            id: "33333333-3333-4333-8333-333333333333",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            updatedAt: "2026-04-15T01:05:00.000Z",
+          },
+          objectiveExcerpt:
+            "Answer the stored policy lookup question for acme from scoped policy source only.",
+          pendingApprovalCount: 0,
+          policySourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          primaryRepo: null,
+          proofBundleStatus: "ready",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: "policy_lookup",
+          sourceKind: "manual_discovery",
+          sourceRef: null,
+          status: "succeeded",
+          title: "Review policy lookup for acme",
+          updatedAt: "2026-04-15T01:05:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("Policy lookup");
+    expect(html).toContain("Policy source");
+    expect(html).toContain("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    expect(html).toContain("Missing");
     expect(html).toContain("proof ready");
   });
 });

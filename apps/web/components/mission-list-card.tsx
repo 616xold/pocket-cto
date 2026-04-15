@@ -61,6 +61,12 @@ export function MissionListCard({ mission }: MissionListCardProps) {
               <dt>Question kind</dt>
               <dd>{questionKindLabel ?? "Pending question"}</dd>
             </div>
+            {mission.questionKind === "policy_lookup" || mission.policySourceId ? (
+              <div>
+                <dt>Policy source</dt>
+                <dd>{mission.policySourceId ?? "Pending policy source"}</dd>
+              </div>
+            ) : null}
             <div>
               <dt>Freshness</dt>
               <dd>{readFreshnessLabel(mission.freshnessState ?? "pending_answer")}</dd>

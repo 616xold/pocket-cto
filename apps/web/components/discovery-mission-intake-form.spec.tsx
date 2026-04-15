@@ -18,6 +18,7 @@ describe("DiscoveryMissionIntakeForm", () => {
       await import("./discovery-mission-intake-form");
     const html = renderToStaticMarkup(<DiscoveryMissionIntakeForm />);
 
+    expect(html).toContain("Policy lookup");
     expect(html).toContain("Cash posture");
     expect(html).toContain("Collections pressure");
     expect(html).toContain("Payables pressure");
@@ -28,5 +29,20 @@ describe("DiscoveryMissionIntakeForm", () => {
       "What finance posture should I review from stored state, and which evidence gaps matter most?",
     );
     expect(html).toContain("Local web operator");
+  });
+
+  it("renders an explicit policy source field when policy lookup is preselected", async () => {
+    const { DiscoveryMissionIntakeForm } =
+      await import("./discovery-mission-intake-form");
+    const html = renderToStaticMarkup(
+      <DiscoveryMissionIntakeForm initialQuestionKind="policy_lookup" />,
+    );
+
+    expect(html).toContain("Policy source id");
+    expect(html).toContain("00000000-0000-0000-0000-000000000000");
+    expect(html).toContain(
+      "Which scoped policy page should I review from stored state, and what limitations or extract gaps remain visible?",
+    );
+    expect(html).toContain("policy_document");
   });
 });

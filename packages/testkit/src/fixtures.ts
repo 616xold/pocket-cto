@@ -40,6 +40,7 @@ export function proofBundlePlaceholderFixture(
     objective: "Placeholder objective",
     companyKey: null,
     questionKind: null,
+    policySourceId: null,
     answerSummary: "",
     freshnessState: null,
     freshnessSummary: "",

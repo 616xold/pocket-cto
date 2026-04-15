@@ -173,6 +173,7 @@ describe("MissionCard", () => {
           limitationsSummary: "",
           pullRequestNumber: null,
           pullRequestUrl: null,
+          policySourceId: null,
           questionKind: null,
           replayEventCount: 14,
           relatedRoutePaths: [],
@@ -299,6 +300,7 @@ describe("MissionCard", () => {
           limitationsSummary: "",
           pullRequestNumber: null,
           pullRequestUrl: null,
+          policySourceId: null,
           questionKind: null,
           replayEventCount: 12,
           relatedRoutePaths: [],
@@ -405,6 +407,7 @@ describe("MissionCard", () => {
           freshnessSummary:
             "All required Finance Twin reads for cash posture are fresh for acme.",
           limitationsSummary: "Visible limitations remain preserved.",
+          policySourceId: null,
           pullRequestNumber: null,
           pullRequestUrl: null,
           questionKind: "cash_posture",
@@ -450,6 +453,139 @@ describe("MissionCard", () => {
     expect(html).toContain("Fresh");
     expect(html).not.toContain(">cash_posture<");
     expect(html).not.toContain(">fresh<");
+  });
+
+  it("renders explicit policy source scope in mission detail and proof-bundle blocks", () => {
+    const policySourceId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const html = renderToStaticMarkup(
+      <MissionCard
+        approvalCards={[]}
+        artifacts={[]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          createdAt: "2026-04-15T10:00:00.000Z",
+          createdBy: "operator",
+          id: "11111111-1111-4111-8111-111111111111",
+          objective:
+            "Answer the stored policy lookup question for acme from scoped policy source only.",
+          primaryRepo: null,
+          sourceKind: "manual_discovery",
+          sourceRef: null,
+          spec: {
+            acceptance: [
+              "persist one durable finance discovery answer artifact",
+            ],
+            constraints: {
+              allowedPaths: [],
+              mustNot: [],
+            },
+            deliverables: ["discovery_answer", "proof_bundle"],
+            evidenceRequirements: ["stored scoped policy page"],
+            input: {
+              discoveryQuestion: {
+                companyKey: "acme",
+                questionKind: "policy_lookup",
+                policySourceId,
+              },
+            },
+            objective:
+              "Answer the stored policy lookup question for acme from scoped policy source only.",
+            repos: [],
+            riskBudget: {
+              allowNetwork: false,
+              maxCostUsd: 1,
+              maxWallClockMinutes: 5,
+              requiresHumanApprovalFor: [],
+              sandboxMode: "read-only",
+            },
+            title: "Review policy lookup for acme",
+            type: "discovery",
+          },
+          status: "succeeded",
+          title: "Review policy lookup for acme",
+          type: "discovery",
+          updatedAt: "2026-04-15T10:05:00.000Z",
+        }}
+        proofBundle={{
+          artifactIds: [],
+          artifacts: [],
+          branchName: null,
+          changeSummary:
+            "Stored policy lookup is scoped to the requested policy source.",
+          companyKey: "acme",
+          decisionTrace: [],
+          evidenceCompleteness: {
+            status: "complete",
+            expectedArtifactKinds: ["discovery_answer"],
+            presentArtifactKinds: ["discovery_answer"],
+            missingArtifactKinds: [],
+            notes: [],
+          },
+          latestApproval: null,
+          missionId: "11111111-1111-4111-8111-111111111111",
+          missionTitle: "Review policy lookup for acme",
+          objective:
+            "Answer the stored policy lookup question for acme from scoped policy source only.",
+          answerSummary:
+            "Stored policy lookup is scoped to the requested policy source.",
+          freshnessState: "missing",
+          freshnessSummary:
+            "Policy source has an unsupported deterministic extract for the latest stored snapshot.",
+          limitationsSummary: "Visible limitations remain preserved.",
+          policySourceId,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: "policy_lookup",
+          relatedRoutePaths: [
+            `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
+          ],
+          relatedWikiPageKeys: [`policies/${policySourceId}`],
+          replayEventCount: 3,
+          riskSummary: "",
+          rollbackSummary: "",
+          status: "ready",
+          targetRepoFullName: null,
+          timestamps: {
+            missionCreatedAt: "2026-04-15T10:00:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPullRequestAt: null,
+            latestApprovalAt: null,
+            latestArtifactAt: "2026-04-15T10:05:00.000Z",
+          },
+          validationSummary: "",
+          verificationSummary: "",
+        }}
+        tasks={[
+          {
+            attemptCount: 1,
+            codexThreadId: null,
+            codexTurnId: null,
+            createdAt: "2026-04-15T10:00:00.000Z",
+            dependsOnTaskId: null,
+            id: "33333333-3333-4333-8333-333333333333",
+            missionId: "11111111-1111-4111-8111-111111111111",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            summary:
+              "Stored policy lookup is scoped to the requested policy source.",
+            updatedAt: "2026-04-15T10:05:00.000Z",
+            workspaceId: null,
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain("Policy lookup");
+    expect(html).toContain("Policy source");
+    expect(html).toContain(policySourceId);
+    expect(html).toContain("Missing");
   });
 
   it("renders the stored discovery answer with freshness and limitations prominently", () => {
@@ -726,6 +862,7 @@ describe("MissionCard", () => {
           freshnessState: null,
           freshnessSummary: "",
           limitationsSummary: "",
+          policySourceId: null,
           pullRequestNumber: null,
           pullRequestUrl: null,
           questionKind: "auth_change",

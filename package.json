@@ -67,6 +67,7 @@
     "smoke:cfo-wiki-concept-metric-policy:local": "tsx tools/cfo-wiki-concept-metric-policy-smoke.mjs",
     "smoke:finance-discovery-answer:local": "tsx tools/finance-discovery-answer-smoke.mjs",
     "smoke:finance-discovery-supported-families:local": "tsx tools/finance-discovery-supported-families-smoke.mjs",
+    "smoke:finance-policy-lookup:local": "tsx tools/finance-policy-lookup-smoke.mjs",
     "smoke:source-ingest:local": "tsx tools/source-ingest-smoke.mjs --mode ingest",
     "smoke:source-registry:local": "tsx tools/source-ingest-smoke.mjs --mode registry",
     "smoke:twin-blast-radius:live": "tsx tools/twin-blast-radius-smoke.mjs",

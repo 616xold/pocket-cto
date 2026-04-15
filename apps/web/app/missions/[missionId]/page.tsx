@@ -138,6 +138,7 @@ function buildDemoMissionDetail(): MissionDetailView {
       objective: "Ship passkeys without breaking email login.",
       companyKey: null,
       questionKind: null,
+      policySourceId: null,
       answerSummary: "",
       freshnessState: null,
       freshnessSummary: "",
