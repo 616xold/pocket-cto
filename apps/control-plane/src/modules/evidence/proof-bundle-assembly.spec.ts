@@ -394,7 +394,7 @@ describe("assembleProofBundleManifest", () => {
             "collections_pressure",
             {
               reasonSummary:
-                "Required Finance Twin reads for collections pressure do not agree for acme. Collections posture is fresh: Stored collections posture state is fresh. Receivables aging is stale: Stored receivables-aging coverage is stale relative to the freshness threshold.",
+                "Required Finance Twin reads for collections pressure do not agree for acme. Collections posture is Fresh: Stored collections posture state is fresh. Receivables aging is Stale: Stored receivables-aging coverage is stale relative to the freshness threshold.",
               state: "mixed",
             },
           ),
@@ -429,7 +429,7 @@ describe("assembleProofBundleManifest", () => {
             "collections_pressure",
             {
               reasonSummary:
-                "Required Finance Twin reads for collections pressure do not agree for acme. Collections posture is fresh: Stored collections posture state is fresh. Receivables aging is stale: Stored receivables-aging coverage is stale relative to the freshness threshold.",
+                "Required Finance Twin reads for collections pressure do not agree for acme. Collections posture is Fresh: Stored collections posture state is fresh. Receivables aging is Stale: Stored receivables-aging coverage is stale relative to the freshness threshold.",
               state: "mixed",
             },
             [
@@ -465,7 +465,7 @@ describe("assembleProofBundleManifest", () => {
             "payables_pressure",
             {
               reasonSummary:
-                "Required Finance Twin reads for payables pressure do not agree for acme. Payables posture is fresh: Stored finance slice state is fresh. Payables aging is failed: The latest payables-aging sync failed after an earlier successful snapshot was stored.",
+                "Required Finance Twin reads for payables pressure do not agree for acme. Payables posture is Fresh: Stored finance slice state is fresh. Payables aging is Failed: The latest payables-aging sync failed after an earlier successful snapshot was stored.",
               state: "mixed",
             },
             [

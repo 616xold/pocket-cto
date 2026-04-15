@@ -14,6 +14,7 @@ The user-visible goal is to close the last truthfulness gaps in the stored finan
 - [x] 2026-04-15T17:30:18Z Apply the narrow code fixes so stale required Finance Twin reads become explicit limitations and human-facing finance artifact copy stops emitting raw freshness enums.
 - [x] 2026-04-15T17:30:18Z Refresh the smallest truthful active-doc surface, including the README repo map and any directly stale F4 handoff notes this slice changes.
 - [x] 2026-04-15T17:30:18Z Run the full required validation ladder through `pnpm ci:repro:current`, confirming every requested check is green before publication.
+- [x] 2026-04-15T17:40:38Z Run a strict post-publish QA pass on the landed polish slice, catch the remaining freshness-posture wording leak inside durable human-facing summaries, and keep the fix inside the same finance-discovery bounded context without widening scope.
 
 ## Surprises & Discoveries
 
@@ -29,6 +30,9 @@ The user-visible goal is to close the last truthfulness gaps in the stored finan
 - Observation: the active README repo map is one plan behind the shipped F4 plan chain.
   Evidence: `README.md` includes `FP-0030`, `FP-0031`, and `FP-0032` in the repo map, but omits the shipped `FP-0033` and the new active `FP-0034` plan file for this slice.
 
+- Observation: the first polish pass still left raw freshness enum tokens inside the freshness-posture reason summary, which meant durable answer markdown and proof-bundle freshness copy could still read `fresh`, `stale`, or `failed` straight from the enum-backed summary builder.
+  Evidence: `apps/control-plane/src/modules/finance-discovery/summary-builders.ts` still interpolated `${state}` and `${entry.state}` directly into `reasonSummary` after the `bodyMarkdown` state line and route evidence summaries were already humanized.
+
 ## Decision Log
 
 - Decision: keep the final polish additive and avoid DB or schema changes unless a concrete blocker appears.
@@ -42,6 +46,9 @@ The user-visible goal is to close the last truthfulness gaps in the stored finan
 
 - Decision: keep GitHub connector and engineering-twin modules intact and do not start F4C, F5, or F6 implementation in this slice.
   Rationale: the user requested a final F4A/F4B audit-and-fix slice only, with F4C reserved for the next planning phase.
+
+- Decision: apply the shared freshness-label helper to freshness-posture reason summaries as well, so the durable answer markdown and derived proof-bundle freshness summaries do not continue to expose raw enum tokens through copied prose.
+  Rationale: leaving the helper out of the summary builder meant the final stored artifact copy was only partially humanized, which failed the narrow truthfulness bar of this polish slice.
 
 ## Context and Orientation
 
@@ -173,6 +180,10 @@ Dependencies:
 Implementation stayed inside the existing finance-discovery bounded context, shared domain helpers, web freshness-label surface, proof-bundle shaping, and a tiny README repo-map refresh. No DB schema, extractor, family-support, runtime-codex, policy lookup, vector-search, OCR, PageIndex, QMD, MinerU, or deep-read work was added.
 
 The narrow code fixes now make stale required Finance Twin reads appear as explicit stored limitations alongside the already shipped missing and failed cases, while preserving deterministic route-backed behavior. Durable finance answer markdown and route evidence summaries now render shared human-readable freshness labels instead of raw enum strings.
+
+A strict post-publish QA pass found one remaining wording leak: freshness-posture `reasonSummary` strings still interpolated raw enum tokens, which then propagated into human-facing answer markdown and proof-bundle freshness summaries. The follow-up correction applied the shared freshness-label helper there as well, keeping the change inside the same control-plane formatter surface and focused specs.
+
+That QA follow-up revalidated the affected control-plane specs, both finance-discovery local smokes, the engineering-twin reproducibility trio, and `pnpm ci:repro:current`, all green on the same branch without widening the slice.
 
 Validation completed green across the required ladder:
 

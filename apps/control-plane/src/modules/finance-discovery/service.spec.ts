@@ -134,13 +134,13 @@ describe("FinanceDiscoveryService", () => {
     );
     expect(answer.freshnessPosture.state).toBe("fresh");
     expect(answer.freshnessPosture.reasonSummary).toContain(
-      "All required Finance Twin reads for cash posture are fresh for acme.",
+      "All required Finance Twin reads for cash posture are Fresh for acme.",
     );
     expect(answer.freshnessPosture.reasonSummary).toContain(
-      "Cash posture is fresh: Stored bank-account summary state is fresh.",
+      "Cash posture is Fresh: Stored bank-account summary state is fresh.",
     );
     expect(answer.freshnessPosture.reasonSummary).toContain(
-      "Bank account inventory is fresh: Stored bank-account summary state is fresh.",
+      "Bank account inventory is Fresh: Stored bank-account summary state is fresh.",
     );
     expect(answer.relatedRoutes.map((route) => route.routePath)).toEqual([
       "/finance-twin/companies/acme/cash-posture",
@@ -222,10 +222,10 @@ describe("FinanceDiscoveryService", () => {
       "Required Finance Twin reads for cash posture do not agree for acme.",
     );
     expect(answer.freshnessPosture.reasonSummary).toContain(
-      "Cash posture is stale:",
+      "Cash posture is Stale:",
     );
     expect(answer.freshnessPosture.reasonSummary).toContain(
-      "Bank account inventory is fresh:",
+      "Bank account inventory is Fresh:",
     );
     expect(answer.answerSummary).toContain("is limited");
     expect(answer.limitations).toContain(
@@ -270,10 +270,10 @@ describe("FinanceDiscoveryService", () => {
       ),
     });
     expect(answer.freshnessPosture.reasonSummary).toContain(
-      "Collections posture is fresh: Stored finance slice state is fresh.",
+      "Collections posture is Fresh: Stored finance slice state is fresh.",
     );
     expect(answer.freshnessPosture.reasonSummary).toContain(
-      "Receivables aging is stale: Stored receivables-aging coverage is stale relative to the freshness threshold.",
+      "Receivables aging is Stale: Stored receivables-aging coverage is stale relative to the freshness threshold.",
     );
   });
 
@@ -476,7 +476,7 @@ describe("FinanceDiscoveryService", () => {
         "All required Finance Twin reads for",
       );
       expect(answer.freshnessPosture.reasonSummary).toContain(
-        "are missing for missing-company.",
+        "are Missing for missing-company.",
       );
       expect(answer.answerSummary).toContain("No stored");
       expect(

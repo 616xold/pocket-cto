@@ -10,6 +10,7 @@ import {
   buildRequiredReadGapLimitations,
   collectRequiredReadPosture,
 } from "./required-read-posture";
+import { readFreshnessLabel } from "@pocket-cto/domain";
 import type { FinanceDiscoveryAnswerFormatterInput } from "./types";
 
 export function buildFinanceDiscoveryFreshnessPosture(
@@ -32,13 +33,16 @@ export function buildFinanceDiscoveryFreshnessPosture(
   const stateSummary =
     state === "mixed"
       ? `Required Finance Twin reads for ${input.family.displayLabel} do not agree for ${input.question.companyKey}.`
-      : `All required Finance Twin reads for ${input.family.displayLabel} are ${state} for ${input.question.companyKey}.`;
+      : `All required Finance Twin reads for ${input.family.displayLabel} are ${readFreshnessLabel(
+          state,
+        )} for ${input.question.companyKey}.`;
 
   return {
     state,
     reasonSummary: `${stateSummary} ${requiredReadFreshness
       .map(
-        (entry) => `${entry.label} is ${entry.state}: ${entry.reasonSummary}`,
+        (entry) =>
+          `${entry.label} is ${readFreshnessLabel(entry.state)}: ${entry.reasonSummary}`,
       )
       .join(" ")}`,
   };
