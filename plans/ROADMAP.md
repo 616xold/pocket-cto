@@ -219,7 +219,7 @@ Slice map:
     - `payables_pressure`
     - `spend_posture`
     - `obligation_calendar_review`
-    - optionally `receivables_aging_review` and `payables_aging_review` if they stay purely route-backed and deterministic
+    - leave `receivables_aging_review` and `payables_aging_review` for a later narrow slice even though the route-backed reads exist
   - keep answers grounded in existing Finance Twin reads, wiki pages, and lineage
   - keep question families narrow and typed
   - still no runtime-codex, F5 reports, or F6 monitoring
@@ -232,8 +232,8 @@ Slice map:
 
 Supported now vs blocked for later:
 
-- the first supportable F4A family is `cash_posture`
-- F4B may later expand into the existing truthful posture, aging, spend, and obligation families listed above
+- the shipped F4 discovery families are `cash_posture`, `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review`
+- `receivables_aging_review` and `payables_aging_review` remain later narrow-slice work rather than part of the first F4B implementation
 - policy lookup belongs to F4C rather than F4A unless code later proves otherwise
 - the following families remain explicitly blocked until new deterministic Finance Twin support exists:
   - `runway`

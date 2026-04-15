@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { ApprovalRecord } from "@pocket-cto/domain";
+import {
+  FINANCE_DISCOVERY_QUESTION_KINDS,
+  type ApprovalRecord,
+} from "@pocket-cto/domain";
 import { InMemoryMissionRepository } from "./repository";
 import { StubMissionCompiler } from "./compiler";
 import { InMemoryReplayRepository } from "../replay/repository";
@@ -103,46 +106,48 @@ describe("MissionService", () => {
     );
   });
 
-  it("creates a typed finance analysis mission with truthful source, company scope, and one scout task", async () => {
+  it("creates typed finance analysis missions for every supported family", async () => {
     const { replayService, service } = createService();
 
-    const created = await service.createDiscovery({
-      companyKey: "acme",
-      questionKind: "cash_posture",
-      operatorPrompt: "What is our current cash posture?",
-      requestedBy: "operator",
-    });
+    for (const questionKind of FINANCE_DISCOVERY_QUESTION_KINDS) {
+      const created = await service.createDiscovery({
+        companyKey: "acme",
+        questionKind,
+        operatorPrompt: `Review ${questionKind} from stored state.`,
+        requestedBy: "operator",
+      });
 
-    expect(created.mission.type).toBe("discovery");
-    expect(created.mission.sourceKind).toBe("manual_discovery");
-    expect(created.mission.primaryRepo).toBeNull();
-    expect(created.mission.spec.repos).toEqual([]);
-    expect(created.mission.spec.constraints.allowedPaths).toEqual([]);
-    expect(created.mission.spec.input?.discoveryQuestion).toEqual({
-      companyKey: "acme",
-      questionKind: "cash_posture",
-      operatorPrompt: "What is our current cash posture?",
-    });
-    expect(created.tasks).toMatchObject([
-      {
-        role: "scout",
-        sequence: 0,
-        status: "pending",
-      },
-    ]);
-    expect(created.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual([
-      "discovery_answer",
-    ]);
-    expect(created.proofBundle.companyKey).toBe("acme");
-    expect(created.proofBundle.questionKind).toBe("cash_posture");
+      expect(created.mission.type).toBe("discovery");
+      expect(created.mission.sourceKind).toBe("manual_discovery");
+      expect(created.mission.primaryRepo).toBeNull();
+      expect(created.mission.spec.repos).toEqual([]);
+      expect(created.mission.spec.constraints.allowedPaths).toEqual([]);
+      expect(created.mission.spec.input?.discoveryQuestion).toEqual({
+        companyKey: "acme",
+        questionKind,
+        operatorPrompt: `Review ${questionKind} from stored state.`,
+      });
+      expect(created.tasks).toMatchObject([
+        {
+          role: "scout",
+          sequence: 0,
+          status: "pending",
+        },
+      ]);
+      expect(
+        created.proofBundle.evidenceCompleteness.expectedArtifactKinds,
+      ).toEqual(["discovery_answer"]);
+      expect(created.proofBundle.companyKey).toBe("acme");
+      expect(created.proofBundle.questionKind).toBe(questionKind);
 
-    const events = await replayService.listByMissionId(created.mission.id);
-    expect(events.map((event) => event.type)).toEqual([
-      "mission.created",
-      "task.created",
-      "mission.status_changed",
-      "artifact.created",
-    ]);
+      const events = await replayService.listByMissionId(created.mission.id);
+      expect(events.slice(-4).map((event) => event.type)).toEqual([
+        "mission.created",
+        "task.created",
+        "mission.status_changed",
+        "artifact.created",
+      ]);
+    }
   });
 
   it("returns summary-shaped approvals, approval cards, and artifacts in mission detail", async () => {

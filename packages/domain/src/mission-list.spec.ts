@@ -12,11 +12,11 @@ describe("Mission list domain schema", () => {
       missions: [
         {
           id: "11111111-1111-4111-8111-111111111111",
-          title: "Assess cash posture for acme",
-          objectiveExcerpt: "Answer the stored cash posture question for acme.",
+          title: "Review payables pressure for acme",
+          objectiveExcerpt: "Answer the stored payables pressure question for acme.",
           companyKey: "acme",
-          questionKind: "cash_posture",
-          answerSummary: "Stored cash posture is available with limitations.",
+          questionKind: "payables_pressure",
+          answerSummary: "Stored payables pressure is available with limitations.",
           freshnessState: "stale",
           status: "succeeded",
           sourceKind: "manual_discovery",
@@ -40,7 +40,7 @@ describe("Mission list domain schema", () => {
     });
 
     expect(parsed.missions[0]?.companyKey).toBe("acme");
-    expect(parsed.missions[0]?.questionKind).toBe("cash_posture");
+    expect(parsed.missions[0]?.questionKind).toBe("payables_pressure");
     expect(parsed.missions[0]?.freshnessState).toBe("stale");
   });
 });

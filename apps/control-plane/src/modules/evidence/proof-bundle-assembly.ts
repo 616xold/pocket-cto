@@ -8,7 +8,10 @@ import type {
   ProofBundleRefreshTrigger,
   ProofBundleStatus,
 } from "@pocket-cto/domain";
-import { ProofBundleManifestSchema } from "@pocket-cto/domain";
+import {
+  ProofBundleManifestSchema,
+  isFinanceDiscoveryQuestionKind,
+} from "@pocket-cto/domain";
 import type { PersistenceSession } from "../../lib/persistence";
 import type { ApprovalRepository } from "../approvals/repository";
 import type { MissionRepository } from "../missions/repository";
@@ -584,7 +587,10 @@ function isDiscoveryMission(mission: MissionRecord) {
 }
 
 function isFinanceDiscoveryFacts(facts: ProofBundleAssemblyFacts) {
-  return facts.companyKey !== null || facts.questionKind === "cash_posture";
+  return (
+    facts.companyKey !== null ||
+    isFinanceDiscoveryQuestionKind(facts.questionKind)
+  );
 }
 
 function readExpectedArtifactKinds(facts: ProofBundleAssemblyFacts) {

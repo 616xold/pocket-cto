@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import {
+  FINANCE_DISCOVERY_QUESTION_KINDS,
+  type FinanceDiscoveryQuestionKind,
+} from "@pocket-cto/domain";
 import type {
   ApprovalRecord,
   ArtifactRecord,
@@ -338,6 +342,39 @@ describe("assembleProofBundleManifest", () => {
     expect(manifest.verificationSummary).toContain("stored freshness");
     expect(manifest.rollbackSummary).toContain("No code, branch, pull request");
   });
+
+  it.each(FINANCE_DISCOVERY_QUESTION_KINDS)(
+    "yields a finance-ready proof bundle for %s",
+    (questionKind) => {
+      const mission = buildFinanceDiscoveryMission(questionKind);
+      const manifest = assembleProofBundleManifest({
+        approvals: [],
+        artifacts: [
+          buildArtifact({
+            id: readFinanceArtifactId(questionKind),
+            kind: "discovery_answer",
+            taskId: scoutTaskId,
+            createdAt: "2026-04-15T09:02:00.000Z",
+            metadata: buildFinanceDiscoveryAnswerMetadata(questionKind),
+          }),
+        ],
+        existingBundle: buildPlaceholderBundle(mission),
+        mission,
+        replayEventCount: 7,
+        tasks: buildDiscoveryTasks("succeeded"),
+      });
+
+      expect(manifest.status).toBe("ready");
+      expect(manifest.companyKey).toBe("acme");
+      expect(manifest.questionKind).toBe(questionKind);
+      expect(manifest.targetRepoFullName).toBeNull();
+      expect(manifest.relatedRoutePaths.length).toBe(2);
+      expect(manifest.relatedWikiPageKeys.length).toBeGreaterThanOrEqual(1);
+      expect(manifest.answerSummary).toContain("Stored");
+      expect(manifest.freshnessSummary).toContain("Stored");
+      expect(manifest.limitationsSummary.length).toBeGreaterThan(0);
+    },
+  );
 });
 
 function buildMission(): MissionRecord {
@@ -419,6 +456,155 @@ function buildDiscoveryMission(): MissionRecord {
     createdAt: "2026-03-20T09:00:00.000Z",
     updatedAt: "2026-03-20T09:03:00.000Z",
   };
+}
+
+function buildFinanceDiscoveryMission(
+  questionKind: FinanceDiscoveryQuestionKind,
+): MissionRecord {
+  return {
+    id: missionId,
+    type: "discovery",
+    status: "succeeded",
+    title: `Review ${questionKind} for acme`,
+    objective: `Answer the stored ${questionKind} question for acme from persisted Finance Twin and CFO Wiki state only.`,
+    sourceKind: "manual_discovery",
+    sourceRef: null,
+    createdBy: "operator",
+    primaryRepo: null,
+    spec: {
+      type: "discovery",
+      title: `Review ${questionKind} for acme`,
+      objective: `Answer the stored ${questionKind} question for acme from persisted Finance Twin and CFO Wiki state only.`,
+      repos: [],
+      constraints: {
+        allowedPaths: [],
+        mustNot: [],
+      },
+      acceptance: ["Persist one durable discovery answer artifact."],
+      riskBudget: {
+        sandboxMode: "read-only",
+        maxWallClockMinutes: 5,
+        maxCostUsd: 1,
+        allowNetwork: false,
+        requiresHumanApprovalFor: [],
+      },
+      deliverables: ["discovery_answer", "proof_bundle"],
+      evidenceRequirements: ["stored finance discovery answer"],
+      input: {
+        discoveryQuestion: {
+          companyKey: "acme",
+          questionKind,
+        },
+      },
+    },
+    createdAt: "2026-04-15T09:00:00.000Z",
+    updatedAt: "2026-04-15T09:03:00.000Z",
+  };
+}
+
+function buildFinanceDiscoveryAnswerMetadata(
+  questionKind: FinanceDiscoveryQuestionKind,
+) {
+  const routesByQuestionKind: Record<
+    FinanceDiscoveryQuestionKind,
+    Array<{ label: string; routePath: string }>
+  > = {
+    cash_posture: [
+      {
+        label: "Cash posture",
+        routePath: "/finance-twin/companies/acme/cash-posture",
+      },
+      {
+        label: "Bank account inventory",
+        routePath: "/finance-twin/companies/acme/bank-accounts",
+      },
+    ],
+    collections_pressure: [
+      {
+        label: "Collections posture",
+        routePath: "/finance-twin/companies/acme/collections-posture",
+      },
+      {
+        label: "Receivables aging",
+        routePath: "/finance-twin/companies/acme/receivables-aging",
+      },
+    ],
+    payables_pressure: [
+      {
+        label: "Payables posture",
+        routePath: "/finance-twin/companies/acme/payables-posture",
+      },
+      {
+        label: "Payables aging",
+        routePath: "/finance-twin/companies/acme/payables-aging",
+      },
+    ],
+    spend_posture: [
+      {
+        label: "Spend posture",
+        routePath: "/finance-twin/companies/acme/spend-posture",
+      },
+      {
+        label: "Spend items",
+        routePath: "/finance-twin/companies/acme/spend-items",
+      },
+    ],
+    obligation_calendar_review: [
+      {
+        label: "Obligation calendar",
+        routePath: "/finance-twin/companies/acme/obligation-calendar",
+      },
+      {
+        label: "Contracts",
+        routePath: "/finance-twin/companies/acme/contracts",
+      },
+    ],
+  };
+
+  return {
+    source: "stored_finance_twin_and_cfo_wiki",
+    summary: `Stored ${questionKind} is available with limitations.`,
+    companyKey: "acme",
+    questionKind,
+    answerSummary: `Stored ${questionKind} is available with limitations.`,
+    freshnessPosture: {
+      state: "stale",
+      reasonSummary: "Stored finance slice state is stale.",
+    },
+    limitations: ["Visible limitations remain preserved."],
+    relatedRoutes: routesByQuestionKind[questionKind],
+    relatedWikiPages: [
+      {
+        pageKey: "company/overview",
+        title: "Company overview",
+      },
+    ],
+    evidenceSections: [
+      {
+        key: `${questionKind}_route`,
+        title: `${questionKind} route`,
+        summary: "Stored route-backed evidence.",
+        routePath: routesByQuestionKind[questionKind][0]?.routePath,
+      },
+    ],
+    bodyMarkdown: `# ${questionKind}\n\nStored finance answer.`,
+    structuredData: {},
+  };
+}
+
+function readFinanceArtifactId(questionKind: FinanceDiscoveryQuestionKind) {
+  switch (questionKind) {
+    case "cash_posture":
+      return "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaa1";
+    case "collections_pressure":
+      return "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaa2";
+    case "payables_pressure":
+      return "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaa3";
+    case "spend_posture":
+      return "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaa4";
+    case "obligation_calendar_review":
+      return "11111111-aaaa-4aaa-8aaa-aaaaaaaaaaa5";
+  }
 }
 
 function buildTasks(input: {

@@ -195,8 +195,8 @@ describe("web api module", () => {
     const mod = await loadApiModuleWithEnv({});
     const created = await mod.createDiscoveryMission({
       companyKey: "acme",
-      questionKind: "cash_posture",
-      operatorPrompt: "What is our current cash posture?",
+      questionKind: "spend_posture",
+      operatorPrompt: "Review spend posture from stored state.",
       requestedBy: "Local web operator",
     });
 
@@ -206,8 +206,8 @@ describe("web api module", () => {
       {
         body: JSON.stringify({
           companyKey: "acme",
-          questionKind: "cash_posture",
-          operatorPrompt: "What is our current cash posture?",
+          questionKind: "spend_posture",
+          operatorPrompt: "Review spend posture from stored state.",
           requestedBy: "Local web operator",
         }),
         cache: "no-store",
@@ -854,20 +854,20 @@ function buildDiscoveryMissionCreatePayload() {
         },
         deliverables: ["discovery_answer", "proof_bundle"],
         evidenceRequirements: [
-          "stored finance-twin cash-posture route",
-          "stored finance-twin bank-account inventory route",
+          "stored finance-twin spend-posture route",
+          "stored finance-twin spend-items route",
           "stored CFO Wiki pages when present",
           "freshness and limitation posture",
         ],
         input: {
           discoveryQuestion: {
             companyKey: "acme",
-            questionKind: "cash_posture",
-            operatorPrompt: "What is our current cash posture?",
+            questionKind: "spend_posture",
+            operatorPrompt: "Review spend posture from stored state.",
           },
         },
         objective:
-          "Answer the stored cash posture question for acme from persisted Finance Twin and CFO Wiki state only.",
+          "Answer the stored spend posture question for acme from persisted Finance Twin and CFO Wiki state only.",
         repos: [],
         riskBudget: {
           allowNetwork: false,
@@ -876,11 +876,11 @@ function buildDiscoveryMissionCreatePayload() {
           requiresHumanApprovalFor: [],
           sandboxMode: "read-only",
         },
-        title: "Assess cash posture for acme",
+        title: "Review spend posture for acme",
         type: "discovery",
       },
       status: "queued",
-      title: "Assess cash posture for acme",
+      title: "Review spend posture for acme",
       type: "discovery",
       updatedAt: "2026-03-20T03:00:00.000Z",
     },
@@ -904,12 +904,12 @@ function buildDiscoveryMissionCreatePayload() {
       latestApproval: null,
       limitationsSummary: "",
       missionId,
-      missionTitle: "Assess cash posture for acme",
+      missionTitle: "Review spend posture for acme",
       objective:
-        "Answer the stored cash posture question for acme from persisted Finance Twin and CFO Wiki state only.",
+        "Answer the stored spend posture question for acme from persisted Finance Twin and CFO Wiki state only.",
       pullRequestNumber: null,
       pullRequestUrl: null,
-      questionKind: "cash_posture",
+      questionKind: "spend_posture",
       replayEventCount: 0,
       relatedRoutePaths: [],
       relatedWikiPageKeys: [],

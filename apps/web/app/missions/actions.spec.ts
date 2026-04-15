@@ -58,8 +58,8 @@ describe("mission intake server action", () => {
 
     expect(createAnalysisMission).toHaveBeenCalledWith({
       companyKey: "acme",
-      questionKind: "cash_posture",
-      operatorPrompt: "What is our current cash posture?",
+      questionKind: "collections_pressure",
+      operatorPrompt: "Review collections pressure from stored state.",
       requestedBy: "Local web operator",
     });
     expect(revalidatePath).toHaveBeenNthCalledWith(1, "/");
@@ -103,8 +103,8 @@ function buildIssueFormData() {
 function buildDiscoveryFormData() {
   const formData = new FormData();
   formData.set("companyKey", "acme");
-  formData.set("questionKind", "cash_posture");
-  formData.set("operatorPrompt", "What is our current cash posture?");
+  formData.set("questionKind", "collections_pressure");
+  formData.set("operatorPrompt", "Review collections pressure from stored state.");
   formData.set("requestedBy", "Local web operator");
   return formData;
 }

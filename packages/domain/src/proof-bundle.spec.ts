@@ -5,18 +5,24 @@ describe("Proof bundle domain schema", () => {
   it("parses a finance-ready discovery proof bundle without repo or PR fields", () => {
     const parsed = ProofBundleManifestSchema.parse({
       missionId: "11111111-1111-4111-8111-111111111111",
-      missionTitle: "Assess cash posture for acme",
-      objective: "Answer the stored cash posture question for acme.",
+      missionTitle: "Review collections pressure for acme",
+      objective: "Answer the stored collections pressure question for acme.",
       companyKey: "acme",
-      questionKind: "cash_posture",
+      questionKind: "collections_pressure",
       answerSummary:
-        "Stored bank summaries show USD and EUR cash buckets, with stale bank coverage notes.",
+        "Stored collections pressure highlights overdue receivables buckets with visible limitations.",
       freshnessSummary:
-        "Finance discovery is stale because the latest bank-account summary sync is older than the freshness threshold.",
+        "Finance discovery is stale because the latest receivables-aging sync is older than the freshness threshold.",
       limitationsSummary:
-        "No FX conversion is performed and mixed as-of dates remain visible.",
-      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
-      relatedWikiPageKeys: ["metrics/cash-posture", "concepts/cash"],
+        "No cash-timing inference is performed and mixed as-of dates remain visible.",
+      relatedRoutePaths: [
+        "/finance-twin/companies/acme/collections-posture",
+        "/finance-twin/companies/acme/receivables-aging",
+      ],
+      relatedWikiPageKeys: [
+        "metrics/collections-posture",
+        "concepts/receivables",
+      ],
       targetRepoFullName: null,
       branchName: null,
       pullRequestNumber: null,
@@ -59,7 +65,7 @@ describe("Proof bundle domain schema", () => {
     });
 
     expect(parsed.companyKey).toBe("acme");
-    expect(parsed.questionKind).toBe("cash_posture");
+    expect(parsed.questionKind).toBe("collections_pressure");
     expect(parsed.targetRepoFullName).toBeNull();
   });
 });

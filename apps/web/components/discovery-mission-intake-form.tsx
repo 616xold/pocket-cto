@@ -1,4 +1,5 @@
 import React from "react";
+import { FINANCE_DISCOVERY_QUESTION_KINDS } from "@pocket-cto/domain";
 import { submitDiscoveryMissionIntake } from "../app/missions/actions";
 import { getWebOperatorIdentity } from "../lib/operator-identity";
 
@@ -39,7 +40,11 @@ export function DiscoveryMissionIntakeForm({
         id="discovery-question-kind"
         name="questionKind"
       >
-        <option value="cash_posture">cash_posture</option>
+        {FINANCE_DISCOVERY_QUESTION_KINDS.map((questionKind) => (
+          <option key={questionKind} value={questionKind}>
+            {questionKind}
+          </option>
+        ))}
       </select>
 
       <label className="field-label" htmlFor="discovery-operator-prompt">

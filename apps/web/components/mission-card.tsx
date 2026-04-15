@@ -1,7 +1,8 @@
 import React from "react";
-import type {
-  DiscoveryMissionQuestion,
-  MissionDetailView,
+import type { MissionDetailView } from "@pocket-cto/domain";
+import {
+  isFinanceDiscoveryQuestion,
+  isFinanceDiscoveryQuestionKind,
 } from "@pocket-cto/domain";
 import { ApprovalCardList } from "./approval-card-list";
 import { DiscoveryAnswerCard } from "./discovery-answer-card";
@@ -411,11 +412,8 @@ function buildProofBundleReadinessMessage(
 }
 
 function isFinanceProofBundle(proofBundle: MissionCardProps["proofBundle"]) {
-  return proofBundle.companyKey !== null || proofBundle.questionKind === "cash_posture";
-}
-
-function isFinanceDiscoveryQuestion(
-  question: DiscoveryMissionQuestion | null,
-): question is Extract<DiscoveryMissionQuestion, { companyKey: string }> {
-  return typeof question === "object" && question !== null && "companyKey" in question;
+  return (
+    proofBundle.companyKey !== null ||
+    isFinanceDiscoveryQuestionKind(proofBundle.questionKind)
+  );
 }

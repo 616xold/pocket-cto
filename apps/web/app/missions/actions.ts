@@ -1,6 +1,9 @@
 "use server";
 
-import { CreateDiscoveryMissionInputSchema } from "@pocket-cto/domain";
+import {
+  CreateDiscoveryMissionInputSchema,
+  FINANCE_DISCOVERY_QUESTION_KINDS,
+} from "@pocket-cto/domain";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -22,7 +25,7 @@ const githubIssueMissionCreateSchema = z.object({
 const discoveryMissionIntakeFormSchema = z.object({
   companyKey: z.string().trim().min(1),
   operatorPrompt: z.string().trim().optional(),
-  questionKind: z.literal("cash_posture"),
+  questionKind: z.enum(FINANCE_DISCOVERY_QUESTION_KINDS),
   requestedBy: z.string().trim().min(1),
 });
 

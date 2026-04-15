@@ -105,7 +105,7 @@ describe("MissionService (DB-backed)", () => {
     const service = createMissionService(new DrizzleMissionRepository(db));
     const created = await service.createDiscovery({
       companyKey: "acme",
-      questionKind: "cash_posture",
+      questionKind: "spend_posture",
       requestedBy: "operator",
     });
 
@@ -134,6 +134,7 @@ describe("MissionService (DB-backed)", () => {
     expect(storedMission?.primaryRepo).toBeNull();
     expect(storedInputs).toHaveLength(1);
     expect(storedInputs[0]?.rawText).toContain("\"companyKey\": \"acme\"");
+    expect(storedInputs[0]?.rawText).toContain("\"questionKind\": \"spend_posture\"");
     expect(storedTasks.map((task) => task.role)).toEqual(["scout"]);
     expect(storedReplayEvents.map((event) => event.type)).toEqual([
       "mission.created",

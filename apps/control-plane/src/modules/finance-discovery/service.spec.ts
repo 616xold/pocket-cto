@@ -5,14 +5,95 @@ import {
   FinanceCashPostureViewSchema,
   type FinanceBankAccountInventoryView,
   type FinanceCashPostureView,
+  type FinanceCollectionsPostureView,
+  type FinanceContractsView,
+  type FinanceObligationCalendarView,
+  type FinancePayablesAgingView,
+  type FinancePayablesPostureView,
+  type FinanceReceivablesAgingView,
+  type FinanceSpendItemsView,
+  type FinanceSpendPostureView,
 } from "@pocket-cto/domain";
+import { FinanceCompanyNotFoundError } from "../finance-twin/errors";
 import { CfoWikiPageNotFoundError } from "../wiki/errors";
 import { FinanceDiscoveryService } from "./service";
 
 type TestWikiPageKey =
   | "company/overview"
+  | "concepts/contract-obligations"
   | "concepts/cash"
-  | "metrics/cash-posture";
+  | "concepts/payables"
+  | "concepts/receivables"
+  | "concepts/spend"
+  | "metrics/collections-posture"
+  | "metrics/obligation-calendar"
+  | "metrics/cash-posture"
+  | "metrics/payables-aging"
+  | "metrics/payables-posture"
+  | "metrics/receivables-aging"
+  | "metrics/spend-posture";
+
+const SUPPORTED_FAMILY_CASES = [
+  {
+    questionKind: "cash_posture" as const,
+    expectedPageKeys: ["metrics/cash-posture", "concepts/cash", "company/overview"],
+    expectedRoutePaths: [
+      "/finance-twin/companies/acme/cash-posture",
+      "/finance-twin/companies/acme/bank-accounts",
+    ],
+    summaryText: "Stored cash posture",
+  },
+  {
+    questionKind: "collections_pressure" as const,
+    expectedPageKeys: [
+      "metrics/collections-posture",
+      "metrics/receivables-aging",
+      "concepts/receivables",
+      "company/overview",
+    ],
+    expectedRoutePaths: [
+      "/finance-twin/companies/acme/collections-posture",
+      "/finance-twin/companies/acme/receivables-aging",
+    ],
+    summaryText: "Stored collections pressure",
+  },
+  {
+    questionKind: "payables_pressure" as const,
+    expectedPageKeys: [
+      "metrics/payables-posture",
+      "metrics/payables-aging",
+      "concepts/payables",
+      "company/overview",
+    ],
+    expectedRoutePaths: [
+      "/finance-twin/companies/acme/payables-posture",
+      "/finance-twin/companies/acme/payables-aging",
+    ],
+    summaryText: "Stored payables pressure",
+  },
+  {
+    questionKind: "spend_posture" as const,
+    expectedPageKeys: ["metrics/spend-posture", "concepts/spend", "company/overview"],
+    expectedRoutePaths: [
+      "/finance-twin/companies/acme/spend-posture",
+      "/finance-twin/companies/acme/spend-items",
+    ],
+    summaryText: "Stored spend posture",
+  },
+  {
+    questionKind: "obligation_calendar_review" as const,
+    expectedPageKeys: [
+      "metrics/obligation-calendar",
+      "concepts/contract-obligations",
+      "company/overview",
+    ],
+    expectedRoutePaths: [
+      "/finance-twin/companies/acme/obligation-calendar",
+      "/finance-twin/companies/acme/contracts",
+    ],
+    summaryText: "Stored obligation calendar review",
+  },
+] as const;
 
 describe("FinanceDiscoveryService", () => {
   it("builds a deterministic cash-posture answer from stored finance and wiki state", async () => {
@@ -31,14 +112,7 @@ describe("FinanceDiscoveryService", () => {
           });
         },
       },
-      financeTwinService: {
-        async getBankAccounts() {
-          return buildBankAccountsView();
-        },
-        async getCashPosture() {
-          return buildCashPostureView();
-        },
-      },
+      financeTwinService: createFinanceTwinService(),
     });
 
     const answer = await service.answerQuestion({
@@ -83,7 +157,7 @@ describe("FinanceDiscoveryService", () => {
           });
         },
       },
-      financeTwinService: {
+      financeTwinService: createFinanceTwinService({
         async getBankAccounts() {
           return buildBankAccountsView({
             accountCount: 0,
@@ -115,7 +189,7 @@ describe("FinanceDiscoveryService", () => {
             ],
           });
         },
-      },
+      }),
     });
 
     const answer = await service.answerQuestion({
@@ -145,14 +219,7 @@ describe("FinanceDiscoveryService", () => {
           });
         },
       },
-      financeTwinService: {
-        async getBankAccounts() {
-          return buildBankAccountsView();
-        },
-        async getCashPosture() {
-          return buildCashPostureView();
-        },
-      },
+      financeTwinService: createFinanceTwinService(),
     });
 
     const answer = await service.answerQuestion({
@@ -168,7 +235,162 @@ describe("FinanceDiscoveryService", () => {
       "CFO Wiki page company/overview is not available yet for acme.",
     );
   });
+
+  it.each(SUPPORTED_FAMILY_CASES)(
+    "keeps missing finance twin state visible for $questionKind",
+    async ({ questionKind }) => {
+      const service = new FinanceDiscoveryService({
+        cfoWikiService: {
+          async getPage(companyKey, pageKey) {
+            return buildWikiPage({
+              companyKey,
+              pageKey: pageKey as TestWikiPageKey,
+              title: buildWikiTitle(pageKey as TestWikiPageKey),
+            });
+          },
+        },
+        financeTwinService: createFinanceTwinService({
+          async getBankAccounts(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+          async getCashPosture(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+          async getCollectionsPosture(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+          async getContracts(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+          async getObligationCalendar(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+          async getPayablesAging(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+          async getPayablesPosture(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+          async getReceivablesAging(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+          async getSpendItems(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+          async getSpendPosture(companyKey) {
+            throw new FinanceCompanyNotFoundError(companyKey);
+          },
+        }),
+      });
+
+      const answer = await service.answerQuestion({
+        companyKey: "missing-company",
+        questionKind,
+      });
+
+      expect(answer.freshnessPosture).toEqual({
+        state: "missing",
+        reasonSummary: expect.stringContaining("No stored Finance Twin"),
+      });
+      expect(answer.answerSummary).toContain("No stored");
+      expect(answer.limitations.some((entry) => entry.includes("missing-company"))).toBe(
+        true,
+      );
+    },
+  );
+
+  it.each(SUPPORTED_FAMILY_CASES)(
+    "builds a deterministic supported-family answer for $questionKind",
+    async ({ expectedPageKeys, expectedRoutePaths, questionKind, summaryText }) => {
+      const service = new FinanceDiscoveryService({
+        cfoWikiService: {
+          async getPage(companyKey, pageKey) {
+            return buildWikiPage({
+              companyKey,
+              pageKey: pageKey as TestWikiPageKey,
+              title: buildWikiTitle(pageKey as TestWikiPageKey),
+            });
+          },
+        },
+        financeTwinService: createFinanceTwinService(),
+      });
+
+      const answer = await service.answerQuestion({
+        companyKey: "acme",
+        questionKind,
+      });
+
+      expect(answer.answerSummary).toContain(summaryText);
+      expect(answer.relatedRoutes.map((route) => route.routePath)).toEqual(
+        expectedRoutePaths,
+      );
+      expect(answer.relatedWikiPages.map((page) => page.pageKey)).toEqual(
+        expectedPageKeys,
+      );
+      expect(answer.evidenceSections.length).toBeGreaterThanOrEqual(
+        expectedPageKeys.length + 2,
+      );
+      expect(answer.limitations.length).toBeGreaterThan(0);
+      expect(answer.bodyMarkdown).toContain("# ");
+      expect(answer.bodyMarkdown).toContain("## Limitations");
+    },
+  );
 });
+
+function createFinanceTwinService(
+  overrides?: Partial<{
+    getBankAccounts: (companyKey: string) => Promise<FinanceBankAccountInventoryView>;
+    getCashPosture: (companyKey: string) => Promise<FinanceCashPostureView>;
+    getCollectionsPosture: (
+      companyKey: string,
+    ) => Promise<FinanceCollectionsPostureView>;
+    getContracts: (companyKey: string) => Promise<FinanceContractsView>;
+    getObligationCalendar: (
+      companyKey: string,
+    ) => Promise<FinanceObligationCalendarView>;
+    getPayablesAging: (companyKey: string) => Promise<FinancePayablesAgingView>;
+    getPayablesPosture: (companyKey: string) => Promise<FinancePayablesPostureView>;
+    getReceivablesAging: (
+      companyKey: string,
+    ) => Promise<FinanceReceivablesAgingView>;
+    getSpendItems: (companyKey: string) => Promise<FinanceSpendItemsView>;
+    getSpendPosture: (companyKey: string) => Promise<FinanceSpendPostureView>;
+  }>,
+) {
+  return {
+    async getBankAccounts(_companyKey: string) {
+      return buildBankAccountsView();
+    },
+    async getCashPosture(_companyKey: string) {
+      return buildCashPostureView();
+    },
+    async getCollectionsPosture(_companyKey: string) {
+      return buildCollectionsPostureView();
+    },
+    async getContracts(_companyKey: string) {
+      return buildContractsView();
+    },
+    async getObligationCalendar(_companyKey: string) {
+      return buildObligationCalendarView();
+    },
+    async getPayablesAging(_companyKey: string) {
+      return buildPayablesAgingView();
+    },
+    async getPayablesPosture(_companyKey: string) {
+      return buildPayablesPostureView();
+    },
+    async getReceivablesAging(_companyKey: string) {
+      return buildReceivablesAgingView();
+    },
+    async getSpendItems(_companyKey: string) {
+      return buildSpendItemsView();
+    },
+    async getSpendPosture(_companyKey: string) {
+      return buildSpendPostureView();
+    },
+    ...overrides,
+  };
+}
 
 function buildCashPostureView(input?: {
   coverageSummary?: Partial<FinanceCashPostureView["coverageSummary"]>;
@@ -360,12 +582,11 @@ function buildWikiPage(input: {
       companyId: "11111111-1111-4111-8111-111111111111",
       compileRunId: "66666666-6666-4666-8666-666666666666",
       pageKey: input.pageKey,
-      pageKind:
-        input.pageKey === "metrics/cash-posture"
-          ? "metric_definition"
-          : input.pageKey === "concepts/cash"
-            ? "concept"
-            : "company_overview",
+      pageKind: input.pageKey.startsWith("metrics/")
+        ? "metric_definition"
+        : input.pageKey.startsWith("concepts/")
+          ? "concept"
+          : "company_overview",
       ownershipKind: "compiler_owned",
       temporalStatus: "current",
       title: input.title,
@@ -392,4 +613,472 @@ function buildWikiPage(input: {
     },
     limitations: [],
   });
+}
+
+function buildWikiTitle(pageKey: TestWikiPageKey) {
+  switch (pageKey) {
+    case "company/overview":
+      return "Company overview";
+    case "concepts/cash":
+      return "Cash";
+    case "concepts/contract-obligations":
+      return "Contract Obligations";
+    case "concepts/payables":
+      return "Payables";
+    case "concepts/receivables":
+      return "Receivables";
+    case "concepts/spend":
+      return "Spend";
+    case "metrics/cash-posture":
+      return "Cash posture";
+    case "metrics/collections-posture":
+      return "Collections posture";
+    case "metrics/obligation-calendar":
+      return "Obligation calendar";
+    case "metrics/payables-aging":
+      return "Payables aging";
+    case "metrics/payables-posture":
+      return "Payables posture";
+    case "metrics/receivables-aging":
+      return "Receivables aging";
+    case "metrics/spend-posture":
+      return "Spend posture";
+  }
+}
+
+function buildReceivablesAgingView(): FinanceReceivablesAgingView {
+  return {
+    company: buildCompanyRecord(),
+    latestAttemptedSyncRun: null,
+    latestSuccessfulSlice: {
+      latestSource: null,
+      latestSyncRun: null,
+      coverage: {
+        customerCount: 3,
+        rowCount: 4,
+        lineageCount: 4,
+        lineageTargetCounts: buildLineageTargetCounts({
+          customerCount: 3,
+          receivablesAgingRowCount: 4,
+        }),
+      },
+      summary: null,
+    },
+    freshness: buildFreshnessSummary(),
+    customerCount: 3,
+    rows: [
+      {
+        customer: {
+          id: "customer-1",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          customerLabel: "Alpha Co",
+          externalCustomerId: "C-100",
+          createdAt: "2026-04-15T00:00:00.000Z",
+          updatedAt: "2026-04-15T00:00:00.000Z",
+        },
+        receivablesAgingRow: {
+          id: "receivable-row-1",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          customerId: "customer-1",
+          syncRunId: "receivables-sync-1",
+          lineNumber: 1,
+          sourceLineNumbers: [1],
+          currencyCode: "USD",
+          asOfDate: "2026-04-30",
+          knownAsOfDates: ["2026-04-30"],
+          unknownAsOfObservationCount: 0,
+          bucketValues: [],
+          sourceFieldMap: {},
+          observedAt: "2026-04-15T00:00:00.000Z",
+          createdAt: "2026-04-15T00:00:00.000Z",
+          updatedAt: "2026-04-15T00:00:00.000Z",
+        } as never,
+        reportedTotalAmount: "120.00",
+        lineageRef: {
+          targetKind: "receivables_aging_row",
+          targetId: "receivable-row-1",
+          syncRunId: "receivables-sync-1",
+        },
+      },
+    ],
+    diagnostics: [],
+    limitations: [],
+  } as FinanceReceivablesAgingView;
+}
+
+function buildCollectionsPostureView(): FinanceCollectionsPostureView {
+  return {
+    company: buildCompanyRecord(),
+    latestAttemptedSyncRun: null,
+    latestSuccessfulReceivablesAgingSlice: {
+      latestSource: null,
+      latestSyncRun: null,
+      coverage: {
+        customerCount: 3,
+        rowCount: 4,
+        lineageCount: 4,
+        lineageTargetCounts: buildLineageTargetCounts({
+          customerCount: 3,
+          receivablesAgingRowCount: 4,
+        }),
+      },
+      summary: null,
+    },
+    freshness: buildFreshnessSummary(),
+    currencyBuckets: [
+      {
+        currency: "USD",
+        totalReceivables: "200.00",
+        currentBucketTotal: "100.00",
+        pastDueBucketTotal: "100.00",
+        exactBucketTotals: [],
+        customerCount: 2,
+        datedCustomerCount: 1,
+        undatedCustomerCount: 1,
+        mixedAsOfDates: true,
+        earliestAsOfDate: "2026-04-29",
+        latestAsOfDate: "2026-04-30",
+      },
+    ],
+    coverageSummary: {
+      customerCount: 3,
+      rowCount: 4,
+      currencyBucketCount: 1,
+      datedRowCount: 3,
+      undatedRowCount: 1,
+      rowsWithExplicitTotalCount: 4,
+      rowsWithCurrentBucketCount: 3,
+      rowsWithComputablePastDueCount: 4,
+      rowsWithPartialPastDueOnlyCount: 0,
+    },
+    diagnostics: [],
+    limitations: [],
+  } as FinanceCollectionsPostureView;
+}
+
+function buildPayablesAgingView(): FinancePayablesAgingView {
+  return {
+    company: buildCompanyRecord(),
+    latestAttemptedSyncRun: null,
+    latestSuccessfulSlice: {
+      latestSource: null,
+      latestSyncRun: null,
+      coverage: {
+        vendorCount: 3,
+        rowCount: 4,
+        lineageCount: 4,
+        lineageTargetCounts: buildLineageTargetCounts({
+          payablesAgingRowCount: 4,
+          vendorCount: 3,
+        }),
+      },
+      summary: null,
+    },
+    freshness: buildFreshnessSummary(),
+    vendorCount: 3,
+    rows: [
+      {
+        vendor: {
+          id: "vendor-1",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          vendorLabel: "Paper Supply Co",
+          externalVendorId: "V-100",
+          createdAt: "2026-04-15T00:00:00.000Z",
+          updatedAt: "2026-04-15T00:00:00.000Z",
+        },
+        payablesAgingRow: {
+          id: "payable-row-1",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          vendorId: "vendor-1",
+          syncRunId: "payables-sync-1",
+          lineNumber: 1,
+          sourceLineNumbers: [1],
+          currencyCode: "USD",
+          asOfDate: "2026-04-30",
+          knownAsOfDates: ["2026-04-30"],
+          unknownAsOfObservationCount: 0,
+          bucketValues: [],
+          sourceFieldMap: {},
+          observedAt: "2026-04-15T00:00:00.000Z",
+          createdAt: "2026-04-15T00:00:00.000Z",
+          updatedAt: "2026-04-15T00:00:00.000Z",
+        } as never,
+        reportedTotalAmount: "120.00",
+        lineageRef: {
+          targetKind: "payables_aging_row",
+          targetId: "payable-row-1",
+          syncRunId: "payables-sync-1",
+        },
+      },
+    ],
+    diagnostics: [],
+    limitations: [],
+  } as FinancePayablesAgingView;
+}
+
+function buildPayablesPostureView(): FinancePayablesPostureView {
+  return {
+    company: buildCompanyRecord(),
+    latestAttemptedSyncRun: null,
+    latestSuccessfulPayablesAgingSlice: {
+      latestSource: null,
+      latestSyncRun: null,
+      coverage: {
+        vendorCount: 3,
+        rowCount: 4,
+        lineageCount: 4,
+        lineageTargetCounts: buildLineageTargetCounts({
+          payablesAgingRowCount: 4,
+          vendorCount: 3,
+        }),
+      },
+      summary: null,
+    },
+    freshness: buildFreshnessSummary(),
+    currencyBuckets: [
+      {
+        currency: "USD",
+        totalPayables: "200.00",
+        currentBucketTotal: "100.00",
+        pastDueBucketTotal: "100.00",
+        exactBucketTotals: [],
+        vendorCount: 2,
+        datedVendorCount: 1,
+        undatedVendorCount: 1,
+        mixedAsOfDates: true,
+        earliestAsOfDate: "2026-04-29",
+        latestAsOfDate: "2026-04-30",
+      },
+    ],
+    coverageSummary: {
+      vendorCount: 3,
+      rowCount: 4,
+      currencyBucketCount: 1,
+      datedRowCount: 3,
+      undatedRowCount: 1,
+      rowsWithExplicitTotalCount: 4,
+      rowsWithCurrentBucketCount: 3,
+      rowsWithComputablePastDueCount: 4,
+      rowsWithPartialPastDueOnlyCount: 0,
+    },
+    diagnostics: [],
+    limitations: [],
+  } as FinancePayablesPostureView;
+}
+
+function buildSpendItemsView(): FinanceSpendItemsView {
+  return {
+    company: buildCompanyRecord(),
+    latestAttemptedSyncRun: null,
+    latestSuccessfulSlice: {
+      latestSource: null,
+      latestSyncRun: null,
+      coverage: {
+        rowCount: 5,
+        lineageCount: 5,
+        lineageTargetCounts: buildLineageTargetCounts({
+          spendRowCount: 5,
+        }),
+      },
+      summary: null,
+    },
+    freshness: buildFreshnessSummary(),
+    rowCount: 5,
+    rows: [],
+    diagnostics: [],
+    limitations: [],
+  } as FinanceSpendItemsView;
+}
+
+function buildSpendPostureView(): FinanceSpendPostureView {
+  return {
+    company: buildCompanyRecord(),
+    latestAttemptedSyncRun: null,
+    latestSuccessfulCardExpenseSlice: {
+      latestSource: null,
+      latestSyncRun: null,
+      coverage: {
+        rowCount: 5,
+        lineageCount: 5,
+        lineageTargetCounts: buildLineageTargetCounts({
+          spendRowCount: 5,
+        }),
+      },
+      summary: null,
+    },
+    freshness: buildFreshnessSummary(),
+    currencyBuckets: [
+      {
+        currency: "USD",
+        reportedAmountTotal: "512.50",
+        postedAmountTotal: "545.00",
+        transactionAmountTotal: "534.00",
+        rowCount: 4,
+        datedRowCount: 4,
+        undatedRowCount: 0,
+        mixedPostedDates: true,
+        mixedTransactionDates: true,
+        earliestPostedDate: "2026-04-03",
+        latestPostedDate: "2026-04-04",
+        earliestTransactionDate: "2026-04-01",
+        latestTransactionDate: "2026-04-02",
+      },
+    ],
+    coverageSummary: {
+      rowCount: 5,
+      currencyBucketCount: 1,
+      datedRowCount: 4,
+      undatedRowCount: 1,
+      rowsWithExplicitRowIdentityCount: 4,
+      rowsWithReportedAmountCount: 4,
+      rowsWithPostedAmountCount: 3,
+      rowsWithTransactionAmountCount: 3,
+      rowsWithMerchantOrVendorCount: 5,
+      rowsWithEmployeeOrCardholderCount: 4,
+    },
+    diagnostics: [],
+    limitations: [],
+  } as FinanceSpendPostureView;
+}
+
+function buildContractsView(): FinanceContractsView {
+  return {
+    company: buildCompanyRecord(),
+    latestAttemptedSyncRun: null,
+    latestSuccessfulSlice: {
+      latestSource: null,
+      latestSyncRun: null,
+      coverage: {
+        contractCount: 4,
+        obligationCount: 5,
+        lineageCount: 9,
+        lineageTargetCounts: buildLineageTargetCounts({
+          contractCount: 4,
+          contractObligationCount: 5,
+        }),
+      },
+      summary: null,
+    },
+    freshness: buildFreshnessSummary(),
+    contractCount: 4,
+    contracts: [],
+    diagnostics: [],
+    limitations: [],
+  } as FinanceContractsView;
+}
+
+function buildObligationCalendarView(): FinanceObligationCalendarView {
+  return {
+    company: buildCompanyRecord(),
+    latestAttemptedSyncRun: null,
+    latestSuccessfulContractMetadataSlice: {
+      latestSource: null,
+      latestSyncRun: null,
+      coverage: {
+        contractCount: 4,
+        obligationCount: 5,
+        lineageCount: 9,
+        lineageTargetCounts: buildLineageTargetCounts({
+          contractCount: 4,
+          contractObligationCount: 5,
+        }),
+      },
+      summary: null,
+    },
+    freshness: buildFreshnessSummary(),
+    upcomingObligations: [],
+    currencyBuckets: [
+      {
+        currency: "USD",
+        obligationCount: 1,
+        obligationsWithExplicitAmountCount: 1,
+        obligationsWithoutExplicitAmountCount: 0,
+        explicitAmountTotal: "500.00",
+        earliestDueDate: "2026-05-15",
+        latestDueDate: "2026-05-15",
+      },
+    ],
+    coverageSummary: {
+      contractCount: 4,
+      obligationCount: 5,
+      currencyBucketCount: 1,
+      datedContractCount: 3,
+      undatedContractCount: 1,
+      obligationsWithExplicitAmountCount: 2,
+      obligationsWithoutExplicitAmountCount: 3,
+      contractsWithRenewalDateCount: 1,
+      contractsWithExpirationDateCount: 0,
+      contractsWithEndDateCount: 2,
+      contractsWithNoticeDeadlineCount: 1,
+      contractsWithScheduledPaymentDateCount: 3,
+    },
+    diagnostics: [],
+    limitations: [],
+  } as FinanceObligationCalendarView;
+}
+
+function buildCompanyRecord() {
+  return {
+    id: "11111111-1111-4111-8111-111111111111",
+    companyKey: "acme",
+    displayName: "Acme",
+    createdAt: "2026-04-15T00:00:00.000Z",
+    updatedAt: "2026-04-15T00:00:00.000Z",
+  };
+}
+
+function buildFreshnessSummary() {
+  return {
+    state: "fresh" as const,
+    latestSyncRunId: null,
+    latestSyncStatus: null,
+    latestCompletedAt: null,
+    latestSuccessfulSyncRunId: null,
+    latestSuccessfulCompletedAt: null,
+    ageSeconds: null,
+    staleAfterSeconds: 86400,
+    reasonCode: "test",
+    reasonSummary: "Stored finance slice state is fresh.",
+  };
+}
+
+function buildLineageTargetCounts(
+  overrides?: Partial<{
+    accountCatalogEntryCount: number;
+    bankAccountCount: number;
+    bankAccountSummaryCount: number;
+    contractCount: number;
+    contractObligationCount: number;
+    customerCount: number;
+    generalLedgerBalanceProofCount: number;
+    journalEntryCount: number;
+    journalLineCount: number;
+    ledgerAccountCount: number;
+    payablesAgingRowCount: number;
+    receivablesAgingRowCount: number;
+    reportingPeriodCount: number;
+    spendRowCount: number;
+    trialBalanceLineCount: number;
+    vendorCount: number;
+  }>,
+) {
+  return {
+    reportingPeriodCount: 0,
+    ledgerAccountCount: 0,
+    bankAccountCount: 0,
+    bankAccountSummaryCount: 0,
+    customerCount: 0,
+    receivablesAgingRowCount: 0,
+    vendorCount: 0,
+    payablesAgingRowCount: 0,
+    contractCount: 0,
+    contractObligationCount: 0,
+    spendRowCount: 0,
+    trialBalanceLineCount: 0,
+    accountCatalogEntryCount: 0,
+    journalEntryCount: 0,
+    journalLineCount: 0,
+    generalLedgerBalanceProofCount: 0,
+    ...overrides,
+  };
 }

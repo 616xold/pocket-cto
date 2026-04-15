@@ -9,6 +9,11 @@ import {
   FinanceDiscoveryQuestionSchema,
 } from "@pocket-cto/domain";
 import type { MissionCompilationResult } from "./compiler";
+import {
+  buildFinanceDiscoveryMissionObjective,
+  buildFinanceDiscoveryMissionTitle,
+  getFinanceDiscoveryFamily,
+} from "../finance-discovery/family-registry";
 
 const DISCOVERY_INTAKE_COMPILER: MissionCompilationResult = {
   compilerName: "typed-discovery-intake",
@@ -64,8 +69,15 @@ export function buildDiscoveryMissionCreationInput(rawInput: CreateDiscoveryMiss
 }
 
 function buildDiscoveryMissionSpec(input: FinanceDiscoveryQuestion): MissionSpec {
-  const title = buildDiscoveryTitle(input.companyKey, input.questionKind);
-  const objective = buildDiscoveryObjective(input.companyKey);
+  const family = getFinanceDiscoveryFamily(input.questionKind);
+  const title = buildFinanceDiscoveryMissionTitle(
+    input.questionKind,
+    input.companyKey,
+  );
+  const objective = buildFinanceDiscoveryMissionObjective(
+    input.questionKind,
+    input.companyKey,
+  );
 
   return {
     type: "discovery",
@@ -96,8 +108,9 @@ function buildDiscoveryMissionSpec(input: FinanceDiscoveryQuestion): MissionSpec
     },
     deliverables: ["discovery_answer", "proof_bundle"],
     evidenceRequirements: [
-      "stored finance-twin cash-posture route",
-      "stored finance-twin bank-account inventory route",
+      ...family.relatedRoutes.map(
+        (route) => `stored finance-twin ${route.routePathSuffix} route`,
+      ),
       "stored CFO Wiki pages when present",
       "freshness and limitation posture",
     ],
@@ -105,15 +118,4 @@ function buildDiscoveryMissionSpec(input: FinanceDiscoveryQuestion): MissionSpec
       discoveryQuestion: input,
     },
   };
-}
-
-function buildDiscoveryTitle(companyKey: string, questionKind: FinanceDiscoveryQuestion["questionKind"]) {
-  switch (questionKind) {
-    case "cash_posture":
-      return `Assess cash posture for ${companyKey}`;
-  }
-}
-
-function buildDiscoveryObjective(companyKey: string) {
-  return `Answer the stored cash posture question for ${companyKey} from persisted Finance Twin and CFO Wiki state only.`;
 }

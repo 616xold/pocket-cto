@@ -43,4 +43,44 @@ describe("MissionListCard", () => {
     expect(html).toContain("PR #19");
     expect(html).toContain("/missions/11111111-1111-4111-8111-111111111111");
   });
+
+  it("renders finance mission summaries with company scope and supported family metadata", () => {
+    const html = renderToStaticMarkup(
+      <MissionListCard
+        mission={{
+          answerSummary: "Stored payables pressure is available with limitations.",
+          companyKey: "acme",
+          createdAt: "2026-04-15T01:00:00.000Z",
+          freshnessState: "stale",
+          id: "22222222-2222-4222-8222-222222222222",
+          latestTask: {
+            id: "33333333-3333-4333-8333-333333333333",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            updatedAt: "2026-04-15T01:05:00.000Z",
+          },
+          objectiveExcerpt:
+            "Answer the stored payables pressure question for acme.",
+          pendingApprovalCount: 0,
+          primaryRepo: null,
+          proofBundleStatus: "ready",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: "payables_pressure",
+          sourceKind: "manual_discovery",
+          sourceRef: null,
+          status: "succeeded",
+          title: "Review payables pressure for acme",
+          updatedAt: "2026-04-15T01:05:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("Review payables pressure for acme");
+    expect(html).toContain("payables_pressure");
+    expect(html).toContain("acme");
+    expect(html).toContain("Stored payables pressure is available with limitations.");
+    expect(html).toContain("proof ready");
+  });
 });

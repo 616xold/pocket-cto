@@ -50,6 +50,7 @@ pnpm smoke:cfo-wiki-document-pages:local
 pnpm smoke:cfo-wiki-lint-export:local
 pnpm smoke:cfo-wiki-concept-metric-policy:local
 pnpm smoke:finance-discovery-answer:local
+pnpm smoke:finance-discovery-supported-families:local
 ```
 
 ## Pivot-foundation baseline
@@ -114,6 +115,8 @@ Today, steps 1 through 5 exist in a narrow form:
 - the packaged `pnpm smoke:cfo-wiki-concept-metric-policy:local` path proves one company can sync supported cash coverage, compile deterministic concept and metric-definition pages, and read back supported plus unsupported policy pages without runtime-codex, OCR, or vector search
 - F4A adds one deterministic mission-based finance discovery answer path for `cash_posture`, backed only by stored Finance Twin and stored CFO Wiki state, with a durable answer artifact and a finance-ready proof bundle
 - the packaged `pnpm smoke:finance-discovery-answer:local` path proves one company can sync bank-account-summary coverage, compile related wiki pages, run `POST /missions/analysis`, and read back the persisted finance answer plus finance-ready proof bundle without runtime-codex, vector search, OCR, or deep-read dependencies
+- F4B widens that deterministic finance-discovery path to the truthful stored-state families `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review` while keeping policy lookup, aging-review families, runtime-codex, OCR, vector search, and deep-read dependencies out of scope
+- the packaged `pnpm smoke:finance-discovery-supported-families:local` path proves one company can sync the existing cash, receivables-aging, payables-aging, card-expense, and contract-metadata source families, compile the related wiki pages, run `POST /missions/analysis` for each shipped supported family, and read back deterministic finance answers plus finance-ready proof bundles without runtime-codex, vector search, OCR, or deep-read dependencies
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.

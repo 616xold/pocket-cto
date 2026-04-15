@@ -9,6 +9,7 @@ import type {
   MissionTaskRecord,
   ProofBundleManifest,
 } from "@pocket-cto/domain";
+import { isFinanceDiscoveryQuestionKind } from "@pocket-cto/domain";
 import { buildMissionApprovalCards } from "../approvals/card-formatter";
 import { readMissionDiscoveryAnswer } from "./discovery-answer-view";
 import { readProofBundleManifest } from "./repository-mappers";
@@ -140,5 +141,8 @@ function truncate(value: string) {
 }
 
 function isFinanceProofBundle(manifest: ProofBundleManifest) {
-  return manifest.companyKey !== null || manifest.questionKind === "cash_posture";
+  return (
+    manifest.companyKey !== null ||
+    isFinanceDiscoveryQuestionKind(manifest.questionKind)
+  );
 }

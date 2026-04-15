@@ -2,8 +2,13 @@ import React from "react";
 import type {
   DiscoveryAnswerArtifactMetadata,
   DiscoveryMissionQuestion,
+  FinanceDiscoveryQuestionKind,
   MissionDetailView,
   MissionRecord,
+} from "@pocket-cto/domain";
+import {
+  isFinanceDiscoveryAnswerArtifactMetadata,
+  isFinanceDiscoveryQuestion,
 } from "@pocket-cto/domain";
 import { StatusPill } from "./status-pill";
 
@@ -51,17 +56,8 @@ function FinanceDiscoveryAnswerCard(input: {
   const questionKind = answer?.questionKind ?? question?.questionKind ?? null;
   const relatedRoutes =
     answer?.relatedRoutes ??
-    (companyKey
-      ? [
-          {
-            label: "Cash posture",
-            routePath: `/finance-twin/companies/${companyKey}/cash-posture`,
-          },
-          {
-            label: "Bank account inventory",
-            routePath: `/finance-twin/companies/${companyKey}/bank-accounts`,
-          },
-        ]
+    (companyKey && questionKind
+      ? readFinanceFallbackRoutes(companyKey, questionKind)
       : []);
 
   return (
@@ -417,19 +413,13 @@ function readFreshnessTone(state: string) {
   return state === "fresh" ? ("good" as const) : ("warn" as const);
 }
 
-function isFinanceDiscoveryQuestion(
-  question: DiscoveryMissionQuestion | null,
-): question is Extract<DiscoveryMissionQuestion, { companyKey: string }> {
-  return typeof question === "object" && question !== null && "companyKey" in question;
-}
-
 function isFinanceDiscoveryAnswer(
   answer: DiscoveryAnswerArtifactMetadata | null,
 ): answer is Extract<
   DiscoveryAnswerArtifactMetadata,
   { source: "stored_finance_twin_and_cfo_wiki" }
 > {
-  return answer?.source === "stored_finance_twin_and_cfo_wiki";
+  return isFinanceDiscoveryAnswerArtifactMetadata(answer);
 }
 
 function isLegacyDiscoveryAnswer(
@@ -439,4 +429,67 @@ function isLegacyDiscoveryAnswer(
   { source: "stored_twin_blast_radius_query" }
 > {
   return answer?.source === "stored_twin_blast_radius_query";
+}
+
+function readFinanceFallbackRoutes(
+  companyKey: string,
+  questionKind: FinanceDiscoveryQuestionKind,
+) {
+  switch (questionKind) {
+    case "cash_posture":
+      return [
+        {
+          label: "Cash posture",
+          routePath: `/finance-twin/companies/${companyKey}/cash-posture`,
+        },
+        {
+          label: "Bank account inventory",
+          routePath: `/finance-twin/companies/${companyKey}/bank-accounts`,
+        },
+      ];
+    case "collections_pressure":
+      return [
+        {
+          label: "Collections posture",
+          routePath: `/finance-twin/companies/${companyKey}/collections-posture`,
+        },
+        {
+          label: "Receivables aging",
+          routePath: `/finance-twin/companies/${companyKey}/receivables-aging`,
+        },
+      ];
+    case "payables_pressure":
+      return [
+        {
+          label: "Payables posture",
+          routePath: `/finance-twin/companies/${companyKey}/payables-posture`,
+        },
+        {
+          label: "Payables aging",
+          routePath: `/finance-twin/companies/${companyKey}/payables-aging`,
+        },
+      ];
+    case "spend_posture":
+      return [
+        {
+          label: "Spend posture",
+          routePath: `/finance-twin/companies/${companyKey}/spend-posture`,
+        },
+        {
+          label: "Spend items",
+          routePath: `/finance-twin/companies/${companyKey}/spend-items`,
+        },
+      ];
+    case "obligation_calendar_review":
+      return [
+        {
+          label: "Obligation calendar",
+          routePath: `/finance-twin/companies/${companyKey}/obligation-calendar`,
+        },
+        {
+          label: "Contracts",
+          routePath: `/finance-twin/companies/${companyKey}/contracts`,
+        },
+      ];
+  }
 }

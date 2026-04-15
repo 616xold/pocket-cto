@@ -2,23 +2,36 @@ import { describe, expect, it } from "vitest";
 import {
   CreateDiscoveryMissionInputSchema,
   DiscoveryAnswerArtifactMetadataSchema,
+  FINANCE_DISCOVERY_QUESTION_KINDS,
 } from "./discovery-mission";
 
 describe("Discovery mission domain schemas", () => {
-  it("parses a typed company-scoped finance discovery intake", () => {
-    const parsed = CreateDiscoveryMissionInputSchema.parse({
-      companyKey: "acme",
-      questionKind: "cash_posture",
-      operatorPrompt: "How much cash do we have on hand right now?",
-      requestedBy: "finance-operator",
-    });
+  it("parses all supported typed company-scoped finance discovery intakes", () => {
+    for (const questionKind of FINANCE_DISCOVERY_QUESTION_KINDS) {
+      const parsed = CreateDiscoveryMissionInputSchema.parse({
+        companyKey: "acme",
+        questionKind,
+        operatorPrompt: `Review ${questionKind} from stored state.`,
+        requestedBy: "finance-operator",
+      });
 
-    expect(parsed).toEqual({
-      companyKey: "acme",
-      questionKind: "cash_posture",
-      operatorPrompt: "How much cash do we have on hand right now?",
-      requestedBy: "finance-operator",
-    });
+      expect(parsed).toEqual({
+        companyKey: "acme",
+        questionKind,
+        operatorPrompt: `Review ${questionKind} from stored state.`,
+        requestedBy: "finance-operator",
+      });
+    }
+  });
+
+  it("rejects unsupported finance discovery families", () => {
+    expect(() =>
+      CreateDiscoveryMissionInputSchema.parse({
+        companyKey: "acme",
+        questionKind: "receivables_aging_review",
+        requestedBy: "finance-operator",
+      }),
+    ).toThrow();
   });
 
   it("parses a durable finance discovery answer artifact", () => {

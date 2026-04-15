@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import {
+  FINANCE_DISCOVERY_QUESTION_KINDS,
   type ProofBundleManifest,
   ProofBundleManifestSchema,
 } from "@pocket-cto/domain";
@@ -104,56 +105,55 @@ describe("control-plane app", () => {
     });
   });
 
-  it("POST /missions/analysis returns 201 with one scout task and a finance discovery proof placeholder", async () => {
+  it("POST /missions/analysis returns 201 with one scout task and a finance discovery proof placeholder for every supported family", async () => {
     const app = await createTestApp(apps);
 
-    const response = await app.inject({
-      method: "POST",
-      url: "/missions/analysis",
-      payload: {
-        companyKey: "acme",
-        questionKind: "cash_posture",
-        operatorPrompt: "What is our current cash posture?",
-        requestedBy: "operator",
-      },
-    });
+    for (const questionKind of FINANCE_DISCOVERY_QUESTION_KINDS) {
+      const response = await app.inject({
+        method: "POST",
+        url: "/missions/analysis",
+        payload: {
+          companyKey: "acme",
+          questionKind,
+          operatorPrompt: `Review ${questionKind} from stored state.`,
+          requestedBy: "operator",
+        },
+      });
 
-    expect(response.statusCode).toBe(201);
-    expect(response.json()).toMatchObject({
-      mission: {
-        type: "discovery",
-        status: "queued",
-        title: "Assess cash posture for acme",
-        sourceKind: "manual_discovery",
-        createdBy: "operator",
-        primaryRepo: null,
-        spec: {
-          repos: [],
-          constraints: {
-            allowedPaths: [],
-          },
-          input: {
-            discoveryQuestion: {
-              companyKey: "acme",
-              questionKind: "cash_posture",
-              operatorPrompt: "What is our current cash posture?",
+      expect(response.statusCode).toBe(201);
+      expect(response.json()).toMatchObject({
+        mission: {
+          type: "discovery",
+          status: "queued",
+          sourceKind: "manual_discovery",
+          createdBy: "operator",
+          primaryRepo: null,
+          spec: {
+            repos: [],
+            constraints: {
+              allowedPaths: [],
+            },
+            input: {
+              discoveryQuestion: {
+                companyKey: "acme",
+                questionKind,
+                operatorPrompt: `Review ${questionKind} from stored state.`,
+              },
             },
           },
         },
-      },
-      tasks: [{ role: "scout", sequence: 0, status: "pending" }],
-      proofBundle: {
-        status: "placeholder",
-        companyKey: "acme",
-        questionKind: "cash_posture",
-        objective:
-          "Answer the stored cash posture question for acme from persisted Finance Twin and CFO Wiki state only.",
-        evidenceCompleteness: {
-          expectedArtifactKinds: ["discovery_answer"],
-          missingArtifactKinds: ["discovery_answer"],
+        tasks: [{ role: "scout", sequence: 0, status: "pending" }],
+        proofBundle: {
+          status: "placeholder",
+          companyKey: "acme",
+          questionKind,
+          evidenceCompleteness: {
+            expectedArtifactKinds: ["discovery_answer"],
+            missingArtifactKinds: ["discovery_answer"],
+          },
         },
-      },
-    });
+      });
+    }
   });
 
   it("POST /sources registers a source with its first snapshot and GET /sources surfaces the registry summary", async () => {

@@ -13,7 +13,17 @@ import {
   TwinRepositoryFreshnessRollupSchema,
 } from "./twin";
 
-export const FinanceDiscoveryQuestionKindSchema = z.enum(["cash_posture"]);
+export const FINANCE_DISCOVERY_QUESTION_KINDS = [
+  "cash_posture",
+  "collections_pressure",
+  "payables_pressure",
+  "spend_posture",
+  "obligation_calendar_review",
+] as const;
+
+export const FinanceDiscoveryQuestionKindSchema = z.enum(
+  FINANCE_DISCOVERY_QUESTION_KINDS,
+);
 export const LegacyDiscoveryQuestionKindSchema = TwinBlastRadiusQuestionKindSchema;
 export const DiscoveryQuestionKindSchema = z.union([
   FinanceDiscoveryQuestionKindSchema,
@@ -163,6 +173,9 @@ export const DiscoveryAnswerSummarySchema = z.union([
 export type FinanceDiscoveryQuestion = z.infer<
   typeof FinanceDiscoveryQuestionSchema
 >;
+export type FinanceDiscoveryQuestionKind = z.infer<
+  typeof FinanceDiscoveryQuestionKindSchema
+>;
 export type LegacyDiscoveryMissionQuestion = z.infer<
   typeof LegacyDiscoveryMissionQuestionSchema
 >;
@@ -206,3 +219,30 @@ export type LegacyDiscoveryAnswerSummary = z.infer<
 export type DiscoveryAnswerSummary =
   | FinanceDiscoveryAnswerSummary
   | LegacyDiscoveryAnswerSummary;
+
+export function isFinanceDiscoveryQuestionKind(
+  value: string | null | undefined,
+): value is FinanceDiscoveryQuestionKind {
+  return (
+    typeof value === "string" &&
+    FINANCE_DISCOVERY_QUESTION_KINDS.includes(
+      value as FinanceDiscoveryQuestionKind,
+    )
+  );
+}
+
+export function isFinanceDiscoveryQuestion(
+  question: DiscoveryMissionQuestion | null | undefined,
+): question is FinanceDiscoveryQuestion {
+  return (
+    typeof question === "object" &&
+    question !== null &&
+    "companyKey" in question
+  );
+}
+
+export function isFinanceDiscoveryAnswerArtifactMetadata(
+  metadata: DiscoveryAnswerArtifactMetadata | null | undefined,
+): metadata is FinanceDiscoveryAnswerArtifactMetadata {
+  return metadata?.source === "stored_finance_twin_and_cfo_wiki";
+}

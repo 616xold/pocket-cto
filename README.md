@@ -39,12 +39,14 @@ Today the merged backbone is:
 - F3C additive persisted CFO Wiki lint runs and findings, deterministic markdown-first export runs, and ownership-safe filed artifact pages preserved across later compiler-owned compiles
 - F3D additive deterministic concept pages, metric-definition pages, and policy pages compiled from fixed registries plus explicit `policy_document` bindings while unsupported policy extracts remain visible as gaps
 - F4A additive deterministic finance-discovery missions for one typed `cash_posture` question family, backed only by stored Finance Twin plus stored CFO Wiki state, with durable answer artifacts and finance-ready proof bundles
+- F4B additive deterministic finance-discovery missions for four more typed families already grounded in shipped Finance Twin plus CFO Wiki state: `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review`
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
 F3A through F3D are now shipped.
 F4A is now the shipped first finance-discovery baseline.
-The next new major implementation phase should be F4B supported posture and obligation families rather than reopening earlier wiki slices or widening into later F5 or F6 work.
+F4B now widens that baseline to the truthful stored-state posture, spend, and obligation families listed above while still excluding policy lookup, aging-review families, runtime-codex answer generation, and later F5 or F6 work.
+The next new major implementation phase should be F4C policy lookup and finance-discovery hardening rather than reopening earlier wiki slices or widening into F5 or F6 work.
 
 ## Product boundary for v1
 
@@ -196,6 +198,7 @@ pnpm smoke:cfo-wiki-document-pages:local
 pnpm smoke:cfo-wiki-lint-export:local
 pnpm smoke:cfo-wiki-concept-metric-policy:local
 pnpm smoke:finance-discovery-answer:local
+pnpm smoke:finance-discovery-supported-families:local
 ```
 
 The current backend-first finance-twin read surface is:
