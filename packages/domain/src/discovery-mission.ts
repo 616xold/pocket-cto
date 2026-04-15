@@ -21,10 +21,19 @@ export const FINANCE_DISCOVERY_QUESTION_KINDS = [
   "obligation_calendar_review",
 ] as const;
 
+export const FINANCE_DISCOVERY_QUESTION_KIND_LABELS = {
+  cash_posture: "Cash posture",
+  collections_pressure: "Collections pressure",
+  payables_pressure: "Payables pressure",
+  spend_posture: "Spend posture",
+  obligation_calendar_review: "Obligation calendar review",
+} satisfies Record<(typeof FINANCE_DISCOVERY_QUESTION_KINDS)[number], string>;
+
 export const FinanceDiscoveryQuestionKindSchema = z.enum(
   FINANCE_DISCOVERY_QUESTION_KINDS,
 );
-export const LegacyDiscoveryQuestionKindSchema = TwinBlastRadiusQuestionKindSchema;
+export const LegacyDiscoveryQuestionKindSchema =
+  TwinBlastRadiusQuestionKindSchema;
 export const DiscoveryQuestionKindSchema = z.union([
   FinanceDiscoveryQuestionKindSchema,
   LegacyDiscoveryQuestionKindSchema,
@@ -160,11 +169,10 @@ export const DiscoveryMissionQuestionSchema = z.union([
 ]);
 export const CreateDiscoveryMissionInputSchema =
   CreateFinanceDiscoveryMissionInputSchema;
-export const DiscoveryAnswerArtifactMetadataSchema =
-  z.union([
-    FinanceDiscoveryAnswerArtifactMetadataSchema,
-    LegacyDiscoveryAnswerArtifactMetadataSchema,
-  ]);
+export const DiscoveryAnswerArtifactMetadataSchema = z.union([
+  FinanceDiscoveryAnswerArtifactMetadataSchema,
+  LegacyDiscoveryAnswerArtifactMetadataSchema,
+]);
 export const DiscoveryAnswerSummarySchema = z.union([
   FinanceDiscoveryAnswerSummarySchema,
   LegacyDiscoveryAnswerSummarySchema,
@@ -245,4 +253,10 @@ export function isFinanceDiscoveryAnswerArtifactMetadata(
   metadata: DiscoveryAnswerArtifactMetadata | null | undefined,
 ): metadata is FinanceDiscoveryAnswerArtifactMetadata {
   return metadata?.source === "stored_finance_twin_and_cfo_wiki";
+}
+
+export function readFinanceDiscoveryQuestionKindLabel(
+  questionKind: FinanceDiscoveryQuestionKind,
+) {
+  return FINANCE_DISCOVERY_QUESTION_KIND_LABELS[questionKind];
 }

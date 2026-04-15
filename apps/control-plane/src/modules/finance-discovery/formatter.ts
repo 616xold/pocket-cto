@@ -4,7 +4,10 @@ import type {
   FinanceDiscoveryFreshnessPosture,
   FinanceDiscoveryRelatedWikiPage,
 } from "@pocket-cto/domain";
-import { FinanceDiscoveryAnswerArtifactMetadataSchema } from "@pocket-cto/domain";
+import {
+  FinanceDiscoveryAnswerArtifactMetadataSchema,
+  readFinanceDiscoveryQuestionKindLabel,
+} from "@pocket-cto/domain";
 import {
   buildFinanceDiscoveryEvidenceSections,
   buildFinanceDiscoveryStructuredData,
@@ -50,7 +53,10 @@ export function buildFinanceDiscoveryAnswerMetadata(
       limitations,
       relatedWikiPages,
     }),
-    structuredData: buildFinanceDiscoveryStructuredData(input, freshnessPosture),
+    structuredData: buildFinanceDiscoveryStructuredData(
+      input,
+      freshnessPosture,
+    ),
   });
 }
 
@@ -69,7 +75,9 @@ function buildBodyMarkdown(input: {
     "",
     "## Question",
     `- Company key: \`${input.input.question.companyKey}\``,
-    `- Question kind: \`${input.input.question.questionKind}\``,
+    `- Question kind: ${readFinanceDiscoveryQuestionKindLabel(
+      input.input.question.questionKind,
+    )} (\`${input.input.question.questionKind}\`)`,
     ...(input.input.question.operatorPrompt
       ? [`- Operator prompt: ${input.input.question.operatorPrompt}`]
       : []),

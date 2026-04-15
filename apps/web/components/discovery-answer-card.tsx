@@ -9,6 +9,7 @@ import type {
 import {
   isFinanceDiscoveryAnswerArtifactMetadata,
   isFinanceDiscoveryQuestion,
+  readFinanceDiscoveryQuestionKindLabel,
 } from "@pocket-cto/domain";
 import { StatusPill } from "./status-pill";
 
@@ -54,6 +55,9 @@ function FinanceDiscoveryAnswerCard(input: {
     : null;
   const companyKey = answer?.companyKey ?? question?.companyKey ?? null;
   const questionKind = answer?.questionKind ?? question?.questionKind ?? null;
+  const questionKindLabel = questionKind
+    ? readFinanceDiscoveryQuestionKindLabel(questionKind)
+    : null;
   const relatedRoutes =
     answer?.relatedRoutes ??
     (companyKey && questionKind
@@ -81,7 +85,9 @@ function FinanceDiscoveryAnswerCard(input: {
           : "The mission exists, but no durable finance discovery answer artifact is stored yet. The scout task may still be running, or the mission may have failed before answer persistence."}
       </p>
 
-      {answer ? <p className="mission-summary-copy">{answer.answerSummary}</p> : null}
+      {answer ? (
+        <p className="mission-summary-copy">{answer.answerSummary}</p>
+      ) : null}
 
       <div className="meta-grid">
         <div>
@@ -90,7 +96,7 @@ function FinanceDiscoveryAnswerCard(input: {
         </div>
         <div>
           <dt>Question kind</dt>
-          <dd>{questionKind ?? "Not recorded yet."}</dd>
+          <dd>{questionKindLabel ?? "Not recorded yet."}</dd>
         </div>
         <div>
           <dt>Freshness</dt>
@@ -120,7 +126,9 @@ function FinanceDiscoveryAnswerCard(input: {
             ))}
           </ul>
         ) : (
-          <p className="muted">No related routes were recorded for this mission.</p>
+          <p className="muted">
+            No related routes were recorded for this mission.
+          </p>
         )}
       </div>
 
@@ -140,8 +148,8 @@ function FinanceDiscoveryAnswerCard(input: {
           )
         ) : (
           <p className="muted">
-            Related CFO Wiki pages will appear after a discovery answer artifact is
-            stored.
+            Related CFO Wiki pages will appear after a discovery answer artifact
+            is stored.
           </p>
         )}
       </div>
@@ -266,7 +274,9 @@ function LegacyDiscoveryAnswerCard(input: {
             ))}
           </ul>
         ) : (
-          <p className="muted">No changed paths were recorded for this mission.</p>
+          <p className="muted">
+            No changed paths were recorded for this mission.
+          </p>
         )}
       </div>
 
@@ -290,8 +300,8 @@ function LegacyDiscoveryAnswerCard(input: {
           )
         ) : (
           <p className="muted">
-            Impacted directories will appear after a discovery answer artifact is
-            stored.
+            Impacted directories will appear after a discovery answer artifact
+            is stored.
           </p>
         )}
       </div>
@@ -331,8 +341,9 @@ function LegacyDiscoveryAnswerCard(input: {
             <ul className="list-clean">
               {answer.relatedTestSuites.map((suite) => (
                 <li key={suite.stableKey}>
-                  <code>{suite.manifestPath}</code> · <code>{suite.scriptKey}</code>{" "}
-                  · matched jobs {suite.matchedJobs.length}
+                  <code>{suite.manifestPath}</code> ·{" "}
+                  <code>{suite.scriptKey}</code> · matched jobs{" "}
+                  {suite.matchedJobs.length}
                 </li>
               ))}
             </ul>

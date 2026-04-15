@@ -297,7 +297,7 @@ A trustworthy query flow should look like this:
 
 Pocket CFO F4 should treat finance discovery as a mission-based read path, not as a generic finance chatbot.
 
-The first F4 contract should therefore be:
+The shipped F4A and F4B contract therefore stays:
 
 - one typed company-scoped finance discovery question
 - one deterministic answer artifact
@@ -312,13 +312,21 @@ The authority boundary remains:
 - the Finance Twin remains authoritative for structured finance facts
 - the CFO Wiki remains the derived operator-readable layer built from those two sources of truth
 
-The first F4A question contract should stay typed and narrow:
+The shipped F4 question contract stays typed and narrow:
 
 - `companyKey`
 - `questionKind`
 - optional operator wording stored for display only
 
-The first F4A answer artifact should be durable enough to survive outside chat and later feed F5 reporting work.
+The shipped answer families are exactly:
+
+- `cash_posture`
+- `collections_pressure`
+- `payables_pressure`
+- `spend_posture`
+- `obligation_calendar_review`
+
+The current finance discovery answer artifact is durable enough to survive outside chat and later feed F5 reporting work.
 At minimum it should carry:
 
 - company key
@@ -334,21 +342,21 @@ At minimum it should carry:
 Numeric claims should only appear when route-backed stored state or explicit refs support them.
 If the stored state is partial, stale, conflicting, or insufficient, the answer should say so plainly instead of inventing certainty.
 
-## First F4A answer posture
+## Shipped F4 discovery answer posture
 
-The first F4A answer path must stay deterministic and read-only.
+The shipped F4A and F4B answer path stays deterministic and read-only.
 
-It should:
+It now:
 
 - execute through the mission engine rather than an ad hoc chat route
 - answer from stored Finance Twin plus stored CFO Wiki state only
-- use the shipped cash-posture read, bank-account inventory read when useful, and relevant wiki pages such as `metrics/cash-posture`, `concepts/cash`, and `company/overview`
-- surface currency buckets
-- surface dated versus undated balance posture when relevant
+- supports only the shipped families listed above
+- uses the relevant stored Finance Twin reads and related wiki pages for each supported family
+- surfaces route-backed freshness posture, visible limitations, related routes, and related wiki pages in every stored answer artifact and proof bundle
 - reuse diagnostics already present in stored views
-- state explicit limitations rather than collapsing everything into a fake single-number cash claim
+- state explicit limitations rather than collapsing everything into a fake single-number finance claim
 
-The first F4A slice must not do any of the following:
+The shipped F4 baseline still does none of the following:
 
 - no generic finance chat
 - no runtime-codex in the first answer path

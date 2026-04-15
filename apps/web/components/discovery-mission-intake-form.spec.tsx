@@ -14,16 +14,18 @@ vi.mock("../lib/operator-identity", () => ({
 
 describe("DiscoveryMissionIntakeForm", () => {
   it("renders every supported finance discovery family in the intake select", async () => {
-    const { DiscoveryMissionIntakeForm } = await import(
-      "./discovery-mission-intake-form"
-    );
+    const { DiscoveryMissionIntakeForm } =
+      await import("./discovery-mission-intake-form");
     const html = renderToStaticMarkup(<DiscoveryMissionIntakeForm />);
 
-    expect(html).toContain("cash_posture");
-    expect(html).toContain("collections_pressure");
-    expect(html).toContain("payables_pressure");
-    expect(html).toContain("spend_posture");
-    expect(html).toContain("obligation_calendar_review");
+    expect(html).toContain("Cash posture");
+    expect(html).toContain("Collections pressure");
+    expect(html).toContain("Payables pressure");
+    expect(html).toContain("Spend posture");
+    expect(html).toContain("Obligation calendar review");
+    expect(html).toContain(
+      "What finance posture should I review from stored state, and which evidence gaps matter most?",
+    );
     expect(html).toContain("Local web operator");
   });
 });

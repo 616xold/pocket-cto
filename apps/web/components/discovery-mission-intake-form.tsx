@@ -1,5 +1,8 @@
 import React from "react";
-import { FINANCE_DISCOVERY_QUESTION_KINDS } from "@pocket-cto/domain";
+import {
+  FINANCE_DISCOVERY_QUESTION_KINDS,
+  readFinanceDiscoveryQuestionKindLabel,
+} from "@pocket-cto/domain";
 import { submitDiscoveryMissionIntake } from "../app/missions/actions";
 import { getWebOperatorIdentity } from "../lib/operator-identity";
 
@@ -15,10 +18,7 @@ export function DiscoveryMissionIntakeForm({
   const operatorIdentity = getWebOperatorIdentity();
 
   return (
-    <form
-      action={submitDiscoveryMissionIntake}
-      className="mission-intake-form"
-    >
+    <form action={submitDiscoveryMissionIntake} className="mission-intake-form">
       <label className="field-label" htmlFor="discovery-company-key">
         Company key
       </label>
@@ -42,7 +42,7 @@ export function DiscoveryMissionIntakeForm({
       >
         {FINANCE_DISCOVERY_QUESTION_KINDS.map((questionKind) => (
           <option key={questionKind} value={questionKind}>
-            {questionKind}
+            {readFinanceDiscoveryQuestionKindLabel(questionKind)}
           </option>
         ))}
       </select>
@@ -54,7 +54,7 @@ export function DiscoveryMissionIntakeForm({
         className="text-area"
         id="discovery-operator-prompt"
         name="operatorPrompt"
-        placeholder="What is our current cash posture and what evidence gaps should I keep in mind?"
+        placeholder="What finance posture should I review from stored state, and which evidence gaps matter most?"
         rows={3}
       />
 

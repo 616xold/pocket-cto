@@ -18,6 +18,7 @@ GitHub connector work is explicitly out of scope for this slice. This plan is th
 - [x] 2026-04-15T11:38:43Z Update the web intake and mission answer presentation so the new supported families are visible and truthful without implying unsupported finance capabilities.
 - [x] 2026-04-15T11:38:43Z Add the narrow tests and the new `tools/finance-discovery-supported-families-smoke.mjs` coverage, then run the required F4B validation ladder through `pnpm ci:repro:current`.
 - [x] 2026-04-15T14:20:31Z Refresh the stale final publication status now that F4B is already merged on `main`, and hand any narrow post-merge truthfulness follow-up to `plans/FP-0032-finance-discovery-polish-and-compatibility.md` instead of leaving this shipped plan looking unfinished.
+- [x] 2026-04-15T14:46:59Z Land a narrow post-merge F4B truthfulness refresh inside the shipped supported-family baseline: roll freshness posture up across every required Finance Twin read, neutralize cash-specific intake placeholder copy, humanize operator-facing finance question-kind labels, and refresh the smallest stale active-doc surfaces without widening families or starting F4C.
 
 ## Surprises & Discoveries
 
@@ -58,6 +59,9 @@ GitHub connector work is explicitly out of scope for this slice. This plan is th
 
 - Decision: add a dedicated supported-families local smoke command instead of widening the original F4A `finance-discovery-answer` smoke beyond its first-answer purpose.
   Rationale: a separate smoke keeps the original cash-posture proof intact while giving F4B its own deterministic acceptance check for the newly supported families.
+
+- Decision: keep this post-merge polish inside the existing F4B bounded context and active-doc surface rather than widening into schema work or new family support.
+  Rationale: the remaining defects are answer-truthfulness and operator-copy issues in already-shipped families, not missing deterministic backend capability.
 
 ## Context and Orientation
 
@@ -268,6 +272,13 @@ Expected dependencies:
   - `README.md`
   - `plans/ROADMAP.md`
   - `docs/ops/local-dev.md`
+
+- Post-merge truthfulness refresh:
+  - Freshness posture now rolls up across every required Finance Twin read for a supported family instead of trusting only the first related route.
+  - Mixed freshness is now preserved when required reads disagree or when one required read is stale, missing, or failed while another remains available.
+  - The discovery intake no longer uses cash-specific placeholder copy now that five finance families are supported.
+  - Obvious operator-facing web surfaces now show human-readable finance family labels instead of raw snake_case values.
+  - `README.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, and `evals/README.md` now reflect the shipped F4A/F4B baseline and the fact that F4C is the next new major phase.
 
 - Validation passed:
   - Narrow domain contract specs for discovery mission, proof bundle, mission detail, and mission list.

@@ -76,7 +76,8 @@ describe("MissionCard", () => {
             createdAt: "2026-03-14T10:04:00.000Z",
             id: "77777777-7777-4777-8777-777777777777",
             kind: "diff_summary",
-            summary: "Workspace changes touched apps/web and apps/control-plane.",
+            summary:
+              "Workspace changes touched apps/web and apps/control-plane.",
             taskId: "33333333-3333-4333-8333-333333333333",
             uri: "pocket-cto://missions/11111111-1111-4111-8111-111111111111/tasks/33333333-3333-4333-8333-333333333333/diff-summary",
           },
@@ -131,14 +132,20 @@ describe("MissionCard", () => {
             },
           ],
           branchName: null,
-          changeSummary: "Updated the mission detail read model for approvals and artifacts.",
+          changeSummary:
+            "Updated the mission detail read model for approvals and artifacts.",
           companyKey: null,
           decisionTrace: [
             "Executor task 1 produced diff_summary artifact 77777777-7777-4777-8777-777777777777.",
           ],
           evidenceCompleteness: {
             status: "partial",
-            expectedArtifactKinds: ["plan", "diff_summary", "test_report", "pr_link"],
+            expectedArtifactKinds: [
+              "plan",
+              "diff_summary",
+              "test_report",
+              "pr_link",
+            ],
             presentArtifactKinds: ["diff_summary"],
             missingArtifactKinds: ["plan", "test_report", "pr_link"],
             notes: [
@@ -171,7 +178,8 @@ describe("MissionCard", () => {
           relatedRoutePaths: [],
           relatedWikiPageKeys: [],
           riskSummary: "Action controls still require embedded-worker mode.",
-          rollbackSummary: "Disable the action panel and fall back to the API route surface.",
+          rollbackSummary:
+            "Disable the action panel and fall back to the API route surface.",
           status: "incomplete",
           targetRepoFullName: null,
           timestamps: {
@@ -271,7 +279,12 @@ describe("MissionCard", () => {
           decisionTrace: [],
           evidenceCompleteness: {
             status: "partial",
-            expectedArtifactKinds: ["plan", "diff_summary", "test_report", "pr_link"],
+            expectedArtifactKinds: [
+              "plan",
+              "diff_summary",
+              "test_report",
+              "pr_link",
+            ],
             presentArtifactKinds: ["test_report"],
             missingArtifactKinds: ["plan", "diff_summary", "pr_link"],
             notes: ["GitHub pull request evidence is missing."],
@@ -312,6 +325,129 @@ describe("MissionCard", () => {
     expect(html).toContain("Not recorded yet.");
     expect(html).not.toContain("Pending PR publication.");
     expect(html).not.toContain("Pending repo resolution.");
+  });
+
+  it("humanizes supported finance question kinds in mission detail and proof-bundle blocks", () => {
+    const html = renderToStaticMarkup(
+      <MissionCard
+        approvalCards={[]}
+        artifacts={[]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          createdAt: "2026-04-15T10:00:00.000Z",
+          createdBy: "operator",
+          id: "11111111-1111-4111-8111-111111111111",
+          objective:
+            "Answer the stored cash posture question for acme from persisted Finance Twin and CFO Wiki state only.",
+          primaryRepo: null,
+          sourceKind: "manual_discovery",
+          sourceRef: null,
+          spec: {
+            acceptance: [
+              "persist one durable finance discovery answer artifact",
+            ],
+            constraints: {
+              allowedPaths: [],
+              mustNot: [],
+            },
+            deliverables: ["discovery_answer", "proof_bundle"],
+            evidenceRequirements: ["stored finance discovery answer"],
+            input: {
+              discoveryQuestion: {
+                companyKey: "acme",
+                questionKind: "cash_posture",
+              },
+            },
+            objective:
+              "Answer the stored cash posture question for acme from persisted Finance Twin and CFO Wiki state only.",
+            repos: [],
+            riskBudget: {
+              allowNetwork: false,
+              maxCostUsd: 1,
+              maxWallClockMinutes: 5,
+              requiresHumanApprovalFor: [],
+              sandboxMode: "read-only",
+            },
+            title: "Assess cash posture for acme",
+            type: "discovery",
+          },
+          status: "succeeded",
+          title: "Assess cash posture for acme",
+          type: "discovery",
+          updatedAt: "2026-04-15T10:05:00.000Z",
+        }}
+        proofBundle={{
+          artifactIds: [],
+          artifacts: [],
+          branchName: null,
+          changeSummary: "Stored cash posture is available with limitations.",
+          companyKey: "acme",
+          decisionTrace: [],
+          evidenceCompleteness: {
+            status: "complete",
+            expectedArtifactKinds: ["discovery_answer"],
+            presentArtifactKinds: ["discovery_answer"],
+            missingArtifactKinds: [],
+            notes: [],
+          },
+          latestApproval: null,
+          missionId: "11111111-1111-4111-8111-111111111111",
+          missionTitle: "Assess cash posture for acme",
+          objective:
+            "Answer the stored cash posture question for acme from persisted Finance Twin and CFO Wiki state only.",
+          answerSummary: "Stored cash posture is available with limitations.",
+          freshnessState: "fresh",
+          freshnessSummary:
+            "All required Finance Twin reads for cash posture are fresh for acme.",
+          limitationsSummary: "Visible limitations remain preserved.",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: "cash_posture",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          replayEventCount: 3,
+          riskSummary: "",
+          rollbackSummary: "",
+          status: "ready",
+          targetRepoFullName: null,
+          timestamps: {
+            missionCreatedAt: "2026-04-15T10:00:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPullRequestAt: null,
+            latestApprovalAt: null,
+            latestArtifactAt: "2026-04-15T10:05:00.000Z",
+          },
+          validationSummary: "",
+          verificationSummary: "",
+        }}
+        tasks={[
+          {
+            attemptCount: 1,
+            codexThreadId: null,
+            codexTurnId: null,
+            createdAt: "2026-04-15T10:00:00.000Z",
+            dependsOnTaskId: null,
+            id: "33333333-3333-4333-8333-333333333333",
+            missionId: "11111111-1111-4111-8111-111111111111",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            summary: "Stored cash posture is available with limitations.",
+            updatedAt: "2026-04-15T10:05:00.000Z",
+            workspaceId: null,
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain("Cash posture");
+    expect(html).not.toContain(">cash_posture<");
   });
 
   it("renders the stored discovery answer with freshness and limitations prominently", () => {
@@ -524,7 +660,9 @@ describe("MissionCard", () => {
           spec: {
             acceptance: ["persist one durable discovery answer artifact"],
             constraints: {
-              allowedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
+              allowedPaths: [
+                "apps/control-plane/src/modules/github-app/auth.ts",
+              ],
               mustNot: [],
             },
             deliverables: ["discovery_answer", "proof_bundle"],
@@ -578,7 +716,8 @@ describe("MissionCard", () => {
           },
           latestApproval: null,
           missionId: "11111111-1111-4111-8111-111111111111",
-          missionTitle: "Assess auth-change blast radius for 616xold/pocket-cto",
+          missionTitle:
+            "Assess auth-change blast radius for 616xold/pocket-cto",
           objective:
             "Answer the stored auth-change blast radius for 616xold/pocket-cto across: apps/control-plane/src/modules/github-app/auth.ts.",
           answerSummary: "",

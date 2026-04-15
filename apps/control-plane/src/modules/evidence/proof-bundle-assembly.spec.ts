@@ -39,7 +39,8 @@ describe("assembleProofBundleManifest", () => {
           taskId: executorTaskId,
           createdAt: "2026-03-15T21:10:00.000Z",
           metadata: {
-            summary: "Workspace changes touched README.md and apps/web/page.tsx.",
+            summary:
+              "Workspace changes touched README.md and apps/web/page.tsx.",
           },
         }),
         buildArtifact({
@@ -48,7 +49,8 @@ describe("assembleProofBundleManifest", () => {
           taskId: executorTaskId,
           createdAt: "2026-03-15T21:11:00.000Z",
           metadata: {
-            summary: "Local executor validation passed. Validation passed for README.md (+1 more) and a clean git diff check.",
+            summary:
+              "Local executor validation passed. Validation passed for README.md (+1 more) and a clean git diff check.",
           },
         }),
         buildArtifact({
@@ -58,13 +60,15 @@ describe("assembleProofBundleManifest", () => {
           uri: "https://github.com/616xold/pocket-cto/pull/77",
           createdAt: "2026-03-15T21:12:00.000Z",
           metadata: {
-            branchName: "pocket-cto/11111111-1111-4111-8111-111111111111/1-executor",
+            branchName:
+              "pocket-cto/11111111-1111-4111-8111-111111111111/1-executor",
             draft: true,
             prNumber: 77,
             prUrl: "https://github.com/616xold/pocket-cto/pull/77",
             publishedAt: "2026-03-15T21:12:00.000Z",
             repoFullName: "616xold/pocket-cto",
-            summary: "Draft PR #77 opened for 616xold/pocket-cto from pocket-cto/11111111-1111-4111-8111-111111111111/1-executor into main.",
+            summary:
+              "Draft PR #77 opened for 616xold/pocket-cto from pocket-cto/11111111-1111-4111-8111-111111111111/1-executor into main.",
           },
         }),
       ],
@@ -162,7 +166,8 @@ describe("assembleProofBundleManifest", () => {
           taskId: executorTaskId,
           createdAt: "2026-03-15T21:11:00.000Z",
           metadata: {
-            summary: "Local executor validation failed: the executor turn completed without changing any files.",
+            summary:
+              "Local executor validation failed: the executor turn completed without changing any files.",
           },
         }),
         buildArtifact({
@@ -171,7 +176,8 @@ describe("assembleProofBundleManifest", () => {
           taskId: executorTaskId,
           createdAt: "2026-03-15T21:11:30.000Z",
           metadata: {
-            summary: "Captured executor failure excerpts from runtime output and local validation.",
+            summary:
+              "Captured executor failure excerpts from runtime output and local validation.",
           },
         }),
       ],
@@ -249,9 +255,7 @@ describe("assembleProofBundleManifest", () => {
               "Stored twin state shows apps/control-plane as the main auth-change blast radius with stale workflow freshness.",
             repoFullName: "616xold/pocket-cto",
             questionKind: "auth_change",
-            changedPaths: [
-              "apps/control-plane/src/modules/github-app/auth.ts",
-            ],
+            changedPaths: ["apps/control-plane/src/modules/github-app/auth.ts"],
             impactedDirectories: [
               {
                 path: "apps/control-plane",
@@ -375,6 +379,41 @@ describe("assembleProofBundleManifest", () => {
       expect(manifest.limitationsSummary.length).toBeGreaterThan(0);
     },
   );
+
+  it("carries mixed freshness posture from the stored finance answer into the proof bundle summary", () => {
+    const mission = buildFinanceDiscoveryMission("collections_pressure");
+    const manifest = assembleProofBundleManifest({
+      approvals: [],
+      artifacts: [
+        buildArtifact({
+          id: readFinanceArtifactId("collections_pressure"),
+          kind: "discovery_answer",
+          taskId: scoutTaskId,
+          createdAt: "2026-04-15T09:05:00.000Z",
+          metadata: buildFinanceDiscoveryAnswerMetadata(
+            "collections_pressure",
+            {
+              reasonSummary:
+                "Required Finance Twin reads for collections pressure do not agree for acme. Collections posture is fresh: Stored collections posture state is fresh. Receivables aging is stale: Stored receivables-aging coverage is stale relative to the freshness threshold.",
+              state: "mixed",
+            },
+          ),
+        }),
+      ],
+      existingBundle: buildPlaceholderBundle(mission),
+      mission,
+      replayEventCount: 8,
+      tasks: buildDiscoveryTasks("succeeded"),
+    });
+
+    expect(manifest.freshnessState).toBe("mixed");
+    expect(manifest.freshnessSummary).toContain(
+      "Required Finance Twin reads for collections pressure do not agree for acme.",
+    );
+    expect(manifest.verificationSummary).toContain(
+      "Review the stored freshness, route-backed evidence, and visible limitations before acting on the answer.",
+    );
+  });
 });
 
 function buildMission(): MissionRecord {
@@ -504,6 +543,10 @@ function buildFinanceDiscoveryMission(
 
 function buildFinanceDiscoveryAnswerMetadata(
   questionKind: FinanceDiscoveryQuestionKind,
+  freshnessPosture?: {
+    reasonSummary: string;
+    state: "failed" | "fresh" | "missing" | "mixed" | "stale";
+  },
 ) {
   const routesByQuestionKind: Record<
     FinanceDiscoveryQuestionKind,
@@ -567,7 +610,7 @@ function buildFinanceDiscoveryAnswerMetadata(
     companyKey: "acme",
     questionKind,
     answerSummary: `Stored ${questionKind} is available with limitations.`,
-    freshnessPosture: {
+    freshnessPosture: freshnessPosture ?? {
       state: "stale",
       reasonSummary: "Stored finance slice state is stale.",
     },
