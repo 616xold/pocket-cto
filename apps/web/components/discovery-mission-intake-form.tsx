@@ -36,10 +36,14 @@ export function DiscoveryMissionIntakeForm({
       </label>
       <select
         className="field-control"
-        defaultValue="cash_posture"
+        defaultValue=""
         id="discovery-question-kind"
         name="questionKind"
+        required
       >
+        <option value="" disabled>
+          Choose a finance question kind
+        </option>
         {FINANCE_DISCOVERY_QUESTION_KINDS.map((questionKind) => (
           <option key={questionKind} value={questionKind}>
             {readFinanceDiscoveryQuestionKindLabel(questionKind)}

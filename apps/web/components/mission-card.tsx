@@ -7,6 +7,7 @@ import {
 } from "@pocket-cto/domain";
 import { ApprovalCardList } from "./approval-card-list";
 import { DiscoveryAnswerCard } from "./discovery-answer-card";
+import { readFreshnessLabel } from "./freshness-label";
 import { StatusPill } from "./status-pill";
 
 type MissionCardProps = Pick<
@@ -202,7 +203,7 @@ export function MissionCard({
               </div>
               <div>
                 <dt>Freshness</dt>
-                <dd>{proofBundle.freshnessState ?? "Not recorded yet."}</dd>
+                <dd>{readFreshnessLabel(proofBundle.freshnessState)}</dd>
               </div>
               <div>
                 <dt>Related routes</dt>

@@ -84,6 +84,8 @@ describe("MissionListCard", () => {
     expect(html).toContain(
       "Stored payables pressure is available with limitations.",
     );
+    expect(html).toContain("Stale");
+    expect(html).not.toContain(">stale<");
     expect(html).toContain("proof ready");
   });
 });

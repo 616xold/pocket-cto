@@ -23,6 +23,7 @@ describe("DiscoveryMissionIntakeForm", () => {
     expect(html).toContain("Payables pressure");
     expect(html).toContain("Spend posture");
     expect(html).toContain("Obligation calendar review");
+    expect(html).toContain("Choose a finance question kind");
     expect(html).toContain(
       "What finance posture should I review from stored state, and which evidence gaps matter most?",
     );

@@ -5,6 +5,7 @@ import {
   isFinanceDiscoveryQuestionKind,
   readFinanceDiscoveryQuestionKindLabel,
 } from "@pocket-cto/domain";
+import { readFreshnessLabel } from "./freshness-label";
 import { StatusPill } from "./status-pill";
 
 type MissionListCardProps = {
@@ -62,7 +63,7 @@ export function MissionListCard({ mission }: MissionListCardProps) {
             </div>
             <div>
               <dt>Freshness</dt>
-              <dd>{mission.freshnessState ?? "pending_answer"}</dd>
+              <dd>{readFreshnessLabel(mission.freshnessState ?? "pending_answer")}</dd>
             </div>
           </>
         ) : (

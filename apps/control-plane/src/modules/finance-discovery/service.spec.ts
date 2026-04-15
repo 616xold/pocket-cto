@@ -275,6 +275,80 @@ describe("FinanceDiscoveryService", () => {
     );
   });
 
+  it("adds an explicit limitation when a required supported-family read is missing", async () => {
+    const service = new FinanceDiscoveryService({
+      cfoWikiService: {
+        async getPage(companyKey, pageKey) {
+          return buildWikiPage({
+            companyKey,
+            pageKey: pageKey as TestWikiPageKey,
+            title: buildWikiTitle(pageKey as TestWikiPageKey),
+          });
+        },
+      },
+      financeTwinService: createFinanceTwinService({
+        async getReceivablesAging() {
+          return {
+            ...buildReceivablesAgingView(),
+            customerCount: 0,
+            freshness: buildFreshnessSummary({
+              reasonSummary:
+                "No successful receivables-aging sync has completed yet for this company.",
+              state: "missing",
+            }),
+            rows: [],
+          };
+        },
+      }),
+    });
+
+    const answer = await service.answerQuestion({
+      companyKey: "acme",
+      questionKind: "collections_pressure",
+    });
+
+    expect(answer.freshnessPosture.state).toBe("mixed");
+    expect(answer.limitations).toContain(
+      "Required Finance Twin read Receivables aging is missing for acme: No successful receivables-aging sync has completed yet for this company.",
+    );
+  });
+
+  it("adds an explicit limitation when a required supported-family read is freshness-failed", async () => {
+    const service = new FinanceDiscoveryService({
+      cfoWikiService: {
+        async getPage(companyKey, pageKey) {
+          return buildWikiPage({
+            companyKey,
+            pageKey: pageKey as TestWikiPageKey,
+            title: buildWikiTitle(pageKey as TestWikiPageKey),
+          });
+        },
+      },
+      financeTwinService: createFinanceTwinService({
+        async getPayablesAging() {
+          return {
+            ...buildPayablesAgingView(),
+            freshness: buildFreshnessSummary({
+              reasonSummary:
+                "The latest payables-aging sync failed after an earlier successful snapshot was stored.",
+              state: "failed",
+            }),
+          };
+        },
+      }),
+    });
+
+    const answer = await service.answerQuestion({
+      companyKey: "acme",
+      questionKind: "payables_pressure",
+    });
+
+    expect(answer.freshnessPosture.state).toBe("mixed");
+    expect(answer.limitations).toContain(
+      "Required Finance Twin read Payables aging is in failed freshness posture for acme: The latest payables-aging sync failed after an earlier successful snapshot was stored.",
+    );
+  });
+
   it("keeps missing related wiki pages visible without failing the answer", async () => {
     const service = new FinanceDiscoveryService({
       cfoWikiService: {
@@ -367,6 +441,11 @@ describe("FinanceDiscoveryService", () => {
         "are missing for missing-company.",
       );
       expect(answer.answerSummary).toContain("No stored");
+      expect(
+        answer.limitations.some((entry) =>
+          entry.includes("Required Finance Twin read"),
+        ),
+      ).toBe(true);
       expect(
         answer.limitations.some((entry) => entry.includes("missing-company")),
       ).toBe(true);

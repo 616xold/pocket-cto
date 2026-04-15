@@ -2,7 +2,7 @@
 
 Pocket CFO should benchmark trusted finance work, not generic “AI CFO” vibes.
 
-This file defines the first seeded mission families the product should eventually support and grade.
+This file defines the first seeded mission families the product should benchmark and grade, starting with the shipped F4A and F4B discovery families below.
 
 ## Why these matter
 
@@ -60,7 +60,7 @@ The system produces a short memo or packet with linked evidence, freshness notes
 
 ## Blocked for now
 
-These discovery families should stay out of the first F4 slice and out of early seeded-finance grading until new deterministic Finance Twin support exists:
+These discovery families should stay out of the shipped F4A/F4B baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
 
 - `runway`
 - `burn_variance`
@@ -71,7 +71,7 @@ These discovery families should stay out of the first F4 slice and out of early 
 
 ## Rubric dimensions
 
-Each seeded mission should eventually be graded on:
+Each seeded mission should be graded on:
 
 - groundedness
 - citation completeness

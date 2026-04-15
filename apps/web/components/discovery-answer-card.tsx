@@ -11,6 +11,7 @@ import {
   isFinanceDiscoveryQuestion,
   readFinanceDiscoveryQuestionKindLabel,
 } from "@pocket-cto/domain";
+import { readFreshnessLabel } from "./freshness-label";
 import { StatusPill } from "./status-pill";
 
 type DiscoveryAnswerCardProps = {
@@ -73,7 +74,7 @@ function FinanceDiscoveryAnswerCard(input: {
         </div>
         {answer ? (
           <StatusPill
-            label={answer.freshnessPosture.state}
+            label={readFreshnessLabel(answer.freshnessPosture.state)}
             tone={readFreshnessTone(answer.freshnessPosture.state)}
           />
         ) : null}
@@ -100,7 +101,11 @@ function FinanceDiscoveryAnswerCard(input: {
         </div>
         <div>
           <dt>Freshness</dt>
-          <dd>{answer?.freshnessPosture.state ?? "pending_answer"}</dd>
+          <dd>
+            {answer
+              ? readFreshnessLabel(answer.freshnessPosture.state)
+              : readFreshnessLabel("pending_answer")}
+          </dd>
         </div>
         <div>
           <dt>Limitations</dt>
@@ -228,7 +233,7 @@ function LegacyDiscoveryAnswerCard(input: {
         </div>
         {answer ? (
           <StatusPill
-            label={answer.freshnessRollup.state}
+            label={readFreshnessLabel(answer.freshnessRollup.state)}
             tone={readFreshnessTone(answer.freshnessRollup.state)}
           />
         ) : null}
@@ -255,7 +260,11 @@ function LegacyDiscoveryAnswerCard(input: {
         </div>
         <div>
           <dt>Freshness</dt>
-          <dd>{answer?.freshnessRollup.state ?? "pending_answer"}</dd>
+          <dd>
+            {answer
+              ? readFreshnessLabel(answer.freshnessRollup.state)
+              : readFreshnessLabel("pending_answer")}
+          </dd>
         </div>
         <div>
           <dt>Limitations</dt>

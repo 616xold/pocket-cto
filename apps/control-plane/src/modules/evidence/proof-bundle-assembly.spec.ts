@@ -414,6 +414,42 @@ describe("assembleProofBundleManifest", () => {
       "Review the stored freshness, route-backed evidence, and visible limitations before acting on the answer.",
     );
   });
+
+  it("surfaces missing or failed required-read limitations in the finance proof-bundle summary", () => {
+    const mission = buildFinanceDiscoveryMission("payables_pressure");
+    const manifest = assembleProofBundleManifest({
+      approvals: [],
+      artifacts: [
+        buildArtifact({
+          id: readFinanceArtifactId("payables_pressure"),
+          kind: "discovery_answer",
+          taskId: scoutTaskId,
+          createdAt: "2026-04-15T09:06:00.000Z",
+          metadata: buildFinanceDiscoveryAnswerMetadata(
+            "payables_pressure",
+            {
+              reasonSummary:
+                "Required Finance Twin reads for payables pressure do not agree for acme. Payables posture is fresh: Stored finance slice state is fresh. Payables aging is failed: The latest payables-aging sync failed after an earlier successful snapshot was stored.",
+              state: "mixed",
+            },
+            [
+              "Required Finance Twin read Payables aging is in failed freshness posture for acme: The latest payables-aging sync failed after an earlier successful snapshot was stored.",
+              "Visible limitations remain preserved.",
+            ],
+          ),
+        }),
+      ],
+      existingBundle: buildPlaceholderBundle(mission),
+      mission,
+      replayEventCount: 9,
+      tasks: buildDiscoveryTasks("succeeded"),
+    });
+
+    expect(manifest.freshnessState).toBe("mixed");
+    expect(manifest.limitationsSummary).toContain(
+      "Required Finance Twin read Payables aging is in failed freshness posture for acme",
+    );
+  });
 });
 
 function buildMission(): MissionRecord {
@@ -547,6 +583,7 @@ function buildFinanceDiscoveryAnswerMetadata(
     reasonSummary: string;
     state: "failed" | "fresh" | "missing" | "mixed" | "stale";
   },
+  limitations = ["Visible limitations remain preserved."],
 ) {
   const routesByQuestionKind: Record<
     FinanceDiscoveryQuestionKind,
@@ -614,7 +651,7 @@ function buildFinanceDiscoveryAnswerMetadata(
       state: "stale",
       reasonSummary: "Stored finance slice state is stale.",
     },
-    limitations: ["Visible limitations remain preserved."],
+    limitations,
     relatedRoutes: routesByQuestionKind[questionKind],
     relatedWikiPages: [
       {

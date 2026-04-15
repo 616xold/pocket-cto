@@ -447,7 +447,9 @@ describe("MissionCard", () => {
     );
 
     expect(html).toContain("Cash posture");
+    expect(html).toContain("Fresh");
     expect(html).not.toContain(">cash_posture<");
+    expect(html).not.toContain(">fresh<");
   });
 
   it("renders the stored discovery answer with freshness and limitations prominently", () => {

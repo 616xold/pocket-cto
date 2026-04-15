@@ -58,6 +58,7 @@ describe("DiscoveryAnswerCard", () => {
     expect(html).toContain("/finance-twin/companies/acme/spend-items");
     expect(html).toContain("Question kind");
     expect(html).toContain("Spend posture");
+    expect(html).toContain("Pending answer");
   });
 
   it("renders stored supported-family answer evidence without cash-only assumptions", () => {
@@ -161,6 +162,8 @@ describe("DiscoveryAnswerCard", () => {
     expect(html).toContain("/finance-twin/companies/acme/payables-aging");
     expect(html).toContain("metrics/payables-posture");
     expect(html).toContain("Payables pressure");
+    expect(html).toContain("Stale");
+    expect(html).not.toContain(">stale<");
     expect(html).not.toContain("/finance-twin/companies/acme/cash-posture");
   });
 });

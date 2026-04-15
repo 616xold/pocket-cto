@@ -348,12 +348,12 @@ The shipped F4A and F4B answer path stays deterministic and read-only.
 
 It now:
 
-- execute through the mission engine rather than an ad hoc chat route
+- executes through the mission engine rather than an ad hoc chat route
 - answer from stored Finance Twin plus stored CFO Wiki state only
 - supports only the shipped families listed above
 - uses the relevant stored Finance Twin reads and related wiki pages for each supported family
 - surfaces route-backed freshness posture, visible limitations, related routes, and related wiki pages in every stored answer artifact and proof bundle
-- reuse diagnostics already present in stored views
+- reuses diagnostics already present in stored views
 - state explicit limitations rather than collapsing everything into a fake single-number finance claim
 
 The shipped F4 baseline still does none of the following:
@@ -366,8 +366,8 @@ The shipped F4 baseline still does none of the following:
 - no F5 report compiler work
 - no F6 monitoring work
 
-Policy lookup is later than the first `cash_posture` answer.
-It belongs in a later F4C slice and should read only from explicit `policy_document` bindings plus stored deterministic extracts unless later code truthfully ships a narrower earlier path.
+Policy lookup remains later than the shipped F4A/F4B baseline.
+It belongs in the later F4C slice and should read only from explicit `policy_document` bindings plus stored deterministic extracts unless later code truthfully ships a narrower earlier path.
 
 ## Lint flow
 

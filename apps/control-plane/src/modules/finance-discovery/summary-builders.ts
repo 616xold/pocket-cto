@@ -2,17 +2,20 @@ import type {
   FinanceCashPostureCurrencyBucket,
   FinanceCollectionsPostureCurrencyBucket,
   FinanceDiscoveryFreshnessPosture,
-  FinanceDiscoveryFreshnessState,
   FinanceObligationCalendarCurrencyBucket,
   FinancePayablesPostureCurrencyBucket,
   FinanceSpendPostureCurrencyBucket,
 } from "@pocket-cto/domain";
+import {
+  buildRequiredReadGapLimitations,
+  collectRequiredReadPosture,
+} from "./required-read-posture";
 import type { FinanceDiscoveryAnswerFormatterInput } from "./types";
 
 export function buildFinanceDiscoveryFreshnessPosture(
   input: FinanceDiscoveryAnswerFormatterInput,
 ): FinanceDiscoveryFreshnessPosture {
-  const requiredReadFreshness = collectRequiredReadFreshness(input);
+  const requiredReadFreshness = collectRequiredReadPosture(input);
 
   if (requiredReadFreshness.length === 0) {
     return {
@@ -41,45 +44,13 @@ export function buildFinanceDiscoveryFreshnessPosture(
   };
 }
 
-function collectRequiredReadFreshness(
-  input: FinanceDiscoveryAnswerFormatterInput,
-) {
-  const seenReadKeys = new Set<string>();
-
-  return input.relatedRoutes.flatMap((route) => {
-    if (seenReadKeys.has(route.readKey)) {
-      return [];
-    }
-
-    seenReadKeys.add(route.readKey);
-    const twinRead = input.twinReads[route.readKey];
-
-    if (!twinRead) {
-      return [
-        {
-          label: route.label,
-          state: "missing" as FinanceDiscoveryFreshnessState,
-          reasonSummary: `No stored ${route.label.toLowerCase()} route result is available yet for ${input.question.companyKey}.`,
-        },
-      ];
-    }
-
-    return [
-      {
-        label: route.label,
-        state: twinRead.freshness.state,
-        reasonSummary: twinRead.freshness.reasonSummary,
-      },
-    ];
-  });
-}
-
 export function buildFinanceDiscoveryLimitations(
   input: FinanceDiscoveryAnswerFormatterInput,
 ) {
   const limitations = [
+    ...buildRequiredReadGapLimitations(input),
     ...input.extraLimitations,
-    ...input.family.baselineLimitations,
+    ...readCoverageLimitations(input),
     ...Object.values(input.twinReads).flatMap(
       (view) => view?.limitations ?? [],
     ),
@@ -87,7 +58,7 @@ export function buildFinanceDiscoveryLimitations(
       (pageKey) =>
         `CFO Wiki page ${pageKey} is not available yet for ${input.question.companyKey}.`,
     ),
-    ...readCoverageLimitations(input),
+    ...input.family.baselineLimitations,
   ];
 
   return Array.from(
