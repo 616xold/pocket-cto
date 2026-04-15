@@ -3,6 +3,7 @@ import type { MissionDetailView } from "@pocket-cto/domain";
 import {
   isFinanceDiscoveryQuestion,
   isFinanceDiscoveryQuestionKind,
+  readFinanceDiscoveryQuestionKindLabel,
 } from "@pocket-cto/domain";
 import { ApprovalCardList } from "./approval-card-list";
 import { DiscoveryAnswerCard } from "./discovery-answer-card";
@@ -44,7 +45,10 @@ export function MissionCard({
             <h1>{mission.title}</h1>
             <p className="lede">{mission.objective}</p>
           </div>
-          <StatusPill label={mission.status} tone={readStatusTone(mission.status)} />
+          <StatusPill
+            label={mission.status}
+            tone={readStatusTone(mission.status)}
+          />
         </div>
 
         <div className="meta-grid">
@@ -60,7 +64,11 @@ export function MissionCard({
               </div>
               <div>
                 <dt>Question kind</dt>
-                <dd>{financeDiscoveryQuestion.questionKind}</dd>
+                <dd>
+                  {readFinanceDiscoveryQuestionKindLabel(
+                    financeDiscoveryQuestion.questionKind,
+                  )}
+                </dd>
               </div>
             </>
           ) : (
@@ -96,7 +104,10 @@ export function MissionCard({
                   Task {task.sequence} · {task.role}
                 </strong>
               </div>
-              <StatusPill label={task.status} tone={readStatusTone(task.status)} />
+              <StatusPill
+                label={task.status}
+                tone={readStatusTone(task.status)}
+              />
             </div>
           ))}
         </div>
@@ -126,7 +137,9 @@ export function MissionCard({
         <div className="stack" style={{ marginTop: 18 }}>
           {artifacts.length > 0 ? (
             artifacts.map((artifact) => {
-              const task = artifact.taskId ? taskById.get(artifact.taskId) : null;
+              const task = artifact.taskId
+                ? taskById.get(artifact.taskId)
+                : null;
 
               return (
                 <div key={artifact.id} className="task-row">
@@ -139,7 +152,8 @@ export function MissionCard({
                       · {artifact.createdAt}
                     </p>
                     <p className="muted" style={{ marginTop: 4 }}>
-                      {artifact.summary ?? "No concise artifact summary was stored."}
+                      {artifact.summary ??
+                        "No concise artifact summary was stored."}
                     </p>
                     <p className="muted" style={{ marginTop: 4 }}>
                       {artifact.uri}
@@ -149,7 +163,9 @@ export function MissionCard({
               );
             })
           ) : (
-            <p className="muted">No persisted artifacts for this mission yet.</p>
+            <p className="muted">
+              No persisted artifacts for this mission yet.
+            </p>
           )}
         </div>
       </section>
@@ -175,7 +191,14 @@ export function MissionCard({
               </div>
               <div>
                 <dt>Question kind</dt>
-                <dd>{proofBundle.questionKind ?? "Not recorded yet."}</dd>
+                <dd>
+                  {proofBundle.questionKind &&
+                  isFinanceDiscoveryQuestionKind(proofBundle.questionKind)
+                    ? readFinanceDiscoveryQuestionKindLabel(
+                        proofBundle.questionKind,
+                      )
+                    : "Not recorded yet."}
+                </dd>
               </div>
               <div>
                 <dt>Freshness</dt>
@@ -203,8 +226,13 @@ export function MissionCard({
               <div>
                 <dt>Pull request</dt>
                 <dd>
-                  {proofBundle.pullRequestUrl && proofBundle.pullRequestNumber ? (
-                    <a href={proofBundle.pullRequestUrl} target="_blank" rel="noreferrer">
+                  {proofBundle.pullRequestUrl &&
+                  proofBundle.pullRequestNumber ? (
+                    <a
+                      href={proofBundle.pullRequestUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       #{proofBundle.pullRequestNumber}
                     </a>
                   ) : (
@@ -290,21 +318,25 @@ export function MissionCard({
               <>
                 <li>
                   Planner evidence:{" "}
-                  {proofBundle.timestamps.latestPlannerEvidenceAt ?? "Not recorded yet."}
+                  {proofBundle.timestamps.latestPlannerEvidenceAt ??
+                    "Not recorded yet."}
                 </li>
                 <li>
                   Executor evidence:{" "}
-                  {proofBundle.timestamps.latestExecutorEvidenceAt ?? "Not recorded yet."}
+                  {proofBundle.timestamps.latestExecutorEvidenceAt ??
+                    "Not recorded yet."}
                 </li>
                 <li>
                   Pull request:{" "}
-                  {proofBundle.timestamps.latestPullRequestAt ?? "Not recorded yet."}
+                  {proofBundle.timestamps.latestPullRequestAt ??
+                    "Not recorded yet."}
                 </li>
               </>
             )}
             <li>
               Latest approval:{" "}
-              {proofBundle.timestamps.latestApprovalAt ?? "No approvals recorded."}
+              {proofBundle.timestamps.latestApprovalAt ??
+                "No approvals recorded."}
             </li>
           </ul>
         </div>
@@ -337,7 +369,9 @@ export function MissionCard({
                   ))}
                 </ul>
               ) : (
-                <p className="muted">No related CFO Wiki pages were recorded.</p>
+                <p className="muted">
+                  No related CFO Wiki pages were recorded.
+                </p>
               )}
             </div>
           </>

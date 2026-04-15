@@ -3,6 +3,7 @@ import {
   CreateDiscoveryMissionInputSchema,
   DiscoveryAnswerArtifactMetadataSchema,
   FINANCE_DISCOVERY_QUESTION_KINDS,
+  readFinanceDiscoveryQuestionKindLabel,
 } from "./discovery-mission";
 
 describe("Discovery mission domain schemas", () => {
@@ -22,6 +23,15 @@ describe("Discovery mission domain schemas", () => {
         requestedBy: "finance-operator",
       });
     }
+  });
+
+  it("exposes human-readable labels for supported finance discovery families", () => {
+    expect(readFinanceDiscoveryQuestionKindLabel("cash_posture")).toBe(
+      "Cash posture",
+    );
+    expect(
+      readFinanceDiscoveryQuestionKindLabel("obligation_calendar_review"),
+    ).toBe("Obligation calendar review");
   });
 
   it("rejects unsupported finance discovery families", () => {
@@ -81,7 +91,8 @@ describe("Discovery mission domain schemas", () => {
           routePath: "/finance-twin/companies/acme/cash-posture",
         },
       ],
-      bodyMarkdown: "## Summary\n\nStored cash posture is available with limits.",
+      bodyMarkdown:
+        "## Summary\n\nStored cash posture is available with limits.",
       structuredData: {
         currencyBucketCount: 2,
       },

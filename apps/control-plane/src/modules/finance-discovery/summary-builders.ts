@@ -2,6 +2,7 @@ import type {
   FinanceCashPostureCurrencyBucket,
   FinanceCollectionsPostureCurrencyBucket,
   FinanceDiscoveryFreshnessPosture,
+  FinanceDiscoveryFreshnessState,
   FinanceObligationCalendarCurrencyBucket,
   FinancePayablesPostureCurrencyBucket,
   FinanceSpendPostureCurrencyBucket,
@@ -11,22 +12,66 @@ import type { FinanceDiscoveryAnswerFormatterInput } from "./types";
 export function buildFinanceDiscoveryFreshnessPosture(
   input: FinanceDiscoveryAnswerFormatterInput,
 ): FinanceDiscoveryFreshnessPosture {
-  const primaryRoute = input.family.relatedRoutes[0];
-  const primaryRead = primaryRoute
-    ? input.twinReads[primaryRoute.readKey]
-    : null;
+  const requiredReadFreshness = collectRequiredReadFreshness(input);
 
-  if (!primaryRead) {
+  if (requiredReadFreshness.length === 0) {
     return {
       state: "missing",
-      reasonSummary: `No stored Finance Twin ${input.family.displayLabel} is available yet for ${input.question.companyKey}.`,
+      reasonSummary: `No Finance Twin reads are configured yet for the ${input.family.displayLabel} family on ${input.question.companyKey}.`,
     };
   }
 
+  const distinctStates = Array.from(
+    new Set(requiredReadFreshness.map((entry) => entry.state)),
+  );
+  const state =
+    distinctStates.length === 1 ? distinctStates[0]! : ("mixed" as const);
+  const stateSummary =
+    state === "mixed"
+      ? `Required Finance Twin reads for ${input.family.displayLabel} do not agree for ${input.question.companyKey}.`
+      : `All required Finance Twin reads for ${input.family.displayLabel} are ${state} for ${input.question.companyKey}.`;
+
   return {
-    state: primaryRead.freshness.state,
-    reasonSummary: primaryRead.freshness.reasonSummary,
+    state,
+    reasonSummary: `${stateSummary} ${requiredReadFreshness
+      .map(
+        (entry) => `${entry.label} is ${entry.state}: ${entry.reasonSummary}`,
+      )
+      .join(" ")}`,
   };
+}
+
+function collectRequiredReadFreshness(
+  input: FinanceDiscoveryAnswerFormatterInput,
+) {
+  const seenReadKeys = new Set<string>();
+
+  return input.relatedRoutes.flatMap((route) => {
+    if (seenReadKeys.has(route.readKey)) {
+      return [];
+    }
+
+    seenReadKeys.add(route.readKey);
+    const twinRead = input.twinReads[route.readKey];
+
+    if (!twinRead) {
+      return [
+        {
+          label: route.label,
+          state: "missing" as FinanceDiscoveryFreshnessState,
+          reasonSummary: `No stored ${route.label.toLowerCase()} route result is available yet for ${input.question.companyKey}.`,
+        },
+      ];
+    }
+
+    return [
+      {
+        label: route.label,
+        state: twinRead.freshness.state,
+        reasonSummary: twinRead.freshness.reasonSummary,
+      },
+    ];
+  });
 }
 
 export function buildFinanceDiscoveryLimitations(
@@ -35,7 +80,9 @@ export function buildFinanceDiscoveryLimitations(
   const limitations = [
     ...input.extraLimitations,
     ...input.family.baselineLimitations,
-    ...Object.values(input.twinReads).flatMap((view) => view?.limitations ?? []),
+    ...Object.values(input.twinReads).flatMap(
+      (view) => view?.limitations ?? [],
+    ),
     ...input.missingWikiPages.map(
       (pageKey) =>
         `CFO Wiki page ${pageKey} is not available yet for ${input.question.companyKey}.`,
@@ -68,7 +115,8 @@ export function buildFinanceDiscoveryAnswerSummary(
 function readCoverageLimitations(input: FinanceDiscoveryAnswerFormatterInput) {
   switch (input.question.questionKind) {
     case "cash_posture":
-      return input.twinReads.cashPosture?.coverageSummary.reportedBalanceCount === 0
+      return input.twinReads.cashPosture?.coverageSummary
+        .reportedBalanceCount === 0
         ? [
             `No persisted bank-account summary rows are available yet for ${input.question.companyKey}.`,
           ]
@@ -92,7 +140,8 @@ function readCoverageLimitations(input: FinanceDiscoveryAnswerFormatterInput) {
           ]
         : [];
     case "obligation_calendar_review":
-      return input.twinReads.obligationCalendar?.coverageSummary.obligationCount === 0
+      return input.twinReads.obligationCalendar?.coverageSummary
+        .obligationCount === 0
         ? [
             `No persisted contract obligations are available yet for ${input.question.companyKey}.`,
           ]
@@ -124,7 +173,9 @@ function buildCashPostureSummary(input: FinanceDiscoveryAnswerFormatterInput) {
   });
 }
 
-function buildCollectionsPressureSummary(input: FinanceDiscoveryAnswerFormatterInput) {
+function buildCollectionsPressureSummary(
+  input: FinanceDiscoveryAnswerFormatterInput,
+) {
   const collectionsPosture = input.twinReads.collectionsPosture;
 
   if (!collectionsPosture) {
@@ -150,7 +201,9 @@ function buildCollectionsPressureSummary(input: FinanceDiscoveryAnswerFormatterI
   });
 }
 
-function buildPayablesPressureSummary(input: FinanceDiscoveryAnswerFormatterInput) {
+function buildPayablesPressureSummary(
+  input: FinanceDiscoveryAnswerFormatterInput,
+) {
   const payablesPosture = input.twinReads.payablesPosture;
 
   if (!payablesPosture) {
@@ -166,7 +219,9 @@ function buildPayablesPressureSummary(input: FinanceDiscoveryAnswerFormatterInpu
 
   return buildBucketSummarySentence({
     additionalBucketCount: payablesPosture.currencyBuckets.length - 1,
-    bucketSummary: buildPayablesBucketSummary(payablesPosture.currencyBuckets[0]),
+    bucketSummary: buildPayablesBucketSummary(
+      payablesPosture.currencyBuckets[0],
+    ),
     companyKey: input.question.companyKey,
     count: payablesPosture.coverageSummary.vendorCount,
     countLabel: "vendor",
@@ -198,7 +253,9 @@ function buildSpendPostureSummary(input: FinanceDiscoveryAnswerFormatterInput) {
   });
 }
 
-function buildObligationCalendarSummary(input: FinanceDiscoveryAnswerFormatterInput) {
+function buildObligationCalendarSummary(
+  input: FinanceDiscoveryAnswerFormatterInput,
+) {
   const obligationCalendar = input.twinReads.obligationCalendar;
 
   if (!obligationCalendar) {
@@ -252,7 +309,9 @@ function buildBucketSummarySentence(input: {
   )}: ${input.bucketSummary}.${additionalBucketSummary}`;
 }
 
-function buildCashBucketSummary(bucket: FinanceCashPostureCurrencyBucket | undefined) {
+function buildCashBucketSummary(
+  bucket: FinanceCashPostureCurrencyBucket | undefined,
+) {
   if (!bucket) {
     return "no persisted bank-account summary rows are currently available for review";
   }
@@ -295,7 +354,9 @@ function buildPayablesBucketSummary(
   )}`;
 }
 
-function buildSpendBucketSummary(bucket: FinanceSpendPostureCurrencyBucket | undefined) {
+function buildSpendBucketSummary(
+  bucket: FinanceSpendPostureCurrencyBucket | undefined,
+) {
   if (!bucket) {
     return "no persisted spend rows are currently available for review";
   }
@@ -321,7 +382,10 @@ function buildObligationBucketSummary(
   )}`;
 }
 
-function readDateSummary(earliestDate: string | null, latestDate: string | null) {
+function readDateSummary(
+  earliestDate: string | null,
+  latestDate: string | null,
+) {
   if (!earliestDate && !latestDate) {
     return "";
   }

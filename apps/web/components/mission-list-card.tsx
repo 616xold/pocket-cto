@@ -1,6 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import type { MissionListItem } from "@pocket-cto/domain";
+import {
+  isFinanceDiscoveryQuestionKind,
+  readFinanceDiscoveryQuestionKindLabel,
+} from "@pocket-cto/domain";
 import { StatusPill } from "./status-pill";
 
 type MissionListCardProps = {
@@ -9,6 +13,10 @@ type MissionListCardProps = {
 
 export function MissionListCard({ mission }: MissionListCardProps) {
   const isFinanceMission = mission.companyKey !== null;
+  const questionKindLabel =
+    mission.questionKind && isFinanceDiscoveryQuestionKind(mission.questionKind)
+      ? readFinanceDiscoveryQuestionKindLabel(mission.questionKind)
+      : mission.questionKind;
 
   return (
     <article className="mission-summary-card">
@@ -36,7 +44,9 @@ export function MissionListCard({ mission }: MissionListCardProps) {
       ) : null}
 
       {mission.sourceRef ? (
-        <p className="muted mission-summary-inline">Source: {mission.sourceRef}</p>
+        <p className="muted mission-summary-inline">
+          Source: {mission.sourceRef}
+        </p>
       ) : null}
 
       <dl className="mission-summary-meta">
@@ -48,7 +58,7 @@ export function MissionListCard({ mission }: MissionListCardProps) {
             </div>
             <div>
               <dt>Question kind</dt>
-              <dd>{mission.questionKind ?? "Pending question"}</dd>
+              <dd>{questionKindLabel ?? "Pending question"}</dd>
             </div>
             <div>
               <dt>Freshness</dt>

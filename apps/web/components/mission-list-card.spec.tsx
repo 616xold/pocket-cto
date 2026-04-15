@@ -48,7 +48,8 @@ describe("MissionListCard", () => {
     const html = renderToStaticMarkup(
       <MissionListCard
         mission={{
-          answerSummary: "Stored payables pressure is available with limitations.",
+          answerSummary:
+            "Stored payables pressure is available with limitations.",
           companyKey: "acme",
           createdAt: "2026-04-15T01:00:00.000Z",
           freshnessState: "stale",
@@ -78,9 +79,11 @@ describe("MissionListCard", () => {
     );
 
     expect(html).toContain("Review payables pressure for acme");
-    expect(html).toContain("payables_pressure");
+    expect(html).toContain("Payables pressure");
     expect(html).toContain("acme");
-    expect(html).toContain("Stored payables pressure is available with limitations.");
+    expect(html).toContain(
+      "Stored payables pressure is available with limitations.",
+    );
     expect(html).toContain("proof ready");
   });
 });

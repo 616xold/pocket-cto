@@ -32,7 +32,7 @@ When using those commands during the pivot:
 
 ## Target finance eval families
 
-1. deterministic finance discovery answers, with `cash_posture` as the first F4A family
+1. deterministic finance discovery answers for the shipped F4A/F4B families, with `cash_posture` as the first F4A family and `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review` shipped in F4B
 2. later posture, aging, spend, and obligation answers that stay grounded in already-shipped Finance Twin reads
 3. policy lookup from explicit `policy_document` bindings and stored deterministic extracts
 4. finance memo or packet compilation
@@ -43,15 +43,15 @@ When using those commands during the pivot:
 
 Early F4 evals should distinguish what the repo can truthfully support from what belongs to later deterministic work.
 
-During F4A:
+Shipped today:
 
-- the first discovery eval family should be `cash_posture`
+- discovery evals can cover `cash_posture`, `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review`
 - eval prompts should require twin/wiki-grounded answers with explicit freshness and limitations
 - runtime-codex, vector retrieval, OCR, deep-read, and report compilation should stay out of scope
 
-During later F4B and F4C work:
+During F4C and later finance-discovery hardening:
 
-- add only the posture, aging, spend, obligation, and policy families the repo can already ground deterministically
+- add only the policy and later discovery families the repo can already ground deterministically
 
 Do not treat these as early F4 supported families:
 

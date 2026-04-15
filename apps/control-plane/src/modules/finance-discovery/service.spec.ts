@@ -36,7 +36,11 @@ type TestWikiPageKey =
 const SUPPORTED_FAMILY_CASES = [
   {
     questionKind: "cash_posture" as const,
-    expectedPageKeys: ["metrics/cash-posture", "concepts/cash", "company/overview"],
+    expectedPageKeys: [
+      "metrics/cash-posture",
+      "concepts/cash",
+      "company/overview",
+    ],
     expectedRoutePaths: [
       "/finance-twin/companies/acme/cash-posture",
       "/finance-twin/companies/acme/bank-accounts",
@@ -73,7 +77,11 @@ const SUPPORTED_FAMILY_CASES = [
   },
   {
     questionKind: "spend_posture" as const,
-    expectedPageKeys: ["metrics/spend-posture", "concepts/spend", "company/overview"],
+    expectedPageKeys: [
+      "metrics/spend-posture",
+      "concepts/spend",
+      "company/overview",
+    ],
     expectedRoutePaths: [
       "/finance-twin/companies/acme/spend-posture",
       "/finance-twin/companies/acme/spend-items",
@@ -121,11 +129,19 @@ describe("FinanceDiscoveryService", () => {
       operatorPrompt: "What is our current cash posture?",
     });
 
-    expect(answer.answerSummary).toContain("Stored cash posture for acme covers 4 bank accounts");
-    expect(answer.freshnessPosture).toEqual({
-      state: "fresh",
-      reasonSummary: "Stored bank-account summary state is fresh.",
-    });
+    expect(answer.answerSummary).toContain(
+      "Stored cash posture for acme covers 4 bank accounts",
+    );
+    expect(answer.freshnessPosture.state).toBe("fresh");
+    expect(answer.freshnessPosture.reasonSummary).toContain(
+      "All required Finance Twin reads for cash posture are fresh for acme.",
+    );
+    expect(answer.freshnessPosture.reasonSummary).toContain(
+      "Cash posture is fresh: Stored bank-account summary state is fresh.",
+    );
+    expect(answer.freshnessPosture.reasonSummary).toContain(
+      "Bank account inventory is fresh: Stored bank-account summary state is fresh.",
+    );
     expect(answer.relatedRoutes.map((route) => route.routePath)).toEqual([
       "/finance-twin/companies/acme/cash-posture",
       "/finance-twin/companies/acme/bank-accounts",
@@ -146,7 +162,7 @@ describe("FinanceDiscoveryService", () => {
     expect(answer.bodyMarkdown).toContain("## Evidence sections");
   });
 
-  it("persists a truthful limited answer when the stored cash posture is stale and partial", async () => {
+  it("persists a truthful mixed freshness answer when one required cash read is stale and another remains available", async () => {
     const service = new FinanceDiscoveryService({
       cfoWikiService: {
         async getPage(companyKey, pageKey) {
@@ -162,7 +178,9 @@ describe("FinanceDiscoveryService", () => {
           return buildBankAccountsView({
             accountCount: 0,
             accounts: [],
-            limitations: ["No successful bank-account-summary slice exists yet for this company."],
+            limitations: [
+              "No successful bank-account-summary slice exists yet for this company.",
+            ],
           });
         },
         async getCashPosture() {
@@ -197,10 +215,63 @@ describe("FinanceDiscoveryService", () => {
       questionKind: "cash_posture",
     });
 
-    expect(answer.freshnessPosture.state).toBe("stale");
+    expect(answer.freshnessPosture.state).toBe("mixed");
+    expect(answer.freshnessPosture.reasonSummary).toContain(
+      "Required Finance Twin reads for cash posture do not agree for acme.",
+    );
+    expect(answer.freshnessPosture.reasonSummary).toContain(
+      "Cash posture is stale:",
+    );
+    expect(answer.freshnessPosture.reasonSummary).toContain(
+      "Bank account inventory is fresh:",
+    );
     expect(answer.answerSummary).toContain("is limited");
     expect(answer.limitations).toContain(
       "No persisted bank-account summary rows are available yet for acme.",
+    );
+  });
+
+  it("rolls multi-read freshness up to mixed when a supported family depends on disagreeing twin reads", async () => {
+    const service = new FinanceDiscoveryService({
+      cfoWikiService: {
+        async getPage(companyKey, pageKey) {
+          return buildWikiPage({
+            companyKey,
+            pageKey: pageKey as TestWikiPageKey,
+            title: buildWikiTitle(pageKey as TestWikiPageKey),
+          });
+        },
+      },
+      financeTwinService: createFinanceTwinService({
+        async getReceivablesAging() {
+          return {
+            ...buildReceivablesAgingView(),
+            freshness: buildFreshnessSummary({
+              reasonSummary:
+                "Stored receivables-aging coverage is stale relative to the freshness threshold.",
+              state: "stale",
+            }),
+          };
+        },
+      }),
+    });
+
+    const answer = await service.answerQuestion({
+      companyKey: "acme",
+      questionKind: "collections_pressure",
+    });
+
+    expect(answer.freshnessPosture).toEqual({
+      state: "mixed",
+      reasonSummary: expect.stringContaining(
+        "Required Finance Twin reads for collections pressure do not agree for acme.",
+      ),
+    });
+    expect(answer.freshnessPosture.reasonSummary).toContain(
+      "Collections posture is fresh: Stored finance slice state is fresh.",
+    );
+    expect(answer.freshnessPosture.reasonSummary).toContain(
+      "Receivables aging is stale: Stored receivables-aging coverage is stale relative to the freshness threshold.",
     );
   });
 
@@ -288,20 +359,28 @@ describe("FinanceDiscoveryService", () => {
         questionKind,
       });
 
-      expect(answer.freshnessPosture).toEqual({
-        state: "missing",
-        reasonSummary: expect.stringContaining("No stored Finance Twin"),
-      });
-      expect(answer.answerSummary).toContain("No stored");
-      expect(answer.limitations.some((entry) => entry.includes("missing-company"))).toBe(
-        true,
+      expect(answer.freshnessPosture.state).toBe("missing");
+      expect(answer.freshnessPosture.reasonSummary).toContain(
+        "All required Finance Twin reads for",
       );
+      expect(answer.freshnessPosture.reasonSummary).toContain(
+        "are missing for missing-company.",
+      );
+      expect(answer.answerSummary).toContain("No stored");
+      expect(
+        answer.limitations.some((entry) => entry.includes("missing-company")),
+      ).toBe(true);
     },
   );
 
   it.each(SUPPORTED_FAMILY_CASES)(
     "builds a deterministic supported-family answer for $questionKind",
-    async ({ expectedPageKeys, expectedRoutePaths, questionKind, summaryText }) => {
+    async ({
+      expectedPageKeys,
+      expectedRoutePaths,
+      questionKind,
+      summaryText,
+    }) => {
       const service = new FinanceDiscoveryService({
         cfoWikiService: {
           async getPage(companyKey, pageKey) {
@@ -339,7 +418,9 @@ describe("FinanceDiscoveryService", () => {
 
 function createFinanceTwinService(
   overrides?: Partial<{
-    getBankAccounts: (companyKey: string) => Promise<FinanceBankAccountInventoryView>;
+    getBankAccounts: (
+      companyKey: string,
+    ) => Promise<FinanceBankAccountInventoryView>;
     getCashPosture: (companyKey: string) => Promise<FinanceCashPostureView>;
     getCollectionsPosture: (
       companyKey: string,
@@ -349,7 +430,9 @@ function createFinanceTwinService(
       companyKey: string,
     ) => Promise<FinanceObligationCalendarView>;
     getPayablesAging: (companyKey: string) => Promise<FinancePayablesAgingView>;
-    getPayablesPosture: (companyKey: string) => Promise<FinancePayablesPostureView>;
+    getPayablesPosture: (
+      companyKey: string,
+    ) => Promise<FinancePayablesPostureView>;
     getReceivablesAging: (
       companyKey: string,
     ) => Promise<FinanceReceivablesAgingView>;
@@ -431,36 +514,35 @@ function buildCashPostureView(input?: {
       staleAfterSeconds: 86400,
       reasonCode: "test",
       reasonSummary:
-        input?.freshness?.reasonSummary ?? "Stored bank-account summary state is fresh.",
+        input?.freshness?.reasonSummary ??
+        "Stored bank-account summary state is fresh.",
     },
-    currencyBuckets:
-      input?.currencyBuckets ??
-      [
-        {
-          currency: "USD",
-          statementOrLedgerBalanceTotal: "1200.00",
-          availableBalanceTotal: "1400.00",
-          unspecifiedBalanceTotal: "250.00",
-          accountCount: 3,
-          datedAccountCount: 2,
-          undatedAccountCount: 1,
-          mixedAsOfDates: true,
-          earliestAsOfDate: "2026-04-10",
-          latestAsOfDate: "2026-04-11",
-        },
-        {
-          currency: "EUR",
-          statementOrLedgerBalanceTotal: "300.00",
-          availableBalanceTotal: "0.00",
-          unspecifiedBalanceTotal: "0.00",
-          accountCount: 1,
-          datedAccountCount: 1,
-          undatedAccountCount: 0,
-          mixedAsOfDates: false,
-          earliestAsOfDate: "2026-04-09",
-          latestAsOfDate: "2026-04-09",
-        },
-      ],
+    currencyBuckets: input?.currencyBuckets ?? [
+      {
+        currency: "USD",
+        statementOrLedgerBalanceTotal: "1200.00",
+        availableBalanceTotal: "1400.00",
+        unspecifiedBalanceTotal: "250.00",
+        accountCount: 3,
+        datedAccountCount: 2,
+        undatedAccountCount: 1,
+        mixedAsOfDates: true,
+        earliestAsOfDate: "2026-04-10",
+        latestAsOfDate: "2026-04-11",
+      },
+      {
+        currency: "EUR",
+        statementOrLedgerBalanceTotal: "300.00",
+        availableBalanceTotal: "0.00",
+        unspecifiedBalanceTotal: "0.00",
+        accountCount: 1,
+        datedAccountCount: 1,
+        undatedAccountCount: 0,
+        mixedAsOfDates: false,
+        earliestAsOfDate: "2026-04-09",
+        latestAsOfDate: "2026-04-09",
+      },
+    ],
     coverageSummary: {
       bankAccountCount: 4,
       reportedBalanceCount: 4,
@@ -518,51 +600,49 @@ function buildBankAccountsView(input?: {
       reasonSummary: "Stored bank-account summary state is fresh.",
     },
     accountCount: input?.accountCount ?? 4,
-    accounts:
-      input?.accounts ??
-      [
-        {
-          bankAccount: {
-            id: "22222222-2222-4222-8222-222222222222",
-            companyId: "11111111-1111-4111-8111-111111111111",
-            accountLabel: "Operating Checking",
-            institutionName: "Acme Bank",
-            externalAccountId: "bank-account-1",
-            accountNumberLast4: "1234",
-            createdAt: "2026-04-15T00:00:00.000Z",
-            updatedAt: "2026-04-15T00:00:00.000Z",
-          },
-          reportedBalances: [
-            {
-              summary: {
-                id: "33333333-3333-4333-8333-333333333333",
-                companyId: "11111111-1111-4111-8111-111111111111",
-                bankAccountId: "22222222-2222-4222-8222-222222222222",
-                syncRunId: "44444444-4444-4444-8444-444444444444",
-                lineNumber: 1,
-                balanceType: "statement_or_ledger",
-                balanceAmount: "1200.00",
-                currencyCode: "USD",
-                asOfDate: "2026-04-11",
-                asOfDateSourceColumn: "as_of_date",
-                balanceSourceColumn: "balance",
-                observedAt: "2026-04-15T00:00:00.000Z",
-                createdAt: "2026-04-15T00:00:00.000Z",
-                updatedAt: "2026-04-15T00:00:00.000Z",
-              },
-              lineageRef: {
-                targetKind: "bank_account_summary",
-                targetId: "33333333-3333-4333-8333-333333333333",
-                syncRunId: "44444444-4444-4444-8444-444444444444",
-              },
-            },
-          ],
-          currencyCodes: ["USD"],
-          knownAsOfDates: ["2026-04-11"],
-          unknownAsOfDateBalanceCount: 0,
-          hasMixedAsOfDates: false,
+    accounts: input?.accounts ?? [
+      {
+        bankAccount: {
+          id: "22222222-2222-4222-8222-222222222222",
+          companyId: "11111111-1111-4111-8111-111111111111",
+          accountLabel: "Operating Checking",
+          institutionName: "Acme Bank",
+          externalAccountId: "bank-account-1",
+          accountNumberLast4: "1234",
+          createdAt: "2026-04-15T00:00:00.000Z",
+          updatedAt: "2026-04-15T00:00:00.000Z",
         },
-      ],
+        reportedBalances: [
+          {
+            summary: {
+              id: "33333333-3333-4333-8333-333333333333",
+              companyId: "11111111-1111-4111-8111-111111111111",
+              bankAccountId: "22222222-2222-4222-8222-222222222222",
+              syncRunId: "44444444-4444-4444-8444-444444444444",
+              lineNumber: 1,
+              balanceType: "statement_or_ledger",
+              balanceAmount: "1200.00",
+              currencyCode: "USD",
+              asOfDate: "2026-04-11",
+              asOfDateSourceColumn: "as_of_date",
+              balanceSourceColumn: "balance",
+              observedAt: "2026-04-15T00:00:00.000Z",
+              createdAt: "2026-04-15T00:00:00.000Z",
+              updatedAt: "2026-04-15T00:00:00.000Z",
+            },
+            lineageRef: {
+              targetKind: "bank_account_summary",
+              targetId: "33333333-3333-4333-8333-333333333333",
+              syncRunId: "44444444-4444-4444-8444-444444444444",
+            },
+          },
+        ],
+        currencyCodes: ["USD"],
+        knownAsOfDates: ["2026-04-11"],
+        unknownAsOfDateBalanceCount: 0,
+        hasMixedAsOfDates: false,
+      },
+    ],
     diagnostics: [],
     limitations: input?.limitations ?? [],
   });
@@ -1027,9 +1107,12 @@ function buildCompanyRecord() {
   };
 }
 
-function buildFreshnessSummary() {
+function buildFreshnessSummary(input?: {
+  reasonSummary?: string;
+  state?: "failed" | "fresh" | "missing" | "stale";
+}) {
   return {
-    state: "fresh" as const,
+    state: input?.state ?? ("fresh" as const),
     latestSyncRunId: null,
     latestSyncStatus: null,
     latestCompletedAt: null,
@@ -1038,7 +1121,8 @@ function buildFreshnessSummary() {
     ageSeconds: null,
     staleAfterSeconds: 86400,
     reasonCode: "test",
-    reasonSummary: "Stored finance slice state is fresh.",
+    reasonSummary:
+      input?.reasonSummary ?? "Stored finance slice state is fresh.",
   };
 }
 

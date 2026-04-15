@@ -18,7 +18,9 @@ describe("DiscoveryAnswerCard", () => {
           sourceKind: "manual_discovery",
           sourceRef: null,
           spec: {
-            acceptance: ["Persist one durable finance discovery answer artifact."],
+            acceptance: [
+              "Persist one durable finance discovery answer artifact.",
+            ],
             constraints: {
               allowedPaths: [],
               mustNot: [],
@@ -55,7 +57,7 @@ describe("DiscoveryAnswerCard", () => {
     expect(html).toContain("/finance-twin/companies/acme/spend-posture");
     expect(html).toContain("/finance-twin/companies/acme/spend-items");
     expect(html).toContain("Question kind");
-    expect(html).toContain("spend_posture");
+    expect(html).toContain("Spend posture");
   });
 
   it("renders stored supported-family answer evidence without cash-only assumptions", () => {
@@ -66,7 +68,8 @@ describe("DiscoveryAnswerCard", () => {
           summary: "Stored payables pressure is available with limitations.",
           companyKey: "acme",
           questionKind: "payables_pressure",
-          answerSummary: "Stored payables pressure is available with limitations.",
+          answerSummary:
+            "Stored payables pressure is available with limitations.",
           freshnessPosture: {
             state: "stale",
             reasonSummary: "Stored payables-aging coverage is stale.",
@@ -102,7 +105,8 @@ describe("DiscoveryAnswerCard", () => {
               routePath: "/finance-twin/companies/acme/payables-posture",
             },
           ],
-          bodyMarkdown: "# Payables pressure answer\n\nStored payables pressure.",
+          bodyMarkdown:
+            "# Payables pressure answer\n\nStored payables pressure.",
           structuredData: {},
         }}
         mission={{
@@ -115,13 +119,17 @@ describe("DiscoveryAnswerCard", () => {
           sourceKind: "manual_discovery",
           sourceRef: null,
           spec: {
-            acceptance: ["Persist one durable finance discovery answer artifact."],
+            acceptance: [
+              "Persist one durable finance discovery answer artifact.",
+            ],
             constraints: {
               allowedPaths: [],
               mustNot: [],
             },
             deliverables: ["discovery_answer", "proof_bundle"],
-            evidenceRequirements: ["stored finance-twin payables-posture route"],
+            evidenceRequirements: [
+              "stored finance-twin payables-posture route",
+            ],
             input: {
               discoveryQuestion: {
                 companyKey: "acme",
@@ -152,7 +160,7 @@ describe("DiscoveryAnswerCard", () => {
     expect(html).toContain("/finance-twin/companies/acme/payables-posture");
     expect(html).toContain("/finance-twin/companies/acme/payables-aging");
     expect(html).toContain("metrics/payables-posture");
-    expect(html).toContain("payables_pressure");
+    expect(html).toContain("Payables pressure");
     expect(html).not.toContain("/finance-twin/companies/acme/cash-posture");
   });
 });
