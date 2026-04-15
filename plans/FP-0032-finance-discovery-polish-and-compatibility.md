@@ -17,6 +17,7 @@ GitHub connector work is explicitly out of scope. This slice must not start F4B,
 - [x] 2026-04-15T14:20:31Z Add route and domain coverage so `/missions/discovery` is proven truthful as a finance alias and legacy repo-scoped payload rejection is explicit.
 - [x] 2026-04-15T14:20:31Z Apply the smallest active-doc and plan refresh needed so current docs and plans no longer overstate legacy engineering discovery mission creation support.
 - [x] 2026-04-15T14:20:31Z Run the requested validation ladder through `pnpm ci:repro:current`; create the single local commit, push, and open or report the PR only after the green validation state is preserved.
+- [x] 2026-04-15T14:32:42Z Run the follow-up QA pass, correct the missed FP-0030 present-tense legacy-discovery wording, and re-run the required narrow tests, finance smokes, twin reproducibility trio, and `pnpm ci:repro:current` because the active-doc truth boundary needed one more fix.
 
 ## Surprises & Discoveries
 
@@ -34,6 +35,9 @@ GitHub connector work is explicitly out of scope. This slice must not start F4B,
 
 - Observation: after retirement, the removed live smoke alias no longer appears in the active package or active-doc set outside this execution plan's own audit notes.
   Evidence: `rg -n "smoke:m3-discovery:live" package.json README.md START_HERE.md plans/ROADMAP.md plans/FP-0030-finance-discovery-foundation-and-first-answer.md plans/FP-0031-finance-discovery-supported-posture-and-obligation-families.md docs/ops/source-ingest-and-cfo-wiki.md docs/ops/local-dev.md docs/ops/codex-app-server.md docs/benchmarks/seeded-missions.md evals/README.md` returned no matches.
+
+- Observation: the first QA pass still found stale present-tense engineering-discovery wording inside `plans/FP-0030-finance-discovery-foundation-and-first-answer.md`, even though the active product surfaces had already been corrected.
+  Evidence: a strict active-doc scan on 2026-04-15 matched `plans/FP-0030-finance-discovery-foundation-and-first-answer.md:25-26` and `:103-110`, where pre-F4A blast-radius observations still read as if they described the live route contract until this QA correction rewrote them as historical context.
 
 ## Decision Log
 
@@ -163,6 +167,7 @@ Dependencies:
   - Added explicit domain and route coverage proving that `/missions/discovery` now succeeds only for finance-shaped payloads and rejects the legacy repo-scoped engineering payload truthfully.
   - Refreshed the smallest active guidance set so contributors now see F4B as shipped, understand `/missions/discovery` as a deprecated finance-shaped alias, and get pointed at F4C or this polish plan instead of stale pre-F4B next-step guidance.
   - Refreshed stale F4A and F4B plan closeout notes so neither active plan still reads like the current next implementation phase.
+  - Followed up with a QA-only doc correction so FP-0030 now frames its pre-F4A engineering-discovery observations as historical context rather than live product truth.
 
 - Files changed:
   - `package.json`

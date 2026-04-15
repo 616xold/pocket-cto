@@ -22,8 +22,8 @@ This plan is the active F4A implementation contract and must stay current while 
 
 ## Surprises & Discoveries
 
-- Observation: the current discovery mission contract is still engineering blast-radius discovery from domain through web UI.
-  Evidence: `packages/domain/src/discovery-mission.ts`, `apps/control-plane/src/modules/missions/discovery.ts`, `apps/control-plane/src/modules/orchestrator/discovery-phase.ts`, `apps/control-plane/src/modules/evidence/discovery-answer.ts`, `apps/web/components/discovery-mission-intake-form.tsx`, `apps/web/components/discovery-answer-card.tsx`, `tools/m3-discovery-mission-smoke.mjs`, and `tools/twin-blast-radius-smoke.mjs` all still center `repoFullName`, `changedPaths`, `auth_change`, and stored twin blast-radius answers.
+- Observation: at plan start, the discovery mission contract was still engineering blast-radius discovery from domain through web UI.
+  Evidence: `packages/domain/src/discovery-mission.ts`, `apps/control-plane/src/modules/missions/discovery.ts`, `apps/control-plane/src/modules/orchestrator/discovery-phase.ts`, `apps/control-plane/src/modules/evidence/discovery-answer.ts`, `apps/web/components/discovery-mission-intake-form.tsx`, `apps/web/components/discovery-answer-card.tsx`, `tools/m3-discovery-mission-smoke.mjs`, and `tools/twin-blast-radius-smoke.mjs` all centered `repoFullName`, `changedPaths`, `auth_change`, and stored twin blast-radius answers before the F4A implementation landed.
 
 - Observation: discovery proof-bundle support already exists, but the current proof surface still carries repo and PR assumptions that are not finance-ready.
   Evidence: `packages/domain/src/proof-bundle.ts`, `apps/control-plane/src/modules/evidence/proof-bundle-summary.ts`, `apps/control-plane/src/modules/evidence/proof-bundle-assembly.ts`, and `apps/web/components/mission-card.tsx` still default to repo labels, PR links, GitHub-ready bundle copy, and build-mission evidence framing even when the mission type is `discovery`.
@@ -98,16 +98,16 @@ Pocket CFO has already shipped:
 - F3C persisted wiki lint runs, deterministic export runs, and ownership-safe filed artifact preservation
 - F3D deterministic concept pages, metric-definition pages, and policy pages from fixed registries plus explicit `policy_document` bindings
 
-The current repo truth that F4A must retarget is:
+The pre-implementation repo truth that F4A had to retarget was:
 
-- `packages/domain/src/mission.ts` still models mission types as `build`, `incident`, `release`, and `discovery`
-- `packages/domain/src/discovery-mission.ts` still models repo-scoped blast-radius discovery questions and artifacts
-- `packages/domain/src/proof-bundle.ts` still centers generic build or PR-era evidence expectations
-- `apps/control-plane/src/modules/missions/discovery.ts` still compiles stored blast-radius discovery missions around `repoFullName`, `changedPaths`, and `auth_change`
-- `apps/control-plane/src/modules/evidence/discovery-answer.ts` still persists stored twin blast-radius answers
-- `apps/control-plane/src/modules/orchestrator/discovery-phase.ts` still executes discovery through `TwinService.queryRepositoryBlastRadius`
-- `apps/web/components/discovery-mission-intake-form.tsx` and `apps/web/components/discovery-answer-card.tsx` still present repo blast-radius intake and evidence
-- `tools/m3-discovery-mission-smoke.mjs` and `tools/twin-blast-radius-smoke.mjs` remain engineering discovery proofs
+- `packages/domain/src/mission.ts` modeled mission types as `build`, `incident`, `release`, and `discovery`
+- `packages/domain/src/discovery-mission.ts` modeled repo-scoped blast-radius discovery questions and artifacts
+- `packages/domain/src/proof-bundle.ts` centered generic build or PR-era evidence expectations
+- `apps/control-plane/src/modules/missions/discovery.ts` compiled stored blast-radius discovery missions around `repoFullName`, `changedPaths`, and `auth_change`
+- `apps/control-plane/src/modules/evidence/discovery-answer.ts` persisted stored twin blast-radius answers
+- `apps/control-plane/src/modules/orchestrator/discovery-phase.ts` executed discovery through `TwinService.queryRepositoryBlastRadius`
+- `apps/web/components/discovery-mission-intake-form.tsx` and `apps/web/components/discovery-answer-card.tsx` presented repo blast-radius intake and evidence
+- `tools/m3-discovery-mission-smoke.mjs` and `tools/twin-blast-radius-smoke.mjs` served as the engineering discovery proofs
 
 The active-doc boundary for this slice is:
 
@@ -529,7 +529,7 @@ F4A is now shipped as a narrow deterministic finance-discovery slice with one tr
 
 What changed from the pre-existing repo state:
 
-- the old engineering blast-radius discovery contract now coexists with a typed company-scoped finance discovery question contract that supports `cash_posture` only for new intake
+- the live engineering blast-radius discovery create contract was replaced for active intake by a typed company-scoped finance discovery question contract that supports `cash_posture` only, while any remaining engineering discovery references became historical follow-up surfaces rather than active product truth
 - the control plane now assembles finance discovery answers deterministically from stored Finance Twin plus stored CFO Wiki state and persists finance-ready answer and proof artifacts without runtime-codex
 - mission list, mission detail, proof-bundle summaries, and web mission cards now expose company key, question kind, freshness posture, limitations, related routes, related wiki pages, and reusable evidence sections truthfully
 - the new `pnpm smoke:finance-discovery-answer:local` proof is green while the existing F1, F2, F3, and engineering-twin reproducibility surfaces remain intact and green
