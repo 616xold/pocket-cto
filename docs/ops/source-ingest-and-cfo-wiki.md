@@ -367,7 +367,9 @@ The shipped F4 baseline still does none of the following:
 - no F6 monitoring work
 
 Policy lookup remains later than the shipped F4A/F4B baseline.
-It belongs in the later F4C slice and should read only from explicit `policy_document` bindings plus stored deterministic extracts unless later code truthfully ships a narrower earlier path.
+The first F4C1 policy path should stay mission-based, source-scoped, and deterministic: require explicit `policySourceId`, answer only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
+If the latest bound policy extract is missing, unsupported, or failed, the mission should persist a truthful limited answer rather than inventing a digest.
+Generic corpus-wide policy retrieval, runtime-codex answer generation, vector search, OCR, deep-read, and report compilation remain out of scope for that first policy slice.
 
 ## Lint flow
 

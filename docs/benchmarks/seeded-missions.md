@@ -45,10 +45,10 @@ The system answers narrow typed questions such as `collections_pressure`, `payab
 ### 4. F4C policy lookup
 
 Input:
-One or more sources explicitly bound as `policy_document` for the company; generic SOP docs or board materials do not count unless they are intentionally bound that way.
+One explicit `policySourceId` bound as `policy_document` for the company plus the stored deterministic wiki state for that same source; generic SOP docs or board materials do not count unless they are intentionally bound that way.
 
 Success:
-The system answers a typed policy question from explicit `policy_document` bindings and stored deterministic extracts with explicit uncertainty where the policy is ambiguous.
+The system answers a typed `policy_lookup` question from the scoped policy page, same-source digest history when useful, `concepts/policy-corpus` when useful, and bound-source extract status, with a truthful limited answer whenever the latest extract is missing, unsupported, or failed.
 
 ### 5. Memo or packet compilation
 
@@ -62,6 +62,8 @@ The system produces a short memo or packet with linked evidence, freshness notes
 
 These discovery families should stay out of the shipped F4A/F4B baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
 
+- `receivables_aging_review`
+- `payables_aging_review`
 - `runway`
 - `burn_variance`
 - `concentration`

@@ -225,16 +225,32 @@ Slice map:
   - still no runtime-codex, F5 reports, or F6 monitoring
 
 - `F4C — policy lookup and discovery quality hardening`
-  - add policy lookup from explicit `policy_document` bindings and stored deterministic extracts only
-  - extend seeded finance smoke and eval hooks
-  - harden operator-facing answer detail and proof-bundle presentation
-  - do not introduce PageIndex/QMD/MinerU, vector search, OCR, or deep-read dependencies unless an actual evidence-precision gap is proven during F4A/F4B
+  - `F4C1 — explicit policy lookup from bound policy documents`
+    - add one typed finance discovery family:
+      - `policy_lookup`
+    - require explicit policy source scope for the first shipped slice via `policySourceId`
+    - answer only from:
+      - compiled policy page `policies/<sourceId>`
+      - related source-digest pages for that same source when useful
+      - `concepts/policy-corpus` when useful
+      - explicit bound-source metadata and stored extract status
+    - keep answers deterministic, read-only, and mission-based
+    - if the latest bound policy extract is missing, unsupported, or failed, persist a truthful limited answer instead of fabricating a digest
+    - no runtime-codex
+    - no generic retrieval or search layer
+    - no new Finance Twin extractor
+    - no report compiler
+  - `F4C2 — discovery quality hardening and eval extension`
+    - extend seeded finance smoke and eval hooks for the shipped discovery families plus `policy_lookup`
+    - harden operator-facing answer detail and proof-bundle presentation where F4A, F4B, or F4C1 prove a real need
+    - only consider deeper evidence-precision work if a concrete gap remains after F4C1
+    - do not assume PageIndex/QMD/MinerU, vector search, OCR, or deep-read are required
 
 Supported now vs blocked for later:
 
 - the shipped F4 discovery families are `cash_posture`, `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review`
 - `receivables_aging_review` and `payables_aging_review` remain later narrow-slice work rather than part of the first F4B implementation
-- policy lookup belongs to F4C rather than F4A unless code later proves otherwise
+- policy lookup belongs to F4C1 rather than F4A or F4B and requires explicit `policySourceId` scope rather than generic corpus-wide retrieval
 - the following families remain explicitly blocked until new deterministic Finance Twin support exists:
   - `runway`
   - `burn_variance`

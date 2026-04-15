@@ -34,7 +34,7 @@ When using those commands during the pivot:
 
 1. deterministic finance discovery answers for the shipped F4A/F4B families, with `cash_posture` as the first F4A family and `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review` shipped in F4B
 2. later posture, aging, spend, and obligation answers that stay grounded in already-shipped Finance Twin reads
-3. policy lookup from explicit `policy_document` bindings and stored deterministic extracts
+3. source-scoped `policy_lookup` from explicit `policySourceId`, explicit `policy_document` bindings, and stored deterministic extracts
 4. finance memo or packet compilation
 5. wiki compilation quality
 6. provenance, freshness disclosure, and contradiction handling
@@ -51,10 +51,14 @@ Shipped today:
 
 During F4C and later finance-discovery hardening:
 
-- add only the policy and later discovery families the repo can already ground deterministically
+- add `policy_lookup` only when the eval prompt includes explicit policy source scope and the repo can ground the answer from stored deterministic policy pages and extract status
+- do not grade generic corpus-wide semantic policy search as if it already exists
+- add later discovery families only when the repo can already ground them deterministically
 
 Do not treat these as early F4 supported families:
 
+- `receivables_aging_review`
+- `payables_aging_review`
 - `runway`
 - `burn_variance`
 - `concentration`

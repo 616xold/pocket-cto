@@ -46,7 +46,9 @@ The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-a
 F3A through F3D are now shipped.
 F4A is now the shipped first finance-discovery baseline.
 F4B now widens that baseline to the truthful stored-state posture, spend, and obligation families listed above while still excluding policy lookup, aging-review families, runtime-codex answer generation, and later F5 or F6 work.
-The next new major implementation phase should be F4C policy lookup and finance-discovery hardening rather than reopening earlier wiki slices or widening into F5 or F6 work.
+`plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` now defines the first real F4C execution contract.
+The next new implementation step is F4C1 `policy_lookup`: one explicit-source, deterministic, read-only policy family grounded only in `policy_document` bindings, stored deterministic extracts, compiler-owned policy pages, same-source digest history when useful, and `concepts/policy-corpus`.
+F4C2 should follow only after that slice is green and should focus on discovery-quality hardening and eval extension rather than widening into F5 or F6 work.
 
 ## Product boundary for v1
 
@@ -146,6 +148,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0032-finance-discovery-polish-and-compatibility.md
 │   ├── FP-0033-finance-discovery-baseline-closeout-polish.md
 │   ├── FP-0034-finance-discovery-final-artifact-and-doc-polish.md
+│   ├── FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md
 │   └── templates
 └── .agents
     └── skills
