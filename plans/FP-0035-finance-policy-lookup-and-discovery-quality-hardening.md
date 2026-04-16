@@ -17,6 +17,7 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 - [x] 2026-04-15T22:20:42Z Apply a tiny follow-on handoff-doc truthfulness polish so `START_HERE.md` and `docs/ops/local-dev.md` point cleanly at the shipped F4A/F4B baseline, the active `FP-0035` contract, the next `F4C1` implementation thread, and the later `F4C2` hardening pass.
 - [x] 2026-04-15T22:34:18Z Preflight the clean `codex/f4c1-finance-policy-lookup-local-v1` branch against fetched `origin/main`, reload the active docs and required repo skills, and confirm this existing `FP-0035` contract is sufficient for F4C1 without creating a new Finance Plan.
 - [x] 2026-04-15T23:12:41Z Implement `policy_lookup` as the only new F4C1 family through the existing mission engine, discovery bounded context, proof-bundle path, and operator read models. The shipped slice keeps the five F4A/F4B families unchanged, requires explicit `policySourceId` scope, persists truthful limited answers plus finance-ready proof bundles, adds the local `smoke:finance-policy-lookup:local` alias, and refreshes only the small doc set made stale by the landed code.
+- [x] 2026-04-16T11:56:00Z Apply a tiny post-merge truthfulness polish so this active F4 plan, the seeded benchmark framing, and the eval staging text all point at the shipped F4A through F4C1 baseline while leaving only F4C2 as remaining planned work.
 - [ ] Land F4C2 discovery-quality hardening and eval extension only after F4C1 proves which operator or evidence gaps are still real.
 
 ## Surprises & Discoveries
@@ -79,6 +80,9 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 
 - Decision: keep the F4C1 policy-lookup read seam inside the existing discovery service by binding the current wiki-service methods rather than widening the wiki module or adding a special policy route.
   Rationale: the shipped `getPage` plus `listCompanySources` seam was already sufficient; the only extra hardening needed was to preserve method context in the embedded-worker path.
+
+- Decision: keep `FP-0035` as the active F4 plan record after merge, but rewrite any stale post-acceptance wording so only `F4C2` remains as planned work.
+  Rationale: the repo truth now includes shipped F4C1 acceptance, so the plan chain should no longer imply that unchecked F4C1 implementation still remains.
 
 ## Context and Orientation
 
@@ -355,9 +359,9 @@ Dependencies and seams:
 
 This planning slice created the first real F4C execution contract and the follow-on handoff-doc polish now leaves the active-doc set pointing cleanly at that contract so a fresh Codex thread can implement F4C cleanly. The active contract now separates `F4C1` from `F4C2`, defines `policy_lookup` as the only new required F4C1 family, requires explicit `policySourceId` scope, and locks the first policy answer path to explicit `policy_document` bindings plus stored deterministic extracts only.
 
-No runtime code, routes, schema changes, migrations, package scripts, smoke aliases, eval datasets, runtime-codex dependencies, vector search, OCR, PageIndex, QMD, MinerU, or deep-read work were added in this slice. F4A and F4B remain the shipped authoritative discovery baseline.
+No runtime code, routes, schema changes, migrations, package scripts, smoke aliases, eval datasets, runtime-codex dependencies, vector search, OCR, PageIndex, QMD, MinerU, or deep-read work were added in this slice. F4A through F4C1 remain the shipped authoritative discovery baseline.
 
 Remaining work:
 
-- execute the unchecked F4C1 implementation steps in a follow-on thread against this plan
-- leave any smoke or eval extension to F4C2 rather than widening F4C1 prematurely
+- execute `F4C2` discovery-quality hardening and eval extension in the next implementation thread against this same active plan
+- keep that follow-on work limited to seeded benchmark, eval, and answer-quality hardening that reflects the already-shipped F4A through F4C1 discovery baseline

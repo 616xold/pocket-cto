@@ -49,7 +49,7 @@ Shipped today:
 - eval prompts should require twin/wiki-grounded answers with explicit freshness and limitations
 - runtime-codex, vector retrieval, OCR, deep-read, and report compilation should stay out of scope
 
-During F4C and later finance-discovery hardening:
+During F4C2 and later finance-discovery hardening:
 
 - keep `policy_lookup` eval prompts explicitly source-scoped and grounded in stored deterministic policy pages plus extract status
 - do not grade generic corpus-wide semantic policy search as if it already exists
