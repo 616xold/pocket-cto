@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { CfoWikiPageKeySchema } from "./cfo-wiki";
+import {
+  CfoWikiDocumentExtractStatusSchema,
+  CfoWikiDocumentRoleSchema,
+  CfoWikiPageKeySchema,
+} from "./cfo-wiki";
 import { FinanceCompanyKeySchema } from "./finance-twin";
 import {
   TwinBlastRadiusImpactedDirectorySchema,
@@ -149,6 +153,19 @@ export const FinanceDiscoveryEvidenceSectionSchema = z
   })
   .strict();
 
+export const FinancePolicySourceScopeSummarySchema = z
+  .object({
+    policySourceId: z.string().uuid(),
+    sourceName: z.string().min(1).nullable().default(null),
+    documentRole: CfoWikiDocumentRoleSchema.nullable().default(null),
+    includeInCompile: z.boolean().nullable().default(null),
+    latestExtractStatus: CfoWikiDocumentExtractStatusSchema.nullable().default(
+      null,
+    ),
+    latestSnapshotVersion: z.number().int().positive().nullable().default(null),
+  })
+  .strict();
+
 const FinanceDiscoveryAnswerArtifactMetadataBaseSchema = z.object({
   source: z.literal("stored_finance_twin_and_cfo_wiki"),
   summary: z.string().min(1),
@@ -165,12 +182,15 @@ const FinanceDiscoveryAnswerArtifactMetadataBaseSchema = z.object({
 
 export const FinanceStoredStateDiscoveryAnswerArtifactMetadataSchema =
   FinanceDiscoveryAnswerArtifactMetadataBaseSchema.extend({
+    policySourceScope: z.null().default(null),
     questionKind: FinanceDiscoveryStoredStateQuestionKindSchema,
     policySourceId: z.null().default(null),
   }).strict();
 
 export const FinancePolicyLookupAnswerArtifactMetadataSchema =
   FinanceDiscoveryAnswerArtifactMetadataBaseSchema.extend({
+    policySourceScope:
+      FinancePolicySourceScopeSummarySchema.nullable().default(null),
     questionKind: z.literal("policy_lookup"),
     policySourceId: z.string().uuid(),
   }).strict();
@@ -282,6 +302,9 @@ export type FinanceDiscoveryRelatedWikiPage = z.infer<
 >;
 export type FinanceDiscoveryEvidenceSection = z.infer<
   typeof FinanceDiscoveryEvidenceSectionSchema
+>;
+export type FinancePolicySourceScopeSummary = z.infer<
+  typeof FinancePolicySourceScopeSummarySchema
 >;
 export type FinanceDiscoveryAnswerArtifactMetadata = z.infer<
   typeof FinanceDiscoveryAnswerArtifactMetadataSchema

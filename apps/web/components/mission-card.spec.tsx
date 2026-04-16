@@ -174,6 +174,7 @@ describe("MissionCard", () => {
           pullRequestNumber: null,
           pullRequestUrl: null,
           policySourceId: null,
+          policySourceScope: null,
           questionKind: null,
           replayEventCount: 14,
           relatedRoutePaths: [],
@@ -301,6 +302,7 @@ describe("MissionCard", () => {
           pullRequestNumber: null,
           pullRequestUrl: null,
           policySourceId: null,
+          policySourceScope: null,
           questionKind: null,
           replayEventCount: 12,
           relatedRoutePaths: [],
@@ -408,6 +410,7 @@ describe("MissionCard", () => {
             "All required Finance Twin reads for cash posture are fresh for acme.",
           limitationsSummary: "Visible limitations remain preserved.",
           policySourceId: null,
+          policySourceScope: null,
           pullRequestNumber: null,
           pullRequestUrl: null,
           questionKind: "cash_posture",
@@ -538,6 +541,14 @@ describe("MissionCard", () => {
             "Policy source has an unsupported deterministic extract for the latest stored snapshot.",
           limitationsSummary: "Visible limitations remain preserved.",
           policySourceId,
+          policySourceScope: {
+            policySourceId,
+            sourceName: "Travel and expense policy",
+            documentRole: "policy_document",
+            includeInCompile: true,
+            latestExtractStatus: "unsupported",
+            latestSnapshotVersion: 2,
+          },
           pullRequestNumber: null,
           pullRequestUrl: null,
           questionKind: "policy_lookup",
@@ -585,6 +596,10 @@ describe("MissionCard", () => {
     expect(html).toContain("Policy lookup");
     expect(html).toContain("Policy source");
     expect(html).toContain(policySourceId);
+    expect(html).toContain("Travel and expense policy");
+    expect(html).toContain("Policy Document");
+    expect(html).toContain("Unsupported");
+    expect(html).toContain("v2");
     expect(html).toContain("Missing");
   });
 
@@ -863,6 +878,7 @@ describe("MissionCard", () => {
           freshnessSummary: "",
           limitationsSummary: "",
           policySourceId: null,
+          policySourceScope: null,
           pullRequestNumber: null,
           pullRequestUrl: null,
           questionKind: "auth_change",

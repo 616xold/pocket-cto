@@ -17,6 +17,7 @@ describe("Mission list domain schema", () => {
           companyKey: "acme",
           questionKind: "payables_pressure",
           policySourceId: null,
+          policySourceScope: null,
           answerSummary: "Stored payables pressure is available with limitations.",
           freshnessState: "stale",
           status: "succeeded",
@@ -63,6 +64,14 @@ describe("Mission list domain schema", () => {
           companyKey: "acme",
           questionKind: "policy_lookup",
           policySourceId: "22222222-2222-4222-8222-222222222222",
+          policySourceScope: {
+            policySourceId: "22222222-2222-4222-8222-222222222222",
+            sourceName: "Travel and expense policy",
+            documentRole: "policy_document",
+            includeInCompile: true,
+            latestExtractStatus: null,
+            latestSnapshotVersion: 2,
+          },
           answerSummary:
             "Stored policy lookup is limited by a missing deterministic extract.",
           freshnessState: "missing",
@@ -90,6 +99,9 @@ describe("Mission list domain schema", () => {
     expect(parsed.missions[0]?.questionKind).toBe("policy_lookup");
     expect(parsed.missions[0]?.policySourceId).toBe(
       "22222222-2222-4222-8222-222222222222",
+    );
+    expect(parsed.missions[0]?.policySourceScope?.sourceName).toBe(
+      "Travel and expense policy",
     );
   });
 });

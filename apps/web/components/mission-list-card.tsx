@@ -5,6 +5,7 @@ import {
   isFinanceDiscoveryQuestionKind,
   readFinanceDiscoveryQuestionKindLabel,
 } from "@pocket-cto/domain";
+import { PolicySourceScopeFields } from "./policy-source-scope-fields";
 import { readFreshnessLabel } from "./freshness-label";
 import { StatusPill } from "./status-pill";
 
@@ -62,10 +63,10 @@ export function MissionListCard({ mission }: MissionListCardProps) {
               <dd>{questionKindLabel ?? "Pending question"}</dd>
             </div>
             {mission.questionKind === "policy_lookup" || mission.policySourceId ? (
-              <div>
-                <dt>Policy source</dt>
-                <dd>{mission.policySourceId ?? "Pending policy source"}</dd>
-              </div>
+              <PolicySourceScopeFields
+                fallbackPolicySourceId={mission.policySourceId}
+                scope={mission.policySourceScope}
+              />
             ) : null}
             <div>
               <dt>Freshness</dt>

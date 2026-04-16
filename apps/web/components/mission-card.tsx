@@ -1,12 +1,14 @@
 import React from "react";
 import type { MissionDetailView } from "@pocket-cto/domain";
 import {
+  isFinanceDiscoveryAnswerArtifactMetadata,
   isFinanceDiscoveryQuestion,
   isFinanceDiscoveryQuestionKind,
   readFinanceDiscoveryQuestionKindLabel,
 } from "@pocket-cto/domain";
 import { ApprovalCardList } from "./approval-card-list";
 import { DiscoveryAnswerCard } from "./discovery-answer-card";
+import { PolicySourceScopeFields } from "./policy-source-scope-fields";
 import { readFreshnessLabel } from "./freshness-label";
 import { StatusPill } from "./status-pill";
 
@@ -35,7 +37,16 @@ export function MissionCard({
   const financeDiscoveryQuestion = isFinanceDiscoveryQuestion(discoveryQuestion)
     ? discoveryQuestion
     : null;
+  const financeDiscoveryAnswer = isFinanceDiscoveryAnswerArtifactMetadata(
+    discoveryAnswer,
+  )
+    ? discoveryAnswer
+    : null;
   const financeProofBundle = isFinanceProofBundle(proofBundle);
+  const policySourceScope =
+    financeDiscoveryAnswer?.policySourceScope ??
+    proofBundle.policySourceScope ??
+    null;
 
   return (
     <div className="mission-grid">
@@ -72,10 +83,10 @@ export function MissionCard({
                 </dd>
               </div>
               {financeDiscoveryQuestion.questionKind === "policy_lookup" ? (
-                <div>
-                  <dt>Policy source</dt>
-                  <dd>{financeDiscoveryQuestion.policySourceId}</dd>
-                </div>
+                <PolicySourceScopeFields
+                  fallbackPolicySourceId={financeDiscoveryQuestion.policySourceId}
+                  scope={policySourceScope}
+                />
               ) : null}
             </>
           ) : (
@@ -209,10 +220,10 @@ export function MissionCard({
               </div>
               {proofBundle.questionKind === "policy_lookup" ||
               proofBundle.policySourceId ? (
-                <div>
-                  <dt>Policy source</dt>
-                  <dd>{proofBundle.policySourceId ?? "Not recorded yet."}</dd>
-                </div>
+                <PolicySourceScopeFields
+                  fallbackPolicySourceId={proofBundle.policySourceId}
+                  scope={proofBundle.policySourceScope}
+                />
               ) : null}
               <div>
                 <dt>Freshness</dt>

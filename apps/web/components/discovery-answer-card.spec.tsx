@@ -70,6 +70,7 @@ describe("DiscoveryAnswerCard", () => {
           companyKey: "acme",
           questionKind: "payables_pressure",
           policySourceId: null,
+          policySourceScope: null,
           answerSummary:
             "Stored payables pressure is available with limitations.",
           freshnessPosture: {
@@ -179,6 +180,14 @@ describe("DiscoveryAnswerCard", () => {
           companyKey: "acme",
           questionKind: "policy_lookup",
           policySourceId,
+          policySourceScope: {
+            policySourceId,
+            sourceName: "Travel and expense policy",
+            documentRole: "policy_document",
+            includeInCompile: true,
+            latestExtractStatus: "unsupported",
+            latestSnapshotVersion: 2,
+          },
           answerSummary:
             "Stored policy lookup is scoped to the requested policy source.",
           freshnessPosture: {
@@ -266,6 +275,11 @@ describe("DiscoveryAnswerCard", () => {
 
     expect(html).toContain("Policy source");
     expect(html).toContain(policySourceId);
+    expect(html).toContain("Travel and expense policy");
+    expect(html).toContain("Policy Document");
+    expect(html).toContain("Yes");
+    expect(html).toContain("Unsupported");
+    expect(html).toContain("v2");
     expect(html).toContain(
       `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
     );

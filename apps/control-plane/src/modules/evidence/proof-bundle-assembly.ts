@@ -177,6 +177,7 @@ export function assembleProofBundleManifest(input: {
     companyKey: facts.companyKey,
     questionKind: facts.questionKind,
     policySourceId: facts.policySourceId,
+    policySourceScope: facts.policySourceScope,
     answerSummary: facts.discoveryAnswerSummary ?? "",
     freshnessState: facts.freshnessState,
     freshnessSummary: facts.freshnessSummary ?? "",

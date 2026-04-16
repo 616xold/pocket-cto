@@ -41,6 +41,7 @@ export function proofBundlePlaceholderFixture(
     companyKey: null,
     questionKind: null,
     policySourceId: null,
+    policySourceScope: null,
     answerSummary: "",
     freshnessState: null,
     freshnessSummary: "",

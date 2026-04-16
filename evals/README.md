@@ -53,6 +53,7 @@ During F4C2 and later finance-discovery hardening:
 
 - keep `policy_lookup` eval prompts explicitly source-scoped and grounded in stored deterministic policy pages plus extract status
 - do not grade generic corpus-wide semantic policy search as if it already exists
+- use the deterministic `pnpm smoke:finance-discovery-quality:local` ladder as the current practical quality proof for the shipped F4 baseline while broader eval-hook continuation remains later work
 - add later discovery families only when the repo can already ground them deterministically
 
 Do not treat these as early F4 supported families:

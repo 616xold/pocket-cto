@@ -5,6 +5,7 @@ import type {
   CfoWikiPageKey,
   DiscoveryAnswerArtifactMetadata,
   DiscoveryMissionQuestion,
+  FinancePolicySourceScopeSummary,
   MissionRecord,
   MissionTaskRecord,
   ProofBundleArtifactSummary,
@@ -48,6 +49,7 @@ export type ProofBundleAssemblyFacts = {
   pullRequestNumber: number | null;
   pullRequestUrl: string | null;
   policySourceId: string | null;
+  policySourceScope: FinancePolicySourceScopeSummary | null;
   questionKind: ProofBundleManifest["questionKind"];
   relatedRoutePaths: string[];
   relatedWikiPageKeys: CfoWikiPageKey[];
@@ -181,6 +183,10 @@ export function deriveProofBundleAssemblyFacts(input: {
         : null) ??
       input.existingBundle?.policySourceId ??
       null,
+    policySourceScope:
+      readFinancePolicySourceScope(discoveryAnswerMetadata) ??
+      input.existingBundle?.policySourceScope ??
+      null,
     questionKind:
       discoveryAnswerMetadata?.questionKind ??
       discoveryQuestion?.questionKind ??
@@ -289,6 +295,61 @@ function summarizeLimitations(limitations: string[]) {
   }
 
   return `${normalized[0]} ${normalized.length - 1} additional limitation${normalized.length === 2 ? "" : "s"} remain visible.`;
+}
+
+function readFinancePolicySourceScope(
+  metadata: DiscoveryAnswerArtifactMetadata | null,
+): FinancePolicySourceScopeSummary | null {
+  if (!isFinanceDiscoveryAnswerMetadata(metadata)) {
+    return null;
+  }
+
+  if (metadata.policySourceScope) {
+    return metadata.policySourceScope;
+  }
+
+  if (metadata.policySourceId === null) {
+    return null;
+  }
+
+  const boundSource = metadata.structuredData.boundSource;
+
+  if (
+    typeof boundSource !== "object" ||
+    boundSource === null ||
+    Array.isArray(boundSource)
+  ) {
+    return null;
+  }
+
+  const boundSourceRecord = boundSource as Record<string, unknown>;
+  const sourceName = readMetadataString(boundSourceRecord, "sourceName");
+  const documentRole = readMetadataString(boundSourceRecord, "documentRole");
+  const includeInCompile = readMetadataBoolean(
+    boundSourceRecord,
+    "includeInCompile",
+  );
+  const latestExtractStatus = readMetadataString(
+    boundSourceRecord,
+    "latestExtractStatus",
+  );
+  const latestSnapshotVersion = readMetadataPositiveInt(
+    boundSourceRecord,
+    "latestSnapshotVersion",
+  );
+
+  return {
+    policySourceId: metadata.policySourceId,
+    sourceName,
+    documentRole:
+      documentRole === null ? null : (documentRole as FinancePolicySourceScopeSummary["documentRole"]),
+    includeInCompile,
+    latestExtractStatus:
+      latestExtractStatus === null
+        ? null
+        : (latestExtractStatus as FinancePolicySourceScopeSummary["latestExtractStatus"]),
+    latestSnapshotVersion,
+  };
 }
 
 function readLatestApproval(
@@ -502,6 +563,14 @@ function readMetadataPositiveInt(
   }
 
   return null;
+}
+
+function readMetadataBoolean(
+  metadata: Record<string, unknown> | undefined,
+  key: string,
+) {
+  const value = metadata?.[key];
+  return typeof value === "boolean" ? value : null;
 }
 
 function readMetadataUrl(

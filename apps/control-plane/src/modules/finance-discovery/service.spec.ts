@@ -594,6 +594,14 @@ describe("FinanceDiscoveryService", () => {
 
     expect(answer.questionKind).toBe("policy_lookup");
     expect(answer.policySourceId).toBe(policySourceId);
+    expect(answer.policySourceScope).toMatchObject({
+      policySourceId,
+      sourceName: "Travel and expense policy",
+      documentRole: "policy_document",
+      includeInCompile: true,
+      latestExtractStatus: "extracted",
+      latestSnapshotVersion: 2,
+    });
     expect(answer.answerSummary).toContain(
       `Stored policy lookup for acme is scoped to policy source ${policySourceId}.`,
     );
@@ -687,6 +695,13 @@ describe("FinanceDiscoveryService", () => {
 
       expect(answer.questionKind).toBe("policy_lookup");
       expect(answer.policySourceId).toBe(policySourceId);
+      expect(answer.policySourceScope).toMatchObject({
+        policySourceId,
+        sourceName: "Travel and expense policy",
+        documentRole: "policy_document",
+        includeInCompile: true,
+        latestSnapshotVersion: 2,
+      });
       expect(answer.freshnessPosture.state).toBe(expectedFreshnessState);
       expect(answer.answerSummary).toContain("is limited");
       expect(answer.relatedRoutes.map((route) => route.routePath)).toContain(

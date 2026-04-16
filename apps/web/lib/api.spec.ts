@@ -122,6 +122,62 @@ describe("web api module", () => {
     );
   });
 
+  it("reads the company bound-source list for policy selector loading", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      async json() {
+        return {
+          companyId: "11111111-1111-4111-8111-111111111111",
+          companyKey: "acme",
+          companyDisplayName: "Acme",
+          sourceCount: 1,
+          limitations: [],
+          sources: [
+            {
+              binding: {
+                id: "22222222-2222-4222-8222-222222222222",
+                companyId: "11111111-1111-4111-8111-111111111111",
+                sourceId: "33333333-3333-4333-8333-333333333333",
+                includeInCompile: true,
+                documentRole: "policy_document",
+                boundBy: "operator",
+                createdAt: "2026-04-16T12:00:00.000Z",
+                updatedAt: "2026-04-16T12:00:00.000Z",
+              },
+              source: {
+                id: "33333333-3333-4333-8333-333333333333",
+                kind: "document",
+                name: "Travel and expense policy",
+                description: "Policy document",
+                originKind: "manual",
+                createdBy: "operator",
+                createdAt: "2026-04-16T12:00:00.000Z",
+                updatedAt: "2026-04-16T12:00:00.000Z",
+              },
+              latestSnapshot: null,
+              latestSourceFile: null,
+              latestExtract: null,
+              limitations: [],
+            },
+          ],
+        };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const sources = await mod.getCfoWikiCompanySourceList("acme");
+
+    expect(sources?.companyKey).toBe("acme");
+    expect(sources?.sources[0]?.binding.documentRole).toBe("policy_document");
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/cfo-wiki/companies/acme/sources`,
+      {
+        cache: "no-store",
+      },
+    );
+  });
+
   it("parses the GitHub issue intake route", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

@@ -23,6 +23,7 @@ describe("MissionListCard", () => {
           objectiveExcerpt: "Ship passkeys without breaking email login.",
           pendingApprovalCount: 1,
           policySourceId: null,
+          policySourceScope: null,
           primaryRepo: "web",
           proofBundleStatus: "incomplete",
           pullRequestNumber: 19,
@@ -66,6 +67,7 @@ describe("MissionListCard", () => {
             "Answer the stored payables pressure question for acme.",
           pendingApprovalCount: 0,
           policySourceId: null,
+          policySourceScope: null,
           primaryRepo: null,
           proofBundleStatus: "ready",
           pullRequestNumber: null,
@@ -112,6 +114,14 @@ describe("MissionListCard", () => {
             "Answer the stored policy lookup question for acme from scoped policy source only.",
           pendingApprovalCount: 0,
           policySourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          policySourceScope: {
+            policySourceId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            sourceName: "Travel and expense policy",
+            documentRole: "policy_document",
+            includeInCompile: true,
+            latestExtractStatus: null,
+            latestSnapshotVersion: 2,
+          },
           primaryRepo: null,
           proofBundleStatus: "ready",
           pullRequestNumber: null,
@@ -129,7 +139,10 @@ describe("MissionListCard", () => {
     expect(html).toContain("Policy lookup");
     expect(html).toContain("Policy source");
     expect(html).toContain("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    expect(html).toContain("Travel and expense policy");
+    expect(html).toContain("Policy Document");
     expect(html).toContain("Missing");
+    expect(html).toContain("v2");
     expect(html).toContain("proof ready");
   });
 });

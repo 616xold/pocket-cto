@@ -38,11 +38,12 @@ describe("DiscoveryMissionIntakeForm", () => {
       <DiscoveryMissionIntakeForm initialQuestionKind="policy_lookup" />,
     );
 
-    expect(html).toContain("Policy source id");
-    expect(html).toContain("00000000-0000-0000-0000-000000000000");
+    expect(html).toContain("Policy source");
+    expect(html).toContain("Enter a company key to load bound policy documents");
     expect(html).toContain(
       "Which scoped policy page should I review from stored state, and what limitations or extract gaps remain visible?",
     );
     expect(html).toContain("policy_document");
+    expect(html).toContain("policySourceId");
   });
 });

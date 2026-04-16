@@ -5,6 +5,7 @@ import { ProofBundleStatusSchema } from "./proof-bundle";
 import {
   DiscoveryQuestionKindSchema,
   FinanceDiscoveryFreshnessStateSchema,
+  FinancePolicySourceScopeSummarySchema,
 } from "./discovery-mission";
 import { FinanceCompanyKeySchema } from "./finance-twin";
 
@@ -23,6 +24,9 @@ export const MissionListItemSchema = z.object({
   companyKey: FinanceCompanyKeySchema.nullable().default(null),
   questionKind: DiscoveryQuestionKindSchema.nullable().default(null),
   policySourceId: z.string().uuid().nullable().default(null),
+  policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
+    null,
+  ),
   answerSummary: z.string().nullable().default(null),
   freshnessState: FinanceDiscoveryFreshnessStateSchema.nullable().default(null),
   status: MissionStatusSchema,

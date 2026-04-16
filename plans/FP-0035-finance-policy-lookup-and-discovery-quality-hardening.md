@@ -18,7 +18,9 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 - [x] 2026-04-15T22:34:18Z Preflight the clean `codex/f4c1-finance-policy-lookup-local-v1` branch against fetched `origin/main`, reload the active docs and required repo skills, and confirm this existing `FP-0035` contract is sufficient for F4C1 without creating a new Finance Plan.
 - [x] 2026-04-15T23:12:41Z Implement `policy_lookup` as the only new F4C1 family through the existing mission engine, discovery bounded context, proof-bundle path, and operator read models. The shipped slice keeps the five F4A/F4B families unchanged, requires explicit `policySourceId` scope, persists truthful limited answers plus finance-ready proof bundles, adds the local `smoke:finance-policy-lookup:local` alias, and refreshes only the small doc set made stale by the landed code.
 - [x] 2026-04-16T11:56:00Z Apply a tiny post-merge truthfulness polish so this active F4 plan, the seeded benchmark framing, and the eval staging text all point at the shipped F4A through F4C1 baseline while leaving only F4C2 as remaining planned work.
-- [ ] Land F4C2 discovery-quality hardening and eval extension only after F4C1 proves which operator or evidence gaps are still real.
+- [x] 2026-04-16T12:24:00Z Preflight the clean `codex/f4c2-discovery-quality-hardening-local-v1` branch, reload the required repo skills plus the active-doc set, and confirm the narrowest truthful F4C2 slice is operator-safe policy-source selection, additive policy source-scope rendering hardening, and one deterministic packaged discovery-quality smoke.
+- [x] 2026-04-16T15:28:20Z Land the first real F4C2 slice: replace blind raw UUID policy selection with a deterministic `policy_document` picker, propagate one additive policy source-scope summary through answer/mission/proof surfaces, add the packaged `smoke:finance-discovery-quality:local` proof, refresh only the small stale doc set, and hold the line against new discovery families, generic retrieval, runtime-codex answering, vector search, OCR, deep-read, F5, and F6 expansion.
+- [x] 2026-04-16T16:37:00Z Tighten the F4C2 QA proof so `smoke:finance-discovery-quality:local` renders the mission-list card as well as discovery and mission detail surfaces, keeping the packaged smoke aligned with the shipped local-dev truthfulness claim without widening the slice.
 
 ## Surprises & Discoveries
 
@@ -42,6 +44,12 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 
 - Observation: the new packaged F4C1 smoke caught one real embedded-worker seam that focused unit batches did not exercise.
   Evidence: `pnpm smoke:finance-policy-lookup:local` initially failed with `this.requireCompany is not a function` because the policy-lookup discovery path passed `CfoWikiService` instance methods unbound; the final implementation now wraps those reads so the embedded worker preserves the wiki service context cleanly.
+
+- Observation: the current operator intake still requires a raw UUID paste for `policy_lookup`, even though the existing bound-source list route already exposes the exact deterministic data needed for a safe selector.
+  Evidence: `apps/web/components/discovery-mission-intake-form.tsx` still renders a freeform `policySourceId` text field, while `apps/control-plane/src/modules/wiki/routes.ts` and `service.ts` already expose `GET /cfo-wiki/companies/:companyKey/sources` with bound-source role, include-in-compile posture, latest extract status, and latest snapshot version.
+
+- Observation: the shipped F4C1 answer path already computes a richer bound-source summary than the operator surfaces currently show.
+  Evidence: `apps/control-plane/src/modules/finance-discovery/policy-lookup.ts` already records bound source name, role, include-in-compile posture, latest extract status, and latest snapshot version inside the policy answer structured data, while `apps/web/components/discovery-answer-card.tsx`, `mission-card.tsx`, and `mission-list-card.tsx` still largely display only the raw `policySourceId`.
 
 ## Decision Log
 
@@ -83,6 +91,15 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 
 - Decision: keep `FP-0035` as the active F4 plan record after merge, but rewrite any stale post-acceptance wording so only `F4C2` remains as planned work.
   Rationale: the repo truth now includes shipped F4C1 acceptance, so the plan chain should no longer imply that unchecked F4C1 implementation still remains.
+
+- Decision: implement F4C2 operator hardening by propagating one additive typed policy-source-scope summary through discovery answers, proof bundles, and mission list read models instead of inventing a second rendering contract.
+  Rationale: the policy answer already owns the truthful bound-source evidence posture, and the narrowest safe hardening path is to reuse that deterministic summary across the operator surfaces.
+
+- Decision: keep policy-source selection deterministic and route-backed through the existing company bound-source list, filtered to explicit `policy_document` bindings only.
+  Rationale: this removes blind UUID entry without replacing the required `policySourceId` contract with fuzzy search or generic retrieval.
+
+- Decision: package F4C2 quality proof as one deterministic smoke that specifically validates the six shipped discovery families, human-readable freshness labels, visible limitations, route/wiki evidence links, and source-scoped policy proof-bundle posture.
+  Rationale: the current practical finance quality proof is the deterministic smoke ladder, not the older planner/executor/compiler eval naming.
 
 ## Context and Orientation
 
@@ -229,11 +246,26 @@ The limitation posture for `policy_lookup` must always remain explicit. At minim
    - render the scoped policy source, related wiki pages, extract-status limitations, and limited-answer posture clearly
    - stay deterministic and read-only, with no chat-like freeform answer UI
 
-5. Reserve `F4C2` for later hardening only after F4C1 proves what still needs attention.
-   Expected F4C2 surfaces are:
-   - `docs/benchmarks/seeded-missions.md`
-   - `evals/README.md`
-   - the existing finance smoke and eval hooks those docs point at
+5. Implement the narrow F4C2 hardening pass in:
+   - `packages/domain/src/discovery-mission.ts`
+   - `packages/domain/src/proof-bundle.ts`
+   - `packages/domain/src/mission-detail.ts`
+   - `packages/domain/src/mission-list.ts`
+   - `packages/domain/src/index.ts`
+   - `apps/control-plane/src/modules/finance-discovery/**`
+   - `apps/control-plane/src/modules/missions/**`
+   - `apps/control-plane/src/modules/evidence/**`
+   - `apps/web/components/**`
+   - `apps/web/lib/api.ts`
+   - `package.json`
+   - `tools/finance-discovery-quality-hardening-smoke.mjs`
+
+   F4C2 should:
+   - keep the six shipped discovery families exactly unchanged
+   - preserve explicit `policySourceId` submission while replacing blind raw-UUID entry with a deterministic `policy_document` selector
+   - surface an additive policy source-scope summary wherever a policy answer, mission summary, mission detail, or proof bundle already exists
+   - add one packaged `pnpm smoke:finance-discovery-quality:local` alias without retargeting the broader eval framework
+   - refresh only the tiny active-doc set made stale by the landed smoke alias or source-scope presentation changes
 
 ## Validation and Acceptance
 
@@ -284,39 +316,58 @@ F4C1 implementation is now accepted on this branch after the required thread-lev
 - `pnpm test`
 - `pnpm ci:repro:current`
 
-Remaining planned work stays narrow:
+F4C2 implementation acceptance for this thread should run in this order:
 
-- `F4C2` only, for discovery-quality hardening and eval extension informed by the now-shipped `policy_lookup` slice
-   - `pnpm smoke:cfo-wiki-foundation:local`
-   - `pnpm smoke:cfo-wiki-document-pages:local`
-   - `pnpm smoke:cfo-wiki-lint-export:local`
-   - `pnpm smoke:cfo-wiki-concept-metric-policy:local`
-   - `pnpm smoke:finance-discovery-answer:local`
-   - `pnpm smoke:finance-discovery-supported-families:local`
-
-4. Run:
-   - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts`
+4. Run the narrow targeted tests you add or widen for:
+   - policy-source selector state and explicit `policy_document` filtering
+   - additive policy source-scope rendering in discovery answer, mission detail, mission card, mission list, and proof-bundle summary surfaces
+   - truthful policy proof-bundle summary propagation from stored answer metadata
+   - deterministic quality-smoke behavior for the six shipped finance discovery families
 
 5. Run:
+   - `pnpm --filter @pocket-cto/domain exec vitest run src/discovery-mission.spec.ts src/proof-bundle.spec.ts src/mission-detail.spec.ts src/mission-list.spec.ts`
+   - `zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/finance-discovery/**/*.spec.ts src/modules/missions/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/app.spec.ts"`
+   - `zsh -lc "cd apps/web && pnpm exec vitest run app/**/*.spec.ts* components/**/*.spec.ts* lib/api.spec.ts"`
+   - `pnpm smoke:finance-discovery-answer:local`
+   - `pnpm smoke:finance-discovery-supported-families:local`
+   - `pnpm smoke:finance-policy-lookup:local`
+   - `pnpm smoke:finance-discovery-quality:local`
+
+6. Run:
+   - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts`
+
+7. Run:
    - `pnpm lint`
    - `pnpm typecheck`
    - `pnpm test`
    - `pnpm ci:repro:current`
 
-6. Only after F4C1 is green, extend the seeded finance smokes and eval hooks in F4C2 and rerun the same ladder with the added policy-specific coverage.
+F4C2 acceptance is met only if all of the following are observable:
 
-F4C1 acceptance is met only if all of the following are observable:
+- `policy_lookup` mission submission still requires explicit `policySourceId`, but the operator can choose it from a deterministic `policy_document` source selector rather than blind raw UUID entry.
+- discovery answer, mission detail, mission card, mission list, and proof-bundle presentation all show an additive source-scope summary more informative than the raw id alone whenever that scoped metadata is truly available.
+- the packaged `pnpm smoke:finance-discovery-quality:local` proof covers the six shipped discovery families and specifically verifies human-readable freshness labels, visible limitations, route/wiki evidence links, explicit policy source scope, and truthful limited-answer behavior for unsupported policy extracts.
+- no generic retrieval, runtime-codex, vector search, OCR, PageIndex, QMD, MinerU, deep-read dependency, new Finance Twin extractor, F5, or F6 behavior is introduced.
 
-- `POST /missions/analysis` accepts `policy_lookup` only when `policySourceId` is supplied.
-- Each `policy_lookup` mission persists one deterministic source-scoped answer artifact and one finance-ready proof bundle.
-- The answer reads only from the scoped policy page, same-source source-digest history when useful, `concepts/policy-corpus` when useful, and bound-source extract status.
-- Missing, unsupported, or failed latest extracts produce truthful limited answers rather than fabricated digest content.
-- The operator surface makes the explicit policy source scope visible and does not imply generic semantic policy retrieval.
-- No runtime-codex, vector search, OCR, deep-read, new Finance Twin extractor, report compiler, F5, or F6 work is introduced.
+F4C2 implementation is now accepted on this branch after the required thread-level ladder ran green:
+
+- targeted domain, control-plane, and web F4C2 hardening tests for policy source selector state, answer/mission/proof scope rendering, and deterministic smoke behavior
+- `pnpm --filter @pocket-cto/domain exec vitest run src/discovery-mission.spec.ts src/proof-bundle.spec.ts src/mission-detail.spec.ts src/mission-list.spec.ts`
+- `zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/finance-discovery/**/*.spec.ts src/modules/missions/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/app.spec.ts"`
+- `zsh -lc "cd apps/web && pnpm exec vitest run app/**/*.spec.ts* components/**/*.spec.ts* lib/api.spec.ts"`
+- `pnpm smoke:finance-discovery-answer:local`
+- `pnpm smoke:finance-discovery-supported-families:local`
+- `pnpm smoke:finance-policy-lookup:local`
+- `pnpm smoke:finance-discovery-quality:local`
+- `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm ci:repro:current`
 
 ## Idempotence and Recovery
 
-F4C1 should stay additive and retry-safe. It should not mutate raw sources, rewrite stored document extracts, or silently rewrite wiki pages outside the normal compiler-owned path. If an implementation step fails, the safe retry path is to rerun the targeted tests and the existing confidence ladder, refresh the relevant stored wiki compile only when the source evidence actually changed, and preserve limited-answer posture rather than introducing a heuristic fallback. If the policy contract proves broader than expected, revert only the touched domain, finance-discovery, mission, evidence, web, and doc files from F4C1 rather than disturbing the shipped F4A/F4B baseline or the optional GitHub connector path.
+F4C2 should stay additive and retry-safe. It should not mutate raw sources, rewrite stored document extracts, or silently rewrite wiki pages outside the normal compiler-owned path. If an implementation step fails, the safe retry path is to rerun the targeted tests plus the packaged discovery smokes, refresh the relevant stored wiki compile only when the source evidence actually changed, and preserve limited-answer posture rather than introducing a heuristic fallback. If the hardening contract proves broader than expected, revert only the touched domain, finance-discovery, mission, evidence, web, smoke, and tiny doc files from F4C2 rather than disturbing the shipped F4A through F4C1 baseline or the optional GitHub connector path.
 
 ## Artifacts and Notes
 
@@ -325,8 +376,8 @@ Expected future artifacts from F4C are:
 - this active F4C Finance Plan kept current as implementation lands
 - one stored `discovery_answer` artifact per `policy_lookup` mission
 - one finance-ready proof bundle carrying source-scoped policy evidence posture
-- the smallest active-doc refresh needed if F4C1 implementation changes visible behavior
-- later F4C2 seeded-smoke and eval updates only after F4C1 proves the right hardening targets
+- one packaged `finance-discovery-quality-hardening` smoke proving the shipped six-family discovery baseline plus policy-source truthfulness
+- the smallest active-doc refresh needed if the F4C2 smoke alias or policy-source presentation changes visible behavior
 
 This planning thread itself should leave behind:
 
@@ -353,15 +404,14 @@ Dependencies and seams:
 - existing finance discovery route and mission engine seams
 - no new environment variables
 - no GitHub connector guard usage
-- no runtime-codex dependency in F4C1
+- no runtime-codex dependency in F4C1 or F4C2
 
 ## Outcomes & Retrospective
 
-This planning slice created the first real F4C execution contract and the follow-on handoff-doc polish now leaves the active-doc set pointing cleanly at that contract so a fresh Codex thread can implement F4C cleanly. The active contract now separates `F4C1` from `F4C2`, defines `policy_lookup` as the only new required F4C1 family, requires explicit `policySourceId` scope, and locks the first policy answer path to explicit `policy_document` bindings plus stored deterministic extracts only.
+This active plan now records a landed F4C2 slice rather than only a future contract. The repo still ships exactly six finance discovery families, `policy_lookup` remains explicitly source-scoped, operator intake now chooses policy sources from deterministic `policy_document` bindings, mission-facing answer and proof surfaces carry a richer additive scope summary than a raw UUID alone, and one packaged deterministic smoke now proves the shipped discovery-quality baseline. The contract still requires explicit `policySourceId` scope and still locks policy answers to explicit `policy_document` bindings plus stored deterministic extracts only.
 
-No runtime code, routes, schema changes, migrations, package scripts, smoke aliases, eval datasets, runtime-codex dependencies, vector search, OCR, PageIndex, QMD, MinerU, or deep-read work were added in this slice. F4A through F4C1 remain the shipped authoritative discovery baseline.
+No new finance discovery families, generic policy chat, corpus-wide retrieval, runtime-codex answer generation, vector search, embeddings, OCR, PageIndex, QMD, MinerU, deep-read dependencies, new Finance Twin extractors, F5 reporting, or F6 monitoring behavior were added in this slice. F4A through F4C2 are now the shipped authoritative discovery baseline.
 
 Remaining work:
 
-- execute `F4C2` discovery-quality hardening and eval extension in the next implementation thread against this same active plan
-- keep that follow-on work limited to seeded benchmark, eval, and answer-quality hardening that reflects the already-shipped F4A through F4C1 discovery baseline
+- if a later follow-on remains before F5, keep it limited to an eval-hook continuation that reuses the shipped deterministic discovery-quality smoke and does not widen discovery behavior

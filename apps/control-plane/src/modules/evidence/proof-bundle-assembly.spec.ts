@@ -511,6 +511,13 @@ describe("assembleProofBundleManifest", () => {
     expect(manifest.companyKey).toBe("acme");
     expect(manifest.questionKind).toBe("policy_lookup");
     expect(manifest.policySourceId).toBe(policySourceId);
+    expect(manifest.policySourceScope).toMatchObject({
+      sourceName: "Travel and expense policy",
+      documentRole: "policy_document",
+      includeInCompile: true,
+      latestExtractStatus: "extracted",
+      latestSnapshotVersion: 2,
+    });
     expect(manifest.relatedRoutePaths).toEqual([
       `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`policies/${policySourceId}`)}`,
       `/cfo-wiki/companies/acme/pages/${encodeURIComponent(`sources/${policySourceId}/snapshots/2`)}`,
@@ -725,6 +732,7 @@ function buildFinanceDiscoveryAnswerMetadata(
     summary: `Stored ${questionKind} is available with limitations.`,
     companyKey: "acme",
     questionKind,
+    policySourceScope: null,
     answerSummary: `Stored ${questionKind} is available with limitations.`,
     freshnessPosture: freshnessPosture ?? {
       state: "stale",
@@ -818,6 +826,14 @@ function buildPolicyLookupDiscoveryAnswerMetadata(policySourceId: string) {
     companyKey: "acme",
     questionKind: "policy_lookup",
     policySourceId,
+    policySourceScope: {
+      policySourceId,
+      sourceName: "Travel and expense policy",
+      documentRole: "policy_document",
+      includeInCompile: true,
+      latestExtractStatus: "extracted",
+      latestSnapshotVersion: 2,
+    },
     answerSummary: `Stored policy lookup for acme is scoped to policy source ${policySourceId}. Travel and expense policy sets explicit approval thresholds for higher-value spend.`,
     freshnessPosture: {
       state: "fresh" as const,

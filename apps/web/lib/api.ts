@@ -1,5 +1,6 @@
 import {
   ApprovalRecordSchema,
+  CfoWikiCompanySourceListViewSchema,
   CreateDiscoveryMissionInputSchema,
   CreateSourceInputSchema,
   GitHubIssueIntakeListViewSchema,
@@ -21,6 +22,7 @@ import {
 } from "@pocket-cto/domain";
 import type { ApprovalDecision, MissionSourceKind, MissionStatus } from "@pocket-cto/domain";
 import type {
+  CfoWikiCompanySourceListView,
   CreateDiscoveryMissionInput,
   CreateSourceInput,
   SourceDetailView,
@@ -50,6 +52,7 @@ const missionListSchema = MissionListViewSchema;
 type MissionList = z.output<typeof missionListSchema>;
 
 const sourceListSchema = SourceListViewSchema;
+const cfoWikiCompanySourceListSchema = CfoWikiCompanySourceListViewSchema;
 
 const sourceDetailSchema = SourceDetailViewSchema;
 
@@ -237,6 +240,21 @@ export async function getSourceList(input?: {
 
   const suffix = search.size > 0 ? `?${search.toString()}` : "";
   return fetchJson(`/sources${suffix}`, sourceListSchema);
+}
+
+export async function getCfoWikiCompanySourceList(
+  companyKey: string,
+): Promise<CfoWikiCompanySourceListView | null> {
+  const normalizedCompanyKey = companyKey.trim();
+
+  if (!normalizedCompanyKey) {
+    return null;
+  }
+
+  return fetchJson(
+    `/cfo-wiki/companies/${encodeURIComponent(normalizedCompanyKey)}/sources`,
+    cfoWikiCompanySourceListSchema,
+  );
 }
 
 export async function getSourceDetail(

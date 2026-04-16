@@ -363,6 +363,7 @@ function summarizeMission(input: {
     answerSummary: input.proofBundle.answerSummary || null,
     freshnessState: input.proofBundle.freshnessState,
     policySourceId: input.proofBundle.policySourceId,
+    policySourceScope: input.proofBundle.policySourceScope,
     questionKind: input.proofBundle.questionKind,
     latestTask: latestTask
       ? {

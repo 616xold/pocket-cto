@@ -10,6 +10,7 @@ describe("Proof bundle domain schema", () => {
       companyKey: "acme",
       questionKind: "collections_pressure",
       policySourceId: null,
+      policySourceScope: null,
       answerSummary:
         "Stored collections pressure highlights overdue receivables buckets with visible limitations.",
       freshnessSummary:
@@ -81,6 +82,14 @@ describe("Proof bundle domain schema", () => {
       companyKey: "acme",
       questionKind: "policy_lookup",
       policySourceId: "22222222-2222-4222-8222-222222222222",
+      policySourceScope: {
+        policySourceId: "22222222-2222-4222-8222-222222222222",
+        sourceName: "Travel and expense policy",
+        documentRole: "policy_document",
+        includeInCompile: true,
+        latestExtractStatus: "failed",
+        latestSnapshotVersion: 2,
+      },
       answerSummary:
         "Stored policy lookup is limited by a failed deterministic extract.",
       freshnessState: "failed",
@@ -138,5 +147,6 @@ describe("Proof bundle domain schema", () => {
     expect(parsed.policySourceId).toBe(
       "22222222-2222-4222-8222-222222222222",
     );
+    expect(parsed.policySourceScope?.latestExtractStatus).toBe("failed");
   });
 });

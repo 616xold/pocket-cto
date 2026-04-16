@@ -98,6 +98,7 @@ describe("Discovery mission domain schemas", () => {
       summary: "Cash posture is available but limited by mixed as-of dates.",
       companyKey: "acme",
       questionKind: "cash_posture",
+      policySourceScope: null,
       answerSummary:
         "Stored bank summaries show USD and EUR cash buckets, with mixed as-of dates that should be reviewed before taking action.",
       freshnessPosture: {
@@ -152,6 +153,14 @@ describe("Discovery mission domain schemas", () => {
       companyKey: "acme",
       questionKind: "policy_lookup",
       policySourceId: "11111111-1111-4111-8111-111111111111",
+      policySourceScope: {
+        policySourceId: "11111111-1111-4111-8111-111111111111",
+        sourceName: "Travel and expense policy",
+        documentRole: "policy_document",
+        includeInCompile: true,
+        latestExtractStatus: "failed",
+        latestSnapshotVersion: 2,
+      },
       answerSummary:
         "Stored policy lookup for acme is scoped to policy source 11111111-1111-4111-8111-111111111111. The compiled policy page remains limited by a missing deterministic extract.",
       freshnessPosture: {
@@ -197,5 +206,6 @@ describe("Discovery mission domain schemas", () => {
     expect(parsed.policySourceId).toBe(
       "11111111-1111-4111-8111-111111111111",
     );
+    expect(parsed.policySourceScope?.sourceName).toBe("Travel and expense policy");
   });
 });

@@ -655,6 +655,7 @@ function createFinanceDiscoveryAnswer(): FinanceDiscoveryAnswerArtifactMetadata 
     companyKey: "acme",
     questionKind: "cash_posture",
     policySourceId: null,
+    policySourceScope: null,
     answerSummary:
       "Stored cash posture for acme covers 4 bank accounts across 2 currency buckets: USD statement or ledger 1200.00, available 1400.00, unspecified 250.00 (as of 2026-04-10 to 2026-04-11). 1 additional currency bucket is also present.",
     freshnessPosture: {
@@ -708,6 +709,14 @@ function createPolicyLookupDiscoveryAnswer(
     companyKey: "acme",
     questionKind: "policy_lookup",
     policySourceId,
+    policySourceScope: {
+      policySourceId,
+      sourceName: "Travel and expense policy",
+      documentRole: "policy_document",
+      includeInCompile: true,
+      latestExtractStatus: "extracted",
+      latestSnapshotVersion: 2,
+    },
     answerSummary: `Stored policy lookup for acme is scoped to policy source ${policySourceId}. Travel and expense policy sets explicit approval thresholds for higher-value spend.`,
     freshnessPosture: {
       state: "fresh",

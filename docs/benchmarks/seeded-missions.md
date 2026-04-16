@@ -88,3 +88,4 @@ Each seeded mission should be graded on:
 
 During the early pivot, the repo may still carry legacy engineering eval commands.
 Keep the eval harness architecture, but replace the scenarios and rubrics with finance-oriented datasets as F4/F5 land.
+The current packaged proof for the shipped F4A through F4C2 discovery baseline is the deterministic `pnpm smoke:finance-discovery-quality:local` ladder rather than a model-scored runtime eval.

@@ -6,6 +6,7 @@ import type {
   FinanceDiscoveryAnswerArtifactMetadata,
   FinanceDiscoveryEvidenceSection,
   FinanceDiscoveryFreshnessPosture,
+  FinancePolicySourceScopeSummary,
   FinanceDiscoveryRelatedRoute,
   FinanceDiscoveryRelatedWikiPage,
   FinancePolicyLookupQuestion,
@@ -127,6 +128,7 @@ export async function answerPolicyLookupQuestion(input: {
     question: input.question,
     sourceResolution,
   });
+  const policySourceScope = buildPolicySourceScopeSummary(boundSource);
 
   return FinancePolicyLookupAnswerArtifactMetadataSchema.parse({
     source: "stored_finance_twin_and_cfo_wiki",
@@ -134,6 +136,7 @@ export async function answerPolicyLookupQuestion(input: {
     companyKey: input.question.companyKey,
     questionKind: input.question.questionKind,
     policySourceId: input.question.policySourceId,
+    policySourceScope,
     answerSummary,
     freshnessPosture,
     limitations,
@@ -172,6 +175,7 @@ export async function answerPolicyLookupQuestion(input: {
       freshnessPosture,
       missingWikiPages,
       operatorPrompt: input.question.operatorPrompt ?? null,
+      policySourceScope,
       policySourceId: input.question.policySourceId,
       questionKind: input.question.questionKind,
       sourceResolution: sourceResolution.status,
@@ -206,6 +210,23 @@ export function resolvePolicyLookupSource(
   return {
     status: "ok",
     source,
+  };
+}
+
+function buildPolicySourceScopeSummary(
+  boundSource: CfoWikiBoundSourceSummary | null,
+): FinancePolicySourceScopeSummary | null {
+  if (boundSource === null) {
+    return null;
+  }
+
+  return {
+    policySourceId: boundSource.source.id,
+    sourceName: boundSource.source.name,
+    documentRole: boundSource.binding.documentRole,
+    includeInCompile: boundSource.binding.includeInCompile,
+    latestExtractStatus: boundSource.latestExtract?.extractStatus ?? null,
+    latestSnapshotVersion: boundSource.latestSnapshot?.version ?? null,
   };
 }
 

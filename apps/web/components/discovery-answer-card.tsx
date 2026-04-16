@@ -11,6 +11,7 @@ import {
   isFinanceDiscoveryQuestion,
   readFinanceDiscoveryQuestionKindLabel,
 } from "@pocket-cto/domain";
+import { PolicySourceScopeFields } from "./policy-source-scope-fields";
 import { readFreshnessLabel } from "./freshness-label";
 import { StatusPill } from "./status-pill";
 
@@ -61,6 +62,7 @@ function FinanceDiscoveryAnswerCard(input: {
     (question?.questionKind === "policy_lookup"
       ? question.policySourceId
       : null);
+  const policySourceScope = answer?.policySourceScope ?? null;
   const questionKindLabel = questionKind
     ? readFinanceDiscoveryQuestionKindLabel(questionKind)
     : null;
@@ -105,10 +107,10 @@ function FinanceDiscoveryAnswerCard(input: {
           <dd>{questionKindLabel ?? "Not recorded yet."}</dd>
         </div>
         {questionKind === "policy_lookup" || policySourceId ? (
-          <div>
-            <dt>Policy source</dt>
-            <dd>{policySourceId ?? "Not recorded yet."}</dd>
-          </div>
+          <PolicySourceScopeFields
+            fallbackPolicySourceId={policySourceId}
+            scope={policySourceScope}
+          />
         ) : null}
         <div>
           <dt>Freshness</dt>

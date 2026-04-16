@@ -3,6 +3,7 @@ import { ApprovalKindSchema, ApprovalStatusSchema } from "./approval";
 import { CfoWikiPageKeySchema } from "./cfo-wiki";
 import {
   DiscoveryQuestionKindSchema,
+  FinancePolicySourceScopeSummarySchema,
   FinanceDiscoveryFreshnessStateSchema,
 } from "./discovery-mission";
 import {
@@ -90,6 +91,9 @@ export const ProofBundleManifestSchema = z.object({
   companyKey: FinanceCompanyKeySchema.nullable().default(null),
   questionKind: DiscoveryQuestionKindSchema.nullable().default(null),
   policySourceId: z.string().uuid().nullable().default(null),
+  policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
+    null,
+  ),
   answerSummary: z.string().default(""),
   freshnessState: FinanceDiscoveryFreshnessStateSchema.nullable().default(null),
   freshnessSummary: z.string().default(""),

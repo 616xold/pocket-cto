@@ -62,6 +62,7 @@ describe("Mission detail domain schema", () => {
         companyKey: "acme",
         questionKind: "obligation_calendar_review",
         policySourceId: null,
+        policySourceScope: null,
         answerSummary: "Stored obligation calendar review is available with limitations.",
         freshnessSummary: "Contract metadata coverage is stale.",
         limitationsSummary:
@@ -114,6 +115,7 @@ describe("Mission detail domain schema", () => {
         summary: "Stored obligation calendar review is available with limitations.",
         companyKey: "acme",
         questionKind: "obligation_calendar_review",
+        policySourceScope: null,
         answerSummary: "Stored obligation calendar review is available with limitations.",
         freshnessPosture: {
           state: "stale",
@@ -220,6 +222,14 @@ describe("Mission detail domain schema", () => {
         companyKey: "acme",
         questionKind: "policy_lookup",
         policySourceId: "22222222-2222-4222-8222-222222222222",
+        policySourceScope: {
+          policySourceId: "22222222-2222-4222-8222-222222222222",
+          sourceName: "Travel and expense policy",
+          documentRole: "policy_document",
+          includeInCompile: true,
+          latestExtractStatus: null,
+          latestSnapshotVersion: 2,
+        },
         answerSummary:
           "Stored policy lookup is limited by a missing deterministic extract.",
         freshnessState: "missing",
@@ -278,6 +288,14 @@ describe("Mission detail domain schema", () => {
         companyKey: "acme",
         questionKind: "policy_lookup",
         policySourceId: "22222222-2222-4222-8222-222222222222",
+        policySourceScope: {
+          policySourceId: "22222222-2222-4222-8222-222222222222",
+          sourceName: "Travel and expense policy",
+          documentRole: "policy_document",
+          includeInCompile: true,
+          latestExtractStatus: null,
+          latestSnapshotVersion: 2,
+        },
         answerSummary:
           "Stored policy lookup is limited by a missing deterministic extract.",
         freshnessPosture: {
@@ -328,5 +346,8 @@ describe("Mission detail domain schema", () => {
       "22222222-2222-4222-8222-222222222222",
     );
     expect(parsed.discoveryAnswer?.questionKind).toBe("policy_lookup");
+    expect(parsed.proofBundle.policySourceScope?.sourceName).toBe(
+      "Travel and expense policy",
+    );
   });
 });

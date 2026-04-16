@@ -139,6 +139,7 @@ function buildDemoMissionDetail(): MissionDetailView {
       companyKey: null,
       questionKind: null,
       policySourceId: null,
+      policySourceScope: null,
       answerSummary: "",
       freshnessState: null,
       freshnessSummary: "",
