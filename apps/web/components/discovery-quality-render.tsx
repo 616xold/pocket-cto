@@ -1,8 +1,9 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { MissionDetailView } from "@pocket-cto/domain";
+import type { MissionDetailView, MissionListItem } from "@pocket-cto/domain";
 import { DiscoveryAnswerCard } from "./discovery-answer-card";
 import { MissionCard } from "./mission-card";
+import { MissionListCard } from "./mission-list-card";
 
 type MissionCardRenderInput = Pick<
   MissionDetailView,
@@ -26,4 +27,10 @@ export function renderDiscoveryAnswerCardMarkup(input: {
 
 export function renderMissionCardMarkup(input: MissionCardRenderInput) {
   return renderToStaticMarkup(<MissionCard {...input} />);
+}
+
+export function renderMissionListCardMarkup(input: {
+  mission: MissionListItem;
+}) {
+  return renderToStaticMarkup(<MissionListCard mission={input.mission} />);
 }

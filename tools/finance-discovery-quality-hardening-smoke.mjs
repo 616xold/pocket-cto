@@ -8,6 +8,7 @@ import { createEmbeddedWorkerContainer } from "../apps/control-plane/src/bootstr
 import {
   renderDiscoveryAnswerCardMarkup,
   renderMissionCardMarkup,
+  renderMissionListCardMarkup,
 } from "../apps/web/components/discovery-quality-render.tsx";
 import { closeAllPools } from "../packages/db/src/client.ts";
 import { buildRunTag, loadNearestEnvFile, wait } from "./m2-exit-utils.mjs";
@@ -698,9 +699,17 @@ function assertStoredStateMissionResult(input) {
     proofBundle: input.detail.proofBundle,
     tasks: input.detail.tasks,
   });
+  const missionListMarkup = renderMissionListCardMarkup({
+    mission: input.listItem,
+  });
 
   assertHumanFreshnessLabel(discoveryMarkup, answer.freshnessPosture.state, input.expected.questionKind);
   assertHumanFreshnessLabel(missionMarkup, input.detail.proofBundle.freshnessState, input.expected.questionKind);
+  assertHumanFreshnessLabel(
+    missionListMarkup,
+    input.listItem.freshnessState,
+    `${input.expected.questionKind} mission list`,
+  );
   assert(
     discoveryMarkup.includes("Limitations"),
     `Expected ${input.expected.questionKind} discovery card to render visible limitations.`,
@@ -784,7 +793,10 @@ function assertPolicyMissionResult(input) {
     proofBundle: input.detail.proofBundle,
     tasks: input.detail.tasks,
   });
-  for (const markup of [discoveryMarkup, missionMarkup]) {
+  const missionListMarkup = renderMissionListCardMarkup({
+    mission: input.listItem,
+  });
+  for (const markup of [discoveryMarkup, missionMarkup, missionListMarkup]) {
     assert(markup.includes(input.expectedSourceId), "Expected rendered policy scope to keep the source id visible.");
     assert(markup.includes(input.sourceName), "Expected rendered policy scope to keep the source name visible.");
     assert(markup.includes("Policy Document"), "Expected rendered policy scope to humanize the document role.");
@@ -799,6 +811,11 @@ function assertPolicyMissionResult(input) {
 
   assertHumanFreshnessLabel(discoveryMarkup, answer.freshnessPosture.state, "policy_lookup");
   assertHumanFreshnessLabel(missionMarkup, input.detail.proofBundle.freshnessState, "policy_lookup");
+  assertHumanFreshnessLabel(
+    missionListMarkup,
+    input.listItem.freshnessState,
+    "policy_lookup mission list",
+  );
 
   return {
     answerSummary: answer.answerSummary,

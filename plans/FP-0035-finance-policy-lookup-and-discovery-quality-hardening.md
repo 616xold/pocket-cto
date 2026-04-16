@@ -20,6 +20,7 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 - [x] 2026-04-16T11:56:00Z Apply a tiny post-merge truthfulness polish so this active F4 plan, the seeded benchmark framing, and the eval staging text all point at the shipped F4A through F4C1 baseline while leaving only F4C2 as remaining planned work.
 - [x] 2026-04-16T12:24:00Z Preflight the clean `codex/f4c2-discovery-quality-hardening-local-v1` branch, reload the required repo skills plus the active-doc set, and confirm the narrowest truthful F4C2 slice is operator-safe policy-source selection, additive policy source-scope rendering hardening, and one deterministic packaged discovery-quality smoke.
 - [x] 2026-04-16T15:28:20Z Land the first real F4C2 slice: replace blind raw UUID policy selection with a deterministic `policy_document` picker, propagate one additive policy source-scope summary through answer/mission/proof surfaces, add the packaged `smoke:finance-discovery-quality:local` proof, refresh only the small stale doc set, and hold the line against new discovery families, generic retrieval, runtime-codex answering, vector search, OCR, deep-read, F5, and F6 expansion.
+- [x] 2026-04-16T16:37:00Z Tighten the F4C2 QA proof so `smoke:finance-discovery-quality:local` renders the mission-list card as well as discovery and mission detail surfaces, keeping the packaged smoke aligned with the shipped local-dev truthfulness claim without widening the slice.
 
 ## Surprises & Discoveries
 
