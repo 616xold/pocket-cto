@@ -88,6 +88,7 @@ function parseArgs(argv) {
     companyKey: DEFAULT_COMPANY_KEY,
     companyName: DEFAULT_COMPANY_NAME,
     createdBy: DEFAULT_CREATED_BY,
+    json: false,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -98,6 +99,12 @@ function parseArgs(argv) {
     }
 
     const [rawFlag, inlineValue] = entry.slice(2).split("=", 2);
+
+    if (rawFlag === "json" && inlineValue === undefined) {
+      options.json = true;
+      continue;
+    }
+
     const value = inlineValue ?? argv[index + 1];
 
     if (inlineValue === undefined) {
@@ -117,6 +124,9 @@ function parseArgs(argv) {
         break;
       case "created-by":
         options.createdBy = value;
+        break;
+      case "json":
+        options.json = value !== "false";
         break;
       default:
         throw new Error(`Unexpected argument: --${rawFlag}`);
@@ -471,36 +481,31 @@ async function main() {
       unsupported: true,
     });
 
-    console.log(
-      JSON.stringify(
-        {
-          generatedAt: new Date().toISOString(),
-          company: {
-            companyKey: fixture.companyKey,
-            displayName: fixture.companyName,
-          },
-          sourceRuns,
-          wikiCompile: {
-            compileRunId: wikiCompile.compileRun.id,
-            status: wikiCompile.compileRun.status,
-            changedPageKeys: wikiCompile.changedPageKeys,
-          },
-          companySources: companySources.sources.map((entry) => ({
-            sourceId: entry.source.id,
-            sourceName: entry.source.name,
-            documentRole: entry.binding.documentRole,
-            includeInCompile: entry.binding.includeInCompile,
-            latestExtractStatus: entry.latestExtract?.extractStatus ?? null,
-            latestSnapshotVersion: entry.latestSnapshot?.version ?? null,
-          })),
-          storedStateResults,
-          supportedPolicyResult,
-          unsupportedPolicyResult,
-        },
-        null,
-        2,
-      ),
-    );
+    const smokeSummary = buildSmokeSummary({
+      companyKey: fixture.companyKey,
+      companyName: fixture.companyName,
+      companySources: companySources.sources.map((entry) => ({
+        sourceId: entry.source.id,
+        sourceName: entry.source.name,
+        documentRole: entry.binding.documentRole,
+        includeInCompile: entry.binding.includeInCompile,
+        latestExtractStatus: entry.latestExtract?.extractStatus ?? null,
+        latestSnapshotVersion: entry.latestSnapshot?.version ?? null,
+      })),
+      generatedAt: new Date().toISOString(),
+      runTag: fixture.runTag,
+      sourceRuns,
+      storedStateResults,
+      supportedPolicyResult,
+      unsupportedPolicyResult,
+      wikiCompile: {
+        compileRunId: wikiCompile.compileRun.id,
+        status: wikiCompile.compileRun.status,
+        changedPageKeys: wikiCompile.changedPageKeys,
+      },
+    });
+
+    process.stdout.write(renderSmokeSummary(smokeSummary, options.json));
   } finally {
     if (app) {
       await app.close();
@@ -717,10 +722,58 @@ function assertStoredStateMissionResult(input) {
 
   return {
     answerSummary: answer.answerSummary,
+    assertions: [
+      buildPassedAssertion(
+        "answer_summary_mentions_expected_phrase",
+        `Answer summary mentions the shipped ${input.expected.questionKind} baseline.`,
+      ),
+      buildPassedAssertion(
+        "limitations_visible",
+        "Visible limitations stayed attached to the stored-state answer.",
+      ),
+      buildPassedAssertion(
+        "related_route_and_wiki_evidence_visible",
+        "Answer kept related route and wiki evidence links.",
+      ),
+      buildPassedAssertion(
+        "proof_bundle_ready",
+        "Proof bundle reached ready status.",
+      ),
+      buildPassedAssertion(
+        "proof_bundle_routes_and_wiki_pages_visible",
+        "Proof bundle kept related route and wiki evidence.",
+      ),
+      buildPassedAssertion(
+        "shipped_route_suffixes_present",
+        "Answer routes still include the shipped route coverage for this family.",
+      ),
+      buildPassedAssertion(
+        "shipped_related_wiki_pages_present",
+        "Answer wiki references still include the shipped family baseline.",
+      ),
+      buildPassedAssertion(
+        "discovery_card_human_freshness_label",
+        "Discovery answer card renders a human-readable freshness label.",
+      ),
+      buildPassedAssertion(
+        "mission_card_human_freshness_label",
+        "Mission detail card renders a human-readable freshness label.",
+      ),
+      buildPassedAssertion(
+        "mission_list_human_freshness_label",
+        "Mission list card renders a human-readable freshness label.",
+      ),
+      buildPassedAssertion(
+        "discovery_card_limitations_visible",
+        "Discovery answer card keeps the limitations section visible.",
+      ),
+    ],
+    caseLabel: input.expected.questionKind,
     freshness: answer.freshnessPosture,
     missionId: input.detail.mission.id,
     proofBundleStatus: input.detail.proofBundle.status,
     questionKind: input.expected.questionKind,
+    unsupported: false,
   };
 }
 
@@ -819,11 +872,119 @@ function assertPolicyMissionResult(input) {
 
   return {
     answerSummary: answer.answerSummary,
+    assertions: [
+      buildPassedAssertion(
+        "explicit_policy_source_scope_retained",
+        "Policy answer retained explicit source scope.",
+      ),
+      buildPassedAssertion(
+        "policy_source_name_visible",
+        "Policy source name stayed visible in the answer scope summary.",
+      ),
+      buildPassedAssertion(
+        "policy_document_scope_visible",
+        "Policy-document scope stayed explicit and compile-visible.",
+      ),
+      buildPassedAssertion(
+        "latest_snapshot_version_visible",
+        "Latest snapshot version stayed visible in the scope summary.",
+      ),
+      buildPassedAssertion(
+        "proof_bundle_scope_summary_matches_answer",
+        "Proof bundle scope summary matches the answer scope summary.",
+      ),
+      buildPassedAssertion(
+        "mission_list_scope_summary_matches_answer",
+        "Mission list scope summary matches the answer scope summary.",
+      ),
+      buildPassedAssertion(
+        "proof_bundle_routes_and_wiki_pages_visible",
+        "Policy proof bundle kept related route and wiki evidence.",
+      ),
+      buildPassedAssertion(
+        input.unsupported
+          ? "unsupported_extract_limitations_visible"
+          : "supported_extract_freshness_visible",
+        input.unsupported
+          ? "Unsupported policy extracts stay visible as limitations."
+          : "Supported policy extracts stay visibly fresh.",
+      ),
+      buildPassedAssertion(
+        "rendered_policy_scope_visible_across_surfaces",
+        "Policy scope remains visible across answer, mission, and list surfaces.",
+      ),
+      buildPassedAssertion(
+        "human_freshness_labels_visible_across_surfaces",
+        "Answer, mission, and list surfaces keep human-readable freshness labels.",
+      ),
+    ],
+    caseLabel: input.unsupported
+      ? "policy_lookup_unsupported_policy_document"
+      : "policy_lookup_supported_policy_document",
     freshness: answer.freshnessPosture,
     missionId: input.detail.mission.id,
     policySourceScope: input.detail.proofBundle.policySourceScope,
     proofBundleStatus: input.detail.proofBundle.status,
+    questionKind: "policy_lookup",
     unsupported: input.unsupported,
+  };
+}
+
+function buildSmokeSummary(input) {
+  const cases = [
+    ...input.storedStateResults,
+    input.supportedPolicyResult,
+    input.unsupportedPolicyResult,
+  ];
+  const totalAssertions = cases.reduce(
+    (sum, entry) => sum + entry.assertions.length,
+    0,
+  );
+  const passedAssertions = cases.reduce(
+    (sum, entry) =>
+      sum + entry.assertions.filter((assertion) => assertion.passed).length,
+    0,
+  );
+  const familiesCovered = Array.from(
+    new Set(cases.map((entry) => entry.questionKind)),
+  );
+
+  return {
+    schemaVersion: "finance-discovery-quality-smoke.v1",
+    generatedAt: input.generatedAt,
+    runTag: input.runTag,
+    company: {
+      companyKey: input.companyKey,
+      displayName: input.companyName,
+    },
+    sourceRuns: input.sourceRuns,
+    wikiCompile: input.wikiCompile,
+    companySources: input.companySources,
+    storedStateResults: input.storedStateResults,
+    supportedPolicyResult: input.supportedPolicyResult,
+    unsupportedPolicyResult: input.unsupportedPolicyResult,
+    cases,
+    familiesCovered,
+    assertionTotals: {
+      passed: passedAssertions,
+      total: totalAssertions,
+    },
+    allAssertionsPassed: passedAssertions === totalAssertions,
+    humanSummary: `Deterministic finance discovery quality smoke covered ${familiesCovered.length} shipped families across ${cases.length} smoke cases with ${passedAssertions}/${totalAssertions} assertions green.`,
+  };
+}
+
+function renderSmokeSummary(summary, json) {
+  return json
+    ? JSON.stringify(summary).concat("\n")
+    : JSON.stringify(summary, null, 2).concat("\n");
+}
+
+function buildPassedAssertion(id, label) {
+  return {
+    id,
+    label,
+    passed: true,
   };
 }
 
