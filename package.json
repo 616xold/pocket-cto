@@ -19,6 +19,7 @@
     "dev:web": "pnpm --filter @pocket-cto/web dev",
     "dev:worker": "pnpm --filter @pocket-cto/control-plane dev:worker",
     "eval:compare": "pnpm --filter @pocket-cto/control-plane eval:compare",
+    "eval:finance-discovery-quality": "pnpm --filter @pocket-cto/control-plane eval:finance-discovery-quality",
     "eval:doctor": "pnpm --filter @pocket-cto/control-plane eval:doctor",
     "eval:doctor:codex": "EVAL_BACKEND=codex_subscription pnpm --filter @pocket-cto/control-plane eval:doctor:codex",
     "eval:planner": "pnpm --filter @pocket-cto/control-plane eval:planner",

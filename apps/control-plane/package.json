@@ -12,6 +12,7 @@
     "dev:embedded": "CONTROL_PLANE_EMBEDDED_WORKER=true tsx watch src/server.ts",
     "dev:worker": "tsx watch src/worker.ts",
     "eval:compare": "tsx src/evals/compare.ts",
+    "eval:finance-discovery-quality": "tsx src/evals/finance-discovery-quality.ts",
     "eval:doctor": "tsx src/evals/doctor.ts",
     "eval:doctor:codex": "tsx src/evals/doctor-codex.ts",
     "eval:planner": "tsx src/evals/run.ts planner",

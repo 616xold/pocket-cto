@@ -1,6 +1,6 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, and through the shipped F4A through F4C2 finance-discovery baseline. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains active only because a possible narrow eval-hook continuation may still remain before F5.
+This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, and through the shipped F4A through F4C2 finance-discovery baseline. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` now serves as the shipped F4C record, including the narrow finance-native eval-hook closeout before F5 planning.
 
 That means two things are true at once:
 
@@ -53,6 +53,7 @@ pnpm smoke:finance-discovery-answer:local
 pnpm smoke:finance-discovery-supported-families:local
 pnpm smoke:finance-discovery-quality:local
 pnpm smoke:finance-policy-lookup:local
+pnpm eval:finance-discovery-quality
 ```
 
 ## Pivot-foundation baseline
@@ -122,11 +123,12 @@ Today, steps 1 through 5 exist in a narrow form:
 - F4C1 adds one deterministic source-scoped `policy_lookup` family that requires explicit `policySourceId`, answers only from the scoped policy page plus related bound-source extract posture, and persists truthful limited answers when the latest bound policy extract is missing, unsupported, or failed
 - the packaged `pnpm smoke:finance-policy-lookup:local` path proves one company can bind policy-document sources, compile scoped policy pages, run `POST /missions/analysis` for both extracted and unsupported `policy_lookup` missions, and read back deterministic source-scoped answers plus finance-ready proof bundles without runtime-codex, generic retrieval, OCR, or deep-read dependencies
 - the packaged `pnpm smoke:finance-discovery-quality:local` path proves the shipped six-family discovery baseline still renders human-readable freshness, visible limitations, route/wiki evidence, and additive policy source scope across stored answer, mission, list, and proof-bundle surfaces without widening into generic retrieval or runtime-codex
+- the finance-native `pnpm eval:finance-discovery-quality` path reuses that deterministic smoke to write a durable eval-style report under `evals/results/finance-discovery-quality/` with git provenance, covered families, per-case quality assertions, and no fake model/provider metadata
 - `POST /missions/discovery` may still exist as a deprecated finance-shaped alias for compatibility, but it is not a live repo-scoped engineering discovery create contract and legacy repo payloads should be treated as unsupported
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-If none exists, the next new major implementation phase should be F5 memo and packet compiler unless the active `FP-0035` contract still names a narrow eval-hook continuation before F5.
+If none exists, the next new major implementation phase should be F5 memo and packet compiler rather than another F4C2 continuation.
 Use the docs to guide what gets built next.
 
 The active finance-twin read surface is currently backend-first:

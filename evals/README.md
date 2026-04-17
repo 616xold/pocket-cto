@@ -48,12 +48,13 @@ Shipped today:
 - discovery evals can cover `cash_posture`, `collections_pressure`, `payables_pressure`, `spend_posture`, `obligation_calendar_review`, and source-scoped `policy_lookup`
 - eval prompts should require twin/wiki-grounded answers with explicit freshness and limitations
 - runtime-codex, vector retrieval, OCR, deep-read, and report compilation should stay out of scope
+- `pnpm smoke:finance-discovery-quality:local` remains the deterministic source-of-truth quality smoke for the shipped F4A through F4C2 baseline
+- `pnpm eval:finance-discovery-quality` now reuses that deterministic smoke to write a finance-native report under `evals/results/finance-discovery-quality/` without fake candidate, grader, reference, or provider metadata
 
-For any later eval-hook continuation before F5, and for later phases:
+For later phases:
 
 - keep `policy_lookup` eval prompts explicitly source-scoped and grounded in stored deterministic policy pages plus extract status
 - do not grade generic corpus-wide semantic policy search as if it already exists
-- use the deterministic `pnpm smoke:finance-discovery-quality:local` ladder as the current practical quality proof for the shipped F4A through F4C2 baseline while any broader eval-hook continuation remains later work
 - add later discovery families only when the repo can already ground them deterministically
 
 Do not treat these as early F4 supported families:

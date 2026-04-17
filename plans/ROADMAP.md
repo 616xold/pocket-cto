@@ -237,9 +237,9 @@ Slice map:
     - stays deterministic, read-only, and mission-based
     - persists a truthful limited answer instead of fabricating a digest when the latest bound policy extract is missing, unsupported, or failed
     - keeps runtime-codex, generic retrieval, new Finance Twin extractors, and report compilation out of scope
-  - `F4C2 — shipped discovery quality hardening with a later eval-hook boundary`
-    - the shipped baseline now includes deterministic `policy_document` source selection from the existing bound-source route, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, and packaged `pnpm smoke:finance-discovery-quality:local`
-    - if any follow-on remains before F5, keep it limited to a narrow eval-hook continuation that reuses the shipped deterministic discovery-quality smoke rather than widening discovery behavior
+  - `F4C2 — shipped discovery quality hardening and finance-native eval-hook closeout`
+    - the shipped baseline now includes deterministic `policy_document` source selection from the existing bound-source route, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, packaged `pnpm smoke:finance-discovery-quality:local`, and finance-native `pnpm eval:finance-discovery-quality`
+    - the landed eval hook reuses the shipped deterministic discovery-quality smoke to write a durable finance-native report without fake model or provider metadata
     - only consider deeper evidence-precision work if a concrete gap remains after the shipped F4C2 baseline
     - do not assume PageIndex/QMD/MinerU, vector search, OCR, or deep-read are required
 

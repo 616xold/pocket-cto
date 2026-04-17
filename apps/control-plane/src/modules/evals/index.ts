@@ -7,6 +7,7 @@ export * from "./codex-subscription-client";
 export * from "./dataset";
 export * from "./doctor";
 export * from "./doctor-args";
+export * from "./finance-discovery-quality";
 export * from "./grader";
 export * from "./model-client";
 export * from "./openai-client";
