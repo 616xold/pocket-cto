@@ -32,7 +32,7 @@ When using those commands during the pivot:
 
 ## Target finance eval families
 
-1. deterministic finance discovery answers for the shipped F4A through F4C1 families, with `cash_posture` as the first F4A family, `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review` shipped in F4B, and explicit-source `policy_lookup` shipped in F4C1
+1. deterministic finance discovery answers for the shipped F4A through F4C2 baseline, with `cash_posture` as the first F4A family, `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review` shipped in F4B, explicit-source `policy_lookup` shipped in F4C1, and F4C2 discovery-quality hardening already shipped for the current six-family baseline
 2. later posture, aging, spend, and obligation answers that stay grounded in already-shipped Finance Twin reads
 3. source-scoped `policy_lookup` from explicit `policySourceId`, explicit `policy_document` bindings, and stored deterministic extracts
 4. finance memo or packet compilation
@@ -49,11 +49,11 @@ Shipped today:
 - eval prompts should require twin/wiki-grounded answers with explicit freshness and limitations
 - runtime-codex, vector retrieval, OCR, deep-read, and report compilation should stay out of scope
 
-During F4C2 and later finance-discovery hardening:
+For any later eval-hook continuation before F5, and for later phases:
 
 - keep `policy_lookup` eval prompts explicitly source-scoped and grounded in stored deterministic policy pages plus extract status
 - do not grade generic corpus-wide semantic policy search as if it already exists
-- use the deterministic `pnpm smoke:finance-discovery-quality:local` ladder as the current practical quality proof for the shipped F4 baseline while broader eval-hook continuation remains later work
+- use the deterministic `pnpm smoke:finance-discovery-quality:local` ladder as the current practical quality proof for the shipped F4A through F4C2 baseline while any broader eval-hook continuation remains later work
 - add later discovery families only when the repo can already ground them deterministically
 
 Do not treat these as early F4 supported families:

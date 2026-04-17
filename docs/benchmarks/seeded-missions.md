@@ -2,7 +2,7 @@
 
 Pocket CFO should benchmark trusted finance work, not generic “AI CFO” vibes.
 
-This file defines the first seeded mission families the product should benchmark and grade, including the shipped F4A through F4C1 discovery baseline below.
+This file defines the first seeded mission families the product should benchmark and grade, including the shipped F4A through F4C2 discovery baseline below.
 
 ## Why these matter
 
@@ -60,7 +60,7 @@ The system produces a short memo or packet with linked evidence, freshness notes
 
 ## Blocked for now
 
-These discovery families should stay out of the shipped F4A through F4C1 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
+These discovery families should stay out of the shipped F4A through F4C2 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
 
 - `receivables_aging_review`
 - `payables_aging_review`

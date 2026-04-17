@@ -21,6 +21,7 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 - [x] 2026-04-16T12:24:00Z Preflight the clean `codex/f4c2-discovery-quality-hardening-local-v1` branch, reload the required repo skills plus the active-doc set, and confirm the narrowest truthful F4C2 slice is operator-safe policy-source selection, additive policy source-scope rendering hardening, and one deterministic packaged discovery-quality smoke.
 - [x] 2026-04-16T15:28:20Z Land the first real F4C2 slice: replace blind raw UUID policy selection with a deterministic `policy_document` picker, propagate one additive policy source-scope summary through answer/mission/proof surfaces, add the packaged `smoke:finance-discovery-quality:local` proof, refresh only the small stale doc set, and hold the line against new discovery families, generic retrieval, runtime-codex answering, vector search, OCR, deep-read, F5, and F6 expansion.
 - [x] 2026-04-16T16:37:00Z Tighten the F4C2 QA proof so `smoke:finance-discovery-quality:local` renders the mission-list card as well as discovery and mission detail surfaces, keeping the packaged smoke aligned with the shipped local-dev truthfulness claim without widening the slice.
+- [x] 2026-04-17T16:15:03Z Apply a tiny post-merge active-doc truthfulness polish so README, START_HERE, local-dev guidance, source-ingest guidance, seeded benchmarks, and eval staging all point at the shipped F4A through F4C2 baseline while leaving `FP-0035` active only for a possible later eval-hook continuation before F5.
 
 ## Surprises & Discoveries
 
@@ -50,6 +51,9 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 
 - Observation: the shipped F4C1 answer path already computes a richer bound-source summary than the operator surfaces currently show.
   Evidence: `apps/control-plane/src/modules/finance-discovery/policy-lookup.ts` already records bound source name, role, include-in-compile posture, latest extract status, and latest snapshot version inside the policy answer structured data, while `apps/web/components/discovery-answer-card.tsx`, `mission-card.tsx`, and `mission-list-card.tsx` still largely display only the raw `policySourceId`.
+
+- Observation: several active docs still lagged the shipped F4C2 baseline after merge and continued to frame either the baseline or the next-thread guidance as if F4C2 were still future work.
+  Evidence: `README.md`, `START_HERE.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `evals/README.md`, and `docs/benchmarks/seeded-missions.md` each needed a narrow wording refresh even though this plan already recorded the landed F4C2 slice and later-only eval-hook boundary.
 
 ## Decision Log
 
@@ -100,6 +104,9 @@ This planning thread is docs-and-plan only. It creates the active F4C contract a
 
 - Decision: package F4C2 quality proof as one deterministic smoke that specifically validates the six shipped discovery families, human-readable freshness labels, visible limitations, route/wiki evidence links, and source-scoped policy proof-bundle posture.
   Rationale: the current practical finance quality proof is the deterministic smoke ladder, not the older planner/executor/compiler eval naming.
+
+- Decision: after the F4C2 merge, keep the active-doc chain explicitly aligned to the shipped F4A through F4C2 baseline and describe `FP-0035` as active only for a possible narrow eval-hook continuation before F5.
+  Rationale: leaving README, START_HERE, local-dev guidance, benchmark framing, or eval staging one phase behind would misstate shipped product truth and could send the next thread back into already-completed F4C2 work.
 
 ## Context and Orientation
 
@@ -367,7 +374,7 @@ F4C2 implementation is now accepted on this branch after the required thread-lev
 
 ## Idempotence and Recovery
 
-F4C2 should stay additive and retry-safe. It should not mutate raw sources, rewrite stored document extracts, or silently rewrite wiki pages outside the normal compiler-owned path. If an implementation step fails, the safe retry path is to rerun the targeted tests plus the packaged discovery smokes, refresh the relevant stored wiki compile only when the source evidence actually changed, and preserve limited-answer posture rather than introducing a heuristic fallback. If the hardening contract proves broader than expected, revert only the touched domain, finance-discovery, mission, evidence, web, smoke, and tiny doc files from F4C2 rather than disturbing the shipped F4A through F4C1 baseline or the optional GitHub connector path.
+F4C2 should stay additive and retry-safe. It should not mutate raw sources, rewrite stored document extracts, or silently rewrite wiki pages outside the normal compiler-owned path. If an implementation step fails, the safe retry path is to rerun the targeted tests plus the packaged discovery smokes, refresh the relevant stored wiki compile only when the source evidence actually changed, and preserve limited-answer posture rather than introducing a heuristic fallback. If the hardening contract proves broader than expected, revert only the touched domain, finance-discovery, mission, evidence, web, smoke, and tiny doc files from F4C2 rather than disturbing the shipped F4A through F4C2 baseline or the optional GitHub connector path.
 
 ## Artifacts and Notes
 

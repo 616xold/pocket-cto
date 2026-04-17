@@ -297,7 +297,7 @@ A trustworthy query flow should look like this:
 
 Pocket CFO F4 should treat finance discovery as a mission-based read path, not as a generic finance chatbot.
 
-The shipped F4A and F4B contract therefore stays:
+The shipped F4A through F4C2 contract therefore stays:
 
 - one typed company-scoped finance discovery question
 - one deterministic answer artifact
@@ -317,6 +317,7 @@ The shipped F4 question contract stays typed and narrow:
 - `companyKey`
 - `questionKind`
 - optional operator wording stored for display only
+- `policySourceId` required only for source-scoped `policy_lookup`
 
 The shipped answer families are exactly:
 
@@ -325,6 +326,7 @@ The shipped answer families are exactly:
 - `payables_pressure`
 - `spend_posture`
 - `obligation_calendar_review`
+- `policy_lookup`
 
 The current finance discovery answer artifact is durable enough to survive outside chat and later feed F5 reporting work.
 At minimum it should carry:
@@ -344,7 +346,7 @@ If the stored state is partial, stale, conflicting, or insufficient, the answer 
 
 ## Shipped F4 discovery answer posture
 
-The shipped F4A and F4B answer path stays deterministic and read-only.
+The shipped F4A through F4C2 answer path stays deterministic and read-only.
 
 It now:
 
@@ -369,6 +371,7 @@ The shipped F4 baseline still does none of the following:
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
 If the latest bound policy extract is missing, unsupported, or failed, the mission persists a truthful limited answer rather than inventing a digest.
+F4C2 now also ships operator-safe policy source selection from the existing bound-source route, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, and the packaged deterministic `pnpm smoke:finance-discovery-quality:local` ladder as the current practical proof for the shipped six-family discovery baseline.
 Generic corpus-wide policy retrieval, runtime-codex answer generation, vector search, OCR, deep-read, and report compilation remain out of scope for this shipped F4C1 slice.
 
 ## Lint flow

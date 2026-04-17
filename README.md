@@ -41,14 +41,16 @@ Today the merged backbone is:
 - F4A additive deterministic finance-discovery missions for one typed `cash_posture` question family, backed only by stored Finance Twin plus stored CFO Wiki state, with durable answer artifacts and finance-ready proof bundles
 - F4B additive deterministic finance-discovery missions for four more typed families already grounded in shipped Finance Twin plus CFO Wiki state: `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review`
 - F4C1 additive deterministic finance-discovery missions for one explicit-source `policy_lookup` family, requiring `policySourceId` and answering only from scoped `policy_document` wiki state plus bound-source extract posture
+- F4C2 additive discovery-quality hardening for the shipped six-family baseline: deterministic policy-document selection from the existing bound-source route, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, and packaged `pnpm smoke:finance-discovery-quality:local`
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
 F3A through F3D are now shipped.
-F4A through F4C1 are now the shipped finance-discovery baseline.
+F4A through F4C2 are now the shipped finance-discovery baseline.
 F4B widens the first answer path to the truthful stored-state posture, spend, and obligation families listed above.
 F4C1 adds explicit-source `policy_lookup`, grounded only in `policy_document` bindings, stored deterministic extracts, compiler-owned policy pages, same-source digest history when useful, and `concepts/policy-corpus`.
-`plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains the active F4C plan record because F4C2 discovery-quality hardening and eval extension still remain later work.
+F4C2 hardens that shipped six-family discovery baseline with operator-safe policy source selection from existing `policy_document` bindings, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, and packaged deterministic `pnpm smoke:finance-discovery-quality:local`.
+`plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains the active F4C plan record only because a later narrow eval-hook continuation may still remain before F5.
 
 ## Product boundary for v1
 
@@ -207,6 +209,7 @@ pnpm smoke:cfo-wiki-concept-metric-policy:local
 pnpm smoke:finance-discovery-answer:local
 pnpm smoke:finance-discovery-supported-families:local
 pnpm smoke:finance-policy-lookup:local
+pnpm smoke:finance-discovery-quality:local
 ```
 
 The current backend-first finance-twin read surface is:

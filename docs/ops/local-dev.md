@@ -1,6 +1,6 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, and through the shipped F4A through F4C1 finance-discovery baseline. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains active because F4C2 discovery-quality hardening and eval extension still remain later work.
+This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, and through the shipped F4A through F4C2 finance-discovery baseline. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains active only because a possible narrow eval-hook continuation may still remain before F5.
 
 That means two things are true at once:
 
@@ -126,7 +126,7 @@ Today, steps 1 through 5 exist in a narrow form:
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-If none exists, the next new major implementation phase should be F4C2 discovery-quality hardening and eval extension rather than reopening completed wiki slices.
+If none exists, the next new major implementation phase should be F5 memo and packet compiler unless the active `FP-0035` contract still names a narrow eval-hook continuation before F5.
 Use the docs to guide what gets built next.
 
 The active finance-twin read surface is currently backend-first:
