@@ -18,37 +18,42 @@ This plan does not authorize F6 monitoring, packet specialization, PDF export, s
 - [x] 2026-04-18T15:57:53Z Create `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` and refresh the smallest truthful active-doc set so `FP-0035` remains the shipped final F4 record while this file becomes the active F5 implementation contract.
 - [x] 2026-04-18T16:08:11Z Re-run the preserved F4 confidence ladder for this docs-only handoff, including source-ingest, finance-twin, CFO Wiki, discovery quality, targeted twin regressions, repo-wide lint and typecheck and test, and `pnpm ci:repro:current`, without starting F5A code.
 - [x] 2026-04-18T16:46:56Z Run a strict QA pass on this docs-only F5 handoff, confirm the branch and PR stay clean, and apply only one tiny wording correction so top-level docs describe `FP-0035` as the shipped final F4 record and mirror the narrow F5A, F5B, and F5C slice map.
+- [x] 2026-04-18T17:23:49Z Apply a tiny post-merge portability polish so this active F5 contract removes absolute local filesystem links, stays repo-portable for a fresh contributor, and leaves the wider active-doc chain unchanged because it was already truthful.
+- [x] 2026-04-18T17:28:39Z Re-run the required docs-only validation ladder after the portability polish and keep the result green across the preserved smoke and eval stack, the targeted twin regressions, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 - [ ] 2026-04-18T15:57:53Z Implement `F5A-reporting-mission-foundation-and-first-finance-memo` exactly as defined here, without widening into packets, release semantics, runtime drafting, or F6 work.
 - [ ] 2026-04-18T15:57:53Z Run the F5A implementation validation ladder after code lands, including the preserved F4 baseline confidence ladder plus the new narrow reporting proof.
 
 ## Surprises & Discoveries
 
 - Observation: first-class reporting cannot be a domain-only rename because `mission_type`, `mission_source_kind`, and `artifact_kind` are backed by Postgres enums today.
-  Evidence: `packages/domain/src/mission.ts`, [packages/db/src/schema/missions.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/db/src/schema/missions.ts), and [packages/db/src/schema/artifacts.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/db/src/schema/artifacts.ts).
+  Evidence: `packages/domain/src/mission.ts`, `packages/db/src/schema/missions.ts`, and `packages/db/src/schema/artifacts.ts`.
 
 - Observation: the current generic mission compiler is still an engineering-era stub that emits a `build` mission, so the first report path should not start from freeform text intake.
-  Evidence: [apps/control-plane/src/modules/missions/compiler.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/missions/compiler.ts).
+  Evidence: `apps/control-plane/src/modules/missions/compiler.ts`.
 
 - Observation: the shipped discovery answer contract already preserves the exact evidence posture a first memo compiler should reuse, including company scope, question kind, freshness, limitations, related routes, related wiki pages, evidence sections, body markdown, and structured data.
-  Evidence: [packages/domain/src/discovery-mission.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/discovery-mission.ts) and [apps/control-plane/src/modules/finance-discovery/artifact.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/finance-discovery/artifact.ts).
+  Evidence: `packages/domain/src/discovery-mission.ts` and `apps/control-plane/src/modules/finance-discovery/artifact.ts`.
 
 - Observation: the proof-bundle layer is already finance-aware for discovery, but its expected artifact kinds still stop at `discovery_answer` for finance work and do not know about memo or appendix artifacts.
-  Evidence: [packages/domain/src/proof-bundle.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/proof-bundle.ts) and [apps/control-plane/src/modules/evidence/proof-bundle-assembly.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/evidence/proof-bundle-assembly.ts).
+  Evidence: `packages/domain/src/proof-bundle.ts` and `apps/control-plane/src/modules/evidence/proof-bundle-assembly.ts`.
 
 - Observation: the current approval bounded context models live Codex runtime approvals for file changes, commands, and network escalation, not report review or external communication release semantics.
-  Evidence: [packages/domain/src/approval.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/approval.ts), [apps/control-plane/src/modules/approvals/README.md](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/approvals/README.md), and [apps/control-plane/src/modules/approvals/service.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/approvals/service.ts).
+  Evidence: `packages/domain/src/approval.ts`, `apps/control-plane/src/modules/approvals/README.md`, and `apps/control-plane/src/modules/approvals/service.ts`.
 
 - Observation: the wiki already has a durable manual filing seam, but it is intentionally separate from compiler-owned pages and is not yet a report-specific filing or export contract.
-  Evidence: [packages/domain/src/cfo-wiki.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/cfo-wiki.ts) and [apps/control-plane/src/modules/wiki/filed-pages.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/wiki/filed-pages.ts).
+  Evidence: `packages/domain/src/cfo-wiki.ts` and `apps/control-plane/src/modules/wiki/filed-pages.ts`.
 
 - Observation: the mission UI already centers mission list and mission detail screens, so the narrowest coherent first reporting entry point is from an existing completed discovery mission detail or answer surface rather than from a second disconnected report tool.
-  Evidence: [apps/web/app/missions/page.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/app/missions/page.tsx), [apps/web/app/missions/[missionId]/page.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/app/missions/[missionId]/page.tsx), [apps/web/components/discovery-answer-card.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/discovery-answer-card.tsx), and [apps/web/components/mission-card.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/mission-card.tsx).
+  Evidence: `apps/web/app/missions/page.tsx`, `apps/web/app/missions/[missionId]/page.tsx`, `apps/web/components/discovery-answer-card.tsx`, and `apps/web/components/mission-card.tsx`.
 
 - Observation: the current runtime-codex seam is already intentionally narrow and can stay fully out of the first F5A slice without blocking memo compilation.
-  Evidence: [docs/ops/codex-app-server.md](/Users/sohaib/Downloads/pocket-cto-starter/docs/ops/codex-app-server.md), [apps/control-plane/src/modules/runtime-codex/service.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/runtime-codex/service.ts), and [apps/control-plane/src/modules/orchestrator/discovery-phase.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/orchestrator/discovery-phase.ts).
+  Evidence: `docs/ops/codex-app-server.md`, `apps/control-plane/src/modules/runtime-codex/service.ts`, and `apps/control-plane/src/modules/orchestrator/discovery-phase.ts`.
 
 - Observation: even after the first doc refresh, two top-level guidance points could still blur the F4-to-F5 handoff by calling `FP-0035` the shipped `F4C` record instead of the shipped final F4 record and by keeping one old broad F5 thread label in `START_HERE.md`.
-  Evidence: [README.md](/Users/sohaib/Downloads/pocket-cto-starter/README.md) and [START_HERE.md](/Users/sohaib/Downloads/pocket-cto-starter/START_HERE.md).
+  Evidence: `README.md` and `START_HERE.md`.
+
+- Observation: the active F5 implementation contract still carried workstation-specific markdown links even though the surrounding active-doc chain was already phase-correct.
+  Evidence: this file previously referenced absolute local filesystem paths throughout the Evidence, Context and Orientation, and Concrete Steps sections.
 
 ## Decision Log
 
@@ -94,6 +99,9 @@ This plan does not authorize F6 monitoring, packet specialization, PDF export, s
 - Decision: top-level docs should describe `FP-0035` as the shipped final F4 record and should mirror the narrow F5A, F5B, and F5C thread map rather than leaving behind a broad legacy F5 thread label.
   Rationale: the active-doc chain should point the next contributor at one exact F5A implementation start and preserve the truthful phase boundary between shipped F4 work and planned later F5 specialization.
 
+- Decision: normalize all intra-repo references in this active F5 contract to repo-portable paths and keep the rest of the active-doc chain untouched unless a real truthfulness gap appears.
+  Rationale: the only remaining post-merge issue was plan portability, not broader phase wording or scope drift.
+
 ## Context and Orientation
 
 Pocket CFO has already shipped F4A through F4C2 and now truthfully supports exactly six finance discovery families:
@@ -131,15 +139,15 @@ The next thread should implement only the F5A slice defined here.
 
 The relevant implementation seams for the future F5A code thread are:
 
-- [packages/domain/src/mission.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/mission.ts), [packages/domain/src/proof-bundle.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/proof-bundle.ts), [packages/domain/src/mission-detail.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/mission-detail.ts), [packages/domain/src/mission-list.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/mission-list.ts), and a new `packages/domain/src/reporting-mission.ts`
-- [packages/db/src/schema/missions.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/db/src/schema/missions.ts) and [packages/db/src/schema/artifacts.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/db/src/schema/artifacts.ts) plus one additive migration
-- [apps/control-plane/src/modules/missions/**](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/missions)
-- [apps/control-plane/src/modules/evidence/**](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/evidence)
-- [apps/control-plane/src/modules/orchestrator/**](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/orchestrator)
+- `packages/domain/src/mission.ts`, `packages/domain/src/proof-bundle.ts`, `packages/domain/src/mission-detail.ts`, `packages/domain/src/mission-list.ts`, and a new `packages/domain/src/reporting-mission.ts`
+- `packages/db/src/schema/missions.ts` and `packages/db/src/schema/artifacts.ts` plus one additive migration
+- `apps/control-plane/src/modules/missions/**`
+- `apps/control-plane/src/modules/evidence/**`
+- `apps/control-plane/src/modules/orchestrator/**`
 - a new `apps/control-plane/src/modules/reporting/**` bounded context
-- [apps/control-plane/src/modules/wiki/**](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/wiki) for read-only evidence reuse only
-- [apps/control-plane/src/modules/runtime-codex/**](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/runtime-codex) only as an explicit non-goal for F5A
-- [apps/web/app/missions/**](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/app/missions), [apps/web/components/mission-card.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/mission-card.tsx), [apps/web/components/discovery-answer-card.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/discovery-answer-card.tsx), [apps/web/components/mission-list-card.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/mission-list-card.tsx), [apps/web/components/approval-card-list.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/approval-card-list.tsx), and [apps/web/lib/api.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/lib/api.ts)
+- `apps/control-plane/src/modules/wiki/**` for read-only evidence reuse only
+- `apps/control-plane/src/modules/runtime-codex/**` only as an explicit non-goal for F5A
+- `apps/web/app/missions/**`, `apps/web/components/mission-card.tsx`, `apps/web/components/discovery-answer-card.tsx`, `apps/web/components/mission-list-card.tsx`, `apps/web/components/approval-card-list.tsx`, and `apps/web/lib/api.ts`
 
 ## Plan of Work
 
@@ -162,14 +170,14 @@ It should land one strong memo path, not three half-built output surfaces.
 
 1. Widen the pure domain and DB contracts.
    Update:
-   - [packages/domain/src/mission.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/mission.ts)
-   - [packages/domain/src/proof-bundle.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/proof-bundle.ts)
-   - [packages/domain/src/mission-detail.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/mission-detail.ts)
-   - [packages/domain/src/mission-list.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/mission-list.ts)
+   - `packages/domain/src/mission.ts`
+   - `packages/domain/src/proof-bundle.ts`
+   - `packages/domain/src/mission-detail.ts`
+   - `packages/domain/src/mission-list.ts`
    - `packages/domain/src/reporting-mission.ts`
-   - [packages/domain/src/index.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/domain/src/index.ts)
-   - [packages/db/src/schema/missions.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/db/src/schema/missions.ts)
-   - [packages/db/src/schema/artifacts.ts](/Users/sohaib/Downloads/pocket-cto-starter/packages/db/src/schema/artifacts.ts)
+   - `packages/domain/src/index.ts`
+   - `packages/db/src/schema/missions.ts`
+   - `packages/db/src/schema/artifacts.ts`
    - one additive drizzle migration under `packages/db/drizzle/`
 
    F5A should add:
@@ -199,13 +207,13 @@ It should land one strong memo path, not three half-built output surfaces.
 3. Integrate reporting into the mission engine with minimal new seams.
    Update:
    - add `apps/control-plane/src/modules/missions/reporting.ts`
-   - [apps/control-plane/src/modules/missions/service.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/missions/service.ts)
-   - [apps/control-plane/src/modules/missions/routes.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/missions/routes.ts)
-   - [apps/control-plane/src/modules/missions/schema.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/missions/schema.ts)
-   - [apps/control-plane/src/modules/orchestrator/task-state-machine.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/orchestrator/task-state-machine.ts)
+   - `apps/control-plane/src/modules/missions/service.ts`
+   - `apps/control-plane/src/modules/missions/routes.ts`
+   - `apps/control-plane/src/modules/missions/schema.ts`
+   - `apps/control-plane/src/modules/orchestrator/task-state-machine.ts`
    - add `apps/control-plane/src/modules/orchestrator/reporting-phase.ts`
-   - [apps/control-plane/src/modules/orchestrator/service.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/orchestrator/service.ts)
-   - [apps/control-plane/src/bootstrap.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/bootstrap.ts)
+   - `apps/control-plane/src/modules/orchestrator/service.ts`
+   - `apps/control-plane/src/bootstrap.ts`
 
    F5A should:
    - create reporting missions through a typed route, not through `compileFromText`
@@ -217,22 +225,22 @@ It should land one strong memo path, not three half-built output surfaces.
    Update:
    - add `apps/control-plane/src/modules/evidence/finance-memo.ts`
    - add `apps/control-plane/src/modules/evidence/evidence-appendix.ts`
-   - [apps/control-plane/src/modules/evidence/proof-bundle-assembly.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/evidence/proof-bundle-assembly.ts)
-   - [apps/control-plane/src/modules/evidence/proof-bundle-summary.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/evidence/proof-bundle-summary.ts)
-   - [apps/control-plane/src/modules/missions/detail-view.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/missions/detail-view.ts)
-   - [apps/control-plane/src/modules/missions/discovery-answer-view.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/missions/discovery-answer-view.ts) only if a parallel report-artifact reader is needed
+   - `apps/control-plane/src/modules/evidence/proof-bundle-assembly.ts`
+   - `apps/control-plane/src/modules/evidence/proof-bundle-summary.ts`
+   - `apps/control-plane/src/modules/missions/detail-view.ts`
+   - `apps/control-plane/src/modules/missions/discovery-answer-view.ts` only if a parallel report-artifact reader is needed
 
    F5A proof bundles should consider a reporting mission ready only when both `finance_memo` and `evidence_appendix` are present and linked back to the source discovery mission.
 
 5. Add the narrowest mission-based operator path for report creation and review.
    Update:
-   - [apps/web/app/missions/[missionId]/page.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/app/missions/[missionId]/page.tsx)
-   - [apps/web/app/missions/[missionId]/mission-actions.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/app/missions/[missionId]/mission-actions.tsx)
-   - [apps/web/components/discovery-answer-card.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/discovery-answer-card.tsx)
-   - [apps/web/components/mission-card.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/mission-card.tsx)
-   - [apps/web/components/mission-list-card.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/mission-list-card.tsx)
-   - [apps/web/components/approval-card-list.tsx](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/components/approval-card-list.tsx) only if wording needs a draft-only reporting clarification
-   - [apps/web/lib/api.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/web/lib/api.ts)
+   - `apps/web/app/missions/[missionId]/page.tsx`
+   - `apps/web/app/missions/[missionId]/mission-actions.tsx`
+   - `apps/web/components/discovery-answer-card.tsx`
+   - `apps/web/components/mission-card.tsx`
+   - `apps/web/components/mission-list-card.tsx`
+   - `apps/web/components/approval-card-list.tsx` only if wording needs a draft-only reporting clarification
+   - `apps/web/lib/api.ts`
 
    The first report surfaces must show:
    - memo summary
@@ -368,6 +376,8 @@ This thread ships the F5 master-plan and doc refresh only.
 No runtime code, routes, schema changes, migrations, package scripts, smoke commands, or eval datasets were added in this slice.
 The preserved F4 baseline validation ladder stayed green after the doc refresh, including the full smoke stack, `pnpm eval:finance-discovery-quality`, the targeted twin regression batch, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 The follow-on QA pass kept scope narrow, confirmed the branch and PR state, and applied only a tiny wording correction in top-level docs before rerunning the required docs-and-plan validation ladder.
+This post-merge portability polish keeps the same implementation scope, removes workstation-specific markdown links from the active F5 contract, and leaves the wider active-doc chain unchanged because no further truthfulness drift remained.
+The required validation ladder stayed green again after this portability pass, including every requested packaged smoke, `pnpm eval:finance-discovery-quality`, the targeted twin regression batch, repo-wide checks, and the clean-worktree `pnpm ci:repro:current` reproduction.
 
 `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains the shipped final F4 record.
 This file is now the active F5 implementation contract.

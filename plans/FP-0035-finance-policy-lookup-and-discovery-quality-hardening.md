@@ -7,7 +7,7 @@ This plan defines the first real **F4C finance discovery** execution contract fo
 The user-visible goal is to let a fresh implementation thread add one truthful new finance-discovery family, `policy_lookup`, without reopening the shipped F4A and F4B baseline or widening into generic policy chat, runtime-codex answer generation, vector retrieval, OCR, deep-read, F5 reporting, or F6 monitoring. F4C matters now because the repo already ships the deterministic source and wiki backbone needed for source-scoped policy answers: explicit `policy_document` bindings, stored deterministic document extracts, compiler-owned policy pages at `policies/<sourceId>`, related source-digest history, and the `concepts/policy-corpus` concept page. The next gain is therefore not broader retrieval. It is a deterministic, read-only, mission-based policy lookup path plus a later hardening pass that extends discovery quality and eval coverage only where real evidence gaps remain.
 
 GitHub connector work is explicitly out of scope for this slice and for the initial F4C1 implementation.
-This plan now serves as the shipped F4C record. It preserves the narrow implementation contract, validation ladder, evidence posture, and active-doc refresh that carried F4C1, F4C2, and the final finance-native eval-hook closeout without widening into F5 or F6 behavior.
+This plan now serves as the shipped final F4 record. It preserves the narrow implementation contract, validation ladder, evidence posture, and active-doc refresh that carried F4C1, F4C2, and the final finance-native eval-hook closeout without widening into F5 or F6 behavior.
 
 ## Progress
 
