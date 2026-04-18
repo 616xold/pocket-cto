@@ -17,6 +17,7 @@ This plan does not authorize F6 monitoring, packet specialization, PDF export, s
 - [x] 2026-04-18T15:57:53Z Audit the active docs, shipped F4 record, mission-domain contracts, proof-bundle shaping, approval semantics, runtime-codex posture, wiki filing seam, web mission surfaces, and DB enum constraints before choosing the first real F5 slice.
 - [x] 2026-04-18T15:57:53Z Create `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` and refresh the smallest truthful active-doc set so `FP-0035` remains the shipped final F4 record while this file becomes the active F5 implementation contract.
 - [x] 2026-04-18T16:08:11Z Re-run the preserved F4 confidence ladder for this docs-only handoff, including source-ingest, finance-twin, CFO Wiki, discovery quality, targeted twin regressions, repo-wide lint and typecheck and test, and `pnpm ci:repro:current`, without starting F5A code.
+- [x] 2026-04-18T16:46:56Z Run a strict QA pass on this docs-only F5 handoff, confirm the branch and PR stay clean, and apply only one tiny wording correction so top-level docs describe `FP-0035` as the shipped final F4 record and mirror the narrow F5A, F5B, and F5C slice map.
 - [ ] 2026-04-18T15:57:53Z Implement `F5A-reporting-mission-foundation-and-first-finance-memo` exactly as defined here, without widening into packets, release semantics, runtime drafting, or F6 work.
 - [ ] 2026-04-18T15:57:53Z Run the F5A implementation validation ladder after code lands, including the preserved F4 baseline confidence ladder plus the new narrow reporting proof.
 
@@ -45,6 +46,9 @@ This plan does not authorize F6 monitoring, packet specialization, PDF export, s
 
 - Observation: the current runtime-codex seam is already intentionally narrow and can stay fully out of the first F5A slice without blocking memo compilation.
   Evidence: [docs/ops/codex-app-server.md](/Users/sohaib/Downloads/pocket-cto-starter/docs/ops/codex-app-server.md), [apps/control-plane/src/modules/runtime-codex/service.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/runtime-codex/service.ts), and [apps/control-plane/src/modules/orchestrator/discovery-phase.ts](/Users/sohaib/Downloads/pocket-cto-starter/apps/control-plane/src/modules/orchestrator/discovery-phase.ts).
+
+- Observation: even after the first doc refresh, two top-level guidance points could still blur the F4-to-F5 handoff by calling `FP-0035` the shipped `F4C` record instead of the shipped final F4 record and by keeping one old broad F5 thread label in `START_HERE.md`.
+  Evidence: [README.md](/Users/sohaib/Downloads/pocket-cto-starter/README.md) and [START_HERE.md](/Users/sohaib/Downloads/pocket-cto-starter/START_HERE.md).
 
 ## Decision Log
 
@@ -86,6 +90,9 @@ This plan does not authorize F6 monitoring, packet specialization, PDF export, s
 
 - Decision: the post-F5A slice map is `F5B-evidence-appendix-filed-artifact-and-export-hardening` followed by `F5C-board-lender-diligence-packet-specialization-and-approval-release-hardening`.
   Rationale: this sequence keeps memo foundation first, filing/export second, and audience-specific packet plus approval semantics last.
+
+- Decision: top-level docs should describe `FP-0035` as the shipped final F4 record and should mirror the narrow F5A, F5B, and F5C thread map rather than leaving behind a broad legacy F5 thread label.
+  Rationale: the active-doc chain should point the next contributor at one exact F5A implementation start and preserve the truthful phase boundary between shipped F4 work and planned later F5 specialization.
 
 ## Context and Orientation
 
@@ -360,6 +367,7 @@ F5A does not depend on:
 This thread ships the F5 master-plan and doc refresh only.
 No runtime code, routes, schema changes, migrations, package scripts, smoke commands, or eval datasets were added in this slice.
 The preserved F4 baseline validation ladder stayed green after the doc refresh, including the full smoke stack, `pnpm eval:finance-discovery-quality`, the targeted twin regression batch, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+The follow-on QA pass kept scope narrow, confirmed the branch and PR state, and applied only a tiny wording correction in top-level docs before rerunning the required docs-and-plan validation ladder.
 
 `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains the shipped final F4 record.
 This file is now the active F5 implementation contract.

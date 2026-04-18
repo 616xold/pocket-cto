@@ -55,7 +55,8 @@ Suggested thread naming:
 - `F4C2-discovery-quality-hardening-and-evals`
 - `F5-master-plan-and-doc-refresh`
 - `F5A-reporting-mission-foundation-and-first-finance-memo`
-- `F5-memo-and-packet-compiler`
+- `F5B-evidence-appendix-filed-artifact-and-export-hardening`
+- `F5C-board-lender-diligence-packet-specialization-and-approval-release-hardening`
 - `F6-monitoring-and-controls`
 
 Broad F2 Finance Twin work now runs through F2O.
@@ -67,7 +68,7 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `F3D-cfo-wiki-concept-metric-and-policy-pages` is now the shipped deterministic knowledge-page slice.
 `F4-finance-discovery-master-plan-and-doc-refresh` is the planning and active-doc slice that creates the first implementation-ready F4 contract.
 `plans/FP-0030-finance-discovery-foundation-and-first-answer.md`, `plans/FP-0031-finance-discovery-supported-posture-and-obligation-families.md`, `plans/FP-0032-finance-discovery-polish-and-compatibility.md`, `plans/FP-0033-finance-discovery-baseline-closeout-polish.md`, and `plans/FP-0034-finance-discovery-final-artifact-and-doc-polish.md` are now shipped.
-`plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` now serves as the shipped F4C record, including the narrow finance-native eval-hook closeout.
+`plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` now serves as the shipped final F4 record, including the narrow finance-native eval-hook closeout.
 `F4C1-finance-policy-lookup` is now the shipped explicit-source policy lookup slice.
 `F4C2-discovery-quality-hardening-and-evals` is now the shipped discovery-quality hardening slice.
 `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` is now the active F5 implementation contract.
