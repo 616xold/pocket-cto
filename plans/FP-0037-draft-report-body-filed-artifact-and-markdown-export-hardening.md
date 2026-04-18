@@ -18,7 +18,7 @@ This plan does not authorize packet specialization, release semantics, PDF expor
 - [x] 2026-04-18T21:09:53Z Create `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` and refresh the smallest truthful active-doc chain so `FP-0036` remains the shipped F5A record while this file becomes the active F5B implementation contract.
 - [x] 2026-04-18T21:23:00Z Run the preserved source-ingest through finance-memo confidence ladder plus repo-wide validation for this docs-and-plan handoff without starting F5B code.
 - [x] 2026-04-18T22:00:50Z Land the first F5B implementation slice: direct draft-body visibility, explicit mission-centric filed artifact reuse, mission-centric markdown export triggering over the existing CFO Wiki seams, additive stored-vs-filed-vs-exported posture, and packaged `pnpm smoke:finance-report-filed-artifact:local`.
-- [ ] 2026-04-18T22:00:50Z Re-run the full F5B validation ladder after code lands and keep proof readiness semantics unchanged even when filing or export has not happened yet.
+- [x] 2026-04-18T22:24:16Z Reconfirm the landed F5B slice in a strict QA pass: the focused domain, control-plane, and web reruns stayed green; the shipped discovery and reporting smokes plus twin guardrails stayed green; the branch remained clean; and this plan was refreshed so its progress and retrospective match the shipped branch reality without widening into F5C.
 
 ## Surprises & Discoveries
 
@@ -39,6 +39,9 @@ This plan does not authorize packet specialization, release semantics, PDF expor
 
 - Observation: the raw proof-bundle publication summary string can lag behind newer filed or export linkage unless the read model normalizes it from the explicit stored publication fields.
   Evidence: the first end-to-end F5B smoke exposed a stale proof-bundle summary string after export even though `latestMarkdownExport` was already correct, so `apps/control-plane/src/modules/missions/detail-view.ts` now normalizes `proofBundle.reportPublication` from the stored fields before returning mission detail.
+
+- Observation: the active F5B plan can become misleading if branch-local validation completes but the final progress and retrospective text still describe only the pre-code handoff state.
+  Evidence: the first strict QA pass on this branch found the code and proofs green while `Progress` still showed the post-implementation validation item as unfinished and `Outcomes & Retrospective` still described this file as a docs-only handoff record.
 
 ## Decision Log
 
@@ -77,6 +80,9 @@ This plan does not authorize packet specialization, release semantics, PDF expor
 
 - Decision: the post-F5B slice map is `F5C-board-lender-diligence-packet-specialization-and-approval-release-hardening`.
   Rationale: packet specialization, approval posture, and external release semantics belong after the base memo, filing, and markdown export reuse path is stable.
+
+- Decision: keep `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` as the active implementation record until a dedicated F5C plan is created, but make its progress and retrospective reflect that the first F5B slice is already landed and validated in this branch.
+  Rationale: this QA-only thread must not start F5C, but it still needs truthful documentation of the current F5B branch state and a clean handoff for the next slice.
 
 ## Context and Orientation
 
@@ -333,11 +339,14 @@ F5B does not depend on:
 
 ## Outcomes & Retrospective
 
-This docs-and-plan slice creates the active F5B implementation contract and refreshes the active-doc chain so the next thread can start the first real F5B code slice cleanly.
-No runtime code, routes, schema changes, migrations, package scripts, smoke commands, or implementation scaffolding were added here.
+The first real F5B slice is now landed and validated in this branch.
+It adds read-only memo and appendix body visibility in mission detail, thin mission-centric filing and markdown export actions that reuse the existing CFO Wiki filed-page and export seams, additive stored-vs-filed-vs-exported publication posture across reporting and proof surfaces, and the packaged `pnpm smoke:finance-report-filed-artifact:local` proof for the stored -> filed -> exported path.
+
+The branch-local validation ladder is green for this slice, including the focused domain, control-plane, and web reruns, the shipped discovery/reporting smokes, the new F5B filed-artifact smoke, the preserved twin guardrails, and the repo-wide validation that previously ran before this QA pass.
+The strict QA pass found one documentation truthfulness gap in this plan itself, corrected it here, and did not require any runtime or product-surface changes.
 
 `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains the shipped final F4 record.
 `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` remains the shipped F5A record.
-This file is now the active F5B contract.
+This file remains the active F5B record until a dedicated F5C plan exists.
 
-If a bigger issue than body visibility, explicit filing, or markdown export reuse appears during implementation, stop and report it rather than widening into F5C or F6 work.
+The next slice should start from a new F5C plan rather than reopening F5B scope unless a new narrow regression appears.
