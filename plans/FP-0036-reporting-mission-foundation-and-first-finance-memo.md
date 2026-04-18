@@ -53,7 +53,7 @@ This plan does not authorize F6 monitoring, packet specialization, PDF export, s
   Evidence: `README.md` and `START_HERE.md`.
 
 - Observation: the active F5 implementation contract still carried workstation-specific markdown links even though the surrounding active-doc chain was already phase-correct.
-  Evidence: this file previously referenced local `/Users/...` paths throughout the Evidence, Context and Orientation, and Concrete Steps sections.
+  Evidence: this file previously referenced absolute local filesystem paths throughout the Evidence, Context and Orientation, and Concrete Steps sections.
 
 ## Decision Log
 
