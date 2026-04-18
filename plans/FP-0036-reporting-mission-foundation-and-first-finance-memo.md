@@ -321,7 +321,8 @@ Do not delete source discovery artifacts or raw-source evidence as part of recov
 
 This landed F5A slice now leaves:
 
-- one active implementation record at `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`
+- one shipped F5A record at `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`
+- one follow-on active implementation record at `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`
 - refreshed active docs that point at the shipped F4 record, the landed F5A memo foundation, and the narrow F5B next step
 
 The landed F5A implementation now provides:
@@ -369,10 +370,10 @@ The preserved F4 baseline validation ladder stayed green after the implementatio
 The follow-on QA pass kept scope narrow, confirmed the branch and PR state, corrected only the stale post-landing doc language in this plan and the top-level handoff docs, and re-ran the narrow reporting proofs plus the required discovery, eval, and twin guardrails.
 
 `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains the shipped final F4 record.
-This file remains the active F5 implementation record until the next narrow F5B plan supersedes it.
+This file is now the shipped F5A record, and `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` is the active F5B implementation contract.
 The next remaining work is to start the narrow F5B follow-on exactly where F5A intentionally stopped:
 
-- filed-artifact and export hardening for the existing evidence appendix path
+- direct draft report-body visibility plus filed-artifact and markdown export hardening for the existing memo and appendix path
 - no reopening of F5A mission foundation work
 - no packet specialization yet
 - no release semantics yet

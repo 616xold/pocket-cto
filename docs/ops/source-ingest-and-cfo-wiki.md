@@ -328,10 +328,9 @@ The shipped answer families are exactly:
 - `obligation_calendar_review`
 - `policy_lookup`
 
-The current finance discovery answer artifact is durable enough to survive outside chat and later feed F5 reporting work.
-`plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` now defines that first reporting reuse contract as a draft `finance_memo` plus linked `evidence_appendix` compiled from a completed discovery mission.
-That reporting path is planned, not yet implemented.
-At minimum it should carry:
+The current finance discovery answer artifact is durable enough to survive outside chat and now already feeds the shipped first F5A reporting path.
+`plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` records that landed first reporting reuse contract as a draft `finance_memo` plus linked `evidence_appendix` compiled from a completed discovery mission.
+Those reporting artifacts now persist:
 
 - company key
 - question kind
@@ -341,7 +340,13 @@ At minimum it should carry:
 - explicit related routes or route-backed evidence
 - explicit related wiki pages
 - structured evidence sections that later report compilation can reuse
-- deterministic markdown or another renderable body plus structured metadata
+- deterministic `bodyMarkdown` plus structured metadata
+
+`plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` is now the active F5B contract for the next reporting reuse step:
+
+- render the stored memo and appendix bodies directly in mission detail, read-only
+- file selected report artifacts into the existing CFO Wiki filed-page seam through explicit operator action
+- reuse company-level markdown export runs after filing without changing proof readiness semantics
 
 Numeric claims should only appear when route-backed stored state or explicit refs support them.
 If the stored state is partial, stale, conflicting, or insufficient, the answer should say so plainly instead of inventing certainty.
@@ -367,21 +372,23 @@ The shipped F4 baseline still does none of the following:
 - no vector DB or generic retrieval layer
 - no PageIndex, QMD, MinerU, OCR, or PDF-heavy deep read dependency
 - no new Finance Twin extractor
-- no F5 report compiler work
+- no report compilation inside the F4 answer path itself; later F5 reporting work consumes the stored discovery outputs in a separate mission phase
 - no F6 monitoring work
 
-`FP-0036` now makes the next-step boundary explicit:
+`FP-0037` now makes the next-step boundary explicit:
 
-- first reporting work should compile from stored discovery answers and proof bundles
-- the first F5 slice should stay draft-only and deterministic
-- wiki filing, packet specialization, export, and release semantics remain later work
+- the next F5 step should render stored report bodies directly from the landed F5A artifacts
+- filing into the wiki should be an explicit operator action that reuses the existing filed-page route
+- company markdown export posture should stay separate from proof readiness and should reuse the existing export-run seam
+- packet specialization, PDF export, slide export, runtime-codex drafting, and release semantics remain later work
 
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
 If the latest bound policy extract is missing, unsupported, or failed, the mission persists a truthful limited answer rather than inventing a digest.
 F4C2 now also ships operator-safe policy source selection from the existing bound-source route, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, and the packaged deterministic `pnpm smoke:finance-discovery-quality:local` ladder as the current practical proof for the shipped six-family discovery baseline.
 Generic corpus-wide policy retrieval, runtime-codex answer generation, vector search, OCR, and deep-read remain out of scope for the shipped F4 baseline.
-Report compilation begins only under the active F5 plan, and that first F5A slice stays deterministic, draft-only, and source-discovery-grounded.
+Report compilation now exists in the shipped F5A slice and stays deterministic, draft-only, and source-discovery-grounded.
+The active F5B follow-on should harden only body visibility, filed-page reuse, and markdown export posture from that stored reporting state.
 
 ## Lint flow
 

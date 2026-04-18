@@ -1,6 +1,6 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, and through the shipped F4A through F4C2 finance-discovery baseline. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` is the shipped final F4 record, and `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` is the active F5 implementation contract.
+This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, through the shipped F4A through F4C2 finance-discovery baseline, and through the shipped first F5A reporting slice. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` is the shipped final F4 record, `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` is the shipped F5A record, and `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` is the active F5B implementation contract.
 
 That means two things are true at once:
 
@@ -130,8 +130,8 @@ Today, steps 1 through 5 exist in a narrow form:
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-Today that means `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`, which keeps the next implementation thread focused on first-class reporting mission foundation and the first draft `finance_memo`.
-Do not reopen F4C2 and do not widen into later F5 packet/export work until that active contract lands.
+Today that means `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`, which keeps the next implementation thread focused on direct draft report-body visibility, explicit filed artifact reuse, and markdown export posture from the existing CFO Wiki seams.
+Do not reopen F4C2, do not repeat F5A mission-foundation work, and do not widen into later F5C packet or release work until that active contract lands.
 
 The active finance-twin read surface is currently backend-first:
 

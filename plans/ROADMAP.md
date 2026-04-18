@@ -273,7 +273,7 @@ Exit criteria:
 Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
-The active implementation contract for this phase is `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`.
+The active implementation contract for this phase is `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
@@ -299,11 +299,12 @@ Slice map:
   - keep execution deterministic and read-only
   - keep runtime-codex, wiki filing, packet specialization, PDF export, and release semantics out of scope
 
-- `F5B — evidence appendix, filed artifact, and export hardening`
-  - harden appendix structure
-  - decide whether and how selected report artifacts file back into the wiki
-  - add export work only after the durable artifact contract is stable
-  - keep packet specialization and release hardening out of scope
+- `F5B — draft report body, filed artifact, and markdown export hardening`
+  - expose stored `finance_memo.bodyMarkdown` and `evidence_appendix.bodyMarkdown` directly in reporting mission detail
+  - keep that body exposure read-only, with no editor and no runtime drafting
+  - file selected report artifacts back into the wiki only through an explicit operator action that reuses the existing filed-page seam
+  - reuse company-level markdown export runs and export linkage only after filing, while keeping export posture separate from proof readiness
+  - keep packet specialization, PDF export, slide export, and release hardening out of scope
 
 - `F5C — board, lender, and diligence packet specialization plus approval-release hardening`
   - add specialized report families such as `board_packet`, `lender_update`, and `diligence_packet`
@@ -315,7 +316,7 @@ Exit criteria:
 - one completed finance discovery mission can produce a first-class reporting mission
 - the first report path yields a draft `finance_memo` plus `evidence_appendix`
 - report outputs remain reproducible, evidence-linked, freshness-aware, and explicit about limitations
-- packet specialization, export, and release semantics remain clearly deferred until later F5 slices
+- packet specialization and release semantics remain clearly deferred until later F5 slices, while markdown export reuse stays limited to the filed-artifact path defined in F5B
 
 ## F6 — Monitoring, controls, and adoption loop
 

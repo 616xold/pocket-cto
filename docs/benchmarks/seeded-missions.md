@@ -58,6 +58,14 @@ A completed discovery mission plus its stored `discovery_answer`, proof bundle, 
 Success:
 The system creates a first-class reporting mission that produces one draft `finance_memo` plus one linked `evidence_appendix`, with linked evidence, freshness notes, visible limitations, and explicit draft-only posture.
 
+### 6. F5B draft report body, filed artifact, and markdown export posture
+
+Input:
+One completed reporting mission that already stores a draft `finance_memo`, a linked `evidence_appendix`, and company-scoped CFO Wiki state with the existing filed-page and export seams.
+
+Success:
+The system renders the stored memo and appendix bodies directly in mission detail, lets an operator explicitly file those stored drafts into the CFO Wiki through the existing filed-page route, and shows filing plus markdown export posture separately from proof readiness.
+
 ## Blocked for now
 
 These discovery families should stay out of the shipped F4A through F4C2 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
@@ -89,3 +97,4 @@ Each seeded mission should be graded on:
 During the early pivot, the repo may still carry legacy engineering eval commands.
 Keep the eval harness architecture, but replace the scenarios and rubrics with finance-oriented datasets as F4/F5 land.
 The current finance-native eval-hook proof for the shipped F4A through F4C2 discovery baseline is `pnpm eval:finance-discovery-quality`, which reuses the deterministic `pnpm smoke:finance-discovery-quality:local` ladder rather than a model-scored runtime eval.
+The active next-step F5 reporting benchmark contract now lives in `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`.

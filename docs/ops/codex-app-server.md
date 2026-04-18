@@ -56,16 +56,18 @@ Codex remains valuable after that first answer path exists for:
 - memo or packet drafting in F5
 - evidence-summary or formatting assistance when a deterministic answer already exists
 
-## First F5 posture
+## Current F5 posture
 
-The active F5 contract is `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`.
+The active F5 contract is `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`.
+The shipped first F5A slice already creates first-class reporting missions from completed discovery missions and assembles one draft `finance_memo` plus one linked `evidence_appendix` from stored discovery answers, proof bundles, related routes, and related wiki pages without creating a runtime thread.
 
-For F5A, the control plane should:
+For F5B, the control plane and operator surface should:
 
-- create a first-class reporting mission from a completed discovery mission
-- assemble one draft `finance_memo` plus one linked `evidence_appendix` from stored discovery answers, proof bundles, related routes, and related wiki pages
 - keep numeric and factual authority in stored evidence, not in runtime output
-- avoid creating a runtime thread for the first memo compiler
+- expose the stored memo and appendix bodies directly, read-only
+- reuse the existing CFO Wiki filed-page seam for explicit operator filing only
+- reuse the existing company markdown export seam for export linkage only
+- avoid creating a runtime thread for body rendering, filing, or export posture
 
 Later F5 slices may use runtime-codex only in a bounded role such as draft phrasing or formatting assistance once a deterministic memo skeleton already exists.
 Even then, runtime-codex must not invent finance facts, override stored numbers, or become the approval authority layer.
@@ -90,7 +92,7 @@ As the product pivots:
 - network access should remain restricted by default
 - runtime actions that change external communication posture must stay human-reviewable
 
-For F5A specifically, draft memo compilation should stay deterministic and draft-only, so the slice should not introduce runtime approval or release semantics yet.
+For F5A through F5B specifically, draft report compilation, body exposure, filing, and export posture should stay deterministic and draft-only, so these slices should not introduce runtime approval or release semantics yet.
 
 ## Transition note
 
