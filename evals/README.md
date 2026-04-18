@@ -36,9 +36,10 @@ When using those commands during the pivot:
 2. later posture, aging, spend, and obligation answers that stay grounded in already-shipped Finance Twin reads
 3. source-scoped `policy_lookup` from explicit `policySourceId`, explicit `policy_document` bindings, and stored deterministic extracts
 4. shipped F5A draft finance memo compilation from a completed discovery mission, its stored `discovery_answer`, and its linked evidence appendix
-5. active F5B draft report body visibility, explicit filed artifact reuse, and markdown export posture from stored reporting artifacts plus the existing CFO Wiki seams
-6. wiki compilation quality
-7. provenance, freshness disclosure, and contradiction handling
+5. shipped F5B draft report body visibility, explicit filed artifact reuse, and markdown export posture from stored reporting artifacts plus the existing CFO Wiki seams
+6. active F5C1 draft `board_packet` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`
+7. wiki compilation quality
+8. provenance, freshness disclosure, and contradiction handling
 
 ## F4 staging
 
@@ -57,8 +58,8 @@ For later phases:
 - keep `policy_lookup` eval prompts explicitly source-scoped and grounded in stored deterministic policy pages plus extract status
 - do not grade generic corpus-wide semantic policy search as if it already exists
 - add later discovery families only when the repo can already ground them deterministically
-- keep F5 memo and report-posture evals anchored to the active `FP-0037` contract: stored `finance_memo` plus `evidence_appendix` bodies in, read-only mission detail plus explicit filed-page reuse and separate markdown export posture out, with explicit freshness, limitations, and no runtime-codex fact invention
-- keep packet specialization, PDF export, and release approval grading out of the first F5B eval scope
+- keep F5 memo, report-posture, and first packet-specialization evals anchored to the active `FP-0038` contract: one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix` in, one deterministic draft `board_packet` out, with explicit freshness, limitations, review-ready posture, and no runtime-codex fact invention
+- keep lender and diligence specialization, PDF export, slide or Marp export, and release approval grading out of the first F5C1 eval scope
 
 Do not treat these as early F4 supported families:
 

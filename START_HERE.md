@@ -56,7 +56,10 @@ Suggested thread naming:
 - `F5-master-plan-and-doc-refresh`
 - `F5A-reporting-mission-foundation-and-first-finance-memo`
 - `F5B-draft-report-body-filed-artifact-and-markdown-export-hardening`
-- `F5C-board-lender-diligence-packet-specialization-and-approval-release-hardening`
+- `F5C-master-plan-and-doc-refresh`
+- `F5C1-board-packet-specialization-and-draft-review-foundation`
+- `F5C2-lender-and-diligence-packet-specialization`
+- `F5C3-approval-release-hardening`
 - `F6-monitoring-and-controls`
 
 Broad F2 Finance Twin work now runs through F2O.
@@ -72,8 +75,9 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `F4C1-finance-policy-lookup` is now the shipped explicit-source policy lookup slice.
 `F4C2-discovery-quality-hardening-and-evals` is now the shipped discovery-quality hardening slice.
 `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` now records the landed first F5A implementation slice.
-`plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` is now the active F5B implementation contract.
-The next implementation thread should start that narrow F5B follow-on, not a reopened F4C2 continuation and not a widened F6 start.
+`plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` now serves as the shipped F5B record.
+`plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` is now the active F5C implementation contract.
+The next implementation thread should start that narrow `F5C1-board-packet-specialization-and-draft-review-foundation` slice, not a reopened F5B follow-on, not a widened F5C2 or F5C3 start, and not a widened F6 start.
 
 ## Review ritual
 

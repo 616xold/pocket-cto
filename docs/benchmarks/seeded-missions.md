@@ -66,6 +66,14 @@ One completed reporting mission that already stores a draft `finance_memo`, a li
 Success:
 The system renders the stored memo and appendix bodies directly in mission detail, lets an operator explicitly file those stored drafts into the CFO Wiki through the existing filed-page route, and shows filing plus markdown export posture separately from proof readiness.
 
+### 7. F5C1 board packet specialization and draft review foundation
+
+Input:
+One completed reporting mission that already stores a draft `finance_memo`, a linked `evidence_appendix`, and the carried freshness, limitations, route, and wiki context from completed reporting work.
+
+Success:
+The system creates one draft `board_packet` from that completed reporting mission only, keeps `mission.type = "reporting"` and specializes through `reportKind`, preserves carried freshness and limitations, and presents the packet as review-ready draft output without lender or diligence specialization, release workflow, runtime-codex drafting, or PDF or slide export.
+
 ## Blocked for now
 
 These discovery families should stay out of the shipped F4A through F4C2 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
@@ -97,4 +105,4 @@ Each seeded mission should be graded on:
 During the early pivot, the repo may still carry legacy engineering eval commands.
 Keep the eval harness architecture, but replace the scenarios and rubrics with finance-oriented datasets as F4/F5 land.
 The current finance-native eval-hook proof for the shipped F4A through F4C2 discovery baseline is `pnpm eval:finance-discovery-quality`, which reuses the deterministic `pnpm smoke:finance-discovery-quality:local` ladder rather than a model-scored runtime eval.
-The active next-step F5 reporting benchmark contract now lives in `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`.
+The active next-step F5 reporting benchmark contract now lives in `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`.

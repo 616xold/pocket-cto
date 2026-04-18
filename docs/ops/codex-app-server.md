@@ -58,18 +58,18 @@ Codex remains valuable after that first answer path exists for:
 
 ## Current F5 posture
 
-The active F5 contract is `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`.
-The shipped first F5A slice already creates first-class reporting missions from completed discovery missions and assembles one draft `finance_memo` plus one linked `evidence_appendix` from stored discovery answers, proof bundles, related routes, and related wiki pages without creating a runtime thread.
+The active F5 contract is `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`.
+The shipped F5A and F5B slices already create first-class reporting missions from completed discovery missions, assemble one draft `finance_memo` plus one linked `evidence_appendix`, expose those stored bodies directly, and reuse the existing CFO Wiki filed-page plus markdown export seams without creating a runtime thread.
 
-For F5B, the control plane and operator surface should:
+For F5C1, the control plane and operator surface should:
 
 - keep numeric and factual authority in stored evidence, not in runtime output
-- expose the stored memo and appendix bodies directly, read-only
-- reuse the existing CFO Wiki filed-page seam for explicit operator filing only
-- reuse the existing company markdown export seam for export linkage only
-- avoid creating a runtime thread for body rendering, filing, or export posture
+- compile one draft `board_packet` only from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`
+- keep `mission.type = "reporting"` and specialize through `reportKind`
+- keep the first packet path deterministic, runtime-free, and draft-only
+- avoid creating a runtime thread for packet compilation or draft-review posture
 
-Later F5 slices may use runtime-codex only in a bounded role such as draft phrasing or formatting assistance once a deterministic memo skeleton already exists.
+Later F5 slices may use runtime-codex only in a bounded role such as draft phrasing or formatting assistance once a deterministic packet skeleton already exists.
 Even then, runtime-codex must not invent finance facts, override stored numbers, or become the approval authority layer.
 
 ## Prompt ownership
@@ -78,7 +78,7 @@ Build product prompts in control-plane modules such as:
 
 - missions
 - wiki
-- reports
+- reporting
 - approvals
 
 Do not hard-code Pocket CFO product logic into the runtime transport wrapper.
@@ -92,7 +92,7 @@ As the product pivots:
 - network access should remain restricted by default
 - runtime actions that change external communication posture must stay human-reviewable
 
-For F5A through F5B specifically, draft report compilation, body exposure, filing, and export posture should stay deterministic and draft-only, so these slices should not introduce runtime approval or release semantics yet.
+For F5A through F5C1 specifically, draft report compilation, body exposure, filing, export posture, and first board-packet specialization should stay deterministic and draft-only, so these slices should not introduce runtime approval or release semantics yet.
 
 ## Transition note
 

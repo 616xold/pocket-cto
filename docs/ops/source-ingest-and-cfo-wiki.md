@@ -342,11 +342,18 @@ Those reporting artifacts now persist:
 - structured evidence sections that later report compilation can reuse
 - deterministic `bodyMarkdown` plus structured metadata
 
-`plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` is now the active F5B contract for the next reporting reuse step:
+`plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` now serves as the shipped F5B record for that stored-report reuse step:
 
 - render the stored memo and appendix bodies directly in mission detail, read-only
 - file selected report artifacts into the existing CFO Wiki filed-page seam through explicit operator action
 - reuse company-level markdown export runs after filing without changing proof readiness semantics
+
+`plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` is now the active F5C contract for the next reporting specialization step:
+
+- compile one draft `board_packet` only from one completed `reporting` mission with stored `finance_memo` plus stored `evidence_appendix`
+- keep `mission.type = "reporting"` and specialize through `reportKind`
+- keep packet compilation deterministic, runtime-free, and draft-only
+- keep lender and diligence specialization, approval-release semantics, and non-markdown export formats out of scope
 
 Numeric claims should only appear when route-backed stored state or explicit refs support them.
 If the stored state is partial, stale, conflicting, or insufficient, the answer should say so plainly instead of inventing certainty.
@@ -375,12 +382,12 @@ The shipped F4 baseline still does none of the following:
 - no report compilation inside the F4 answer path itself; later F5 reporting work consumes the stored discovery outputs in a separate mission phase
 - no F6 monitoring work
 
-`FP-0037` now makes the next-step boundary explicit:
+`FP-0038` now makes the next-step boundary explicit:
 
-- the next F5 step should render stored report bodies directly from the landed F5A artifacts
-- filing into the wiki should be an explicit operator action that reuses the existing filed-page route
-- company markdown export posture should stay separate from proof readiness and should reuse the existing export-run seam
-- packet specialization, PDF export, slide export, runtime-codex drafting, and release semantics remain later work
+- the next F5 step should compile one specialized `board_packet` from the landed F5A plus F5B reporting artifacts rather than from discovery or generic chat
+- the source reporting mission must already store both `finance_memo` and `evidence_appendix`
+- raw wiki pages remain derived evidence inputs, not the only packet source of truth
+- lender and diligence specialization, PDF export, slide export, runtime-codex drafting, and release semantics remain later work
 
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
@@ -388,7 +395,8 @@ If the latest bound policy extract is missing, unsupported, or failed, the missi
 F4C2 now also ships operator-safe policy source selection from the existing bound-source route, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, and the packaged deterministic `pnpm smoke:finance-discovery-quality:local` ladder as the current practical proof for the shipped six-family discovery baseline.
 Generic corpus-wide policy retrieval, runtime-codex answer generation, vector search, OCR, and deep-read remain out of scope for the shipped F4 baseline.
 Report compilation now exists in the shipped F5A slice and stays deterministic, draft-only, and source-discovery-grounded.
-The active F5B follow-on should harden only body visibility, filed-page reuse, and markdown export posture from that stored reporting state.
+The shipped F5B follow-on now hardens body visibility, filed-page reuse, and markdown export posture from that stored reporting state.
+The active F5C1 follow-on should specialize only one draft `board_packet` from that completed reporting state.
 
 ## Lint flow
 
