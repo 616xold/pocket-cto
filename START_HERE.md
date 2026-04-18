@@ -53,6 +53,8 @@ Suggested thread naming:
 - `F4B-finance-discovery-supported-posture-and-obligation-families`
 - `F4C1-finance-policy-lookup`
 - `F4C2-discovery-quality-hardening-and-evals`
+- `F5-master-plan-and-doc-refresh`
+- `F5A-reporting-mission-foundation-and-first-finance-memo`
 - `F5-memo-and-packet-compiler`
 - `F6-monitoring-and-controls`
 
@@ -68,7 +70,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` now serves as the shipped F4C record, including the narrow finance-native eval-hook closeout.
 `F4C1-finance-policy-lookup` is now the shipped explicit-source policy lookup slice.
 `F4C2-discovery-quality-hardening-and-evals` is now the shipped discovery-quality hardening slice.
-The next major phase is `F5-memo-and-packet-compiler` rather than reopening F4C2 or widening into F6 work.
+`plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` is now the active F5 implementation contract.
+The next implementation thread should be `F5A-reporting-mission-foundation-and-first-finance-memo`, not a reopened F4C2 continuation and not a widened F6 start.
 
 ## Review ritual
 

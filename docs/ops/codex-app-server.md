@@ -56,6 +56,20 @@ Codex remains valuable after that first answer path exists for:
 - memo or packet drafting in F5
 - evidence-summary or formatting assistance when a deterministic answer already exists
 
+## First F5 posture
+
+The active F5 contract is `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`.
+
+For F5A, the control plane should:
+
+- create a first-class reporting mission from a completed discovery mission
+- assemble one draft `finance_memo` plus one linked `evidence_appendix` from stored discovery answers, proof bundles, related routes, and related wiki pages
+- keep numeric and factual authority in stored evidence, not in runtime output
+- avoid creating a runtime thread for the first memo compiler
+
+Later F5 slices may use runtime-codex only in a bounded role such as draft phrasing or formatting assistance once a deterministic memo skeleton already exists.
+Even then, runtime-codex must not invent finance facts, override stored numbers, or become the approval authority layer.
+
 ## Prompt ownership
 
 Build product prompts in control-plane modules such as:
@@ -75,6 +89,8 @@ As the product pivots:
 - write-capable tasks such as wiki filing or report artifact generation should request approval when the slice requires it
 - network access should remain restricted by default
 - runtime actions that change external communication posture must stay human-reviewable
+
+For F5A specifically, draft memo compilation should stay deterministic and draft-only, so the slice should not introduce runtime approval or release semantics yet.
 
 ## Transition note
 

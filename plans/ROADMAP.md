@@ -271,20 +271,51 @@ Exit criteria:
 ## F5 — Reporting, memo, and packet compiler
 
 Goal:
-Turn discovery outputs into artifacts real operators can share and review.
+Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
+
+The active implementation contract for this phase is `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`.
+The authority model stays fixed:
+
+- raw sources remain authoritative for document claims
+- the Finance Twin remains authoritative for structured finance facts
+- discovery answers and proof bundles remain the stored reporting inputs
+- the memo compiler is derived output, not a new source of truth
 
 Focus:
 
-- finance memos
-- board packets
-- lender or diligence updates
-- evidence appendices
-- approval and release flows
+- first-class reporting missions
+- one draft `finance_memo`
+- one linked `evidence_appendix`
+- mission-based operator entry from completed discovery work
+- explicit draft posture and later approval or release hardening
+
+Slice map:
+
+- `F5A — reporting mission foundation and first finance memo`
+  - add a first-class `reporting` mission type
+  - compile only from a completed finance discovery mission and its stored `discovery_answer`, proof bundle, related routes, and related wiki pages
+  - persist one draft `finance_memo`
+  - persist one linked `evidence_appendix`
+  - keep execution deterministic and read-only
+  - keep runtime-codex, wiki filing, packet specialization, PDF export, and release semantics out of scope
+
+- `F5B — evidence appendix, filed artifact, and export hardening`
+  - harden appendix structure
+  - decide whether and how selected report artifacts file back into the wiki
+  - add export work only after the durable artifact contract is stable
+  - keep packet specialization and release hardening out of scope
+
+- `F5C — board, lender, and diligence packet specialization plus approval-release hardening`
+  - add specialized report families such as `board_packet`, `lender_update`, and `diligence_packet`
+  - add the first real report review or release semantics
+  - harden operator approval posture for external communication workflows
 
 Exit criteria:
 
-- at least one discovery path can produce a reviewable finance artifact
-- the artifact remains reproducible and evidence-linked
+- one completed finance discovery mission can produce a first-class reporting mission
+- the first report path yields a draft `finance_memo` plus `evidence_appendix`
+- report outputs remain reproducible, evidence-linked, freshness-aware, and explicit about limitations
+- packet specialization, export, and release semantics remain clearly deferred until later F5 slices
 
 ## F6 — Monitoring, controls, and adoption loop
 
