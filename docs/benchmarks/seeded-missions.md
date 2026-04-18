@@ -50,13 +50,13 @@ One explicit `policySourceId` bound as `policy_document` for the company plus th
 Success:
 The system answers a typed `policy_lookup` question from the scoped policy page, same-source digest history when useful, `concepts/policy-corpus` when useful, and bound-source extract status, with a truthful limited answer whenever the latest extract is missing, unsupported, or failed.
 
-### 5. Memo or packet compilation
+### 5. F5A draft finance memo compilation
 
 Input:
-A stored answer plus relevant twin or wiki context.
+A completed discovery mission plus its stored `discovery_answer`, proof bundle, and relevant route or wiki context.
 
 Success:
-The system produces a short memo or packet with linked evidence, freshness notes, and an appendix-ready structure.
+The system creates a first-class reporting mission that produces one draft `finance_memo` plus one linked `evidence_appendix`, with linked evidence, freshness notes, visible limitations, and explicit draft-only posture.
 
 ## Blocked for now
 

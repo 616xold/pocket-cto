@@ -329,6 +329,8 @@ The shipped answer families are exactly:
 - `policy_lookup`
 
 The current finance discovery answer artifact is durable enough to survive outside chat and later feed F5 reporting work.
+`plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` now defines that first reporting reuse contract as a draft `finance_memo` plus linked `evidence_appendix` compiled from a completed discovery mission.
+That reporting path is planned, not yet implemented.
 At minimum it should carry:
 
 - company key
@@ -368,11 +370,18 @@ The shipped F4 baseline still does none of the following:
 - no F5 report compiler work
 - no F6 monitoring work
 
+`FP-0036` now makes the next-step boundary explicit:
+
+- first reporting work should compile from stored discovery answers and proof bundles
+- the first F5 slice should stay draft-only and deterministic
+- wiki filing, packet specialization, export, and release semantics remain later work
+
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
 If the latest bound policy extract is missing, unsupported, or failed, the mission persists a truthful limited answer rather than inventing a digest.
 F4C2 now also ships operator-safe policy source selection from the existing bound-source route, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, and the packaged deterministic `pnpm smoke:finance-discovery-quality:local` ladder as the current practical proof for the shipped six-family discovery baseline.
-Generic corpus-wide policy retrieval, runtime-codex answer generation, vector search, OCR, deep-read, and report compilation remain out of scope for this shipped F4C1 slice.
+Generic corpus-wide policy retrieval, runtime-codex answer generation, vector search, OCR, and deep-read remain out of scope for the shipped F4 baseline.
+Report compilation begins only under the active F5 plan, and that first F5A slice stays deterministic, draft-only, and source-discovery-grounded.
 
 ## Lint flow
 

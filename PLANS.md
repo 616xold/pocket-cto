@@ -29,6 +29,7 @@ Existing `EP-*` files are Pocket CTO history and should be archived or treated a
 12. Every Finance Plan must say whether GitHub connector work is in scope or explicitly out of scope.
 13. If no unfinished Finance Plan exists for the current repo phase, create the next-phase `plans/FP-*.md` plan before changing code.
 14. Once a plan is clearly merged or shipped, update stale final publication checkboxes and outcome notes instead of leaving the plan looking unfinished.
+15. When a new phase starts, keep the prior shipped plan as the historical record and create exactly one new active plan for the next implementation contract.
 
 ## Required sections
 
@@ -67,6 +68,7 @@ For Pocket CFO plans:
 - preserve architecture boundaries from `AGENTS.md`
 - mention replay and evidence-bundle implications
 - mention provenance, freshness, and limitation posture when the slice affects answers or reports
+- for reporting or report-artifact phases, define the source-evidence contract, draft-versus-release posture, and runtime-codex boundary explicitly
 - mention any impact on `WORKFLOW.md`, stack packs, or skills
 - mention any new environment variables and where they are documented
 - say whether the change is docs-only, schema-only, route-driven, artifact-driven, or cross-cutting

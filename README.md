@@ -50,7 +50,8 @@ F4A through F4C2 are now the shipped finance-discovery baseline.
 F4B widens the first answer path to the truthful stored-state posture, spend, and obligation families listed above.
 F4C1 adds explicit-source `policy_lookup`, grounded only in `policy_document` bindings, stored deterministic extracts, compiler-owned policy pages, same-source digest history when useful, and `concepts/policy-corpus`.
 F4C2 hardens that shipped six-family discovery baseline with operator-safe policy source selection from existing `policy_document` bindings, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, packaged deterministic `pnpm smoke:finance-discovery-quality:local`, and finance-native `pnpm eval:finance-discovery-quality` reporting that reuses the deterministic smoke without fake model metadata.
-`plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` now serves as the shipped F4C record, and the next major implementation phase is F5 memo and packet compiler rather than another F4C2 continuation.
+`plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` now serves as the shipped final F4 record.
+`plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` is now the active F5 contract, and it keeps the first implementation slice narrow: a first-class reporting mission that compiles one draft `finance_memo` plus one `evidence_appendix` from a completed discovery mission and its stored evidence rather than from generic chat intake.
 
 ## Product boundary for v1
 
@@ -151,6 +152,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0033-finance-discovery-baseline-closeout-polish.md
 │   ├── FP-0034-finance-discovery-final-artifact-and-doc-polish.md
 │   ├── FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md
+│   ├── FP-0036-reporting-mission-foundation-and-first-finance-memo.md
 │   └── templates
 └── .agents
     └── skills
