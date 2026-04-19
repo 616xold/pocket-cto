@@ -355,7 +355,7 @@ Those reporting artifacts now persist:
 - keep packet compilation deterministic, runtime-free, and draft-only
 - keep lender specialization, diligence specialization, approval-release semantics, and non-markdown export formats out of scope
 
-`plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` is now the active F5C2 contract for the next reporting specialization step:
+`plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` now serves as the shipped F5C2 record for the second reporting specialization step:
 
 - compile one draft `lender_update` only from one completed `reporting` mission with stored `finance_memo` plus stored `evidence_appendix`
 - keep `mission.type = "reporting"` and specialize through `reportKind`
@@ -389,9 +389,9 @@ The shipped F4 baseline still does none of the following:
 - no report compilation inside the F4 answer path itself; later F5 reporting work consumes the stored discovery outputs in a separate mission phase
 - no F6 monitoring work
 
-`FP-0039` now makes the next-step boundary explicit:
+`FP-0039` now makes the shipped F5C2 boundary explicit:
 
-- the next F5 step should compile one specialized `lender_update` from the landed F5A plus F5B reporting artifacts rather than from discovery, `board_packet`, or generic chat
+- the repo now compiles one specialized `lender_update` from the landed F5A plus F5B reporting artifacts rather than from discovery, `board_packet`, or generic chat
 - the source reporting mission must already store both `finance_memo` and `evidence_appendix`
 - raw wiki pages remain derived evidence inputs, not the only packet source of truth
 - diligence specialization, PDF export, slide export, runtime-codex drafting, and release semantics remain later work
@@ -404,7 +404,7 @@ Generic corpus-wide policy retrieval, runtime-codex answer generation, vector se
 Report compilation now exists in the shipped F5A slice and stays deterministic, draft-only, and source-discovery-grounded.
 The shipped F5B follow-on now hardens body visibility, filed-page reuse, and markdown export posture from that stored reporting state.
 The shipped F5C1 follow-on now specializes one draft `board_packet` from that completed reporting state.
-The active F5C2 follow-on should specialize only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
+The shipped F5C2 follow-on now specializes only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
 
 ## Lint flow
 

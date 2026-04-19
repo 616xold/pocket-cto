@@ -2,7 +2,7 @@
 
 ## Purpose / Big Picture
 
-This plan is the active F5 implementation contract produced by the F5C2 master-plan and active-doc refresh slice.
+This plan now serves as the shipped F5C2 implementation record produced by the F5C2 master-plan, implementation, and QA closeout work.
 The target phase is `F5`, and the next execution slice is `F5C2-lender-update-specialization-and-draft-review-foundation`.
 The user-visible goal is narrow and concrete: after the shipped F5A, F5B, and F5C1 path already creates one draft `finance_memo`, one linked `evidence_appendix`, truthful stored-vs-filed-vs-exported posture, and one specialized draft `board_packet`, Pocket CFO should next be able to compile one specialized draft `lender_update` from completed reporting work and present it as review-ready draft output without widening into diligence specialization, external release, finance approval, runtime-codex drafting, filing or export expansion, or non-markdown output formats.
 
@@ -23,6 +23,8 @@ This plan now records the landed F5C2 implementation: additive runtime code, one
 - [x] 2026-04-19T12:35:24Z Re-audit the clean F5C2 branch against the shipped F5A through F5C1 code, explicitly invoke the required repo skills in-thread, and confirm the pre-edit implementation verdict: add one deterministic `lender_update` specialization by extending the existing reporting and board-packet seams rather than reopening finance-memo publication, runtime-codex drafting, diligence specialization, or release posture.
 - [x] 2026-04-19T13:58:26Z Land the first real F5C2 implementation slice: add `reportKind = "lender_update"`, add a first-class `lender_update` artifact kind and additive DB migration, add one dedicated `POST /missions/reporting/lender-updates` creation contract, compile one deterministic draft lender update from one completed finance-memo reporting mission with stored memo-plus-appendix evidence only, and extend proof-bundle plus mission-detail plus mission-list plus operator surfaces without widening into filing, export, diligence, approval, or runtime-codex drafting.
 - [x] 2026-04-19T14:02:00Z Validate the landed F5C2 slice through targeted domain, control-plane, and web suites; the preserved F4 through F5C1 smoke ladder; the new `pnpm smoke:lender-update:local` proof; preserved twin guardrails; repo-wide `pnpm lint`, `pnpm typecheck`, and `pnpm test`; and clean-worktree `pnpm ci:repro:current`.
+- [x] 2026-04-19T14:10:08Z Run a strict F5C2 QA pass, fix the lender-update operator follow-on copy so it stays truthful on lender-update mission detail, and refresh the active-doc chain so FP-0039 is recorded as the shipped F5C2 record rather than the next active implementation thread.
+- [x] 2026-04-19T14:20:08Z Fix one QA-only web spec fixture shape mismatch that `pnpm ci:repro:current` exposed in `apps/web/app/missions/[missionId]/mission-actions.spec.tsx`, then rerun the narrow web tests plus `pnpm ci:repro:current` until reproducibility returned green.
 
 ## Surprises & Discoveries
 
@@ -46,6 +48,12 @@ This plan now records the landed F5C2 implementation: additive runtime code, one
 
 - Observation: the packaged lender-update smoke exposed one real slice-local failure before the final ladder went green: the new `artifact_kind` enum value existed in code and migration files, but the already-running local database had not applied the additive migration yet.
   Evidence: the first `pnpm smoke:lender-update:local` run left the lender-update mission stuck in `running` with only the placeholder proof bundle persisted until `pnpm db:migrate` applied `packages/db/drizzle/0032_bizarre_daimon_hellstrom.sql`, after which the same smoke passed cleanly.
+
+- Observation: the first implementation pass left one operator-surface wording leak and one stale active-doc chain after the code itself had already landed.
+  Evidence: `apps/web/app/missions/[missionId]/mission-actions.tsx` reused board-packet draft-only fallback copy on lender-update mission detail, while `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `docs/ops/codex-app-server.md`, and `evals/README.md` still pointed contributors at `FP-0039` as if F5C2 were the next active thread.
+
+- Observation: the only post-correction failure came from a new QA spec fixture rather than the shipped lender-update path itself.
+  Evidence: `pnpm ci:repro:current` failed in `apps/web/app/missions/[missionId]/mission-actions.spec.tsx` until the fixture added the required `mission.createdBy` field and the `liveControl.limitation = "single_process_only"` shape expected by `MissionDetailView`.
 
 ## Decision Log
 
@@ -78,6 +86,9 @@ This plan now records the landed F5C2 implementation: additive runtime code, one
 
 - Decision: implement F5C2 by mirroring the shipped board-packet specialization pattern with one dedicated lender-update intake contract, one dedicated lender-update artifact, and the same completed-finance-memo source-reporting gate.
   Rationale: that keeps the slice additive, legible, and low-risk while preserving the existing `reporting` mission umbrella, the current proof-bundle fanout, and the finance-memo-only publication seam.
+
+- Decision: the F5C2 QA closeout should refresh operator copy and active-doc pointers without opening a new later-F5 implementation plan inside this slice.
+  Rationale: the truthful correction is to mark FP-0039 as the shipped F5C2 record and leave later-F5 planning to its own next slice, rather than keeping stale “active F5C2” wording or widening this QA pass into F5C3 implementation work.
 
 - Decision: F5C should now proceed as three explicit remaining sub-slices after shipped F5C1: `F5C2-lender-update-specialization-and-draft-review-foundation`, `F5C3-diligence-packet-specialization-and-draft-review-foundation`, and `F5C4-approval-release-hardening-for-external-communication-posture`.
   Rationale: this sequencing keeps lender specialization, diligence specialization, and external communication posture hardening as separate contracts.
@@ -338,18 +349,11 @@ No release, send, approval, filing, PDF export, or slide export side effect shou
 
 ## Artifacts and Notes
 
-This docs-and-plan slice leaves:
+This shipped F5C2 record now leaves:
 
-- one new active F5C2 implementation contract at `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`
-- refreshed active docs that point at shipped F5A, F5B, and F5C1 history plus this new active F5C2 contract
-- one tiny FP-0038 handoff note so the older board-packet plan remains a truthful shipped record instead of an active next-step instruction
-
-The first F5C2 code thread is expected to leave:
-
-- one specialized draft `lender_update` reporting mission
-- explicit source reporting mission lineage and source discovery mission lineage
-- carried freshness posture and visible limitations from the stored reporting inputs
-- updated proof-bundle summaries and mission read models that expose review-ready lender-update draft posture
+- one shipped `lender_update` reporting specialization at `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`
+- refreshed active docs that point at shipped F5A through F5C2 history without pretending F5C2 is still the next unfinished thread
+- one operator-surface copy fix so lender-update mission detail stays truthful about F5C2 draft-only posture
 
 No new environment variables are expected for the first F5C2 slice.
 If a concrete implementation blocker proves otherwise, document it in this plan and in the active docs before widening scope.
@@ -368,8 +372,8 @@ The existing finance-memo filing and markdown export seams remain valid, but the
 
 ## Outcomes & Retrospective
 
-This thread ships the F5C2 master-plan and active-doc refresh only.
-It creates `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`, moves the active-doc chain from the shipped F5C1 board-packet record to this new active F5C2 contract, narrows the next implementation thread to one deterministic, draft-only, runtime-free `lender_update` specialization path from completed reporting work, and reruns the full prescribed validation ladder without starting F5C2 code.
+This thread now records the shipped F5C2 implementation plus a narrow QA closeout.
+It preserves the landed deterministic, draft-only, runtime-free `lender_update` specialization path from completed reporting work, records the additive migration and packaged lender-update smoke, and refreshes the active-doc chain so contributors are not pointed back at an already-shipped F5C2 slice.
 
-This thread does not start F5C2 code, does not reopen F5C1, does not widen into diligence specialization or approval-release hardening, and does not start F6.
-What remains is the first real F5C2 implementation thread.
+This thread does not reopen F5C1, does not widen into F5C3 diligence implementation or F5C4 approval-release hardening, and does not start F6.
+What remains is the next narrow later-F5 planning and implementation slice.

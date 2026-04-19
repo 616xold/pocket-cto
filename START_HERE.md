@@ -78,8 +78,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` now records the landed first F5A implementation slice.
 `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` now serves as the shipped F5B record.
 `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C1 record.
-`plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` is now the active F5C2 implementation contract.
-The next implementation thread should start that narrow `F5C2-lender-update-specialization-and-draft-review-foundation` slice, not a reopened F5C1 follow-on, not a widened F5C3 or F5C4 start, and not a widened F6 start.
+`plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` now serves as the shipped F5C2 record.
+There is no unfinished `plans/FP-*.md` file checked in right now, so the next implementation thread should begin by creating the next narrow later-F5 plan rather than reopening F5C2, widening straight into F5C4, or starting F6 early.
 
 ## Review ritual
 

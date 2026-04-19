@@ -63,6 +63,12 @@ export function MissionActions({
       reporting?.publication?.filedMemo &&
         reporting.publication.filedEvidenceAppendix,
     );
+  const reportingFollowOnOutOfScopeNote =
+    reporting?.reportKind === "board_packet"
+      ? "Board packet missions remain draft-only in F5C1. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
+      : reporting?.reportKind === "lender_update"
+        ? "Lender update missions remain draft-only in F5C2. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
+        : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C2 path.";
 
   return (
     <section className="card">
@@ -151,9 +157,7 @@ export function MissionActions({
             </>
           ) : (
             <p className="muted">
-              Board packet missions remain draft-only in F5C1. Filing, markdown
-              export, approval, release, PDF, and slide actions stay out of
-              scope here.
+              {reportingFollowOnOutOfScopeNote}
             </p>
           )}
         </div>
