@@ -13,7 +13,7 @@ Treat these as the active product and implementation guidance, in this order:
 4. `PLANS.md`
 5. `WORKFLOW.md`
 6. `plans/ROADMAP.md`
-7. the unfinished `plans/FP-*.md` file if one exists; today that is `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`, while `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` remains the shipped F5B record, `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` remains the shipped F5A record, and `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains the shipped final F4 record
+7. the unfinished `plans/FP-*.md` file if one exists; today that is `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`, while `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` remains the shipped F5C1 record, `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` remains the shipped F5B record, `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` remains the shipped F5A record, and `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` remains the shipped final F4 record
 8. `docs/ops/source-ingest-and-cfo-wiki.md`
 9. `docs/ops/local-dev.md`
 10. `docs/ops/codex-app-server.md`

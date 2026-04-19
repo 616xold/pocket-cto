@@ -2,7 +2,8 @@
 
 ## Purpose / Big Picture
 
-This plan is the active F5 implementation contract produced by the docs-only F5C master-plan and active-doc refresh slice.
+This plan now serves as the shipped F5C1 record.
+`plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` is the active F5C2 implementation contract that follows it.
 The target phase is `F5`, and the first execution slice is `F5C1-board-packet-specialization-and-draft-review-foundation`.
 The user-visible goal is narrow and concrete: after the shipped F5A and F5B reporting path already creates one draft `finance_memo`, one linked `evidence_appendix`, and truthful stored-vs-filed-vs-exported posture, Pocket CFO should be able to compile one specialized draft `board_packet` from that completed reporting work and present it as review-ready draft output without widening into external release, finance approval, lender or diligence specialization, runtime-codex drafting, or non-markdown export formats.
 
@@ -75,14 +76,14 @@ This plan does not authorize F5C2 lender or diligence packet specialization, F5C
 - Decision: F5C1 does not add PDF export, slide export, or Marp export.
   Rationale: the first packet slice should prove the specialized draft artifact contract before it widens into new output channels.
 
-- Decision: F5C should now proceed as three explicit sub-slices: `F5C1-board-packet-specialization-and-draft-review-foundation`, `F5C2-lender-and-diligence-packet-specialization`, and `F5C3-approval-release-hardening-for-external-communication-posture`.
-  Rationale: this sequencing keeps packet-family expansion separate from external communication posture hardening.
+- Decision: after this shipped F5C1 record, successor plans should keep lender specialization, diligence specialization, and approval-release hardening as separate contracts, with `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` narrowing the next step to `F5C2-lender-update-specialization-and-draft-review-foundation`.
+  Rationale: separating lender specialization, diligence specialization, and external communication posture hardening keeps the next implementation contract narrow and truthful.
 
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reintroduce a `modules/reports/**` rename wave.
   Rationale: the shipped F5A and F5B code already standardized on first-class `reporting` seams, and a rename would create noise before the packet contract exists.
 
-- Decision: leave `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` as the shipped F5A record and `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` as the shipped F5B record while this file becomes the active F5C contract.
-  Rationale: the plan chain should preserve shipped history and create exactly one new active plan.
+- Decision: leave `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` as the shipped F5A record and `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` as the shipped F5B record while this file remains the shipped F5C1 record and successor planning moves to `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`.
+  Rationale: the plan chain should preserve shipped history and keep exactly one active successor plan.
 
 ## Context and Orientation
 
@@ -115,7 +116,7 @@ The active-doc boundary for this handoff is:
 - `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md`
 - `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`
 - `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`
-- this active plan, `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`
+- this shipped F5C1 record, `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`
 - `docs/ops/local-dev.md`
 - `docs/ops/source-ingest-and-cfo-wiki.md`
 - `docs/ops/codex-app-server.md`
@@ -313,10 +314,10 @@ No release, send, approval, PDF export, or slide export side effect should be pr
 
 ## Artifacts and Notes
 
-This docs-and-plan slice leaves:
+This shipped F5C1 record now leaves:
 
-- one new active F5C implementation contract at `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`
-- refreshed active docs that point at shipped F5A and F5B history plus this active F5C contract
+- one shipped F5C1 implementation record at `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`
+- refreshed active docs that now point at shipped F5A through F5C1 history plus the active F5C2 contract in `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`
 
 The first F5C1 code thread is expected to leave:
 
@@ -341,8 +342,8 @@ The first packet path must stay grounded in the stored reporting artifacts that 
 
 ## Outcomes & Retrospective
 
-This thread shipped the F5C master-plan and active-doc refresh only.
-It created `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`, moved the active-doc chain from the shipped F5B record to this new active F5C contract, and narrowed the next implementation thread to one deterministic, draft-only, runtime-free `board_packet` specialization path from completed reporting work.
+This plan now records the shipped F5C1 board-packet slice.
+It narrowed the first packet-specialization contract, then the later implementation thread landed one deterministic, draft-only, runtime-free `board_packet` specialization path from completed reporting work and proved it through the packaged `pnpm smoke:board-packet:local` ladder plus the preserved repo-wide validation stack.
 
-This thread did not start F5C1 code, did not reopen F5B, did not widen into F5C2 or F5C3, and did not start F6.
-What remains is the first real F5C1 implementation thread.
+What remains is not more F5C1 work.
+The next active implementation thread should follow `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` for one narrow `lender_update` specialization slice without widening into diligence, approval-release, or F6 work.

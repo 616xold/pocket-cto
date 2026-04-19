@@ -53,7 +53,8 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` now serves as the shipped final F4 record.
 `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` now records the landed first F5A slice: a first-class reporting mission that compiles one draft `finance_memo` plus one `evidence_appendix` from a completed discovery mission and its stored evidence rather than from generic chat intake.
 `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` now serves as the shipped F5B record: expose the stored report bodies directly, add mission-centric filing and markdown export actions that reuse the existing CFO Wiki seams, keep reporting deterministic and draft-only, and preserve proof readiness semantics while packaged `pnpm smoke:finance-report-filed-artifact:local` proves the stored -> filed -> exported path.
-`plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` is now the active F5C contract: narrow the first real F5C implementation to one deterministic, runtime-free, draft-only `board_packet` specialization path from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`, while leaving lender and diligence packet specialization plus approval-release hardening for later F5C slices.
+`plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C1 record: one deterministic, runtime-free, draft-only `board_packet` specialization path from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
+`plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` is now the active F5C2 contract: narrow the next implementation thread to one deterministic, runtime-free, draft-only `lender_update` specialization path from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`, while leaving diligence specialization and approval-release hardening for later F5C slices.
 
 ## Product boundary for v1
 
@@ -157,6 +158,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0036-reporting-mission-foundation-and-first-finance-memo.md
 │   ├── FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md
 │   ├── FP-0038-board-packet-specialization-and-draft-review-foundation.md
+│   ├── FP-0039-lender-update-specialization-and-draft-review-foundation.md
 │   └── templates
 └── .agents
     └── skills

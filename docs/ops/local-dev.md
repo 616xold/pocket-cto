@@ -1,6 +1,6 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, through the shipped F4A through F4C2 finance-discovery baseline, and through the shipped F5A plus F5B reporting slices. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` is the shipped final F4 record, `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` is the shipped F5A record, `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` is the shipped F5B record, and `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` is the active F5C implementation contract.
+This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, through the shipped F4A through F4C2 finance-discovery baseline, and through the shipped F5A through F5C1 reporting slices. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` is the shipped final F4 record, `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` is the shipped F5A record, `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` is the shipped F5B record, `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` is the shipped F5C1 record, and `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` is the active F5C2 implementation contract.
 
 That means two things are true at once:
 
@@ -134,8 +134,8 @@ Today, steps 1 through 5 exist in a narrow form:
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-Today that means `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`, which keeps the next implementation thread focused on one deterministic, runtime-free, draft-only `board_packet` specialization path from a completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
-Do not reopen F4C2, do not repeat F5A or F5B work, and do not widen into later F5C2 lender or diligence specialization, F5C3 approval-release hardening, or F6 until that active contract lands.
+Today that means `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`, which keeps the next implementation thread focused on one deterministic, runtime-free, draft-only `lender_update` specialization path from a completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
+Do not reopen F4C2, do not repeat F5A, F5B, or F5C1 work, and do not widen into later F5C3 diligence specialization, F5C4 approval-release hardening, or F6 until that active contract lands.
 
 The active finance-twin read surface is currently backend-first:
 
