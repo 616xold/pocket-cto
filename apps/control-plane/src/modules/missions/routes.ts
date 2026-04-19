@@ -9,6 +9,7 @@ import {
   createAnalysisMissionSchema,
   createBoardPacketMissionSchema,
   createDiscoveryMissionSchema,
+  createLenderUpdateMissionSchema,
   exportReportingMissionMarkdownSchema,
   fileReportingMissionArtifactsSchema,
   createMissionFromTextSchema,
@@ -65,6 +66,13 @@ export async function registerMissionRoutes(
   app.post("/missions/reporting/board-packets", async (request, reply) => {
     const body = createBoardPacketMissionSchema.parse(request.body);
     const created = await deps.missionService.createBoardPacket(body);
+    reply.code(201);
+    return created;
+  });
+
+  app.post("/missions/reporting/lender-updates", async (request, reply) => {
+    const body = createLenderUpdateMissionSchema.parse(request.body);
+    const created = await deps.missionService.createLenderUpdate(body);
     reply.code(201);
     return created;
   });

@@ -21,6 +21,7 @@ export const ArtifactKindSchema = z.enum([
   "finance_memo",
   "evidence_appendix",
   "board_packet",
+  "lender_update",
   "pr_link",
   "diff_summary",
   "test_report",

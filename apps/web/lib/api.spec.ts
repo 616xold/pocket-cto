@@ -396,6 +396,44 @@ describe("web api module", () => {
     });
   });
 
+  it("posts the lender-update mission-create route correctly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        return buildLenderUpdateMissionCreatePayload();
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const created = await mod.createLenderUpdateMission({
+      requestedBy: "Local web operator",
+      sourceReportingMissionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    });
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+
+    expect(created.mission.type).toBe("reporting");
+    expect(created.proofBundle.reportKind).toBe("lender_update");
+    expect(created.proofBundle.sourceReportingMissionId).toBe(
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/missions/reporting/lender-updates`,
+      expect.objectContaining({
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      }),
+    );
+    expect(JSON.parse(String(request.body))).toEqual({
+      requestedBy: "Local web operator",
+      sourceReportingMissionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    });
+  });
+
   it("posts the reporting filed-artifacts route correctly", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -1629,6 +1667,139 @@ function buildBoardPacketMissionCreatePayload() {
         status: "pending",
         summary: null,
         updatedAt: "2026-04-19T10:00:00.000Z",
+        workspaceId: null,
+      },
+    ],
+  };
+}
+
+function buildLenderUpdateMissionCreatePayload() {
+  return {
+    mission: {
+      createdAt: "2026-04-19T10:30:00.000Z",
+      createdBy: "Local web operator",
+      id: missionId,
+      objective:
+        "Compile one draft lender update from completed reporting mission bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb and its stored finance memo plus evidence appendix.",
+      primaryRepo: null,
+      sourceKind: "manual_reporting",
+      sourceRef: null,
+      spec: {
+        acceptance: ["persist one draft lender_update artifact"],
+        constraints: {
+          allowedPaths: [],
+          mustNot: [
+            "do not invoke the codex runtime",
+            "do not read generic chat text or freeform lender-update prompts",
+            "do not invent or restate finance facts beyond stored reporting evidence",
+            "do not hide stale, partial, missing, or conflicting stored evidence",
+            "do not add approval workflow, release workflow, diligence packets, PDF export, or slide export",
+          ],
+        },
+        deliverables: ["lender_update", "proof_bundle"],
+        evidenceRequirements: [
+          "stored finance_memo artifact",
+          "stored evidence_appendix artifact",
+          "stored source reporting proof bundle",
+          "stored related route paths and related CFO Wiki page keys",
+          "stored freshness posture and visible limitations",
+        ],
+        input: {
+          reportingRequest: {
+            companyKey: "acme",
+            policySourceId: null,
+            policySourceScope: null,
+            questionKind: "payables_pressure",
+            reportKind: "lender_update",
+            sourceDiscoveryMissionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            sourceReportingMissionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          },
+        },
+        objective:
+          "Compile one draft lender update from completed reporting mission bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb and its stored finance memo plus evidence appendix.",
+        repos: [],
+        riskBudget: {
+          allowNetwork: false,
+          maxCostUsd: 1,
+          maxWallClockMinutes: 5,
+          requiresHumanApprovalFor: [],
+          sandboxMode: "read-only",
+        },
+        title: "Draft lender update for acme from payables pressure reporting",
+        type: "reporting",
+      },
+      status: "queued",
+      title: "Draft lender update for acme from payables pressure reporting",
+      type: "reporting",
+      updatedAt: "2026-04-19T10:30:00.000Z",
+    },
+    proofBundle: {
+      answerSummary: "",
+      appendixPresent: true,
+      artifactIds: [],
+      artifacts: [],
+      branchName: null,
+      changeSummary: "",
+      companyKey: "acme",
+      decisionTrace: [],
+      evidenceCompleteness: {
+        status: "missing",
+        expectedArtifactKinds: ["lender_update"],
+        presentArtifactKinds: [],
+        missingArtifactKinds: ["lender_update"],
+        notes: ["Draft lender update evidence is missing."],
+      },
+      freshnessState: null,
+      freshnessSummary: "",
+      latestApproval: null,
+      limitationsSummary: "",
+      missionId,
+      missionTitle: "Draft lender update for acme from payables pressure reporting",
+      objective:
+        "Compile one draft lender update from completed reporting mission bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb and its stored finance memo plus evidence appendix.",
+      policySourceId: null,
+      policySourceScope: null,
+      pullRequestNumber: null,
+      pullRequestUrl: null,
+      questionKind: "payables_pressure",
+      replayEventCount: 0,
+      relatedRoutePaths: [],
+      relatedWikiPageKeys: [],
+      reportDraftStatus: "draft_only",
+      reportKind: "lender_update",
+      reportPublication: null,
+      reportSummary: "",
+      riskSummary: "",
+      rollbackSummary: "",
+      sourceDiscoveryMissionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      sourceReportingMissionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      status: "placeholder",
+      targetRepoFullName: null,
+      timestamps: {
+        missionCreatedAt: "2026-04-19T10:30:00.000Z",
+        latestPlannerEvidenceAt: null,
+        latestExecutorEvidenceAt: null,
+        latestPullRequestAt: null,
+        latestApprovalAt: null,
+        latestArtifactAt: null,
+      },
+      validationSummary: "",
+      verificationSummary: "",
+    },
+    tasks: [
+      {
+        attemptCount: 0,
+        codexThreadId: null,
+        codexTurnId: null,
+        createdAt: "2026-04-19T10:30:00.000Z",
+        dependsOnTaskId: null,
+        id: taskId,
+        missionId,
+        role: "scout",
+        sequence: 0,
+        status: "pending",
+        summary: null,
+        updatedAt: "2026-04-19T10:30:00.000Z",
         workspaceId: null,
       },
     ],

@@ -36,6 +36,9 @@ const FINANCE_MEMO_REPORTING_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = [
 const BOARD_PACKET_REPORTING_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = [
   "board_packet",
 ];
+const LENDER_UPDATE_REPORTING_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = [
+  "lender_update",
+];
 
 const SUMMARY_MAX_LENGTH = 240;
 
@@ -342,9 +345,15 @@ function buildChangeSummary(
       return truncate(facts.latestScoutTask.summary, SUMMARY_MAX_LENGTH);
     }
 
-    return isBoardPacketFacts(facts)
-      ? "Draft board packet compilation is still pending persisted board-packet evidence."
-      : "Draft finance memo compilation is still pending persisted reporting artifacts.";
+    if (isBoardPacketFacts(facts)) {
+      return "Draft board packet compilation is still pending persisted board-packet evidence.";
+    }
+
+    if (isLenderUpdateFacts(facts)) {
+      return "Draft lender-update compilation is still pending persisted lender-update evidence.";
+    }
+
+    return "Draft finance memo compilation is still pending persisted reporting artifacts.";
   }
 
   if (isFinanceDiscoveryFacts(facts) && facts.latestScoutTask) {
@@ -394,6 +403,22 @@ function buildValidationSummary(
 
       if (status === "failed") {
         return "No draft board packet could be persisted for this reporting mission.";
+      }
+
+      return "";
+    }
+
+    if (isLenderUpdateFacts(facts)) {
+      if (status === "ready") {
+        return "Draft lender update was compiled deterministically from one completed reporting mission and its stored finance memo plus evidence appendix without running the Codex runtime.";
+      }
+
+      if (status === "incomplete") {
+        return "Draft lender update evidence is still pending from the stored reporting path.";
+      }
+
+      if (status === "failed") {
+        return "No draft lender update could be persisted for this reporting mission.";
       }
 
       return "";
@@ -508,7 +533,7 @@ function buildVerificationSummary(
     facts.reportSummary
   ) {
     return truncate(
-      isBoardPacketFacts(facts)
+      isBoardPacketFacts(facts) || isLenderUpdateFacts(facts)
         ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.`
         : `${facts.reportSummary} Review the linked evidence appendix, carried-forward freshness, and visible limitations before sharing this draft.`,
       SUMMARY_MAX_LENGTH,
@@ -573,6 +598,22 @@ function buildRiskSummary(
 
       if (status === "ready") {
         return "This board packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C1.";
+      }
+
+      return "";
+    }
+
+    if (isLenderUpdateFacts(facts)) {
+      if (status === "failed") {
+        return "Draft lender update is currently unavailable; inspect the stored source reporting evidence and reporting task timeline before retrying.";
+      }
+
+      if (status === "incomplete") {
+        return "Lender-update proof readiness depends on one persisted lender_update artifact compiled from stored finance memo and evidence appendix evidence only.";
+      }
+
+      if (status === "ready") {
+        return "This lender update is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, diligence, PDF, or slide workflow in F5C2.";
       }
 
       return "";
@@ -671,6 +712,22 @@ function buildRollbackSummary(
       return "";
     }
 
+    if (isLenderUpdateFacts(facts)) {
+      if (status === "failed") {
+        return "Safe fallback: refresh or rerun the source finance-memo reporting mission truthfully, then retry draft lender-update compilation; no release, send, or wiki filing side effect was produced.";
+      }
+
+      if (status === "incomplete") {
+        return "Wait for the stored lender_update artifact before relying on this reporting mission.";
+      }
+
+      if (status === "ready") {
+        return "No release, approval, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
+      }
+
+      return "";
+    }
+
     if (status === "failed") {
       return "Safe fallback: refresh or rerun the source discovery mission truthfully, then retry draft memo compilation; no release, send, or wiki filing side effect was produced.";
     }
@@ -745,6 +802,8 @@ function readMissingArtifactNote(kind: ArtifactKind) {
       return "Evidence appendix is missing.";
     case "board_packet":
       return "Draft board packet evidence is missing.";
+    case "lender_update":
+      return "Draft lender update evidence is missing.";
     case "diff_summary":
       return "Change-summary evidence is missing.";
     case "test_report":
@@ -779,15 +838,25 @@ function isBoardPacketFacts(facts: ProofBundleAssemblyFacts) {
   return facts.reportKind === "board_packet";
 }
 
+function isLenderUpdateFacts(facts: ProofBundleAssemblyFacts) {
+  return facts.reportKind === "lender_update";
+}
+
 function isReportingFacts(facts: ProofBundleAssemblyFacts) {
   return facts.reportKind !== null || facts.sourceDiscoveryMissionId !== null;
 }
 
 function readExpectedArtifactKinds(facts: ProofBundleAssemblyFacts) {
   if (facts.missionType === "reporting") {
-    return isBoardPacketFacts(facts)
-      ? BOARD_PACKET_REPORTING_EXPECTED_ARTIFACT_KINDS
-      : FINANCE_MEMO_REPORTING_EXPECTED_ARTIFACT_KINDS;
+    if (isBoardPacketFacts(facts)) {
+      return BOARD_PACKET_REPORTING_EXPECTED_ARTIFACT_KINDS;
+    }
+
+    if (isLenderUpdateFacts(facts)) {
+      return LENDER_UPDATE_REPORTING_EXPECTED_ARTIFACT_KINDS;
+    }
+
+    return FINANCE_MEMO_REPORTING_EXPECTED_ARTIFACT_KINDS;
   }
 
   return facts.missionType === "discovery"

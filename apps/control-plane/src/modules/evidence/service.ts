@@ -343,6 +343,10 @@ function readExpectedArtifactKinds(input: {
     return ["board_packet"] satisfies ArtifactKind[];
   }
 
+  if (input.reportingRequest?.reportKind === "lender_update") {
+    return ["lender_update"] satisfies ArtifactKind[];
+  }
+
   if (input.reportingRequest) {
     return ["finance_memo", "evidence_appendix"] satisfies ArtifactKind[];
   }
@@ -360,6 +364,10 @@ function readMissingArtifactNotes(input: {
 }) {
   if (input.reportingRequest?.reportKind === "board_packet") {
     return ["Draft board packet evidence is missing."];
+  }
+
+  if (input.reportingRequest?.reportKind === "lender_update") {
+    return ["Draft lender update evidence is missing."];
   }
 
   if (input.reportingRequest) {

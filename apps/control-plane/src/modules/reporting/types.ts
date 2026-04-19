@@ -6,6 +6,7 @@ import type {
   EvidenceAppendixArtifactMetadata,
   FinanceDiscoveryAnswerArtifactMetadata,
   FinanceMemoArtifactMetadata,
+  LenderUpdateArtifactMetadata,
   MissionRecord,
   ProofBundleManifest,
   ReportingPublicationView,
@@ -42,9 +43,15 @@ export type CompiledBoardPacketArtifacts = {
   reportKind: "board_packet";
 };
 
+export type CompiledLenderUpdateArtifacts = {
+  lenderUpdate: LenderUpdateArtifactMetadata;
+  reportKind: "lender_update";
+};
+
 export type CompiledReportingArtifacts =
   | CompiledFinanceMemoArtifacts
-  | CompiledBoardPacketArtifacts;
+  | CompiledBoardPacketArtifacts
+  | CompiledLenderUpdateArtifacts;
 
 export type ReportingMissionContext = {
   artifacts: ArtifactRecord[];

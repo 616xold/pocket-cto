@@ -1,0 +1,1 @@
+ALTER TYPE "public"."artifact_kind" ADD VALUE 'lender_update' BEFORE 'pr_link';

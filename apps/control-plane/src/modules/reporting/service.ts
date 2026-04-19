@@ -14,6 +14,7 @@ import {
   ReportingMarkdownExportResultSchema,
   ReportingMissionInputSchema,
   isFinanceDiscoveryAnswerArtifactMetadata,
+  readReportingMissionReportKindLabel,
 } from "@pocket-cto/domain";
 import { AppHttpError, MissionNotFoundError } from "../../lib/http-errors";
 import type { CfoWikiServicePort } from "../../lib/types";
@@ -21,6 +22,7 @@ import { readMissionDiscoveryAnswer } from "../missions/discovery-answer-view";
 import type { MissionRepository } from "../missions/repository";
 import { compileBoardPacketArtifacts } from "./board-packet";
 import { compileFinanceMemoArtifacts } from "./formatter";
+import { compileLenderUpdateArtifacts } from "./lender-update";
 import {
   buildReportingFiledPageKey,
   buildReportingFiledPageProvenanceSummary,
@@ -58,6 +60,11 @@ export class ReportingService {
     if (reportingRequest.reportKind === "board_packet") {
       const source = await this.loadSourceReportingBundle(reportingRequest);
       return compileBoardPacketArtifacts(source);
+    }
+
+    if (reportingRequest.reportKind === "lender_update") {
+      const source = await this.loadSourceReportingBundle(reportingRequest);
+      return compileLenderUpdateArtifacts(source);
     }
 
     const source = await this.loadDiscoverySourceBundle(reportingRequest);
@@ -326,9 +333,14 @@ export class ReportingService {
     reportingRequest: ReportingMissionInput,
   ): Promise<SourceReportingBundle> {
     const sourceReportingMissionId = reportingRequest.sourceReportingMissionId;
+    const reportKindLabel = readReportingMissionReportKindLabel(
+      reportingRequest.reportKind,
+    );
 
     if (!sourceReportingMissionId) {
-      throw new Error("Board packet reporting requires a source reporting mission.");
+      throw new Error(
+        `${reportKindLabel} reporting requires a source reporting mission.`,
+      );
     }
 
     const sourceReportingMission =
@@ -348,7 +360,7 @@ export class ReportingService {
 
     if (sourceReportingMission.status !== "succeeded") {
       throw new Error(
-        `Source reporting mission ${sourceReportingMission.id} must be succeeded before board packet compilation.`,
+        `Source reporting mission ${sourceReportingMission.id} must be succeeded before ${reportKindLabel.toLowerCase()} compilation.`,
       );
     }
 
@@ -382,7 +394,7 @@ export class ReportingService {
 
     if (!sourceReportingView.financeMemo || !sourceReportingView.evidenceAppendix) {
       throw new Error(
-        `Source reporting mission ${sourceReportingMission.id} must store both finance_memo and evidence_appendix artifacts before board packet compilation.`,
+        `Source reporting mission ${sourceReportingMission.id} must store both finance_memo and evidence_appendix artifacts before ${reportKindLabel.toLowerCase()} compilation.`,
       );
     }
 
@@ -397,7 +409,7 @@ export class ReportingService {
 
     if (!sourceFinanceMemoArtifactId || !sourceEvidenceAppendixArtifactId) {
       throw new Error(
-        `Source reporting mission ${sourceReportingMission.id} is missing stored source artifact rows required for board packet compilation.`,
+        `Source reporting mission ${sourceReportingMission.id} is missing stored source artifact rows required for ${reportKindLabel.toLowerCase()} compilation.`,
       );
     }
 
@@ -492,10 +504,13 @@ function requireStoredReportingView(input: {
   });
 
   if (!reporting?.financeMemo || !reporting.evidenceAppendix) {
-    if (reporting?.reportKind === "board_packet") {
+    if (
+      reporting?.reportKind === "board_packet" ||
+      reporting?.reportKind === "lender_update"
+    ) {
       throw invalidRequest(
         "missionId",
-        "Board-packet reporting stays draft-only in F5C1 and cannot file or export through the finance-memo publication path.",
+        "Specialized reporting stays draft-only in F5C and cannot file or export through the finance-memo publication path.",
       );
     }
 

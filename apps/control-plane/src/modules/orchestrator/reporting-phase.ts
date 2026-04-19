@@ -16,6 +16,7 @@ import {
   buildBoardPacketArtifact,
   buildEvidenceAppendixArtifact,
   buildFinanceMemoArtifact,
+  buildLenderUpdateArtifact,
 } from "../reporting/artifact";
 import type { ReportingService } from "../reporting/service";
 import type { ReplayService } from "../replay/service";
@@ -128,6 +129,14 @@ export class ReportingOrchestratorPhase {
                 taskId: task.id,
               }),
             ]
+          : input.compiled.reportKind === "lender_update"
+            ? [
+                buildLenderUpdateArtifact({
+                  lenderUpdate: input.compiled.lenderUpdate,
+                  missionId: mission.id,
+                  taskId: task.id,
+                }),
+              ]
           : [
               buildFinanceMemoArtifact({
                 memo: input.compiled.financeMemo,
@@ -315,9 +324,15 @@ export class ReportingOrchestratorPhase {
 function readTaskSummary(
   compiled: Awaited<ReturnType<ReportingService["compileDraftReport"]>>,
 ) {
-  return compiled.reportKind === "board_packet"
-    ? compiled.boardPacket.packetSummary
-    : compiled.financeMemo.memoSummary;
+  if (compiled.reportKind === "board_packet") {
+    return compiled.boardPacket.packetSummary;
+  }
+
+  if (compiled.reportKind === "lender_update") {
+    return compiled.lenderUpdate.updateSummary;
+  }
+
+  return compiled.financeMemo.memoSummary;
 }
 
 function buildReportingFailureSummary(error: unknown) {

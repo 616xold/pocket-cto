@@ -461,6 +461,88 @@ describe("MissionService", () => {
     ]);
   });
 
+  it("creates lender-update reporting missions only from a succeeded finance-memo reporting mission with stored memo and appendix artifacts", async () => {
+    const { replayService, repository, service } = createService();
+    const source = await service.createDiscovery({
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      operatorPrompt: "Review cash posture from stored state.",
+      requestedBy: "operator",
+    });
+    const sourceScoutTask = source.tasks[0]!;
+
+    await repository.updateTaskStatus(sourceScoutTask.id, "succeeded");
+    await repository.updateMissionStatus(source.mission.id, "succeeded");
+    await repository.saveArtifact(
+      buildFinanceDiscoveryAnswerArtifact({
+        missionId: source.mission.id,
+        taskId: sourceScoutTask.id,
+      }),
+    );
+
+    const reporting = await service.createReporting({
+      sourceDiscoveryMissionId: source.mission.id,
+      reportKind: "finance_memo",
+      requestedBy: "finance-operator",
+    });
+    const reportingScoutTask = reporting.tasks[0]!;
+
+    await repository.updateTaskStatus(reportingScoutTask.id, "succeeded");
+    await repository.updateMissionStatus(reporting.mission.id, "succeeded");
+    await repository.saveArtifact(
+      buildFinanceMemoReportingArtifact({
+        missionId: reporting.mission.id,
+        sourceDiscoveryMissionId: source.mission.id,
+        taskId: reportingScoutTask.id,
+      }),
+    );
+    await repository.saveArtifact(
+      buildEvidenceAppendixReportingArtifact({
+        missionId: reporting.mission.id,
+        sourceDiscoveryMissionId: source.mission.id,
+        taskId: reportingScoutTask.id,
+      }),
+    );
+    await repository.upsertProofBundle(
+      buildReadyFinanceMemoProofBundle({
+        missionId: reporting.mission.id,
+        sourceDiscoveryMissionId: source.mission.id,
+      }),
+    );
+
+    const created = await service.createLenderUpdate({
+      requestedBy: "finance-operator",
+      sourceReportingMissionId: reporting.mission.id,
+    });
+
+    expect(created.mission.type).toBe("reporting");
+    expect(created.mission.sourceKind).toBe("manual_reporting");
+    expect(created.mission.spec.input?.reportingRequest).toEqual({
+      sourceDiscoveryMissionId: source.mission.id,
+      sourceReportingMissionId: reporting.mission.id,
+      reportKind: "lender_update",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+    });
+    expect(created.proofBundle.reportKind).toBe("lender_update");
+    expect(created.proofBundle.sourceReportingMissionId).toBe(
+      reporting.mission.id,
+    );
+    expect(created.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual(
+      ["lender_update"],
+    );
+
+    const events = await replayService.listByMissionId(created.mission.id);
+    expect(events.slice(-4).map((event) => event.type)).toEqual([
+      "mission.created",
+      "task.created",
+      "mission.status_changed",
+      "artifact.created",
+    ]);
+  });
+
   it("rejects reporting creation when the source mission is not a completed discovery mission", async () => {
     const { service } = createService();
     const buildMission = await service.createFromText({

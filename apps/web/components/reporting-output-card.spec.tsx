@@ -106,6 +106,7 @@ describe("ReportingOutputCard", () => {
           relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
           relatedWikiPageKeys: ["metrics/cash-posture"],
           appendixPresent: true,
+          lenderUpdate: null,
           financeMemo: {
             source: "stored_discovery_evidence",
             summary: "Cash posture remains constrained.",
@@ -276,6 +277,7 @@ describe("ReportingOutputCard", () => {
           relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
           relatedWikiPageKeys: ["metrics/cash-posture"],
           appendixPresent: true,
+          lenderUpdate: null,
           financeMemo: null,
           evidenceAppendix: null,
           boardPacket: {
@@ -313,6 +315,125 @@ describe("ReportingOutputCard", () => {
     );
 
     expect(html).toContain("Draft board packet body");
+    expect(html).toContain("Source reporting mission");
+    expect(html).toContain("33333333-3333-4333-8333-333333333333");
+    expect(html).toContain("Linked from source reporting mission");
+    expect(html).toContain("44444444-4444-4444-8444-444444444444");
+    expect(html).toContain("55555555-5555-4555-8555-555555555555");
+    expect(html).not.toContain("Markdown export");
+  });
+
+  it("renders a lender update with source reporting lineage and linked appendix posture", () => {
+    const html = renderToStaticMarkup(
+      <ReportingOutputCard
+        proofBundle={{
+          missionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          missionTitle: "Draft lender update for acme",
+          objective:
+            "Compile one draft lender update from stored finance memo and evidence appendix artifacts.",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          answerSummary: "",
+          reportKind: "lender_update",
+          reportDraftStatus: "draft_only",
+          reportPublication: null,
+          reportSummary:
+            "Draft lender update for acme from the completed cash posture reporting mission.",
+          appendixPresent: true,
+          freshnessState: "stale",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          targetRepoFullName: null,
+          branchName: null,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          changeSummary: "",
+          validationSummary: "",
+          verificationSummary: "",
+          riskSummary: "",
+          rollbackSummary: "",
+          latestApproval: null,
+          evidenceCompleteness: {
+            status: "complete",
+            expectedArtifactKinds: ["lender_update"],
+            presentArtifactKinds: ["lender_update"],
+            missingArtifactKinds: [],
+            notes: [],
+          },
+          decisionTrace: [],
+          artifactIds: [],
+          artifacts: [],
+          replayEventCount: 0,
+          timestamps: {
+            missionCreatedAt: "2026-04-19T13:30:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPullRequestAt: null,
+            latestApprovalAt: null,
+            latestArtifactAt: "2026-04-19T13:32:00.000Z",
+          },
+          status: "ready",
+        }}
+        reporting={{
+          reportKind: "lender_update",
+          draftStatus: "draft_only",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          reportSummary:
+            "Draft lender update for acme from the completed cash posture reporting mission.",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          appendixPresent: true,
+          financeMemo: null,
+          evidenceAppendix: null,
+          boardPacket: null,
+          lenderUpdate: {
+            source: "stored_reporting_evidence",
+            summary:
+              "Draft lender update for acme from the completed cash posture reporting mission.",
+            reportKind: "lender_update",
+            draftStatus: "draft_only",
+            sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+            sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+            companyKey: "acme",
+            questionKind: "cash_posture",
+            policySourceId: null,
+            policySourceScope: null,
+            updateSummary:
+              "Draft lender update for acme from the completed cash posture reporting mission.",
+            freshnessSummary: "Cash posture remains stale.",
+            limitationsSummary: "Draft-only posture remains explicit.",
+            relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+            relatedWikiPageKeys: ["metrics/cash-posture"],
+            sourceFinanceMemo: {
+              artifactId: "44444444-4444-4444-8444-444444444444",
+              kind: "finance_memo",
+            },
+            sourceEvidenceAppendix: {
+              artifactId: "55555555-5555-4555-8555-555555555555",
+              kind: "evidence_appendix",
+            },
+            bodyMarkdown:
+              "# Draft Lender Update\n\n## Update Summary\n\nCash posture remains constrained.",
+          },
+          publication: null,
+        }}
+      />,
+    );
+
+    expect(html).toContain("Draft lender update body");
     expect(html).toContain("Source reporting mission");
     expect(html).toContain("33333333-3333-4333-8333-333333333333");
     expect(html).toContain("Linked from source reporting mission");

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   BoardPacketArtifactMetadataSchema,
   CreateBoardPacketMissionInputSchema,
+  CreateLenderUpdateMissionInputSchema,
   CreateReportingMissionInputSchema,
   EvidenceAppendixArtifactMetadataSchema,
   FinanceMemoArtifactMetadataSchema,
+  LenderUpdateArtifactMetadataSchema,
   ReportingMissionViewSchema,
   readReportingMissionReportKindLabel,
 } from "./reporting-mission";
@@ -23,6 +25,18 @@ describe("Reporting mission domain schemas", () => {
 
   it("parses the dedicated board-packet creation input", () => {
     const parsed = CreateBoardPacketMissionInputSchema.parse({
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      requestedBy: "finance-operator",
+    });
+
+    expect(parsed.sourceReportingMissionId).toBe(
+      "11111111-1111-4111-8111-111111111111",
+    );
+    expect(parsed.requestedBy).toBe("finance-operator");
+  });
+
+  it("parses the dedicated lender-update creation input", () => {
+    const parsed = CreateLenderUpdateMissionInputSchema.parse({
       sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
       requestedBy: "finance-operator",
     });
@@ -137,6 +151,46 @@ describe("Reporting mission domain schemas", () => {
     expect(parsed.sourceFinanceMemo.kind).toBe("finance_memo");
   });
 
+  it("parses lender-update metadata", () => {
+    const parsed = LenderUpdateArtifactMetadataSchema.parse({
+      source: "stored_reporting_evidence",
+      summary:
+        "Draft lender update for acme from the completed cash posture reporting mission.",
+      reportKind: "lender_update",
+      draftStatus: "draft_only",
+      sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+      sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      updateSummary:
+        "Draft lender update for acme from the completed cash posture reporting mission.",
+      freshnessSummary:
+        "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+      limitationsSummary:
+        "This lender update is draft-only and carries source reporting freshness and limitations forward.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceFinanceMemo: {
+        artifactId: "44444444-4444-4444-8444-444444444444",
+        kind: "finance_memo",
+      },
+      sourceEvidenceAppendix: {
+        artifactId: "55555555-5555-4555-8555-555555555555",
+        kind: "evidence_appendix",
+      },
+      bodyMarkdown:
+        "# Draft Lender Update\n\n## Update Summary\n\nCash posture remains constrained.",
+    });
+
+    expect(parsed.reportKind).toBe("lender_update");
+    expect(parsed.sourceReportingMissionId).toBe(
+      "33333333-3333-4333-8333-333333333333",
+    );
+    expect(parsed.sourceEvidenceAppendix.kind).toBe("evidence_appendix");
+  });
+
   it("parses the reporting read model view", () => {
     const parsed = ReportingMissionViewSchema.parse({
       reportKind: "finance_memo",
@@ -237,6 +291,71 @@ describe("Reporting mission domain schemas", () => {
     expect(parsed.publication).toBeNull();
     expect(readReportingMissionReportKindLabel(parsed.reportKind)).toBe(
       "Board packet",
+    );
+  });
+
+  it("parses the lender-update reporting read model view", () => {
+    const parsed = ReportingMissionViewSchema.parse({
+      reportKind: "lender_update",
+      draftStatus: "draft_only",
+      sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      reportSummary:
+        "Draft lender update for acme from the completed cash posture reporting mission.",
+      freshnessSummary:
+        "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+      limitationsSummary:
+        "This lender update is draft-only and carries source reporting freshness and limitations forward.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      appendixPresent: true,
+      financeMemo: null,
+      evidenceAppendix: null,
+      boardPacket: null,
+      lenderUpdate: {
+        source: "stored_reporting_evidence",
+        summary:
+          "Draft lender update for acme from the completed cash posture reporting mission.",
+        reportKind: "lender_update",
+        draftStatus: "draft_only",
+        sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+        sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        updateSummary:
+          "Draft lender update for acme from the completed cash posture reporting mission.",
+        freshnessSummary:
+          "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+        limitationsSummary:
+          "This lender update is draft-only and carries source reporting freshness and limitations forward.",
+        relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+        relatedWikiPageKeys: ["metrics/cash-posture"],
+        sourceFinanceMemo: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          kind: "finance_memo",
+        },
+        sourceEvidenceAppendix: {
+          artifactId: "55555555-5555-4555-8555-555555555555",
+          kind: "evidence_appendix",
+        },
+        bodyMarkdown:
+          "# Draft Lender Update\n\n## Update Summary\n\nCash posture remains constrained.",
+      },
+      publication: null,
+    });
+
+    expect(parsed.lenderUpdate?.sourceEvidenceAppendix.kind).toBe(
+      "evidence_appendix",
+    );
+    expect(parsed.publication).toBeNull();
+    expect(readReportingMissionReportKindLabel(parsed.reportKind)).toBe(
+      "Lender update",
     );
   });
 });

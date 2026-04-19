@@ -5,6 +5,7 @@ import { getWebOperatorIdentity } from "../../../lib/operator-identity";
 import {
   ApprovalActionForm,
   CreateBoardPacketForm,
+  CreateLenderUpdateForm,
   CreateReportForm,
   ExportReportingMarkdownForm,
   FileReportingArtifactsForm,
@@ -44,6 +45,7 @@ export function MissionActions({
     mission.status === "succeeded" &&
     reporting?.reportKind === "finance_memo" &&
     Boolean(reporting.financeMemo && reporting.evidenceAppendix);
+  const canCreateDraftLenderUpdate = canCreateDraftBoardPacket;
   const canFileDraftArtifacts =
     mission.type === "reporting" &&
     mission.status === "succeeded" &&
@@ -99,6 +101,17 @@ export function MissionActions({
                 operatorIdentity={operatorIdentity}
                 sourceReportingMissionId={mission.id}
               />
+              <p className="muted">
+                Create one draft-only lender update from this completed finance
+                memo reporting mission and its stored memo plus evidence
+                appendix only.
+              </p>
+              {canCreateDraftLenderUpdate ? (
+                <CreateLenderUpdateForm
+                  operatorIdentity={operatorIdentity}
+                  sourceReportingMissionId={mission.id}
+                />
+              ) : null}
             </>
           ) : null}
           {reporting?.reportKind === "finance_memo" ? (

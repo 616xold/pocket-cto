@@ -13,13 +13,16 @@ This plan narrows that next thread to one packet family, one input contract, one
 
 GitHub connector work is explicitly out of scope.
 This plan does not authorize diligence packet specialization, approval-release hardening, runtime-codex drafting, PDF export, slide export, Marp export, F6 monitoring, or any rename from `modules/reporting/**` to `modules/reports/**`.
-This is a docs-and-plan-only slice; it must not add runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding.
+This plan now records the landed F5C2 implementation: additive runtime code, one additive artifact-kind migration, one packaged lender-update smoke, and no new eval dataset, filing path, export path, approval path, or runtime-codex drafting seam beyond the bounded lender-update specialization described below.
 
 ## Progress
 
 - [x] 2026-04-19T12:11:24Z Audit the active docs, shipped F5A through F5C1 records, reporting mission contracts, reporting operator surfaces, proof-bundle posture, runtime-codex boundary, approval semantics, and packaged smoke coverage before choosing the narrowest truthful F5C2 scope.
 - [x] 2026-04-19T12:11:24Z Create `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` and refresh the smallest truthful active-doc chain so `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` remains the shipped F5C1 record while this file becomes the single active F5C2 implementation contract.
 - [x] 2026-04-19T12:18:41Z Run the preserved source-ingest through board-packet confidence ladder, targeted twin regressions, repo-wide validation, and `pnpm ci:repro:current` for this docs-and-plan handoff without starting F5C2 code.
+- [x] 2026-04-19T12:35:24Z Re-audit the clean F5C2 branch against the shipped F5A through F5C1 code, explicitly invoke the required repo skills in-thread, and confirm the pre-edit implementation verdict: add one deterministic `lender_update` specialization by extending the existing reporting and board-packet seams rather than reopening finance-memo publication, runtime-codex drafting, diligence specialization, or release posture.
+- [x] 2026-04-19T13:58:26Z Land the first real F5C2 implementation slice: add `reportKind = "lender_update"`, add a first-class `lender_update` artifact kind and additive DB migration, add one dedicated `POST /missions/reporting/lender-updates` creation contract, compile one deterministic draft lender update from one completed finance-memo reporting mission with stored memo-plus-appendix evidence only, and extend proof-bundle plus mission-detail plus mission-list plus operator surfaces without widening into filing, export, diligence, approval, or runtime-codex drafting.
+- [x] 2026-04-19T14:02:00Z Validate the landed F5C2 slice through targeted domain, control-plane, and web suites; the preserved F4 through F5C1 smoke ladder; the new `pnpm smoke:lender-update:local` proof; preserved twin guardrails; repo-wide `pnpm lint`, `pnpm typecheck`, and `pnpm test`; and clean-worktree `pnpm ci:repro:current`.
 
 ## Surprises & Discoveries
 
@@ -37,6 +40,12 @@ This is a docs-and-plan-only slice; it must not add runtime code, routes, schema
 
 - Observation: the shipped F5C1 plan needed a minimal handoff note so it would remain a truthful historical record instead of an active next-step instruction.
   Evidence: before this refresh, `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` still described the old docs-only handoff state even though its own progress log already recorded the landed F5C1 implementation.
+
+- Observation: the shipped board-packet specialization already isolates almost all of the control-plane and web fanout F5C2 needs, so the remaining work is mostly to add a second packet artifact contract and creation path rather than inventing a new reporting architecture.
+  Evidence: `packages/domain/src/reporting-mission.ts`, `apps/control-plane/src/modules/missions/board-packet.ts`, `apps/control-plane/src/modules/reporting/board-packet.ts`, `apps/control-plane/src/modules/reporting/service.ts`, `apps/control-plane/src/modules/evidence/proof-bundle-summary.ts`, `apps/web/app/missions/[missionId]/mission-actions.tsx`, and `apps/web/components/reporting-output-card.tsx`.
+
+- Observation: the packaged lender-update smoke exposed one real slice-local failure before the final ladder went green: the new `artifact_kind` enum value existed in code and migration files, but the already-running local database had not applied the additive migration yet.
+  Evidence: the first `pnpm smoke:lender-update:local` run left the lender-update mission stuck in `running` with only the placeholder proof bundle persisted until `pnpm db:migrate` applied `packages/db/drizzle/0032_bizarre_daimon_hellstrom.sql`, after which the same smoke passed cleanly.
 
 ## Decision Log
 
@@ -66,6 +75,9 @@ This is a docs-and-plan-only slice; it must not add runtime code, routes, schema
 
 - Decision: F5C2 should not add filing or export behavior for `lender_update` in the first specialization pass.
   Rationale: the strong preference is to keep the next packet family focused on specialization, not publication posture, because filing and export already exist as a distinct finance-memo seam and should not be silently broadened into lender communication.
+
+- Decision: implement F5C2 by mirroring the shipped board-packet specialization pattern with one dedicated lender-update intake contract, one dedicated lender-update artifact, and the same completed-finance-memo source-reporting gate.
+  Rationale: that keeps the slice additive, legible, and low-risk while preserving the existing `reporting` mission umbrella, the current proof-bundle fanout, and the finance-memo-only publication seam.
 
 - Decision: F5C should now proceed as three explicit remaining sub-slices after shipped F5C1: `F5C2-lender-update-specialization-and-draft-review-foundation`, `F5C3-diligence-packet-specialization-and-draft-review-foundation`, and `F5C4-approval-release-hardening-for-external-communication-posture`.
   Rationale: this sequencing keeps lender specialization, diligence specialization, and external communication posture hardening as separate contracts.
@@ -117,9 +129,9 @@ The active-doc boundary for this handoff is:
 
 GitHub connector work is out of scope.
 The internal `@pocket-cto/*` package scope remains unchanged.
-This planning slice is docs-only and must not add runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding.
+This landed slice adds bounded runtime code, one additive migration, one packaged lender-update smoke command, and no new eval dataset. Filing, markdown export reuse, PDF or slide export, approval-release posture, diligence specialization, and runtime-codex drafting remain out of scope.
 
-The most relevant implementation seams for the future F5C2 code thread are:
+The most relevant implementation seams for the landed F5C2 work are:
 
 - `packages/domain/src/mission.ts`
 - `packages/domain/src/reporting-mission.ts`
@@ -298,14 +310,15 @@ User-visible F5C2 acceptance should be:
 - filing or export behavior for `lender_update` remains out of scope in the first specialization pass
 - PDF, slide, and Marp export remain out of scope
 
-For this docs-and-plan slice, acceptance is:
+For the landed F5C2 slice, acceptance is:
 
-- one new active F5C2 plan exists at `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`
-- active docs point the next thread at `FP-0039` rather than at the already-shipped F5C1 work
-- `FP-0038` stays as the shipped F5C1 record
-- the next implementation thread is narrowed to one lender-update specialization slice and not widened into diligence, approval-release, or F6
+- `POST /missions/reporting/lender-updates` creates one `reporting` mission with `reportKind = "lender_update"` from one completed finance-memo reporting mission
+- the new mission persists exactly one draft `lender_update` artifact plus the proof-bundle manifest
+- proof readiness for the lender-update mission depends on the persisted `lender_update` artifact only while exposing source reporting lineage and linked appendix posture explicitly
+- mission detail, mission list, and operator reporting cards expose the draft lender-update posture truthfully without inventing publication posture
+- `pnpm smoke:lender-update:local` proves the deterministic, runtime-free, draft-only path without widening into diligence, approval, filing, export, PDF, or slide behavior
 
-Provenance, freshness, replay, and limitation expectations for the future F5C2 code thread are:
+Provenance, freshness, replay, and limitation expectations for the landed F5C2 slice are:
 
 - raw sources remain immutable and authoritative
 - stored `finance_memo` plus stored `evidence_appendix` remain the lender-update source of truth

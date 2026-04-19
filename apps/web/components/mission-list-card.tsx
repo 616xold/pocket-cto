@@ -17,6 +17,8 @@ type MissionListCardProps = {
 export function MissionListCard({ mission }: MissionListCardProps) {
   const isReportingMission = mission.reportKind !== null;
   const isBoardPacket = mission.reportKind === "board_packet";
+  const isLenderUpdate = mission.reportKind === "lender_update";
+  const isSpecializedReporting = isBoardPacket || isLenderUpdate;
   const isFinanceMission = mission.companyKey !== null;
   const questionKindLabel =
     mission.questionKind && isFinanceDiscoveryQuestionKind(mission.questionKind)
@@ -86,16 +88,16 @@ export function MissionListCard({ mission }: MissionListCardProps) {
               <dd>{mission.reportDraftStatus ?? "Not recorded yet."}</dd>
             </div>
             <div>
-              <dt>{isBoardPacket ? "Linked appendix" : "Appendix"}</dt>
+              <dt>{isSpecializedReporting ? "Linked appendix" : "Appendix"}</dt>
               <dd>
                 {mission.appendixPresent
-                  ? isBoardPacket
+                  ? isSpecializedReporting
                     ? "Linked"
                     : "Stored"
                   : "Pending"}
               </dd>
             </div>
-            {isBoardPacket ? (
+            {isSpecializedReporting ? (
               <div>
                 <dt>Source reporting</dt>
                 <dd>{mission.sourceReportingMissionId ?? "Not recorded yet."}</dd>

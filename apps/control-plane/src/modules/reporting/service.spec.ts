@@ -157,6 +157,59 @@ describe("ReportingService", () => {
     );
   });
 
+  it("compiles one draft lender update from stored finance memo and evidence appendix artifacts only", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMission = buildSucceededReportingMission(
+      sourceDiscoveryMissionId,
+    );
+    const lenderUpdateMission = buildLenderUpdateMission(
+      sourceDiscoveryMissionId,
+      sourceReportingMission.id,
+    );
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [sourceReportingMission.id]: buildReportingArtifacts(
+          sourceReportingMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+      missionsById: {
+        [sourceReportingMission.id]: sourceReportingMission,
+      },
+      proofBundlesByMissionId: {
+        [sourceReportingMission.id]: buildReportingProofBundle(
+          sourceReportingMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+    });
+
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+    const compiled = requireLenderUpdateArtifacts(
+      await service.compileDraftReport(lenderUpdateMission),
+    );
+
+    expect(compiled.lenderUpdate.reportKind).toBe("lender_update");
+    expect(compiled.lenderUpdate.sourceReportingMissionId).toBe(
+      sourceReportingMission.id,
+    );
+    expect(compiled.lenderUpdate.sourceDiscoveryMissionId).toBe(
+      sourceDiscoveryMissionId,
+    );
+    expect(compiled.lenderUpdate.sourceFinanceMemo.kind).toBe("finance_memo");
+    expect(compiled.lenderUpdate.sourceEvidenceAppendix.kind).toBe(
+      "evidence_appendix",
+    );
+    expect(compiled.lenderUpdate.bodyMarkdown).toContain(
+      "## Source Finance Memo Draft",
+    );
+    expect(compiled.lenderUpdate.bodyMarkdown).toContain(
+      "## Linked Evidence Appendix Posture",
+    );
+  });
+
   it("files draft memo and appendix into deterministic CFO Wiki page keys", async () => {
     const sourceMission = buildSourceDiscoveryMission();
     const reportingMission = buildSucceededReportingMission(sourceMission.id);
@@ -389,6 +442,16 @@ function requireBoardPacketArtifacts(
   return compiled;
 }
 
+function requireLenderUpdateArtifacts(
+  compiled: Awaited<ReturnType<ReportingService["compileDraftReport"]>>,
+) {
+  if (compiled.reportKind !== "lender_update") {
+    throw new Error("Expected lender-update reporting artifacts.");
+  }
+
+  return compiled;
+}
+
 function buildReportingMission(sourceDiscoveryMissionId: string): MissionRecord {
   return {
     id: "55555555-5555-4555-8555-555555555555",
@@ -505,6 +568,64 @@ function buildBoardPacketMission(
     },
     createdAt: "2026-04-19T12:00:00.000Z",
     updatedAt: "2026-04-19T12:00:00.000Z",
+  };
+}
+
+function buildLenderUpdateMission(
+  sourceDiscoveryMissionId: string,
+  sourceReportingMissionId: string,
+): MissionRecord {
+  return {
+    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    type: "reporting",
+    status: "queued",
+    title: "Draft lender update for acme from cash posture reporting",
+    objective:
+      "Compile one draft lender update from completed reporting mission and its stored finance memo plus evidence appendix only.",
+    sourceKind: "manual_reporting",
+    sourceRef: null,
+    createdBy: "finance-operator",
+    primaryRepo: null,
+    spec: {
+      type: "reporting",
+      title: "Draft lender update for acme from cash posture reporting",
+      objective:
+        "Compile one draft lender update from completed reporting mission and its stored finance memo plus evidence appendix only.",
+      repos: [],
+      constraints: {
+        mustNot: [
+          "do not invoke the codex runtime",
+          "do not add approval workflow, release workflow, diligence packets, PDF export, or slide export",
+        ],
+        allowedPaths: [],
+      },
+      acceptance: ["persist one draft lender_update artifact"],
+      riskBudget: {
+        sandboxMode: "read-only",
+        maxWallClockMinutes: 5,
+        maxCostUsd: 1,
+        allowNetwork: false,
+        requiresHumanApprovalFor: [],
+      },
+      deliverables: ["lender_update", "proof_bundle"],
+      evidenceRequirements: [
+        "stored finance_memo artifact",
+        "stored evidence_appendix artifact",
+      ],
+      input: {
+        reportingRequest: {
+          sourceDiscoveryMissionId,
+          sourceReportingMissionId,
+          reportKind: "lender_update",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+        },
+      },
+    },
+    createdAt: "2026-04-19T12:30:00.000Z",
+    updatedAt: "2026-04-19T12:30:00.000Z",
   };
 }
 

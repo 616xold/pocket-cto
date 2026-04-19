@@ -37,6 +37,32 @@ describe("mission reporting action routes", () => {
     });
   });
 
+  it("POST /missions/reporting/lender-updates defaults requestedBy and returns 201", async () => {
+    const createLenderUpdate = vi.fn(async () => ({
+      mission: {
+        id: "44444444-4444-4444-8444-444444444444",
+      },
+    }));
+    const app = await createTestApp(apps, {
+      createLenderUpdate:
+        createLenderUpdate as unknown as AppContainer["missionService"]["createLenderUpdate"],
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/reporting/lender-updates",
+      payload: {
+        sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(createLenderUpdate).toHaveBeenCalledWith({
+      requestedBy: "operator",
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+    });
+  });
+
   it("POST /missions/:missionId/reporting/filed-artifacts defaults filedBy and returns 201", async () => {
     const fileDraftArtifacts = vi.fn(async () => ({
       missionId: "11111111-1111-4111-8111-111111111111",
@@ -110,12 +136,21 @@ describe("mission reporting action routes", () => {
 async function createTestApp(
   apps: FastifyInstance[],
   overrides: Partial<AppContainer["missionReportingActionsService"]> &
-    Partial<Pick<AppContainer["missionService"], "createBoardPacket">>,
+    Partial<
+      Pick<
+        AppContainer["missionService"],
+        "createBoardPacket" | "createLenderUpdate"
+      >
+    >,
 ) {
   const container = createInMemoryContainer();
 
   if (overrides.createBoardPacket) {
     container.missionService.createBoardPacket = overrides.createBoardPacket;
+  }
+
+  if (overrides.createLenderUpdate) {
+    container.missionService.createLenderUpdate = overrides.createLenderUpdate;
   }
 
   if (overrides.exportMarkdownBundle) {

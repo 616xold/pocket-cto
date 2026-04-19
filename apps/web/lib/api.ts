@@ -3,6 +3,7 @@ import {
   CfoWikiCompanySourceListViewSchema,
   CreateBoardPacketMissionInputSchema,
   CreateDiscoveryMissionInputSchema,
+  CreateLenderUpdateMissionInputSchema,
   CreateReportingMissionInputSchema,
   CreateSourceInputSchema,
   ExportReportingMissionMarkdownInputSchema,
@@ -365,6 +366,16 @@ export async function createBoardPacketMission(
   return postJsonStrict(
     "/missions/reporting/board-packets",
     CreateBoardPacketMissionInputSchema.parse(input),
+    createMissionResponseSchema,
+  );
+}
+
+export async function createLenderUpdateMission(
+  input: z.input<typeof CreateLenderUpdateMissionInputSchema>,
+) {
+  return postJsonStrict(
+    "/missions/reporting/lender-updates",
+    CreateLenderUpdateMissionInputSchema.parse(input),
     createMissionResponseSchema,
   );
 }

@@ -11,6 +11,7 @@ import {
   submitApprovalResolution,
   submitCreateDraftBoardPacket,
   submitCreateDraftFinanceMemo,
+  submitCreateDraftLenderUpdate,
   submitTaskInterrupt,
 } from "./actions";
 import { ActionFeedback } from "./action-feedback";
@@ -36,6 +37,11 @@ type CreateReportFormProps = {
 };
 
 type CreateBoardPacketFormProps = {
+  operatorIdentity: string;
+  sourceReportingMissionId: string;
+};
+
+type CreateLenderUpdateFormProps = {
   operatorIdentity: string;
   sourceReportingMissionId: string;
 };
@@ -163,6 +169,28 @@ export function CreateBoardPacketForm({
         className="action-button"
         label="Create draft board packet"
         pendingLabel="Creating board packet..."
+      />
+    </form>
+  );
+}
+
+export function CreateLenderUpdateForm({
+  operatorIdentity,
+  sourceReportingMissionId,
+}: CreateLenderUpdateFormProps) {
+  return (
+    <form action={submitCreateDraftLenderUpdate} className="stack">
+      <input
+        name="sourceReportingMissionId"
+        type="hidden"
+        value={sourceReportingMissionId}
+      />
+      <input name="requestedBy" type="hidden" value={operatorIdentity} />
+
+      <ActionSubmitButton
+        className="action-button"
+        label="Create draft lender update"
+        pendingLabel="Creating lender update..."
       />
     </form>
   );

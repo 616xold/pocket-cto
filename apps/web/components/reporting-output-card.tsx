@@ -21,10 +21,13 @@ export function ReportingOutputCard({
   reporting,
 }: ReportingOutputCardProps) {
   const boardPacket = reporting.boardPacket;
+  const lenderUpdate = reporting.lenderUpdate;
   const financeMemo = reporting.financeMemo;
   const evidenceAppendix = reporting.evidenceAppendix;
   const publication = reporting.publication;
   const isBoardPacket = reporting.reportKind === "board_packet";
+  const isLenderUpdate = reporting.reportKind === "lender_update";
+  const isSpecializedReporting = isBoardPacket || isLenderUpdate;
   const questionKindLabel =
     reporting.questionKind && isFinanceDiscoveryQuestionKind(reporting.questionKind)
       ? readFinanceDiscoveryQuestionKindLabel(reporting.questionKind)
@@ -70,7 +73,7 @@ export function ReportingOutputCard({
             </a>
           </dd>
         </div>
-        {isBoardPacket ? (
+        {isSpecializedReporting ? (
           <div>
             <dt>Source reporting mission</dt>
             <dd>
@@ -103,28 +106,28 @@ export function ReportingOutputCard({
           <dd>{readFreshnessLabel(proofBundle.freshnessState)}</dd>
         </div>
         <div>
-          <dt>{isBoardPacket ? "Linked appendix" : "Appendix"}</dt>
+          <dt>{isSpecializedReporting ? "Linked appendix" : "Appendix"}</dt>
           <dd>
             {reporting.appendixPresent
-              ? isBoardPacket
+              ? isSpecializedReporting
                 ? "Linked from source reporting mission"
                 : "Stored"
               : "Pending"}
           </dd>
         </div>
-        {isBoardPacket ? (
+        {isSpecializedReporting ? (
           <>
             <div>
               <dt>Source memo artifact</dt>
               <dd>
-                <code>{boardPacket?.sourceFinanceMemo.artifactId ?? "Not recorded yet."}</code>
+                <code>{readSpecializedSources(reporting)?.sourceFinanceMemo.artifactId ?? "Not recorded yet."}</code>
               </dd>
             </div>
             <div>
               <dt>Source appendix artifact</dt>
               <dd>
                 <code>
-                  {boardPacket?.sourceEvidenceAppendix.artifactId ??
+                  {readSpecializedSources(reporting)?.sourceEvidenceAppendix.artifactId ??
                     "Not recorded yet."}
                 </code>
               </dd>
@@ -194,6 +197,13 @@ export function ReportingOutputCard({
         <ReadOnlyMarkdownPreview
           bodyMarkdown={boardPacket.bodyMarkdown}
           title="Draft board packet body"
+        />
+      ) : null}
+
+      {lenderUpdate ? (
+        <ReadOnlyMarkdownPreview
+          bodyMarkdown={lenderUpdate.bodyMarkdown}
+          title="Draft lender update body"
         />
       ) : null}
 
@@ -285,5 +295,16 @@ function readLinkedArtifacts(reporting: ReportingOutputCardProps["reporting"]) {
     ];
   }
 
+  if (reporting.lenderUpdate) {
+    return [
+      reporting.lenderUpdate.sourceFinanceMemo,
+      reporting.lenderUpdate.sourceEvidenceAppendix,
+    ];
+  }
+
   return reporting.evidenceAppendix?.sourceArtifacts ?? reporting.financeMemo?.sourceArtifacts ?? [];
+}
+
+function readSpecializedSources(reporting: ReportingOutputCardProps["reporting"]) {
+  return reporting.boardPacket ?? reporting.lenderUpdate ?? null;
 }

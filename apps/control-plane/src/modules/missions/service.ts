@@ -3,6 +3,7 @@ import type {
   CfoWikiCompanySourceListView,
   CreateBoardPacketMissionInput,
   CreateDiscoveryMissionInput,
+  CreateLenderUpdateMissionInput,
   CreateMissionFromTextInput,
   CreateReportingMissionInput,
   MissionDetailView,
@@ -26,6 +27,7 @@ import type { MissionCompilationResult, MissionCompiler } from "./compiler";
 import { buildBoardPacketMissionCreationInput } from "./board-packet";
 import { buildDiscoveryMissionCreationInput } from "./discovery";
 import { buildQueuedMissionStatusChangedPayload } from "./events";
+import { buildLenderUpdateMissionCreationInput } from "./lender-update";
 import { buildReportingMissionCreationInput } from "./reporting";
 import type { MissionRepository } from "./repository";
 import { buildReportingPublicationViewFromProofBundle } from "../reporting/publication";
@@ -107,6 +109,15 @@ export class MissionService {
   async createBoardPacket(rawInput: CreateBoardPacketMissionInput) {
     return this.createFromCompilation(
       await buildBoardPacketMissionCreationInput(rawInput, {
+        missionRepository: this.repository,
+      }),
+      undefined,
+    );
+  }
+
+  async createLenderUpdate(rawInput: CreateLenderUpdateMissionInput) {
+    return this.createFromCompilation(
+      await buildLenderUpdateMissionCreationInput(rawInput, {
         missionRepository: this.repository,
       }),
       undefined,

@@ -50,6 +50,8 @@ export function MissionCard({
   const reportingPublication =
     reportingView?.publication ?? proofBundle.reportPublication ?? null;
   const isBoardPacket = proofBundle.reportKind === "board_packet";
+  const isLenderUpdate = proofBundle.reportKind === "lender_update";
+  const isSpecializedReporting = isBoardPacket || isLenderUpdate;
   const reportProofBundle = proofBundle.reportKind !== null || reportingView !== null;
   const financeProofBundle = !reportProofBundle && isFinanceProofBundle(proofBundle);
   const policySourceScope =
@@ -98,7 +100,7 @@ export function MissionCard({
                   </a>
                 </dd>
               </div>
-              {reportingView.reportKind === "board_packet" ? (
+              {isSpecializedReporting ? (
                 <div>
                   <dt>Source reporting mission</dt>
                   <dd>
@@ -278,7 +280,7 @@ export function MissionCard({
                 <dt>Source discovery mission</dt>
                 <dd>{proofBundle.sourceDiscoveryMissionId ?? "Not recorded yet."}</dd>
               </div>
-              {isBoardPacket ? (
+              {isSpecializedReporting ? (
                 <div>
                   <dt>Source reporting mission</dt>
                   <dd>{proofBundle.sourceReportingMissionId ?? "Not recorded yet."}</dd>
@@ -295,7 +297,7 @@ export function MissionCard({
                     : "Not recorded yet."}
                 </dd>
               </div>
-              {isBoardPacket ? (
+              {isSpecializedReporting ? (
                 <div>
                   <dt>Linked appendix posture</dt>
                   <dd>
@@ -357,10 +359,10 @@ export function MissionCard({
                 <dd>{proofBundle.relatedWikiPageKeys?.length ?? 0}</dd>
               </div>
               <div>
-                <dt>{isBoardPacket ? "Linked appendix" : "Appendix"}</dt>
+                <dt>{isSpecializedReporting ? "Linked appendix" : "Appendix"}</dt>
                 <dd>
                   {proofBundle.appendixPresent
-                    ? isBoardPacket
+                    ? isSpecializedReporting
                       ? "Linked"
                       : "Stored"
                     : "Pending"}
@@ -634,6 +636,22 @@ function buildProofBundleReadinessMessage(
     }
 
     return "The board-packet proof bundle is still at the placeholder stage and has not yet accumulated persisted packet evidence.";
+  }
+
+  if (proofBundle.reportKind === "lender_update") {
+    if (proofBundle.status === "ready") {
+      return "The proof bundle now reads like a draft lender-update review package with source reporting lineage, linked appendix posture, carried freshness, and visible limitations tied together.";
+    }
+
+    if (proofBundle.status === "failed") {
+      return "The current draft lender-update bundle is non-decision-ready. Review the source reporting lineage, linked appendix posture, and mission evidence before retrying.";
+    }
+
+    if (proofBundle.status === "incomplete") {
+      return "The bundle is partially assembled, but the draft lender-update package is still missing its stored lender_update artifact.";
+    }
+
+    return "The lender-update proof bundle is still at the placeholder stage and has not yet accumulated persisted packet evidence.";
   }
 
   if (proofBundle.reportKind) {

@@ -794,6 +794,7 @@ describe("MissionCard", () => {
         }}
         reporting={{
           appendixPresent: true,
+          lenderUpdate: null,
           companyKey: "acme",
           draftStatus: "draft_only",
           evidenceAppendix: {
@@ -1394,6 +1395,7 @@ describe("MissionCard", () => {
           relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
           relatedWikiPageKeys: ["metrics/cash-posture"],
           appendixPresent: true,
+          lenderUpdate: null,
           financeMemo: null,
           evidenceAppendix: null,
           boardPacket: {

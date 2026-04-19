@@ -225,6 +225,13 @@
       "when": 1776559159476,
       "tag": "0031_steady_ma_gnuci",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1776603238617,
+      "tag": "0032_bizarre_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }

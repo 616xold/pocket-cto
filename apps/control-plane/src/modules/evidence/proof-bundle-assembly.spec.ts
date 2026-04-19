@@ -751,6 +751,81 @@ describe("assembleProofBundleManifest", () => {
       "persisted board-packet evidence",
     );
   });
+
+  it("yields a ready lender-update proof bundle when lender-update evidence is stored", () => {
+    const sourceDiscoveryMissionId = "88888888-8888-4888-8888-888888888888";
+    const sourceReportingMissionId = "99999999-9999-4999-8999-999999999999";
+    const mission = buildLenderUpdateMission(
+      sourceDiscoveryMissionId,
+      sourceReportingMissionId,
+    );
+    const manifest = assembleProofBundleManifest({
+      approvals: [],
+      artifacts: [
+        buildArtifact({
+          id: "11111111-eeee-4eee-8eee-eeeeeeeeeeee",
+          kind: "lender_update",
+          taskId: scoutTaskId,
+          createdAt: "2026-04-19T12:33:00.000Z",
+          metadata: {
+            source: "stored_reporting_evidence",
+            summary:
+              "Draft lender update for acme from the completed cash posture reporting mission.",
+            reportKind: "lender_update",
+            draftStatus: "draft_only",
+            sourceReportingMissionId,
+            sourceDiscoveryMissionId,
+            companyKey: "acme",
+            questionKind: "cash_posture",
+            policySourceId: null,
+            policySourceScope: null,
+            updateSummary:
+              "Draft lender update for acme from the completed cash posture reporting mission.",
+            freshnessSummary:
+              "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+            limitationsSummary:
+              "This lender update is draft-only and carries source reporting freshness and limitations forward.",
+            relatedRoutePaths: [
+              "/finance-twin/companies/acme/cash-posture",
+              "/finance-twin/companies/acme/bank-accounts",
+            ],
+            relatedWikiPageKeys: ["metrics/cash-posture", "concepts/cash"],
+            sourceFinanceMemo: {
+              artifactId: "11111111-bbbb-4bbb-8bbb-bbbbbbbbbbb1",
+              kind: "finance_memo",
+            },
+            sourceEvidenceAppendix: {
+              artifactId: "11111111-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+              kind: "evidence_appendix",
+            },
+            bodyMarkdown:
+              "# Draft Lender Update\n\n## Draft Review Posture\n\n- Status: draft_only",
+          },
+        }),
+      ],
+      existingBundle: buildPlaceholderBundle(mission),
+      mission,
+      replayEventCount: 9,
+      tasks: buildDiscoveryTasks("succeeded"),
+    });
+
+    expect(manifest.status).toBe("ready");
+    expect(manifest.reportKind).toBe("lender_update");
+    expect(manifest.sourceReportingMissionId).toBe(sourceReportingMissionId);
+    expect(manifest.reportPublication).toBeNull();
+    expect(manifest.evidenceCompleteness.expectedArtifactKinds).toEqual([
+      "lender_update",
+    ]);
+    expect(manifest.validationSummary).toBe(
+      "Draft lender update was compiled deterministically from one completed reporting mission and its stored finance memo plus evidence appendix without running the Codex runtime.",
+    );
+    expect(manifest.riskSummary).toContain(
+      "does not add approval, release, diligence, PDF, or slide workflow in F5C2",
+    );
+    expect(manifest.decisionTrace[0]).toContain(
+      "persisted lender-update evidence",
+    );
+  });
 });
 
 function buildMission(): MissionRecord {
@@ -1139,6 +1214,61 @@ function buildBoardPacketMission(
     },
     createdAt: "2026-04-19T12:00:00.000Z",
     updatedAt: "2026-04-19T12:03:00.000Z",
+  };
+}
+
+function buildLenderUpdateMission(
+  sourceDiscoveryMissionId: string,
+  sourceReportingMissionId: string,
+): MissionRecord {
+  return {
+    id: missionId,
+    type: "reporting",
+    status: "running",
+    title: "Draft lender update for acme from cash posture reporting",
+    objective:
+      "Compile one draft lender update from completed reporting mission and its stored finance memo plus evidence appendix only.",
+    sourceKind: "manual_reporting",
+    sourceRef: null,
+    createdBy: "finance-operator",
+    primaryRepo: null,
+    spec: {
+      type: "reporting",
+      title: "Draft lender update for acme from cash posture reporting",
+      objective:
+        "Compile one draft lender update from completed reporting mission and its stored finance memo plus evidence appendix only.",
+      repos: [],
+      constraints: {
+        allowedPaths: [],
+        mustNot: [],
+      },
+      acceptance: ["persist one draft lender_update artifact"],
+      riskBudget: {
+        sandboxMode: "read-only",
+        maxWallClockMinutes: 5,
+        maxCostUsd: 1,
+        allowNetwork: false,
+        requiresHumanApprovalFor: [],
+      },
+      deliverables: ["lender_update", "proof_bundle"],
+      evidenceRequirements: [
+        "stored finance_memo artifact",
+        "stored evidence_appendix artifact",
+      ],
+      input: {
+        reportingRequest: {
+          sourceDiscoveryMissionId,
+          sourceReportingMissionId,
+          reportKind: "lender_update",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+        },
+      },
+    },
+    createdAt: "2026-04-19T12:30:00.000Z",
+    updatedAt: "2026-04-19T12:30:00.000Z",
   };
 }
 

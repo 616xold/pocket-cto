@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   createBoardPacketMission,
+  createLenderUpdateMission,
   createReportingMission,
   exportReportingMissionMarkdown,
   fileReportingMissionArtifacts,
@@ -38,6 +39,11 @@ const createDraftFinanceMemoFormSchema = z.object({
 });
 
 const createDraftBoardPacketFormSchema = z.object({
+  requestedBy: z.string().trim().min(1),
+  sourceReportingMissionId: z.string().uuid(),
+});
+
+const createDraftLenderUpdateFormSchema = z.object({
   requestedBy: z.string().trim().min(1),
   sourceReportingMissionId: z.string().uuid(),
 });
@@ -127,6 +133,23 @@ export async function submitCreateDraftBoardPacket(formData: FormData) {
   });
 
   const created = await createBoardPacketMission({
+    requestedBy: input.requestedBy,
+    sourceReportingMissionId: input.sourceReportingMissionId,
+  });
+
+  revalidatePath("/");
+  revalidatePath("/missions");
+  revalidatePath(`/missions/${input.sourceReportingMissionId}`);
+  redirect(`/missions/${created.mission.id}`);
+}
+
+export async function submitCreateDraftLenderUpdate(formData: FormData) {
+  const input = createDraftLenderUpdateFormSchema.parse({
+    requestedBy: formData.get("requestedBy"),
+    sourceReportingMissionId: formData.get("sourceReportingMissionId"),
+  });
+
+  const created = await createLenderUpdateMission({
     requestedBy: input.requestedBy,
     sourceReportingMissionId: input.sourceReportingMissionId,
   });
