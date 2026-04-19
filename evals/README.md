@@ -39,8 +39,9 @@ When using those commands during the pivot:
 5. shipped F5B draft report body visibility, explicit filed artifact reuse, and markdown export posture from stored reporting artifacts plus the existing CFO Wiki seams
 6. shipped F5C1 draft `board_packet` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`
 7. shipped F5C2 draft `lender_update` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`
-8. wiki compilation quality
-9. provenance, freshness disclosure, and contradiction handling
+8. active F5C3 draft `diligence_packet` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`
+9. wiki compilation quality
+10. provenance, freshness disclosure, and contradiction handling
 
 ## F4 staging
 
@@ -59,8 +60,9 @@ For later phases:
 - keep `policy_lookup` eval prompts explicitly source-scoped and grounded in stored deterministic policy pages plus extract status
 - do not grade generic corpus-wide semantic policy search as if it already exists
 - add later discovery families only when the repo can already ground them deterministically
-- keep F5 memo and shipped board-packet evals anchored to the shipped F5A through F5C1 contracts, and keep the lender-update eval scope anchored to the shipped `FP-0039` record: one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix` in, one deterministic draft `lender_update` out, with explicit freshness, limitations, review-ready posture, and no runtime-codex fact invention
-- keep diligence specialization, PDF export, slide or Marp export, and release approval grading out of the first F5C2 eval scope
+- keep F5 memo and shipped board-packet and lender-update evals anchored to the shipped F5A through F5C2 contracts
+- keep the next diligence-packet eval scope anchored to active `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`: one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix` in, one deterministic draft `diligence_packet` out, with explicit freshness, limitations, review-ready posture, and no runtime-codex fact invention
+- keep approval-release grading, PDF export, slide or Marp export, and runtime-codex drafting evaluation out of the first F5C3 eval scope
 
 Do not treat these as early F4 supported families:
 

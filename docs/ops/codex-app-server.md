@@ -59,6 +59,7 @@ Codex remains valuable after that first answer path exists for:
 ## Current F5 posture
 
 The latest shipped F5 record is `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`.
+The active later-F5 implementation contract is `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`.
 The shipped F5A through F5C1 slices already create first-class reporting missions from completed discovery missions, assemble one draft `finance_memo` plus one linked `evidence_appendix`, expose those stored bodies directly, reuse the existing CFO Wiki filed-page plus markdown export seams for the finance-memo path, and compile one draft `board_packet` from completed reporting work without creating a runtime thread.
 
 For shipped F5C2, the control plane and operator surface should:
@@ -69,6 +70,15 @@ For shipped F5C2, the control plane and operator surface should:
 - keep the next packet path deterministic, runtime-free, and draft-only
 - avoid creating a runtime thread for packet compilation or draft-review posture
 - keep filing or export semantics, diligence specialization, approval-release posture, and non-markdown output formats out of the first lender-update slice
+
+For active F5C3, the control plane and operator surface should:
+
+- keep numeric and factual authority in stored evidence, not in runtime output
+- compile one draft `diligence_packet` only from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`
+- keep `mission.type = "reporting"` and specialize through `reportKind`
+- keep the next packet path deterministic, runtime-free, and draft-only
+- avoid creating a runtime thread for packet compilation or draft-review posture
+- keep filing or export semantics, approval-release posture, bounded runtime-codex drafting, and non-markdown output formats out of the first diligence-packet slice
 
 Later F5 slices may use runtime-codex only in a bounded role such as draft phrasing or formatting assistance once a deterministic packet skeleton already exists.
 Even then, runtime-codex must not invent finance facts, override stored numbers, or become the approval authority layer.
@@ -93,7 +103,7 @@ As the product pivots:
 - network access should remain restricted by default
 - runtime actions that change external communication posture must stay human-reviewable
 
-For F5A through shipped F5C2 specifically, draft report compilation, body exposure, finance-memo filing/export posture, first board-packet specialization, and first lender-update specialization should stay deterministic and draft-only, so these slices should not introduce runtime approval or release semantics yet.
+For F5A through shipped F5C2, and for the planned F5C3 implementation in `FP-0040`, draft report compilation, body exposure, finance-memo filing/export posture, first board-packet specialization, first lender-update specialization, and first diligence-packet specialization should stay deterministic and draft-only, so these slices should not introduce runtime approval or release semantics yet.
 
 ## Transition note
 

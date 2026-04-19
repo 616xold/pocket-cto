@@ -3,13 +3,13 @@
 ## Purpose / Big Picture
 
 This plan now serves as the shipped F5C2 implementation record produced by the F5C2 master-plan, implementation, and QA closeout work.
-The target phase is `F5`, and the next execution slice is `F5C2-lender-update-specialization-and-draft-review-foundation`.
-The user-visible goal is narrow and concrete: after the shipped F5A, F5B, and F5C1 path already creates one draft `finance_memo`, one linked `evidence_appendix`, truthful stored-vs-filed-vs-exported posture, and one specialized draft `board_packet`, Pocket CFO should next be able to compile one specialized draft `lender_update` from completed reporting work and present it as review-ready draft output without widening into diligence specialization, external release, finance approval, runtime-codex drafting, filing or export expansion, or non-markdown output formats.
+The target phase is `F5`, and the implementation slice recorded here is `F5C2-lender-update-specialization-and-draft-review-foundation`.
+The user-visible goal recorded in this shipped slice was narrow and concrete: after the shipped F5A, F5B, and F5C1 path already creates one draft `finance_memo`, one linked `evidence_appendix`, truthful stored-vs-filed-vs-exported posture, and one specialized draft `board_packet`, Pocket CFO could next compile one specialized draft `lender_update` from completed reporting work and present it as review-ready draft output without widening into diligence specialization, external release, finance approval, runtime-codex drafting, filing or export expansion, or non-markdown output formats.
 
-This matters now because the repo already ships the right deterministic substrate for the next packet-specialization pass: first-class `reporting` missions, `manual_reporting`, stored `finance_memo.bodyMarkdown`, stored `evidence_appendix.bodyMarkdown`, reporting proof bundles, mission-centric filing and markdown export reuse for the finance-memo path, and the first real packet specialization through a draft-only `board_packet`.
-What is still missing is a narrowed F5C2 contract.
-The inherited “lender and diligence packet specialization” label is too wide to hand to the next implementation thread safely.
-This plan narrows that next thread to one packet family, one input contract, one review posture, and one bounded set of seams.
+At the time this slice started, the repo already shipped the right deterministic substrate for the next packet-specialization pass: first-class `reporting` missions, `manual_reporting`, stored `finance_memo.bodyMarkdown`, stored `evidence_appendix.bodyMarkdown`, reporting proof bundles, mission-centric filing and markdown export reuse for the finance-memo path, and the first real packet specialization through a draft-only `board_packet`.
+Before this slice landed, what was still missing was a narrowed F5C2 contract.
+The inherited “lender and diligence packet specialization” label was too wide to hand to the next implementation thread safely.
+This shipped record captures how that next thread was narrowed to one packet family, one input contract, one review posture, and one bounded set of seams.
 
 GitHub connector work is explicitly out of scope.
 This plan does not authorize diligence packet specialization, approval-release hardening, runtime-codex drafting, PDF export, slide export, Marp export, F6 monitoring, or any rename from `modules/reporting/**` to `modules/reports/**`.
@@ -117,8 +117,8 @@ That shipped F5 baseline now truthfully means all of the following are already i
 - one draft `board_packet`
 - reporting proof bundles that stay explicit about freshness, limitations, discovery lineage, reporting lineage, draft posture, and finance-memo publication posture
 
-What the repo still does not have is any narrowed lender-update specialization contract.
-`reportKind` is still limited to `finance_memo` plus `board_packet`, packet specialization still stops at board review posture, and the current operator reporting follow-on actions do not define lender-facing draft review behavior.
+Before this slice landed, the repo still did not have any narrowed lender-update specialization contract.
+At that point `reportKind` was still limited to `finance_memo` plus `board_packet`, packet specialization still stopped at board review posture, and the current operator reporting follow-on actions did not yet define lender-facing draft review behavior.
 
 The active-doc boundary for this handoff is:
 
@@ -131,7 +131,8 @@ The active-doc boundary for this handoff is:
 - `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`
 - `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`
 - `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`
-- this active plan, `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`
+- this shipped F5C2 record, `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`
+- the active successor plan, `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`
 - `docs/ops/local-dev.md`
 - `docs/ops/source-ingest-and-cfo-wiki.md`
 - `docs/ops/codex-app-server.md`
@@ -165,22 +166,19 @@ The most relevant implementation seams for the landed F5C2 work are:
 
 ## Plan of Work
 
-F5C should now proceed through one narrow lender-focused contract before it widens again.
+This shipped record preserves the implementation contract that guided the lender-focused slice.
 
-First, implement `F5C2` as one specialized reporting family called `lender_update`.
-The new packet path should start only from one completed reporting mission that already stores one `finance_memo` and one `evidence_appendix`.
-That means F5C2 should widen the reporting input contract from the shipped `finance_memo` discovery-grounded source and the shipped `board_packet` reporting-grounded source into a second reporting-grounded specialization: the existing `finance_memo` path keeps its current discovery anchor, the existing `board_packet` path keeps its completed-reporting anchor, and the new `lender_update` path should also compile from a completed reporting mission with stored memo-plus-appendix evidence rather than from the board packet or raw wiki state alone.
+The code thread implemented `F5C2` as one specialized reporting family called `lender_update`.
+That packet path starts only from one completed reporting mission that already stores one `finance_memo` and one `evidence_appendix`.
+It widens the reporting input contract from the shipped `finance_memo` discovery-grounded source and the shipped `board_packet` reporting-grounded source into a second reporting-grounded specialization: the existing `finance_memo` path keeps its current discovery anchor, the existing `board_packet` path keeps its completed-reporting anchor, and the new `lender_update` path also compiles from a completed reporting mission with stored memo-plus-appendix evidence rather than from the board packet or raw wiki state alone.
 
-Second, keep the specialized lender-update compiler inside the existing `modules/reporting/**` bounded context and reuse stored report artifacts as the only lender-update source of truth.
-F5C2 should read the completed source reporting mission, its stored `finance_memo`, its stored `evidence_appendix`, and the existing reporting proof bundle only where that helps explain draft posture.
-It should not re-open discovery answer assembly, not read generic chat text, not treat raw wiki pages as the packet source of truth by themselves, and not create a runtime thread.
+The slice keeps the specialized lender-update compiler inside the existing `modules/reporting/**` bounded context and reuses stored report artifacts as the only lender-update source of truth.
+It reads the completed source reporting mission, its stored `finance_memo`, its stored `evidence_appendix`, and the existing reporting proof bundle only where that helps explain draft posture.
+It does not re-open discovery answer assembly, does not read generic chat text, does not treat raw wiki pages as the packet source of truth by themselves, and does not create a runtime thread.
 
-Third, expose the lender update as a review-ready draft reporting artifact through the existing mission list and mission detail surfaces.
-F5C2 should show that the packet is specialized and reviewable, but it must not add release buttons, external-send actions, finance approval cards, filing behavior, markdown export reuse, PDF output, or slide output.
-Later slices can widen from there:
-
-- `F5C3` can add diligence packet specialization after the lender-update contract is stable.
-- `F5C4` can add explicit approval-release hardening for external communication posture once specialized lender and diligence drafts already exist.
+The slice exposes the lender update as a review-ready draft reporting artifact through the existing mission list and mission detail surfaces.
+It shows that the packet is specialized and reviewable, but it does not add release buttons, external-send actions, finance approval cards, filing behavior, markdown export reuse, PDF output, or slide output.
+The active successor plan is now `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`, followed later by `F5C4-approval-release-hardening-for-external-communication-posture`.
 
 ## Concrete Steps
 

@@ -362,6 +362,13 @@ Those reporting artifacts now persist:
 - keep packet compilation deterministic, runtime-free, and draft-only
 - keep lender-update filing or export behavior, diligence specialization, approval-release semantics, and non-markdown export formats out of scope
 
+`plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` now serves as the active F5C3 implementation contract for the third reporting specialization step:
+
+- compile one draft `diligence_packet` only from one completed `reporting` mission with stored `finance_memo` plus stored `evidence_appendix`
+- keep `mission.type = "reporting"` and specialize through `reportKind`
+- keep packet compilation deterministic, runtime-free, and draft-only
+- keep diligence-packet filing or export behavior, approval-release semantics, bounded runtime-codex drafting, and non-markdown export formats out of scope
+
 Numeric claims should only appear when route-backed stored state or explicit refs support them.
 If the stored state is partial, stale, conflicting, or insufficient, the answer should say so plainly instead of inventing certainty.
 
@@ -396,6 +403,13 @@ The shipped F4 baseline still does none of the following:
 - raw wiki pages remain derived evidence inputs, not the only packet source of truth
 - diligence specialization, PDF export, slide export, runtime-codex drafting, and release semantics remain later work
 
+`FP-0040` now makes the active F5C3 boundary explicit:
+
+- the next implementation slice should compile one specialized `diligence_packet` from that same landed F5A plus F5B reporting state rather than from `board_packet`, `lender_update`, or generic chat
+- the source reporting mission must already store both `finance_memo` and `evidence_appendix`
+- raw wiki pages remain derived evidence inputs, not the only packet source of truth
+- approval-release hardening, bounded runtime-codex drafting, PDF export, and slide export remain later work
+
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
 If the latest bound policy extract is missing, unsupported, or failed, the mission persists a truthful limited answer rather than inventing a digest.
@@ -405,6 +419,7 @@ Report compilation now exists in the shipped F5A slice and stays deterministic, 
 The shipped F5B follow-on now hardens body visibility, filed-page reuse, and markdown export posture from that stored reporting state.
 The shipped F5C1 follow-on now specializes one draft `board_packet` from that completed reporting state.
 The shipped F5C2 follow-on now specializes only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
+The active F5C3 follow-on now narrows the next step to only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
 
 ## Lint flow
 
