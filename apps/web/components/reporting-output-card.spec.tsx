@@ -12,6 +12,7 @@ describe("ReportingOutputCard", () => {
           missionTitle: "Draft finance memo for acme",
           objective: "Compile one draft finance memo from stored evidence.",
           sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: null,
           companyKey: "acme",
           questionKind: "cash_posture",
           policySourceId: null,
@@ -94,6 +95,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "finance_memo",
           draftStatus: "draft_only",
           sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: null,
           companyKey: "acme",
           questionKind: "cash_posture",
           policySourceId: null,
@@ -152,6 +154,7 @@ describe("ReportingOutputCard", () => {
             bodyMarkdown:
               "# Evidence Appendix\n\n## Source Discovery Lineage\n\nStored lineage.",
           },
+          boardPacket: null,
           publication: {
             storedDraft: true,
             filedMemo: {
@@ -198,5 +201,123 @@ describe("ReportingOutputCard", () => {
     );
     expect(html).toContain("33333333-3333-4333-8333-333333333333");
     expect(html).toContain("Draft memo and evidence appendix are stored.");
+  });
+
+  it("renders a board packet with source reporting lineage and linked appendix posture", () => {
+    const html = renderToStaticMarkup(
+      <ReportingOutputCard
+        proofBundle={{
+          missionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          missionTitle: "Draft board packet for acme",
+          objective:
+            "Compile one draft board packet from stored finance memo and evidence appendix artifacts.",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          answerSummary: "",
+          reportKind: "board_packet",
+          reportDraftStatus: "draft_only",
+          reportPublication: null,
+          reportSummary:
+            "Draft board packet for acme from the completed cash posture reporting mission.",
+          appendixPresent: true,
+          freshnessState: "stale",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          targetRepoFullName: null,
+          branchName: null,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          changeSummary: "",
+          validationSummary: "",
+          verificationSummary: "",
+          riskSummary: "",
+          rollbackSummary: "",
+          latestApproval: null,
+          evidenceCompleteness: {
+            status: "complete",
+            expectedArtifactKinds: ["board_packet"],
+            presentArtifactKinds: ["board_packet"],
+            missingArtifactKinds: [],
+            notes: [],
+          },
+          decisionTrace: [],
+          artifactIds: [],
+          artifacts: [],
+          replayEventCount: 0,
+          timestamps: {
+            missionCreatedAt: "2026-04-19T13:00:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPullRequestAt: null,
+            latestApprovalAt: null,
+            latestArtifactAt: "2026-04-19T13:02:00.000Z",
+          },
+          status: "ready",
+        }}
+        reporting={{
+          reportKind: "board_packet",
+          draftStatus: "draft_only",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          reportSummary:
+            "Draft board packet for acme from the completed cash posture reporting mission.",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          appendixPresent: true,
+          financeMemo: null,
+          evidenceAppendix: null,
+          boardPacket: {
+            source: "stored_reporting_evidence",
+            summary:
+              "Draft board packet for acme from the completed cash posture reporting mission.",
+            reportKind: "board_packet",
+            draftStatus: "draft_only",
+            sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+            sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+            companyKey: "acme",
+            questionKind: "cash_posture",
+            policySourceId: null,
+            policySourceScope: null,
+            packetSummary:
+              "Draft board packet for acme from the completed cash posture reporting mission.",
+            freshnessSummary: "Cash posture remains stale.",
+            limitationsSummary: "Draft-only posture remains explicit.",
+            relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+            relatedWikiPageKeys: ["metrics/cash-posture"],
+            sourceFinanceMemo: {
+              artifactId: "44444444-4444-4444-8444-444444444444",
+              kind: "finance_memo",
+            },
+            sourceEvidenceAppendix: {
+              artifactId: "55555555-5555-4555-8555-555555555555",
+              kind: "evidence_appendix",
+            },
+            bodyMarkdown:
+              "# Draft Board Packet\n\n## Linked Evidence Appendix Posture\n\n- Appendix remains linked.",
+          },
+          publication: null,
+        }}
+      />,
+    );
+
+    expect(html).toContain("Draft board packet body");
+    expect(html).toContain("Source reporting mission");
+    expect(html).toContain("33333333-3333-4333-8333-333333333333");
+    expect(html).toContain("Linked from source reporting mission");
+    expect(html).toContain("44444444-4444-4444-8444-444444444444");
+    expect(html).toContain("55555555-5555-4555-8555-555555555555");
+    expect(html).not.toContain("Markdown export");
   });
 });

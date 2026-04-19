@@ -526,7 +526,7 @@ export class DrizzleMissionRepository implements MissionRepository {
       .values({
         missionId: input.missionId,
         taskId: input.taskId ?? null,
-        kind: input.kind,
+        kind: input.kind as typeof artifacts.$inferInsert.kind,
         uri: input.uri,
         mimeType: input.mimeType ?? null,
         sha256: input.sha256 ?? null,

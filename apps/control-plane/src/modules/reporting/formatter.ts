@@ -6,13 +6,13 @@ import {
   ReportingDraftStatusSchema,
 } from "@pocket-cto/domain";
 import type {
-  CompiledReportingArtifacts,
-  ReportingSourceBundle,
+  CompiledFinanceMemoArtifacts,
+  DiscoveryReportingSourceBundle,
 } from "./types";
 
-export function compileReportingArtifacts(
-  source: ReportingSourceBundle,
-): CompiledReportingArtifacts {
+export function compileFinanceMemoArtifacts(
+  source: DiscoveryReportingSourceBundle,
+): CompiledFinanceMemoArtifacts {
   const sourceArtifacts = buildSourceArtifacts(source);
   const carriedLimitations = buildCarriedLimitations(source);
   const limitationsSummary = summarizeLimitations(carriedLimitations);
@@ -28,6 +28,7 @@ export function compileReportingArtifacts(
   const freshnessSummary = source.discoveryAnswer.freshnessPosture.reasonSummary;
 
   return {
+    reportKind,
     financeMemo: {
       source: "stored_discovery_evidence",
       summary: memoSummary,
@@ -87,7 +88,7 @@ function buildFinanceMemoMarkdown(input: {
   memoSummary: string;
   relatedRoutePaths: string[];
   relatedWikiPageKeys: string[];
-  source: ReportingSourceBundle;
+  source: DiscoveryReportingSourceBundle;
 }) {
   const lines = [
     "# Draft Finance Memo",
@@ -148,7 +149,7 @@ function buildEvidenceAppendixMarkdown(input: {
   freshnessSummary: string;
   relatedRoutePaths: string[];
   relatedWikiPageKeys: string[];
-  source: ReportingSourceBundle;
+  source: DiscoveryReportingSourceBundle;
 }) {
   const sourceProofBundleStatus = input.source.sourceProofBundle?.status ?? "missing";
   const lines = [
@@ -196,7 +197,7 @@ function buildEvidenceAppendixMarkdown(input: {
   return lines.join("\n").trimEnd();
 }
 
-function buildCarriedLimitations(source: ReportingSourceBundle) {
+function buildCarriedLimitations(source: DiscoveryReportingSourceBundle) {
   const limitations = [...source.discoveryAnswer.limitations];
 
   if (!source.sourceProofBundle) {
@@ -220,7 +221,7 @@ function buildCarriedLimitations(source: ReportingSourceBundle) {
 }
 
 function buildSourceArtifacts(
-  source: ReportingSourceBundle,
+  source: DiscoveryReportingSourceBundle,
 ): ReportingSourceArtifactLink[] {
   const artifacts: ReportingSourceArtifactLink[] = [
     {

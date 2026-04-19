@@ -39,7 +39,9 @@ describe("ReportingService", () => {
     const service = new ReportingService({
       missionRepository: repository,
     });
-    const compiled = await service.compileDraftReport(reportingMission);
+    const compiled = requireFinanceMemoArtifacts(
+      await service.compileDraftReport(reportingMission),
+    );
 
     expect(compiled.financeMemo.reportKind).toBe("finance_memo");
     expect(compiled.financeMemo.draftStatus).toBe("draft_only");
@@ -84,7 +86,9 @@ describe("ReportingService", () => {
     const service = new ReportingService({
       missionRepository: repository,
     });
-    const compiled = await service.compileDraftReport(reportingMission);
+    const compiled = requireFinanceMemoArtifacts(
+      await service.compileDraftReport(reportingMission),
+    );
 
     expect(compiled.financeMemo.sourceArtifacts).toEqual([
       {
@@ -97,6 +101,59 @@ describe("ReportingService", () => {
     );
     expect(compiled.evidenceAppendix.limitations).toContain(
       "The source discovery proof bundle is missing, so this draft memo compiles from the stored discovery answer plus its persisted route and wiki evidence only.",
+    );
+  });
+
+  it("compiles one draft board packet from stored finance memo and evidence appendix artifacts only", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMission = buildSucceededReportingMission(
+      sourceDiscoveryMissionId,
+    );
+    const boardPacketMission = buildBoardPacketMission(
+      sourceDiscoveryMissionId,
+      sourceReportingMission.id,
+    );
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [sourceReportingMission.id]: buildReportingArtifacts(
+          sourceReportingMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+      missionsById: {
+        [sourceReportingMission.id]: sourceReportingMission,
+      },
+      proofBundlesByMissionId: {
+        [sourceReportingMission.id]: buildReportingProofBundle(
+          sourceReportingMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+    });
+
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+    const compiled = requireBoardPacketArtifacts(
+      await service.compileDraftReport(boardPacketMission),
+    );
+
+    expect(compiled.boardPacket.reportKind).toBe("board_packet");
+    expect(compiled.boardPacket.sourceReportingMissionId).toBe(
+      sourceReportingMission.id,
+    );
+    expect(compiled.boardPacket.sourceDiscoveryMissionId).toBe(
+      sourceDiscoveryMissionId,
+    );
+    expect(compiled.boardPacket.sourceFinanceMemo.kind).toBe("finance_memo");
+    expect(compiled.boardPacket.sourceEvidenceAppendix.kind).toBe(
+      "evidence_appendix",
+    );
+    expect(compiled.boardPacket.bodyMarkdown).toContain(
+      "## Source Finance Memo Draft",
+    );
+    expect(compiled.boardPacket.bodyMarkdown).toContain(
+      "## Linked Evidence Appendix Posture",
     );
   });
 
@@ -312,6 +369,26 @@ function createMissionRepositoryStub(input: {
   };
 }
 
+function requireFinanceMemoArtifacts(
+  compiled: Awaited<ReturnType<ReportingService["compileDraftReport"]>>,
+) {
+  if (compiled.reportKind !== "finance_memo") {
+    throw new Error("Expected finance-memo reporting artifacts.");
+  }
+
+  return compiled;
+}
+
+function requireBoardPacketArtifacts(
+  compiled: Awaited<ReturnType<ReportingService["compileDraftReport"]>>,
+) {
+  if (compiled.reportKind !== "board_packet") {
+    throw new Error("Expected board-packet reporting artifacts.");
+  }
+
+  return compiled;
+}
+
 function buildReportingMission(sourceDiscoveryMissionId: string): MissionRecord {
   return {
     id: "55555555-5555-4555-8555-555555555555",
@@ -350,6 +427,7 @@ function buildReportingMission(sourceDiscoveryMissionId: string): MissionRecord 
       input: {
         reportingRequest: {
           sourceDiscoveryMissionId,
+          sourceReportingMissionId: null,
           reportKind: "finance_memo",
           companyKey: "acme",
           questionKind: "cash_posture",
@@ -369,6 +447,64 @@ function buildSucceededReportingMission(
   return {
     ...buildReportingMission(sourceDiscoveryMissionId),
     status: "succeeded",
+  };
+}
+
+function buildBoardPacketMission(
+  sourceDiscoveryMissionId: string,
+  sourceReportingMissionId: string,
+): MissionRecord {
+  return {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    type: "reporting",
+    status: "queued",
+    title: "Draft board packet for acme from cash posture reporting",
+    objective:
+      "Compile one draft board packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
+    sourceKind: "manual_reporting",
+    sourceRef: null,
+    createdBy: "finance-operator",
+    primaryRepo: null,
+    spec: {
+      type: "reporting",
+      title: "Draft board packet for acme from cash posture reporting",
+      objective:
+        "Compile one draft board packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
+      repos: [],
+      constraints: {
+        mustNot: [
+          "do not invoke the codex runtime",
+          "do not add approval workflow, release workflow, lender packets, diligence packets, PDF export, or slide export",
+        ],
+        allowedPaths: [],
+      },
+      acceptance: ["persist one draft board_packet artifact"],
+      riskBudget: {
+        sandboxMode: "read-only",
+        maxWallClockMinutes: 5,
+        maxCostUsd: 1,
+        allowNetwork: false,
+        requiresHumanApprovalFor: [],
+      },
+      deliverables: ["board_packet", "proof_bundle"],
+      evidenceRequirements: [
+        "stored finance_memo artifact",
+        "stored evidence_appendix artifact",
+      ],
+      input: {
+        reportingRequest: {
+          sourceDiscoveryMissionId,
+          sourceReportingMissionId,
+          reportKind: "board_packet",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+        },
+      },
+    },
+    createdAt: "2026-04-19T12:00:00.000Z",
+    updatedAt: "2026-04-19T12:00:00.000Z",
   };
 }
 
@@ -457,6 +593,7 @@ function buildReportingProofBundle(
     missionTitle: "Draft finance memo for acme from cash posture discovery",
     objective: "Compile one draft finance memo from stored evidence.",
     sourceDiscoveryMissionId,
+    sourceReportingMissionId: null,
     companyKey: "acme",
     questionKind: "cash_posture",
     policySourceId: null,
@@ -678,6 +815,7 @@ function buildSourceProofBundle(missionId: string): ProofBundleManifest {
     objective:
       "Answer the stored cash posture question for acme from persisted Finance Twin and CFO Wiki state only.",
     sourceDiscoveryMissionId: null,
+    sourceReportingMissionId: null,
     companyKey: "acme",
     questionKind: "cash_posture",
     policySourceId: null,

@@ -62,6 +62,7 @@ function buildReportingMission(): MissionRecord {
       input: {
         reportingRequest: {
           sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: null,
           reportKind: "finance_memo",
           companyKey: "acme",
           questionKind: "cash_posture",
@@ -81,6 +82,7 @@ function buildReportingProofBundle(): ProofBundleManifest {
     missionTitle: "Draft finance memo for acme",
     objective: "Compile one draft finance memo from stored evidence.",
     sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+    sourceReportingMissionId: null,
     companyKey: "acme",
     questionKind: "cash_posture",
     policySourceId: null,

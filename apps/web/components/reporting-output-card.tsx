@@ -20,9 +20,11 @@ export function ReportingOutputCard({
   proofBundle,
   reporting,
 }: ReportingOutputCardProps) {
+  const boardPacket = reporting.boardPacket;
   const financeMemo = reporting.financeMemo;
   const evidenceAppendix = reporting.evidenceAppendix;
   const publication = reporting.publication;
+  const isBoardPacket = reporting.reportKind === "board_packet";
   const questionKindLabel =
     reporting.questionKind && isFinanceDiscoveryQuestionKind(reporting.questionKind)
       ? readFinanceDiscoveryQuestionKindLabel(reporting.questionKind)
@@ -68,6 +70,20 @@ export function ReportingOutputCard({
             </a>
           </dd>
         </div>
+        {isBoardPacket ? (
+          <div>
+            <dt>Source reporting mission</dt>
+            <dd>
+              {reporting.sourceReportingMissionId ? (
+                <a href={`/missions/${reporting.sourceReportingMissionId}`}>
+                  {reporting.sourceReportingMissionId}
+                </a>
+              ) : (
+                "Not recorded yet."
+              )}
+            </dd>
+          </div>
+        ) : null}
         <div>
           <dt>Company</dt>
           <dd>{reporting.companyKey ?? "Not recorded yet."}</dd>
@@ -87,64 +103,99 @@ export function ReportingOutputCard({
           <dd>{readFreshnessLabel(proofBundle.freshnessState)}</dd>
         </div>
         <div>
-          <dt>Appendix</dt>
-          <dd>{reporting.appendixPresent ? "Stored" : "Pending"}</dd>
-        </div>
-        <div>
-          <dt>Stored draft</dt>
-          <dd>{publication?.storedDraft ? "Memo and appendix stored" : "Pending"}</dd>
-        </div>
-        <div>
-          <dt>Memo page</dt>
+          <dt>{isBoardPacket ? "Linked appendix" : "Appendix"}</dt>
           <dd>
-            {publication?.filedMemo && reporting.companyKey ? (
-              <a
-                href={`${resolveControlPlaneUrl()}/cfo-wiki/companies/${encodeURIComponent(reporting.companyKey)}/pages/${encodeURIComponent(publication.filedMemo.pageKey)}`}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <code>{publication.filedMemo.pageKey}</code>
-              </a>
-            ) : (
-              "Not filed"
-            )}
+            {reporting.appendixPresent
+              ? isBoardPacket
+                ? "Linked from source reporting mission"
+                : "Stored"
+              : "Pending"}
           </dd>
         </div>
-        <div>
-          <dt>Appendix page</dt>
-          <dd>
-            {publication?.filedEvidenceAppendix && reporting.companyKey ? (
-              <a
-                href={`${resolveControlPlaneUrl()}/cfo-wiki/companies/${encodeURIComponent(reporting.companyKey)}/pages/${encodeURIComponent(publication.filedEvidenceAppendix.pageKey)}`}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <code>{publication.filedEvidenceAppendix.pageKey}</code>
-              </a>
-            ) : (
-              "Not filed"
-            )}
-          </dd>
-        </div>
-        <div>
-          <dt>Markdown export</dt>
-          <dd>
-            {publication?.latestMarkdownExport && reporting.companyKey ? (
-              <a
-                href={`${resolveControlPlaneUrl()}/cfo-wiki/companies/${encodeURIComponent(reporting.companyKey)}/exports/${encodeURIComponent(publication.latestMarkdownExport.exportRunId)}`}
-                rel="noreferrer"
-                target="_blank"
-              >
-                {publication.latestMarkdownExport.includesLatestFiledArtifacts
-                  ? `Run ${publication.latestMarkdownExport.exportRunId}`
-                  : `Run ${publication.latestMarkdownExport.exportRunId} (predates latest filing)`}
-              </a>
-            ) : (
-              "No export run recorded"
-            )}
-          </dd>
-        </div>
+        {isBoardPacket ? (
+          <>
+            <div>
+              <dt>Source memo artifact</dt>
+              <dd>
+                <code>{boardPacket?.sourceFinanceMemo.artifactId ?? "Not recorded yet."}</code>
+              </dd>
+            </div>
+            <div>
+              <dt>Source appendix artifact</dt>
+              <dd>
+                <code>
+                  {boardPacket?.sourceEvidenceAppendix.artifactId ??
+                    "Not recorded yet."}
+                </code>
+              </dd>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <dt>Stored draft</dt>
+              <dd>{publication?.storedDraft ? "Memo and appendix stored" : "Pending"}</dd>
+            </div>
+            <div>
+              <dt>Memo page</dt>
+              <dd>
+                {publication?.filedMemo && reporting.companyKey ? (
+                  <a
+                    href={`${resolveControlPlaneUrl()}/cfo-wiki/companies/${encodeURIComponent(reporting.companyKey)}/pages/${encodeURIComponent(publication.filedMemo.pageKey)}`}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <code>{publication.filedMemo.pageKey}</code>
+                  </a>
+                ) : (
+                  "Not filed"
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>Appendix page</dt>
+              <dd>
+                {publication?.filedEvidenceAppendix && reporting.companyKey ? (
+                  <a
+                    href={`${resolveControlPlaneUrl()}/cfo-wiki/companies/${encodeURIComponent(reporting.companyKey)}/pages/${encodeURIComponent(publication.filedEvidenceAppendix.pageKey)}`}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    <code>{publication.filedEvidenceAppendix.pageKey}</code>
+                  </a>
+                ) : (
+                  "Not filed"
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>Markdown export</dt>
+              <dd>
+                {publication?.latestMarkdownExport && reporting.companyKey ? (
+                  <a
+                    href={`${resolveControlPlaneUrl()}/cfo-wiki/companies/${encodeURIComponent(reporting.companyKey)}/exports/${encodeURIComponent(publication.latestMarkdownExport.exportRunId)}`}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {publication.latestMarkdownExport.includesLatestFiledArtifacts
+                      ? `Run ${publication.latestMarkdownExport.exportRunId}`
+                      : `Run ${publication.latestMarkdownExport.exportRunId} (predates latest filing)`}
+                  </a>
+                ) : (
+                  "No export run recorded"
+                )}
+              </dd>
+            </div>
+          </>
+        )}
       </div>
+
+      {boardPacket ? (
+        <ReadOnlyMarkdownPreview
+          bodyMarkdown={boardPacket.bodyMarkdown}
+          title="Draft board packet body"
+        />
+      ) : null}
 
       {financeMemo ? (
         <ReadOnlyMarkdownPreview
@@ -192,16 +243,13 @@ export function ReportingOutputCard({
 
       <div className="stack" style={{ marginTop: 18 }}>
         <h3>Linked evidence</h3>
-        {(evidenceAppendix?.sourceArtifacts ?? financeMemo?.sourceArtifacts ?? [])
-          .length > 0 ? (
+        {readLinkedArtifacts(reporting).length > 0 ? (
           <ul className="list-clean">
-            {(evidenceAppendix?.sourceArtifacts ?? financeMemo?.sourceArtifacts ?? []).map(
-              (artifact) => (
-                <li key={artifact.artifactId}>
-                  {artifact.kind} · <code>{artifact.artifactId}</code>
-                </li>
-              ),
-            )}
+            {readLinkedArtifacts(reporting).map((artifact) => (
+              <li key={artifact.artifactId}>
+                {artifact.kind} · <code>{artifact.artifactId}</code>
+              </li>
+            ))}
           </ul>
         ) : (
           <p className="muted">No source artifact linkage was recorded yet.</p>
@@ -227,4 +275,15 @@ export function ReportingOutputCard({
       </div>
     </section>
   );
+}
+
+function readLinkedArtifacts(reporting: ReportingOutputCardProps["reporting"]) {
+  if (reporting.boardPacket) {
+    return [
+      reporting.boardPacket.sourceFinanceMemo,
+      reporting.boardPacket.sourceEvidenceAppendix,
+    ];
+  }
+
+  return reporting.evidenceAppendix?.sourceArtifacts ?? reporting.financeMemo?.sourceArtifacts ?? [];
 }

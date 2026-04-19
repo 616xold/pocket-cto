@@ -4,6 +4,7 @@ import { isFinanceDiscoveryAnswerArtifactMetadata } from "@pocket-cto/domain";
 import { getWebOperatorIdentity } from "../../../lib/operator-identity";
 import {
   ApprovalActionForm,
+  CreateBoardPacketForm,
   CreateReportForm,
   ExportReportingMarkdownForm,
   FileReportingArtifactsForm,
@@ -38,9 +39,15 @@ export function MissionActions({
     mission.type === "discovery" &&
     mission.status === "succeeded" &&
     isFinanceDiscoveryAnswerArtifactMetadata(discoveryAnswer);
+  const canCreateDraftBoardPacket =
+    mission.type === "reporting" &&
+    mission.status === "succeeded" &&
+    reporting?.reportKind === "finance_memo" &&
+    Boolean(reporting.financeMemo && reporting.evidenceAppendix);
   const canFileDraftArtifacts =
     mission.type === "reporting" &&
     mission.status === "succeeded" &&
+    reporting?.reportKind === "finance_memo" &&
     Boolean(reporting?.publication?.storedDraft) &&
     !(
       reporting?.publication?.filedMemo &&
@@ -49,6 +56,7 @@ export function MissionActions({
   const canExportMarkdownBundle =
     mission.type === "reporting" &&
     mission.status === "succeeded" &&
+    reporting?.reportKind === "finance_memo" &&
     Boolean(
       reporting?.publication?.filedMemo &&
         reporting.publication.filedEvidenceAppendix,
@@ -80,35 +88,59 @@ export function MissionActions({
       {mission.type === "reporting" ? (
         <div className="stack" style={{ marginTop: 18 }}>
           <h3>Reporting follow-on</h3>
-          <p className="muted">
-            Filing and export remain explicit operator actions. They reuse the
-            existing CFO Wiki filed-page and markdown export seams without
-            changing the stored draft artifacts or F5A proof readiness.
-          </p>
-          {canFileDraftArtifacts ? (
-            <FileReportingArtifactsForm
-              missionId={mission.id}
-              operatorIdentity={operatorIdentity}
-            />
-          ) : reporting?.publication?.storedDraft ? (
-            <p className="muted">
-              Draft memo and appendix are already filed into the CFO Wiki.
-            </p>
+          {canCreateDraftBoardPacket ? (
+            <>
+              <p className="muted">
+                Create one draft-only board packet from this completed finance
+                memo reporting mission and its stored memo plus evidence
+                appendix only.
+              </p>
+              <CreateBoardPacketForm
+                operatorIdentity={operatorIdentity}
+                sourceReportingMissionId={mission.id}
+              />
+            </>
+          ) : null}
+          {reporting?.reportKind === "finance_memo" ? (
+            <>
+              <p className="muted">
+                Filing and export remain explicit operator actions. They reuse
+                the existing CFO Wiki filed-page and markdown export seams
+                without changing the stored draft artifacts or F5A proof
+                readiness.
+              </p>
+              {canFileDraftArtifacts ? (
+                <FileReportingArtifactsForm
+                  missionId={mission.id}
+                  operatorIdentity={operatorIdentity}
+                />
+              ) : reporting?.publication?.storedDraft ? (
+                <p className="muted">
+                  Draft memo and appendix are already filed into the CFO Wiki.
+                </p>
+              ) : (
+                <p className="muted">
+                  Draft filing becomes available once the reporting mission has
+                  both stored artifacts and a company scope.
+                </p>
+              )}
+              {canExportMarkdownBundle ? (
+                <ExportReportingMarkdownForm
+                  missionId={mission.id}
+                  operatorIdentity={operatorIdentity}
+                />
+              ) : (
+                <p className="muted">
+                  Markdown export becomes available after both draft artifacts
+                  are filed into the CFO Wiki.
+                </p>
+              )}
+            </>
           ) : (
             <p className="muted">
-              Draft filing becomes available once the reporting mission has both
-              stored artifacts and a company scope.
-            </p>
-          )}
-          {canExportMarkdownBundle ? (
-            <ExportReportingMarkdownForm
-              missionId={mission.id}
-              operatorIdentity={operatorIdentity}
-            />
-          ) : (
-            <p className="muted">
-              Markdown export becomes available after both draft artifacts are
-              filed into the CFO Wiki.
+              Board packet missions remain draft-only in F5C1. Filing, markdown
+              export, approval, release, PDF, and slide actions stay out of
+              scope here.
             </p>
           )}
         </div>

@@ -19,7 +19,9 @@ This plan does not authorize F5C2 lender or diligence packet specialization, F5C
 - [x] 2026-04-18T23:40:19Z Audit the active docs, shipped F5A and F5B records, reporting mission contracts, reporting operator surfaces, proof-bundle posture, runtime-codex boundary, and approval semantics before narrowing the first real F5C implementation slice.
 - [x] 2026-04-18T23:40:19Z Create `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` and refresh the smallest truthful active-doc set so `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` remains the shipped F5B record while this file becomes the active F5C implementation contract.
 - [x] 2026-04-18T23:40:19Z Re-run the preserved source-ingest through finance-report confidence ladder plus repo-wide validation for this docs-and-plan handoff without starting F5C1 code.
-- [ ] 2026-04-18T23:40:19Z Start the first real F5C1 implementation thread on a clean branch and land deterministic `board_packet` specialization plus draft-review foundation from one completed reporting mission with stored `finance_memo` and stored `evidence_appendix` only.
+- [x] 2026-04-19T00:41:25Z Land the first real F5C1 implementation slice: keep `mission.type = "reporting"`, add `reportKind = "board_packet"`, add the dedicated `POST /missions/reporting/board-packets` creation contract, compile one deterministic draft `board_packet` from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`, and wire truthful read models across domain, control-plane, and web surfaces without approval, release, lender, diligence, PDF, slide, or runtime-codex widening.
+- [x] 2026-04-19T00:41:25Z Add the additive local-proof layer for F5C1: one packaged `tools/board-packet-smoke.mjs` flow plus `pnpm smoke:board-packet:local`, one additive `artifact_kind` enum migration for `board_packet`, and the smallest truthful `docs/ops/local-dev.md` refresh for the new packaged validation path.
+- [x] 2026-04-19T01:52:05Z Run the full F5C1 validation ladder end to end and keep it green after narrow closeout fixes: remove one unused board-packet compiler binding, align the shared proof-bundle placeholder fixture with `sourceReportingMissionId`, tighten one route-spec mock cast, confirm `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all pass, and proceed to one local commit plus branch push/PR publication from the existing branch only.
 
 ## Surprises & Discoveries
 
@@ -38,6 +40,12 @@ This plan does not authorize F5C2 lender or diligence packet specialization, F5C
 - Observation: the active-doc chain was the main thing still widening or misdirecting F5 work.
   Evidence: `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `docs/ops/codex-app-server.md`, `evals/README.md`, and `docs/benchmarks/seeded-missions.md` all still pointed at `FP-0037` as active or left F5C too broad.
 
+- Observation: local F5C1 execution needs the additive database enum migration applied before the new board-packet artifact can persist.
+  Evidence: `packages/db/drizzle/0031_steady_ma_gnuci.sql` adds `board_packet` to `artifact_kind`, and the packaged board-packet smoke only terminalized truthfully after `pnpm db:migrate` applied that additive schema change to the local Docker-backed Postgres instance.
+
+- Observation: the final repo-wide validation pass surfaced only closeout-level polish rather than any F5C1 scope flaw.
+  Evidence: `apps/control-plane/src/modules/reporting/board-packet.ts` dropped one unused binding for `pnpm lint`; `packages/testkit/src/fixtures.ts` added nullable `sourceReportingMissionId`; and `apps/control-plane/src/modules/missions/routes.spec.ts` plus `apps/control-plane/src/modules/missions/service.spec.ts` received type-only test fixes before the final green `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` runs.
+
 ## Decision Log
 
 - Decision: the first real F5C scope is `F5C1-board-packet-specialization-and-draft-review-foundation`.
@@ -45,6 +53,9 @@ This plan does not authorize F5C2 lender or diligence packet specialization, F5C
 
 - Decision: the first packet family is exactly `board_packet`.
   Rationale: one board-facing draft packet is the narrowest truthful specialization on top of the shipped memo-plus-appendix baseline.
+
+- Decision: use a dedicated `POST /missions/reporting/board-packets` creation contract instead of widening the shipped `POST /missions/reporting` finance-memo input.
+  Rationale: the finance-memo path should stay discovery-grounded and stable while the first packet-specialization input stays explicitly reporting-grounded and draft-only.
 
 - Decision: F5C1 compiles only from one completed `reporting` mission that already stores one `finance_memo` and one `evidence_appendix`.
   Rationale: the first packet path should reuse stored reporting evidence, not generic chat intake and not raw wiki pages alone.

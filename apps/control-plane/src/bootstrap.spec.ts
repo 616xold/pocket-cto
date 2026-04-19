@@ -375,6 +375,9 @@ function createAppContainer(
       async createAnalysis() {
         throw new Error("createAnalysis should not be called in this test");
       },
+      async createBoardPacket() {
+        throw new Error("createBoardPacket should not be called in this test");
+      },
       async createDiscovery() {
         throw new Error("createDiscovery should not be called in this test");
       },

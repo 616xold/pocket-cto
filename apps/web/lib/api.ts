@@ -1,6 +1,7 @@
 import {
   ApprovalRecordSchema,
   CfoWikiCompanySourceListViewSchema,
+  CreateBoardPacketMissionInputSchema,
   CreateDiscoveryMissionInputSchema,
   CreateReportingMissionInputSchema,
   CreateSourceInputSchema,
@@ -354,6 +355,16 @@ export async function createReportingMission(
   return postJsonStrict(
     "/missions/reporting",
     CreateReportingMissionInputSchema.parse(input),
+    createMissionResponseSchema,
+  );
+}
+
+export async function createBoardPacketMission(
+  input: z.input<typeof CreateBoardPacketMissionInputSchema>,
+) {
+  return postJsonStrict(
+    "/missions/reporting/board-packets",
+    CreateBoardPacketMissionInputSchema.parse(input),
     createMissionResponseSchema,
   );
 }

@@ -6,7 +6,10 @@ import {
 } from "./discovery-mission";
 import { FinanceCompanyKeySchema } from "./finance-twin";
 
-export const REPORTING_MISSION_REPORT_KINDS = ["finance_memo"] as const;
+export const REPORTING_MISSION_REPORT_KINDS = [
+  "finance_memo",
+  "board_packet",
+] as const;
 export const REPORTING_FILED_ARTIFACT_KINDS = [
   "finance_memo",
   "evidence_appendix",
@@ -23,6 +26,7 @@ export const ReportingFiledArtifactKindSchema = z.enum(
 
 export const REPORTING_MISSION_REPORT_KIND_LABELS = {
   finance_memo: "Finance memo",
+  board_packet: "Board packet",
 } satisfies Record<(typeof REPORTING_MISSION_REPORT_KINDS)[number], string>;
 
 export const REPORTING_FILED_ARTIFACT_KIND_LABELS = {
@@ -36,7 +40,14 @@ export const REPORTING_FILED_ARTIFACT_KIND_LABELS = {
 export const CreateReportingMissionInputSchema = z
   .object({
     sourceDiscoveryMissionId: z.string().uuid(),
-    reportKind: ReportingMissionReportKindSchema,
+    reportKind: z.literal("finance_memo"),
+    requestedBy: z.string().trim().min(1).default("operator"),
+  })
+  .strict();
+
+export const CreateBoardPacketMissionInputSchema = z
+  .object({
+    sourceReportingMissionId: z.string().uuid(),
     requestedBy: z.string().trim().min(1).default("operator"),
   })
   .strict();
@@ -56,6 +67,7 @@ export const ExportReportingMissionMarkdownInputSchema = z
 export const ReportingMissionInputSchema = z
   .object({
     sourceDiscoveryMissionId: z.string().uuid(),
+    sourceReportingMissionId: z.string().uuid().nullable().default(null),
     reportKind: ReportingMissionReportKindSchema,
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
     questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
@@ -64,7 +76,31 @@ export const ReportingMissionInputSchema = z
       null,
     ),
   })
-  .strict();
+  .strict()
+  .superRefine((input, ctx) => {
+    if (
+      input.reportKind === "board_packet" &&
+      input.sourceReportingMissionId === null
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Required",
+        path: ["sourceReportingMissionId"],
+      });
+    }
+
+    if (
+      input.reportKind === "finance_memo" &&
+      input.sourceReportingMissionId !== null
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Finance memo reporting must start from a completed discovery mission only.",
+        path: ["sourceReportingMissionId"],
+      });
+    }
+  });
 
 export const ReportingSourceArtifactKindSchema = z.enum([
   "discovery_answer",
@@ -105,7 +141,7 @@ export const EvidenceAppendixArtifactMetadataSchema = z
   .object({
     source: z.literal("stored_discovery_evidence"),
     summary: z.string().min(1),
-    reportKind: ReportingMissionReportKindSchema,
+    reportKind: z.literal("finance_memo"),
     draftStatus: ReportingDraftStatusSchema.default("draft_only"),
     sourceDiscoveryMissionId: z.string().uuid(),
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
@@ -121,6 +157,47 @@ export const EvidenceAppendixArtifactMetadataSchema = z
     relatedRoutePaths: z.array(z.string().min(1)).default([]),
     relatedWikiPageKeys: z.array(CfoWikiPageKeySchema).default([]),
     sourceArtifacts: z.array(ReportingSourceArtifactLinkSchema).min(1),
+    bodyMarkdown: z.string().min(1),
+  })
+  .strict();
+
+export const BoardPacketSourceArtifactKindSchema = z.enum([
+  "finance_memo",
+  "evidence_appendix",
+]);
+
+export const BoardPacketSourceArtifactLinkSchema = z
+  .object({
+    artifactId: z.string().uuid(),
+    kind: BoardPacketSourceArtifactKindSchema,
+  })
+  .strict();
+
+export const BoardPacketArtifactMetadataSchema = z
+  .object({
+    source: z.literal("stored_reporting_evidence"),
+    summary: z.string().min(1),
+    reportKind: z.literal("board_packet"),
+    draftStatus: ReportingDraftStatusSchema.default("draft_only"),
+    sourceReportingMissionId: z.string().uuid(),
+    sourceDiscoveryMissionId: z.string().uuid(),
+    companyKey: FinanceCompanyKeySchema.nullable().default(null),
+    questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
+    policySourceId: z.string().uuid().nullable().default(null),
+    policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
+      null,
+    ),
+    packetSummary: z.string().min(1),
+    freshnessSummary: z.string().min(1),
+    limitationsSummary: z.string().min(1),
+    relatedRoutePaths: z.array(z.string().min(1)).default([]),
+    relatedWikiPageKeys: z.array(CfoWikiPageKeySchema).default([]),
+    sourceFinanceMemo: BoardPacketSourceArtifactLinkSchema.extend({
+      kind: z.literal("finance_memo"),
+    }),
+    sourceEvidenceAppendix: BoardPacketSourceArtifactLinkSchema.extend({
+      kind: z.literal("evidence_appendix"),
+    }),
     bodyMarkdown: z.string().min(1),
   })
   .strict();
@@ -163,6 +240,7 @@ export const ReportingMissionViewSchema = z
     reportKind: ReportingMissionReportKindSchema,
     draftStatus: ReportingDraftStatusSchema.default("draft_only"),
     sourceDiscoveryMissionId: z.string().uuid(),
+    sourceReportingMissionId: z.string().uuid().nullable().default(null),
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
     questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
     policySourceId: z.string().uuid().nullable().default(null),
@@ -179,6 +257,7 @@ export const ReportingMissionViewSchema = z
     evidenceAppendix: EvidenceAppendixArtifactMetadataSchema.nullable().default(
       null,
     ),
+    boardPacket: BoardPacketArtifactMetadataSchema.nullable().default(null),
     publication: ReportingPublicationViewSchema.nullable().default(null),
   })
   .strict();
@@ -209,6 +288,9 @@ export type ReportingFiledArtifactKind = z.infer<
 export type CreateReportingMissionInput = z.infer<
   typeof CreateReportingMissionInputSchema
 >;
+export type CreateBoardPacketMissionInput = z.infer<
+  typeof CreateBoardPacketMissionInputSchema
+>;
 export type FileReportingMissionArtifactsInput = z.infer<
   typeof FileReportingMissionArtifactsInputSchema
 >;
@@ -227,6 +309,15 @@ export type FinanceMemoArtifactMetadata = z.infer<
 >;
 export type EvidenceAppendixArtifactMetadata = z.infer<
   typeof EvidenceAppendixArtifactMetadataSchema
+>;
+export type BoardPacketSourceArtifactKind = z.infer<
+  typeof BoardPacketSourceArtifactKindSchema
+>;
+export type BoardPacketSourceArtifactLink = z.infer<
+  typeof BoardPacketSourceArtifactLinkSchema
+>;
+export type BoardPacketArtifactMetadata = z.infer<
+  typeof BoardPacketArtifactMetadataSchema
 >;
 export type ReportingFiledArtifactView = z.infer<
   typeof ReportingFiledArtifactViewSchema
@@ -255,6 +346,12 @@ export function isEvidenceAppendixArtifactMetadata(
   value: unknown,
 ): value is EvidenceAppendixArtifactMetadata {
   return EvidenceAppendixArtifactMetadataSchema.safeParse(value).success;
+}
+
+export function isBoardPacketArtifactMetadata(
+  value: unknown,
+): value is BoardPacketArtifactMetadata {
+  return BoardPacketArtifactMetadataSchema.safeParse(value).success;
 }
 
 export function readReportingMissionReportKindLabel(

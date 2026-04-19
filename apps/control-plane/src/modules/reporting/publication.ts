@@ -64,7 +64,7 @@ export function buildReportingPublicationViewFromProofBundle(
     | "reportPublication"
   >,
 ) {
-  if (input.reportKind === null) {
+  if (input.reportKind !== "finance_memo") {
     return null;
   }
 

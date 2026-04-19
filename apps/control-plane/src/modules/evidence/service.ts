@@ -37,6 +37,10 @@ export type PlannerArtifactCapture = {
   sourceItems: PlannerArtifactSourceItem[];
 };
 
+type ReportingRequest = NonNullable<
+  NonNullable<MissionRecord["spec"]["input"]>["reportingRequest"]
+>;
+
 export class EvidenceService {
   createPlaceholder(mission: MissionRecord): ProofBundleManifest {
     const isDiscoveryMission = mission.type === "discovery";
@@ -72,6 +76,10 @@ export class EvidenceService {
         isReportingMission && reportingRequest
           ? reportingRequest.sourceDiscoveryMissionId
           : null,
+      sourceReportingMissionId:
+        isReportingMission && reportingRequest
+          ? reportingRequest.sourceReportingMissionId
+          : null,
       companyKey: financeCompanyKey,
       questionKind: discoveryQuestionKind,
       policySourceId,
@@ -104,30 +112,19 @@ export class EvidenceService {
       latestApproval: null,
       evidenceCompleteness: {
         status: "missing",
-        expectedArtifactKinds: isReportingMission
-          ? ["finance_memo", "evidence_appendix"]
-          : isDiscoveryMission
-            ? ["discovery_answer"]
-            : ["plan", "diff_summary", "test_report", "pr_link"],
+        expectedArtifactKinds: readExpectedArtifactKinds({
+          isDiscoveryMission,
+          reportingRequest,
+        }),
         presentArtifactKinds: [],
-        missingArtifactKinds: isReportingMission
-          ? ["finance_memo", "evidence_appendix"]
-          : isDiscoveryMission
-            ? ["discovery_answer"]
-            : ["plan", "diff_summary", "test_report", "pr_link"],
-        notes: isReportingMission
-          ? [
-              "Draft finance memo evidence is missing.",
-              "Evidence appendix is missing.",
-            ]
-          : isDiscoveryMission
-            ? ["Discovery answer evidence is missing."]
-            : [
-                "Planner evidence is missing.",
-                "Change-summary evidence is missing.",
-                "Validation evidence is missing.",
-                "GitHub pull request evidence is missing.",
-              ],
+        missingArtifactKinds: readExpectedArtifactKinds({
+          isDiscoveryMission,
+          reportingRequest,
+        }),
+        notes: readMissingArtifactNotes({
+          isDiscoveryMission,
+          reportingRequest,
+        }),
       },
       decisionTrace: [],
       artifactIds: [],
@@ -336,6 +333,52 @@ export class EvidenceService {
       decisionTrace: nextDecisionTrace,
     });
   }
+}
+
+function readExpectedArtifactKinds(input: {
+  isDiscoveryMission: boolean;
+  reportingRequest: ReportingRequest | undefined;
+}) {
+  if (input.reportingRequest?.reportKind === "board_packet") {
+    return ["board_packet"] satisfies ArtifactKind[];
+  }
+
+  if (input.reportingRequest) {
+    return ["finance_memo", "evidence_appendix"] satisfies ArtifactKind[];
+  }
+
+  if (input.isDiscoveryMission) {
+    return ["discovery_answer"] satisfies ArtifactKind[];
+  }
+
+  return ["plan", "diff_summary", "test_report", "pr_link"] satisfies ArtifactKind[];
+}
+
+function readMissingArtifactNotes(input: {
+  isDiscoveryMission: boolean;
+  reportingRequest: ReportingRequest | undefined;
+}) {
+  if (input.reportingRequest?.reportKind === "board_packet") {
+    return ["Draft board packet evidence is missing."];
+  }
+
+  if (input.reportingRequest) {
+    return [
+      "Draft finance memo evidence is missing.",
+      "Evidence appendix is missing.",
+    ];
+  }
+
+  if (input.isDiscoveryMission) {
+    return ["Discovery answer evidence is missing."];
+  }
+
+  return [
+    "Planner evidence is missing.",
+    "Change-summary evidence is missing.",
+    "Validation evidence is missing.",
+    "GitHub pull request evidence is missing.",
+  ];
 }
 
 function isFinanceDiscoveryQuestion(

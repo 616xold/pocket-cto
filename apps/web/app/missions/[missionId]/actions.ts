@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
+  createBoardPacketMission,
   createReportingMission,
   exportReportingMissionMarkdown,
   fileReportingMissionArtifacts,
@@ -34,6 +35,11 @@ const taskInterruptFormSchema = z.object({
 const createDraftFinanceMemoFormSchema = z.object({
   requestedBy: z.string().trim().min(1),
   sourceDiscoveryMissionId: z.string().uuid(),
+});
+
+const createDraftBoardPacketFormSchema = z.object({
+  requestedBy: z.string().trim().min(1),
+  sourceReportingMissionId: z.string().uuid(),
 });
 
 const fileReportingMissionArtifactsFormSchema = z.object({
@@ -111,6 +117,23 @@ export async function submitCreateDraftFinanceMemo(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/missions");
   revalidatePath(`/missions/${input.sourceDiscoveryMissionId}`);
+  redirect(`/missions/${created.mission.id}`);
+}
+
+export async function submitCreateDraftBoardPacket(formData: FormData) {
+  const input = createDraftBoardPacketFormSchema.parse({
+    requestedBy: formData.get("requestedBy"),
+    sourceReportingMissionId: formData.get("sourceReportingMissionId"),
+  });
+
+  const created = await createBoardPacketMission({
+    requestedBy: input.requestedBy,
+    sourceReportingMissionId: input.sourceReportingMissionId,
+  });
+
+  revalidatePath("/");
+  revalidatePath("/missions");
+  revalidatePath(`/missions/${input.sourceReportingMissionId}`);
   redirect(`/missions/${created.mission.id}`);
 }
 

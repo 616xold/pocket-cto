@@ -29,9 +29,12 @@ const BUILD_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = [
   "pr_link",
 ];
 const DISCOVERY_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = ["discovery_answer"];
-const REPORTING_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = [
+const FINANCE_MEMO_REPORTING_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = [
   "finance_memo",
   "evidence_appendix",
+];
+const BOARD_PACKET_REPORTING_EXPECTED_ARTIFACT_KINDS: ArtifactKind[] = [
+  "board_packet",
 ];
 
 const SUMMARY_MAX_LENGTH = 240;
@@ -216,6 +219,7 @@ export function assembleProofBundleManifest(input: {
     missionTitle: input.mission.title,
     objective: input.mission.objective,
     sourceDiscoveryMissionId: facts.sourceDiscoveryMissionId,
+    sourceReportingMissionId: facts.sourceReportingMissionId,
     companyKey: facts.companyKey,
     questionKind: facts.questionKind,
     policySourceId: facts.policySourceId,
@@ -338,7 +342,9 @@ function buildChangeSummary(
       return truncate(facts.latestScoutTask.summary, SUMMARY_MAX_LENGTH);
     }
 
-    return "Draft finance memo compilation is still pending persisted reporting artifacts.";
+    return isBoardPacketFacts(facts)
+      ? "Draft board packet compilation is still pending persisted board-packet evidence."
+      : "Draft finance memo compilation is still pending persisted reporting artifacts.";
   }
 
   if (isFinanceDiscoveryFacts(facts) && facts.latestScoutTask) {
@@ -377,6 +383,22 @@ function buildValidationSummary(
   }
 
   if (isReportingFacts(facts) && facts.latestScoutTask) {
+    if (isBoardPacketFacts(facts)) {
+      if (status === "ready") {
+        return "Draft board packet was compiled deterministically from one completed reporting mission and its stored finance memo plus evidence appendix without running the Codex runtime.";
+      }
+
+      if (status === "incomplete") {
+        return "Draft board packet evidence is still pending from the stored reporting path.";
+      }
+
+      if (status === "failed") {
+        return "No draft board packet could be persisted for this reporting mission.";
+      }
+
+      return "";
+    }
+
     if (status === "ready") {
       return "Draft finance memo and evidence appendix were compiled deterministically from stored discovery evidence without running the Codex runtime.";
     }
@@ -486,7 +508,9 @@ function buildVerificationSummary(
     facts.reportSummary
   ) {
     return truncate(
-      `${facts.reportSummary} Review the linked evidence appendix, carried-forward freshness, and visible limitations before sharing this draft.`,
+      isBoardPacketFacts(facts)
+        ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.`
+        : `${facts.reportSummary} Review the linked evidence appendix, carried-forward freshness, and visible limitations before sharing this draft.`,
       SUMMARY_MAX_LENGTH,
     );
   }
@@ -538,6 +562,22 @@ function buildRiskSummary(
   }
 
   if (isReportingFacts(facts) && facts.latestScoutTask) {
+    if (isBoardPacketFacts(facts)) {
+      if (status === "failed") {
+        return "Draft board packet is currently unavailable; inspect the stored source reporting evidence and reporting task timeline before retrying.";
+      }
+
+      if (status === "incomplete") {
+        return "Board-packet proof readiness depends on one persisted board_packet artifact compiled from stored finance memo and evidence appendix evidence only.";
+      }
+
+      if (status === "ready") {
+        return "This board packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C1.";
+      }
+
+      return "";
+    }
+
     if (status === "failed") {
       return "Draft reporting is currently unavailable; inspect the stored source discovery evidence and reporting task timeline before retrying.";
     }
@@ -615,6 +655,22 @@ function buildRollbackSummary(
   }
 
   if (isReportingFacts(facts) && facts.latestScoutTask) {
+    if (isBoardPacketFacts(facts)) {
+      if (status === "failed") {
+        return "Safe fallback: refresh or rerun the source finance-memo reporting mission truthfully, then retry draft board-packet compilation; no release, send, or wiki filing side effect was produced.";
+      }
+
+      if (status === "incomplete") {
+        return "Wait for the stored board_packet artifact before relying on this reporting mission.";
+      }
+
+      if (status === "ready") {
+        return "No release, approval, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
+      }
+
+      return "";
+    }
+
     if (status === "failed") {
       return "Safe fallback: refresh or rerun the source discovery mission truthfully, then retry draft memo compilation; no release, send, or wiki filing side effect was produced.";
     }
@@ -687,6 +743,8 @@ function readMissingArtifactNote(kind: ArtifactKind) {
       return "Draft finance memo evidence is missing.";
     case "evidence_appendix":
       return "Evidence appendix is missing.";
+    case "board_packet":
+      return "Draft board packet evidence is missing.";
     case "diff_summary":
       return "Change-summary evidence is missing.";
     case "test_report":
@@ -717,13 +775,19 @@ function isFinanceDiscoveryFacts(facts: ProofBundleAssemblyFacts) {
   );
 }
 
+function isBoardPacketFacts(facts: ProofBundleAssemblyFacts) {
+  return facts.reportKind === "board_packet";
+}
+
 function isReportingFacts(facts: ProofBundleAssemblyFacts) {
   return facts.reportKind !== null || facts.sourceDiscoveryMissionId !== null;
 }
 
 function readExpectedArtifactKinds(facts: ProofBundleAssemblyFacts) {
   if (facts.missionType === "reporting") {
-    return REPORTING_EXPECTED_ARTIFACT_KINDS;
+    return isBoardPacketFacts(facts)
+      ? BOARD_PACKET_REPORTING_EXPECTED_ARTIFACT_KINDS
+      : FINANCE_MEMO_REPORTING_EXPECTED_ARTIFACT_KINDS;
   }
 
   return facts.missionType === "discovery"

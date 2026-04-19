@@ -7,6 +7,7 @@ import type {
 } from "../../lib/types";
 import {
   createAnalysisMissionSchema,
+  createBoardPacketMissionSchema,
   createDiscoveryMissionSchema,
   exportReportingMissionMarkdownSchema,
   fileReportingMissionArtifactsSchema,
@@ -57,6 +58,13 @@ export async function registerMissionRoutes(
   app.post("/missions/reporting", async (request, reply) => {
     const body = createReportingMissionSchema.parse(request.body);
     const created = await deps.missionService.createReporting(body);
+    reply.code(201);
+    return created;
+  });
+
+  app.post("/missions/reporting/board-packets", async (request, reply) => {
+    const body = createBoardPacketMissionSchema.parse(request.body);
+    const created = await deps.missionService.createBoardPacket(body);
     reply.code(201);
     return created;
   });

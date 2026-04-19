@@ -36,6 +36,7 @@ describe("MissionListCard", () => {
           reportSummary: null,
           sourceKind: "github_issue",
           sourceDiscoveryMissionId: null,
+          sourceReportingMissionId: null,
           sourceRef: "https://github.com/acme/web/issues/19",
           status: "running",
           title: "Implement passkeys for sign-in",
@@ -86,6 +87,7 @@ describe("MissionListCard", () => {
           reportSummary: null,
           sourceKind: "manual_discovery",
           sourceDiscoveryMissionId: null,
+          sourceReportingMissionId: null,
           sourceRef: null,
           status: "succeeded",
           title: "Review payables pressure for acme",
@@ -146,6 +148,7 @@ describe("MissionListCard", () => {
           reportSummary: null,
           sourceKind: "manual_discovery",
           sourceDiscoveryMissionId: null,
+          sourceReportingMissionId: null,
           sourceRef: null,
           status: "succeeded",
           title: "Review policy lookup for acme",
@@ -230,6 +233,7 @@ describe("MissionListCard", () => {
           reportSummary:
             "Draft finance memo summarizing stored payables pressure and evidence posture.",
           sourceDiscoveryMissionId,
+          sourceReportingMissionId: null,
           sourceKind: "manual_reporting",
           sourceRef: null,
           status: "succeeded",
@@ -250,6 +254,58 @@ describe("MissionListCard", () => {
       "Draft finance memo summarizing stored payables pressure and evidence posture.",
     );
     expect(html).toContain("Markdown export");
+    expect(html).toContain("proof ready");
+  });
+
+  it("renders board-packet mission summaries with source-report lineage", () => {
+    const sourceReportingMissionId = "77777777-7777-4777-8777-777777777777";
+    const html = renderToStaticMarkup(
+      <MissionListCard
+        mission={{
+          appendixPresent: true,
+          answerSummary: null,
+          companyKey: "acme",
+          createdAt: "2026-04-19T01:00:00.000Z",
+          freshnessState: "stale",
+          id: "88888888-8888-4888-8888-888888888888",
+          latestTask: {
+            id: "99999999-9999-4999-8999-999999999999",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            updatedAt: "2026-04-19T01:05:00.000Z",
+          },
+          objectiveExcerpt:
+            "Compile one draft board packet from completed reporting mission and its stored finance memo plus evidence appendix.",
+          pendingApprovalCount: 0,
+          policySourceId: null,
+          policySourceScope: null,
+          primaryRepo: null,
+          proofBundleStatus: "ready",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: "cash_posture",
+          reportDraftStatus: "draft_only",
+          reportKind: "board_packet",
+          reportPublication: null,
+          reportSummary:
+            "Draft board packet for acme from the completed cash posture reporting mission.",
+          sourceDiscoveryMissionId: "66666666-6666-4666-8666-666666666666",
+          sourceReportingMissionId,
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          status: "succeeded",
+          title: "Draft board packet for acme from cash posture reporting",
+          updatedAt: "2026-04-19T01:05:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("Board packet");
+    expect(html).toContain("Linked");
+    expect(html).toContain(sourceReportingMissionId);
+    expect(html).toContain("66666666-6666-4666-8666-666666666666");
+    expect(html).not.toContain("Markdown export");
     expect(html).toContain("proof ready");
   });
 });
