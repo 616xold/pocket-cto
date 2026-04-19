@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  BoardPacketArtifactMetadataSchema,
+  CreateBoardPacketMissionInputSchema,
   CreateReportingMissionInputSchema,
   EvidenceAppendixArtifactMetadataSchema,
   FinanceMemoArtifactMetadataSchema,
@@ -16,6 +18,18 @@ describe("Reporting mission domain schemas", () => {
     });
 
     expect(parsed.reportKind).toBe("finance_memo");
+    expect(parsed.requestedBy).toBe("finance-operator");
+  });
+
+  it("parses the dedicated board-packet creation input", () => {
+    const parsed = CreateBoardPacketMissionInputSchema.parse({
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      requestedBy: "finance-operator",
+    });
+
+    expect(parsed.sourceReportingMissionId).toBe(
+      "11111111-1111-4111-8111-111111111111",
+    );
     expect(parsed.requestedBy).toBe("finance-operator");
   });
 
@@ -83,11 +97,52 @@ describe("Reporting mission domain schemas", () => {
     expect(appendix.sourceArtifacts).toHaveLength(1);
   });
 
+  it("parses board-packet metadata", () => {
+    const parsed = BoardPacketArtifactMetadataSchema.parse({
+      source: "stored_reporting_evidence",
+      summary:
+        "Draft board packet for acme from the completed cash posture reporting mission.",
+      reportKind: "board_packet",
+      draftStatus: "draft_only",
+      sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+      sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      packetSummary:
+        "Draft board packet for acme from the completed cash posture reporting mission.",
+      freshnessSummary:
+        "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+      limitationsSummary:
+        "This board packet is draft-only and carries source reporting freshness and limitations forward.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceFinanceMemo: {
+        artifactId: "44444444-4444-4444-8444-444444444444",
+        kind: "finance_memo",
+      },
+      sourceEvidenceAppendix: {
+        artifactId: "55555555-5555-4555-8555-555555555555",
+        kind: "evidence_appendix",
+      },
+      bodyMarkdown:
+        "# Draft Board Packet\n\n## Packet Summary\n\nCash posture remains constrained.",
+    });
+
+    expect(parsed.reportKind).toBe("board_packet");
+    expect(parsed.sourceReportingMissionId).toBe(
+      "33333333-3333-4333-8333-333333333333",
+    );
+    expect(parsed.sourceFinanceMemo.kind).toBe("finance_memo");
+  });
+
   it("parses the reporting read model view", () => {
     const parsed = ReportingMissionViewSchema.parse({
       reportKind: "finance_memo",
       draftStatus: "draft_only",
       sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceReportingMissionId: null,
       companyKey: "acme",
       questionKind: "cash_posture",
       policySourceId: null,
@@ -103,6 +158,7 @@ describe("Reporting mission domain schemas", () => {
       appendixPresent: true,
       financeMemo: null,
       evidenceAppendix: null,
+      boardPacket: null,
       publication: {
         storedDraft: true,
         filedMemo: null,
@@ -117,6 +173,70 @@ describe("Reporting mission domain schemas", () => {
     expect(parsed.publication?.storedDraft).toBe(true);
     expect(readReportingMissionReportKindLabel(parsed.reportKind)).toBe(
       "Finance memo",
+    );
+  });
+
+  it("parses the board-packet reporting read model view", () => {
+    const parsed = ReportingMissionViewSchema.parse({
+      reportKind: "board_packet",
+      draftStatus: "draft_only",
+      sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      reportSummary:
+        "Draft board packet for acme from the completed cash posture reporting mission.",
+      freshnessSummary:
+        "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+      limitationsSummary:
+        "This board packet is draft-only and carries source reporting freshness and limitations forward.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      appendixPresent: true,
+      financeMemo: null,
+      evidenceAppendix: null,
+      boardPacket: {
+        source: "stored_reporting_evidence",
+        summary:
+          "Draft board packet for acme from the completed cash posture reporting mission.",
+        reportKind: "board_packet",
+        draftStatus: "draft_only",
+        sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+        sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        packetSummary:
+          "Draft board packet for acme from the completed cash posture reporting mission.",
+        freshnessSummary:
+          "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+        limitationsSummary:
+          "This board packet is draft-only and carries source reporting freshness and limitations forward.",
+        relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+        relatedWikiPageKeys: ["metrics/cash-posture"],
+        sourceFinanceMemo: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          kind: "finance_memo",
+        },
+        sourceEvidenceAppendix: {
+          artifactId: "55555555-5555-4555-8555-555555555555",
+          kind: "evidence_appendix",
+        },
+        bodyMarkdown:
+          "# Draft Board Packet\n\n## Packet Summary\n\nCash posture remains constrained.",
+      },
+      publication: null,
+    });
+
+    expect(parsed.boardPacket?.sourceEvidenceAppendix.kind).toBe(
+      "evidence_appendix",
+    );
+    expect(parsed.publication).toBeNull();
+    expect(readReportingMissionReportKindLabel(parsed.reportKind)).toBe(
+      "Board packet",
     );
   });
 });

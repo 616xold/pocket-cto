@@ -143,6 +143,7 @@ function buildDemoMissionDetail(): MissionDetailView {
       missionTitle: "Implement passkeys for sign-in",
       objective: "Ship passkeys without breaking email login.",
       sourceDiscoveryMissionId: null,
+      sourceReportingMissionId: null,
       companyKey: null,
       questionKind: null,
       policySourceId: null,

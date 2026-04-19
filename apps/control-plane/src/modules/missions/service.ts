@@ -1,6 +1,7 @@
 import type {
   ApprovalRecord,
   CfoWikiCompanySourceListView,
+  CreateBoardPacketMissionInput,
   CreateDiscoveryMissionInput,
   CreateMissionFromTextInput,
   CreateReportingMissionInput,
@@ -22,6 +23,7 @@ import type { EvidenceService } from "../evidence/service";
 import type { PersistenceSession } from "../../lib/persistence";
 import type { ReplayService } from "../replay/service";
 import type { MissionCompilationResult, MissionCompiler } from "./compiler";
+import { buildBoardPacketMissionCreationInput } from "./board-packet";
 import { buildDiscoveryMissionCreationInput } from "./discovery";
 import { buildQueuedMissionStatusChangedPayload } from "./events";
 import { buildReportingMissionCreationInput } from "./reporting";
@@ -96,6 +98,15 @@ export class MissionService {
   async createReporting(rawInput: CreateReportingMissionInput) {
     return this.createFromCompilation(
       await buildReportingMissionCreationInput(rawInput, {
+        missionRepository: this.repository,
+      }),
+      undefined,
+    );
+  }
+
+  async createBoardPacket(rawInput: CreateBoardPacketMissionInput) {
+    return this.createFromCompilation(
+      await buildBoardPacketMissionCreationInput(rawInput, {
         missionRepository: this.repository,
       }),
       undefined,
@@ -371,6 +382,7 @@ function summarizeMission(input: {
   return {
     id: input.mission.id,
     sourceDiscoveryMissionId: input.proofBundle.sourceDiscoveryMissionId,
+    sourceReportingMissionId: input.proofBundle.sourceReportingMissionId,
     companyKey: input.proofBundle.companyKey,
     createdAt: input.mission.createdAt,
     answerSummary: input.proofBundle.answerSummary || null,

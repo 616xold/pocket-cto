@@ -9,6 +9,7 @@ import {
   submitExportReportingMissionMarkdown,
   submitFileReportingMissionArtifacts,
   submitApprovalResolution,
+  submitCreateDraftBoardPacket,
   submitCreateDraftFinanceMemo,
   submitTaskInterrupt,
 } from "./actions";
@@ -32,6 +33,11 @@ type TaskInterruptFormProps = {
 type CreateReportFormProps = {
   operatorIdentity: string;
   sourceDiscoveryMissionId: string;
+};
+
+type CreateBoardPacketFormProps = {
+  operatorIdentity: string;
+  sourceReportingMissionId: string;
 };
 
 type ExportReportingMarkdownFormProps = {
@@ -135,6 +141,28 @@ export function CreateReportForm({
         className="action-button"
         label="Create draft finance memo"
         pendingLabel="Creating draft memo..."
+      />
+    </form>
+  );
+}
+
+export function CreateBoardPacketForm({
+  operatorIdentity,
+  sourceReportingMissionId,
+}: CreateBoardPacketFormProps) {
+  return (
+    <form action={submitCreateDraftBoardPacket} className="stack">
+      <input
+        name="sourceReportingMissionId"
+        type="hidden"
+        value={sourceReportingMissionId}
+      />
+      <input name="requestedBy" type="hidden" value={operatorIdentity} />
+
+      <ActionSubmitButton
+        className="action-button"
+        label="Create draft board packet"
+        pendingLabel="Creating board packet..."
       />
     </form>
   );

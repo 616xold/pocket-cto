@@ -40,6 +40,7 @@ export type GitHubIssueIntakeServicePort = Pick<
 export type MissionServicePort = Pick<
   MissionService,
   | "createAnalysis"
+  | "createBoardPacket"
   | "createDiscovery"
   | "createReporting"
   | "createFromText"

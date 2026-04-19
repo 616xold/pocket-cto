@@ -19,7 +19,8 @@ import { AppHttpError, MissionNotFoundError } from "../../lib/http-errors";
 import type { CfoWikiServicePort } from "../../lib/types";
 import { readMissionDiscoveryAnswer } from "../missions/discovery-answer-view";
 import type { MissionRepository } from "../missions/repository";
-import { compileReportingArtifacts } from "./formatter";
+import { compileBoardPacketArtifacts } from "./board-packet";
+import { compileFinanceMemoArtifacts } from "./formatter";
 import {
   buildReportingFiledPageKey,
   buildReportingFiledPageProvenanceSummary,
@@ -27,7 +28,11 @@ import {
   buildReportingPublicationView,
 } from "./publication";
 import { readMissionReportingView } from "./artifact";
-import type { CompiledReportingArtifacts, ReportingSourceBundle } from "./types";
+import type {
+  CompiledReportingArtifacts,
+  DiscoveryReportingSourceBundle,
+  SourceReportingBundle,
+} from "./types";
 
 export class ReportingService {
   constructor(
@@ -49,8 +54,14 @@ export class ReportingService {
 
   async compileDraftReport(mission: MissionRecord): Promise<CompiledReportingArtifacts> {
     const reportingRequest = readReportingMissionInput(mission);
-    const source = await this.loadSourceBundle(reportingRequest);
-    return compileReportingArtifacts(source);
+
+    if (reportingRequest.reportKind === "board_packet") {
+      const source = await this.loadSourceReportingBundle(reportingRequest);
+      return compileBoardPacketArtifacts(source);
+    }
+
+    const source = await this.loadDiscoverySourceBundle(reportingRequest);
+    return compileFinanceMemoArtifacts(source);
   }
 
   async readPublicationFacts(input: {
@@ -70,6 +81,10 @@ export class ReportingService {
     });
 
     if (!reporting) {
+      return null;
+    }
+
+    if (reporting.reportKind !== "finance_memo") {
       return null;
     }
 
@@ -232,9 +247,9 @@ export class ReportingService {
     });
   }
 
-  private async loadSourceBundle(
+  private async loadDiscoverySourceBundle(
     reportingRequest: ReportingMissionInput,
-  ): Promise<ReportingSourceBundle> {
+  ): Promise<DiscoveryReportingSourceBundle> {
     const sourceDiscoveryMission =
       await this.deps.missionRepository.getMissionById(
         reportingRequest.sourceDiscoveryMissionId,
@@ -304,6 +319,98 @@ export class ReportingService {
       sourceDiscoveryMission,
       sourceProofBundle,
       sourceProofBundleArtifactId: sourceProofBundleArtifact?.id ?? null,
+    };
+  }
+
+  private async loadSourceReportingBundle(
+    reportingRequest: ReportingMissionInput,
+  ): Promise<SourceReportingBundle> {
+    const sourceReportingMissionId = reportingRequest.sourceReportingMissionId;
+
+    if (!sourceReportingMissionId) {
+      throw new Error("Board packet reporting requires a source reporting mission.");
+    }
+
+    const sourceReportingMission =
+      await this.deps.missionRepository.getMissionById(sourceReportingMissionId);
+
+    if (!sourceReportingMission) {
+      throw new Error(
+        `Source reporting mission ${sourceReportingMissionId} is missing.`,
+      );
+    }
+
+    if (sourceReportingMission.type !== "reporting") {
+      throw new Error(
+        `Source mission ${sourceReportingMission.id} is ${sourceReportingMission.type}, not reporting.`,
+      );
+    }
+
+    if (sourceReportingMission.status !== "succeeded") {
+      throw new Error(
+        `Source reporting mission ${sourceReportingMission.id} must be succeeded before board packet compilation.`,
+      );
+    }
+
+    const [artifacts, sourceProofBundle] = await Promise.all([
+      this.deps.missionRepository.listArtifactsByMissionId(sourceReportingMission.id),
+      this.deps.missionRepository.getProofBundleByMissionId(sourceReportingMission.id),
+    ]);
+
+    if (!sourceProofBundle) {
+      throw new Error(
+        `Source reporting mission ${sourceReportingMission.id} is missing a proof bundle.`,
+      );
+    }
+
+    const sourceReportingView = readMissionReportingView({
+      artifacts,
+      proofBundle: sourceProofBundle,
+    });
+
+    if (!sourceReportingView) {
+      throw new Error(
+        `Source reporting mission ${sourceReportingMission.id} has no persisted reporting view.`,
+      );
+    }
+
+    if (sourceReportingView.reportKind !== "finance_memo") {
+      throw new Error(
+        `Source reporting mission ${sourceReportingMission.id} has report kind ${sourceReportingView.reportKind}, not finance_memo.`,
+      );
+    }
+
+    if (!sourceReportingView.financeMemo || !sourceReportingView.evidenceAppendix) {
+      throw new Error(
+        `Source reporting mission ${sourceReportingMission.id} must store both finance_memo and evidence_appendix artifacts before board packet compilation.`,
+      );
+    }
+
+    const sourceFinanceMemoArtifactId = readLatestArtifactId(
+      artifacts,
+      "finance_memo",
+    );
+    const sourceEvidenceAppendixArtifactId = readLatestArtifactId(
+      artifacts,
+      "evidence_appendix",
+    );
+
+    if (!sourceFinanceMemoArtifactId || !sourceEvidenceAppendixArtifactId) {
+      throw new Error(
+        `Source reporting mission ${sourceReportingMission.id} is missing stored source artifact rows required for board packet compilation.`,
+      );
+    }
+
+    return {
+      sourceEvidenceAppendixArtifactId,
+      sourceFinanceMemoArtifactId,
+      sourceProofBundle,
+      sourceReportingMission,
+      sourceReportingView: {
+        ...sourceReportingView,
+        evidenceAppendix: sourceReportingView.evidenceAppendix,
+        financeMemo: sourceReportingView.financeMemo,
+      },
     };
   }
 
@@ -385,6 +492,13 @@ function requireStoredReportingView(input: {
   });
 
   if (!reporting?.financeMemo || !reporting.evidenceAppendix) {
+    if (reporting?.reportKind === "board_packet") {
+      throw invalidRequest(
+        "missionId",
+        "Board-packet reporting stays draft-only in F5C1 and cannot file or export through the finance-memo publication path.",
+      );
+    }
+
     throw invalidRequest(
       "missionId",
       "The reporting mission does not yet have both stored draft artifacts required for filing and export.",
@@ -435,4 +549,21 @@ function parseExportRunRecord(
   exportRun: unknown,
 ) {
   return CfoWikiExportRunRecordSchema.parse(exportRun);
+}
+
+function readLatestArtifactId(
+  artifacts: Awaited<ReturnType<MissionRepository["listArtifactsByMissionId"]>>,
+  kind: Awaited<
+    ReturnType<MissionRepository["listArtifactsByMissionId"]>
+  >[number]["kind"],
+) {
+  return (
+    [...artifacts]
+      .filter((artifact) => artifact.kind === kind)
+      .sort(
+        (left, right) =>
+          right.createdAt.localeCompare(left.createdAt) ||
+          right.id.localeCompare(left.id),
+      )[0]?.id ?? null
+  );
 }

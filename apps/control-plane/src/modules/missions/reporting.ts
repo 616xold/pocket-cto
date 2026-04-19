@@ -171,6 +171,7 @@ function buildReportingMissionInput(
 ): ReportingMissionInput {
   return {
     sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+    sourceReportingMissionId: null,
     reportKind,
     companyKey: input.companyKey,
     questionKind: input.questionKind,

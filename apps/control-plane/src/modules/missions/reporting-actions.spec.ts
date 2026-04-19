@@ -108,6 +108,7 @@ function buildProofBundleManifest(): ProofBundleManifest {
     objective:
       "Compile one draft finance memo from the stored payables pressure evidence for acme.",
     sourceDiscoveryMissionId: "99999999-9999-4999-8999-999999999999",
+    sourceReportingMissionId: null,
     companyKey: "acme",
     questionKind: "payables_pressure",
     policySourceId: null,

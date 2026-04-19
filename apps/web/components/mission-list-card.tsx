@@ -16,6 +16,7 @@ type MissionListCardProps = {
 
 export function MissionListCard({ mission }: MissionListCardProps) {
   const isReportingMission = mission.reportKind !== null;
+  const isBoardPacket = mission.reportKind === "board_packet";
   const isFinanceMission = mission.companyKey !== null;
   const questionKindLabel =
     mission.questionKind && isFinanceDiscoveryQuestionKind(mission.questionKind)
@@ -85,31 +86,46 @@ export function MissionListCard({ mission }: MissionListCardProps) {
               <dd>{mission.reportDraftStatus ?? "Not recorded yet."}</dd>
             </div>
             <div>
-              <dt>Appendix</dt>
-              <dd>{mission.appendixPresent ? "Stored" : "Pending"}</dd>
-            </div>
-            <div>
-              <dt>Memo page</dt>
-              <dd>{mission.reportPublication?.filedMemo?.pageKey ?? "Not filed"}</dd>
-            </div>
-            <div>
-              <dt>Appendix page</dt>
+              <dt>{isBoardPacket ? "Linked appendix" : "Appendix"}</dt>
               <dd>
-                {mission.reportPublication?.filedEvidenceAppendix?.pageKey ??
-                  "Not filed"}
+                {mission.appendixPresent
+                  ? isBoardPacket
+                    ? "Linked"
+                    : "Stored"
+                  : "Pending"}
               </dd>
             </div>
-            <div>
-              <dt>Markdown export</dt>
-              <dd>
-                {mission.reportPublication?.latestMarkdownExport
-                  ? mission.reportPublication.latestMarkdownExport
-                      .includesLatestFiledArtifacts
-                    ? "Recorded"
-                    : "Recorded before latest filing"
-                  : "Not exported"}
-              </dd>
-            </div>
+            {isBoardPacket ? (
+              <div>
+                <dt>Source reporting</dt>
+                <dd>{mission.sourceReportingMissionId ?? "Not recorded yet."}</dd>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <dt>Memo page</dt>
+                  <dd>{mission.reportPublication?.filedMemo?.pageKey ?? "Not filed"}</dd>
+                </div>
+                <div>
+                  <dt>Appendix page</dt>
+                  <dd>
+                    {mission.reportPublication?.filedEvidenceAppendix?.pageKey ??
+                      "Not filed"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Markdown export</dt>
+                  <dd>
+                    {mission.reportPublication?.latestMarkdownExport
+                      ? mission.reportPublication.latestMarkdownExport
+                          .includesLatestFiledArtifacts
+                        ? "Recorded"
+                        : "Recorded before latest filing"
+                      : "Not exported"}
+                  </dd>
+                </div>
+              </>
+            )}
             <div>
               <dt>Source discovery</dt>
               <dd>{mission.sourceDiscoveryMissionId ?? "Not recorded yet."}</dd>

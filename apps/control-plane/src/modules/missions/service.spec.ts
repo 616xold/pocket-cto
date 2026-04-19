@@ -3,6 +3,7 @@ import {
   FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS,
   type ApprovalRecord,
   type CfoWikiCompanySourceListView,
+  type ProofBundleManifest,
 } from "@pocket-cto/domain";
 import { InMemoryMissionRepository } from "./repository";
 import { StubMissionCompiler } from "./compiler";
@@ -348,6 +349,7 @@ describe("MissionService", () => {
     expect(created.mission.primaryRepo).toBeNull();
     expect(created.mission.spec.input?.reportingRequest).toEqual({
       sourceDiscoveryMissionId: source.mission.id,
+      sourceReportingMissionId: null,
       reportKind: "finance_memo",
       companyKey: "acme",
       questionKind: "cash_posture",
@@ -367,6 +369,88 @@ describe("MissionService", () => {
     ]);
     expect(created.proofBundle.reportKind).toBe("finance_memo");
     expect(created.proofBundle.sourceDiscoveryMissionId).toBe(source.mission.id);
+
+    const events = await replayService.listByMissionId(created.mission.id);
+    expect(events.slice(-4).map((event) => event.type)).toEqual([
+      "mission.created",
+      "task.created",
+      "mission.status_changed",
+      "artifact.created",
+    ]);
+  });
+
+  it("creates board-packet reporting missions only from a succeeded finance-memo reporting mission with stored memo and appendix artifacts", async () => {
+    const { replayService, repository, service } = createService();
+    const source = await service.createDiscovery({
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      operatorPrompt: "Review cash posture from stored state.",
+      requestedBy: "operator",
+    });
+    const sourceScoutTask = source.tasks[0]!;
+
+    await repository.updateTaskStatus(sourceScoutTask.id, "succeeded");
+    await repository.updateMissionStatus(source.mission.id, "succeeded");
+    await repository.saveArtifact(
+      buildFinanceDiscoveryAnswerArtifact({
+        missionId: source.mission.id,
+        taskId: sourceScoutTask.id,
+      }),
+    );
+
+    const reporting = await service.createReporting({
+      sourceDiscoveryMissionId: source.mission.id,
+      reportKind: "finance_memo",
+      requestedBy: "finance-operator",
+    });
+    const reportingScoutTask = reporting.tasks[0]!;
+
+    await repository.updateTaskStatus(reportingScoutTask.id, "succeeded");
+    await repository.updateMissionStatus(reporting.mission.id, "succeeded");
+    await repository.saveArtifact(
+      buildFinanceMemoReportingArtifact({
+        missionId: reporting.mission.id,
+        sourceDiscoveryMissionId: source.mission.id,
+        taskId: reportingScoutTask.id,
+      }),
+    );
+    await repository.saveArtifact(
+      buildEvidenceAppendixReportingArtifact({
+        missionId: reporting.mission.id,
+        sourceDiscoveryMissionId: source.mission.id,
+        taskId: reportingScoutTask.id,
+      }),
+    );
+    await repository.upsertProofBundle(
+      buildReadyFinanceMemoProofBundle({
+        missionId: reporting.mission.id,
+        sourceDiscoveryMissionId: source.mission.id,
+      }),
+    );
+
+    const created = await service.createBoardPacket({
+      requestedBy: "finance-operator",
+      sourceReportingMissionId: reporting.mission.id,
+    });
+
+    expect(created.mission.type).toBe("reporting");
+    expect(created.mission.sourceKind).toBe("manual_reporting");
+    expect(created.mission.spec.input?.reportingRequest).toEqual({
+      sourceDiscoveryMissionId: source.mission.id,
+      sourceReportingMissionId: reporting.mission.id,
+      reportKind: "board_packet",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+    });
+    expect(created.proofBundle.reportKind).toBe("board_packet");
+    expect(created.proofBundle.sourceReportingMissionId).toBe(
+      reporting.mission.id,
+    );
+    expect(created.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual(
+      ["board_packet"],
+    );
 
     const events = await replayService.listByMissionId(created.mission.id);
     expect(events.slice(-4).map((event) => event.type)).toEqual([
@@ -700,5 +784,168 @@ function buildFinanceDiscoveryAnswerArtifact(input: {
     mimeType: "application/json",
     taskId: input.taskId,
     uri: `pocket-cto://missions/${input.missionId}/tasks/${input.taskId}/discovery-answer`,
+  };
+}
+
+function buildFinanceMemoReportingArtifact(input: {
+  missionId: string;
+  sourceDiscoveryMissionId: string;
+  taskId: string;
+}) {
+  return {
+    kind: "finance_memo" as const,
+    metadata: {
+      source: "stored_discovery_evidence",
+      summary:
+        "Cash posture remains constrained by stale bank coverage and visible working-capital gaps.",
+      reportKind: "finance_memo" as const,
+      draftStatus: "draft_only" as const,
+      sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+      companyKey: "acme",
+      questionKind: "cash_posture" as const,
+      policySourceId: null,
+      policySourceScope: null,
+      memoSummary:
+        "Cash posture remains constrained by stale bank coverage and visible working-capital gaps.",
+      freshnessSummary:
+        "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+      limitationsSummary:
+        "This memo is draft-only and carries source discovery freshness and limitation posture forward.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceArtifacts: [
+        {
+          artifactId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          kind: "discovery_answer" as const,
+        },
+      ],
+      bodyMarkdown:
+        "# Draft Finance Memo\n\n## Memo Summary\n\nCash posture remains constrained.",
+    },
+    missionId: input.missionId,
+    mimeType: "text/markdown",
+    taskId: input.taskId,
+    uri: `pocket-cto://missions/${input.missionId}/tasks/${input.taskId}/finance-memo`,
+  };
+}
+
+function buildEvidenceAppendixReportingArtifact(input: {
+  missionId: string;
+  sourceDiscoveryMissionId: string;
+  taskId: string;
+}) {
+  return {
+    kind: "evidence_appendix" as const,
+    metadata: {
+      source: "stored_discovery_evidence",
+      summary:
+        "Evidence appendix for source discovery mission 11111111-1111-4111-8111-111111111111.",
+      reportKind: "finance_memo" as const,
+      draftStatus: "draft_only" as const,
+      sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+      companyKey: "acme",
+      questionKind: "cash_posture" as const,
+      policySourceId: null,
+      policySourceScope: null,
+      appendixSummary:
+        "Stored evidence appendix for discovery mission 11111111-1111-4111-8111-111111111111.",
+      freshnessSummary:
+        "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+      limitationsSummary:
+        "This memo is draft-only and carries source discovery freshness and limitation posture forward.",
+      limitations: [
+        "Working-capital timing remains approximate because no payment calendar inference is performed.",
+      ],
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceArtifacts: [
+        {
+          artifactId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          kind: "discovery_answer" as const,
+        },
+      ],
+      bodyMarkdown:
+        "# Evidence Appendix\n\n## Source Discovery Lineage\n\nStored lineage.",
+    },
+    missionId: input.missionId,
+    mimeType: "text/markdown",
+    taskId: input.taskId,
+    uri: `pocket-cto://missions/${input.missionId}/tasks/${input.taskId}/evidence-appendix`,
+  };
+}
+
+function buildReadyFinanceMemoProofBundle(input: {
+  missionId: string;
+  sourceDiscoveryMissionId: string;
+}): ProofBundleManifest {
+  return {
+    missionId: input.missionId,
+    missionTitle: "Draft finance memo for acme from cash posture discovery",
+    objective:
+      "Compile one draft finance memo plus one linked evidence appendix from completed discovery mission and its stored evidence only.",
+    sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+    sourceReportingMissionId: null,
+    companyKey: "acme",
+    questionKind: "cash_posture",
+    policySourceId: null,
+    policySourceScope: null,
+    answerSummary: "",
+    reportKind: "finance_memo",
+    reportDraftStatus: "draft_only",
+    reportPublication: {
+      storedDraft: true,
+      filedMemo: null,
+      filedEvidenceAppendix: null,
+      latestMarkdownExport: null,
+      summary:
+        "Draft memo and evidence appendix are stored. Neither draft artifact has been filed into the CFO Wiki yet. No markdown export run has been recorded yet.",
+    },
+    reportSummary:
+      "Cash posture remains constrained by stale bank coverage and visible working-capital gaps.",
+    appendixPresent: true,
+    freshnessState: "stale",
+    freshnessSummary:
+      "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+    limitationsSummary:
+      "This memo is draft-only and carries source discovery freshness and limitation posture forward.",
+    relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+    relatedWikiPageKeys: ["metrics/cash-posture"],
+    targetRepoFullName: null,
+    branchName: null,
+    pullRequestNumber: null,
+    pullRequestUrl: null,
+    changeSummary:
+      "Cash posture remains constrained by stale bank coverage and visible working-capital gaps.",
+    validationSummary:
+      "Draft finance memo and evidence appendix were compiled deterministically from stored discovery evidence without running the Codex runtime.",
+    verificationSummary:
+      "Review the linked evidence appendix, carried-forward freshness, and visible limitations before sharing this draft.",
+    riskSummary:
+      "This memo is draft-only, carries source discovery freshness and limitations forward, and has no release or approval workflow in F5A.",
+    rollbackSummary:
+      "No release side effect was produced; rerun only after the stored discovery evidence is refreshed first.",
+    latestApproval: null,
+    evidenceCompleteness: {
+      status: "complete",
+      expectedArtifactKinds: ["finance_memo", "evidence_appendix"],
+      presentArtifactKinds: ["finance_memo", "evidence_appendix"],
+      missingArtifactKinds: [],
+      notes: [],
+    },
+    decisionTrace: [
+      "Scout task 0 terminalized as succeeded with persisted reporting evidence.",
+    ],
+    artifactIds: [],
+    artifacts: [],
+    replayEventCount: 8,
+    timestamps: {
+      missionCreatedAt: "2026-04-18T12:00:00.000Z",
+      latestPlannerEvidenceAt: null,
+      latestExecutorEvidenceAt: null,
+      latestPullRequestAt: null,
+      latestApprovalAt: null,
+      latestArtifactAt: "2026-04-18T12:03:00.000Z",
+    },
+    status: "ready",
   };
 }

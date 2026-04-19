@@ -49,6 +49,7 @@ export function MissionCard({
   const reportingView = reporting;
   const reportingPublication =
     reportingView?.publication ?? proofBundle.reportPublication ?? null;
+  const isBoardPacket = proofBundle.reportKind === "board_packet";
   const reportProofBundle = proofBundle.reportKind !== null || reportingView !== null;
   const financeProofBundle = !reportProofBundle && isFinanceProofBundle(proofBundle);
   const policySourceScope =
@@ -97,6 +98,20 @@ export function MissionCard({
                   </a>
                 </dd>
               </div>
+              {reportingView.reportKind === "board_packet" ? (
+                <div>
+                  <dt>Source reporting mission</dt>
+                  <dd>
+                    {reportingView.sourceReportingMissionId ? (
+                      <a href={`/missions/${reportingView.sourceReportingMissionId}`}>
+                        {reportingView.sourceReportingMissionId}
+                      </a>
+                    ) : (
+                      "Not recorded yet."
+                    )}
+                  </dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Draft posture</dt>
                 <dd>{reportingView.draftStatus}</dd>
@@ -263,6 +278,12 @@ export function MissionCard({
                 <dt>Source discovery mission</dt>
                 <dd>{proofBundle.sourceDiscoveryMissionId ?? "Not recorded yet."}</dd>
               </div>
+              {isBoardPacket ? (
+                <div>
+                  <dt>Source reporting mission</dt>
+                  <dd>{proofBundle.sourceReportingMissionId ?? "Not recorded yet."}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Source question kind</dt>
                 <dd>
@@ -274,35 +295,48 @@ export function MissionCard({
                     : "Not recorded yet."}
                 </dd>
               </div>
-              <div>
-                <dt>Publication posture</dt>
-                <dd>
-                  {reportingPublication?.summary ??
-                    "Draft reporting publication posture has not been recorded yet."}
-                </dd>
-              </div>
-              <div>
-                <dt>Memo page</dt>
-                <dd>{reportingPublication?.filedMemo?.pageKey ?? "Not filed"}</dd>
-              </div>
-              <div>
-                <dt>Appendix page</dt>
-                <dd>
-                  {reportingPublication?.filedEvidenceAppendix?.pageKey ??
-                    "Not filed"}
-                </dd>
-              </div>
-              <div>
-                <dt>Markdown export</dt>
-                <dd>
-                  {reportingPublication?.latestMarkdownExport
-                    ? reportingPublication.latestMarkdownExport
-                        .includesLatestFiledArtifacts
-                      ? `Run ${reportingPublication.latestMarkdownExport.exportRunId}`
-                      : `Run ${reportingPublication.latestMarkdownExport.exportRunId} (predates latest filing)`
-                    : "No export run recorded"}
-                </dd>
-              </div>
+              {isBoardPacket ? (
+                <div>
+                  <dt>Linked appendix posture</dt>
+                  <dd>
+                    {proofBundle.appendixPresent
+                      ? "Linked from the source reporting mission."
+                      : "Linked appendix posture not recorded yet."}
+                  </dd>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <dt>Publication posture</dt>
+                    <dd>
+                      {reportingPublication?.summary ??
+                        "Draft reporting publication posture has not been recorded yet."}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Memo page</dt>
+                    <dd>{reportingPublication?.filedMemo?.pageKey ?? "Not filed"}</dd>
+                  </div>
+                  <div>
+                    <dt>Appendix page</dt>
+                    <dd>
+                      {reportingPublication?.filedEvidenceAppendix?.pageKey ??
+                        "Not filed"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Markdown export</dt>
+                    <dd>
+                      {reportingPublication?.latestMarkdownExport
+                        ? reportingPublication.latestMarkdownExport
+                            .includesLatestFiledArtifacts
+                          ? `Run ${reportingPublication.latestMarkdownExport.exportRunId}`
+                          : `Run ${reportingPublication.latestMarkdownExport.exportRunId} (predates latest filing)`
+                        : "No export run recorded"}
+                    </dd>
+                  </div>
+                </>
+              )}
               {proofBundle.questionKind === "policy_lookup" ||
               proofBundle.policySourceId ? (
                 <PolicySourceScopeFields
@@ -323,8 +357,14 @@ export function MissionCard({
                 <dd>{proofBundle.relatedWikiPageKeys?.length ?? 0}</dd>
               </div>
               <div>
-                <dt>Appendix</dt>
-                <dd>{proofBundle.appendixPresent ? "Stored" : "Pending"}</dd>
+                <dt>{isBoardPacket ? "Linked appendix" : "Appendix"}</dt>
+                <dd>
+                  {proofBundle.appendixPresent
+                    ? isBoardPacket
+                      ? "Linked"
+                      : "Stored"
+                    : "Pending"}
+                </dd>
               </div>
             </>
           ) : financeProofBundle ? (
@@ -580,6 +620,22 @@ function readStatusTone(status: string) {
 function buildProofBundleReadinessMessage(
   proofBundle: MissionCardProps["proofBundle"],
 ) {
+  if (proofBundle.reportKind === "board_packet") {
+    if (proofBundle.status === "ready") {
+      return "The proof bundle now reads like a draft board-packet review package with source reporting lineage, linked appendix posture, carried freshness, and visible limitations tied together.";
+    }
+
+    if (proofBundle.status === "failed") {
+      return "The current draft board-packet bundle is non-decision-ready. Review the source reporting lineage, linked appendix posture, and mission evidence before retrying.";
+    }
+
+    if (proofBundle.status === "incomplete") {
+      return "The bundle is partially assembled, but the draft board-packet package is still missing its stored board_packet artifact.";
+    }
+
+    return "The board-packet proof bundle is still at the placeholder stage and has not yet accumulated persisted packet evidence.";
+  }
+
   if (proofBundle.reportKind) {
     if (proofBundle.status === "ready") {
       return "The proof bundle now reads like a draft reporting package with source discovery lineage, memo summary, appendix linkage, freshness posture, and visible limitations tied together.";

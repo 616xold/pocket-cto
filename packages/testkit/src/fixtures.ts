@@ -45,6 +45,7 @@ export function proofBundlePlaceholderFixture(
     policySourceScope: null,
     answerSummary: "",
     reportKind: null,
+    sourceReportingMissionId: null,
     reportDraftStatus: null,
     reportSummary: "",
     reportPublication: null,

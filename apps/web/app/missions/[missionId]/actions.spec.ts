@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const createReportingMission = vi.fn();
+const createBoardPacketMission = vi.fn();
 const exportReportingMissionMarkdown = vi.fn();
 const fileReportingMissionArtifacts = vi.fn();
 const revalidatePath = vi.fn();
@@ -17,6 +18,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("../../../lib/api", () => ({
+  createBoardPacketMission,
   createReportingMission,
   exportReportingMissionMarkdown,
   fileReportingMissionArtifacts,
@@ -137,6 +139,32 @@ describe("mission server actions", () => {
     );
   });
 
+  it("creates a board-packet mission, revalidates mission surfaces, and redirects to detail", async () => {
+    createBoardPacketMission.mockResolvedValue({
+      mission: {
+        id: "55555555-5555-4555-8555-555555555555",
+      },
+    });
+
+    const mod = await import("./actions");
+    await mod.submitCreateDraftBoardPacket(
+      buildCreateDraftBoardPacketFormData({
+        requestedBy: "Alicia",
+      }),
+    );
+
+    expect(createBoardPacketMission).toHaveBeenCalledWith({
+      requestedBy: "Alicia",
+      sourceReportingMissionId: missionId,
+    });
+    expect(revalidatePath).toHaveBeenNthCalledWith(1, "/");
+    expect(revalidatePath).toHaveBeenNthCalledWith(2, "/missions");
+    expect(revalidatePath).toHaveBeenNthCalledWith(3, `/missions/${missionId}`);
+    expect(redirect).toHaveBeenCalledWith(
+      "/missions/55555555-5555-4555-8555-555555555555",
+    );
+  });
+
   it("files reporting artifacts, revalidates mission surfaces, and returns success feedback", async () => {
     fileReportingMissionArtifacts.mockResolvedValue({
       ok: true,
@@ -223,6 +251,13 @@ function buildCreateDraftFinanceMemoFormData(input: { requestedBy: string }) {
   const formData = new FormData();
   formData.set("requestedBy", input.requestedBy);
   formData.set("sourceDiscoveryMissionId", missionId);
+  return formData;
+}
+
+function buildCreateDraftBoardPacketFormData(input: { requestedBy: string }) {
+  const formData = new FormData();
+  formData.set("requestedBy", input.requestedBy);
+  formData.set("sourceReportingMissionId", missionId);
   return formData;
 }
 

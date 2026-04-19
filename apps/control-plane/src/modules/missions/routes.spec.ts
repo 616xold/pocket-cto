@@ -11,6 +11,32 @@ describe("mission reporting action routes", () => {
     await Promise.all(apps.splice(0).map((app) => app.close()));
   });
 
+  it("POST /missions/reporting/board-packets defaults requestedBy and returns 201", async () => {
+    const createBoardPacket = vi.fn(async () => ({
+      mission: {
+        id: "33333333-3333-4333-8333-333333333333",
+      },
+    }));
+    const app = await createTestApp(apps, {
+      createBoardPacket:
+        createBoardPacket as unknown as AppContainer["missionService"]["createBoardPacket"],
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/reporting/board-packets",
+      payload: {
+        sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(createBoardPacket).toHaveBeenCalledWith({
+      requestedBy: "operator",
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+    });
+  });
+
   it("POST /missions/:missionId/reporting/filed-artifacts defaults filedBy and returns 201", async () => {
     const fileDraftArtifacts = vi.fn(async () => ({
       missionId: "11111111-1111-4111-8111-111111111111",
@@ -83,9 +109,14 @@ describe("mission reporting action routes", () => {
 
 async function createTestApp(
   apps: FastifyInstance[],
-  overrides: Partial<AppContainer["missionReportingActionsService"]>,
+  overrides: Partial<AppContainer["missionReportingActionsService"]> &
+    Partial<Pick<AppContainer["missionService"], "createBoardPacket">>,
 ) {
   const container = createInMemoryContainer();
+
+  if (overrides.createBoardPacket) {
+    container.missionService.createBoardPacket = overrides.createBoardPacket;
+  }
 
   if (overrides.exportMarkdownBundle) {
     container.missionReportingActionsService.exportMarkdownBundle =

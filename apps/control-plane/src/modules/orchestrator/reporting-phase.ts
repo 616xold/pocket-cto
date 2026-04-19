@@ -12,7 +12,11 @@ import {
   buildTaskTerminalizedMissionStatusChangedPayload,
 } from "../missions/events";
 import type { MissionRepository } from "../missions/repository";
-import { buildEvidenceAppendixArtifact, buildFinanceMemoArtifact } from "../reporting/artifact";
+import {
+  buildBoardPacketArtifact,
+  buildEvidenceAppendixArtifact,
+  buildFinanceMemoArtifact,
+} from "../reporting/artifact";
 import type { ReportingService } from "../reporting/service";
 import type { ReplayService } from "../replay/service";
 import {
@@ -115,24 +119,33 @@ export class ReportingOrchestratorPhase {
     return this.missionRepository.transaction(async (session) => {
       const task = await this.getRequiredTask(input.task.id, session);
       const mission = await this.getRequiredMission(task.missionId, session);
-      const financeMemoArtifact = await this.missionRepository.saveArtifact(
-        buildFinanceMemoArtifact({
-          memo: input.compiled.financeMemo,
-          missionId: mission.id,
-          taskId: task.id,
-        }),
-        session,
-      );
-      const evidenceAppendixArtifact = await this.missionRepository.saveArtifact(
-        buildEvidenceAppendixArtifact({
-          evidenceAppendix: input.compiled.evidenceAppendix,
-          missionId: mission.id,
-          taskId: task.id,
-        }),
-        session,
-      );
+      const artifactDrafts =
+        input.compiled.reportKind === "board_packet"
+          ? [
+              buildBoardPacketArtifact({
+                boardPacket: input.compiled.boardPacket,
+                missionId: mission.id,
+                taskId: task.id,
+              }),
+            ]
+          : [
+              buildFinanceMemoArtifact({
+                memo: input.compiled.financeMemo,
+                missionId: mission.id,
+                taskId: task.id,
+              }),
+              buildEvidenceAppendixArtifact({
+                evidenceAppendix: input.compiled.evidenceAppendix,
+                missionId: mission.id,
+                taskId: task.id,
+              }),
+            ];
 
-      for (const artifact of [financeMemoArtifact, evidenceAppendixArtifact]) {
+      for (const artifactDraft of artifactDrafts) {
+        const artifact = await this.missionRepository.saveArtifact(
+          artifactDraft,
+          session,
+        );
         await this.replayService.append(
           {
             missionId: mission.id,
@@ -149,7 +162,7 @@ export class ReportingOrchestratorPhase {
 
       await this.missionRepository.updateTaskSummary(
         task.id,
-        truncate(input.compiled.financeMemo.memoSummary, TASK_SUMMARY_MAX_LENGTH),
+        truncate(readTaskSummary(input.compiled), TASK_SUMMARY_MAX_LENGTH),
         session,
       );
       const succeededTask = await this.missionRepository.updateTaskStatus(
@@ -297,6 +310,14 @@ export class ReportingOrchestratorPhase {
 
     return task;
   }
+}
+
+function readTaskSummary(
+  compiled: Awaited<ReturnType<ReportingService["compileDraftReport"]>>,
+) {
+  return compiled.reportKind === "board_packet"
+    ? compiled.boardPacket.packetSummary
+    : compiled.financeMemo.memoSummary;
 }
 
 function buildReportingFailureSummary(error: unknown) {

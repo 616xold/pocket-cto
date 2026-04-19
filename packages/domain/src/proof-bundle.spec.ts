@@ -157,6 +157,7 @@ describe("Proof bundle domain schema", () => {
       objective:
         "Compile one draft finance memo plus one linked evidence appendix from completed discovery mission 22222222-2222-4222-8222-222222222222.",
       sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+      sourceReportingMissionId: null,
       companyKey: "acme",
       questionKind: "cash_posture",
       policySourceId: null,
@@ -242,5 +243,88 @@ describe("Proof bundle domain schema", () => {
     );
     expect(parsed.reportPublication?.storedDraft).toBe(true);
     expect(parsed.appendixPresent).toBe(true);
+  });
+
+  it("parses a board-packet proof bundle with source reporting lineage", () => {
+    const parsed = ProofBundleManifestSchema.parse({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      missionTitle: "Draft board packet for acme from cash posture reporting",
+      objective:
+        "Compile one draft board packet from completed reporting mission 33333333-3333-4333-8333-333333333333 and its stored finance memo plus evidence appendix.",
+      sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+      sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      answerSummary: "",
+      reportKind: "board_packet",
+      reportDraftStatus: "draft_only",
+      reportPublication: null,
+      reportSummary:
+        "Draft board packet for acme from the completed cash posture reporting mission.",
+      appendixPresent: true,
+      freshnessState: "stale",
+      freshnessSummary:
+        "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+      limitationsSummary:
+        "This board packet is draft-only and carries source reporting freshness and limitations forward.",
+      relatedRoutePaths: [
+        "/finance-twin/companies/acme/cash-posture",
+        "/finance-twin/companies/acme/bank-accounts",
+      ],
+      relatedWikiPageKeys: ["metrics/cash-posture", "concepts/cash"],
+      targetRepoFullName: null,
+      branchName: null,
+      pullRequestNumber: null,
+      pullRequestUrl: null,
+      changeSummary:
+        "Draft board packet for acme from the completed cash posture reporting mission.",
+      validationSummary:
+        "Draft board packet was compiled deterministically from one completed reporting mission and its stored finance memo plus evidence appendix without running the Codex runtime.",
+      verificationSummary:
+        "Draft board packet for acme from the completed cash posture reporting mission. Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.",
+      riskSummary:
+        "This board packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C1.",
+      rollbackSummary:
+        "Safe fallback: refresh or rerun the source finance-memo reporting mission truthfully, then retry draft board-packet compilation; no release, send, or wiki filing side effect was produced.",
+      latestApproval: null,
+      evidenceCompleteness: {
+        status: "complete",
+        expectedArtifactKinds: ["board_packet"],
+        presentArtifactKinds: ["board_packet"],
+        missingArtifactKinds: [],
+        notes: [],
+      },
+      decisionTrace: [
+        "Scout task 0 terminalized as succeeded with persisted board-packet evidence.",
+      ],
+      artifactIds: ["44444444-4444-4444-8444-444444444444"],
+      artifacts: [
+        {
+          id: "44444444-4444-4444-8444-444444444444",
+          kind: "board_packet",
+        },
+      ],
+      replayEventCount: 9,
+      timestamps: {
+        missionCreatedAt: "2026-04-19T12:00:00.000Z",
+        latestPlannerEvidenceAt: null,
+        latestExecutorEvidenceAt: null,
+        latestPullRequestAt: null,
+        latestApprovalAt: null,
+        latestArtifactAt: "2026-04-19T12:03:00.000Z",
+      },
+      status: "ready",
+    });
+
+    expect(parsed.reportKind).toBe("board_packet");
+    expect(parsed.sourceReportingMissionId).toBe(
+      "33333333-3333-4333-8333-333333333333",
+    );
+    expect(parsed.reportPublication).toBeNull();
+    expect(parsed.evidenceCompleteness.expectedArtifactKinds).toEqual([
+      "board_packet",
+    ]);
   });
 });
