@@ -1,0 +1,1 @@
+ALTER TYPE "public"."artifact_kind" ADD VALUE 'diligence_packet' BEFORE 'pr_link';

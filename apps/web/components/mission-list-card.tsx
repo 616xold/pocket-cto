@@ -16,9 +16,11 @@ type MissionListCardProps = {
 
 export function MissionListCard({ mission }: MissionListCardProps) {
   const isReportingMission = mission.reportKind !== null;
+  const isDiligencePacket = mission.reportKind === "diligence_packet";
   const isBoardPacket = mission.reportKind === "board_packet";
   const isLenderUpdate = mission.reportKind === "lender_update";
-  const isSpecializedReporting = isBoardPacket || isLenderUpdate;
+  const isSpecializedReporting =
+    isBoardPacket || isLenderUpdate || isDiligencePacket;
   const isFinanceMission = mission.companyKey !== null;
   const questionKindLabel =
     mission.questionKind && isFinanceDiscoveryQuestionKind(mission.questionKind)

@@ -9,6 +9,7 @@ export const artifactKindEnum = pgEnum("artifact_kind", [
   "evidence_appendix",
   "board_packet",
   "lender_update",
+  "diligence_packet",
   "pr_link",
   "diff_summary",
   "test_report",

@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const createReportingMission = vi.fn();
 const createBoardPacketMission = vi.fn();
+const createDiligencePacketMission = vi.fn();
+const createLenderUpdateMission = vi.fn();
 const exportReportingMissionMarkdown = vi.fn();
 const fileReportingMissionArtifacts = vi.fn();
 const revalidatePath = vi.fn();
@@ -19,6 +21,8 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("../../../lib/api", () => ({
   createBoardPacketMission,
+  createDiligencePacketMission,
+  createLenderUpdateMission,
   createReportingMission,
   exportReportingMissionMarkdown,
   fileReportingMissionArtifacts,
@@ -165,6 +169,32 @@ describe("mission server actions", () => {
     );
   });
 
+  it("creates a diligence-packet mission, revalidates mission surfaces, and redirects to detail", async () => {
+    createDiligencePacketMission.mockResolvedValue({
+      mission: {
+        id: "66666666-6666-4666-8666-666666666666",
+      },
+    });
+
+    const mod = await import("./actions");
+    await mod.submitCreateDraftDiligencePacket(
+      buildCreateDraftDiligencePacketFormData({
+        requestedBy: "Alicia",
+      }),
+    );
+
+    expect(createDiligencePacketMission).toHaveBeenCalledWith({
+      requestedBy: "Alicia",
+      sourceReportingMissionId: missionId,
+    });
+    expect(revalidatePath).toHaveBeenNthCalledWith(1, "/");
+    expect(revalidatePath).toHaveBeenNthCalledWith(2, "/missions");
+    expect(revalidatePath).toHaveBeenNthCalledWith(3, `/missions/${missionId}`);
+    expect(redirect).toHaveBeenCalledWith(
+      "/missions/66666666-6666-4666-8666-666666666666",
+    );
+  });
+
   it("files reporting artifacts, revalidates mission surfaces, and returns success feedback", async () => {
     fileReportingMissionArtifacts.mockResolvedValue({
       ok: true,
@@ -255,6 +285,15 @@ function buildCreateDraftFinanceMemoFormData(input: { requestedBy: string }) {
 }
 
 function buildCreateDraftBoardPacketFormData(input: { requestedBy: string }) {
+  const formData = new FormData();
+  formData.set("requestedBy", input.requestedBy);
+  formData.set("sourceReportingMissionId", missionId);
+  return formData;
+}
+
+function buildCreateDraftDiligencePacketFormData(input: {
+  requestedBy: string;
+}) {
   const formData = new FormData();
   formData.set("requestedBy", input.requestedBy);
   formData.set("sourceReportingMissionId", missionId);

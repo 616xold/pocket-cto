@@ -308,4 +308,56 @@ describe("MissionListCard", () => {
     expect(html).not.toContain("Markdown export");
     expect(html).toContain("proof ready");
   });
+
+  it("renders diligence-packet mission summaries with source-report lineage", () => {
+    const sourceReportingMissionId = "77777777-7777-4777-8777-777777777777";
+    const html = renderToStaticMarkup(
+      <MissionListCard
+        mission={{
+          appendixPresent: true,
+          answerSummary: null,
+          companyKey: "acme",
+          createdAt: "2026-04-19T01:00:00.000Z",
+          freshnessState: "stale",
+          id: "99999999-9999-4999-8999-999999999999",
+          latestTask: {
+            id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            updatedAt: "2026-04-19T01:05:00.000Z",
+          },
+          objectiveExcerpt:
+            "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix.",
+          pendingApprovalCount: 0,
+          policySourceId: null,
+          policySourceScope: null,
+          primaryRepo: null,
+          proofBundleStatus: "ready",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: "cash_posture",
+          reportDraftStatus: "draft_only",
+          reportKind: "diligence_packet",
+          reportPublication: null,
+          reportSummary:
+            "Draft diligence packet for acme from the completed cash posture reporting mission.",
+          sourceDiscoveryMissionId: "66666666-6666-4666-8666-666666666666",
+          sourceReportingMissionId,
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          status: "succeeded",
+          title: "Draft diligence packet for acme from cash posture reporting",
+          updatedAt: "2026-04-19T01:05:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("Diligence packet");
+    expect(html).toContain("Linked");
+    expect(html).toContain(sourceReportingMissionId);
+    expect(html).toContain("66666666-6666-4666-8666-666666666666");
+    expect(html).not.toContain("Markdown export");
+    expect(html).toContain("proof ready");
+  });
 });

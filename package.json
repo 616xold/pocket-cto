@@ -72,6 +72,7 @@
     "smoke:finance-memo:local": "tsx tools/finance-memo-smoke.mjs",
     "smoke:board-packet:local": "tsx tools/board-packet-smoke.mjs",
     "smoke:lender-update:local": "tsx tools/lender-update-smoke.mjs",
+    "smoke:diligence-packet:local": "tsx tools/diligence-packet-smoke.mjs",
     "smoke:finance-report-filed-artifact:local": "tsx tools/finance-report-filed-artifact-smoke.mjs",
     "smoke:finance-policy-lookup:local": "tsx tools/finance-policy-lookup-smoke.mjs",
     "smoke:source-ingest:local": "tsx tools/source-ingest-smoke.mjs --mode ingest",

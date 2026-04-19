@@ -20,14 +20,17 @@ export function ReportingOutputCard({
   proofBundle,
   reporting,
 }: ReportingOutputCardProps) {
+  const diligencePacket = reporting.diligencePacket;
   const boardPacket = reporting.boardPacket;
   const lenderUpdate = reporting.lenderUpdate;
   const financeMemo = reporting.financeMemo;
   const evidenceAppendix = reporting.evidenceAppendix;
   const publication = reporting.publication;
+  const isDiligencePacket = reporting.reportKind === "diligence_packet";
   const isBoardPacket = reporting.reportKind === "board_packet";
   const isLenderUpdate = reporting.reportKind === "lender_update";
-  const isSpecializedReporting = isBoardPacket || isLenderUpdate;
+  const isSpecializedReporting =
+    isBoardPacket || isLenderUpdate || isDiligencePacket;
   const questionKindLabel =
     reporting.questionKind && isFinanceDiscoveryQuestionKind(reporting.questionKind)
       ? readFinanceDiscoveryQuestionKindLabel(reporting.questionKind)
@@ -193,6 +196,13 @@ export function ReportingOutputCard({
         )}
       </div>
 
+      {diligencePacket ? (
+        <ReadOnlyMarkdownPreview
+          bodyMarkdown={diligencePacket.bodyMarkdown}
+          title="Draft diligence packet body"
+        />
+      ) : null}
+
       {boardPacket ? (
         <ReadOnlyMarkdownPreview
           bodyMarkdown={boardPacket.bodyMarkdown}
@@ -288,6 +298,13 @@ export function ReportingOutputCard({
 }
 
 function readLinkedArtifacts(reporting: ReportingOutputCardProps["reporting"]) {
+  if (reporting.diligencePacket) {
+    return [
+      reporting.diligencePacket.sourceFinanceMemo,
+      reporting.diligencePacket.sourceEvidenceAppendix,
+    ];
+  }
+
   if (reporting.boardPacket) {
     return [
       reporting.boardPacket.sourceFinanceMemo,
@@ -306,5 +323,7 @@ function readLinkedArtifacts(reporting: ReportingOutputCardProps["reporting"]) {
 }
 
 function readSpecializedSources(reporting: ReportingOutputCardProps["reporting"]) {
-  return reporting.boardPacket ?? reporting.lenderUpdate ?? null;
+  return (
+    reporting.diligencePacket ?? reporting.boardPacket ?? reporting.lenderUpdate ?? null
+  );
 }

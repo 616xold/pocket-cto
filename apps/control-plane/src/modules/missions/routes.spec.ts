@@ -63,6 +63,32 @@ describe("mission reporting action routes", () => {
     });
   });
 
+  it("POST /missions/reporting/diligence-packets defaults requestedBy and returns 201", async () => {
+    const createDiligencePacket = vi.fn(async () => ({
+      mission: {
+        id: "55555555-5555-4555-8555-555555555555",
+      },
+    }));
+    const app = await createTestApp(apps, {
+      createDiligencePacket:
+        createDiligencePacket as unknown as AppContainer["missionService"]["createDiligencePacket"],
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/reporting/diligence-packets",
+      payload: {
+        sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(createDiligencePacket).toHaveBeenCalledWith({
+      requestedBy: "operator",
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+    });
+  });
+
   it("POST /missions/:missionId/reporting/filed-artifacts defaults filedBy and returns 201", async () => {
     const fileDraftArtifacts = vi.fn(async () => ({
       missionId: "11111111-1111-4111-8111-111111111111",
@@ -139,7 +165,7 @@ async function createTestApp(
     Partial<
       Pick<
         AppContainer["missionService"],
-        "createBoardPacket" | "createLenderUpdate"
+        "createBoardPacket" | "createDiligencePacket" | "createLenderUpdate"
       >
     >,
 ) {
@@ -151,6 +177,11 @@ async function createTestApp(
 
   if (overrides.createLenderUpdate) {
     container.missionService.createLenderUpdate = overrides.createLenderUpdate;
+  }
+
+  if (overrides.createDiligencePacket) {
+    container.missionService.createDiligencePacket =
+      overrides.createDiligencePacket;
   }
 
   if (overrides.exportMarkdownBundle) {

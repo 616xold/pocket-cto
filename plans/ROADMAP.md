@@ -273,7 +273,8 @@ Exit criteria:
 Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
-The active implementation contract for this phase is `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`.
+The latest shipped implementation record for this phase is `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`.
+The next implementation contract to author is the narrow F5C4 approval-release hardening plan.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
@@ -336,7 +337,7 @@ Exit criteria:
 - one completed finance discovery mission can produce a first-class reporting mission
 - the first report path yields a draft `finance_memo` plus `evidence_appendix`
 - report outputs remain reproducible, evidence-linked, freshness-aware, and explicit about limitations
-- packet specialization now includes shipped `board_packet` and `lender_update` draft-review paths, while the next active contract narrows to one `diligence_packet` draft-review path and leaves approval-release semantics clearly deferred to F5C4 while markdown export reuse stays limited to the filed-artifact path defined in F5B
+- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, while approval-release semantics remain clearly deferred to F5C4 and markdown export reuse stays limited to the filed-artifact path defined in F5B
 
 ## F6 — Monitoring, controls, and adoption loop
 

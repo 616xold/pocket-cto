@@ -4,6 +4,7 @@ import type {
   ArtifactRecord,
   BoardPacketArtifactMetadata,
   CfoWikiPageKey,
+  DiligencePacketArtifactMetadata,
   DiscoveryAnswerArtifactMetadata,
   DiscoveryMissionQuestion,
   FinancePolicySourceScopeSummary,
@@ -18,6 +19,7 @@ import type {
 import { readDiscoveryAnswerArtifactMetadata } from "./discovery-answer";
 import {
   readBoardPacketArtifactMetadata,
+  readDiligencePacketArtifactMetadata,
   readEvidenceAppendixArtifactMetadata,
   readFinanceMemoArtifactMetadata,
   readLenderUpdateArtifactMetadata,
@@ -28,6 +30,7 @@ const SUMMARY_MAX_LENGTH = 240;
 
 type ProofBundleLatestArtifacts = {
   boardPacket: ArtifactRecord | null;
+  diligencePacket: ArtifactRecord | null;
   discoveryAnswer: ArtifactRecord | null;
   evidenceAppendix: ArtifactRecord | null;
   financeMemo: ArtifactRecord | null;
@@ -98,6 +101,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       "finance_memo",
       "evidence_appendix",
       "board_packet",
+      "diligence_packet",
       "test_report",
       "log_excerpt",
       "pr_link",
@@ -106,6 +110,9 @@ export function deriveProofBundleAssemblyFacts(input: {
   const latestArtifacts = readLatestArtifacts(evidenceArtifacts);
   const boardPacketMetadata = readBoardPacketArtifactMetadata(
     latestArtifacts.boardPacket,
+  );
+  const diligencePacketMetadata = readDiligencePacketArtifactMetadata(
+    latestArtifacts.diligencePacket,
   );
   const lenderUpdateMetadata = readLenderUpdateArtifactMetadata(
     latestArtifacts.lenderUpdate,
@@ -159,6 +166,7 @@ export function deriveProofBundleAssemblyFacts(input: {
     })),
     branchName,
     changeSummary:
+      diligencePacketMetadata?.packetSummary ??
       lenderUpdateMetadata?.updateSummary ??
       boardPacketMetadata?.packetSummary ??
       financeMemoMetadata?.memoSummary ??
@@ -168,6 +176,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       normalizeSentence(latestExecutorTask?.summary ?? null) ??
       normalizeSentence(input.existingBundle?.changeSummary ?? null),
     companyKey:
+      diligencePacketMetadata?.companyKey ??
       lenderUpdateMetadata?.companyKey ??
       boardPacketMetadata?.companyKey ??
       financeMemoMetadata?.companyKey ??
@@ -184,11 +193,13 @@ export function deriveProofBundleAssemblyFacts(input: {
     decisionTrace: buildDecisionTrace({
       artifacts: evidenceArtifacts,
       appendixPresent:
+        diligencePacketMetadata !== null ||
         lenderUpdateMetadata !== null ||
         boardPacketMetadata !== null ||
         evidenceAppendixMetadata !== null ||
         input.existingBundle?.appendixPresent === true,
       reportKind:
+        diligencePacketMetadata?.reportKind ??
         lenderUpdateMetadata?.reportKind ??
         boardPacketMetadata?.reportKind ??
         financeMemoMetadata?.reportKind ??
@@ -203,6 +214,9 @@ export function deriveProofBundleAssemblyFacts(input: {
       taskById,
     }),
     freshnessState:
+      inferFreshnessStateFromSummary(
+        diligencePacketMetadata?.freshnessSummary ?? null,
+      ) ??
       inferFreshnessStateFromSummary(lenderUpdateMetadata?.freshnessSummary ?? null) ??
       inferFreshnessStateFromSummary(boardPacketMetadata?.freshnessSummary ?? null) ??
       inferFreshnessStateFromSummary(financeMemoMetadata?.freshnessSummary ?? null) ??
@@ -215,6 +229,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.freshnessState ??
       null,
     freshnessSummary:
+      diligencePacketMetadata?.freshnessSummary ??
       lenderUpdateMetadata?.freshnessSummary ??
       boardPacketMetadata?.freshnessSummary ??
       financeMemoMetadata?.freshnessSummary ??
@@ -224,6 +239,7 @@ export function deriveProofBundleAssemblyFacts(input: {
         : null) ??
       normalizeSentence(input.existingBundle?.freshnessSummary ?? null),
     reportDraftStatus:
+      diligencePacketMetadata?.draftStatus ??
       lenderUpdateMetadata?.draftStatus ??
       boardPacketMetadata?.draftStatus ??
       financeMemoMetadata?.draftStatus ??
@@ -231,6 +247,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.reportDraftStatus ??
       null,
     reportKind:
+      diligencePacketMetadata?.reportKind ??
       lenderUpdateMetadata?.reportKind ??
       boardPacketMetadata?.reportKind ??
       financeMemoMetadata?.reportKind ??
@@ -238,6 +255,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.reportKind ??
       null,
     reportSummary:
+      diligencePacketMetadata?.packetSummary ??
       lenderUpdateMetadata?.updateSummary ??
       boardPacketMetadata?.packetSummary ??
       financeMemoMetadata?.memoSummary ??
@@ -246,6 +264,7 @@ export function deriveProofBundleAssemblyFacts(input: {
     reportPublication:
       input.reportPublication ?? input.existingBundle?.reportPublication ?? null,
     sourceDiscoveryMissionId:
+      diligencePacketMetadata?.sourceDiscoveryMissionId ??
       lenderUpdateMetadata?.sourceDiscoveryMissionId ??
       boardPacketMetadata?.sourceDiscoveryMissionId ??
       financeMemoMetadata?.sourceDiscoveryMissionId ??
@@ -253,11 +272,13 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.sourceDiscoveryMissionId ??
       null,
     sourceReportingMissionId:
+      diligencePacketMetadata?.sourceReportingMissionId ??
       lenderUpdateMetadata?.sourceReportingMissionId ??
       boardPacketMetadata?.sourceReportingMissionId ??
       input.existingBundle?.sourceReportingMissionId ??
       null,
     appendixPresent:
+      diligencePacketMetadata !== null ||
       lenderUpdateMetadata !== null ||
       boardPacketMetadata !== null ||
       evidenceAppendixMetadata !== null ||
@@ -268,6 +289,7 @@ export function deriveProofBundleAssemblyFacts(input: {
     latestPlannerTask,
     latestScoutTask,
     limitationsSummary:
+      diligencePacketMetadata?.limitationsSummary ??
       lenderUpdateMetadata?.limitationsSummary ??
       boardPacketMetadata?.limitationsSummary ??
       financeMemoMetadata?.limitationsSummary ??
@@ -282,6 +304,7 @@ export function deriveProofBundleAssemblyFacts(input: {
     pullRequestNumber,
     pullRequestUrl,
     policySourceId:
+      diligencePacketMetadata?.policySourceId ??
       lenderUpdateMetadata?.policySourceId ??
       boardPacketMetadata?.policySourceId ??
       financeMemoMetadata?.policySourceId ??
@@ -295,6 +318,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.policySourceId ??
       null,
     policySourceScope:
+      diligencePacketMetadata?.policySourceScope ??
       lenderUpdateMetadata?.policySourceScope ??
       boardPacketMetadata?.policySourceScope ??
       financeMemoMetadata?.policySourceScope ??
@@ -303,6 +327,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.policySourceScope ??
       null,
     questionKind:
+      diligencePacketMetadata?.questionKind ??
       lenderUpdateMetadata?.questionKind ??
       boardPacketMetadata?.questionKind ??
       financeMemoMetadata?.questionKind ??
@@ -312,6 +337,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.questionKind ??
       null,
     relatedRoutePaths:
+      diligencePacketMetadata?.relatedRoutePaths ??
       lenderUpdateMetadata?.relatedRoutePaths ??
       boardPacketMetadata?.relatedRoutePaths ??
       financeMemoMetadata?.relatedRoutePaths ??
@@ -322,6 +348,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.relatedRoutePaths ??
       [],
     relatedWikiPageKeys:
+      diligencePacketMetadata?.relatedWikiPageKeys ??
       lenderUpdateMetadata?.relatedWikiPageKeys ??
       boardPacketMetadata?.relatedWikiPageKeys ??
       financeMemoMetadata?.relatedWikiPageKeys ??
@@ -357,6 +384,7 @@ function readLatestArtifacts(
 ): ProofBundleLatestArtifacts {
   return {
     boardPacket: readLatestArtifactByKind(artifacts, "board_packet"),
+    diligencePacket: readLatestArtifactByKind(artifacts, "diligence_packet"),
     discoveryAnswer: readLatestArtifactByKind(artifacts, "discovery_answer"),
     evidenceAppendix: readLatestArtifactByKind(artifacts, "evidence_appendix"),
     financeMemo: readLatestArtifactByKind(artifacts, "finance_memo"),
@@ -516,6 +544,7 @@ function buildDecisionTrace(input: {
   appendixPresent: boolean;
   reportKind:
     | BoardPacketArtifactMetadata["reportKind"]
+    | DiligencePacketArtifactMetadata["reportKind"]
     | LenderUpdateArtifactMetadata["reportKind"]
     | "finance_memo"
     | null;
@@ -561,6 +590,7 @@ function buildDecisionTrace(input: {
           "finance_memo",
           "evidence_appendix",
           "board_packet",
+          "diligence_packet",
           "lender_update",
         ].includes(artifact.kind),
     );
@@ -569,6 +599,8 @@ function buildDecisionTrace(input: {
       lines.push(
         input.reportKind === "board_packet"
           ? `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted board-packet evidence.`
+          : input.reportKind === "diligence_packet"
+            ? `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted diligence-packet evidence.`
           : input.reportKind === "lender_update"
             ? `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted lender-update evidence.`
           : input.appendixPresent

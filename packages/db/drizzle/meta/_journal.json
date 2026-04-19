@@ -232,6 +232,13 @@
       "when": 1776603238617,
       "tag": "0032_bizarre_daimon_hellstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1776639934222,
+      "tag": "0033_workable_ultron",
+      "breakpoints": true
     }
   ]
 }

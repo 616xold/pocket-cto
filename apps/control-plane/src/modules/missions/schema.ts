@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   CreateBoardPacketMissionInputSchema,
+  CreateDiligencePacketMissionInputSchema,
   CreateLenderUpdateMissionInputSchema,
   CreateMissionFromTextInputSchema,
   ExportReportingMissionMarkdownInputSchema,
@@ -44,6 +45,8 @@ export const createDiscoveryMissionSchema = createFinanceMissionQuestionInputSch
 export const createAnalysisMissionSchema = createFinanceMissionQuestionInputSchema;
 export const createReportingMissionSchema = CreateReportingMissionInputSchema;
 export const createBoardPacketMissionSchema = CreateBoardPacketMissionInputSchema;
+export const createDiligencePacketMissionSchema =
+  CreateDiligencePacketMissionInputSchema;
 export const createLenderUpdateMissionSchema =
   CreateLenderUpdateMissionInputSchema;
 export const createMissionFromTextSchema = CreateMissionFromTextInputSchema;

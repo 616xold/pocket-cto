@@ -14,6 +14,7 @@ import {
 import type { MissionRepository } from "../missions/repository";
 import {
   buildBoardPacketArtifact,
+  buildDiligencePacketArtifact,
   buildEvidenceAppendixArtifact,
   buildFinanceMemoArtifact,
   buildLenderUpdateArtifact,
@@ -137,6 +138,14 @@ export class ReportingOrchestratorPhase {
                   taskId: task.id,
                 }),
               ]
+            : input.compiled.reportKind === "diligence_packet"
+              ? [
+                  buildDiligencePacketArtifact({
+                    diligencePacket: input.compiled.diligencePacket,
+                    missionId: mission.id,
+                    taskId: task.id,
+                  }),
+                ]
           : [
               buildFinanceMemoArtifact({
                 memo: input.compiled.financeMemo,
@@ -330,6 +339,10 @@ function readTaskSummary(
 
   if (compiled.reportKind === "lender_update") {
     return compiled.lenderUpdate.updateSummary;
+  }
+
+  if (compiled.reportKind === "diligence_packet") {
+    return compiled.diligencePacket.packetSummary;
   }
 
   return compiled.financeMemo.memoSummary;

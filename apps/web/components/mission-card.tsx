@@ -49,9 +49,11 @@ export function MissionCard({
   const reportingView = reporting;
   const reportingPublication =
     reportingView?.publication ?? proofBundle.reportPublication ?? null;
+  const isDiligencePacket = proofBundle.reportKind === "diligence_packet";
   const isBoardPacket = proofBundle.reportKind === "board_packet";
   const isLenderUpdate = proofBundle.reportKind === "lender_update";
-  const isSpecializedReporting = isBoardPacket || isLenderUpdate;
+  const isSpecializedReporting =
+    isBoardPacket || isLenderUpdate || isDiligencePacket;
   const reportProofBundle = proofBundle.reportKind !== null || reportingView !== null;
   const financeProofBundle = !reportProofBundle && isFinanceProofBundle(proofBundle);
   const policySourceScope =
@@ -622,6 +624,22 @@ function readStatusTone(status: string) {
 function buildProofBundleReadinessMessage(
   proofBundle: MissionCardProps["proofBundle"],
 ) {
+  if (proofBundle.reportKind === "diligence_packet") {
+    if (proofBundle.status === "ready") {
+      return "The proof bundle now reads like a draft diligence-packet review package with source reporting lineage, linked appendix posture, carried freshness, and visible limitations tied together.";
+    }
+
+    if (proofBundle.status === "failed") {
+      return "The current draft diligence-packet bundle is non-decision-ready. Review the source reporting lineage, linked appendix posture, and mission evidence before retrying.";
+    }
+
+    if (proofBundle.status === "incomplete") {
+      return "The bundle is partially assembled, but the draft diligence-packet package is still missing its stored diligence_packet artifact.";
+    }
+
+    return "The diligence-packet proof bundle is still at the placeholder stage and has not yet accumulated persisted packet evidence.";
+  }
+
   if (proofBundle.reportKind === "board_packet") {
     if (proofBundle.status === "ready") {
       return "The proof bundle now reads like a draft board-packet review package with source reporting lineage, linked appendix posture, carried freshness, and visible limitations tied together.";

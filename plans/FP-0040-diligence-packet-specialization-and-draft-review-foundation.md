@@ -6,21 +6,22 @@ This plan is the active F5 implementation contract produced by the F5C3 master-p
 The target phase is `F5`, and the next execution slice is `F5C3-diligence-packet-specialization-and-draft-review-foundation`.
 The user-visible goal is narrow and concrete: after the shipped F5A, F5B, F5C1, and F5C2 path already creates one draft `finance_memo`, one linked `evidence_appendix`, truthful stored-vs-filed-vs-exported posture for the finance-memo path, one draft `board_packet`, and one draft `lender_update`, Pocket CFO should next be able to compile one specialized draft `diligence_packet` from completed reporting work and present it as review-ready draft output without widening into approval-release semantics, runtime-codex drafting, filing or export expansion, or non-markdown output formats.
 
-This matters now because the repo already ships the right deterministic substrate for the next packet-specialization pass: first-class `reporting` missions, `manual_reporting`, stored `finance_memo.bodyMarkdown`, stored `evidence_appendix.bodyMarkdown`, reporting proof bundles, mission-centric filing and markdown export reuse for the finance-memo path, and two specialized draft packet families that already prove `reportKind` can widen inside the existing reporting bounded context without creating a second top-level mission family.
-What is still missing is one narrowed F5C3 contract.
-The inherited “diligence packet specialization and approval-release” shape is too wide to hand to the next implementation thread safely.
-This plan narrows that next thread to one packet family, one input contract, one review posture, one bounded validation ladder, and one explicit later handoff to F5C4.
+This mattered because the repo already shipped the right deterministic substrate for the next packet-specialization pass: first-class `reporting` missions, `manual_reporting`, stored `finance_memo.bodyMarkdown`, stored `evidence_appendix.bodyMarkdown`, reporting proof bundles, mission-centric filing and markdown export reuse for the finance-memo path, and two specialized draft packet families that already proved `reportKind` can widen inside the existing reporting bounded context without creating a second top-level mission family.
+What was still missing was one narrowed F5C3 contract and implementation.
+The inherited “diligence packet specialization and approval-release” shape was too wide to hand to the next implementation thread safely.
+This plan narrowed that work to one packet family, one input contract, one review posture, one bounded validation ladder, and one explicit later handoff to F5C4, and it now records the landed F5C3 slice.
 
 GitHub connector work is explicitly out of scope.
 This plan does not authorize F5C4 approval-release implementation, later bounded runtime-codex phrasing or formatting assistance, PDF export, slide export, Marp export, F6 monitoring, or any rename from `modules/reporting/**` to `modules/reports/**`.
-This thread is docs-and-plan only and does not add runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding.
+The landed F5C3 slice adds only the narrow implementation this plan authorized: one additive `diligence_packet` report kind and artifact kind, one dedicated `POST /missions/reporting/diligence-packets` path, one deterministic compiler, one packaged smoke, and small doc refreshes needed to keep the repo truthful.
 
 ## Progress
 
 - [x] 2026-04-19T22:24:33Z Audit the active docs, shipped F5A through F5C2 records, reporting and evidence contracts, runtime-codex boundary, approval semantics, and benchmark guidance before choosing the narrowest truthful F5C3 scope.
 - [x] 2026-04-19T22:24:33Z Create `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` and refresh the smallest truthful active-doc set so `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` remains the shipped F5C2 record while this file becomes the single active F5C3 implementation contract.
 - [x] 2026-04-19T22:24:33Z Run the preserved source-ingest through lender-update confidence ladder, targeted twin regressions, repo-wide validation, and `pnpm ci:repro:current` for this docs-and-plan handoff without starting F5C3 code.
-- [ ] 2026-04-19T22:24:33Z Implement `F5C3-diligence-packet-specialization-and-draft-review-foundation` exactly as defined here without widening into F5C4 approval-release semantics, later runtime-codex drafting, PDF or slide export, or F6 work.
+- [x] 2026-04-19T23:23:04Z Implement `F5C3-diligence-packet-specialization-and-draft-review-foundation` exactly as defined here: widen the reporting and proof contracts to `diligence_packet`, add the dedicated creation path, compile one deterministic draft artifact from stored memo-plus-appendix evidence only, extend operator review surfaces, and keep approval-release semantics, runtime-codex drafting, filing or export expansion, PDF export, slide export, and F6 work out of scope.
+- [x] 2026-04-19T23:23:04Z Run the required F5C3 validation ladder end to end: narrow suites, required domain/control-plane/web suites, preserved baseline smokes, the new `pnpm smoke:diligence-packet:local` proof, twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 
 ## Surprises & Discoveries
 
@@ -38,6 +39,12 @@ This thread is docs-and-plan only and does not add runtime code, routes, schema 
 
 - Observation: runtime-codex and approvals remain explicit later seams, not blockers for the next deterministic packet slice.
   Evidence: `docs/ops/codex-app-server.md`, `apps/control-plane/src/modules/runtime-codex/**`, `apps/control-plane/src/modules/approvals/**`, and the shipped F5A through F5C2 reporting flow already keep draft packet compilation runtime-free and release-free.
+
+- Observation: the first local diligence smoke failure came from local database drift, not from a widened reporting design problem.
+  Evidence: the first `pnpm smoke:diligence-packet:local` run left the diligence mission stuck after the worker tried to persist a `diligence_packet` artifact into a Docker-backed database whose `artifact_kind` enum had not yet applied the new additive migration. Running `pnpm db:migrate` fixed the local drift, after which the same smoke and `pnpm ci:repro:current` both passed.
+
+- Observation: the repo-wide typecheck still exercises control-plane app-container doubles that the narrower F5C3 suites do not hit directly.
+  Evidence: `pnpm typecheck` surfaced one missing `createDiligencePacket` test-double method in `apps/control-plane/src/bootstrap.spec.ts` even though the narrower reporting, missions, evidence, and web suites were already green.
 
 ## Decision Log
 
@@ -71,6 +78,9 @@ This thread is docs-and-plan only and does not add runtime code, routes, schema 
 - Decision: after F5C3, the next later-F5 slice is `F5C4-approval-release-hardening-for-external-communication-posture`, and only after that should any later bounded runtime-codex drafting or formatting assistance be reconsidered.
   Rationale: the repo needs specialized deterministic packet drafts before it widens into approval, release, or runtime-assisted presentation work.
 
+- Decision: keep the only post-implementation polish inside F5C3 to the additive database migration and one missing test-double method.
+  Rationale: the diligence smoke failure and repo-wide typecheck issue were both narrow truthfulness gaps inside the shipped F5C3 surface, so fixing them directly was lower risk than reopening reporting, proof-bundle, or runtime boundaries.
+
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reintroduce a `modules/reports/**` rename wave.
   Rationale: the shipped F5A through F5C2 code already standardized on first-class `reporting` seams, and a rename would create noise before the diligence-packet contract exists.
 
@@ -101,8 +111,8 @@ That shipped F5 baseline now truthfully means all of the following are already i
 - one draft `lender_update`
 - reporting proof bundles that stay explicit about freshness, limitations, discovery lineage, reporting lineage, draft posture, and finance-memo publication posture
 
-What the repo still does not have is a shipped diligence-packet specialization path.
-`reportKind` is still limited to `finance_memo`, `board_packet`, and `lender_update`, packet specialization still stops before diligence review posture, and the current operator reporting follow-on actions do not define diligence-facing draft review behavior.
+The repo now has the shipped diligence-packet specialization path this plan described.
+`reportKind` now includes `diligence_packet`, packet specialization extends through the first diligence review posture, and the operator reporting follow-on actions now define a dedicated diligence-facing draft review path without widening into approval or release behavior.
 
 The active-doc boundary for this handoff is:
 
@@ -116,7 +126,7 @@ The active-doc boundary for this handoff is:
 - `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`
 - `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`
 - `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`
-- this active plan, `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`
+- this shipped F5C3 record, `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`
 - `docs/ops/local-dev.md`
 - `docs/ops/source-ingest-and-cfo-wiki.md`
 - `docs/ops/codex-app-server.md`
@@ -125,7 +135,7 @@ The active-doc boundary for this handoff is:
 
 GitHub connector work is out of scope.
 The internal `@pocket-cto/*` package scope remains unchanged.
-This thread is docs-only and must not add runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding.
+This plan started as docs-only guidance, but the current landed slice now includes runtime code, routes, schema changes, one additive migration, one packaged smoke command, targeted tests, and small doc refreshes that keep the repo aligned with the shipped F5C3 reality.
 
 The most relevant implementation seams for the future F5C3 code thread are:
 
@@ -336,12 +346,14 @@ User-visible F5C3 acceptance should be:
 - filing or export behavior for `diligence_packet` remains out of scope
 - approval-release semantics remain out of scope
 
-For this docs-and-plan handoff slice, acceptance is:
+Implementation acceptance reached in this slice:
 
-- `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` exists and is the only new active Finance Plan
-- `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` remains the shipped F5C2 record rather than the next active implementation contract
-- active docs no longer point the next thread back at F5C2 or at a generic “create the next later-F5 plan” step
-- no runtime code, routes, schema, migrations, package scripts, smoke commands, or eval datasets were added in this slice
+- the pure reporting, proof-bundle, mission-detail, and mission-list contracts now include `diligence_packet`
+- `packages/db/src/schema/artifacts.ts` and the additive drizzle migration now persist `diligence_packet` truthfully
+- `POST /missions/reporting/diligence-packets` now creates one draft diligence-packet reporting mission only from one completed finance-memo reporting mission with stored `finance_memo` plus stored `evidence_appendix`
+- the reporting compiler, proof-bundle assembly, mission detail, mission list, and web review surfaces now expose one deterministic, draft-only `diligence_packet` path with carried freshness, limitations, lineage, route links, and wiki links
+- `tools/diligence-packet-smoke.mjs` and `pnpm smoke:diligence-packet:local` now prove the packaged F5C3 path end to end
+- the required validation ladder, including `pnpm ci:repro:current`, is green
 
 Provenance, freshness, replay, and limitation expectations for the future F5C3 implementation are:
 
@@ -352,11 +364,8 @@ Provenance, freshness, replay, and limitation expectations for the future F5C3 i
 
 ## Idempotence and Recovery
 
-This docs-only handoff is additive and retry-safe.
-Reapplying it should only restate the same active-plan boundary and stale-doc corrections.
-
-The future F5C3 code thread should also stay additive and retry-safe.
-The new `diligence_packet` behavior should hang off existing `reporting` mission seams, use one additive `artifact_kind` migration, and avoid destructive rewrites of reporting history.
+The landed F5C3 slice is additive and retry-safe.
+The new `diligence_packet` behavior hangs off existing `reporting` mission seams, uses one additive `artifact_kind` migration, and avoids destructive rewrites of reporting history.
 If a local database misses the additive migration, run `pnpm db:migrate` and rerun the narrow proof rather than widening the implementation.
 
 If diligence-packet mission creation fails after the reporting mission record exists but before the artifact persists, the mission should remain non-ready and retryable through the existing mission and proof-bundle flow.
@@ -364,14 +373,10 @@ No release, send, approval, filing, PDF export, or slide export side effect shou
 
 ## Artifacts and Notes
 
-This docs-only slice produces:
+This landed slice produces:
 
-- one new active Finance Plan at `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`
-- refreshed active-doc guidance that points the next thread at FP-0040 instead of back at shipped F5C2 work
-
-The future F5C3 implementation thread should produce:
-
-- one draft `diligence_packet` artifact
+- one shipped Finance Plan record at `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`
+- one draft `diligence_packet` artifact kind and one dedicated diligence-packet compiler path
 - one refreshed reporting proof bundle with diligence-packet lineage and draft-review posture
 - one packaged `pnpm smoke:diligence-packet:local` proof
 - no new eval dataset, no filed-page side effect, and no markdown-export expansion for `diligence_packet`
@@ -396,8 +401,8 @@ If a concrete need appears during implementation, document it in this plan, `doc
 
 ## Outcomes & Retrospective
 
-This thread creates the single active F5C3 implementation contract and refreshes the stale active-doc chain around it.
-It leaves `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` as the shipped F5C2 record, updates the roadmap and benchmark guidance so contributors are no longer pointed back at shipped lender-update work, and explicitly defers F5C4 approval-release semantics plus any later bounded runtime-codex drafting or formatting work until after the diligence packet contract exists.
+This slice lands the first real F5C3 implementation exactly as intended: reporting remains first-class, the discovery families stay unchanged, `diligence_packet` now exists as the next specialized draft report kind, and the packet compiles deterministically from one completed finance-memo reporting mission with stored memo-plus-appendix evidence only.
+It leaves `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` as the shipped F5C2 record, keeps the finance-memo filing and markdown-export seam unchanged, keeps runtime-codex and approvals out of scope, and proves the additive migration plus packaged diligence smoke through `pnpm ci:repro:current`.
 
-This thread does not start F5C3 code, does not reopen F5C2, does not widen into F5C4 or F6, and does not delete GitHub or engineering-twin modules.
-What remains is the next narrow implementation thread against this active plan.
+This slice does not reopen F5A through F5C2, does not widen into F5C4 or F6, and does not delete GitHub or engineering-twin modules.
+What remains is authoring the next narrow F5C4 approval-release plan; no additional F5C3 continuation is required to keep this slice truthful.

@@ -79,8 +79,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` now serves as the shipped F5B record.
 `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C1 record.
 `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` now serves as the shipped F5C2 record.
-`plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` is now the active F5C3 implementation contract.
-The next implementation thread should continue `FP-0040` rather than reopening F5C2, widening straight into F5C4 approval-release work, or starting F6 early.
+`plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` is now the shipped F5C3 record.
+The next implementation thread should author the narrow F5C4 approval-release contract rather than reopening F5C3, widening straight into F6, or replaying F5C2.
 
 ## Review ritual
 

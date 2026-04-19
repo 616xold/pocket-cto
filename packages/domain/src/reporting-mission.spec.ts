@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   BoardPacketArtifactMetadataSchema,
   CreateBoardPacketMissionInputSchema,
+  CreateDiligencePacketMissionInputSchema,
   CreateLenderUpdateMissionInputSchema,
   CreateReportingMissionInputSchema,
+  DiligencePacketArtifactMetadataSchema,
   EvidenceAppendixArtifactMetadataSchema,
   FinanceMemoArtifactMetadataSchema,
   LenderUpdateArtifactMetadataSchema,
@@ -37,6 +39,18 @@ describe("Reporting mission domain schemas", () => {
 
   it("parses the dedicated lender-update creation input", () => {
     const parsed = CreateLenderUpdateMissionInputSchema.parse({
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      requestedBy: "finance-operator",
+    });
+
+    expect(parsed.sourceReportingMissionId).toBe(
+      "11111111-1111-4111-8111-111111111111",
+    );
+    expect(parsed.requestedBy).toBe("finance-operator");
+  });
+
+  it("parses the dedicated diligence-packet creation input", () => {
+    const parsed = CreateDiligencePacketMissionInputSchema.parse({
       sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
       requestedBy: "finance-operator",
     });
@@ -189,6 +203,46 @@ describe("Reporting mission domain schemas", () => {
       "33333333-3333-4333-8333-333333333333",
     );
     expect(parsed.sourceEvidenceAppendix.kind).toBe("evidence_appendix");
+  });
+
+  it("parses diligence-packet metadata", () => {
+    const parsed = DiligencePacketArtifactMetadataSchema.parse({
+      source: "stored_reporting_evidence",
+      summary:
+        "Draft diligence packet for acme from the completed cash posture reporting mission.",
+      reportKind: "diligence_packet",
+      draftStatus: "draft_only",
+      sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+      sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      packetSummary:
+        "Draft diligence packet for acme from the completed cash posture reporting mission.",
+      freshnessSummary:
+        "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+      limitationsSummary:
+        "This diligence packet is draft-only and carries source reporting freshness and limitations forward.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceFinanceMemo: {
+        artifactId: "44444444-4444-4444-8444-444444444444",
+        kind: "finance_memo",
+      },
+      sourceEvidenceAppendix: {
+        artifactId: "55555555-5555-4555-8555-555555555555",
+        kind: "evidence_appendix",
+      },
+      bodyMarkdown:
+        "# Draft Diligence Packet\n\n## Packet Summary\n\nCash posture remains constrained.",
+    });
+
+    expect(parsed.reportKind).toBe("diligence_packet");
+    expect(parsed.sourceReportingMissionId).toBe(
+      "33333333-3333-4333-8333-333333333333",
+    );
+    expect(parsed.sourceFinanceMemo.kind).toBe("finance_memo");
   });
 
   it("parses the reporting read model view", () => {
@@ -356,6 +410,72 @@ describe("Reporting mission domain schemas", () => {
     expect(parsed.publication).toBeNull();
     expect(readReportingMissionReportKindLabel(parsed.reportKind)).toBe(
       "Lender update",
+    );
+  });
+
+  it("parses the diligence-packet reporting read model view", () => {
+    const parsed = ReportingMissionViewSchema.parse({
+      reportKind: "diligence_packet",
+      draftStatus: "draft_only",
+      sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      reportSummary:
+        "Draft diligence packet for acme from the completed cash posture reporting mission.",
+      freshnessSummary:
+        "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+      limitationsSummary:
+        "This diligence packet is draft-only and carries source reporting freshness and limitations forward.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      appendixPresent: true,
+      financeMemo: null,
+      evidenceAppendix: null,
+      boardPacket: null,
+      lenderUpdate: null,
+      diligencePacket: {
+        source: "stored_reporting_evidence",
+        summary:
+          "Draft diligence packet for acme from the completed cash posture reporting mission.",
+        reportKind: "diligence_packet",
+        draftStatus: "draft_only",
+        sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+        sourceDiscoveryMissionId: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        packetSummary:
+          "Draft diligence packet for acme from the completed cash posture reporting mission.",
+        freshnessSummary:
+          "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+        limitationsSummary:
+          "This diligence packet is draft-only and carries source reporting freshness and limitations forward.",
+        relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+        relatedWikiPageKeys: ["metrics/cash-posture"],
+        sourceFinanceMemo: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          kind: "finance_memo",
+        },
+        sourceEvidenceAppendix: {
+          artifactId: "55555555-5555-4555-8555-555555555555",
+          kind: "evidence_appendix",
+        },
+        bodyMarkdown:
+          "# Draft Diligence Packet\n\n## Packet Summary\n\nCash posture remains constrained.",
+      },
+      publication: null,
+    });
+
+    expect(parsed.diligencePacket?.sourceEvidenceAppendix.kind).toBe(
+      "evidence_appendix",
+    );
+    expect(parsed.publication).toBeNull();
+    expect(readReportingMissionReportKindLabel(parsed.reportKind)).toBe(
+      "Diligence packet",
     );
   });
 });

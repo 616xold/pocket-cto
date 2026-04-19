@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   createBoardPacketMission,
+  createDiligencePacketMission,
   createLenderUpdateMission,
   createReportingMission,
   exportReportingMissionMarkdown,
@@ -44,6 +45,11 @@ const createDraftBoardPacketFormSchema = z.object({
 });
 
 const createDraftLenderUpdateFormSchema = z.object({
+  requestedBy: z.string().trim().min(1),
+  sourceReportingMissionId: z.string().uuid(),
+});
+
+const createDraftDiligencePacketFormSchema = z.object({
   requestedBy: z.string().trim().min(1),
   sourceReportingMissionId: z.string().uuid(),
 });
@@ -150,6 +156,23 @@ export async function submitCreateDraftLenderUpdate(formData: FormData) {
   });
 
   const created = await createLenderUpdateMission({
+    requestedBy: input.requestedBy,
+    sourceReportingMissionId: input.sourceReportingMissionId,
+  });
+
+  revalidatePath("/");
+  revalidatePath("/missions");
+  revalidatePath(`/missions/${input.sourceReportingMissionId}`);
+  redirect(`/missions/${created.mission.id}`);
+}
+
+export async function submitCreateDraftDiligencePacket(formData: FormData) {
+  const input = createDraftDiligencePacketFormSchema.parse({
+    requestedBy: formData.get("requestedBy"),
+    sourceReportingMissionId: formData.get("sourceReportingMissionId"),
+  });
+
+  const created = await createDiligencePacketMission({
     requestedBy: input.requestedBy,
     sourceReportingMissionId: input.sourceReportingMissionId,
   });

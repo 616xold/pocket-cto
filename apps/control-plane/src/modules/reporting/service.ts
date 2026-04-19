@@ -21,6 +21,7 @@ import type { CfoWikiServicePort } from "../../lib/types";
 import { readMissionDiscoveryAnswer } from "../missions/discovery-answer-view";
 import type { MissionRepository } from "../missions/repository";
 import { compileBoardPacketArtifacts } from "./board-packet";
+import { compileDiligencePacketArtifacts } from "./diligence-packet";
 import { compileFinanceMemoArtifacts } from "./formatter";
 import { compileLenderUpdateArtifacts } from "./lender-update";
 import {
@@ -65,6 +66,11 @@ export class ReportingService {
     if (reportingRequest.reportKind === "lender_update") {
       const source = await this.loadSourceReportingBundle(reportingRequest);
       return compileLenderUpdateArtifacts(source);
+    }
+
+    if (reportingRequest.reportKind === "diligence_packet") {
+      const source = await this.loadSourceReportingBundle(reportingRequest);
+      return compileDiligencePacketArtifacts(source);
     }
 
     const source = await this.loadDiscoverySourceBundle(reportingRequest);
@@ -503,13 +509,14 @@ function requireStoredReportingView(input: {
     proofBundle: input.proofBundle,
   });
 
-  if (!reporting?.financeMemo || !reporting.evidenceAppendix) {
-    if (
-      reporting?.reportKind === "board_packet" ||
-      reporting?.reportKind === "lender_update"
-    ) {
-      throw invalidRequest(
-        "missionId",
+    if (!reporting?.financeMemo || !reporting.evidenceAppendix) {
+      if (
+        reporting?.reportKind === "board_packet" ||
+        reporting?.reportKind === "lender_update" ||
+        reporting?.reportKind === "diligence_packet"
+      ) {
+        throw invalidRequest(
+          "missionId",
         "Specialized reporting stays draft-only in F5C and cannot file or export through the finance-memo publication path.",
       );
     }

@@ -871,6 +871,7 @@ describe("MissionCard", () => {
           policySourceId: null,
           policySourceScope: null,
           boardPacket: null,
+          diligencePacket: null,
           publication: null,
           questionKind: "payables_pressure",
           relatedRoutePaths: ["/finance-twin/companies/acme/payables-aging"],
@@ -1427,6 +1428,7 @@ describe("MissionCard", () => {
             bodyMarkdown:
               "# Draft Board Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
           },
+          diligencePacket: null,
           publication: null,
         }}
         tasks={[
@@ -1459,6 +1461,221 @@ describe("MissionCard", () => {
     );
     expect(html).toContain(
       "does not add approval, release, PDF, or slide workflow in F5C1",
+    );
+  });
+
+  it("renders diligence-packet mission detail with source-report lineage and draft-only proof posture", () => {
+    const html = renderToStaticMarkup(
+      <MissionCard
+        approvalCards={[]}
+        artifacts={[]}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        discoveryAnswer={null}
+        mission={{
+          createdAt: "2026-04-19T13:00:00.000Z",
+          createdBy: "finance-operator",
+          id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          objective:
+            "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
+          primaryRepo: null,
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          spec: {
+            acceptance: ["persist one draft diligence_packet artifact"],
+            constraints: {
+              allowedPaths: [],
+              mustNot: [
+                "do not invoke the codex runtime",
+                "do not add approval workflow, release workflow, filing, export, PDF export, or slide export",
+              ],
+            },
+            deliverables: ["diligence_packet", "proof_bundle"],
+            evidenceRequirements: [
+              "stored finance_memo artifact",
+              "stored evidence_appendix artifact",
+            ],
+            input: {
+              reportingRequest: {
+                companyKey: "acme",
+                policySourceId: null,
+                policySourceScope: null,
+                questionKind: "cash_posture",
+                reportKind: "diligence_packet",
+                sourceDiscoveryMissionId:
+                  "22222222-2222-4222-8222-222222222222",
+                sourceReportingMissionId:
+                  "33333333-3333-4333-8333-333333333333",
+              },
+            },
+            objective:
+              "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
+            repos: [],
+            riskBudget: {
+              allowNetwork: false,
+              maxCostUsd: 1,
+              maxWallClockMinutes: 5,
+              requiresHumanApprovalFor: [],
+              sandboxMode: "read-only",
+            },
+            title: "Draft diligence packet for acme from cash posture reporting",
+            type: "reporting",
+          },
+          status: "succeeded",
+          title: "Draft diligence packet for acme from cash posture reporting",
+          type: "reporting",
+          updatedAt: "2026-04-19T13:03:00.000Z",
+        }}
+        proofBundle={{
+          artifactIds: ["44444444-4444-4444-8444-444444444444"],
+          artifacts: [
+            {
+              id: "44444444-4444-4444-8444-444444444444",
+              kind: "diligence_packet",
+            },
+          ],
+          branchName: null,
+          changeSummary:
+            "Draft diligence packet for acme from the completed cash posture reporting mission.",
+          companyKey: "acme",
+          decisionTrace: [
+            "Scout task 0 terminalized as succeeded with persisted diligence-packet evidence.",
+          ],
+          evidenceCompleteness: {
+            status: "complete",
+            expectedArtifactKinds: ["diligence_packet"],
+            presentArtifactKinds: ["diligence_packet"],
+            missingArtifactKinds: [],
+            notes: [],
+          },
+          latestApproval: null,
+          missionId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          missionTitle: "Draft diligence packet for acme from cash posture reporting",
+          objective:
+            "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          answerSummary: "",
+          reportKind: "diligence_packet",
+          reportDraftStatus: "draft_only",
+          reportPublication: null,
+          reportSummary:
+            "Draft diligence packet for acme from the completed cash posture reporting mission.",
+          appendixPresent: true,
+          freshnessState: "stale",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          policySourceId: null,
+          policySourceScope: null,
+          questionKind: "cash_posture",
+          replayEventCount: 9,
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          riskSummary:
+            "This diligence packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C3.",
+          rollbackSummary:
+            "Safe fallback: refresh or rerun the source finance-memo reporting mission truthfully, then retry draft diligence-packet compilation; no release, send, or wiki filing side effect was produced.",
+          status: "ready",
+          targetRepoFullName: null,
+          timestamps: {
+            missionCreatedAt: "2026-04-19T13:00:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPullRequestAt: null,
+            latestApprovalAt: null,
+            latestArtifactAt: "2026-04-19T13:03:00.000Z",
+          },
+          validationSummary:
+            "Draft diligence packet was compiled deterministically from one completed reporting mission and its stored finance memo plus evidence appendix without running the Codex runtime.",
+          verificationSummary:
+            "Draft diligence packet for acme from the completed cash posture reporting mission. Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.",
+        }}
+        reporting={{
+          reportKind: "diligence_packet",
+          draftStatus: "draft_only",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          reportSummary:
+            "Draft diligence packet for acme from the completed cash posture reporting mission.",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          appendixPresent: true,
+          financeMemo: null,
+          evidenceAppendix: null,
+          boardPacket: null,
+          lenderUpdate: null,
+          diligencePacket: {
+            source: "stored_reporting_evidence",
+            summary:
+              "Draft diligence packet for acme from the completed cash posture reporting mission.",
+            reportKind: "diligence_packet",
+            draftStatus: "draft_only",
+            sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+            sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+            companyKey: "acme",
+            questionKind: "cash_posture",
+            policySourceId: null,
+            policySourceScope: null,
+            packetSummary:
+              "Draft diligence packet for acme from the completed cash posture reporting mission.",
+            freshnessSummary: "Cash posture remains stale.",
+            limitationsSummary: "Draft-only posture remains explicit.",
+            relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+            relatedWikiPageKeys: ["metrics/cash-posture"],
+            sourceFinanceMemo: {
+              artifactId: "55555555-5555-4555-8555-555555555555",
+              kind: "finance_memo",
+            },
+            sourceEvidenceAppendix: {
+              artifactId: "66666666-6666-4666-8666-666666666666",
+              kind: "evidence_appendix",
+            },
+            bodyMarkdown:
+              "# Draft Diligence Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
+          },
+          publication: null,
+        }}
+        tasks={[
+          {
+            attemptCount: 1,
+            codexThreadId: null,
+            codexTurnId: null,
+            createdAt: "2026-04-19T13:00:00.000Z",
+            dependsOnTaskId: null,
+            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            missionId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            summary:
+              "Draft diligence packet for acme from the completed cash posture reporting mission.",
+            updatedAt: "2026-04-19T13:03:00.000Z",
+            workspaceId: null,
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain("Diligence packet");
+    expect(html).toContain("Source reporting mission");
+    expect(html).toContain("33333333-3333-4333-8333-333333333333");
+    expect(html).toContain("Linked appendix posture");
+    expect(html).toContain(
+      "The proof bundle now reads like a draft diligence-packet review package",
+    );
+    expect(html).toContain(
+      "does not add approval, release, PDF, or slide workflow in F5C3",
     );
   });
 });

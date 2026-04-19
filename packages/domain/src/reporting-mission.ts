@@ -10,6 +10,7 @@ export const REPORTING_MISSION_REPORT_KINDS = [
   "finance_memo",
   "board_packet",
   "lender_update",
+  "diligence_packet",
 ] as const;
 export const REPORTING_FILED_ARTIFACT_KINDS = [
   "finance_memo",
@@ -29,6 +30,7 @@ export const REPORTING_MISSION_REPORT_KIND_LABELS = {
   finance_memo: "Finance memo",
   board_packet: "Board packet",
   lender_update: "Lender update",
+  diligence_packet: "Diligence packet",
 } satisfies Record<(typeof REPORTING_MISSION_REPORT_KINDS)[number], string>;
 
 export const REPORTING_FILED_ARTIFACT_KIND_LABELS = {
@@ -55,6 +57,13 @@ export const CreateBoardPacketMissionInputSchema = z
   .strict();
 
 export const CreateLenderUpdateMissionInputSchema = z
+  .object({
+    sourceReportingMissionId: z.string().uuid(),
+    requestedBy: z.string().trim().min(1).default("operator"),
+  })
+  .strict();
+
+export const CreateDiligencePacketMissionInputSchema = z
   .object({
     sourceReportingMissionId: z.string().uuid(),
     requestedBy: z.string().trim().min(1).default("operator"),
@@ -88,7 +97,9 @@ export const ReportingMissionInputSchema = z
   .strict()
   .superRefine((input, ctx) => {
     if (
-      ["board_packet", "lender_update"].includes(input.reportKind) &&
+      ["board_packet", "lender_update", "diligence_packet"].includes(
+        input.reportKind,
+      ) &&
       input.sourceReportingMissionId === null
     ) {
       ctx.addIssue({
@@ -245,6 +256,35 @@ export const LenderUpdateArtifactMetadataSchema = z
   })
   .strict();
 
+export const DiligencePacketArtifactMetadataSchema = z
+  .object({
+    source: z.literal("stored_reporting_evidence"),
+    summary: z.string().min(1),
+    reportKind: z.literal("diligence_packet"),
+    draftStatus: ReportingDraftStatusSchema.default("draft_only"),
+    sourceReportingMissionId: z.string().uuid(),
+    sourceDiscoveryMissionId: z.string().uuid(),
+    companyKey: FinanceCompanyKeySchema.nullable().default(null),
+    questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
+    policySourceId: z.string().uuid().nullable().default(null),
+    policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
+      null,
+    ),
+    packetSummary: z.string().min(1),
+    freshnessSummary: z.string().min(1),
+    limitationsSummary: z.string().min(1),
+    relatedRoutePaths: z.array(z.string().min(1)).default([]),
+    relatedWikiPageKeys: z.array(CfoWikiPageKeySchema).default([]),
+    sourceFinanceMemo: ReportingPacketSourceArtifactLinkSchema.extend({
+      kind: z.literal("finance_memo"),
+    }),
+    sourceEvidenceAppendix: ReportingPacketSourceArtifactLinkSchema.extend({
+      kind: z.literal("evidence_appendix"),
+    }),
+    bodyMarkdown: z.string().min(1),
+  })
+  .strict();
+
 export const ReportingFiledArtifactViewSchema = z
   .object({
     artifactKind: ReportingFiledArtifactKindSchema,
@@ -302,6 +342,8 @@ export const ReportingMissionViewSchema = z
     ),
     boardPacket: BoardPacketArtifactMetadataSchema.nullable().default(null),
     lenderUpdate: LenderUpdateArtifactMetadataSchema.nullable().default(null),
+    diligencePacket:
+      DiligencePacketArtifactMetadataSchema.nullable().default(null),
     publication: ReportingPublicationViewSchema.nullable().default(null),
   })
   .strict();
@@ -337,6 +379,9 @@ export type CreateBoardPacketMissionInput = z.infer<
 >;
 export type CreateLenderUpdateMissionInput = z.infer<
   typeof CreateLenderUpdateMissionInputSchema
+>;
+export type CreateDiligencePacketMissionInput = z.infer<
+  typeof CreateDiligencePacketMissionInputSchema
 >;
 export type FileReportingMissionArtifactsInput = z.infer<
   typeof FileReportingMissionArtifactsInputSchema
@@ -374,6 +419,9 @@ export type BoardPacketArtifactMetadata = z.infer<
 >;
 export type LenderUpdateArtifactMetadata = z.infer<
   typeof LenderUpdateArtifactMetadataSchema
+>;
+export type DiligencePacketArtifactMetadata = z.infer<
+  typeof DiligencePacketArtifactMetadataSchema
 >;
 export type ReportingFiledArtifactView = z.infer<
   typeof ReportingFiledArtifactViewSchema
@@ -414,6 +462,12 @@ export function isLenderUpdateArtifactMetadata(
   value: unknown,
 ): value is LenderUpdateArtifactMetadata {
   return LenderUpdateArtifactMetadataSchema.safeParse(value).success;
+}
+
+export function isDiligencePacketArtifactMetadata(
+  value: unknown,
+): value is DiligencePacketArtifactMetadata {
+  return DiligencePacketArtifactMetadataSchema.safeParse(value).success;
 }
 
 export function readReportingMissionReportKindLabel(

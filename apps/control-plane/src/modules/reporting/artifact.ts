@@ -1,6 +1,7 @@
 import type {
   ArtifactRecord,
   BoardPacketArtifactMetadata,
+  DiligencePacketArtifactMetadata,
   EvidenceAppendixArtifactMetadata,
   FinanceMemoArtifactMetadata,
   LenderUpdateArtifactMetadata,
@@ -9,6 +10,7 @@ import type {
 } from "@pocket-cto/domain";
 import {
   BoardPacketArtifactMetadataSchema,
+  DiligencePacketArtifactMetadataSchema,
   EvidenceAppendixArtifactMetadataSchema,
   FinanceMemoArtifactMetadataSchema,
   LenderUpdateArtifactMetadataSchema,
@@ -81,6 +83,22 @@ export function buildLenderUpdateArtifact(input: {
   };
 }
 
+export function buildDiligencePacketArtifact(input: {
+  diligencePacket: DiligencePacketArtifactMetadata;
+  missionId: string;
+  taskId: string;
+}): EvidenceArtifactDraft {
+  return {
+    missionId: input.missionId,
+    taskId: input.taskId,
+    kind: "diligence_packet",
+    uri: `pocket-cto://missions/${input.missionId}/tasks/${input.taskId}/diligence-packet`,
+    mimeType: "text/markdown",
+    sha256: null,
+    metadata: input.diligencePacket,
+  };
+}
+
 export function readFinanceMemoArtifactMetadata(
   artifact: Pick<ArtifactRecord, "kind" | "metadata"> | null | undefined,
 ) {
@@ -127,10 +145,26 @@ export function readLenderUpdateArtifactMetadata(
   return parsed.success ? parsed.data : null;
 }
 
+export function readDiligencePacketArtifactMetadata(
+  artifact: Pick<ArtifactRecord, "kind" | "metadata"> | null | undefined,
+) {
+  if (!artifact || artifact.kind !== "diligence_packet") {
+    return null;
+  }
+
+  const parsed = DiligencePacketArtifactMetadataSchema.safeParse(
+    artifact.metadata,
+  );
+  return parsed.success ? parsed.data : null;
+}
+
 export function readMissionReportingView(input: {
   artifacts: ArtifactRecord[];
   proofBundle: ProofBundleManifest;
 }): ReportingMissionView | null {
+  const diligencePacket = readDiligencePacketArtifactMetadata(
+    readLatestArtifactByKind(input.artifacts, "diligence_packet"),
+  );
   const lenderUpdate = readLenderUpdateArtifactMetadata(
     readLatestArtifactByKind(input.artifacts, "lender_update"),
   );
@@ -144,16 +178,19 @@ export function readMissionReportingView(input: {
     readLatestArtifactByKind(input.artifacts, "evidence_appendix"),
   );
   const reportKind =
+    diligencePacket?.reportKind ??
     lenderUpdate?.reportKind ??
     boardPacket?.reportKind ??
     financeMemo?.reportKind ??
     evidenceAppendix?.reportKind ??
     input.proofBundle.reportKind;
   const sourceReportingMissionId =
+    diligencePacket?.sourceReportingMissionId ??
     lenderUpdate?.sourceReportingMissionId ??
     boardPacket?.sourceReportingMissionId ??
     input.proofBundle.sourceReportingMissionId;
   const sourceDiscoveryMissionId =
+    diligencePacket?.sourceDiscoveryMissionId ??
     lenderUpdate?.sourceDiscoveryMissionId ??
     boardPacket?.sourceDiscoveryMissionId ??
     financeMemo?.sourceDiscoveryMissionId ??
@@ -167,6 +204,7 @@ export function readMissionReportingView(input: {
   return ReportingMissionViewSchema.parse({
     reportKind,
     draftStatus:
+      diligencePacket?.draftStatus ??
       boardPacket?.draftStatus ??
       financeMemo?.draftStatus ??
       evidenceAppendix?.draftStatus ??
@@ -175,36 +213,42 @@ export function readMissionReportingView(input: {
     sourceDiscoveryMissionId,
     sourceReportingMissionId,
     companyKey:
+      diligencePacket?.companyKey ??
       lenderUpdate?.companyKey ??
       boardPacket?.companyKey ??
       financeMemo?.companyKey ??
       evidenceAppendix?.companyKey ??
       input.proofBundle.companyKey,
     questionKind:
+      diligencePacket?.questionKind ??
       lenderUpdate?.questionKind ??
       boardPacket?.questionKind ??
       financeMemo?.questionKind ??
       evidenceAppendix?.questionKind ??
       input.proofBundle.questionKind,
     policySourceId:
+      diligencePacket?.policySourceId ??
       lenderUpdate?.policySourceId ??
       boardPacket?.policySourceId ??
       financeMemo?.policySourceId ??
       evidenceAppendix?.policySourceId ??
       input.proofBundle.policySourceId,
     policySourceScope:
+      diligencePacket?.policySourceScope ??
       lenderUpdate?.policySourceScope ??
       boardPacket?.policySourceScope ??
       financeMemo?.policySourceScope ??
       evidenceAppendix?.policySourceScope ??
       input.proofBundle.policySourceScope,
     reportSummary:
+      diligencePacket?.packetSummary ??
       lenderUpdate?.updateSummary ??
       boardPacket?.packetSummary ??
       financeMemo?.memoSummary ??
       input.proofBundle.reportSummary ??
       null,
     freshnessSummary:
+      diligencePacket?.freshnessSummary ??
       lenderUpdate?.freshnessSummary ??
       boardPacket?.freshnessSummary ??
       financeMemo?.freshnessSummary ??
@@ -212,6 +256,7 @@ export function readMissionReportingView(input: {
       input.proofBundle.freshnessSummary ??
       null,
     limitationsSummary:
+      diligencePacket?.limitationsSummary ??
       lenderUpdate?.limitationsSummary ??
       boardPacket?.limitationsSummary ??
       financeMemo?.limitationsSummary ??
@@ -219,18 +264,21 @@ export function readMissionReportingView(input: {
       input.proofBundle.limitationsSummary ??
       null,
     relatedRoutePaths:
+      diligencePacket?.relatedRoutePaths ??
       lenderUpdate?.relatedRoutePaths ??
       boardPacket?.relatedRoutePaths ??
       financeMemo?.relatedRoutePaths ??
       evidenceAppendix?.relatedRoutePaths ??
       input.proofBundle.relatedRoutePaths,
     relatedWikiPageKeys:
+      diligencePacket?.relatedWikiPageKeys ??
       lenderUpdate?.relatedWikiPageKeys ??
       boardPacket?.relatedWikiPageKeys ??
       financeMemo?.relatedWikiPageKeys ??
       evidenceAppendix?.relatedWikiPageKeys ??
       input.proofBundle.relatedWikiPageKeys,
     appendixPresent:
+      diligencePacket !== null ||
       lenderUpdate !== null ||
       boardPacket !== null ||
       evidenceAppendix !== null ||
@@ -239,6 +287,7 @@ export function readMissionReportingView(input: {
     evidenceAppendix,
     boardPacket,
     lenderUpdate,
+    diligencePacket,
     publication:
       reportKind === "finance_memo"
         ? (buildReportingPublicationViewFromProofBundle({

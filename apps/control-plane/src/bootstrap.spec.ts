@@ -378,6 +378,11 @@ function createAppContainer(
       async createBoardPacket() {
         throw new Error("createBoardPacket should not be called in this test");
       },
+      async createDiligencePacket() {
+        throw new Error(
+          "createDiligencePacket should not be called in this test",
+        );
+      },
       async createLenderUpdate() {
         throw new Error("createLenderUpdate should not be called in this test");
       },

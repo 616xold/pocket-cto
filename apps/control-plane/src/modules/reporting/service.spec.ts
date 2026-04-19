@@ -210,6 +210,61 @@ describe("ReportingService", () => {
     );
   });
 
+  it("compiles one draft diligence packet from stored finance memo and evidence appendix artifacts only", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMission = buildSucceededReportingMission(
+      sourceDiscoveryMissionId,
+    );
+    const diligencePacketMission = buildDiligencePacketMission(
+      sourceDiscoveryMissionId,
+      sourceReportingMission.id,
+    );
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [sourceReportingMission.id]: buildReportingArtifacts(
+          sourceReportingMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+      missionsById: {
+        [sourceReportingMission.id]: sourceReportingMission,
+      },
+      proofBundlesByMissionId: {
+        [sourceReportingMission.id]: buildReportingProofBundle(
+          sourceReportingMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+    });
+
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+    const compiled = requireDiligencePacketArtifacts(
+      await service.compileDraftReport(diligencePacketMission),
+    );
+
+    expect(compiled.diligencePacket.reportKind).toBe("diligence_packet");
+    expect(compiled.diligencePacket.sourceReportingMissionId).toBe(
+      sourceReportingMission.id,
+    );
+    expect(compiled.diligencePacket.sourceDiscoveryMissionId).toBe(
+      sourceDiscoveryMissionId,
+    );
+    expect(compiled.diligencePacket.sourceFinanceMemo.kind).toBe(
+      "finance_memo",
+    );
+    expect(compiled.diligencePacket.sourceEvidenceAppendix.kind).toBe(
+      "evidence_appendix",
+    );
+    expect(compiled.diligencePacket.bodyMarkdown).toContain(
+      "## Source Finance Memo Draft",
+    );
+    expect(compiled.diligencePacket.bodyMarkdown).toContain(
+      "## Linked Evidence Appendix Posture",
+    );
+  });
+
   it("files draft memo and appendix into deterministic CFO Wiki page keys", async () => {
     const sourceMission = buildSourceDiscoveryMission();
     const reportingMission = buildSucceededReportingMission(sourceMission.id);
@@ -452,6 +507,16 @@ function requireLenderUpdateArtifacts(
   return compiled;
 }
 
+function requireDiligencePacketArtifacts(
+  compiled: Awaited<ReturnType<ReportingService["compileDraftReport"]>>,
+) {
+  if (compiled.reportKind !== "diligence_packet") {
+    throw new Error("Expected diligence-packet reporting artifacts.");
+  }
+
+  return compiled;
+}
+
 function buildReportingMission(sourceDiscoveryMissionId: string): MissionRecord {
   return {
     id: "55555555-5555-4555-8555-555555555555",
@@ -626,6 +691,64 @@ function buildLenderUpdateMission(
     },
     createdAt: "2026-04-19T12:30:00.000Z",
     updatedAt: "2026-04-19T12:30:00.000Z",
+  };
+}
+
+function buildDiligencePacketMission(
+  sourceDiscoveryMissionId: string,
+  sourceReportingMissionId: string,
+): MissionRecord {
+  return {
+    id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    type: "reporting",
+    status: "queued",
+    title: "Draft diligence packet for acme from cash posture reporting",
+    objective:
+      "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
+    sourceKind: "manual_reporting",
+    sourceRef: null,
+    createdBy: "finance-operator",
+    primaryRepo: null,
+    spec: {
+      type: "reporting",
+      title: "Draft diligence packet for acme from cash posture reporting",
+      objective:
+        "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
+      repos: [],
+      constraints: {
+        mustNot: [
+          "do not invoke the codex runtime",
+          "do not add approval workflow, release workflow, filing, export, PDF export, or slide export",
+        ],
+        allowedPaths: [],
+      },
+      acceptance: ["persist one draft diligence_packet artifact"],
+      riskBudget: {
+        sandboxMode: "read-only",
+        maxWallClockMinutes: 5,
+        maxCostUsd: 1,
+        allowNetwork: false,
+        requiresHumanApprovalFor: [],
+      },
+      deliverables: ["diligence_packet", "proof_bundle"],
+      evidenceRequirements: [
+        "stored finance_memo artifact",
+        "stored evidence_appendix artifact",
+      ],
+      input: {
+        reportingRequest: {
+          sourceDiscoveryMissionId,
+          sourceReportingMissionId,
+          reportKind: "diligence_packet",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+        },
+      },
+    },
+    createdAt: "2026-04-19T13:00:00.000Z",
+    updatedAt: "2026-04-19T13:00:00.000Z",
   };
 }
 

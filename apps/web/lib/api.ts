@@ -2,6 +2,7 @@ import {
   ApprovalRecordSchema,
   CfoWikiCompanySourceListViewSchema,
   CreateBoardPacketMissionInputSchema,
+  CreateDiligencePacketMissionInputSchema,
   CreateDiscoveryMissionInputSchema,
   CreateLenderUpdateMissionInputSchema,
   CreateReportingMissionInputSchema,
@@ -376,6 +377,16 @@ export async function createLenderUpdateMission(
   return postJsonStrict(
     "/missions/reporting/lender-updates",
     CreateLenderUpdateMissionInputSchema.parse(input),
+    createMissionResponseSchema,
+  );
+}
+
+export async function createDiligencePacketMission(
+  input: z.input<typeof CreateDiligencePacketMissionInputSchema>,
+) {
+  return postJsonStrict(
+    "/missions/reporting/diligence-packets",
+    CreateDiligencePacketMissionInputSchema.parse(input),
     createMissionResponseSchema,
   );
 }

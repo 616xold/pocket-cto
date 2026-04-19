@@ -3,6 +3,7 @@ import type {
   BoardPacketArtifactMetadata,
   CfoWikiExportRunRecord,
   CfoWikiPageRecord,
+  DiligencePacketArtifactMetadata,
   EvidenceAppendixArtifactMetadata,
   FinanceDiscoveryAnswerArtifactMetadata,
   FinanceMemoArtifactMetadata,
@@ -48,10 +49,16 @@ export type CompiledLenderUpdateArtifacts = {
   reportKind: "lender_update";
 };
 
+export type CompiledDiligencePacketArtifacts = {
+  diligencePacket: DiligencePacketArtifactMetadata;
+  reportKind: "diligence_packet";
+};
+
 export type CompiledReportingArtifacts =
   | CompiledFinanceMemoArtifacts
   | CompiledBoardPacketArtifacts
-  | CompiledLenderUpdateArtifacts;
+  | CompiledLenderUpdateArtifacts
+  | CompiledDiligencePacketArtifacts;
 
 export type ReportingMissionContext = {
   artifacts: ArtifactRecord[];

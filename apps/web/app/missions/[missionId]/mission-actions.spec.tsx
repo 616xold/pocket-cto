@@ -5,6 +5,61 @@ import type { MissionDetailView } from "@pocket-cto/domain";
 import { MissionActions } from "./mission-actions";
 
 describe("MissionActions", () => {
+  it("renders diligence-packet creation from completed finance-memo reporting", () => {
+    const html = renderToStaticMarkup(
+      <MissionActions
+        approvalCards={[]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          id: "11111111-1111-4111-8111-111111111111",
+          type: "reporting",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          title: "Draft finance memo for acme",
+          objective:
+            "Compile one draft finance memo plus one linked evidence appendix from completed discovery mission 22222222-2222-4222-8222-222222222222.",
+          status: "succeeded",
+          primaryRepo: null,
+          createdBy: "operator",
+          createdAt: "2026-04-19T12:00:00.000Z",
+          updatedAt: "2026-04-19T12:05:00.000Z",
+          spec: {
+            type: "reporting",
+            title: "Draft finance memo for acme",
+            objective:
+              "Compile one draft finance memo plus one linked evidence appendix from completed discovery mission 22222222-2222-4222-8222-222222222222.",
+            repos: [],
+            constraints: {
+              mustNot: [],
+              allowedPaths: [],
+            },
+            acceptance: [],
+            riskBudget: {
+              sandboxMode: "read-only",
+              maxWallClockMinutes: 5,
+              maxCostUsd: 1,
+              allowNetwork: false,
+              requiresHumanApprovalFor: [],
+            },
+            deliverables: ["finance_memo", "evidence_appendix", "proof_bundle"],
+            evidenceRequirements: [],
+          },
+        }}
+        reporting={buildFinanceMemoReportingView()}
+        tasks={[]}
+      />,
+    );
+
+    expect(html).toContain("Create draft board packet");
+    expect(html).toContain("Create draft lender update");
+    expect(html).toContain("Create draft diligence packet");
+  });
+
   it("renders lender-update-specific draft-only follow-on copy", () => {
     const html = renderToStaticMarkup(
       <MissionActions
@@ -64,6 +119,89 @@ describe("MissionActions", () => {
   });
 });
 
+function buildFinanceMemoReportingView(): MissionDetailView["reporting"] {
+  return {
+    reportKind: "finance_memo",
+    draftStatus: "draft_only",
+    sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+    sourceReportingMissionId: null,
+    companyKey: "acme",
+    questionKind: "cash_posture",
+    policySourceId: null,
+    policySourceScope: null,
+    reportSummary:
+      "Draft finance memo for acme from the completed cash posture discovery mission.",
+    freshnessSummary: "Fresh through the stored discovery mission.",
+    limitationsSummary:
+      "This memo is draft-only and carries source discovery freshness and limitations forward.",
+    relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+    relatedWikiPageKeys: ["metrics/cash-posture"],
+    appendixPresent: true,
+    financeMemo: {
+      source: "stored_discovery_evidence",
+      summary:
+        "Draft finance memo for acme from the completed cash posture discovery mission.",
+      reportKind: "finance_memo",
+      draftStatus: "draft_only",
+      sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      memoSummary:
+        "Draft finance memo for acme from the completed cash posture discovery mission.",
+      freshnessSummary: "Fresh through the stored discovery mission.",
+      limitationsSummary:
+        "This memo is draft-only and carries source discovery freshness and limitations forward.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceArtifacts: [
+        {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          kind: "discovery_answer",
+        },
+      ],
+      bodyMarkdown: "# Draft Finance Memo",
+    },
+    evidenceAppendix: {
+      source: "stored_discovery_evidence",
+      summary: "Evidence appendix for stored discovery evidence.",
+      reportKind: "finance_memo",
+      draftStatus: "draft_only",
+      sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      appendixSummary: "Stored appendix.",
+      freshnessSummary: "Fresh through the stored discovery mission.",
+      limitationsSummary:
+        "This memo is draft-only and carries source discovery freshness and limitations forward.",
+      limitations: ["Visible limitations remain preserved."],
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceArtifacts: [
+        {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          kind: "discovery_answer",
+        },
+      ],
+      bodyMarkdown: "# Evidence Appendix",
+    },
+    boardPacket: null,
+    lenderUpdate: null,
+    diligencePacket: null,
+    publication: {
+      storedDraft: true,
+      filedMemo: null,
+      filedEvidenceAppendix: null,
+      latestMarkdownExport: null,
+      summary:
+        "Draft memo and evidence appendix are stored. Neither draft artifact has been filed into the CFO Wiki yet. No markdown export run has been recorded yet.",
+    },
+  } satisfies NonNullable<MissionDetailView["reporting"]>;
+}
+
 function buildLenderUpdateReportingView(): MissionDetailView["reporting"] {
   return {
     reportKind: "lender_update",
@@ -114,6 +252,7 @@ function buildLenderUpdateReportingView(): MissionDetailView["reporting"] {
       },
       bodyMarkdown: "# Draft Lender Update",
     },
+    diligencePacket: null,
     publication: null,
   } satisfies NonNullable<MissionDetailView["reporting"]>;
 }

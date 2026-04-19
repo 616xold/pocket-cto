@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import React, { useActionState } from "react";
 import {
   INITIAL_MISSION_ACTION_STATE,
   type MissionActionState,
@@ -10,6 +10,7 @@ import {
   submitFileReportingMissionArtifacts,
   submitApprovalResolution,
   submitCreateDraftBoardPacket,
+  submitCreateDraftDiligencePacket,
   submitCreateDraftFinanceMemo,
   submitCreateDraftLenderUpdate,
   submitTaskInterrupt,
@@ -42,6 +43,11 @@ type CreateBoardPacketFormProps = {
 };
 
 type CreateLenderUpdateFormProps = {
+  operatorIdentity: string;
+  sourceReportingMissionId: string;
+};
+
+type CreateDiligencePacketFormProps = {
   operatorIdentity: string;
   sourceReportingMissionId: string;
 };
@@ -191,6 +197,28 @@ export function CreateLenderUpdateForm({
         className="action-button"
         label="Create draft lender update"
         pendingLabel="Creating lender update..."
+      />
+    </form>
+  );
+}
+
+export function CreateDiligencePacketForm({
+  operatorIdentity,
+  sourceReportingMissionId,
+}: CreateDiligencePacketFormProps) {
+  return (
+    <form action={submitCreateDraftDiligencePacket} className="stack">
+      <input
+        name="sourceReportingMissionId"
+        type="hidden"
+        value={sourceReportingMissionId}
+      />
+      <input name="requestedBy" type="hidden" value={operatorIdentity} />
+
+      <ActionSubmitButton
+        className="action-button"
+        label="Create draft diligence packet"
+        pendingLabel="Creating diligence packet..."
       />
     </form>
   );

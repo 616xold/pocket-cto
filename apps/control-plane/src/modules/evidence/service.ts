@@ -347,6 +347,10 @@ function readExpectedArtifactKinds(input: {
     return ["lender_update"] satisfies ArtifactKind[];
   }
 
+  if (input.reportingRequest?.reportKind === "diligence_packet") {
+    return ["diligence_packet"] satisfies ArtifactKind[];
+  }
+
   if (input.reportingRequest) {
     return ["finance_memo", "evidence_appendix"] satisfies ArtifactKind[];
   }
@@ -368,6 +372,10 @@ function readMissingArtifactNotes(input: {
 
   if (input.reportingRequest?.reportKind === "lender_update") {
     return ["Draft lender update evidence is missing."];
+  }
+
+  if (input.reportingRequest?.reportKind === "diligence_packet") {
+    return ["Draft diligence packet evidence is missing."];
   }
 
   if (input.reportingRequest) {

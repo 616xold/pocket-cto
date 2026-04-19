@@ -2,6 +2,7 @@ import type {
   ApprovalRecord,
   CfoWikiCompanySourceListView,
   CreateBoardPacketMissionInput,
+  CreateDiligencePacketMissionInput,
   CreateDiscoveryMissionInput,
   CreateLenderUpdateMissionInput,
   CreateMissionFromTextInput,
@@ -25,6 +26,7 @@ import type { PersistenceSession } from "../../lib/persistence";
 import type { ReplayService } from "../replay/service";
 import type { MissionCompilationResult, MissionCompiler } from "./compiler";
 import { buildBoardPacketMissionCreationInput } from "./board-packet";
+import { buildDiligencePacketMissionCreationInput } from "./diligence-packet";
 import { buildDiscoveryMissionCreationInput } from "./discovery";
 import { buildQueuedMissionStatusChangedPayload } from "./events";
 import { buildLenderUpdateMissionCreationInput } from "./lender-update";
@@ -118,6 +120,15 @@ export class MissionService {
   async createLenderUpdate(rawInput: CreateLenderUpdateMissionInput) {
     return this.createFromCompilation(
       await buildLenderUpdateMissionCreationInput(rawInput, {
+        missionRepository: this.repository,
+      }),
+      undefined,
+    );
+  }
+
+  async createDiligencePacket(rawInput: CreateDiligencePacketMissionInput) {
+    return this.createFromCompilation(
+      await buildDiligencePacketMissionCreationInput(rawInput, {
         missionRepository: this.repository,
       }),
       undefined,

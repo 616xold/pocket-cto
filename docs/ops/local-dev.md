@@ -1,6 +1,6 @@
 # Local development
 
-This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, through the shipped F4A through F4C2 finance-discovery baseline, and through the shipped F5A through F5C2 reporting slices. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` is the shipped final F4 record, `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` is the shipped F5A record, `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` is the shipped F5B record, `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` is the shipped F5C1 record, `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` is the shipped F5C2 record, and `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` is the active F5C3 implementation contract.
+This repo is now past the Pocket CFO pivot-foundation reset, through the F1 source-ingest milestone, through the shipped F2A through F2O finance-twin breadth, through the shipped F3A through F3D CFO Wiki slices, through the shipped F4A through F4C2 finance-discovery baseline, and through the shipped F5A through F5C3 reporting slices. `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md` is the shipped final F4 record, `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` is the shipped F5A record, `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` is the shipped F5B record, `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` is the shipped F5C1 record, `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` is the shipped F5C2 record, and `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` is the shipped F5C3 record.
 
 That means two things are true at once:
 
@@ -55,6 +55,7 @@ pnpm smoke:finance-discovery-quality:local
 pnpm smoke:finance-memo:local
 pnpm smoke:board-packet:local
 pnpm smoke:lender-update:local
+pnpm smoke:diligence-packet:local
 pnpm smoke:finance-report-filed-artifact:local
 pnpm smoke:finance-policy-lookup:local
 pnpm eval:finance-discovery-quality
@@ -127,6 +128,7 @@ Today, steps 1 through 5 exist in a narrow form:
 - the packaged `pnpm smoke:finance-memo:local` path proves one completed discovery mission can seed `POST /missions/reporting`, persist one draft `finance_memo` plus one linked `evidence_appendix`, refresh the reporting proof bundle truthfully, and carry forward stored freshness plus limitations without runtime-codex, release workflow, packet specialization, PDF export, or slide export
 - the packaged `pnpm smoke:board-packet:local` path proves one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix` can seed `POST /missions/reporting/board-packets`, persist one draft `board_packet`, keep proof readiness tied to that one stored artifact, and stay deterministic, runtime-free, release-free, approval-free, lender-free, diligence-free, PDF-free, and slide-free
 - the packaged `pnpm smoke:lender-update:local` path proves one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix` can seed `POST /missions/reporting/lender-updates`, persist exactly one draft `lender_update`, keep proof readiness tied to that one stored artifact, reuse source memo plus appendix linkage, and stay deterministic, runtime-free, release-free, approval-free, diligence-free, PDF-free, and slide-free
+- the packaged `pnpm smoke:diligence-packet:local` path proves one completed finance-memo reporting mission with stored `finance_memo` plus stored `evidence_appendix` can seed `POST /missions/reporting/diligence-packets`, persist exactly one draft `diligence_packet`, keep proof readiness tied to that one stored artifact, reuse source memo plus appendix linkage, and stay deterministic, runtime-free, release-free, approval-free, filing-free, export-free, PDF-free, and slide-free
 - the packaged `pnpm smoke:finance-report-filed-artifact:local` path proves the first real F5B stored -> filed -> exported reporting path: read-only memo and appendix bodies in mission detail, explicit mission-centric filing into deterministic CFO Wiki filed-page keys, markdown export reuse through the existing company export seam, and truthful stored-vs-filed-vs-exported posture across mission detail, mission list, and proof-bundle surfaces without runtime-codex, release workflow, packet specialization, PDF export, or slide export
 - F4C1 adds one deterministic source-scoped `policy_lookup` family that requires explicit `policySourceId`, answers only from the scoped policy page plus related bound-source extract posture, and persists truthful limited answers when the latest bound policy extract is missing, unsupported, or failed
 - the packaged `pnpm smoke:finance-policy-lookup:local` path proves one company can bind policy-document sources, compile scoped policy pages, run `POST /missions/analysis` for both extracted and unsupported `policy_lookup` missions, and read back deterministic source-scoped answers plus finance-ready proof bundles without runtime-codex, generic retrieval, OCR, or deep-read dependencies
@@ -136,8 +138,8 @@ Today, steps 1 through 5 exist in a narrow form:
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-Right now `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` is the active F5C3 contract, while `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` remains the shipped F5C2 record.
-Do not reopen F4C2, do not repeat F5A through F5C2 work, and do not widen into F5C4 approval-release hardening or F6 before `FP-0040` lands.
+The latest shipped F5 reporting record is `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`.
+Do not reopen F4C2, do not repeat F5A through F5C3 work, and do not start F6 early; the next plan to author is the narrow F5C4 approval-release hardening contract.
 
 The active finance-twin read surface is currently backend-first:
 
