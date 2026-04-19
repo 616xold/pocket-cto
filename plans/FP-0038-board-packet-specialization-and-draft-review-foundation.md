@@ -76,14 +76,14 @@ This plan does not authorize F5C2 lender or diligence packet specialization, F5C
 - Decision: F5C1 does not add PDF export, slide export, or Marp export.
   Rationale: the first packet slice should prove the specialized draft artifact contract before it widens into new output channels.
 
-- Decision: F5C should now proceed as three explicit sub-slices: `F5C1-board-packet-specialization-and-draft-review-foundation`, `F5C2-lender-and-diligence-packet-specialization`, and `F5C3-approval-release-hardening-for-external-communication-posture`.
-  Rationale: this sequencing keeps packet-family expansion separate from external communication posture hardening.
+- Decision: after this shipped F5C1 record, successor plans should keep lender specialization, diligence specialization, and approval-release hardening as separate contracts, with `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` narrowing the next step to `F5C2-lender-update-specialization-and-draft-review-foundation`.
+  Rationale: separating lender specialization, diligence specialization, and external communication posture hardening keeps the next implementation contract narrow and truthful.
 
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reintroduce a `modules/reports/**` rename wave.
   Rationale: the shipped F5A and F5B code already standardized on first-class `reporting` seams, and a rename would create noise before the packet contract exists.
 
-- Decision: leave `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` as the shipped F5A record and `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` as the shipped F5B record while this file becomes the active F5C contract.
-  Rationale: the plan chain should preserve shipped history and create exactly one new active plan.
+- Decision: leave `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md` as the shipped F5A record and `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` as the shipped F5B record while this file remains the shipped F5C1 record and successor planning moves to `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`.
+  Rationale: the plan chain should preserve shipped history and keep exactly one active successor plan.
 
 ## Context and Orientation
 
@@ -116,7 +116,7 @@ The active-doc boundary for this handoff is:
 - `plans/FP-0035-finance-policy-lookup-and-discovery-quality-hardening.md`
 - `plans/FP-0036-reporting-mission-foundation-and-first-finance-memo.md`
 - `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md`
-- this active plan, `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`
+- this shipped F5C1 record, `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`
 - `docs/ops/local-dev.md`
 - `docs/ops/source-ingest-and-cfo-wiki.md`
 - `docs/ops/codex-app-server.md`

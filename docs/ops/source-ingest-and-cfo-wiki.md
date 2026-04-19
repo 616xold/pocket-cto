@@ -403,7 +403,8 @@ F4C2 now also ships operator-safe policy source selection from the existing boun
 Generic corpus-wide policy retrieval, runtime-codex answer generation, vector search, OCR, and deep-read remain out of scope for the shipped F4 baseline.
 Report compilation now exists in the shipped F5A slice and stays deterministic, draft-only, and source-discovery-grounded.
 The shipped F5B follow-on now hardens body visibility, filed-page reuse, and markdown export posture from that stored reporting state.
-The active F5C1 follow-on should specialize only one draft `board_packet` from that completed reporting state.
+The shipped F5C1 follow-on now specializes one draft `board_packet` from that completed reporting state.
+The active F5C2 follow-on should specialize only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
 
 ## Lint flow
 
