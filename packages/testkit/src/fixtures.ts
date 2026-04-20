@@ -50,6 +50,7 @@ export function proofBundlePlaceholderFixture(
     reportSummary: "",
     reportPublication: null,
     releaseReadiness: null,
+    releaseRecord: null,
     appendixPresent: false,
     freshnessState: null,
     freshnessSummary: "",

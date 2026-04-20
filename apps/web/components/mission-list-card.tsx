@@ -48,7 +48,7 @@ export function MissionListCard({ mission }: MissionListCardProps) {
 
       <p className="mission-summary-copy">{mission.objectiveExcerpt}</p>
 
-      {mission.reportSummary ?? mission.answerSummary ? (
+      {(mission.reportSummary ?? mission.answerSummary) ? (
         <p className="muted mission-summary-inline">
           {mission.reportSummary ?? mission.answerSummary}
         </p>
@@ -63,6 +63,12 @@ export function MissionListCard({ mission }: MissionListCardProps) {
       {mission.releaseReadiness?.summary ? (
         <p className="muted mission-summary-inline">
           {mission.releaseReadiness.summary}
+        </p>
+      ) : null}
+
+      {mission.releaseRecord?.summary ? (
+        <p className="muted mission-summary-inline">
+          {mission.releaseRecord.summary}
         </p>
       ) : null}
 
@@ -108,19 +114,24 @@ export function MissionListCard({ mission }: MissionListCardProps) {
             {isSpecializedReporting ? (
               <div>
                 <dt>Source reporting</dt>
-                <dd>{mission.sourceReportingMissionId ?? "Not recorded yet."}</dd>
+                <dd>
+                  {mission.sourceReportingMissionId ?? "Not recorded yet."}
+                </dd>
               </div>
             ) : (
               <>
                 <div>
                   <dt>Memo page</dt>
-                  <dd>{mission.reportPublication?.filedMemo?.pageKey ?? "Not filed"}</dd>
+                  <dd>
+                    {mission.reportPublication?.filedMemo?.pageKey ??
+                      "Not filed"}
+                  </dd>
                 </div>
                 <div>
                   <dt>Appendix page</dt>
                   <dd>
-                    {mission.reportPublication?.filedEvidenceAppendix?.pageKey ??
-                      "Not filed"}
+                    {mission.reportPublication?.filedEvidenceAppendix
+                      ?.pageKey ?? "Not filed"}
                   </dd>
                 </div>
                 <div>
@@ -146,8 +157,14 @@ export function MissionListCard({ mission }: MissionListCardProps) {
                   </dd>
                 </div>
                 <div>
+                  <dt>Release logged</dt>
+                  <dd>{mission.releaseRecord?.released ? "Yes" : "No"}</dd>
+                </div>
+                <div>
                   <dt>Release ready</dt>
-                  <dd>{mission.releaseReadiness?.releaseReady ? "Yes" : "No"}</dd>
+                  <dd>
+                    {mission.releaseReadiness?.releaseReady ? "Yes" : "No"}
+                  </dd>
                 </div>
               </>
             ) : null}
@@ -157,7 +174,9 @@ export function MissionListCard({ mission }: MissionListCardProps) {
             </div>
             <div>
               <dt>Freshness</dt>
-              <dd>{readFreshnessLabel(mission.freshnessState ?? "pending_answer")}</dd>
+              <dd>
+                {readFreshnessLabel(mission.freshnessState ?? "pending_answer")}
+              </dd>
             </div>
           </>
         ) : isFinanceMission ? (
@@ -170,7 +189,8 @@ export function MissionListCard({ mission }: MissionListCardProps) {
               <dt>Question kind</dt>
               <dd>{questionKindLabel ?? "Pending question"}</dd>
             </div>
-            {mission.questionKind === "policy_lookup" || mission.policySourceId ? (
+            {mission.questionKind === "policy_lookup" ||
+            mission.policySourceId ? (
               <PolicySourceScopeFields
                 fallbackPolicySourceId={mission.policySourceId}
                 scope={mission.policySourceScope}
@@ -178,7 +198,9 @@ export function MissionListCard({ mission }: MissionListCardProps) {
             ) : null}
             <div>
               <dt>Freshness</dt>
-              <dd>{readFreshnessLabel(mission.freshnessState ?? "pending_answer")}</dd>
+              <dd>
+                {readFreshnessLabel(mission.freshnessState ?? "pending_answer")}
+              </dd>
             </div>
           </>
         ) : (

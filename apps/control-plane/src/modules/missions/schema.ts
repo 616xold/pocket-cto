@@ -5,6 +5,7 @@ import {
   CreateLenderUpdateMissionInputSchema,
   CreateMissionFromTextInputSchema,
   ExportReportingMissionMarkdownInputSchema,
+  RecordReportingReleaseLogInputSchema,
   CreateReportingMissionInputSchema,
   FileReportingMissionArtifactsInputSchema,
   FINANCE_DISCOVERY_QUESTION_KINDS,
@@ -42,10 +43,13 @@ const createFinanceMissionQuestionInputSchema = z
         },
   );
 
-export const createDiscoveryMissionSchema = createFinanceMissionQuestionInputSchema;
-export const createAnalysisMissionSchema = createFinanceMissionQuestionInputSchema;
+export const createDiscoveryMissionSchema =
+  createFinanceMissionQuestionInputSchema;
+export const createAnalysisMissionSchema =
+  createFinanceMissionQuestionInputSchema;
 export const createReportingMissionSchema = CreateReportingMissionInputSchema;
-export const createBoardPacketMissionSchema = CreateBoardPacketMissionInputSchema;
+export const createBoardPacketMissionSchema =
+  CreateBoardPacketMissionInputSchema;
 export const createDiligencePacketMissionSchema =
   CreateDiligencePacketMissionInputSchema;
 export const createLenderUpdateMissionSchema =
@@ -64,6 +68,9 @@ export const exportReportingMissionMarkdownSchema =
 
 export const requestReportingReleaseApprovalSchema =
   RequestReportReleaseApprovalInputSchema;
+
+export const recordReportingReleaseLogSchema =
+  RecordReportingReleaseLogInputSchema;
 
 export const listMissionsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(50).default(20),

@@ -8,8 +8,8 @@ import { MissionReportingActionsService } from "./reporting-actions";
 
 describe("MissionReportingActionsService", () => {
   it("refreshes proof posture after filing draft artifacts", async () => {
-    const refreshProofBundle = vi.fn(async (): Promise<ProofBundleManifest> =>
-      buildProofBundleManifest(),
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> => buildProofBundleManifest(),
     );
     const fileDraftArtifacts = vi.fn(
       async (): Promise<ReportingFiledArtifactsResult> =>
@@ -17,6 +17,9 @@ describe("MissionReportingActionsService", () => {
     );
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         requestReportReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -29,6 +32,9 @@ describe("MissionReportingActionsService", () => {
           throw new Error("not used");
         }),
         fileDraftArtifacts,
+        prepareLenderUpdateReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         prepareLenderUpdateReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -62,8 +68,8 @@ describe("MissionReportingActionsService", () => {
   });
 
   it("refreshes proof posture after markdown export", async () => {
-    const refreshProofBundle = vi.fn(async (): Promise<ProofBundleManifest> =>
-      buildProofBundleManifest(),
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> => buildProofBundleManifest(),
     );
     const exportMarkdownBundle = vi.fn(
       async (): Promise<ReportingMarkdownExportResult> =>
@@ -71,6 +77,9 @@ describe("MissionReportingActionsService", () => {
     );
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         requestReportReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -81,6 +90,9 @@ describe("MissionReportingActionsService", () => {
       reportingService: {
         exportMarkdownBundle,
         fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareLenderUpdateReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareLenderUpdateReleaseApproval: vi.fn(async () => {
@@ -117,8 +129,8 @@ describe("MissionReportingActionsService", () => {
   });
 
   it("refreshes proof posture after requesting lender-update release approval", async () => {
-    const refreshProofBundle = vi.fn(async (): Promise<ProofBundleManifest> =>
-      buildProofBundleManifest(),
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> => buildProofBundleManifest(),
     );
     const prepareLenderUpdateReleaseApproval = vi.fn(async () => ({
       missionId: "11111111-1111-4111-8111-111111111111",
@@ -131,6 +143,8 @@ describe("MissionReportingActionsService", () => {
       summary: "Draft lender update for acme from the completed finance memo.",
       freshnessSummary: "Cash posture remains stale.",
       limitationsSummary: "Draft-only posture remains explicit.",
+      resolution: null,
+      releaseRecord: null,
     }));
     const requestReportReleaseApproval = vi.fn(async () => ({
       approval: {
@@ -150,6 +164,9 @@ describe("MissionReportingActionsService", () => {
     }));
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         requestReportReleaseApproval,
       },
       proofBundleAssembly: {
@@ -160,6 +177,9 @@ describe("MissionReportingActionsService", () => {
           throw new Error("not used");
         }),
         fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareLenderUpdateReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareLenderUpdateReleaseApproval,
@@ -185,10 +205,13 @@ describe("MissionReportingActionsService", () => {
         freshnessSummary: "Cash posture remains stale.",
         limitationsSummary: "Draft-only posture remains explicit.",
         missionId: "11111111-1111-4111-8111-111111111111",
+        releaseRecord: null,
         reportKind: "lender_update",
+        resolution: null,
         sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
         sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
-        summary: "Draft lender update for acme from the completed finance memo.",
+        summary:
+          "Draft lender update for acme from the completed finance memo.",
       },
       requestedBy: "finance-operator",
     });
@@ -203,6 +226,137 @@ describe("MissionReportingActionsService", () => {
       approvalStatus: "pending",
       releaseApprovalStatus: "pending_review",
       releaseReady: false,
+    });
+  });
+
+  it("refreshes proof posture after logging one external lender-update release", async () => {
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> => buildProofBundleManifest(),
+    );
+    const prepareLenderUpdateReleaseLog = vi.fn(async () => ({
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      releaseRecord: {
+        releasedAt: "2026-04-20T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+        summary:
+          "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+      },
+    }));
+    const recordReportReleaseLog = vi.fn(async () => ({
+      approval: {
+        id: "55555555-5555-4555-8555-555555555555",
+        missionId: "11111111-1111-4111-8111-111111111111",
+        taskId: null,
+        kind: "report_release" as const,
+        status: "approved" as const,
+        requestedBy: "finance-operator",
+        resolvedBy: "finance-reviewer",
+        rationale: "Approved for release readiness.",
+        payload: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          companyKey: "acme",
+          draftOnlyStatus: "draft_only",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          missionId: "11111111-1111-4111-8111-111111111111",
+          reportKind: "lender_update" as const,
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          summary:
+            "Draft lender update for acme from the completed finance memo.",
+          resolution: {
+            decision: "accept" as const,
+            rationale: "Approved for release readiness.",
+            resolvedBy: "finance-reviewer",
+          },
+          releaseRecord: {
+            releasedAt: "2026-04-20T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "email",
+            releaseNote: "Sent from treasury mailbox after approval.",
+            summary:
+              "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+          },
+        },
+        createdAt: "2026-04-20T09:00:00.000Z",
+        updatedAt: "2026-04-20T09:10:00.000Z",
+      },
+      created: true,
+    }));
+    const service = new MissionReportingActionsService({
+      approvalService: {
+        recordReportReleaseLog,
+        requestReportReleaseApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+      },
+      proofBundleAssembly: {
+        refreshProofBundle,
+      },
+      reportingService: {
+        exportMarkdownBundle: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareLenderUpdateReleaseApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareLenderUpdateReleaseLog,
+      },
+    });
+
+    const result = await service.recordReleaseLog(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        releasedAt: null,
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+      },
+    );
+
+    expect(prepareLenderUpdateReleaseLog).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        releasedAt: null,
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+      },
+    );
+    expect(recordReportReleaseLog).toHaveBeenCalledWith({
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      releaseRecord: {
+        releasedAt: "2026-04-20T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+        summary:
+          "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+      },
+    });
+    expect(refreshProofBundle).toHaveBeenCalledWith({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      trigger: "release_logged",
+    });
+    expect(result).toEqual({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      created: true,
+      releaseRecord: {
+        released: true,
+        releasedAt: "2026-04-20T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+        approvalId: "55555555-5555-4555-8555-555555555555",
+        summary:
+          "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+      },
     });
   });
 });
@@ -245,6 +399,7 @@ function buildProofBundleManifest(): ProofBundleManifest {
     riskSummary: "",
     rollbackSummary: "",
     latestApproval: null,
+    releaseRecord: null,
     releaseReadiness: null,
     evidenceCompleteness: {
       status: "complete",
@@ -292,10 +447,12 @@ function buildPublication(includeExport: boolean) {
       artifactKind: "finance_memo" as const,
       pageKey:
         "filed/reporting-11111111-1111-4111-8111-111111111111-finance_memo",
-      title: "Draft finance memo for acme (11111111-1111-4111-8111-111111111111)",
+      title:
+        "Draft finance memo for acme (11111111-1111-4111-8111-111111111111)",
       filedAt: "2026-04-18T13:05:00.000Z",
       filedBy: "finance-operator",
-      provenanceSummary: "Draft-only reporting artifact filed into the CFO Wiki.",
+      provenanceSummary:
+        "Draft-only reporting artifact filed into the CFO Wiki.",
     },
     filedEvidenceAppendix: {
       artifactKind: "evidence_appendix" as const,
@@ -305,7 +462,8 @@ function buildPublication(includeExport: boolean) {
         "Evidence appendix for acme draft finance memo (11111111-1111-4111-8111-111111111111)",
       filedAt: "2026-04-18T13:05:00.000Z",
       filedBy: "finance-operator",
-      provenanceSummary: "Draft-only reporting artifact filed into the CFO Wiki.",
+      provenanceSummary:
+        "Draft-only reporting artifact filed into the CFO Wiki.",
     },
     latestMarkdownExport: includeExport
       ? {

@@ -6,12 +6,11 @@ import {
   FinancePolicySourceScopeSummarySchema,
   FinanceDiscoveryFreshnessStateSchema,
 } from "./discovery-mission";
-import {
-  FinanceCompanyKeySchema,
-} from "./finance-twin";
+import { FinanceCompanyKeySchema } from "./finance-twin";
 import {
   ReportingDraftStatusSchema,
   ReportingPublicationViewSchema,
+  ReportingReleaseRecordViewSchema,
   ReportingReleaseReadinessViewSchema,
   ReportingMissionReportKindSchema,
 } from "./reporting-mission";
@@ -104,14 +103,14 @@ export const ProofBundleManifestSchema = z.object({
   companyKey: FinanceCompanyKeySchema.nullable().default(null),
   questionKind: DiscoveryQuestionKindSchema.nullable().default(null),
   policySourceId: z.string().uuid().nullable().default(null),
-  policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
-    null,
-  ),
+  policySourceScope:
+    FinancePolicySourceScopeSummarySchema.nullable().default(null),
   answerSummary: z.string().default(""),
   reportKind: ReportingMissionReportKindSchema.nullable().default(null),
   reportDraftStatus: ReportingDraftStatusSchema.nullable().default(null),
   reportSummary: z.string().default(""),
   reportPublication: ReportingPublicationViewSchema.nullable().default(null),
+  releaseRecord: ReportingReleaseRecordViewSchema.nullable().default(null),
   releaseReadiness:
     ReportingReleaseReadinessViewSchema.nullable().default(null),
   appendixPresent: z.boolean().default(false),
@@ -154,7 +153,5 @@ export type ProofBundleEvidenceCompletenessStatus = z.infer<
 export type ProofBundleEvidenceCompleteness = z.infer<
   typeof ProofBundleEvidenceCompletenessSchema
 >;
-export type ProofBundleTimestamps = z.infer<
-  typeof ProofBundleTimestampsSchema
->;
+export type ProofBundleTimestamps = z.infer<typeof ProofBundleTimestampsSchema>;
 export type ProofBundleManifest = z.infer<typeof ProofBundleManifestSchema>;

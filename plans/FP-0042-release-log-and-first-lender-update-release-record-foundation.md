@@ -20,6 +20,8 @@ This plan does not authorize actual send, distribute, publish, or delivery autom
 - [x] 2026-04-20T21:55:36Z Audit the active docs, shipped F5A through F5C4A plan chain, approval and reporting contracts, proof-bundle shaping, and current release-readiness truth before choosing the narrow F5C4B successor contract.
 - [x] 2026-04-20T21:55:36Z Create `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` and refresh the smallest truthful active-doc set so `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` remains the shipped F5C4A record while this file becomes the single active F5C4B implementation contract.
 - [x] 2026-04-20T22:07:35Z Run the preserved source-ingest through lender-update-release-approval confidence ladder, targeted twin regressions, repo-wide validation, and `pnpm ci:repro:current` for this docs-only handoff without starting F5C4B code.
+- [x] 2026-04-20T23:50:00Z Implement the first real F5C4B slice by extending the existing `report_release` approval payload with one immutable `releaseRecord`, adding `POST /missions/:missionId/reporting/release-log`, surfacing release-record posture across reporting, mission, proof-bundle, and approval-card reads, and keeping the system runtime-free and delivery-free.
+- [x] 2026-04-20T23:50:00Z Add the packaged `pnpm smoke:lender-update-release-log:local` proof, extend the replay event enum with `approval.release_logged`, repair the two shared typed-fixture regressions found by repo-wide gates, and rerun the full requested validation ladder through `pnpm ci:repro:current`.
 
 ## Surprises & Discoveries
 
@@ -34,6 +36,15 @@ This plan does not authorize actual send, distribute, publish, or delivery autom
 
 - Observation: the stale truth in this slice lives mostly in the active docs and successor-plan wording rather than in missing approval or reporting architecture.
   Evidence: `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `docs/ops/codex-app-server.md`, `evals/README.md`, `docs/benchmarks/seeded-missions.md`, and `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` still pointed the next thread at F5C4A even though that slice is already shipped.
+
+- Observation: the first implementation really could stay inside the existing approval seam; no second release subsystem or release-log table was needed.
+  Evidence: the final implementation persists `releaseRecord` directly inside the resolved `report_release` payload in `apps/control-plane/src/modules/approvals/service.ts` and derives mission, reporting, and proof-bundle views from that stored approval state.
+
+- Observation: replay truth for the first release-record slice still required one additive database migration.
+  Evidence: the first packaged release-log smoke failed until `packages/db/drizzle/0035_keen_morlun.sql` was generated and migrated so Postgres would accept the new `approval.release_logged` replay event type.
+
+- Observation: the broad repo-wide gates surfaced two shared typed-fixture misses outside the narrow route/service implementation.
+  Evidence: `packages/testkit/src/fixtures.ts` needed `releaseRecord: null`, and `apps/web/app/missions/[missionId]/mission-actions.spec.tsx` needed its helper return type narrowed to `NonNullable<MissionDetailView["reporting"]>` before `pnpm typecheck` and the clean-tree CI reproduction could pass.
 
 ## Decision Log
 
@@ -58,11 +69,17 @@ This plan does not authorize actual send, distribute, publish, or delivery autom
 - Decision: the first F5C4B contract should add one explicit release-record view with `releaseLogged`, `releasedAt`, `releasedBy`, minimal `releaseChannel` metadata, the backing approval id, and a human-readable summary.
   Rationale: the repo needs one first-class release-record surface that stays separate from draft posture, proof readiness, and finance-memo publication posture.
 
-- Decision: the first mission-centric route should be `POST /missions/:missionId/reporting/release-record`.
-  Rationale: the next operator action is to record release on one already-approved draft, so a singular mission-scoped route is the narrowest truthful control-plane seam.
+- Decision: the shipped field name should be `releaseRecord.released` rather than a second top-level `releaseLogged` flag.
+  Rationale: the release-record view now cleanly separates release-record posture from `releaseReadiness` while keeping the contract minimal and typed across domain, control-plane, proof-bundle, and web surfaces.
+
+- Decision: the first mission-centric route should be `POST /missions/:missionId/reporting/release-log`.
+  Rationale: the next operator action is to log one external release on one already-approved draft, and the user-facing slice language is explicitly release-log oriented, so a singular mission-scoped route with that wording is the narrowest truthful control-plane seam.
 
 - Decision: the first F5C4B slice should append one additive `approval.release_logged` replay event when the first release record is persisted.
   Rationale: recording external release changes mission-facing posture and therefore needs replay coverage, but it should stay anchored to the existing approval seam rather than creating a second release-event family unless a concrete gap appears.
+
+- Decision: one additive replay-event enum migration is in scope even though the rest of F5C4B stays approval-payload-backed.
+  Rationale: persisting `approval.release_logged` truthfully through the existing replay store requires one narrow extension to the replay-event enum and is smaller and safer than faking replay coverage in application code.
 
 - Decision: the first F5C4B slice stays deterministic, runtime-free, and delivery-free in the system sense.
   Rationale: Pocket CFO may record that release happened externally, but it must not actually send, distribute, or publish anything in this slice.
@@ -204,7 +221,7 @@ Only after that later review posture exists should the repo reconsider bounded r
    - add one small helper such as `apps/control-plane/src/modules/missions/release-record.ts` or `apps/control-plane/src/modules/reporting/release-record.ts` only if it keeps service logic legible
 
    F5C4B should:
-   - add one thin operator route at `POST /missions/:missionId/reporting/release-record`
+   - add one thin operator route at `POST /missions/:missionId/reporting/release-log`
    - require one completed `reporting` mission
    - require `reportKind = "lender_update"`
    - require one stored `lender_update` artifact
@@ -250,13 +267,13 @@ Only after that later review posture exists should the repo reconsider bounded r
 
 5. Add the narrowest local proof for the first lender-update release-record slice.
    Update:
-   - add `tools/lender-update-release-record-smoke.mjs`
+   - add `tools/lender-update-release-log-smoke.mjs`
    - `package.json`
    - `docs/ops/local-dev.md` only if the new packaged smoke command lands in code
 
    F5C4B should:
    - preserve the shipped `pnpm smoke:lender-update-release-approval:local` baseline
-   - add one packaged `pnpm smoke:lender-update-release-record:local` command
+   - add one packaged `pnpm smoke:lender-update-release-log:local` command
    - prove one completed approved lender-update mission can record one external release and surface that release record across mission detail, mission list, proof bundle, and approval cards
    - avoid new eval datasets in the first implementation pass
 
@@ -277,6 +294,12 @@ Only after that later review posture exists should the repo reconsider bounded r
 ## Validation and Acceptance
 
 The next F5C4B implementation thread should preserve the current confidence ladder and add only the narrowest release-record coverage on top of it.
+
+Implementation outcome on 2026-04-20:
+
+- All requested targeted domain, control-plane, web, smoke, twin, repo-wide, and clean-tree CI reproduction commands passed after the slice landed.
+- The only repo-wide regressions found were two typed-fixture gaps in `packages/testkit/src/fixtures.ts` and `apps/web/app/missions/[missionId]/mission-actions.spec.tsx`, both repaired inside this slice before the final green rerun.
+- The new packaged proof `pnpm smoke:lender-update-release-log:local` passed with one approved lender-update mission, one persisted external release record, one `approval.release_logged` replay event, and no actual send, distribute, publish, PDF, or slide behavior.
 
 Targeted test batches:
 
@@ -317,7 +340,7 @@ Preserved finance proof ladder:
 - `pnpm smoke:lender-update:local`
 - `pnpm smoke:diligence-packet:local`
 - `pnpm smoke:lender-update-release-approval:local`
-- `pnpm smoke:lender-update-release-record:local`
+- `pnpm smoke:lender-update-release-log:local`
 
 Preserved regression guardrails:
 
@@ -329,7 +352,7 @@ Preserved regression guardrails:
 
 User-visible F5C4B acceptance should be:
 
-- one completed `lender_update` reporting mission that is already `approved_for_release` can record one external release through `POST /missions/:missionId/reporting/release-record`
+- one completed `lender_update` reporting mission that is already `approved_for_release` can record one external release through `POST /missions/:missionId/reporting/release-log`
 - the system persists one explicit release record with `releasedAt`, `releasedBy`, minimal channel metadata, and a durable summary
 - mission detail, mission list, reporting detail, approval cards, and proof bundle all expose the release record without hiding freshness, limitations, provenance, or reviewer trace
 - retries do not create duplicate release records or duplicate replay events
@@ -362,7 +385,7 @@ This active F5C4B contract expects the next code thread to produce:
 - one active Finance Plan record at `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`
 - one thin mission-centric route for release recording on approved lender updates only
 - one explicit release-record view surfaced through reporting, mission, proof-bundle, and approval-card reads
-- one packaged `pnpm smoke:lender-update-release-record:local` proof
+- one packaged `pnpm smoke:lender-update-release-log:local` proof
 - targeted tests plus the preserved finance confidence ladder
 - no new eval dataset
 - no new release-delivery automation
@@ -389,9 +412,13 @@ Raw source evidence remains immutable and authoritative for finance facts, while
 
 ## Outcomes & Retrospective
 
-This docs-only slice creates `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` as the single active implementation contract for later F5 work.
-It keeps `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` as the shipped F5C4A record, refreshes the active-doc chain so the next contributor starts from the narrow lender-update release-log foundation, and explicitly defers broader packet approval widening to `F5C4C`.
-The preserved validation ladder stayed green across the packaged finance smokes, the targeted twin regressions, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+This slice now ships the first real F5C4B lender-update release-log foundation instead of just describing it.
+It keeps `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` as the shipped F5C4A record, preserves the existing discovery-family set unchanged, and lands one narrow continuation on top of the shipped approval path: one approved lender update in, one explicit external release record out.
+The implementation stayed inside the existing `report_release` approval seam, added one additive replay-event enum extension plus migration for `approval.release_logged`, added one packaged `pnpm smoke:lender-update-release-log:local` proof, and kept the system runtime-free, deterministic, and delivery-free.
 
-No runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding were added in this handoff slice.
-What remains is the future F5C4B implementation exactly as described here: one approved lender-update in, one explicit release record out, with replay, proof, freshness, provenance, and limitations all still visible and with no delivery automation.
+Mission detail, mission list, reporting detail, proof-bundle posture, and approval cards now all expose the persisted release record while leaving `releaseReadiness`, freshness, limitations, provenance, and reviewer trace separate and visible.
+No board-packet or diligence-packet widening landed.
+No actual send, distribute, publish, PDF export, slide export, or runtime-codex drafting landed.
+
+The full requested validation ladder finished green, including the targeted suites, the preserved lender-update release-approval baseline, the new release-log smoke, twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+What remains is later F5 work beyond this first release-log foundation rather than another required continuation to make F5C4B truthful.

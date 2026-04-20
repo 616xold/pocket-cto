@@ -54,8 +54,10 @@ export function MissionCard({
   const isLenderUpdate = proofBundle.reportKind === "lender_update";
   const isSpecializedReporting =
     isBoardPacket || isLenderUpdate || isDiligencePacket;
-  const reportProofBundle = proofBundle.reportKind !== null || reportingView !== null;
-  const financeProofBundle = !reportProofBundle && isFinanceProofBundle(proofBundle);
+  const reportProofBundle =
+    proofBundle.reportKind !== null || reportingView !== null;
+  const financeProofBundle =
+    !reportProofBundle && isFinanceProofBundle(proofBundle);
   const policySourceScope =
     reportingView?.policySourceScope ??
     financeDiscoveryAnswer?.policySourceScope ??
@@ -91,13 +93,17 @@ export function MissionCard({
               <div>
                 <dt>Report kind</dt>
                 <dd>
-                  {readReportingMissionReportKindLabel(reportingView.reportKind)}
+                  {readReportingMissionReportKindLabel(
+                    reportingView.reportKind,
+                  )}
                 </dd>
               </div>
               <div>
                 <dt>Source discovery mission</dt>
                 <dd>
-                  <a href={`/missions/${reportingView.sourceDiscoveryMissionId}`}>
+                  <a
+                    href={`/missions/${reportingView.sourceDiscoveryMissionId}`}
+                  >
                     {reportingView.sourceDiscoveryMissionId}
                   </a>
                 </dd>
@@ -107,7 +113,9 @@ export function MissionCard({
                   <dt>Source reporting mission</dt>
                   <dd>
                     {reportingView.sourceReportingMissionId ? (
-                      <a href={`/missions/${reportingView.sourceReportingMissionId}`}>
+                      <a
+                        href={`/missions/${reportingView.sourceReportingMissionId}`}
+                      >
                         {reportingView.sourceReportingMissionId}
                       </a>
                     ) : (
@@ -130,9 +138,17 @@ export function MissionCard({
                     </dd>
                   </div>
                   <div>
+                    <dt>Release logged</dt>
+                    <dd>
+                      {reportingView.releaseRecord?.released ? "Yes" : "No"}
+                    </dd>
+                  </div>
+                  <div>
                     <dt>Release ready</dt>
                     <dd>
-                      {reportingView.releaseReadiness?.releaseReady ? "Yes" : "No"}
+                      {reportingView.releaseReadiness?.releaseReady
+                        ? "Yes"
+                        : "No"}
                     </dd>
                   </div>
                 </>
@@ -158,7 +174,9 @@ export function MissionCard({
               </div>
               {financeDiscoveryQuestion.questionKind === "policy_lookup" ? (
                 <PolicySourceScopeFields
-                  fallbackPolicySourceId={financeDiscoveryQuestion.policySourceId}
+                  fallbackPolicySourceId={
+                    financeDiscoveryQuestion.policySourceId
+                  }
                   scope={policySourceScope}
                 />
               ) : null}
@@ -183,7 +201,10 @@ export function MissionCard({
       </section>
 
       {reportingView ? (
-        <ReportingOutputCard proofBundle={proofBundle} reporting={reportingView} />
+        <ReportingOutputCard
+          proofBundle={proofBundle}
+          reporting={reportingView}
+        />
       ) : mission.type === "discovery" || discoveryAnswer ? (
         <DiscoveryAnswerCard answer={discoveryAnswer} mission={mission} />
       ) : null}
@@ -287,7 +308,9 @@ export function MissionCard({
                 <dt>Report kind</dt>
                 <dd>
                   {proofBundle.reportKind
-                    ? readReportingMissionReportKindLabel(proofBundle.reportKind)
+                    ? readReportingMissionReportKindLabel(
+                        proofBundle.reportKind,
+                      )
                     : "Not recorded yet."}
                 </dd>
               </div>
@@ -305,8 +328,18 @@ export function MissionCard({
                     </dd>
                   </div>
                   <div>
+                    <dt>Release logged</dt>
+                    <dd>
+                      {proofBundle.releaseRecord?.released ? "Yes" : "No"}
+                    </dd>
+                  </div>
+                  <div>
                     <dt>Release ready</dt>
-                    <dd>{proofBundle.releaseReadiness?.releaseReady ? "Yes" : "No"}</dd>
+                    <dd>
+                      {proofBundle.releaseReadiness?.releaseReady
+                        ? "Yes"
+                        : "No"}
+                    </dd>
                   </div>
                   <div>
                     <dt>Release posture</dt>
@@ -315,16 +348,28 @@ export function MissionCard({
                         "Release approval posture has not been recorded yet."}
                     </dd>
                   </div>
+                  <div>
+                    <dt>Release record</dt>
+                    <dd>
+                      {proofBundle.releaseRecord?.summary ??
+                        "No external release has been logged yet."}
+                    </dd>
+                  </div>
                 </>
               ) : null}
               <div>
                 <dt>Source discovery mission</dt>
-                <dd>{proofBundle.sourceDiscoveryMissionId ?? "Not recorded yet."}</dd>
+                <dd>
+                  {proofBundle.sourceDiscoveryMissionId ?? "Not recorded yet."}
+                </dd>
               </div>
               {isSpecializedReporting ? (
                 <div>
                   <dt>Source reporting mission</dt>
-                  <dd>{proofBundle.sourceReportingMissionId ?? "Not recorded yet."}</dd>
+                  <dd>
+                    {proofBundle.sourceReportingMissionId ??
+                      "Not recorded yet."}
+                  </dd>
                 </div>
               ) : null}
               <div>
@@ -358,7 +403,9 @@ export function MissionCard({
                   </div>
                   <div>
                     <dt>Memo page</dt>
-                    <dd>{reportingPublication?.filedMemo?.pageKey ?? "Not filed"}</dd>
+                    <dd>
+                      {reportingPublication?.filedMemo?.pageKey ?? "Not filed"}
+                    </dd>
                   </div>
                   <div>
                     <dt>Appendix page</dt>
@@ -400,7 +447,9 @@ export function MissionCard({
                 <dd>{proofBundle.relatedWikiPageKeys?.length ?? 0}</dd>
               </div>
               <div>
-                <dt>{isSpecializedReporting ? "Linked appendix" : "Appendix"}</dt>
+                <dt>
+                  {isSpecializedReporting ? "Linked appendix" : "Appendix"}
+                </dt>
                 <dd>
                   {proofBundle.appendixPresent
                     ? isSpecializedReporting

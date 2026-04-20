@@ -52,7 +52,10 @@ export type MissionServicePort = Pick<
 
 export type MissionReportingActionServicePort = Pick<
   MissionReportingActionsService,
-  "exportMarkdownBundle" | "fileDraftArtifacts" | "requestReleaseApproval"
+  | "exportMarkdownBundle"
+  | "fileDraftArtifacts"
+  | "recordReleaseLog"
+  | "requestReleaseApproval"
 >;
 
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;

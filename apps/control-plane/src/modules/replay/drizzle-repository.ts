@@ -12,6 +12,8 @@ import {
 import type { ReplayRepository, ReplayEventAppend } from "./repository";
 import { mapReplayEventRow } from "./repository-mappers";
 
+type StoredReplayEventType = typeof replayEvents.$inferSelect.type;
+
 export class DrizzleReplayRepository implements ReplayRepository {
   constructor(private readonly db: Db) {}
 
@@ -58,7 +60,12 @@ export class DrizzleReplayRepository implements ReplayRepository {
         id: replayEvents.id,
       })
       .from(replayEvents)
-      .where(and(eq(replayEvents.taskId, taskId), eq(replayEvents.type, type)))
+      .where(
+        and(
+          eq(replayEvents.taskId, taskId),
+          eq(replayEvents.type, type as StoredReplayEventType),
+        ),
+      )
       .limit(1);
 
     return event !== undefined;
@@ -90,7 +97,7 @@ export class DrizzleReplayRepository implements ReplayRepository {
         missionId: event.missionId,
         taskId: event.taskId,
         sequence: updatedMission.replayCursor,
-        type: event.type,
+        type: event.type as StoredReplayEventType,
         actor: event.actor,
         occurredAt: event.occurredAt,
         payload: event.payload,

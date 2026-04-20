@@ -1,22 +1,33 @@
 import type {
   ExportReportingMissionMarkdownInput,
   FileReportingMissionArtifactsInput,
+  RecordReportingReleaseLogInput,
+  RecordReportingReleaseLogResult,
   RequestReportReleaseApprovalResult,
   RequestReportReleaseApprovalInput,
 } from "@pocket-cto/domain";
+import { RecordReportingReleaseLogResultSchema } from "@pocket-cto/domain";
 import type { ProofBundleAssemblyService } from "../evidence/proof-bundle-assembly";
 import type { ApprovalService } from "../approvals/service";
+import { readReportReleaseApprovalPayload } from "../approvals/payload";
 import type { ReportingService } from "../reporting/service";
 
 export class MissionReportingActionsService {
   constructor(
     private readonly deps: {
-      proofBundleAssembly: Pick<ProofBundleAssemblyService, "refreshProofBundle">;
-      approvalService: Pick<ApprovalService, "requestReportReleaseApproval">;
+      proofBundleAssembly: Pick<
+        ProofBundleAssemblyService,
+        "refreshProofBundle"
+      >;
+      approvalService: Pick<
+        ApprovalService,
+        "recordReportReleaseLog" | "requestReportReleaseApproval"
+      >;
       reportingService: Pick<
         ReportingService,
         | "exportMarkdownBundle"
         | "fileDraftArtifacts"
+        | "prepareLenderUpdateReleaseLog"
         | "prepareLenderUpdateReleaseApproval"
       >;
     },
@@ -71,7 +82,9 @@ export class MissionReportingActionsService {
     input: RequestReportReleaseApprovalInput,
   ): Promise<RequestReportReleaseApprovalResult> {
     const payload =
-      await this.deps.reportingService.prepareLenderUpdateReleaseApproval(missionId);
+      await this.deps.reportingService.prepareLenderUpdateReleaseApproval(
+        missionId,
+      );
     const request =
       await this.deps.approvalService.requestReportReleaseApproval({
         missionId,
@@ -100,13 +113,60 @@ export class MissionReportingActionsService {
       releaseReady: request.approval.status === "approved",
     };
   }
+
+  async recordReleaseLog(
+    missionId: string,
+    input: RecordReportingReleaseLogInput,
+  ): Promise<RecordReportingReleaseLogResult> {
+    const prepared =
+      await this.deps.reportingService.prepareLenderUpdateReleaseLog(
+        missionId,
+        input,
+      );
+    const recorded = await this.deps.approvalService.recordReportReleaseLog({
+      approvalId: prepared.approvalId,
+      releaseRecord: prepared.releaseRecord,
+    });
+
+    if (recorded.created) {
+      await this.deps.proofBundleAssembly.refreshProofBundle({
+        missionId,
+        trigger: "release_logged",
+      });
+    }
+
+    const payload = readReportReleaseApprovalPayload(recorded.approval);
+    const releaseRecord = payload.releaseRecord;
+
+    if (!releaseRecord) {
+      throw new Error(
+        `Approval ${recorded.approval.id} is missing its persisted release record after release logging.`,
+      );
+    }
+
+    return RecordReportingReleaseLogResultSchema.parse({
+      missionId,
+      approvalId: recorded.approval.id,
+      created: recorded.created,
+      releaseRecord: {
+        released: true,
+        releasedAt: releaseRecord.releasedAt,
+        releasedBy: releaseRecord.releasedBy,
+        releaseChannel: releaseRecord.releaseChannel,
+        releaseNote: releaseRecord.releaseNote,
+        approvalId: recorded.approval.id,
+        summary: releaseRecord.summary,
+      },
+    });
+  }
 }
 
 function readFiledPageKeys(input: {
   filedEvidenceAppendix: { pageKey: string } | null;
   filedMemo: { pageKey: string } | null;
 }) {
-  return [input.filedMemo?.pageKey, input.filedEvidenceAppendix?.pageKey].filter(
-    (value): value is string => Boolean(value),
-  );
+  return [
+    input.filedMemo?.pageKey,
+    input.filedEvidenceAppendix?.pageKey,
+  ].filter((value): value is string => Boolean(value));
 }

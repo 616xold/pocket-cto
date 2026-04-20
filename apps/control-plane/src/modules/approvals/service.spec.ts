@@ -29,7 +29,9 @@ describe("ApprovalService", () => {
       hasTaskSession: vi.fn(() => true),
       tryResolveApproval: vi.fn(() => ({
         delivered: false as const,
-        error: new Error("Task live session disappeared before the response handoff"),
+        error: new Error(
+          "Task live session disappeared before the response handoff",
+        ),
       })),
     } satisfies Pick<
       InMemoryRuntimeSessionRegistry,
@@ -49,8 +51,14 @@ describe("ApprovalService", () => {
     });
     const executorTask = created.tasks[1]!;
 
-    await missionRepository.updateMissionStatus(created.mission.id, "awaiting_approval");
-    await missionRepository.updateTaskStatus(executorTask.id, "awaiting_approval");
+    await missionRepository.updateMissionStatus(
+      created.mission.id,
+      "awaiting_approval",
+    );
+    await missionRepository.updateTaskStatus(
+      executorTask.id,
+      "awaiting_approval",
+    );
 
     const approval = await approvalRepository.createApproval({
       kind: "file_change",
@@ -77,13 +85,15 @@ describe("ApprovalService", () => {
         rationale: "Approved, but the live handoff disappeared",
         resolvedBy: "operator",
       }),
-    ).rejects.toThrow(
-      "live runtime continuation could not be resumed",
-    );
+    ).rejects.toThrow("live runtime continuation could not be resumed");
 
-    const updatedApproval = await approvalRepository.getApprovalById(approval.id);
+    const updatedApproval = await approvalRepository.getApprovalById(
+      approval.id,
+    );
     const updatedTask = await missionRepository.getTaskById(executorTask.id);
-    const updatedMission = await missionRepository.getMissionById(created.mission.id);
+    const updatedMission = await missionRepository.getMissionById(
+      created.mission.id,
+    );
     const replay = await replayService.getMissionEvents(created.mission.id);
 
     expect(updatedApproval).toMatchObject({
@@ -181,6 +191,8 @@ describe("ApprovalService", () => {
       freshnessSummary: "Cash posture remains stale.",
       limitationsSummary:
         "This lender update remains delivery-free until review is completed.",
+      resolution: null,
+      releaseRecord: null,
     };
 
     const firstRequest = await approvalService.requestReportReleaseApproval({
@@ -251,6 +263,135 @@ describe("ApprovalService", () => {
       }),
     );
   });
+
+  it("records one release log on an approved lender-update release approval and replays it", async () => {
+    const missionRepository = new InMemoryMissionRepository();
+    const approvalRepository = new InMemoryApprovalRepository();
+    const replayService = new ReplayService(
+      new InMemoryReplayRepository(),
+      missionRepository,
+    );
+    const missionService = new MissionService(
+      new StubMissionCompiler(),
+      missionRepository,
+      replayService,
+      new EvidenceService(),
+    );
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> =>
+        buildProofBundleManifest(createdMissionId),
+    );
+    const liveSessionRegistry = {
+      awaitApprovalResolution: vi.fn(),
+      hasTaskSession: vi.fn(() => false),
+      tryResolveApproval: vi.fn(() => ({
+        delivered: true as const,
+      })),
+    } satisfies Pick<
+      InMemoryRuntimeSessionRegistry,
+      "awaitApprovalResolution" | "hasTaskSession" | "tryResolveApproval"
+    >;
+    const approvalService = new ApprovalService(
+      approvalRepository,
+      missionRepository,
+      replayService,
+      liveSessionRegistry,
+      {
+        refreshProofBundle,
+      },
+    );
+    const created = await missionService.createFromText({
+      text: "Record one lender update as already released outside Pocket CFO",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const createdMissionId = created.mission.id;
+    const payload = {
+      missionId: createdMissionId,
+      reportKind: "lender_update" as const,
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+      artifactId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme" as const,
+      draftOnlyStatus: "draft_only" as const,
+      summary: "Draft lender update for acme from the completed finance memo.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary:
+        "This lender update remains delivery-free until review is completed.",
+      resolution: null,
+      releaseRecord: null,
+    };
+    const request = await approvalService.requestReportReleaseApproval({
+      missionId: createdMissionId,
+      payload,
+      requestedBy: "finance-operator",
+    });
+
+    await approvalService.resolveApproval({
+      approvalId: request.approval.id,
+      decision: "accept",
+      rationale: "Approved for release readiness.",
+      resolvedBy: "finance-reviewer",
+    });
+
+    const logged = await approvalService.recordReportReleaseLog({
+      approvalId: request.approval.id,
+      releaseRecord: {
+        releasedAt: "2026-04-20T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from the treasury mailbox after approval.",
+        summary:
+          "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from the treasury mailbox after approval..",
+      },
+    });
+    const duplicate = await approvalService.recordReportReleaseLog({
+      approvalId: request.approval.id,
+      releaseRecord: {
+        releasedAt: "2026-04-20T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from the treasury mailbox after approval.",
+        summary:
+          "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from the treasury mailbox after approval..",
+      },
+    });
+    const updatedApproval = await approvalRepository.getApprovalById(
+      request.approval.id,
+    );
+    const replay = await replayService.getMissionEvents(createdMissionId);
+
+    expect(logged.created).toBe(true);
+    expect(duplicate.created).toBe(false);
+    expect(updatedApproval?.payload).toMatchObject({
+      resolution: {
+        decision: "accept",
+        rationale: "Approved for release readiness.",
+        resolvedBy: "finance-reviewer",
+      },
+      releaseRecord: {
+        releasedAt: "2026-04-20T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from the treasury mailbox after approval.",
+      },
+    });
+    expect(refreshProofBundle).toHaveBeenCalledTimes(1);
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.release_logged",
+        payload: expect.objectContaining({
+          approvalId: request.approval.id,
+          missionId: createdMissionId,
+          releaseRecord: expect.objectContaining({
+            releasedAt: "2026-04-20T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "email",
+          }),
+        }),
+      }),
+    );
+  });
 });
 
 function buildProofBundleManifest(missionId: string): ProofBundleManifest {
@@ -268,8 +409,10 @@ function buildProofBundleManifest(missionId: string): ProofBundleManifest {
     reportKind: "lender_update",
     reportDraftStatus: "draft_only",
     reportPublication: null,
+    releaseRecord: null,
     releaseReadiness: null,
-    reportSummary: "Draft lender update for acme from the completed finance memo.",
+    reportSummary:
+      "Draft lender update for acme from the completed finance memo.",
     appendixPresent: false,
     freshnessState: "stale",
     freshnessSummary: "Cash posture remains stale.",
@@ -283,7 +426,8 @@ function buildProofBundleManifest(missionId: string): ProofBundleManifest {
     pullRequestUrl: null,
     changeSummary: "Stored lender update remains in draft-only posture.",
     validationSummary: "",
-    verificationSummary: "Review the stored lender update and linked proof bundle.",
+    verificationSummary:
+      "Review the stored lender update and linked proof bundle.",
     riskSummary: "",
     rollbackSummary: "",
     latestApproval: null,

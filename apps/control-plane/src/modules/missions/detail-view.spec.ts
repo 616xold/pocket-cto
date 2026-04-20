@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type {
-  MissionRecord,
-  ProofBundleManifest,
-} from "@pocket-cto/domain";
+import type { MissionRecord, ProofBundleManifest } from "@pocket-cto/domain";
 import { buildMissionDetailView } from "./detail-view";
 
 describe("buildMissionDetailView", () => {
@@ -20,9 +17,9 @@ describe("buildMissionDetailView", () => {
       tasks: [],
     });
 
-    expect(view.proofBundle.reportPublication?.latestMarkdownExport?.exportRunId).toBe(
-      "33333333-3333-4333-8333-333333333333",
-    );
+    expect(
+      view.proofBundle.reportPublication?.latestMarkdownExport?.exportRunId,
+    ).toBe("33333333-3333-4333-8333-333333333333");
     expect(view.proofBundle.reportPublication?.summary).toContain(
       "includes the latest filed report pages",
     );
@@ -101,7 +98,8 @@ function buildReportingProofBundle(): ProofBundleManifest {
           "Draft finance memo for acme (11111111-1111-4111-8111-111111111111)",
         filedAt: "2026-04-18T13:05:00.000Z",
         filedBy: "finance-operator",
-        provenanceSummary: "Draft-only reporting artifact filed into the CFO Wiki.",
+        provenanceSummary:
+          "Draft-only reporting artifact filed into the CFO Wiki.",
       },
       filedEvidenceAppendix: {
         artifactKind: "evidence_appendix",
@@ -111,7 +109,8 @@ function buildReportingProofBundle(): ProofBundleManifest {
           "Evidence appendix for acme draft finance memo (11111111-1111-4111-8111-111111111111)",
         filedAt: "2026-04-18T13:05:00.000Z",
         filedBy: "finance-operator",
-        provenanceSummary: "Draft-only reporting artifact filed into the CFO Wiki.",
+        provenanceSummary:
+          "Draft-only reporting artifact filed into the CFO Wiki.",
       },
       latestMarkdownExport: {
         exportRunId: "33333333-3333-4333-8333-333333333333",
@@ -138,6 +137,7 @@ function buildReportingProofBundle(): ProofBundleManifest {
     riskSummary: "",
     rollbackSummary: "",
     latestApproval: null,
+    releaseRecord: null,
     releaseReadiness: null,
     evidenceCompleteness: {
       status: "complete",

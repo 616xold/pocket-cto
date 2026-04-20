@@ -11,6 +11,7 @@ import { FinanceCompanyKeySchema } from "./finance-twin";
 import {
   ReportingDraftStatusSchema,
   ReportingPublicationViewSchema,
+  ReportingReleaseRecordViewSchema,
   ReportingReleaseReadinessViewSchema,
   ReportingMissionReportKindSchema,
 } from "./reporting-mission";
@@ -32,14 +33,14 @@ export const MissionListItemSchema = z.object({
   companyKey: FinanceCompanyKeySchema.nullable().default(null),
   questionKind: DiscoveryQuestionKindSchema.nullable().default(null),
   policySourceId: z.string().uuid().nullable().default(null),
-  policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
-    null,
-  ),
+  policySourceScope:
+    FinancePolicySourceScopeSummarySchema.nullable().default(null),
   answerSummary: z.string().nullable().default(null),
   reportKind: ReportingMissionReportKindSchema.nullable().default(null),
   reportDraftStatus: ReportingDraftStatusSchema.nullable().default(null),
   reportSummary: z.string().nullable().default(null),
   reportPublication: ReportingPublicationViewSchema.nullable().default(null),
+  releaseRecord: ReportingReleaseRecordViewSchema.nullable().default(null),
   releaseReadiness:
     ReportingReleaseReadinessViewSchema.nullable().default(null),
   appendixPresent: z.boolean().default(false),

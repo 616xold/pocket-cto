@@ -21,6 +21,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "finance_memo",
           reportDraftStatus: "draft_only",
           reportSummary: "Cash posture remains constrained.",
+          releaseRecord: null,
           releaseReadiness: null,
           reportPublication: {
             storedDraft: true,
@@ -129,7 +130,8 @@ describe("ReportingOutputCard", () => {
                 kind: "discovery_answer",
               },
             ],
-            bodyMarkdown: "# Draft Finance Memo\n\n## Memo Summary\n\nCash posture remains constrained.",
+            bodyMarkdown:
+              "# Draft Finance Memo\n\n## Memo Summary\n\nCash posture remains constrained.",
           },
           evidenceAppendix: {
             source: "stored_discovery_evidence",
@@ -158,6 +160,7 @@ describe("ReportingOutputCard", () => {
           },
           boardPacket: null,
           diligencePacket: null,
+          releaseRecord: null,
           releaseReadiness: null,
           publication: {
             storedDraft: true,
@@ -225,6 +228,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "board_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
             "Draft board packet for acme from the completed cash posture reporting mission.",
@@ -314,6 +318,7 @@ describe("ReportingOutputCard", () => {
               "# Draft Board Packet\n\n## Linked Evidence Appendix Posture\n\n- Appendix remains linked.",
           },
           diligencePacket: null,
+          releaseRecord: null,
           releaseReadiness: null,
           publication: null,
         }}
@@ -347,6 +352,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "lender_update",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
             "Draft lender update for acme from the completed cash posture reporting mission.",
@@ -436,6 +442,7 @@ describe("ReportingOutputCard", () => {
               "# Draft Lender Update\n\n## Update Summary\n\nCash posture remains constrained.",
           },
           diligencePacket: null,
+          releaseRecord: null,
           releaseReadiness: null,
           publication: null,
         }}
@@ -469,6 +476,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "diligence_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
             "Draft diligence packet for acme from the completed cash posture reporting mission.",
@@ -558,6 +566,7 @@ describe("ReportingOutputCard", () => {
             bodyMarkdown:
               "# Draft Diligence Packet\n\n## Packet Summary\n\nCash posture remains constrained.",
           },
+          releaseRecord: null,
           releaseReadiness: null,
           publication: null,
         }}
@@ -593,6 +602,7 @@ describe("ReportingOutputCard", () => {
           reportSummary:
             "Draft lender update for acme from the completed cash posture reporting mission.",
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: {
             releaseApprovalStatus: "approved_for_release",
             releaseReady: true,
@@ -693,6 +703,7 @@ describe("ReportingOutputCard", () => {
           },
           diligencePacket: null,
           publication: null,
+          releaseRecord: null,
           releaseReadiness: {
             releaseApprovalStatus: "approved_for_release",
             releaseReady: true,
@@ -713,5 +724,169 @@ describe("ReportingOutputCard", () => {
     expect(html).toContain("approved_for_release");
     expect(html).toContain("Release ready");
     expect(html).toContain("no delivery has been recorded");
+  });
+
+  it("renders lender-update release-record posture after external release is logged", () => {
+    const html = renderToStaticMarkup(
+      <ReportingOutputCard
+        proofBundle={{
+          missionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          missionTitle: "Draft lender update for acme",
+          objective:
+            "Compile one draft lender update from stored finance memo and evidence appendix artifacts.",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          answerSummary: "",
+          reportKind: "lender_update",
+          reportDraftStatus: "draft_only",
+          reportSummary:
+            "Draft lender update for acme from the completed cash posture reporting mission.",
+          releaseRecord: {
+            released: true,
+            releasedAt: "2026-04-20T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "email",
+            releaseNote: "Sent from treasury mailbox after approval.",
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            summary:
+              "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+          },
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-20T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-20T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored lender update is approved for release, but no delivery has been recorded.",
+          },
+          reportPublication: null,
+          appendixPresent: true,
+          freshnessState: "stale",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          targetRepoFullName: null,
+          branchName: null,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          changeSummary: "",
+          validationSummary: "",
+          verificationSummary: "",
+          riskSummary: "",
+          rollbackSummary: "",
+          latestApproval: null,
+          evidenceCompleteness: {
+            status: "complete",
+            expectedArtifactKinds: ["lender_update"],
+            presentArtifactKinds: ["lender_update"],
+            missingArtifactKinds: [],
+            notes: [],
+          },
+          decisionTrace: [],
+          artifactIds: [],
+          artifacts: [],
+          replayEventCount: 0,
+          timestamps: {
+            missionCreatedAt: "2026-04-20T09:00:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPullRequestAt: null,
+            latestApprovalAt: "2026-04-20T09:10:00.000Z",
+            latestArtifactAt: "2026-04-20T09:02:00.000Z",
+          },
+          status: "ready",
+        }}
+        reporting={{
+          reportKind: "lender_update",
+          draftStatus: "draft_only",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          reportSummary:
+            "Draft lender update for acme from the completed cash posture reporting mission.",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          appendixPresent: true,
+          financeMemo: null,
+          evidenceAppendix: null,
+          boardPacket: null,
+          lenderUpdate: {
+            source: "stored_reporting_evidence",
+            summary:
+              "Draft lender update for acme from the completed cash posture reporting mission.",
+            reportKind: "lender_update",
+            draftStatus: "draft_only",
+            sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+            sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+            companyKey: "acme",
+            questionKind: "cash_posture",
+            policySourceId: null,
+            policySourceScope: null,
+            updateSummary:
+              "Draft lender update for acme from the completed cash posture reporting mission.",
+            freshnessSummary: "Cash posture remains stale.",
+            limitationsSummary: "Draft-only posture remains explicit.",
+            relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+            relatedWikiPageKeys: ["metrics/cash-posture"],
+            sourceFinanceMemo: {
+              artifactId: "55555555-5555-4555-8555-555555555555",
+              kind: "finance_memo",
+            },
+            sourceEvidenceAppendix: {
+              artifactId: "66666666-6666-4666-8666-666666666666",
+              kind: "evidence_appendix",
+            },
+            bodyMarkdown:
+              "# Draft Lender Update\n\n## Release Review\n\nApproved for release.",
+          },
+          diligencePacket: null,
+          publication: null,
+          releaseRecord: {
+            released: true,
+            releasedAt: "2026-04-20T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "email",
+            releaseNote: "Sent from treasury mailbox after approval.",
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            summary:
+              "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+          },
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-20T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-20T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored lender update is approved for release, but no delivery has been recorded.",
+          },
+        }}
+      />,
+    );
+
+    expect(html).toContain("Release logged");
+    expect(html).toContain("2026-04-20T09:10:00.000Z");
+    expect(html).toContain("finance-operator");
+    expect(html).toContain("email");
+    expect(html).toContain("Sent from treasury mailbox after approval.");
   });
 });

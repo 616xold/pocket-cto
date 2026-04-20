@@ -32,6 +32,24 @@ export const RuntimeApprovalRequestMethodSchema = z.enum([
   "item/permissions/requestApproval",
 ]);
 
+export const ReportReleaseApprovalResolutionSchema = z
+  .object({
+    decision: ApprovalDecisionSchema,
+    rationale: z.string().nullable().default(null),
+    resolvedBy: z.string().min(1),
+  })
+  .strict();
+
+export const ReportReleaseApprovalReleaseRecordSchema = z
+  .object({
+    releasedAt: z.string().datetime({ offset: true }),
+    releasedBy: z.string().min(1),
+    releaseChannel: z.string().min(1),
+    releaseNote: z.string().nullable().default(null),
+    summary: z.string().min(1),
+  })
+  .strict();
+
 export const ReportReleaseApprovalPayloadSchema = z
   .object({
     missionId: z.string().uuid(),
@@ -44,6 +62,9 @@ export const ReportReleaseApprovalPayloadSchema = z
     summary: z.string().min(1),
     freshnessSummary: z.string().min(1),
     limitationsSummary: z.string().min(1),
+    resolution: ReportReleaseApprovalResolutionSchema.nullable().default(null),
+    releaseRecord:
+      ReportReleaseApprovalReleaseRecordSchema.nullable().default(null),
   })
   .strict();
 
@@ -66,6 +87,12 @@ export type ApprovalStatus = z.infer<typeof ApprovalStatusSchema>;
 export type ApprovalDecision = z.infer<typeof ApprovalDecisionSchema>;
 export type RuntimeApprovalRequestMethod = z.infer<
   typeof RuntimeApprovalRequestMethodSchema
+>;
+export type ReportReleaseApprovalResolution = z.infer<
+  typeof ReportReleaseApprovalResolutionSchema
+>;
+export type ReportReleaseApprovalReleaseRecord = z.infer<
+  typeof ReportReleaseApprovalReleaseRecordSchema
 >;
 export type ReportReleaseApprovalPayload = z.infer<
   typeof ReportReleaseApprovalPayloadSchema

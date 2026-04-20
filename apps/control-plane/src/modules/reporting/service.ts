@@ -1,8 +1,10 @@
 import type {
   ExportReportingMissionMarkdownInput,
   FileReportingMissionArtifactsInput,
+  RecordReportingReleaseLogInput,
   MissionRecord,
   ReportReleaseApprovalPayload,
+  ReportReleaseApprovalReleaseRecord,
   ReportingMissionInput,
   ReportingMissionView,
 } from "@pocket-cto/domain";
@@ -11,6 +13,7 @@ import {
   CfoWikiPageRecordSchema,
   ExportReportingMissionMarkdownInputSchema,
   FileReportingMissionArtifactsInputSchema,
+  RecordReportingReleaseLogInputSchema,
   ReportReleaseApprovalPayloadSchema,
   ReportingFiledArtifactsResultSchema,
   ReportingMarkdownExportResultSchema,
@@ -32,6 +35,7 @@ import {
   buildReportingFiledPageTitle,
   buildReportingPublicationView,
 } from "./publication";
+import { buildLoggedReleaseRecordSummary } from "./release-record";
 import { readMissionReportingView } from "./artifact";
 import type {
   CompiledReportingArtifacts,
@@ -44,7 +48,9 @@ export class ReportingService {
     private readonly deps: {
       missionRepository: Pick<
         MissionRepository,
-        "getMissionById" | "getProofBundleByMissionId" | "listArtifactsByMissionId"
+        | "getMissionById"
+        | "getProofBundleByMissionId"
+        | "listArtifactsByMissionId"
       >;
       cfoWikiService?: Pick<
         CfoWikiServicePort,
@@ -57,7 +63,9 @@ export class ReportingService {
     },
   ) {}
 
-  async compileDraftReport(mission: MissionRecord): Promise<CompiledReportingArtifacts> {
+  async compileDraftReport(
+    mission: MissionRecord,
+  ): Promise<CompiledReportingArtifacts> {
     const reportingRequest = readReportingMissionInput(mission);
 
     if (reportingRequest.reportKind === "board_packet") {
@@ -80,9 +88,13 @@ export class ReportingService {
   }
 
   async readPublicationFacts(input: {
-    artifacts: Awaited<ReturnType<MissionRepository["listArtifactsByMissionId"]>>;
+    artifacts: Awaited<
+      ReturnType<MissionRepository["listArtifactsByMissionId"]>
+    >;
     mission: MissionRecord;
-    proofBundle: Awaited<ReturnType<MissionRepository["getProofBundleByMissionId"]>>;
+    proofBundle: Awaited<
+      ReturnType<MissionRepository["getProofBundleByMissionId"]>
+    >;
   }) {
     const proofBundle = input.proofBundle;
 
@@ -112,7 +124,9 @@ export class ReportingService {
           filedEvidenceAppendix: null,
           filedMemo: null,
           latestMarkdownExport: null,
-          storedDraft: Boolean(reporting.financeMemo && reporting.evidenceAppendix),
+          storedDraft: Boolean(
+            reporting.financeMemo && reporting.evidenceAppendix,
+          ),
         }),
       };
     }
@@ -143,7 +157,8 @@ export class ReportingService {
         : Promise.resolve(null),
     ]);
     const latestExport = [...exports.exports].sort((left, right) => {
-      const leftTimestamp = left.completedAt ?? left.updatedAt ?? left.createdAt;
+      const leftTimestamp =
+        left.completedAt ?? left.updatedAt ?? left.createdAt;
       const rightTimestamp =
         right.completedAt ?? right.updatedAt ?? right.createdAt;
       return (
@@ -163,7 +178,9 @@ export class ReportingService {
         filedEvidenceAppendix,
         filedMemo,
         latestMarkdownExport,
-        storedDraft: Boolean(reporting.financeMemo && reporting.evidenceAppendix),
+        storedDraft: Boolean(
+          reporting.financeMemo && reporting.evidenceAppendix,
+        ),
       }),
     };
   }
@@ -226,7 +243,8 @@ export class ReportingService {
     return ReportingFiledArtifactsResultSchema.parse({
       missionId,
       companyKey,
-      publication: nextPublication?.publication ?? publicationFacts?.publication,
+      publication:
+        nextPublication?.publication ?? publicationFacts?.publication,
     });
   }
 
@@ -310,6 +328,7 @@ export class ReportingService {
       context.artifacts,
       "lender_update",
       missionId,
+      "release approval can be requested",
     );
 
     return ReportReleaseApprovalPayloadSchema.parse({
@@ -324,6 +343,78 @@ export class ReportingService {
       sourceReportingMissionId: reporting.sourceReportingMissionId,
       summary: reporting.lenderUpdate.updateSummary,
     });
+  }
+
+  async prepareLenderUpdateReleaseLog(
+    missionId: string,
+    rawInput: RecordReportingReleaseLogInput,
+  ): Promise<{
+    approvalId: string;
+    releaseRecord: ReportReleaseApprovalReleaseRecord;
+  }> {
+    const request = RecordReportingReleaseLogInputSchema.parse(rawInput);
+    const context = await this.loadReportingMissionContext(missionId);
+    const reporting = readMissionReportingView({
+      artifacts: context.artifacts,
+      proofBundle: context.proofBundle,
+    });
+
+    if (!reporting) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet expose a persisted reporting view.`,
+      );
+    }
+
+    if (reporting.reportKind !== "lender_update") {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} has report kind ${reporting.reportKind}, not lender_update.`,
+      );
+    }
+
+    if (!reporting.lenderUpdate) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet store a lender_update artifact payload.`,
+      );
+    }
+
+    if (
+      reporting.releaseReadiness?.releaseApprovalStatus !==
+        "approved_for_release" ||
+      !reporting.releaseReadiness.approvalId
+    ) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} must already be approved_for_release before external release can be logged.`,
+      );
+    }
+
+    readSingleArtifactId(
+      context.artifacts,
+      "lender_update",
+      missionId,
+      "external release can be logged",
+    );
+
+    const releasedAt = request.releasedAt ?? new Date().toISOString();
+
+    return {
+      approvalId: reporting.releaseReadiness.approvalId,
+      releaseRecord: {
+        releasedAt,
+        releasedBy: request.releasedBy,
+        releaseChannel: request.releaseChannel,
+        releaseNote: request.releaseNote,
+        summary: buildLoggedReleaseRecordSummary({
+          releaseChannel: request.releaseChannel,
+          releaseNote: request.releaseNote,
+          releasedAt,
+          releasedBy: request.releasedBy,
+        }),
+      },
+    };
   }
 
   private async loadDiscoverySourceBundle(
@@ -352,9 +443,10 @@ export class ReportingService {
       );
     }
 
-    const artifacts = await this.deps.missionRepository.listArtifactsByMissionId(
-      sourceDiscoveryMission.id,
-    );
+    const artifacts =
+      await this.deps.missionRepository.listArtifactsByMissionId(
+        sourceDiscoveryMission.id,
+      );
     const discoveryAnswer = readMissionDiscoveryAnswer(artifacts);
 
     if (!discoveryAnswer) {
@@ -416,7 +508,9 @@ export class ReportingService {
     }
 
     const sourceReportingMission =
-      await this.deps.missionRepository.getMissionById(sourceReportingMissionId);
+      await this.deps.missionRepository.getMissionById(
+        sourceReportingMissionId,
+      );
 
     if (!sourceReportingMission) {
       throw new Error(
@@ -437,8 +531,12 @@ export class ReportingService {
     }
 
     const [artifacts, sourceProofBundle] = await Promise.all([
-      this.deps.missionRepository.listArtifactsByMissionId(sourceReportingMission.id),
-      this.deps.missionRepository.getProofBundleByMissionId(sourceReportingMission.id),
+      this.deps.missionRepository.listArtifactsByMissionId(
+        sourceReportingMission.id,
+      ),
+      this.deps.missionRepository.getProofBundleByMissionId(
+        sourceReportingMission.id,
+      ),
     ]);
 
     if (!sourceProofBundle) {
@@ -464,7 +562,10 @@ export class ReportingService {
       );
     }
 
-    if (!sourceReportingView.financeMemo || !sourceReportingView.evidenceAppendix) {
+    if (
+      !sourceReportingView.financeMemo ||
+      !sourceReportingView.evidenceAppendix
+    ) {
       throw new Error(
         `Source reporting mission ${sourceReportingMission.id} must store both finance_memo and evidence_appendix artifacts before ${reportKindLabel.toLowerCase()} compilation.`,
       );
@@ -515,7 +616,7 @@ export class ReportingService {
     if (mission.status !== "succeeded") {
       throw invalidRequest(
         "missionId",
-        `Reporting mission ${missionId} must have status \`succeeded\` before filing or export can run.`,
+        `Reporting mission ${missionId} must have status \`succeeded\` before reporting follow-on actions can run.`,
       );
     }
 
@@ -525,7 +626,9 @@ export class ReportingService {
     ]);
 
     if (!proofBundle) {
-      throw new Error(`Reporting mission ${missionId} is missing a proof bundle.`);
+      throw new Error(
+        `Reporting mission ${missionId} is missing a proof bundle.`,
+      );
     }
 
     return {
@@ -537,7 +640,9 @@ export class ReportingService {
 
   private requireCfoWikiService() {
     if (!this.deps.cfoWikiService) {
-      throw new Error("Reporting publication actions require the CFO Wiki service.");
+      throw new Error(
+        "Reporting publication actions require the CFO Wiki service.",
+      );
     }
 
     return this.deps.cfoWikiService;
@@ -550,7 +655,9 @@ function readReportingMissionInput(mission: MissionRecord) {
   );
 
   if (!parsed.success) {
-    throw new Error(`Reporting mission ${mission.id} is missing reporting input.`);
+    throw new Error(
+      `Reporting mission ${mission.id} is missing reporting input.`,
+    );
   }
 
   return parsed.data;
@@ -558,7 +665,9 @@ function readReportingMissionInput(mission: MissionRecord) {
 
 function requireStoredReportingView(input: {
   artifacts: Awaited<ReturnType<MissionRepository["listArtifactsByMissionId"]>>;
-  proofBundle: Awaited<ReturnType<MissionRepository["getProofBundleByMissionId"]>>;
+  proofBundle: Awaited<
+    ReturnType<MissionRepository["getProofBundleByMissionId"]>
+  >;
 }): ReportingMissionView & {
   evidenceAppendix: NonNullable<ReportingMissionView["evidenceAppendix"]>;
   financeMemo: NonNullable<ReportingMissionView["financeMemo"]>;
@@ -575,14 +684,14 @@ function requireStoredReportingView(input: {
     proofBundle: input.proofBundle,
   });
 
-    if (!reporting?.financeMemo || !reporting.evidenceAppendix) {
-      if (
-        reporting?.reportKind === "board_packet" ||
-        reporting?.reportKind === "lender_update" ||
-        reporting?.reportKind === "diligence_packet"
-      ) {
-        throw invalidRequest(
-          "missionId",
+  if (!reporting?.financeMemo || !reporting.evidenceAppendix) {
+    if (
+      reporting?.reportKind === "board_packet" ||
+      reporting?.reportKind === "lender_update" ||
+      reporting?.reportKind === "diligence_packet"
+    ) {
+      throw invalidRequest(
+        "missionId",
         "Specialized reporting stays draft-only in F5C and cannot file or export through the finance-memo publication path.",
       );
     }
@@ -633,9 +742,7 @@ function parsePageRecord(page: unknown) {
   return CfoWikiPageRecordSchema.parse(page);
 }
 
-function parseExportRunRecord(
-  exportRun: unknown,
-) {
+function parseExportRunRecord(exportRun: unknown) {
   return CfoWikiExportRunRecordSchema.parse(exportRun);
 }
 
@@ -662,6 +769,7 @@ function readSingleArtifactId(
     ReturnType<MissionRepository["listArtifactsByMissionId"]>
   >[number]["kind"],
   missionId: string,
+  actionSummary: string,
 ) {
   const matchingArtifacts = [...artifacts]
     .filter((artifact) => artifact.kind === kind)
@@ -674,7 +782,7 @@ function readSingleArtifactId(
   if (matchingArtifacts.length !== 1) {
     throw invalidRequest(
       "missionId",
-      `Reporting mission ${missionId} must store exactly one ${kind} artifact before release approval can be requested.`,
+      `Reporting mission ${missionId} must store exactly one ${kind} artifact before ${actionSummary}.`,
     );
   }
 
@@ -683,7 +791,7 @@ function readSingleArtifactId(
   if (!matchingArtifact) {
     throw invalidRequest(
       "missionId",
-      `Reporting mission ${missionId} must store exactly one ${kind} artifact before release approval can be requested.`,
+      `Reporting mission ${missionId} must store exactly one ${kind} artifact before ${actionSummary}.`,
     );
   }
 

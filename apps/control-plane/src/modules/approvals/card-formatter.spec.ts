@@ -92,7 +92,8 @@ describe("card-formatter", () => {
           details: {
             command: "pnpm --filter @pocket-cto/web test",
             cwd: "/tmp/workspaces/mission-1/apps/web",
-            reason: "Need to verify the updated mission detail UI before publishing",
+            reason:
+              "Need to verify the updated mission detail UI before publishing",
           },
         },
         taskId: task.id,
@@ -102,7 +103,9 @@ describe("card-formatter", () => {
 
     expect(card.title).toContain("Approve command:");
     expect(card.summary).toContain("Run pnpm --filter @pocket-cto/web test.");
-    expect(card.summary).toContain("Working directory: .../mission-1/apps/web.");
+    expect(card.summary).toContain(
+      "Working directory: .../mission-1/apps/web.",
+    );
     expect(card.actionHint).toBe(
       "Review the command and working directory before approving execution.",
     );
@@ -116,7 +119,8 @@ describe("card-formatter", () => {
           details: {
             command: "pnpm audit --prod",
             proposedNetworkPolicyAmendments: [{ host: "registry.npmjs.org" }],
-            reason: "Need package metadata from npm to verify the dependency posture",
+            reason:
+              "Need package metadata from npm to verify the dependency posture",
           },
         },
         taskId: task.id,
@@ -125,8 +129,12 @@ describe("card-formatter", () => {
     });
 
     expect(card.title).toContain("Approve networked command:");
-    expect(card.summary).toContain("Allow networked command pnpm audit --prod.");
-    expect(card.summary).toContain("The runtime proposed 1 network policy amendment.");
+    expect(card.summary).toContain(
+      "Allow networked command pnpm audit --prod.",
+    );
+    expect(card.summary).toContain(
+      "The runtime proposed 1 network policy amendment.",
+    );
     expect(card.actionHint).toBe(
       "Approve only if this task should use network access or adjust network policy to finish the requested work.",
     );
@@ -190,6 +198,53 @@ describe("card-formatter", () => {
       "Approved by Alicia at 2026-03-16T10:06:00.000Z. Rationale: The audit passed and the command is safe to rerun.",
     );
     expect(resolvedCard.resolvedAt).toBe("2026-03-16T10:06:00.000Z");
+  });
+
+  it("formats a logged lender-update release as a non-delivery approval card", () => {
+    const card = buildMissionApprovalCard({
+      approval: buildApproval({
+        kind: "report_release",
+        rationale: "Approved for release readiness.",
+        requestedBy: "finance-operator",
+        resolvedBy: "finance-reviewer",
+        status: "approved",
+        updatedAt: "2026-04-20T09:10:00.000Z",
+        payload: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          companyKey: "acme",
+          draftOnlyStatus: "draft_only",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          missionId: "11111111-1111-4111-8111-111111111111",
+          reportKind: "lender_update",
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          summary:
+            "Draft lender update for acme from the completed finance memo.",
+          resolution: {
+            decision: "accept",
+            rationale: "Approved for release readiness.",
+            resolvedBy: "finance-reviewer",
+          },
+          releaseRecord: {
+            releasedAt: "2026-04-20T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "email",
+            releaseNote: "Sent from treasury mailbox after approval.",
+            summary:
+              "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+          },
+        },
+        taskId: null,
+      }),
+      context: buildContext(),
+    });
+
+    expect(card.title).toBe("Lender update release logged for acme");
+    expect(card.summary).toContain("External lender-update release is logged");
+    expect(card.summary).toContain("Original approval");
+    expect(card.requiresLiveControl).toBe(false);
+    expect(card.actionHint).toBeNull();
   });
 });
 

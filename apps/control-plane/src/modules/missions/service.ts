@@ -33,6 +33,7 @@ import { buildLenderUpdateMissionCreationInput } from "./lender-update";
 import { buildReportingMissionCreationInput } from "./reporting";
 import type { MissionRepository } from "./repository";
 import { buildReportingPublicationViewFromProofBundle } from "../reporting/publication";
+import { buildReportingReleaseRecordViewFromProofBundle } from "../reporting/release-record";
 import { buildReportingReleaseReadinessViewFromProofBundle } from "../reporting/release-readiness";
 
 export type MissionDetail = MissionDetailView;
@@ -418,6 +419,13 @@ function summarizeMission(input: {
         reportKind: input.proofBundle.reportKind,
         reportPublication: input.proofBundle.reportPublication,
       }) ?? null,
+    releaseRecord:
+      buildReportingReleaseRecordViewFromProofBundle({
+        evidenceCompleteness: input.proofBundle.evidenceCompleteness,
+        releaseReadiness: input.proofBundle.releaseReadiness,
+        releaseRecord: input.proofBundle.releaseRecord,
+        reportKind: input.proofBundle.reportKind,
+      }) ?? null,
     releaseReadiness:
       buildReportingReleaseReadinessViewFromProofBundle({
         evidenceCompleteness: input.proofBundle.evidenceCompleteness,
@@ -464,13 +472,15 @@ function normalizeOptionalString(value: string | null | undefined) {
 }
 
 function readLatestTask(tasks: MissionTaskRecord[]) {
-  return [...tasks].sort((left, right) => {
-    return (
-      right.updatedAt.localeCompare(left.updatedAt) ||
-      right.sequence - left.sequence ||
-      right.id.localeCompare(left.id)
-    );
-  })[0] ?? null;
+  return (
+    [...tasks].sort((left, right) => {
+      return (
+        right.updatedAt.localeCompare(left.updatedAt) ||
+        right.sequence - left.sequence ||
+        right.id.localeCompare(left.id)
+      );
+    })[0] ?? null
+  );
 }
 
 function readMissionUpdatedAt(input: {
@@ -499,9 +509,7 @@ function buildObjectiveExcerpt(objective: string) {
     return objective;
   }
 
-  return `${objective
-    .slice(0, MAX_OBJECTIVE_EXCERPT_LENGTH - 3)
-    .trimEnd()}...`;
+  return `${objective.slice(0, MAX_OBJECTIVE_EXCERPT_LENGTH - 3).trimEnd()}...`;
 }
 
 function buildGitHubIssueCompilerText(
@@ -522,7 +530,10 @@ function buildGitHubIssueMissionSpec(input: {
   issueTitle: string;
   primaryRepo: string;
 }): MissionSpec {
-  const objective = buildGitHubIssueObjective(input.issueTitle, input.issueBody);
+  const objective = buildGitHubIssueObjective(
+    input.issueTitle,
+    input.issueBody,
+  );
 
   return {
     ...input.compilerSpec,

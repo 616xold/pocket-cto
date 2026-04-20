@@ -26,6 +26,7 @@ export function ReportingOutputCard({
   const financeMemo = reporting.financeMemo;
   const evidenceAppendix = reporting.evidenceAppendix;
   const publication = reporting.publication;
+  const releaseRecord = reporting.releaseRecord;
   const releaseReadiness = reporting.releaseReadiness;
   const isDiligencePacket = reporting.reportKind === "diligence_packet";
   const isBoardPacket = reporting.reportKind === "board_packet";
@@ -33,7 +34,8 @@ export function ReportingOutputCard({
   const isSpecializedReporting =
     isBoardPacket || isLenderUpdate || isDiligencePacket;
   const questionKindLabel =
-    reporting.questionKind && isFinanceDiscoveryQuestionKind(reporting.questionKind)
+    reporting.questionKind &&
+    isFinanceDiscoveryQuestionKind(reporting.questionKind)
       ? readFinanceDiscoveryQuestionKindLabel(reporting.questionKind)
       : reporting.questionKind;
 
@@ -58,6 +60,10 @@ export function ReportingOutputCard({
 
       {releaseReadiness?.summary ? (
         <p className="muted">{releaseReadiness.summary}</p>
+      ) : null}
+
+      {isLenderUpdate && releaseRecord?.summary ? (
+        <p className="muted">{releaseRecord.summary}</p>
       ) : null}
 
       {reporting.reportSummary ? (
@@ -103,7 +109,8 @@ export function ReportingOutputCard({
           <dt>Source question kind</dt>
           <dd>{questionKindLabel ?? "Not recorded yet."}</dd>
         </div>
-        {reporting.questionKind === "policy_lookup" || reporting.policySourceId ? (
+        {reporting.questionKind === "policy_lookup" ||
+        reporting.policySourceId ? (
           <PolicySourceScopeFields
             fallbackPolicySourceId={reporting.policySourceId}
             scope={reporting.policySourceScope}
@@ -129,7 +136,13 @@ export function ReportingOutputCard({
               <>
                 <div>
                   <dt>Release approval</dt>
-                  <dd>{releaseReadiness?.releaseApprovalStatus ?? "not_requested"}</dd>
+                  <dd>
+                    {releaseReadiness?.releaseApprovalStatus ?? "not_requested"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Release logged</dt>
+                  <dd>{releaseRecord?.released ? "Yes" : "No"}</dd>
                 </div>
                 <div>
                   <dt>Release ready</dt>
@@ -137,26 +150,49 @@ export function ReportingOutputCard({
                 </div>
                 <div>
                   <dt>Approval requested</dt>
-                  <dd>{releaseReadiness?.requestedAt ?? "Not requested yet."}</dd>
+                  <dd>
+                    {releaseReadiness?.requestedAt ?? "Not requested yet."}
+                  </dd>
                 </div>
                 <div>
                   <dt>Approval resolved</dt>
                   <dd>{releaseReadiness?.resolvedAt ?? "Not resolved yet."}</dd>
+                </div>
+                <div>
+                  <dt>Released at</dt>
+                  <dd>{releaseRecord?.releasedAt ?? "Not logged yet."}</dd>
+                </div>
+                <div>
+                  <dt>Released by</dt>
+                  <dd>{releaseRecord?.releasedBy ?? "Not logged yet."}</dd>
+                </div>
+                <div>
+                  <dt>Release channel</dt>
+                  <dd>{releaseRecord?.releaseChannel ?? "Not logged yet."}</dd>
+                </div>
+                <div>
+                  <dt>Release note</dt>
+                  <dd>
+                    {releaseRecord?.releaseNote ?? "No release note recorded."}
+                  </dd>
                 </div>
               </>
             ) : null}
             <div>
               <dt>Source memo artifact</dt>
               <dd>
-                <code>{readSpecializedSources(reporting)?.sourceFinanceMemo.artifactId ?? "Not recorded yet."}</code>
+                <code>
+                  {readSpecializedSources(reporting)?.sourceFinanceMemo
+                    .artifactId ?? "Not recorded yet."}
+                </code>
               </dd>
             </div>
             <div>
               <dt>Source appendix artifact</dt>
               <dd>
                 <code>
-                  {readSpecializedSources(reporting)?.sourceEvidenceAppendix.artifactId ??
-                    "Not recorded yet."}
+                  {readSpecializedSources(reporting)?.sourceEvidenceAppendix
+                    .artifactId ?? "Not recorded yet."}
                 </code>
               </dd>
             </div>
@@ -165,7 +201,11 @@ export function ReportingOutputCard({
           <>
             <div>
               <dt>Stored draft</dt>
-              <dd>{publication?.storedDraft ? "Memo and appendix stored" : "Pending"}</dd>
+              <dd>
+                {publication?.storedDraft
+                  ? "Memo and appendix stored"
+                  : "Pending"}
+              </dd>
             </div>
             <div>
               <dt>Memo page</dt>
@@ -208,7 +248,8 @@ export function ReportingOutputCard({
                     rel="noreferrer"
                     target="_blank"
                   >
-                    {publication.latestMarkdownExport.includesLatestFiledArtifacts
+                    {publication.latestMarkdownExport
+                      .includesLatestFiledArtifacts
                       ? `Run ${publication.latestMarkdownExport.exportRunId}`
                       : `Run ${publication.latestMarkdownExport.exportRunId} (predates latest filing)`}
                   </a>
@@ -344,11 +385,20 @@ function readLinkedArtifacts(reporting: ReportingOutputCardProps["reporting"]) {
     ];
   }
 
-  return reporting.evidenceAppendix?.sourceArtifacts ?? reporting.financeMemo?.sourceArtifacts ?? [];
+  return (
+    reporting.evidenceAppendix?.sourceArtifacts ??
+    reporting.financeMemo?.sourceArtifacts ??
+    []
+  );
 }
 
-function readSpecializedSources(reporting: ReportingOutputCardProps["reporting"]) {
+function readSpecializedSources(
+  reporting: ReportingOutputCardProps["reporting"],
+) {
   return (
-    reporting.diligencePacket ?? reporting.boardPacket ?? reporting.lenderUpdate ?? null
+    reporting.diligencePacket ??
+    reporting.boardPacket ??
+    reporting.lenderUpdate ??
+    null
   );
 }

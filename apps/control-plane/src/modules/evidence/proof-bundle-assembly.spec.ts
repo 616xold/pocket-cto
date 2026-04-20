@@ -615,7 +615,8 @@ describe("assembleProofBundleManifest", () => {
                 kind: "discovery_answer",
               },
             ],
-            bodyMarkdown: "# Evidence Appendix\n\n## Source Discovery Lineage\n",
+            bodyMarkdown:
+              "# Evidence Appendix\n\n## Source Discovery Lineage\n",
           },
         }),
       ],
@@ -666,7 +667,8 @@ describe("assembleProofBundleManifest", () => {
       "filed/reporting-11111111-1111-4111-8111-111111111111-finance_memo",
     );
     expect(
-      manifest.reportPublication?.latestMarkdownExport?.includesLatestFiledArtifacts,
+      manifest.reportPublication?.latestMarkdownExport
+        ?.includesLatestFiledArtifacts,
     ).toBe(true);
     expect(manifest.evidenceCompleteness.expectedArtifactKinds).toEqual([
       "finance_memo",
@@ -924,6 +926,117 @@ describe("assembleProofBundleManifest", () => {
     );
     expect(manifest.riskSummary).toContain("approved for release");
     expect(manifest.rollbackSummary).toContain("No actual release");
+  });
+
+  it("derives a lender-update release record after one external release is logged", () => {
+    const sourceDiscoveryMissionId = "99999999-9999-4999-8999-999999999999";
+    const sourceReportingMissionId = "88888888-8888-4888-8888-888888888888";
+    const mission = buildLenderUpdateMission(
+      sourceDiscoveryMissionId,
+      sourceReportingMissionId,
+    );
+    const lenderUpdateArtifact = buildArtifact({
+      id: "11111111-bbbb-4bbb-8bbb-bbbbbbbbbbb3",
+      kind: "lender_update",
+      taskId: scoutTaskId,
+      createdAt: "2026-04-20T09:02:00.000Z",
+      metadata: {
+        source: "stored_reporting_evidence",
+        summary:
+          "Draft lender update for acme from the completed cash posture reporting mission.",
+        reportKind: "lender_update",
+        draftStatus: "draft_only",
+        sourceReportingMissionId,
+        sourceDiscoveryMissionId,
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        updateSummary:
+          "Draft lender update for acme from the completed cash posture reporting mission.",
+        freshnessSummary:
+          "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+        limitationsSummary:
+          "This lender update is draft-only and carries source reporting freshness and limitations forward.",
+        relatedRoutePaths: [
+          "/finance-twin/companies/acme/cash-posture",
+          "/finance-twin/companies/acme/bank-accounts",
+        ],
+        relatedWikiPageKeys: ["metrics/cash-posture", "concepts/cash"],
+        sourceFinanceMemo: {
+          artifactId: "11111111-bbbb-4bbb-8bbb-bbbbbbbbbbb1",
+          kind: "finance_memo",
+        },
+        sourceEvidenceAppendix: {
+          artifactId: "11111111-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+          kind: "evidence_appendix",
+        },
+        bodyMarkdown:
+          "# Draft Lender Update\n\n## Draft Review Posture\n\n- Status: draft_only",
+      },
+    });
+    const manifest = assembleProofBundleManifest({
+      approvals: [
+        {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          kind: "report_release",
+          missionId,
+          payload: {
+            artifactId: lenderUpdateArtifact.id,
+            companyKey: "acme",
+            draftOnlyStatus: "draft_only",
+            freshnessSummary:
+              "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+            limitationsSummary:
+              "This lender update is draft-only and carries source reporting freshness and limitations forward.",
+            missionId,
+            reportKind: "lender_update",
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+            summary:
+              "Approve the stored lender update for external lender release posture.",
+            resolution: {
+              decision: "accept",
+              rationale: "Approved for release posture.",
+              resolvedBy: "finance-reviewer",
+            },
+            releaseRecord: {
+              releasedAt: "2026-04-20T09:10:00.000Z",
+              releasedBy: "finance-operator",
+              releaseChannel: "email",
+              releaseNote: "Sent from treasury mailbox after approval.",
+              summary:
+                "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+            },
+          },
+          rationale: "Approved for release posture.",
+          requestedBy: "finance-operator",
+          resolvedBy: "finance-reviewer",
+          status: "approved",
+          taskId: null,
+          createdAt: "2026-04-20T09:00:00.000Z",
+          updatedAt: "2026-04-20T09:10:00.000Z",
+        } satisfies ApprovalRecord,
+      ],
+      artifacts: [lenderUpdateArtifact],
+      existingBundle: buildPlaceholderBundle(mission),
+      mission,
+      replayEventCount: 12,
+      tasks: buildDiscoveryTasks("succeeded"),
+    });
+
+    expect(manifest.releaseReadiness?.releaseApprovalStatus).toBe(
+      "approved_for_release",
+    );
+    expect(manifest.releaseRecord).toMatchObject({
+      released: true,
+      releasedAt: "2026-04-20T09:10:00.000Z",
+      releasedBy: "finance-operator",
+      releaseChannel: "email",
+      approvalId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    });
+    expect(manifest.verificationSummary).toContain("external release");
+    expect(manifest.riskSummary).toContain("did not send");
   });
 
   it("yields a ready diligence-packet proof bundle when diligence-packet evidence is stored", () => {
@@ -1240,7 +1353,9 @@ function readFinanceArtifactId(
   }
 }
 
-function buildPolicyLookupDiscoveryMission(policySourceId: string): MissionRecord {
+function buildPolicyLookupDiscoveryMission(
+  policySourceId: string,
+): MissionRecord {
   return {
     id: missionId,
     type: "discovery",
@@ -1283,7 +1398,9 @@ function buildPolicyLookupDiscoveryMission(policySourceId: string): MissionRecor
   };
 }
 
-function buildReportingMission(sourceDiscoveryMissionId: string): MissionRecord {
+function buildReportingMission(
+  sourceDiscoveryMissionId: string,
+): MissionRecord {
   return {
     id: missionId,
     type: "reporting",

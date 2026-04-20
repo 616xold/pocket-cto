@@ -175,6 +175,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
@@ -312,6 +313,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
@@ -430,6 +432,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
@@ -570,6 +573,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
@@ -708,7 +712,7 @@ describe("MissionCard", () => {
                 questionKind: "payables_pressure",
                 reportKind: "finance_memo",
                 sourceDiscoveryMissionId,
-              sourceReportingMissionId: null,
+                sourceReportingMissionId: null,
               },
             },
             objective:
@@ -778,6 +782,7 @@ describe("MissionCard", () => {
           reportDraftStatus: "draft_only",
           reportKind: "finance_memo",
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
             "Draft finance memo summarizing stored payables pressure and carried evidence posture.",
@@ -879,6 +884,7 @@ describe("MissionCard", () => {
           policySourceScope: null,
           boardPacket: null,
           diligencePacket: null,
+          releaseRecord: null,
           releaseReadiness: null,
           publication: null,
           questionKind: "payables_pressure",
@@ -1198,6 +1204,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
@@ -1347,7 +1354,8 @@ describe("MissionCard", () => {
           },
           latestApproval: null,
           missionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-          missionTitle: "Draft board packet for acme from cash posture reporting",
+          missionTitle:
+            "Draft board packet for acme from cash posture reporting",
           objective:
             "Compile one draft board packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
           sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
@@ -1356,6 +1364,7 @@ describe("MissionCard", () => {
           reportKind: "board_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
             "Draft board packet for acme from the completed cash posture reporting mission.",
@@ -1439,6 +1448,7 @@ describe("MissionCard", () => {
               "# Draft Board Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
           },
           diligencePacket: null,
+          releaseRecord: null,
           releaseReadiness: null,
           publication: null,
         }}
@@ -1532,7 +1542,8 @@ describe("MissionCard", () => {
               requiresHumanApprovalFor: [],
               sandboxMode: "read-only",
             },
-            title: "Draft diligence packet for acme from cash posture reporting",
+            title:
+              "Draft diligence packet for acme from cash posture reporting",
             type: "reporting",
           },
           status: "succeeded",
@@ -1564,7 +1575,8 @@ describe("MissionCard", () => {
           },
           latestApproval: null,
           missionId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-          missionTitle: "Draft diligence packet for acme from cash posture reporting",
+          missionTitle:
+            "Draft diligence packet for acme from cash posture reporting",
           objective:
             "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
           sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
@@ -1573,6 +1585,7 @@ describe("MissionCard", () => {
           reportKind: "diligence_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
             "Draft diligence packet for acme from the completed cash posture reporting mission.",
@@ -1656,6 +1669,7 @@ describe("MissionCard", () => {
             bodyMarkdown:
               "# Draft Diligence Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
           },
+          releaseRecord: null,
           releaseReadiness: null,
           publication: null,
         }}

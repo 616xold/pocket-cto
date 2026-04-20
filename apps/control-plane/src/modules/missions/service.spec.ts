@@ -363,12 +363,13 @@ describe("MissionService", () => {
         status: "pending",
       },
     ]);
-    expect(created.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual([
-      "finance_memo",
-      "evidence_appendix",
-    ]);
+    expect(
+      created.proofBundle.evidenceCompleteness.expectedArtifactKinds,
+    ).toEqual(["finance_memo", "evidence_appendix"]);
     expect(created.proofBundle.reportKind).toBe("finance_memo");
-    expect(created.proofBundle.sourceDiscoveryMissionId).toBe(source.mission.id);
+    expect(created.proofBundle.sourceDiscoveryMissionId).toBe(
+      source.mission.id,
+    );
 
     const events = await replayService.listByMissionId(created.mission.id);
     expect(events.slice(-4).map((event) => event.type)).toEqual([
@@ -448,9 +449,9 @@ describe("MissionService", () => {
     expect(created.proofBundle.sourceReportingMissionId).toBe(
       reporting.mission.id,
     );
-    expect(created.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual(
-      ["board_packet"],
-    );
+    expect(
+      created.proofBundle.evidenceCompleteness.expectedArtifactKinds,
+    ).toEqual(["board_packet"]);
 
     const events = await replayService.listByMissionId(created.mission.id);
     expect(events.slice(-4).map((event) => event.type)).toEqual([
@@ -530,9 +531,9 @@ describe("MissionService", () => {
     expect(created.proofBundle.sourceReportingMissionId).toBe(
       reporting.mission.id,
     );
-    expect(created.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual(
-      ["lender_update"],
-    );
+    expect(
+      created.proofBundle.evidenceCompleteness.expectedArtifactKinds,
+    ).toEqual(["lender_update"]);
 
     const events = await replayService.listByMissionId(created.mission.id);
     expect(events.slice(-4).map((event) => event.type)).toEqual([
@@ -612,9 +613,9 @@ describe("MissionService", () => {
     expect(created.proofBundle.sourceReportingMissionId).toBe(
       reporting.mission.id,
     );
-    expect(created.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual(
-      ["diligence_packet"],
-    );
+    expect(
+      created.proofBundle.evidenceCompleteness.expectedArtifactKinds,
+    ).toEqual(["diligence_packet"]);
 
     const events = await replayService.listByMissionId(created.mission.id);
     expect(events.slice(-4).map((event) => event.type)).toEqual([
@@ -797,14 +798,18 @@ describe("MissionService", () => {
       sourceRef: "https://github.com/acme/web/issues/19",
     });
 
-    const firstExecutorTask = first.tasks.find((task) => task.role === "executor");
+    const firstExecutorTask = first.tasks.find(
+      (task) => task.role === "executor",
+    );
 
     expect(firstExecutorTask).toBeDefined();
 
     await repository.updateMissionStatus(first.mission.id, "succeeded");
     await repository.updateTaskStatus(firstExecutorTask?.id ?? "", "succeeded");
 
-    const firstBundle = await repository.getProofBundleByMissionId(first.mission.id);
+    const firstBundle = await repository.getProofBundleByMissionId(
+      first.mission.id,
+    );
     expect(firstBundle).not.toBeNull();
 
     await repository.upsertProofBundle({
@@ -1090,6 +1095,7 @@ function buildReadyFinanceMemoProofBundle(input: {
     rollbackSummary:
       "No release side effect was produced; rerun only after the stored discovery evidence is refreshed first.",
     latestApproval: null,
+    releaseRecord: null,
     releaseReadiness: null,
     evidenceCompleteness: {
       status: "complete",

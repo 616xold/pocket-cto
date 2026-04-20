@@ -152,6 +152,7 @@ function buildDemoMissionDetail(): MissionDetailView {
       reportKind: null,
       reportDraftStatus: null,
       reportPublication: null,
+      releaseRecord: null,
       releaseReadiness: null,
       reportSummary: "",
       appendixPresent: false,
@@ -172,9 +173,19 @@ function buildDemoMissionDetail(): MissionDetailView {
       latestApproval: null,
       evidenceCompleteness: {
         status: "missing",
-        expectedArtifactKinds: ["plan", "diff_summary", "test_report", "pr_link"],
+        expectedArtifactKinds: [
+          "plan",
+          "diff_summary",
+          "test_report",
+          "pr_link",
+        ],
         presentArtifactKinds: [],
-        missingArtifactKinds: ["plan", "diff_summary", "test_report", "pr_link"],
+        missingArtifactKinds: [
+          "plan",
+          "diff_summary",
+          "test_report",
+          "pr_link",
+        ],
         notes: [
           "Planner evidence is missing.",
           "Change-summary evidence is missing.",

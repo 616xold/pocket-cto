@@ -185,6 +185,48 @@ describe("mission reporting action routes", () => {
       },
     );
   });
+
+  it("POST /missions/:missionId/reporting/release-log returns 201 with the supplied release details", async () => {
+    const recordReleaseLog = vi.fn(async () => ({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      approvalId: "22222222-2222-4222-8222-222222222222",
+      created: true,
+      releaseRecord: {
+        released: true,
+        releasedAt: "2026-04-20T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+        approvalId: "22222222-2222-4222-8222-222222222222",
+        summary:
+          "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+      },
+    }));
+    const app = await createTestApp(apps, {
+      recordReleaseLog,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/11111111-1111-4111-8111-111111111111/reporting/release-log",
+      payload: {
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(recordReleaseLog).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+        releasedAt: null,
+      },
+    );
+  });
 });
 
 async function createTestApp(
@@ -225,6 +267,11 @@ async function createTestApp(
   if (overrides.requestReleaseApproval) {
     container.missionReportingActionsService.requestReleaseApproval =
       overrides.requestReleaseApproval;
+  }
+
+  if (overrides.recordReleaseLog) {
+    container.missionReportingActionsService.recordReleaseLog =
+      overrides.recordReleaseLog;
   }
 
   const app = await buildApp({ container });

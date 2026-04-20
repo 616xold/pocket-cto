@@ -41,6 +41,7 @@ export type MissionActionKind =
   | "interrupt_task"
   | "file_reporting_artifacts"
   | "export_reporting_markdown"
+  | "record_reporting_release_log"
   | "request_reporting_release_approval";
 
 export type MissionActionResult =
@@ -173,6 +174,28 @@ export function buildRequestReportingReleaseApprovalActionResult(
   };
 }
 
+export function buildRecordReportingReleaseLogActionResult(
+  operatorName: string,
+  result: ControlPlaneMutationResult<unknown>,
+): MissionActionResult {
+  if (result.ok) {
+    return {
+      ok: true,
+      kind: "record_reporting_release_log",
+      message: `Lender update release logged by ${operatorName}. Mission detail refreshed.`,
+      statusCode: result.statusCode,
+    };
+  }
+
+  return {
+    ok: false,
+    kind: "record_reporting_release_log",
+    message: describeFailure("record_reporting_release_log", result),
+    statusCode: result.statusCode,
+    errorCode: result.errorCode,
+  };
+}
+
 function describeFailure(
   kind: MissionActionKind,
   failure: Extract<ControlPlaneMutationResult<unknown>, { ok: false }>,
@@ -212,7 +235,12 @@ function describeFailure(
               "This lender-update release approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored lender update, lineage, and approval posture before retrying.",
               failure.message,
             )
-        : "The submitted action payload was invalid. Refresh the page and try again.";
+          : kind === "record_reporting_release_log"
+            ? withRouteReason(
+                "This lender-update release log action is unavailable from the mission's current stored state. Refresh the page and confirm approval, stored evidence, and release posture before retrying.",
+                failure.message,
+              )
+            : "The submitted action payload was invalid. Refresh the page and try again.";
     case "internal_error":
       return withRouteReason(
         "The control plane reported an internal error while processing this action.",
@@ -233,6 +261,10 @@ function describeFailure(
 
       if (kind === "request_reporting_release_approval") {
         return "The web app could not reach the control plane to request lender-update release approval. Confirm the local services are running and try again.";
+      }
+
+      if (kind === "record_reporting_release_log") {
+        return "The web app could not reach the control plane to record the lender-update release log. Confirm the local services are running and try again.";
       }
 
       return "The web app could not reach the control plane to export the markdown bundle. Confirm the local services are running and try again.";

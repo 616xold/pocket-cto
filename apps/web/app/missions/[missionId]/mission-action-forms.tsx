@@ -13,6 +13,7 @@ import {
   submitCreateDraftDiligencePacket,
   submitCreateDraftFinanceMemo,
   submitCreateDraftLenderUpdate,
+  submitRecordReportingReleaseLog,
   submitRequestReportingReleaseApproval,
   submitTaskInterrupt,
 } from "./actions";
@@ -68,16 +69,21 @@ type RequestReportingReleaseApprovalFormProps = {
   operatorIdentity: string;
 };
 
+type RecordReportingReleaseLogFormProps = {
+  missionId: string;
+  operatorIdentity: string;
+};
+
 export function ApprovalActionForm({
   approvalId,
   disabled,
   missionId,
   operatorIdentity,
 }: ApprovalActionFormProps) {
-  const [result, formAction] = useActionState<
-    MissionActionState,
-    FormData
-  >(submitApprovalResolution, INITIAL_MISSION_ACTION_STATE);
+  const [result, formAction] = useActionState<MissionActionState, FormData>(
+    submitApprovalResolution,
+    INITIAL_MISSION_ACTION_STATE,
+  );
 
   return (
     <div className="action-cluster">
@@ -117,10 +123,10 @@ export function TaskInterruptForm({
   operatorIdentity,
   taskId,
 }: TaskInterruptFormProps) {
-  const [result, formAction] = useActionState<
-    MissionActionState,
-    FormData
-  >(submitTaskInterrupt, INITIAL_MISSION_ACTION_STATE);
+  const [result, formAction] = useActionState<MissionActionState, FormData>(
+    submitTaskInterrupt,
+    INITIAL_MISSION_ACTION_STATE,
+  );
 
   return (
     <div className="action-cluster">
@@ -234,10 +240,10 @@ export function FileReportingArtifactsForm({
   missionId,
   operatorIdentity,
 }: FileReportingArtifactsFormProps) {
-  const [result, formAction] = useActionState<
-    MissionActionState,
-    FormData
-  >(submitFileReportingMissionArtifacts, INITIAL_MISSION_ACTION_STATE);
+  const [result, formAction] = useActionState<MissionActionState, FormData>(
+    submitFileReportingMissionArtifacts,
+    INITIAL_MISSION_ACTION_STATE,
+  );
 
   return (
     <div className="action-cluster">
@@ -261,10 +267,10 @@ export function ExportReportingMarkdownForm({
   missionId,
   operatorIdentity,
 }: ExportReportingMarkdownFormProps) {
-  const [result, formAction] = useActionState<
-    MissionActionState,
-    FormData
-  >(submitExportReportingMissionMarkdown, INITIAL_MISSION_ACTION_STATE);
+  const [result, formAction] = useActionState<MissionActionState, FormData>(
+    submitExportReportingMissionMarkdown,
+    INITIAL_MISSION_ACTION_STATE,
+  );
 
   return (
     <div className="action-cluster">
@@ -288,10 +294,10 @@ export function RequestReportingReleaseApprovalForm({
   missionId,
   operatorIdentity,
 }: RequestReportingReleaseApprovalFormProps) {
-  const [result, formAction] = useActionState<
-    MissionActionState,
-    FormData
-  >(submitRequestReportingReleaseApproval, INITIAL_MISSION_ACTION_STATE);
+  const [result, formAction] = useActionState<MissionActionState, FormData>(
+    submitRequestReportingReleaseApproval,
+    INITIAL_MISSION_ACTION_STATE,
+  );
 
   return (
     <div className="action-cluster">
@@ -303,6 +309,56 @@ export function RequestReportingReleaseApprovalForm({
           className="action-button"
           label="Request lender update release approval"
           pendingLabel="Requesting release approval..."
+        />
+      </form>
+
+      <ActionFeedback result={result} />
+    </div>
+  );
+}
+
+export function RecordReportingReleaseLogForm({
+  missionId,
+  operatorIdentity,
+}: RecordReportingReleaseLogFormProps) {
+  const [result, formAction] = useActionState<MissionActionState, FormData>(
+    submitRecordReportingReleaseLog,
+    INITIAL_MISSION_ACTION_STATE,
+  );
+
+  return (
+    <div className="action-cluster">
+      <form action={formAction} className="stack">
+        <input name="missionId" type="hidden" value={missionId} />
+        <input name="releasedBy" type="hidden" value={operatorIdentity} />
+
+        <label className="stack" htmlFor={`release-channel-${missionId}`}>
+          <span>Release channel</span>
+          <input
+            className="text-input"
+            defaultValue="email"
+            id={`release-channel-${missionId}`}
+            name="releaseChannel"
+            required
+            type="text"
+          />
+        </label>
+
+        <label className="stack" htmlFor={`release-note-${missionId}`}>
+          <span>Release note</span>
+          <textarea
+            className="text-input"
+            id={`release-note-${missionId}`}
+            name="releaseNote"
+            placeholder="Optional context about the externally completed release."
+            rows={3}
+          />
+        </label>
+
+        <ActionSubmitButton
+          className="action-button"
+          label="Record lender update as released"
+          pendingLabel="Recording release..."
         />
       </form>
 
