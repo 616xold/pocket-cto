@@ -98,6 +98,14 @@ One completed `reporting` mission with `reportKind = "lender_update"`, one store
 Success:
 The system persists one finance-facing `report_release` approval request for that completed lender-update reporting mission, resolves it without live runtime continuation, derives release-readiness as `not_requested`, `pending_review`, `approved_for_release`, or `not_approved_for_release`, and presents that reviewer trace without send, distribute, publish, release-log, runtime-codex drafting, or PDF or slide export behavior.
 
+### 11. F5C4B release log and first lender update release record foundation
+
+Input:
+One completed `reporting` mission with `reportKind = "lender_update"`, one stored `lender_update` artifact, derived release-readiness already at `approved_for_release`, and the carried freshness, limitations, route, and wiki context from completed reporting work.
+
+Success:
+The system records one explicit external-release record for that already-approved lender update, surfaces one release-logged posture plus `releasedAt`, `releasedBy`, and minimal release-channel metadata, preserves the original approval trace, and does so without send, distribute, publish, broader packet approval widening, runtime-codex drafting, or PDF or slide export behavior.
+
 ## Blocked for now
 
 These discovery families should stay out of the shipped F4A through F4C2 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
@@ -130,5 +138,6 @@ During the early pivot, the repo may still carry legacy engineering eval command
 Keep the eval harness architecture, but replace the scenarios and rubrics with finance-oriented datasets as F4/F5 land.
 The current finance-native eval-hook proof for the shipped F4A through F4C2 discovery baseline is `pnpm eval:finance-discovery-quality`, which reuses the deterministic `pnpm smoke:finance-discovery-quality:local` ladder rather than a model-scored runtime eval.
 The shipped F5C3 reporting benchmark contract now lives in `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`.
-The active F5C4A reporting benchmark contract now lives in `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`.
-Actual delivery or release-log benchmarking remains later F5C4B work.
+The shipped F5C4A reporting benchmark contract now lives in `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`.
+The active F5C4B reporting benchmark contract now lives in `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
+Broader packet approval widening remains later F5C4C work.

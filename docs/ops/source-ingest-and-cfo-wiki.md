@@ -369,7 +369,7 @@ Those reporting artifacts now persist:
 - keep packet compilation deterministic, runtime-free, and draft-only
 - keep diligence-packet filing or export behavior, approval-release semantics, bounded runtime-codex drafting, and non-markdown export formats out of scope
 
-`plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` now serves as the active F5C4 implementation contract for the first reporting approval and release-readiness step:
+`plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` now serves as the shipped F5C4A record for the first reporting approval and release-readiness step:
 
 - start only from one completed `reporting` mission with `reportKind = "lender_update"` and one stored `lender_update` artifact
 - keep `mission.type = "reporting"` and specialize through `reportKind`
@@ -377,6 +377,15 @@ Those reporting artifacts now persist:
 - add review request, approval resolution, and release-readiness posture only
 - keep the slice deterministic, runtime-free, and delivery-free
 - keep actual send, distribute, publish, release logging, broader packet widening, bounded runtime-codex drafting, and non-markdown export formats out of scope
+
+`plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` now serves as the active F5C4B implementation contract for the first reporting release-log step:
+
+- start only from one completed `reporting` mission with `reportKind = "lender_update"`, one stored `lender_update` artifact, and release-readiness already at `approved_for_release`
+- keep `mission.type = "reporting"` and specialize through `reportKind`
+- reuse the existing `report_release` approval seam where possible
+- add release logging and one explicit release record only
+- add `releasedAt`, `releasedBy`, and minimal release-channel metadata while keeping the slice deterministic, runtime-free, and delivery-free in the system sense
+- keep actual send, distribute, publish, broader packet widening, bounded runtime-codex drafting, and non-markdown export formats out of scope
 
 Numeric claims should only appear when route-backed stored state or explicit refs support them.
 If the stored state is partial, stale, conflicting, or insufficient, the answer should say so plainly instead of inventing certainty.
@@ -419,12 +428,19 @@ The shipped F4 baseline still does none of the following:
 - raw wiki pages remain derived evidence inputs, not the only packet source of truth
 - approval-release hardening, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
-`FP-0041` now makes the active F5C4 boundary explicit:
+`FP-0041` now makes the shipped F5C4A boundary explicit:
 
-- the next implementation slice should request and resolve review on one completed `lender_update` reporting mission with one stored `lender_update` artifact
+- the repo now requests and resolves review on one completed `lender_update` reporting mission with one stored `lender_update` artifact
 - the source reporting mission must already be completed and remain a `reporting` mission rather than a new approval-specific mission family
 - raw wiki pages remain derived evidence inputs, not the only release-readiness source of truth
 - actual send, distribute, publish, release logging, broader packet widening, bounded runtime-codex drafting, PDF export, and slide export remain later work
+
+`FP-0042` now makes the active F5C4B boundary explicit:
+
+- the next implementation slice should record external release on one already-approved `lender_update` reporting mission with one stored `lender_update` artifact
+- the source reporting mission must already be completed, remain a `reporting` mission, and already carry `approved_for_release` posture
+- raw wiki pages remain derived evidence inputs, not the source of truth for the release record itself
+- actual send, distribute, publish, broader packet widening, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
@@ -436,7 +452,7 @@ The shipped F5B follow-on now hardens body visibility, filed-page reuse, and mar
 The shipped F5C1 follow-on now specializes one draft `board_packet` from that completed reporting state.
 The shipped F5C2 follow-on now specializes only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
-The active F5C4 follow-on now narrows the next step to lender-update review, finance approval, and release-readiness only, without widening into delivery, release logging, broader packet approval rollout, runtime-codex drafting, or export work.
+The active F5C4 follow-on now narrows the next step to lender-update release logging only, without widening into actual delivery, broader packet approval rollout, runtime-codex drafting, or export work.
 
 ## Lint flow
 

@@ -2,8 +2,9 @@
 
 ## Purpose / Big Picture
 
-This plan is the active F5 implementation contract produced by the docs-only F5C4 master-plan and active-doc refresh slice.
-The target phase is `F5`, and the first execution slice is `F5C4A-approval-review-and-first-lender-update-release-readiness`.
+This plan now serves as the shipped F5C4A implementation record.
+`plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` is the active F5C4B implementation contract that follows it.
+The target phase is `F5`, and the execution slice recorded here is `F5C4A-approval-review-and-first-lender-update-release-readiness`.
 The user-visible goal is narrow and concrete: after the shipped F5A through F5C3 path already creates one draft `finance_memo`, one linked `evidence_appendix`, truthful stored-vs-filed-vs-exported posture for the finance-memo path, one draft `board_packet`, one draft `lender_update`, and one draft `diligence_packet`, Pocket CFO should next let an operator request review on one completed `lender_update` reporting mission, resolve one finance-facing approval, and see one explicit release-readiness posture without widening into actual sending, distribution, release logging, runtime-codex drafting, or broader packet-approval rollout.
 
 This matters now because packet specialization is no longer the missing capability.
@@ -94,8 +95,8 @@ This plan does not authorize actual send, distribute, publish, or release loggin
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reintroduce a `modules/reports/**` rename wave.
   Rationale: the shipped F5A through F5C3 code already standardized on `reporting`, and a rename would add noise before the first approval contract exists.
 
-- Decision: the later slice map after F5C4A is `F5C4B-release-log-and-broader-packet-approval-widening`, and only after that should bounded runtime-codex phrasing or formatting assistance be reconsidered if it still solves a real operator problem.
-  Rationale: external-communication posture should harden in layers: first review and release-readiness, then delivery and broader packet widening, then optional bounded runtime presentation help.
+- Decision: the later slice map after F5C4A is `F5C4B-release-log-and-first-lender-update-release-record-foundation`, then `F5C4C-broader-packet-approval-widening`, and only after that should bounded runtime-codex phrasing or formatting assistance be reconsidered if it still solves a real operator problem.
+  Rationale: external-communication posture should harden in layers: first review and release-readiness, then lender-update release logging, then broader packet widening, then optional bounded runtime presentation help.
 
 - Decision: the first mission-centric request path should be the singular `POST /missions/:missionId/reporting/release-approval`, and the packaged local proof should be `tools/lender-update-release-approval-smoke.mjs` behind `pnpm smoke:lender-update-release-approval:local`.
   Rationale: the implementation thread should match the explicit F5C4A user contract exactly rather than carrying forward handoff-era naming drift.
@@ -152,7 +153,7 @@ The active-doc boundary for this handoff is:
 - `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md`
 - `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md`
 - `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`
-- this active F5C4 record, `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`
+- this shipped F5C4A record, `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`
 - `docs/ops/local-dev.md`
 - `docs/ops/source-ingest-and-cfo-wiki.md`
 - `docs/ops/codex-app-server.md`
@@ -201,8 +202,8 @@ The critical distinction is behavioral rather than infrastructural: finance revi
 The control-plane read models should then surface both the latest finance approval trace and the derived release-readiness posture across mission detail, proof bundle, reporting detail, and approval-card copy.
 
 Third, leave actual delivery and broader widening explicitly deferred.
-After F5C4A lands, the next thread should implement `F5C4B-release-log-and-broader-packet-approval-widening`.
-Only after that later review and release posture exists should the repo reconsider bounded runtime-codex phrasing or formatting assistance for report packets.
+After F5C4A lands, the next thread should implement `F5C4B-release-log-and-first-lender-update-release-record-foundation`.
+Only after that lender-update release-record foundation exists should the repo widen into `F5C4C-broader-packet-approval-widening`, and only after that later review posture exists should the repo reconsider bounded runtime-codex phrasing or formatting assistance for report packets.
 
 ## Concrete Steps
 
@@ -401,7 +402,7 @@ If the latest approval resolves declined, cancelled, or expired, the reporting m
 
 ## Artifacts and Notes
 
-This active F5C4A contract expects the next code thread to produce:
+This shipped F5C4A contract expected the implementation thread to produce:
 
 - one active Finance Plan record at `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`
 - one finance-facing `report_release` approval kind and additive migration
@@ -432,7 +433,8 @@ If a concrete need appears during implementation, document it in this plan, `doc
 ## Outcomes & Retrospective
 
 This plan started as the docs-only handoff that narrowed later F5 work to one implementation-ready contract instead of a vague approval-release umbrella.
-It keeps `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` as the shipped F5C3 record, keeps the active-doc chain pointed at this file as the single active F5C4 contract, and now serves as the live implementation record for one deterministic, lender-update-only approval and release-readiness slice.
+It keeps `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` as the shipped F5C3 record, now serves as the shipped F5C4A record for one deterministic lender-update-only approval and release-readiness slice, and hands the next implementation thread to `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
 
 This slice still must not reopen F5C3, widen into delivery semantics or F6, or delete GitHub or engineering-twin modules.
-What remains is landing the bounded F5C4A code, proofs, and closeout exactly as described here; no additional later-F5 master-plan refresh is required before that work continues.
+What remains is not more F5C4A work.
+The next later-F5 step is the bounded F5C4B release-log and release-record slice described in FP-0042, with broader packet approval widening still deferred beyond that.

@@ -55,8 +55,9 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0037-draft-report-body-filed-artifact-and-markdown-export-hardening.md` now serves as the shipped F5B record: expose the stored report bodies directly, add mission-centric filing and markdown export actions that reuse the existing CFO Wiki seams, keep reporting deterministic and draft-only, and preserve proof readiness semantics while packaged `pnpm smoke:finance-report-filed-artifact:local` proves the stored -> filed -> exported path.
 `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C1 record: one deterministic, runtime-free, draft-only `board_packet` specialization path from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
 `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` now serves as the shipped F5C2 record: one deterministic, runtime-free, draft-only `lender_update` specialization path from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
-`plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C3 record: one deterministic, runtime-free, draft-only `diligence_packet` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`, while approval-release hardening remains the later F5C4 step.
-`plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` now serves as the active F5C4 record: the first implementation slice should retarget the existing approvals bounded context for one finance-facing `report_release` approval on one completed `lender_update` reporting mission, add review request plus approval resolution plus release-readiness posture, and stay deterministic, runtime-free, and delivery-free.
+`plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C3 record: one deterministic, runtime-free, draft-only `diligence_packet` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
+`plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` now serves as the shipped F5C4A record: the repo already supports one finance-facing `report_release` approval on one completed `lender_update` reporting mission, approval resolution without live runtime continuation, and explicit release-readiness posture while staying deterministic, runtime-free, and delivery-free.
+`plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` now serves as the active F5C4B record: the next implementation slice should record that one already-approved `lender_update` was released externally, add one explicit release record plus release-logged posture, reuse the existing `report_release` approval seam where possible, and stay deterministic, runtime-free, and delivery-free in the system sense.
 
 ## Product boundary for v1
 
@@ -163,6 +164,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0039-lender-update-specialization-and-draft-review-foundation.md
 │   ├── FP-0040-diligence-packet-specialization-and-draft-review-foundation.md
 │   ├── FP-0041-approval-review-and-first-lender-update-release-readiness.md
+│   ├── FP-0042-release-log-and-first-lender-update-release-record-foundation.md
 │   └── templates
 └── .agents
     └── skills
