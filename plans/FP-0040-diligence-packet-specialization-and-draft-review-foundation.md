@@ -2,8 +2,9 @@
 
 ## Purpose / Big Picture
 
-This plan is the active F5 implementation contract produced by the F5C3 master-plan and active-doc refresh slice.
-The target phase is `F5`, and the next execution slice is `F5C3-diligence-packet-specialization-and-draft-review-foundation`.
+This plan now serves as the shipped F5C3 record produced by the F5C3 master-plan and active-doc refresh slice.
+`plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` is the active F5C4 implementation contract that follows it.
+The target phase is `F5`, and the execution slice recorded here is `F5C3-diligence-packet-specialization-and-draft-review-foundation`.
 The user-visible goal is narrow and concrete: after the shipped F5A, F5B, F5C1, and F5C2 path already creates one draft `finance_memo`, one linked `evidence_appendix`, truthful stored-vs-filed-vs-exported posture for the finance-memo path, one draft `board_packet`, and one draft `lender_update`, Pocket CFO should next be able to compile one specialized draft `diligence_packet` from completed reporting work and present it as review-ready draft output without widening into approval-release semantics, runtime-codex drafting, filing or export expansion, or non-markdown output formats.
 
 This mattered because the repo already shipped the right deterministic substrate for the next packet-specialization pass: first-class `reporting` missions, `manual_reporting`, stored `finance_memo.bodyMarkdown`, stored `evidence_appendix.bodyMarkdown`, reporting proof bundles, mission-centric filing and markdown export reuse for the finance-memo path, and two specialized draft packet families that already proved `reportKind` can widen inside the existing reporting bounded context without creating a second top-level mission family.
@@ -84,7 +85,7 @@ The landed F5C3 slice adds only the narrow implementation this plan authorized: 
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reintroduce a `modules/reports/**` rename wave.
   Rationale: the shipped F5A through F5C2 code already standardized on first-class `reporting` seams, and a rename would create noise before the diligence-packet contract exists.
 
-- Decision: leave `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` as the shipped F5C2 record while this file becomes the single active later-F5 plan.
+- Decision: leave `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` as the shipped F5C2 record while this file serves as the shipped F5C3 record and `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` becomes the active successor plan.
   Rationale: the plan chain should preserve shipped history and keep exactly one active successor plan.
 
 ## Context and Orientation
@@ -405,4 +406,4 @@ This slice lands the first real F5C3 implementation exactly as intended: reporti
 It leaves `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` as the shipped F5C2 record, keeps the finance-memo filing and markdown-export seam unchanged, keeps runtime-codex and approvals out of scope, and proves the additive migration plus packaged diligence smoke through `pnpm ci:repro:current`.
 
 This slice does not reopen F5A through F5C2, does not widen into F5C4 or F6, and does not delete GitHub or engineering-twin modules.
-What remains is authoring the next narrow F5C4 approval-release plan; no additional F5C3 continuation is required to keep this slice truthful.
+What remains is implementing the next narrow F5C4 plan now recorded in `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`; no additional F5C3 continuation is required to keep this slice truthful.

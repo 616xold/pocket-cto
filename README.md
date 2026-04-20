@@ -56,6 +56,7 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0038-board-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C1 record: one deterministic, runtime-free, draft-only `board_packet` specialization path from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
 `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` now serves as the shipped F5C2 record: one deterministic, runtime-free, draft-only `lender_update` specialization path from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
 `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C3 record: one deterministic, runtime-free, draft-only `diligence_packet` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`, while approval-release hardening remains the later F5C4 step.
+`plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` now serves as the active F5C4 record: the first implementation slice should retarget the existing approvals bounded context for one finance-facing `report_release` approval on one completed `lender_update` reporting mission, add review request plus approval resolution plus release-readiness posture, and stay deterministic, runtime-free, and delivery-free.
 
 ## Product boundary for v1
 
@@ -161,6 +162,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0038-board-packet-specialization-and-draft-review-foundation.md
 │   ├── FP-0039-lender-update-specialization-and-draft-review-foundation.md
 │   ├── FP-0040-diligence-packet-specialization-and-draft-review-foundation.md
+│   ├── FP-0041-approval-review-and-first-lender-update-release-readiness.md
 │   └── templates
 └── .agents
     └── skills
