@@ -274,7 +274,8 @@ Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
 The latest shipped implementation record for this phase is `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`.
-The next implementation contract to author is the narrow F5C4 approval-release hardening plan.
+The active later-F5 implementation contract is `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`.
+The first remaining execution slice is `F5C4A-approval-review-and-first-lender-update-release-readiness`.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
@@ -307,7 +308,7 @@ Slice map:
   - reuse company-level markdown export runs and export linkage only after filing, while keeping export posture separate from proof readiness
   - keep packet specialization, PDF export, slide export, and release hardening out of scope
 
-- `F5C — packet specialization and later approval-release hardening`
+- `F5C — packet specialization and later approval, review, and release-readiness hardening`
   - `F5C1 — board packet specialization and draft review foundation`
     - add the first packet-specific `reportKind`: `board_packet`
     - compile only from one completed `reporting` mission with stored `finance_memo` plus stored `evidence_appendix`
@@ -329,15 +330,26 @@ Slice map:
     - keep execution deterministic, runtime-free, and draft-only
     - keep filing or export behavior for `diligence_packet`, external release semantics, finance approval semantics, and bounded runtime-codex drafting out of scope
     - keep PDF, slide, and Marp export out of scope
-  - `F5C4 — approval-release hardening for external communication posture`
-    - add the first real packet review, approval, and release semantics only after specialized packet drafts already exist
+  - `F5C4 — approval, review, and release-readiness hardening for external communication posture`
+    - `F5C4A — approval review and first lender update release readiness`
+      - start only from one completed `reporting` mission with `reportKind = "lender_update"` and one stored `lender_update` artifact
+      - keep `mission.type = "reporting"` and `reportKind = "lender_update"`
+      - retarget the existing approvals bounded context rather than inventing a second approval system
+      - add one finance-facing approval kind:
+        - `report_release`
+      - add review request, approval resolution, and release-readiness posture only
+      - keep the slice deterministic, runtime-free, and delivery-free
+      - do not add actual send, distribute, publish, or release logging
+    - `F5C4B — release log and broader packet approval widening`
+      - add delivery logging and widen review or approval posture to the broader external-facing packet set only after F5C4A is stable
+    - only after F5C4B should bounded runtime-codex phrasing or formatting assistance be reconsidered, and only if it still solves a proven operator problem
 
 Exit criteria:
 
 - one completed finance discovery mission can produce a first-class reporting mission
 - the first report path yields a draft `finance_memo` plus `evidence_appendix`
 - report outputs remain reproducible, evidence-linked, freshness-aware, and explicit about limitations
-- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, while approval-release semantics remain clearly deferred to F5C4 and markdown export reuse stays limited to the filed-artifact path defined in F5B
+- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, while the active next hardening step is lender-update review, approval, and release-readiness only, with actual delivery and broader widening deferred beyond F5C4A and markdown export reuse still limited to the filed-artifact path defined in F5B
 
 ## F6 — Monitoring, controls, and adoption loop
 
