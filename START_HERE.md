@@ -84,8 +84,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` now serves as the shipped F5C2 record.
 `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` is now the shipped F5C3 record.
 `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` is now the shipped F5C4A record.
-`plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` is now the active F5C4B record.
-The next implementation thread should start the narrow `F5C4B-release-log-and-first-lender-update-release-record-foundation` slice against `FP-0042` rather than reopening F5C4A, widening straight into broader packet approval rollout or F6, or replaying F5C2 or F5C3.
+`plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` is now the shipped F5C4B record.
+The next implementation thread should start from `FP-0042`'s shipped boundary and open a new narrow later-F5 plan rather than reopening F5C4B, reopening F5C4A, widening straight into broader packet approval rollout or F6, or replaying F5C2 or F5C3.
 
 ## Review ritual
 

@@ -273,9 +273,9 @@ Exit criteria:
 Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
-The latest shipped implementation record for this phase is `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`.
-The active later-F5 implementation contract is `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
-The first remaining execution slice is `F5C4B-release-log-and-first-lender-update-release-record-foundation`.
+The latest shipped implementation record for this phase is `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
+No later-F5 implementation contract is open in this QA pass.
+The next remaining execution slice should be defined by a new explicit plan before code starts; do not reopen F5C4B or start F6 early.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
