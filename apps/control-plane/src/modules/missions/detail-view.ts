@@ -15,6 +15,7 @@ import { readMissionDiscoveryAnswer } from "./discovery-answer-view";
 import { readProofBundleManifest } from "./repository-mappers";
 import { readMissionReportingView } from "../reporting/artifact";
 import { buildReportingPublicationViewFromProofBundle } from "../reporting/publication";
+import { buildReportingReleaseRecordViewFromProofBundle } from "../reporting/release-record";
 import { buildReportingReleaseReadinessViewFromProofBundle } from "../reporting/release-readiness";
 
 const ARTIFACT_SUMMARY_MAX_LENGTH = 180;
@@ -153,8 +154,7 @@ function isFinanceProofBundle(manifest: ProofBundleManifest) {
   return (
     manifest.reportKind === null &&
     (manifest.companyKey !== null ||
-    isFinanceDiscoveryQuestionKind(manifest.questionKind)
-    )
+      isFinanceDiscoveryQuestionKind(manifest.questionKind))
   );
 }
 
@@ -171,6 +171,13 @@ function normalizeProofBundle(
   return {
     ...proofBundle,
     reportPublication,
+    releaseRecord:
+      buildReportingReleaseRecordViewFromProofBundle({
+        evidenceCompleteness: proofBundle.evidenceCompleteness,
+        releaseReadiness: proofBundle.releaseReadiness,
+        releaseRecord: proofBundle.releaseRecord,
+        reportKind: proofBundle.reportKind,
+      }) ?? null,
     releaseReadiness:
       buildReportingReleaseReadinessViewFromProofBundle({
         evidenceCompleteness: proofBundle.evidenceCompleteness,

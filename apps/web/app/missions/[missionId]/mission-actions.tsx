@@ -10,6 +10,7 @@ import {
   CreateReportForm,
   ExportReportingMarkdownForm,
   FileReportingArtifactsForm,
+  RecordReportingReleaseLogForm,
   RequestReportingReleaseApprovalForm,
   TaskInterruptForm,
 } from "./mission-action-forms";
@@ -72,14 +73,22 @@ export function MissionActions({
     reporting?.reportKind === "lender_update" &&
     Boolean(reporting.lenderUpdate) &&
     reporting.releaseReadiness?.releaseApprovalStatus === "not_requested";
+  const canRecordLenderUpdateReleaseLog =
+    mission.type === "reporting" &&
+    mission.status === "succeeded" &&
+    reporting?.reportKind === "lender_update" &&
+    Boolean(reporting.lenderUpdate) &&
+    reporting.releaseReadiness?.releaseApprovalStatus ===
+      "approved_for_release" &&
+    reporting.releaseRecord?.released !== true;
   const reportingFollowOnOutOfScopeNote =
     reporting?.reportKind === "board_packet"
       ? "Board packet missions remain draft-only in F5C1. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
       : reporting?.reportKind === "lender_update"
-        ? "Lender update missions keep filing, markdown export, actual release delivery, PDF, and slide actions out of scope here. F5C4A adds only one persisted release-approval request and review path for the stored draft lender update."
+        ? "Lender update missions keep filing, markdown export, actual system delivery, PDF, and slide actions out of scope here. F5C4B adds only one persisted release-approval path plus one external release-log path for the stored draft lender update."
         : reporting?.reportKind === "diligence_packet"
           ? "Diligence packet missions remain draft-only in F5C3. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
-        : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C3 path.";
+          : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C3 path.";
 
   return (
     <section className="card">
@@ -131,8 +140,8 @@ export function MissionActions({
               ) : null}
               <p className="muted">
                 Create one draft-only diligence packet from this completed
-                finance memo reporting mission and its stored memo plus
-                evidence appendix only.
+                finance memo reporting mission and its stored memo plus evidence
+                appendix only.
               </p>
               {canCreateDraftDiligencePacket ? (
                 <CreateDiligencePacketForm
@@ -180,27 +189,39 @@ export function MissionActions({
           ) : reporting?.reportKind === "lender_update" ? (
             <>
               <p className="muted">
-                This first F5C4A slice keeps lender updates delivery-free and
-                runtime-free, but it does allow one persisted release-approval
-                request from one completed lender-update reporting mission with
-                one stored lender_update artifact.
+                This first real F5C4B slice keeps lender updates delivery-free
+                and runtime-free, but it does allow one persisted
+                release-approval path plus one external release-log path from
+                one completed lender-update reporting mission with one stored
+                lender_update artifact.
               </p>
               {canRequestLenderUpdateReleaseApproval ? (
                 <RequestReportingReleaseApprovalForm
                   missionId={mission.id}
                   operatorIdentity={operatorIdentity}
                 />
+              ) : canRecordLenderUpdateReleaseLog ? (
+                <>
+                  <p className="muted">
+                    Pocket CFO still does not send or distribute the lender
+                    update. This action only records that release happened
+                    externally after approval.
+                  </p>
+                  <RecordReportingReleaseLogForm
+                    missionId={mission.id}
+                    operatorIdentity={operatorIdentity}
+                  />
+                </>
               ) : (
                 <p className="muted">
-                  {reporting?.releaseReadiness?.summary ??
+                  {reporting?.releaseRecord?.summary ??
+                    reporting?.releaseReadiness?.summary ??
                     "Release approval becomes available once the stored lender update is present and no prior release approval request exists for this mission."}
                 </p>
               )}
             </>
           ) : (
-            <p className="muted">
-              {reportingFollowOnOutOfScopeNote}
-            </p>
+            <p className="muted">{reportingFollowOnOutOfScopeNote}</p>
           )}
         </div>
       ) : null}

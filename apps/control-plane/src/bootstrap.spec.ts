@@ -329,9 +329,7 @@ function createAppContainer(
         throw new Error("getPayablesAging should not be called in this test");
       },
       async getPayablesPosture() {
-        throw new Error(
-          "getPayablesPosture should not be called in this test",
-        );
+        throw new Error("getPayablesPosture should not be called in this test");
       },
       async getCompanySnapshot() {
         throw new Error("getCompanySnapshot should not be called in this test");
@@ -410,6 +408,9 @@ function createAppContainer(
       },
       async fileDraftArtifacts() {
         throw new Error("fileDraftArtifacts should not be called in this test");
+      },
+      async recordReleaseLog() {
+        throw new Error("recordReleaseLog should not be called in this test");
       },
       async requestReleaseApproval() {
         throw new Error(

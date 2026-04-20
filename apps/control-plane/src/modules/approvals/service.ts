@@ -13,6 +13,7 @@ import type {
   MissionRecord,
   MissionTaskRecord,
   ReportReleaseApprovalPayload,
+  ReportReleaseApprovalReleaseRecord,
   RuntimeApprovalRequestMethod,
 } from "@pocket-cto/domain";
 import type { PersistenceSession } from "../../lib/persistence";
@@ -71,6 +72,16 @@ export type RequestReportReleaseApprovalResult = {
   created: boolean;
 };
 
+export type RecordReportReleaseLogInput = {
+  approvalId: string;
+  releaseRecord: ReportReleaseApprovalReleaseRecord;
+};
+
+export type RecordReportReleaseLogResult = {
+  approval: ApprovalRecord;
+  created: boolean;
+};
+
 export class ApprovalService {
   constructor(
     private readonly approvalRepository: ApprovalRepository,
@@ -85,9 +96,7 @@ export class ApprovalService {
     private readonly replayService: Pick<ReplayService, "append">,
     private readonly liveSessionRegistry: Pick<
       InMemoryRuntimeSessionRegistry,
-      | "awaitApprovalResolution"
-      | "hasTaskSession"
-      | "tryResolveApproval"
+      "awaitApprovalResolution" | "hasTaskSession" | "tryResolveApproval"
     >,
     private readonly proofBundleAssembly?: Pick<
       ProofBundleAssemblyService,
@@ -222,10 +231,81 @@ export class ApprovalService {
     });
   }
 
+  async recordReportReleaseLog(
+    input: RecordReportReleaseLogInput,
+  ): Promise<RecordReportReleaseLogResult> {
+    return this.missionRepository.transaction(async (session) => {
+      const approval = await this.getRequiredApproval(
+        input.approvalId,
+        session,
+      );
+
+      if (approval.kind !== "report_release") {
+        throw invalidRequest(
+          "approvalId",
+          `Approval ${approval.id} is ${approval.kind}, not report_release.`,
+        );
+      }
+
+      if (approval.status !== "approved") {
+        throw invalidRequest(
+          "approvalId",
+          `Approval ${approval.id} must already be approved before external release can be logged.`,
+        );
+      }
+
+      const payload = readReportReleaseApprovalPayload(approval);
+
+      if (payload.releaseRecord) {
+        return {
+          approval,
+          created: false,
+        };
+      }
+
+      const updated = await this.approvalRepository.updateApproval(
+        {
+          approvalId: approval.id,
+          payload: {
+            ...approval.payload,
+            releaseRecord: input.releaseRecord,
+          },
+          rationale: approval.rationale,
+          resolvedBy: approval.resolvedBy,
+          status: approval.status,
+        },
+        session,
+      );
+
+      await this.replayService.append(
+        {
+          actor: input.releaseRecord.releasedBy,
+          missionId: updated.missionId,
+          taskId: null,
+          type: "approval.release_logged",
+          payload: {
+            approvalId: updated.id,
+            missionId: updated.missionId,
+            releaseRecord: input.releaseRecord,
+          },
+        },
+        session,
+      );
+
+      return {
+        approval: updated,
+        created: true,
+      };
+    });
+  }
+
   async resolveApproval(input: ResolveApprovalInput) {
     const resolution = await this.missionRepository.transaction(
       async (session) => {
-        const approval = await this.getRequiredApproval(input.approvalId, session);
+        const approval = await this.getRequiredApproval(
+          input.approvalId,
+          session,
+        );
 
         if (approval.status !== "pending") {
           throw new ApprovalNotPendingError(approval.id, approval.status);
@@ -396,9 +476,8 @@ export class ApprovalService {
   }
 
   async cancelPendingApprovalsForTask(input: CancelPendingTaskApprovalsInput) {
-    const approvalsToCancel = await this.approvalRepository.listPendingApprovalsByTaskId(
-      input.taskId,
-    );
+    const approvalsToCancel =
+      await this.approvalRepository.listPendingApprovalsByTaskId(input.taskId);
 
     if (approvalsToCancel.length === 0) {
       return [];
@@ -418,16 +497,17 @@ export class ApprovalService {
               resolvedBy: input.resolvedBy,
             },
           };
-          const cancelledApproval = await this.approvalRepository.updateApproval(
-            {
-              approvalId: approval.id,
-              payload: nextPayload,
-              rationale: input.rationale ?? null,
-              resolvedBy: input.resolvedBy,
-              status: "cancelled",
-            },
-            session,
-          );
+          const cancelledApproval =
+            await this.approvalRepository.updateApproval(
+              {
+                approvalId: approval.id,
+                payload: nextPayload,
+                rationale: input.rationale ?? null,
+                resolvedBy: input.resolvedBy,
+                status: "cancelled",
+              },
+              session,
+            );
 
           await this.replayService.append(
             {
@@ -517,53 +597,26 @@ export class ApprovalService {
       );
     }
 
-    const approval = await this.missionRepository.transaction(async (session) => {
-      const task = await this.getRequiredTask(input.taskId, session);
-      const mission = await this.getRequiredMission(task.missionId, session);
-      const createdApproval = await this.approvalRepository.createApproval(
-        {
-          kind: input.kind,
-          missionId: task.missionId,
-          payload: {
-            details: input.details,
-            itemId: input.itemId,
-            requestId: input.requestId,
-            requestMethod: input.requestMethod,
-            threadId: input.threadId,
-            turnId: input.turnId,
-          },
-          requestedBy: "system",
-          status: "pending",
-          taskId: task.id,
-        },
-        session,
-      );
-
-      await this.replayService.append(
-        {
-          missionId: task.missionId,
-          taskId: task.id,
-          type: "approval.requested",
-          payload: buildApprovalRequestedPayload({
-            approvalId: createdApproval.id,
-            details: input.details,
-            itemId: input.itemId,
-            kind: createdApproval.kind,
+    const approval = await this.missionRepository.transaction(
+      async (session) => {
+        const task = await this.getRequiredTask(input.taskId, session);
+        const mission = await this.getRequiredMission(task.missionId, session);
+        const createdApproval = await this.approvalRepository.createApproval(
+          {
+            kind: input.kind,
             missionId: task.missionId,
-            requestId: input.requestId,
-            requestMethod: input.requestMethod,
+            payload: {
+              details: input.details,
+              itemId: input.itemId,
+              requestId: input.requestId,
+              requestMethod: input.requestMethod,
+              threadId: input.threadId,
+              turnId: input.turnId,
+            },
+            requestedBy: "system",
+            status: "pending",
             taskId: task.id,
-            threadId: input.threadId,
-            turnId: input.turnId,
-          }),
-        },
-        session,
-      );
-
-      if (task.status === "running") {
-        const awaitingTask = await this.missionRepository.updateTaskStatus(
-          task.id,
-          "awaiting_approval",
+          },
           session,
         );
 
@@ -571,39 +624,69 @@ export class ApprovalService {
           {
             missionId: task.missionId,
             taskId: task.id,
-            type: "task.status_changed",
-            payload: buildTaskStatusChangedPayload(
-              task.status,
-              awaitingTask.status,
-              taskStatusChangeReasons.approvalRequested,
-            ),
+            type: "approval.requested",
+            payload: buildApprovalRequestedPayload({
+              approvalId: createdApproval.id,
+              details: input.details,
+              itemId: input.itemId,
+              kind: createdApproval.kind,
+              missionId: task.missionId,
+              requestId: input.requestId,
+              requestMethod: input.requestMethod,
+              taskId: task.id,
+              threadId: input.threadId,
+              turnId: input.turnId,
+            }),
           },
           session,
         );
-      }
 
-      if (mission.status === "running") {
-        const awaitingMission = await this.missionRepository.updateMissionStatus(
-          mission.id,
-          "awaiting_approval",
-          session,
-        );
+        if (task.status === "running") {
+          const awaitingTask = await this.missionRepository.updateTaskStatus(
+            task.id,
+            "awaiting_approval",
+            session,
+          );
 
-        await this.replayService.append(
-          {
-            missionId: mission.id,
-            type: "mission.status_changed",
-            payload: buildApprovalRequestedMissionStatusChangedPayload(
-              mission.status,
-              awaitingMission.status,
-            ),
-          },
-          session,
-        );
-      }
+          await this.replayService.append(
+            {
+              missionId: task.missionId,
+              taskId: task.id,
+              type: "task.status_changed",
+              payload: buildTaskStatusChangedPayload(
+                task.status,
+                awaitingTask.status,
+                taskStatusChangeReasons.approvalRequested,
+              ),
+            },
+            session,
+          );
+        }
 
-      return createdApproval;
-    });
+        if (mission.status === "running") {
+          const awaitingMission =
+            await this.missionRepository.updateMissionStatus(
+              mission.id,
+              "awaiting_approval",
+              session,
+            );
+
+          await this.replayService.append(
+            {
+              missionId: mission.id,
+              type: "mission.status_changed",
+              payload: buildApprovalRequestedMissionStatusChangedPayload(
+                mission.status,
+                awaitingMission.status,
+              ),
+            },
+            session,
+          );
+        }
+
+        return createdApproval;
+      },
+    );
 
     return this.liveSessionRegistry.awaitApprovalResolution({
       approvalId: approval.id,
@@ -646,7 +729,10 @@ export class ApprovalService {
         session,
       );
 
-    if (mission.status === "awaiting_approval" && pendingMissionApprovals === 0) {
+    if (
+      mission.status === "awaiting_approval" &&
+      pendingMissionApprovals === 0
+    ) {
       const runningMission = await this.missionRepository.updateMissionStatus(
         mission.id,
         "running",
@@ -684,7 +770,10 @@ export class ApprovalService {
     errorMessage: string;
   }) {
     return this.missionRepository.transaction(async (session) => {
-      const approval = await this.getRequiredApproval(input.approvalId, session);
+      const approval = await this.getRequiredApproval(
+        input.approvalId,
+        session,
+      );
 
       return this.approvalRepository.updateApproval(
         {
@@ -772,7 +861,9 @@ function mapCommandApprovalKind(
   return "command";
 }
 
-function mapDecisionToApprovalStatus(decision: ApprovalDecision): ApprovalStatus {
+function mapDecisionToApprovalStatus(
+  decision: ApprovalDecision,
+): ApprovalStatus {
   switch (decision) {
     case "accept":
     case "accept_for_session":

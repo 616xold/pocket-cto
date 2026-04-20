@@ -19,6 +19,8 @@ import {
   MissionTaskRecordSchema,
   OperatorControlAvailabilitySchema,
   ProofBundleManifestSchema,
+  RecordReportingReleaseLogInputSchema,
+  RecordReportingReleaseLogResultSchema,
   RequestReportReleaseApprovalInputSchema,
   RequestReportReleaseApprovalResultSchema,
   ReportingFiledArtifactsResultSchema,
@@ -30,7 +32,11 @@ import {
   SourceIngestRunListViewSchema,
   SourceListViewSchema,
 } from "@pocket-cto/domain";
-import type { ApprovalDecision, MissionSourceKind, MissionStatus } from "@pocket-cto/domain";
+import type {
+  ApprovalDecision,
+  MissionSourceKind,
+  MissionStatus,
+} from "@pocket-cto/domain";
 import type {
   CfoWikiCompanySourceListView,
   CreateDiscoveryMissionInput,
@@ -77,7 +83,8 @@ const sourceIngestRunDetailSchema = SourceIngestRunDetailViewSchema;
 const githubIssueIntakeListSchema = GitHubIssueIntakeListViewSchema;
 type GitHubIssueIntakeList = z.output<typeof githubIssueIntakeListSchema>;
 
-const githubIssueMissionCreateResultSchema = GitHubIssueMissionCreateResultSchema;
+const githubIssueMissionCreateResultSchema =
+  GitHubIssueMissionCreateResultSchema;
 type GitHubIssueMissionCreateResult = z.output<
   typeof githubIssueMissionCreateResultSchema
 >;
@@ -203,11 +210,13 @@ async function postJson<TSchema extends z.ZodTypeAny>(
 }
 
 export async function getControlPlaneHealth(): Promise<ControlPlaneHealth> {
-  return (await fetchJson("/health", healthSchema)) ?? {
-    ok: false,
-    service: "unreachable",
-    now: new Date().toISOString(),
-  };
+  return (
+    (await fetchJson("/health", healthSchema)) ?? {
+      ok: false,
+      service: "unreachable",
+      now: new Date().toISOString(),
+    }
+  );
 }
 
 export async function getMissionDetail(
@@ -270,7 +279,10 @@ export async function getCfoWikiCompanySourceList(
 export async function getSourceDetail(
   sourceId: string,
 ): Promise<SourceDetailView | null> {
-  return fetchJson(`/sources/${encodeURIComponent(sourceId)}`, sourceDetailSchema);
+  return fetchJson(
+    `/sources/${encodeURIComponent(sourceId)}`,
+    sourceDetailSchema,
+  );
 }
 
 export async function getSourceFileList(
@@ -429,6 +441,25 @@ export async function requestReportingReleaseApproval(input: {
       requestedBy: input.requestedBy,
     }),
     RequestReportReleaseApprovalResultSchema,
+  );
+}
+
+export async function recordReportingReleaseLog(input: {
+  missionId: string;
+  releasedAt?: string | null;
+  releasedBy: string;
+  releaseChannel: string;
+  releaseNote?: string | null;
+}) {
+  return postJson(
+    `/missions/${encodeURIComponent(input.missionId)}/reporting/release-log`,
+    RecordReportingReleaseLogInputSchema.parse({
+      releasedAt: input.releasedAt ?? null,
+      releasedBy: input.releasedBy,
+      releaseChannel: input.releaseChannel,
+      releaseNote: input.releaseNote ?? null,
+    }),
+    RecordReportingReleaseLogResultSchema,
   );
 }
 

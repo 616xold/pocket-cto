@@ -1,0 +1,1 @@
+ALTER TYPE "public"."replay_event_type" ADD VALUE 'approval.release_logged' BEFORE 'runtime.thread_replaced';

@@ -166,6 +166,21 @@ function buildReportReleaseCard(
   const payload = isReportReleaseApprovalPayload(approval.payload)
     ? approval.payload
     : null;
+  const releaseRecord = payload?.releaseRecord ?? null;
+
+  if (payload && releaseRecord) {
+    return buildCard(approval, context, {
+      actionHint:
+        "This card records an external release log only. Pocket CFO did not send or distribute the lender update.",
+      requiresLiveControl: false,
+      summary: joinCompact([
+        `External lender-update release is logged for ${payload.companyKey}.`,
+        releaseRecord.summary,
+        `Original approval trace remains anchored to report_release approval ${approval.id}.`,
+      ]),
+      title: `Lender update release logged for ${payload.companyKey}`,
+    });
+  }
 
   return buildCard(approval, context, {
     actionHint:
@@ -236,7 +251,8 @@ function buildRepoContext(
     "branchName" | "pullRequestNumber" | "pullRequestUrl" | "targetRepoFullName"
   >,
 ): MissionApprovalCard["repoContext"] {
-  const repoLabel = proofBundle.targetRepoFullName ?? mission.primaryRepo ?? null;
+  const repoLabel =
+    proofBundle.targetRepoFullName ?? mission.primaryRepo ?? null;
 
   if (
     !repoLabel &&
@@ -274,7 +290,9 @@ function readDetails(approval: ApprovalRecord) {
 
 function readDetailString(details: Record<string, unknown>, key: string) {
   const value = details[key];
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : null;
 }
 
 function readNetworkHint(details: Record<string, unknown>) {

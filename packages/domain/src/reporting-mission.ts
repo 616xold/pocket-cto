@@ -37,10 +37,7 @@ export const REPORTING_MISSION_REPORT_KIND_LABELS = {
 export const REPORTING_FILED_ARTIFACT_KIND_LABELS = {
   finance_memo: "Draft memo page",
   evidence_appendix: "Evidence appendix page",
-} satisfies Record<
-  (typeof REPORTING_FILED_ARTIFACT_KINDS)[number],
-  string
->;
+} satisfies Record<(typeof REPORTING_FILED_ARTIFACT_KINDS)[number], string>;
 
 export const CreateReportingMissionInputSchema = z
   .object({
@@ -89,6 +86,15 @@ export const RequestReportReleaseApprovalInputSchema = z
   })
   .strict();
 
+export const RecordReportingReleaseLogInputSchema = z
+  .object({
+    releasedAt: z.string().datetime({ offset: true }).nullable().default(null),
+    releasedBy: z.string().trim().min(1).default("operator"),
+    releaseChannel: z.string().trim().min(1),
+    releaseNote: z.string().trim().min(1).nullable().default(null),
+  })
+  .strict();
+
 export const ReportingMissionInputSchema = z
   .object({
     sourceDiscoveryMissionId: z.string().uuid(),
@@ -97,9 +103,8 @@ export const ReportingMissionInputSchema = z
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
     questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
     policySourceId: z.string().uuid().nullable().default(null),
-    policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
-      null,
-    ),
+    policySourceScope:
+      FinancePolicySourceScopeSummarySchema.nullable().default(null),
   })
   .strict()
   .superRefine((input, ctx) => {
@@ -151,9 +156,8 @@ export const FinanceMemoArtifactMetadataSchema = z
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
     questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
     policySourceId: z.string().uuid().nullable().default(null),
-    policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
-      null,
-    ),
+    policySourceScope:
+      FinancePolicySourceScopeSummarySchema.nullable().default(null),
     memoSummary: z.string().min(1),
     freshnessSummary: z.string().min(1),
     limitationsSummary: z.string().min(1),
@@ -174,9 +178,8 @@ export const EvidenceAppendixArtifactMetadataSchema = z
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
     questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
     policySourceId: z.string().uuid().nullable().default(null),
-    policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
-      null,
-    ),
+    policySourceScope:
+      FinancePolicySourceScopeSummarySchema.nullable().default(null),
     appendixSummary: z.string().min(1),
     freshnessSummary: z.string().min(1),
     limitationsSummary: z.string().min(1),
@@ -216,9 +219,8 @@ export const BoardPacketArtifactMetadataSchema = z
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
     questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
     policySourceId: z.string().uuid().nullable().default(null),
-    policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
-      null,
-    ),
+    policySourceScope:
+      FinancePolicySourceScopeSummarySchema.nullable().default(null),
     packetSummary: z.string().min(1),
     freshnessSummary: z.string().min(1),
     limitationsSummary: z.string().min(1),
@@ -245,9 +247,8 @@ export const LenderUpdateArtifactMetadataSchema = z
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
     questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
     policySourceId: z.string().uuid().nullable().default(null),
-    policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
-      null,
-    ),
+    policySourceScope:
+      FinancePolicySourceScopeSummarySchema.nullable().default(null),
     updateSummary: z.string().min(1),
     freshnessSummary: z.string().min(1),
     limitationsSummary: z.string().min(1),
@@ -274,9 +275,8 @@ export const DiligencePacketArtifactMetadataSchema = z
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
     questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
     policySourceId: z.string().uuid().nullable().default(null),
-    policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
-      null,
-    ),
+    policySourceScope:
+      FinancePolicySourceScopeSummarySchema.nullable().default(null),
     packetSummary: z.string().min(1),
     freshnessSummary: z.string().min(1),
     limitationsSummary: z.string().min(1),
@@ -316,9 +316,8 @@ export const ReportingPublicationViewSchema = z
   .object({
     storedDraft: z.boolean().default(false),
     filedMemo: ReportingFiledArtifactViewSchema.nullable().default(null),
-    filedEvidenceAppendix: ReportingFiledArtifactViewSchema.nullable().default(
-      null,
-    ),
+    filedEvidenceAppendix:
+      ReportingFiledArtifactViewSchema.nullable().default(null),
     latestMarkdownExport:
       ReportingMarkdownExportViewSchema.nullable().default(null),
     summary: z.string().min(1),
@@ -348,6 +347,18 @@ export const ReportingReleaseReadinessViewSchema = z
   })
   .strict();
 
+export const ReportingReleaseRecordViewSchema = z
+  .object({
+    released: z.boolean().default(false),
+    releasedAt: z.string().datetime({ offset: true }).nullable().default(null),
+    releasedBy: z.string().nullable().default(null),
+    releaseChannel: z.string().nullable().default(null),
+    releaseNote: z.string().nullable().default(null),
+    approvalId: z.string().uuid().nullable().default(null),
+    summary: z.string().min(1),
+  })
+  .strict();
+
 export const ReportingMissionViewSchema = z
   .object({
     reportKind: ReportingMissionReportKindSchema,
@@ -357,9 +368,8 @@ export const ReportingMissionViewSchema = z
     companyKey: FinanceCompanyKeySchema.nullable().default(null),
     questionKind: FinanceDiscoveryQuestionKindSchema.nullable().default(null),
     policySourceId: z.string().uuid().nullable().default(null),
-    policySourceScope: FinancePolicySourceScopeSummarySchema.nullable().default(
-      null,
-    ),
+    policySourceScope:
+      FinancePolicySourceScopeSummarySchema.nullable().default(null),
     reportSummary: z.string().nullable().default(null),
     freshnessSummary: z.string().nullable().default(null),
     limitationsSummary: z.string().nullable().default(null),
@@ -367,14 +377,14 @@ export const ReportingMissionViewSchema = z
     relatedWikiPageKeys: z.array(CfoWikiPageKeySchema).default([]),
     appendixPresent: z.boolean().default(false),
     financeMemo: FinanceMemoArtifactMetadataSchema.nullable().default(null),
-    evidenceAppendix: EvidenceAppendixArtifactMetadataSchema.nullable().default(
-      null,
-    ),
+    evidenceAppendix:
+      EvidenceAppendixArtifactMetadataSchema.nullable().default(null),
     boardPacket: BoardPacketArtifactMetadataSchema.nullable().default(null),
     lenderUpdate: LenderUpdateArtifactMetadataSchema.nullable().default(null),
     diligencePacket:
       DiligencePacketArtifactMetadataSchema.nullable().default(null),
     publication: ReportingPublicationViewSchema.nullable().default(null),
+    releaseRecord: ReportingReleaseRecordViewSchema.nullable().default(null),
     releaseReadiness:
       ReportingReleaseReadinessViewSchema.nullable().default(null),
   })
@@ -407,6 +417,15 @@ export const RequestReportReleaseApprovalResultSchema = z
   })
   .strict();
 
+export const RecordReportingReleaseLogResultSchema = z
+  .object({
+    missionId: z.string().uuid(),
+    approvalId: z.string().uuid(),
+    created: z.boolean(),
+    releaseRecord: ReportingReleaseRecordViewSchema,
+  })
+  .strict();
+
 export type ReportingMissionReportKind = z.infer<
   typeof ReportingMissionReportKindSchema
 >;
@@ -434,6 +453,9 @@ export type ExportReportingMissionMarkdownInput = z.infer<
 >;
 export type RequestReportReleaseApprovalInput = z.infer<
   typeof RequestReportReleaseApprovalInputSchema
+>;
+export type RecordReportingReleaseLogInput = z.infer<
+  typeof RecordReportingReleaseLogInputSchema
 >;
 export type ReportingMissionInput = z.infer<typeof ReportingMissionInputSchema>;
 export type ReportingSourceArtifactKind = z.infer<
@@ -484,6 +506,9 @@ export type ReportingReleaseApprovalStatus = z.infer<
 export type ReportingReleaseReadinessView = z.infer<
   typeof ReportingReleaseReadinessViewSchema
 >;
+export type ReportingReleaseRecordView = z.infer<
+  typeof ReportingReleaseRecordViewSchema
+>;
 export type ReportingMissionView = z.infer<typeof ReportingMissionViewSchema>;
 export type ReportingFiledArtifactsResult = z.infer<
   typeof ReportingFiledArtifactsResultSchema
@@ -493,6 +518,9 @@ export type ReportingMarkdownExportResult = z.infer<
 >;
 export type RequestReportReleaseApprovalResult = z.infer<
   typeof RequestReportReleaseApprovalResultSchema
+>;
+export type RecordReportingReleaseLogResult = z.infer<
+  typeof RecordReportingReleaseLogResultSchema
 >;
 
 export function isFinanceMemoArtifactMetadata(

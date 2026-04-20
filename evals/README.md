@@ -41,7 +41,7 @@ When using those commands during the pivot:
 7. shipped F5C2 draft `lender_update` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`
 8. shipped F5C3 draft `diligence_packet` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`
 9. shipped F5C4A lender-update review, approval, and release-readiness posture from one completed reporting mission with stored `lender_update` evidence and no delivery side effect
-10. active F5C4B lender-update release logging and first release-record posture from one completed approved-for-release reporting mission with stored `lender_update` evidence and no delivery automation
+10. shipped F5C4B lender-update release logging and first release-record posture from one completed approved-for-release reporting mission with stored `lender_update` evidence and no delivery automation
 11. wiki compilation quality
 12. provenance, freshness disclosure, and contradiction handling
 
@@ -65,8 +65,8 @@ For later phases:
 - keep F5 memo and shipped board-packet, lender-update, and diligence-packet evals anchored to the shipped F5A through F5C3 contracts
 - keep the shipped diligence-packet eval scope anchored to `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`: one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix` in, one deterministic draft `diligence_packet` out, with explicit freshness, limitations, review-ready posture, and no runtime-codex fact invention
 - keep the shipped F5C4A eval scope anchored to `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`: one completed `lender_update` reporting mission plus one stored `lender_update` artifact in, one finance-facing `report_release` review trace and derived release-readiness posture out, with no send, distribute, publish, or runtime-codex fact invention
-- keep the active F5C4B eval scope anchored to `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`: one completed approved-for-release `lender_update` reporting mission plus one stored `lender_update` artifact in, one explicit release record plus release-logged posture out, with no send, distribute, publish, or runtime-codex fact invention
-- keep broader packet-approval grading, actual delivery grading, PDF export, slide or Marp export, and runtime-codex drafting evaluation out of the active F5C4B scope and reserved for later F5C4C or later work
+- keep the shipped F5C4B eval scope anchored to `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`: one completed approved-for-release `lender_update` reporting mission plus one stored `lender_update` artifact in, one explicit release record plus release-logged posture out, with no send, distribute, publish, or runtime-codex fact invention
+- keep broader packet-approval grading, actual delivery grading, PDF export, slide or Marp export, and runtime-codex drafting evaluation out of the shipped F5C4B scope and reserved for later F5C4C or later work
 
 Do not treat these as early F4 supported families:
 

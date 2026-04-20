@@ -18,6 +18,7 @@ import {
 } from "@pocket-cto/domain";
 import type { EvidenceArtifactDraft } from "../evidence/service";
 import { buildReportingPublicationViewFromProofBundle } from "./publication";
+import { buildReportingReleaseRecordViewFromProofBundle } from "./release-record";
 import { buildReportingReleaseReadinessViewFromProofBundle } from "./release-readiness";
 
 export function buildFinanceMemoArtifact(input: {
@@ -142,7 +143,9 @@ export function readLenderUpdateArtifactMetadata(
     return null;
   }
 
-  const parsed = LenderUpdateArtifactMetadataSchema.safeParse(artifact.metadata);
+  const parsed = LenderUpdateArtifactMetadataSchema.safeParse(
+    artifact.metadata,
+  );
   return parsed.success ? parsed.data : null;
 }
 
@@ -297,6 +300,13 @@ export function readMissionReportingView(input: {
             reportPublication: input.proofBundle.reportPublication,
           }) ?? null)
         : null,
+    releaseRecord:
+      buildReportingReleaseRecordViewFromProofBundle({
+        evidenceCompleteness: input.proofBundle.evidenceCompleteness,
+        releaseReadiness: input.proofBundle.releaseReadiness,
+        releaseRecord: input.proofBundle.releaseRecord,
+        reportKind,
+      }) ?? null,
     releaseReadiness:
       buildReportingReleaseReadinessViewFromProofBundle({
         evidenceCompleteness: input.proofBundle.evidenceCompleteness,

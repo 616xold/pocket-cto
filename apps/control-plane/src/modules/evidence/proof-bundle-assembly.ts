@@ -62,12 +62,9 @@ type ProofBundleAssemblyDeps = {
       artifacts: ArtifactRecord[];
       mission: MissionRecord;
       proofBundle: ProofBundleManifest | null;
-    }): Promise<
-      | {
-          publication: ProofBundleManifest["reportPublication"];
-        }
-      | null
-    >;
+    }): Promise<{
+      publication: ProofBundleManifest["reportPublication"];
+    } | null>;
   };
 };
 
@@ -90,7 +87,9 @@ export class ProofBundleAssemblyService {
     );
 
     if (!mission) {
-      throw new Error(`Mission ${input.missionId} not found for proof-bundle refresh`);
+      throw new Error(
+        `Mission ${input.missionId} not found for proof-bundle refresh`,
+      );
     }
 
     const tasks = await this.deps.missionRepository.getTasksByMissionId(
@@ -102,27 +101,29 @@ export class ProofBundleAssemblyService {
         input.missionId,
         input.session,
       );
-    const artifacts = await this.deps.missionRepository.listArtifactsByMissionId(
-      input.missionId,
-      input.session,
-    );
-    const approvals = await this.deps.approvalRepository.listApprovalsByMissionId(
-      input.missionId,
-      input.session,
-    );
+    const artifacts =
+      await this.deps.missionRepository.listArtifactsByMissionId(
+        input.missionId,
+        input.session,
+      );
+    const approvals =
+      await this.deps.approvalRepository.listApprovalsByMissionId(
+        input.missionId,
+        input.session,
+      );
     const replayEventCount = await this.deps.replayService.countByMissionId(
       input.missionId,
       input.session,
     );
     const reportPublication =
       mission.type === "reporting" && this.deps.reportingPublicationReader
-        ? (
+        ? ((
             await this.deps.reportingPublicationReader.readPublicationFacts({
               artifacts,
               mission,
               proofBundle: existingBundle,
             })
-          )?.publication ?? null
+          )?.publication ?? null)
         : null;
 
     const currentManifest = assembleProofBundleManifest({
@@ -135,7 +136,10 @@ export class ProofBundleAssemblyService {
       artifacts,
     });
 
-    if (existingBundle && proofBundleManifestEquals(existingBundle, currentManifest)) {
+    if (
+      existingBundle &&
+      proofBundleManifestEquals(existingBundle, currentManifest)
+    ) {
       return existingBundle;
     }
 
@@ -170,24 +174,28 @@ export class ProofBundleAssemblyService {
       return nextManifest;
     }
 
-    await this.deps.missionRepository.upsertProofBundle(nextManifest, input.session);
+    await this.deps.missionRepository.upsertProofBundle(
+      nextManifest,
+      input.session,
+    );
     await this.deps.replayService.append(
       {
         missionId: input.missionId,
         type: "proof_bundle.refreshed",
-          payload: {
-            artifactCount: nextManifest.artifacts.length,
-            missionId: input.missionId,
-            missingArtifactKinds: nextManifest.evidenceCompleteness.missingArtifactKinds,
-            reportExportRunId: input.details?.reportExportRunId ?? null,
-            reportFiledPageKeys: input.details?.reportFiledPageKeys ?? [],
-            reportPublicationSummary:
-              input.details?.reportPublicationSummary ??
-              nextManifest.reportPublication?.summary ??
-              "",
-            status: nextManifest.status,
-            trigger: input.trigger,
-          },
+        payload: {
+          artifactCount: nextManifest.artifacts.length,
+          missionId: input.missionId,
+          missingArtifactKinds:
+            nextManifest.evidenceCompleteness.missingArtifactKinds,
+          reportExportRunId: input.details?.reportExportRunId ?? null,
+          reportFiledPageKeys: input.details?.reportFiledPageKeys ?? [],
+          reportPublicationSummary:
+            input.details?.reportPublicationSummary ??
+            nextManifest.reportPublication?.summary ??
+            "",
+          status: nextManifest.status,
+          trigger: input.trigger,
+        },
       },
       input.session,
     );
@@ -235,6 +243,7 @@ export function assembleProofBundleManifest(input: {
     reportDraftStatus: facts.reportDraftStatus,
     reportSummary: facts.reportSummary ?? "",
     reportPublication: facts.reportPublication,
+    releaseRecord: facts.releaseRecord,
     releaseReadiness: facts.releaseReadiness,
     appendixPresent: facts.appendixPresent,
     freshnessState: facts.freshnessState,
@@ -270,7 +279,9 @@ function buildEvidenceCompleteness(facts: ProofBundleAssemblyFacts) {
   const missingArtifactKinds = expectedArtifactKinds.filter(
     (kind) => !presentArtifactKinds.includes(kind),
   );
-  const notes = missingArtifactKinds.map((kind) => readMissingArtifactNote(kind));
+  const notes = missingArtifactKinds.map((kind) =>
+    readMissingArtifactNote(kind),
+  );
 
   if (facts.latestApproval?.status === "pending") {
     notes.push("A runtime approval is still pending.");
@@ -308,10 +319,14 @@ function buildProofBundleStatus(input: {
     : input.facts.latestPlannerTask?.status === "failed" ||
       input.facts.latestExecutorTask?.status === "failed" ||
       input.facts.latestExecutorTask?.status === "cancelled";
-  const hasMissionFailure = ["failed", "cancelled"].includes(input.mission.status);
+  const hasMissionFailure = ["failed", "cancelled"].includes(
+    input.mission.status,
+  );
   const hasRejectedApproval =
     input.facts.latestApproval !== null &&
-    ["declined", "cancelled", "expired"].includes(input.facts.latestApproval.status);
+    ["declined", "cancelled", "expired"].includes(
+      input.facts.latestApproval.status,
+    );
   const hasPendingApproval = input.facts.latestApproval?.status === "pending";
   const hasMeaningfulEvidence =
     input.facts.artifacts.length > 0 || input.facts.latestApproval !== null;
@@ -557,12 +572,13 @@ function buildVerificationSummary(
     facts.reportSummary
   ) {
     return truncate(
-      isBoardPacketFacts(facts) ||
-        isDiligencePacketFacts(facts)
+      isBoardPacketFacts(facts) || isDiligencePacketFacts(facts)
         ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.`
         : isLenderUpdateFacts(facts)
-          ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and lender-update release-readiness posture before sharing this draft.`
-        : `${facts.reportSummary} Review the linked evidence appendix, carried-forward freshness, and visible limitations before sharing this draft.`,
+          ? facts.releaseRecord?.released
+            ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, approval trace, and external release-record posture before relying on this released draft.`
+            : `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and lender-update release-readiness posture before sharing this draft.`
+          : `${facts.reportSummary} Review the linked evidence appendix, carried-forward freshness, and visible limitations before sharing this draft.`,
       SUMMARY_MAX_LENGTH,
     );
   }
@@ -640,6 +656,10 @@ function buildRiskSummary(
       }
 
       if (status === "ready") {
+        if (facts.releaseRecord?.released) {
+          return "This lender update has one persisted external release record linked to an approved release-review trace, but Pocket CFO still did not send, distribute, publish, generate PDF, or generate slides in F5C4B.";
+        }
+
         if (!facts.releaseReadiness?.approvalId) {
           return "This lender update is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, diligence, PDF, or slide workflow in F5C2.";
         }
@@ -771,6 +791,10 @@ function buildRollbackSummary(
       }
 
       if (status === "ready") {
+        if (facts.releaseRecord?.released) {
+          return "No system send, distribute, publish, PDF export, or slide export side effect was produced; this slice only records an operator-entered external release log against the approved lender update.";
+        }
+
         if (!facts.releaseReadiness?.approvalId) {
           return "No release, approval, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
         }

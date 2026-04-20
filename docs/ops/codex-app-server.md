@@ -58,11 +58,12 @@ Codex remains valuable after that first answer path exists for:
 
 ## Current F5 posture
 
-The latest shipped F5 record is `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`.
-The active later-F5 implementation contract is `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
+The latest shipped F5 record is `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
+No later-F5 implementation contract is open in this QA pass.
 The shipped F5A through F5C4A slices already create first-class reporting missions from completed discovery missions, assemble one draft `finance_memo` plus one linked `evidence_appendix`, expose those stored bodies directly, reuse the existing CFO Wiki filed-page plus markdown export seams for the finance-memo path, compile draft `board_packet`, `lender_update`, and `diligence_packet` artifacts from completed reporting work without creating a runtime thread, and resolve one finance-facing `report_release` approval into explicit lender-update release-readiness without live runtime continuation.
+The shipped F5C4B slice builds on that baseline by recording one operator-entered external release record for an already-approved `lender_update` without introducing system delivery.
 
-For active F5C4B, the control plane and operator surface should:
+For shipped F5C4B, the control plane and operator surface now:
 
 - keep numeric and factual authority in stored evidence, not in runtime output
 - start only from one completed `reporting` mission with `reportKind = "lender_update"`, one stored `lender_update` artifact, and release-readiness already at `approved_for_release`
@@ -97,7 +98,7 @@ As the product pivots:
 - runtime actions that change external communication posture must stay human-reviewable
 
 For F5A through shipped F5C4A, draft report compilation, body exposure, finance-memo filing/export posture, the first three packet specializations, and lender-update release-readiness should stay deterministic and draft-only or delivery-free as appropriate.
-For the active F5C4B implementation in `FP-0042`, release logging should be persisted through the existing reporting and approvals seams without depending on live app-server continuation, and the slice should still not introduce runtime-codex approval or delivery behavior.
+For the shipped F5C4B implementation in `FP-0042`, release logging is persisted through the existing reporting and approvals seams without depending on live app-server continuation, and the slice still does not introduce runtime-codex approval or delivery behavior.
 
 ## Transition note
 

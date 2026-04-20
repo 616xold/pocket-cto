@@ -378,7 +378,7 @@ Those reporting artifacts now persist:
 - keep the slice deterministic, runtime-free, and delivery-free
 - keep actual send, distribute, publish, release logging, broader packet widening, bounded runtime-codex drafting, and non-markdown export formats out of scope
 
-`plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` now serves as the active F5C4B implementation contract for the first reporting release-log step:
+`plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` now serves as the shipped F5C4B record for the first reporting release-log step:
 
 - start only from one completed `reporting` mission with `reportKind = "lender_update"`, one stored `lender_update` artifact, and release-readiness already at `approved_for_release`
 - keep `mission.type = "reporting"` and specialize through `reportKind`
@@ -435,9 +435,9 @@ The shipped F4 baseline still does none of the following:
 - raw wiki pages remain derived evidence inputs, not the only release-readiness source of truth
 - actual send, distribute, publish, release logging, broader packet widening, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
-`FP-0042` now makes the active F5C4B boundary explicit:
+`FP-0042` now makes the shipped F5C4B boundary explicit:
 
-- the next implementation slice should record external release on one already-approved `lender_update` reporting mission with one stored `lender_update` artifact
+- the repo now records external release on one already-approved `lender_update` reporting mission with one stored `lender_update` artifact
 - the source reporting mission must already be completed, remain a `reporting` mission, and already carry `approved_for_release` posture
 - raw wiki pages remain derived evidence inputs, not the source of truth for the release record itself
 - actual send, distribute, publish, broader packet widening, bounded runtime-codex drafting, PDF export, and slide export remain later work

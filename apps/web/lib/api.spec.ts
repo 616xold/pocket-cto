@@ -31,7 +31,8 @@ describe("web api module", () => {
 
     expect(
       mod.resolveControlPlaneUrl({
-        NEXT_PUBLIC_CONTROL_PLANE_URL: "http://public-control-plane.example:4100",
+        NEXT_PUBLIC_CONTROL_PLANE_URL:
+          "http://public-control-plane.example:4100",
         CONTROL_PLANE_URL: "http://control-plane.internal:4200",
       }),
     ).toBe("http://public-control-plane.example:4100");
@@ -278,6 +279,75 @@ describe("web api module", () => {
       {
         body: JSON.stringify({
           requestedBy: "finance-operator",
+        }),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+  });
+
+  it("posts the lender-update release-log route correctly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        return {
+          missionId,
+          approvalId,
+          created: true,
+          releaseRecord: {
+            released: true,
+            releasedAt: "2026-04-20T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "email",
+            releaseNote: "Sent from treasury mailbox after approval.",
+            approvalId,
+            summary:
+              "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+          },
+        };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const result = await mod.recordReportingReleaseLog({
+      missionId,
+      releasedBy: "finance-operator",
+      releaseChannel: "email",
+      releaseNote: "Sent from treasury mailbox after approval.",
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      statusCode: 201,
+      data: {
+        missionId,
+        approvalId,
+        created: true,
+        releaseRecord: {
+          released: true,
+          releasedAt: "2026-04-20T09:10:00.000Z",
+          releasedBy: "finance-operator",
+          releaseChannel: "email",
+          releaseNote: "Sent from treasury mailbox after approval.",
+          approvalId,
+          summary:
+            "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+        },
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/missions/${missionId}/reporting/release-log`,
+      {
+        body: JSON.stringify({
+          releasedAt: null,
+          releasedBy: "finance-operator",
+          releaseChannel: "email",
+          releaseNote: "Sent from treasury mailbox after approval.",
         }),
         cache: "no-store",
         headers: {
@@ -611,7 +681,8 @@ describe("web api module", () => {
               completedAt: "2026-04-18T13:06:00.000Z",
               includesLatestFiledArtifacts: true,
             },
-            summary: "Markdown export run includes the latest filed report pages.",
+            summary:
+              "Markdown export run includes the latest filed report pages.",
           },
         };
       },
@@ -699,8 +770,12 @@ describe("web api module", () => {
     });
     expect(sourceDetail?.source.name).toBe("Board package");
     expect(fileList?.files[0]?.originalFileName).toBe("board-pack.csv");
-    expect(runList?.ingestRuns[0]?.parserSelection.parserKey).toBe("csv_tabular");
-    expect(fileDetail?.provenanceRecords[0]?.kind).toBe("source_file_registered");
+    expect(runList?.ingestRuns[0]?.parserSelection.parserKey).toBe(
+      "csv_tabular",
+    );
+    expect(fileDetail?.provenanceRecords[0]?.kind).toBe(
+      "source_file_registered",
+    );
     expect(runDetail?.ingestRun.status).toBe("ready");
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -858,9 +933,9 @@ describe("web api module", () => {
     );
     const uploadCall = fetchMock.mock.calls[1]?.[1];
     expect(uploadCall).toBeDefined();
-    expect(
-      Array.from(new Uint8Array(uploadCall?.body as ArrayBuffer)),
-    ).toEqual(Array.from(body));
+    expect(Array.from(new Uint8Array(uploadCall?.body as ArrayBuffer))).toEqual(
+      Array.from(body),
+    );
   });
 
   it("forms approval-resolution and task-interrupt requests correctly", async () => {
@@ -1018,7 +1093,8 @@ describe("web api module", () => {
       ok: false,
       statusCode: 501,
       errorCode: "live_control_unavailable",
-      message: "Live approval and interrupt control is unavailable in this process",
+      message:
+        "Live approval and interrupt control is unavailable in this process",
     });
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
@@ -1132,13 +1208,19 @@ function buildMissionDetailPayload() {
         },
       ],
       branchName: null,
-      changeSummary: "Updated the mission detail read model for approvals and artifacts.",
+      changeSummary:
+        "Updated the mission detail read model for approvals and artifacts.",
       decisionTrace: [
         "Executor task 1 produced diff_summary artifact 77777777-7777-4777-8777-777777777777.",
       ],
       evidenceCompleteness: {
         status: "partial",
-        expectedArtifactKinds: ["plan", "diff_summary", "test_report", "pr_link"],
+        expectedArtifactKinds: [
+          "plan",
+          "diff_summary",
+          "test_report",
+          "pr_link",
+        ],
         presentArtifactKinds: ["diff_summary"],
         missingArtifactKinds: ["plan", "test_report", "pr_link"],
         notes: [
@@ -1164,7 +1246,8 @@ function buildMissionDetailPayload() {
       pullRequestUrl: null,
       replayEventCount: 14,
       riskSummary: "Action controls still require embedded-worker mode.",
-      rollbackSummary: "Disable the action panel and fall back to the API route surface.",
+      rollbackSummary:
+        "Disable the action panel and fall back to the API route surface.",
       status: "incomplete",
       targetRepoFullName: null,
       timestamps: {
@@ -1709,7 +1792,8 @@ function buildBoardPacketMissionCreatePayload() {
       latestApproval: null,
       limitationsSummary: "",
       missionId,
-      missionTitle: "Draft board packet for acme from payables pressure reporting",
+      missionTitle:
+        "Draft board packet for acme from payables pressure reporting",
       objective:
         "Compile one draft board packet from completed reporting mission bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb and its stored finance memo plus evidence appendix.",
       policySourceId: null,
@@ -1842,7 +1926,8 @@ function buildLenderUpdateMissionCreatePayload() {
       latestApproval: null,
       limitationsSummary: "",
       missionId,
-      missionTitle: "Draft lender update for acme from payables pressure reporting",
+      missionTitle:
+        "Draft lender update for acme from payables pressure reporting",
       objective:
         "Compile one draft lender update from completed reporting mission bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb and its stored finance memo plus evidence appendix.",
       policySourceId: null,
@@ -1946,7 +2031,8 @@ function buildDiligencePacketMissionCreatePayload() {
           requiresHumanApprovalFor: [],
           sandboxMode: "read-only",
         },
-        title: "Draft diligence packet for acme from payables pressure reporting",
+        title:
+          "Draft diligence packet for acme from payables pressure reporting",
         type: "reporting",
       },
       status: "queued",
@@ -1975,7 +2061,8 @@ function buildDiligencePacketMissionCreatePayload() {
       latestApproval: null,
       limitationsSummary: "",
       missionId,
-      missionTitle: "Draft diligence packet for acme from payables pressure reporting",
+      missionTitle:
+        "Draft diligence packet for acme from payables pressure reporting",
       objective:
         "Compile one draft diligence packet from completed reporting mission bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb and its stored finance memo plus evidence appendix.",
       policySourceId: null,
@@ -2245,9 +2332,7 @@ function buildSourceFileDetailPayload() {
 
 function buildSourceIngestRunListPayload() {
   return {
-    ingestRuns: [
-      buildSourceIngestRunDetailPayload().ingestRun,
-    ],
+    ingestRuns: [buildSourceIngestRunDetailPayload().ingestRun],
     runCount: 1,
     sourceFileId: approvalId,
   };
@@ -2335,7 +2420,8 @@ function buildGitHubIssueMissionCreatePayload() {
       createdAt: "2026-03-16T01:56:00.000Z",
       createdBy: "octo-operator",
       id: missionId,
-      objective: "Ship issue intake\n\nTurn the stored issue envelope into a mission.",
+      objective:
+        "Ship issue intake\n\nTurn the stored issue envelope into a mission.",
       primaryRepo: "acme/web",
       sourceKind: "github_issue",
       sourceRef: "https://github.com/acme/web/issues/42",
@@ -2347,7 +2433,8 @@ function buildGitHubIssueMissionCreatePayload() {
         },
         deliverables: ["plan", "proof_bundle"],
         evidenceRequirements: ["test report"],
-        objective: "Ship issue intake\n\nTurn the stored issue envelope into a mission.",
+        objective:
+          "Ship issue intake\n\nTurn the stored issue envelope into a mission.",
         repos: ["acme/web"],
         riskBudget: {
           allowNetwork: false,

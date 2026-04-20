@@ -19,7 +19,9 @@ describe("ReportingService", () => {
   it("compiles one draft finance memo plus one linked evidence appendix from stored discovery evidence", async () => {
     const sourceMission = buildSourceDiscoveryMission();
     const reportingMission = buildReportingMission(sourceMission.id);
-    const discoveryAnswerArtifact = buildDiscoveryAnswerArtifact(sourceMission.id);
+    const discoveryAnswerArtifact = buildDiscoveryAnswerArtifact(
+      sourceMission.id,
+    );
     const sourceProofBundle = buildSourceProofBundle(sourceMission.id);
     const repository = createMissionRepositoryStub({
       artifactsByMissionId: {
@@ -45,7 +47,9 @@ describe("ReportingService", () => {
 
     expect(compiled.financeMemo.reportKind).toBe("finance_memo");
     expect(compiled.financeMemo.draftStatus).toBe("draft_only");
-    expect(compiled.financeMemo.sourceDiscoveryMissionId).toBe(sourceMission.id);
+    expect(compiled.financeMemo.sourceDiscoveryMissionId).toBe(
+      sourceMission.id,
+    );
     expect(compiled.financeMemo.memoSummary).toContain("Cash posture");
     expect(compiled.financeMemo.relatedRoutePaths).toEqual([
       "/finance-twin/companies/acme/cash-posture",
@@ -214,7 +218,10 @@ describe("ReportingService", () => {
     const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
     const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
     const lenderUpdateMission = {
-      ...buildLenderUpdateMission(sourceDiscoveryMissionId, sourceReportingMissionId),
+      ...buildLenderUpdateMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
       status: "succeeded" as const,
     };
     const repository = createMissionRepositoryStub({
@@ -254,9 +261,12 @@ describe("ReportingService", () => {
       limitationsSummary: "Draft-only posture remains explicit.",
       missionId: lenderUpdateMission.id,
       reportKind: "lender_update",
+      releaseRecord: null,
+      resolution: null,
       sourceDiscoveryMissionId,
       sourceReportingMissionId,
-      summary: "Draft lender update for acme from the completed cash posture reporting mission.",
+      summary:
+        "Draft lender update for acme from the completed cash posture reporting mission.",
     });
   });
 
@@ -290,6 +300,146 @@ describe("ReportingService", () => {
 
     await expect(
       service.prepareLenderUpdateReleaseApproval(financeMemoMission.id),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          code: "invalid_request",
+        },
+      },
+      statusCode: 400,
+    });
+  });
+
+  it("prepares one lender-update release log only after release approval is granted", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const lenderUpdateMission = {
+      ...buildLenderUpdateMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [lenderUpdateMission.id]: [
+          buildStoredLenderUpdateArtifact({
+            missionId: lenderUpdateMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [lenderUpdateMission.id]: lenderUpdateMission,
+      },
+      proofBundlesByMissionId: {
+        [lenderUpdateMission.id]: {
+          ...buildLenderUpdateProofBundle({
+            missionId: lenderUpdateMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-20T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-20T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored lender update is approved for release, but no delivery has been recorded.",
+          },
+        },
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    const prepared = await service.prepareLenderUpdateReleaseLog(
+      lenderUpdateMission.id,
+      {
+        releasedAt: "2026-04-20T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+      },
+    );
+
+    expect(prepared).toEqual({
+      approvalId: "44444444-4444-4444-8444-444444444444",
+      releaseRecord: {
+        releasedAt: "2026-04-20T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+        summary:
+          "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval..",
+      },
+    });
+  });
+
+  it("rejects lender-update release log when release approval is still pending", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const lenderUpdateMission = {
+      ...buildLenderUpdateMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [lenderUpdateMission.id]: [
+          buildStoredLenderUpdateArtifact({
+            missionId: lenderUpdateMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [lenderUpdateMission.id]: lenderUpdateMission,
+      },
+      proofBundlesByMissionId: {
+        [lenderUpdateMission.id]: {
+          ...buildLenderUpdateProofBundle({
+            missionId: lenderUpdateMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+          releaseReadiness: {
+            releaseApprovalStatus: "pending_review",
+            releaseReady: false,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "pending",
+            requestedAt: "2026-04-20T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: null,
+            resolvedBy: null,
+            rationale: null,
+            summary:
+              "Release approval was requested by finance-operator; the stored lender update is not yet approved for release.",
+          },
+        },
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    await expect(
+      service.prepareLenderUpdateReleaseLog(lenderUpdateMission.id, {
+        releasedAt: null,
+        releasedBy: "finance-operator",
+        releaseChannel: "email",
+        releaseNote: "Sent from treasury mailbox after approval.",
+      }),
     ).rejects.toMatchObject({
       body: {
         error: {
@@ -607,7 +757,9 @@ function requireDiligencePacketArtifacts(
   return compiled;
 }
 
-function buildReportingMission(sourceDiscoveryMissionId: string): MissionRecord {
+function buildReportingMission(
+  sourceDiscoveryMissionId: string,
+): MissionRecord {
   return {
     id: "55555555-5555-4555-8555-555555555555",
     type: "reporting",
@@ -876,7 +1028,8 @@ function buildReportingArtifacts(
             kind: "discovery_answer",
           },
         ],
-        bodyMarkdown: "# Draft Finance Memo\n\n## Memo Summary\n\nCash posture remains constrained.",
+        bodyMarkdown:
+          "# Draft Finance Memo\n\n## Memo Summary\n\nCash posture remains constrained.",
       },
       createdAt: "2026-04-18T13:02:00.000Z",
     },
@@ -944,6 +1097,7 @@ function buildReportingProofBundle(
       summary:
         "Draft memo and evidence appendix are stored. Neither draft artifact has been filed into the CFO Wiki yet. No markdown export run has been recorded yet.",
     },
+    releaseRecord: null,
     appendixPresent: true,
     freshnessState: "stale",
     freshnessSummary: "Cash posture remains stale.",
@@ -1050,6 +1204,7 @@ function buildLenderUpdateProofBundle(input: {
     reportPublication: null,
     reportSummary:
       "Draft lender update for acme from the completed cash posture reporting mission.",
+    releaseRecord: null,
     evidenceCompleteness: {
       status: "complete",
       expectedArtifactKinds: ["lender_update"],
@@ -1237,6 +1392,7 @@ function buildSourceProofBundle(missionId: string): ProofBundleManifest {
     reportDraftStatus: null,
     reportPublication: null,
     reportSummary: "",
+    releaseRecord: null,
     appendixPresent: false,
     freshnessState: "stale",
     freshnessSummary:

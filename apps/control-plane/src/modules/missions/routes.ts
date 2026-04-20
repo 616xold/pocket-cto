@@ -17,6 +17,7 @@ import {
   createReportingMissionSchema,
   listMissionsQuerySchema,
   missionIdParamsSchema,
+  recordReportingReleaseLogSchema,
   requestReportingReleaseApprovalSchema,
 } from "./schema";
 
@@ -98,11 +99,14 @@ export async function registerMissionRoutes(
     "/missions/:missionId/reporting/filed-artifacts",
     async (request, reply) => {
       const params = missionIdParamsSchema.parse(request.params);
-      const body = fileReportingMissionArtifactsSchema.parse(request.body ?? {});
-      const filed = await deps.missionReportingActionsService.fileDraftArtifacts(
-        params.missionId,
-        body,
+      const body = fileReportingMissionArtifactsSchema.parse(
+        request.body ?? {},
       );
+      const filed =
+        await deps.missionReportingActionsService.fileDraftArtifacts(
+          params.missionId,
+          body,
+        );
 
       reply.code(201);
       return filed;
@@ -126,12 +130,29 @@ export async function registerMissionRoutes(
     "/missions/:missionId/reporting/release-approval",
     async (request, reply) => {
       const params = missionIdParamsSchema.parse(request.params);
-      const body = requestReportingReleaseApprovalSchema.parse(request.body ?? {});
+      const body = requestReportingReleaseApprovalSchema.parse(
+        request.body ?? {},
+      );
       const result =
         await deps.missionReportingActionsService.requestReleaseApproval(
           params.missionId,
           body,
         );
+
+      reply.code(result.created ? 201 : 200);
+      return result;
+    },
+  );
+
+  app.post(
+    "/missions/:missionId/reporting/release-log",
+    async (request, reply) => {
+      const params = missionIdParamsSchema.parse(request.params);
+      const body = recordReportingReleaseLogSchema.parse(request.body ?? {});
+      const result = await deps.missionReportingActionsService.recordReleaseLog(
+        params.missionId,
+        body,
+      );
 
       reply.code(result.created ? 201 : 200);
       return result;

@@ -24,6 +24,7 @@ import {
   readFinanceMemoArtifactMetadata,
   readLenderUpdateArtifactMetadata,
 } from "../reporting/artifact";
+import { buildReportingReleaseRecordView } from "../reporting/release-record";
 import { buildReportingReleaseReadinessView } from "../reporting/release-readiness";
 import { normalizeSentence, truncate } from "./text";
 
@@ -56,6 +57,7 @@ export type ProofBundleAssemblyFacts = {
   reportPublication: ProofBundleManifest["reportPublication"];
   reportDraftStatus: ProofBundleManifest["reportDraftStatus"];
   reportKind: ProofBundleManifest["reportKind"];
+  releaseRecord: ProofBundleManifest["releaseRecord"];
   releaseReadiness: ProofBundleManifest["releaseReadiness"];
   reportSummary: string | null;
   sourceDiscoveryMissionId: string | null;
@@ -134,6 +136,11 @@ export function deriveProofBundleAssemblyFacts(input: {
     approvals: input.approvals,
     storedDraft: lenderUpdateMetadata !== null,
   });
+  const releaseRecord = buildReportingReleaseRecordView({
+    approvals: input.approvals,
+    releaseReadiness,
+    storedDraft: lenderUpdateMetadata !== null,
+  });
   const latestPlannerTask = readLatestTaskByRole(input.tasks, "planner");
   const latestExecutorTask = readLatestTaskByRole(input.tasks, "executor");
   const latestScoutTask = readLatestTaskByRole(input.tasks, "scout");
@@ -152,7 +159,10 @@ export function deriveProofBundleAssemblyFacts(input: {
     input.existingBundle?.branchName ??
     null;
   const pullRequestNumber =
-    readMetadataPositiveInt(latestArtifacts.pullRequest?.metadata, "prNumber") ??
+    readMetadataPositiveInt(
+      latestArtifacts.pullRequest?.metadata,
+      "prNumber",
+    ) ??
     input.existingBundle?.pullRequestNumber ??
     null;
   const pullRequestUrl =
@@ -214,6 +224,7 @@ export function deriveProofBundleAssemblyFacts(input: {
         input.existingBundle?.reportKind ??
         null,
       latestApproval,
+      releaseRecord,
       releaseReadiness,
       latestExecutorTask,
       latestPlannerTask,
@@ -225,9 +236,15 @@ export function deriveProofBundleAssemblyFacts(input: {
       inferFreshnessStateFromSummary(
         diligencePacketMetadata?.freshnessSummary ?? null,
       ) ??
-      inferFreshnessStateFromSummary(lenderUpdateMetadata?.freshnessSummary ?? null) ??
-      inferFreshnessStateFromSummary(boardPacketMetadata?.freshnessSummary ?? null) ??
-      inferFreshnessStateFromSummary(financeMemoMetadata?.freshnessSummary ?? null) ??
+      inferFreshnessStateFromSummary(
+        lenderUpdateMetadata?.freshnessSummary ?? null,
+      ) ??
+      inferFreshnessStateFromSummary(
+        boardPacketMetadata?.freshnessSummary ?? null,
+      ) ??
+      inferFreshnessStateFromSummary(
+        financeMemoMetadata?.freshnessSummary ?? null,
+      ) ??
       inferFreshnessStateFromSummary(
         evidenceAppendixMetadata?.freshnessSummary ?? null,
       ) ??
@@ -262,6 +279,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       evidenceAppendixMetadata?.reportKind ??
       input.existingBundle?.reportKind ??
       null,
+    releaseRecord,
     releaseReadiness,
     reportSummary:
       diligencePacketMetadata?.packetSummary ??
@@ -271,7 +289,9 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.reportSummary ??
       null,
     reportPublication:
-      input.reportPublication ?? input.existingBundle?.reportPublication ?? null,
+      input.reportPublication ??
+      input.existingBundle?.reportPublication ??
+      null,
     sourceDiscoveryMissionId:
       diligencePacketMetadata?.sourceDiscoveryMissionId ??
       lenderUpdateMetadata?.sourceDiscoveryMissionId ??
@@ -319,7 +339,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       financeMemoMetadata?.policySourceId ??
       evidenceAppendixMetadata?.policySourceId ??
       (isFinanceDiscoveryAnswerMetadata(discoveryAnswerMetadata)
-        ? discoveryAnswerMetadata.policySourceId ?? null
+        ? (discoveryAnswerMetadata.policySourceId ?? null)
         : null) ??
       (isPolicyLookupDiscoveryQuestion(discoveryQuestion)
         ? discoveryQuestion.policySourceId
@@ -381,6 +401,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       latestApproval,
       mission: input.mission,
       pullRequestArtifact: latestArtifacts.pullRequest,
+      releaseRecord,
       releaseReadiness,
     }),
     validationSummary:
@@ -443,13 +464,21 @@ function isLegacyDiscoveryAnswerMetadata(
 function isFinanceDiscoveryQuestion(
   question: DiscoveryMissionQuestion | null,
 ): question is Extract<DiscoveryMissionQuestion, { companyKey: string }> {
-  return typeof question === "object" && question !== null && "companyKey" in question;
+  return (
+    typeof question === "object" &&
+    question !== null &&
+    "companyKey" in question
+  );
 }
 
 function isPolicyLookupDiscoveryQuestion(
   question: DiscoveryMissionQuestion | null,
 ): question is Extract<DiscoveryMissionQuestion, { policySourceId: string }> {
-  return typeof question === "object" && question !== null && "policySourceId" in question;
+  return (
+    typeof question === "object" &&
+    question !== null &&
+    "policySourceId" in question
+  );
 }
 
 function summarizeLimitations(limitations: string[]) {
@@ -511,7 +540,9 @@ function readFinancePolicySourceScope(
     policySourceId: metadata.policySourceId,
     sourceName,
     documentRole:
-      documentRole === null ? null : (documentRole as FinancePolicySourceScopeSummary["documentRole"]),
+      documentRole === null
+        ? null
+        : (documentRole as FinancePolicySourceScopeSummary["documentRole"]),
     includeInCompile,
     latestExtractStatus:
       latestExtractStatus === null
@@ -560,6 +591,7 @@ function buildDecisionTrace(input: {
     | "finance_memo"
     | null;
   latestApproval: ProofBundleLatestApproval | null;
+  releaseRecord: ProofBundleManifest["releaseRecord"];
   releaseReadiness: ProofBundleManifest["releaseReadiness"];
   latestExecutorTask: MissionTaskRecord | null;
   latestPlannerTask: MissionTaskRecord | null;
@@ -570,7 +602,9 @@ function buildDecisionTrace(input: {
   const lines: string[] = [];
 
   if (input.latestPlannerTask) {
-    const planArtifact = input.artifacts.find((artifact) => artifact.kind === "plan");
+    const planArtifact = input.artifacts.find(
+      (artifact) => artifact.kind === "plan",
+    );
 
     if (planArtifact) {
       lines.push(
@@ -613,11 +647,11 @@ function buildDecisionTrace(input: {
           ? `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted board-packet evidence.`
           : input.reportKind === "diligence_packet"
             ? `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted diligence-packet evidence.`
-          : input.reportKind === "lender_update"
-            ? `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted lender-update evidence.`
-          : input.appendixPresent
-          ? `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted reporting evidence.`
-          : `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted discovery evidence.`,
+            : input.reportKind === "lender_update"
+              ? `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted lender-update evidence.`
+              : input.appendixPresent
+                ? `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted reporting evidence.`
+                : `Scout task ${input.latestScoutTask.sequence} terminalized as ${input.latestScoutTask.status} with persisted discovery evidence.`,
       );
     }
   }
@@ -632,7 +666,9 @@ function buildDecisionTrace(input: {
       ? `${capitalizeRole(task.role)} task ${task.sequence}`
       : "Mission";
 
-    lines.push(`${taskPrefix} produced ${artifact.kind} artifact ${artifact.id}.`);
+    lines.push(
+      `${taskPrefix} produced ${artifact.kind} artifact ${artifact.id}.`,
+    );
   }
 
   if (input.pullRequestArtifact) {
@@ -676,6 +712,10 @@ function buildDecisionTrace(input: {
     );
   }
 
+  if (input.releaseRecord?.released) {
+    lines.push(input.releaseRecord.summary);
+  }
+
   return lines.filter(
     (line, index, allLines) => allLines.indexOf(line) === index,
   );
@@ -686,15 +726,19 @@ function buildProofBundleTimestamps(input: {
   latestApproval: ProofBundleLatestApproval | null;
   mission: MissionRecord;
   pullRequestArtifact: ArtifactRecord | null;
+  releaseRecord: ProofBundleManifest["releaseRecord"];
   releaseReadiness: ProofBundleManifest["releaseReadiness"];
 }): ProofBundleTimestamps {
   const latestPlannerEvidenceAt =
     readLatestArtifactByKind(input.artifacts, "plan")?.createdAt ?? null;
   const latestExecutorEvidenceAt =
     [
-      readLatestArtifactByKind(input.artifacts, "diff_summary")?.createdAt ?? null,
-      readLatestArtifactByKind(input.artifacts, "test_report")?.createdAt ?? null,
-      readLatestArtifactByKind(input.artifacts, "log_excerpt")?.createdAt ?? null,
+      readLatestArtifactByKind(input.artifacts, "diff_summary")?.createdAt ??
+        null,
+      readLatestArtifactByKind(input.artifacts, "test_report")?.createdAt ??
+        null,
+      readLatestArtifactByKind(input.artifacts, "log_excerpt")?.createdAt ??
+        null,
     ]
       .filter((value): value is string => Boolean(value))
       .sort()
@@ -712,6 +756,7 @@ function buildProofBundleTimestamps(input: {
     latestPullRequestAt,
     latestApprovalAt:
       input.latestApproval?.updatedAt ??
+      input.releaseRecord?.releasedAt ??
       input.releaseReadiness?.resolvedAt ??
       input.releaseReadiness?.requestedAt ??
       null,
@@ -781,7 +826,9 @@ function readPresentArtifactKinds(artifacts: ArtifactRecord[]) {
 
 function readArtifactSummary(artifact: ArtifactRecord | null) {
   const summary = readMetadataString(artifact?.metadata, "summary");
-  return summary ? truncate(normalizeSentence(summary) ?? summary, SUMMARY_MAX_LENGTH) : null;
+  return summary
+    ? truncate(normalizeSentence(summary) ?? summary, SUMMARY_MAX_LENGTH)
+    : null;
 }
 
 function readMetadataString(

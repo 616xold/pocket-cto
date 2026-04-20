@@ -139,5 +139,5 @@ Keep the eval harness architecture, but replace the scenarios and rubrics with f
 The current finance-native eval-hook proof for the shipped F4A through F4C2 discovery baseline is `pnpm eval:finance-discovery-quality`, which reuses the deterministic `pnpm smoke:finance-discovery-quality:local` ladder rather than a model-scored runtime eval.
 The shipped F5C3 reporting benchmark contract now lives in `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`.
 The shipped F5C4A reporting benchmark contract now lives in `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`.
-The active F5C4B reporting benchmark contract now lives in `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
+The shipped F5C4B reporting benchmark contract now lives in `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
 Broader packet approval widening remains later F5C4C work.
