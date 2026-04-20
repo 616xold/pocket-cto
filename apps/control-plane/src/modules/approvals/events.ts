@@ -13,11 +13,11 @@ export function buildApprovalRequestedPayload(input: {
   itemId: string | null;
   kind: ApprovalKind;
   missionId: string;
-  requestId: string | number;
-  requestMethod: RuntimeApprovalRequestMethod;
-  taskId: string;
-  threadId: string;
-  turnId: string;
+  requestId: string | number | null;
+  requestMethod: RuntimeApprovalRequestMethod | null;
+  taskId: string | null;
+  threadId: string | null;
+  turnId: string | null;
 }): ApprovalRequestedPayload {
   return {
     approvalId: input.approvalId,
@@ -41,13 +41,13 @@ export function buildApprovalResolvedPayload(input: {
   kind: ApprovalKind;
   missionId: string;
   rationale: string | null;
-  requestId: string | number;
-  requestMethod: RuntimeApprovalRequestMethod;
+  requestId: string | number | null;
+  requestMethod: RuntimeApprovalRequestMethod | null;
   resolvedBy: string | null;
   status: ApprovalStatus;
-  taskId: string;
-  threadId: string;
-  turnId: string;
+  taskId: string | null;
+  threadId: string | null;
+  turnId: string | null;
 }): ApprovalResolvedPayload {
   return {
     approvalId: input.approvalId,

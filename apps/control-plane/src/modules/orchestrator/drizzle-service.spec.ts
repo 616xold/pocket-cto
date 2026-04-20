@@ -2832,6 +2832,11 @@ async function createHarness(options?: {
             "fileDraftArtifacts should not be called in orchestrator harness",
           );
         },
+        async requestReleaseApproval() {
+          throw new Error(
+            "requestReleaseApproval should not be called in orchestrator harness",
+          );
+        },
       } as AppContainer["missionReportingActionsService"],
       operatorControl: {
         approvalService,

@@ -33,6 +33,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: null,
           reportKind: null,
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary: null,
           sourceKind: "github_issue",
           sourceDiscoveryMissionId: null,
@@ -84,6 +85,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: null,
           reportKind: null,
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary: null,
           sourceKind: "manual_discovery",
           sourceDiscoveryMissionId: null,
@@ -145,6 +147,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: null,
           reportKind: null,
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary: null,
           sourceKind: "manual_discovery",
           sourceDiscoveryMissionId: null,
@@ -230,6 +233,7 @@ describe("MissionListCard", () => {
             summary:
               "Draft memo and evidence appendix are stored. Both filed pages exist in the CFO Wiki: `filed/reporting-44444444-4444-4444-8444-444444444444-finance_memo` and `filed/reporting-44444444-4444-4444-8444-444444444444-evidence_appendix`. Markdown export run 66666666-6666-4666-8666-666666666666 includes the latest filed report pages.",
           },
+          releaseReadiness: null,
           reportSummary:
             "Draft finance memo summarizing stored payables pressure and evidence posture.",
           sourceDiscoveryMissionId,
@@ -288,6 +292,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: "draft_only",
           reportKind: "board_packet",
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary:
             "Draft board packet for acme from the completed cash posture reporting mission.",
           sourceDiscoveryMissionId: "66666666-6666-4666-8666-666666666666",
@@ -340,6 +345,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: "draft_only",
           reportKind: "diligence_packet",
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary:
             "Draft diligence packet for acme from the completed cash posture reporting mission.",
           sourceDiscoveryMissionId: "66666666-6666-4666-8666-666666666666",

@@ -24,6 +24,7 @@ import {
   readFinanceMemoArtifactMetadata,
   readLenderUpdateArtifactMetadata,
 } from "../reporting/artifact";
+import { buildReportingReleaseReadinessView } from "../reporting/release-readiness";
 import { normalizeSentence, truncate } from "./text";
 
 const SUMMARY_MAX_LENGTH = 240;
@@ -55,6 +56,7 @@ export type ProofBundleAssemblyFacts = {
   reportPublication: ProofBundleManifest["reportPublication"];
   reportDraftStatus: ProofBundleManifest["reportDraftStatus"];
   reportKind: ProofBundleManifest["reportKind"];
+  releaseReadiness: ProofBundleManifest["releaseReadiness"];
   reportSummary: string | null;
   sourceDiscoveryMissionId: string | null;
   sourceReportingMissionId: string | null;
@@ -101,6 +103,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       "finance_memo",
       "evidence_appendix",
       "board_packet",
+      "lender_update",
       "diligence_packet",
       "test_report",
       "log_excerpt",
@@ -127,6 +130,10 @@ export function deriveProofBundleAssemblyFacts(input: {
     latestArtifacts.evidenceAppendix,
   );
   const latestApproval = readLatestApproval(input.approvals);
+  const releaseReadiness = buildReportingReleaseReadinessView({
+    approvals: input.approvals,
+    storedDraft: lenderUpdateMetadata !== null,
+  });
   const latestPlannerTask = readLatestTaskByRole(input.tasks, "planner");
   const latestExecutorTask = readLatestTaskByRole(input.tasks, "executor");
   const latestScoutTask = readLatestTaskByRole(input.tasks, "scout");
@@ -207,6 +214,7 @@ export function deriveProofBundleAssemblyFacts(input: {
         input.existingBundle?.reportKind ??
         null,
       latestApproval,
+      releaseReadiness,
       latestExecutorTask,
       latestPlannerTask,
       latestScoutTask,
@@ -254,6 +262,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       evidenceAppendixMetadata?.reportKind ??
       input.existingBundle?.reportKind ??
       null,
+    releaseReadiness,
     reportSummary:
       diligencePacketMetadata?.packetSummary ??
       lenderUpdateMetadata?.updateSummary ??
@@ -372,6 +381,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       latestApproval,
       mission: input.mission,
       pullRequestArtifact: latestArtifacts.pullRequest,
+      releaseReadiness,
     }),
     validationSummary:
       readArtifactSummary(latestArtifacts.testReport) ??
@@ -516,6 +526,7 @@ function readLatestApproval(
 ): ProofBundleLatestApproval | null {
   const latestApproval =
     [...approvals]
+      .filter((approval) => approval.kind !== "report_release")
       .sort(
         (left, right) =>
           left.createdAt.localeCompare(right.createdAt) ||
@@ -549,6 +560,7 @@ function buildDecisionTrace(input: {
     | "finance_memo"
     | null;
   latestApproval: ProofBundleLatestApproval | null;
+  releaseReadiness: ProofBundleManifest["releaseReadiness"];
   latestExecutorTask: MissionTaskRecord | null;
   latestPlannerTask: MissionTaskRecord | null;
   latestScoutTask: MissionTaskRecord | null;
@@ -658,6 +670,12 @@ function buildDecisionTrace(input: {
     );
   }
 
+  if (input.releaseReadiness?.approvalId) {
+    lines.push(
+      `Latest lender-update release approval is ${input.releaseReadiness.releaseApprovalStatus}.`,
+    );
+  }
+
   return lines.filter(
     (line, index, allLines) => allLines.indexOf(line) === index,
   );
@@ -668,6 +686,7 @@ function buildProofBundleTimestamps(input: {
   latestApproval: ProofBundleLatestApproval | null;
   mission: MissionRecord;
   pullRequestArtifact: ArtifactRecord | null;
+  releaseReadiness: ProofBundleManifest["releaseReadiness"];
 }): ProofBundleTimestamps {
   const latestPlannerEvidenceAt =
     readLatestArtifactByKind(input.artifacts, "plan")?.createdAt ?? null;
@@ -691,7 +710,11 @@ function buildProofBundleTimestamps(input: {
     latestPlannerEvidenceAt,
     latestExecutorEvidenceAt,
     latestPullRequestAt,
-    latestApprovalAt: input.latestApproval?.updatedAt ?? null,
+    latestApprovalAt:
+      input.latestApproval?.updatedAt ??
+      input.releaseReadiness?.resolvedAt ??
+      input.releaseReadiness?.requestedAt ??
+      null,
     latestArtifactAt,
   };
 }

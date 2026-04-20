@@ -750,6 +750,7 @@ describe("MissionService", () => {
         kind: "file_change",
         requestedAt: "2026-03-14T10:00:00.000Z",
         requestedBy: "system",
+        requiresLiveControl: true,
         repoContext: {
           repoLabel: created.mission.primaryRepo ?? "repo context pending",
           branchName: null,
@@ -1089,6 +1090,7 @@ function buildReadyFinanceMemoProofBundle(input: {
     rollbackSummary:
       "No release side effect was produced; rerun only after the stored discovery evidence is refreshed first.",
     latestApproval: null,
+    releaseReadiness: null,
     evidenceCompleteness: {
       status: "complete",
       expectedArtifactKinds: ["finance_memo", "evidence_appendix"],

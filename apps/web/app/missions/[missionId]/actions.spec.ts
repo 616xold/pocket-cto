@@ -10,6 +10,7 @@ const revalidatePath = vi.fn();
 const redirect = vi.fn();
 const resolveMissionApproval = vi.fn();
 const interruptMissionTask = vi.fn();
+const requestReportingReleaseApproval = vi.fn();
 
 vi.mock("next/cache", () => ({
   revalidatePath,
@@ -27,6 +28,7 @@ vi.mock("../../../lib/api", () => ({
   exportReportingMissionMarkdown,
   fileReportingMissionArtifacts,
   interruptMissionTask,
+  requestReportingReleaseApproval,
   resolveMissionApproval,
 }));
 
@@ -255,6 +257,37 @@ describe("mission server actions", () => {
     expect(revalidatePath).toHaveBeenNthCalledWith(2, "/missions");
     expect(revalidatePath).toHaveBeenNthCalledWith(3, `/missions/${missionId}`);
   });
+
+  it("requests lender-update release approval, revalidates mission surfaces, and returns success feedback", async () => {
+    requestReportingReleaseApproval.mockResolvedValue({
+      ok: true,
+      statusCode: 201,
+      data: {},
+    });
+
+    const mod = await import("./actions");
+    const result = await mod.submitRequestReportingReleaseApproval(
+      null,
+      buildRequestReportingReleaseApprovalFormData({
+        requestedBy: "Alicia",
+      }),
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      kind: "request_reporting_release_approval",
+      message:
+        "Lender update release approval requested by Alicia. Mission detail refreshed.",
+      statusCode: 201,
+    });
+    expect(requestReportingReleaseApproval).toHaveBeenCalledWith({
+      missionId,
+      requestedBy: "Alicia",
+    });
+    expect(revalidatePath).toHaveBeenNthCalledWith(1, "/");
+    expect(revalidatePath).toHaveBeenNthCalledWith(2, "/missions");
+    expect(revalidatePath).toHaveBeenNthCalledWith(3, `/missions/${missionId}`);
+  });
 });
 
 function buildApprovalFormData(input: {
@@ -313,5 +346,14 @@ function buildFileReportingArtifactsFormData(input: { filedBy: string }) {
   const formData = new FormData();
   formData.set("missionId", missionId);
   formData.set("filedBy", input.filedBy);
+  return formData;
+}
+
+function buildRequestReportingReleaseApprovalFormData(input: {
+  requestedBy: string;
+}) {
+  const formData = new FormData();
+  formData.set("missionId", missionId);
+  formData.set("requestedBy", input.requestedBy);
   return formData;
 }

@@ -30,6 +30,7 @@ export const approvalKindEnum = pgEnum("approval_kind", [
   "deploy",
   "rollback",
   "network_escalation",
+  "report_release",
 ]);
 
 export const approvalStatusEnum = pgEnum("approval_status", [

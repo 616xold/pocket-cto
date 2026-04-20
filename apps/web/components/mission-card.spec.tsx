@@ -24,6 +24,7 @@ describe("MissionCard", () => {
             resolutionSummary: null,
             resolvedAt: null,
             resolvedBy: null,
+            requiresLiveControl: true,
             status: "pending",
             summary:
               "Allow file edits in the task workspace. Why it matters: the runtime needs workspace write access to continue.",
@@ -51,6 +52,7 @@ describe("MissionCard", () => {
               "Approved by Alicia at 2026-03-14T10:04:00.000Z. Rationale: Local validation should run before publishing.",
             resolvedAt: "2026-03-14T10:04:00.000Z",
             resolvedBy: "Alicia",
+            requiresLiveControl: true,
             status: "approved",
             summary:
               "Run pnpm --filter @pocket-cto/web test. Working directory: .../mission-1/apps/web. Why it matters: verify the updated mission detail UI before publishing.",
@@ -173,6 +175,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
           freshnessState: null,
@@ -309,6 +312,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
           freshnessState: null,
@@ -426,6 +430,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
           freshnessState: "fresh",
@@ -565,6 +570,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
           freshnessState: "missing",
@@ -772,6 +778,7 @@ describe("MissionCard", () => {
           reportDraftStatus: "draft_only",
           reportKind: "finance_memo",
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary:
             "Draft finance memo summarizing stored payables pressure and carried evidence posture.",
           riskSummary: "",
@@ -872,6 +879,7 @@ describe("MissionCard", () => {
           policySourceScope: null,
           boardPacket: null,
           diligencePacket: null,
+          releaseReadiness: null,
           publication: null,
           questionKind: "payables_pressure",
           relatedRoutePaths: ["/finance-twin/companies/acme/payables-aging"],
@@ -1190,6 +1198,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary: "",
           appendixPresent: false,
           freshnessState: null,
@@ -1347,6 +1356,7 @@ describe("MissionCard", () => {
           reportKind: "board_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary:
             "Draft board packet for acme from the completed cash posture reporting mission.",
           appendixPresent: true,
@@ -1429,6 +1439,7 @@ describe("MissionCard", () => {
               "# Draft Board Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
           },
           diligencePacket: null,
+          releaseReadiness: null,
           publication: null,
         }}
         tasks={[
@@ -1562,6 +1573,7 @@ describe("MissionCard", () => {
           reportKind: "diligence_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          releaseReadiness: null,
           reportSummary:
             "Draft diligence packet for acme from the completed cash posture reporting mission.",
           appendixPresent: true,
@@ -1644,6 +1656,7 @@ describe("MissionCard", () => {
             bodyMarkdown:
               "# Draft Diligence Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
           },
+          releaseReadiness: null,
           publication: null,
         }}
         tasks={[

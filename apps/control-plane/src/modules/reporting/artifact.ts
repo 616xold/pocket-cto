@@ -18,6 +18,7 @@ import {
 } from "@pocket-cto/domain";
 import type { EvidenceArtifactDraft } from "../evidence/service";
 import { buildReportingPublicationViewFromProofBundle } from "./publication";
+import { buildReportingReleaseReadinessViewFromProofBundle } from "./release-readiness";
 
 export function buildFinanceMemoArtifact(input: {
   memo: FinanceMemoArtifactMetadata;
@@ -296,6 +297,12 @@ export function readMissionReportingView(input: {
             reportPublication: input.proofBundle.reportPublication,
           }) ?? null)
         : null,
+    releaseReadiness:
+      buildReportingReleaseReadinessViewFromProofBundle({
+        evidenceCompleteness: input.proofBundle.evidenceCompleteness,
+        releaseReadiness: input.proofBundle.releaseReadiness,
+        reportKind,
+      }) ?? null,
   });
 }
 

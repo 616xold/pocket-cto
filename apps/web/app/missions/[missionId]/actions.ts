@@ -11,6 +11,7 @@ import {
   exportReportingMissionMarkdown,
   fileReportingMissionArtifacts,
   interruptMissionTask,
+  requestReportingReleaseApproval,
   resolveMissionApproval,
 } from "../../../lib/api";
 import {
@@ -18,6 +19,7 @@ import {
   buildExportReportingMarkdownActionResult,
   buildFileReportingArtifactsActionResult,
   buildInterruptActionResult,
+  buildRequestReportingReleaseApprovalActionResult,
   type MissionActionState,
 } from "../../../lib/operator-actions";
 
@@ -62,6 +64,11 @@ const fileReportingMissionArtifactsFormSchema = z.object({
 const exportReportingMissionMarkdownFormSchema = z.object({
   missionId: z.string().uuid(),
   triggeredBy: z.string().trim().min(1),
+});
+
+const requestReportingReleaseApprovalFormSchema = z.object({
+  missionId: z.string().uuid(),
+  requestedBy: z.string().trim().min(1),
 });
 
 export async function submitApprovalResolution(
@@ -227,4 +234,30 @@ export async function submitFileReportingMissionArtifacts(
   }
 
   return buildFileReportingArtifactsActionResult(input.filedBy, result);
+}
+
+export async function submitRequestReportingReleaseApproval(
+  _previousState: MissionActionState,
+  formData: FormData,
+) {
+  const input = requestReportingReleaseApprovalFormSchema.parse({
+    missionId: formData.get("missionId"),
+    requestedBy: formData.get("requestedBy"),
+  });
+
+  const result = await requestReportingReleaseApproval({
+    missionId: input.missionId,
+    requestedBy: input.requestedBy,
+  });
+
+  if (result.ok) {
+    revalidatePath("/");
+    revalidatePath("/missions");
+    revalidatePath(`/missions/${input.missionId}`);
+  }
+
+  return buildRequestReportingReleaseApprovalActionResult(
+    input.requestedBy,
+    result,
+  );
 }

@@ -279,4 +279,72 @@ describe("Mission list domain schema", () => {
     expect(parsed.missions[0]?.reportPublication).toBeNull();
     expect(parsed.missions[0]?.appendixPresent).toBe(true);
   });
+
+  it("parses lender-update mission summaries with release-readiness posture", () => {
+    const parsed = MissionListViewSchema.parse({
+      filters: {
+        limit: 20,
+        status: null,
+        sourceKind: null,
+      },
+      missions: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          title: "Draft lender update for acme from cash posture reporting",
+          objectiveExcerpt:
+            "Compile one draft lender update from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          answerSummary: null,
+          reportKind: "lender_update",
+          reportDraftStatus: "draft_only",
+          reportPublication: null,
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-20T08:10:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-20T08:12:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored lender update is approved for release, but no delivery has been recorded.",
+          },
+          reportSummary:
+            "Draft lender update for acme from the completed finance memo.",
+          appendixPresent: true,
+          freshnessState: "stale",
+          status: "succeeded",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          primaryRepo: null,
+          createdAt: "2026-04-20T08:00:00.000Z",
+          updatedAt: "2026-04-20T08:12:00.000Z",
+          latestTask: {
+            id: "55555555-5555-4555-8555-555555555555",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            updatedAt: "2026-04-20T08:05:00.000Z",
+          },
+          proofBundleStatus: "ready",
+          pendingApprovalCount: 0,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+        },
+      ],
+    });
+
+    expect(parsed.missions[0]?.reportKind).toBe("lender_update");
+    expect(parsed.missions[0]?.releaseReadiness?.releaseReady).toBe(true);
+    expect(parsed.missions[0]?.releaseReadiness?.releaseApprovalStatus).toBe(
+      "approved_for_release",
+    );
+  });
 });

@@ -33,6 +33,7 @@ import { buildLenderUpdateMissionCreationInput } from "./lender-update";
 import { buildReportingMissionCreationInput } from "./reporting";
 import type { MissionRepository } from "./repository";
 import { buildReportingPublicationViewFromProofBundle } from "../reporting/publication";
+import { buildReportingReleaseReadinessViewFromProofBundle } from "../reporting/release-readiness";
 
 export type MissionDetail = MissionDetailView;
 export type MissionList = MissionListView;
@@ -416,6 +417,12 @@ function summarizeMission(input: {
         evidenceCompleteness: input.proofBundle.evidenceCompleteness,
         reportKind: input.proofBundle.reportKind,
         reportPublication: input.proofBundle.reportPublication,
+      }) ?? null,
+    releaseReadiness:
+      buildReportingReleaseReadinessViewFromProofBundle({
+        evidenceCompleteness: input.proofBundle.evidenceCompleteness,
+        releaseReadiness: input.proofBundle.releaseReadiness,
+        reportKind: input.proofBundle.reportKind,
       }) ?? null,
     appendixPresent: input.proofBundle.appendixPresent,
     freshnessState: input.proofBundle.freshnessState,

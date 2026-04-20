@@ -157,6 +157,34 @@ describe("mission reporting action routes", () => {
       },
     );
   });
+
+  it("POST /missions/:missionId/reporting/release-approval defaults requestedBy and returns 201", async () => {
+    const requestReleaseApproval = vi.fn(async () => ({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      approvalId: "22222222-2222-4222-8222-222222222222",
+      created: true,
+      approvalStatus: "pending" as const,
+      releaseApprovalStatus: "pending_review" as const,
+      releaseReady: false,
+    }));
+    const app = await createTestApp(apps, {
+      requestReleaseApproval,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/11111111-1111-4111-8111-111111111111/reporting/release-approval",
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(requestReleaseApproval).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        requestedBy: "operator",
+      },
+    );
+  });
 });
 
 async function createTestApp(
@@ -192,6 +220,11 @@ async function createTestApp(
   if (overrides.fileDraftArtifacts) {
     container.missionReportingActionsService.fileDraftArtifacts =
       overrides.fileDraftArtifacts;
+  }
+
+  if (overrides.requestReleaseApproval) {
+    container.missionReportingActionsService.requestReleaseApproval =
+      overrides.requestReleaseApproval;
   }
 
   const app = await buildApp({ container });

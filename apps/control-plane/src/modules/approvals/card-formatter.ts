@@ -5,6 +5,7 @@ import type {
   MissionTaskRecord,
   ProofBundleManifest,
 } from "@pocket-cto/domain";
+import { isReportReleaseApprovalPayload } from "@pocket-cto/domain";
 
 type BuildMissionApprovalCardsInput = {
   approvals: ApprovalRecord[];
@@ -53,6 +54,8 @@ export function buildMissionApprovalCard(input: {
       return buildCommandCard(input.approval, details, input.context);
     case "network_escalation":
       return buildNetworkEscalationCard(input.approval, details, input.context);
+    case "report_release":
+      return buildReportReleaseCard(input.approval, input.context);
     default:
       return buildFallbackCard(input.approval, details, input.context);
   }
@@ -156,11 +159,38 @@ function buildFallbackCard(
   });
 }
 
+function buildReportReleaseCard(
+  approval: ApprovalRecord,
+  context: ApprovalCardContext,
+): MissionApprovalCard {
+  const payload = isReportReleaseApprovalPayload(approval.payload)
+    ? approval.payload
+    : null;
+
+  return buildCard(approval, context, {
+    actionHint:
+      "Review the stored lender update summary, freshness, and limitations before deciding whether this draft is approved for release. This slice records posture only and does not deliver the report.",
+    requiresLiveControl: false,
+    summary: payload
+      ? joinCompact([
+          `Review lender update release readiness for ${payload.companyKey}.`,
+          `Summary: ${normalizeSentence(payload.summary)}`,
+          `Freshness: ${normalizeSentence(payload.freshnessSummary)}`,
+          `Limitations: ${normalizeSentence(payload.limitationsSummary)}`,
+        ])
+      : "Review lender update release readiness for a stored draft report. This approval kind carries finance reporting evidence instead of runtime task context.",
+    title: payload
+      ? `Review lender update release approval for ${payload.companyKey}`
+      : "Review lender update release approval",
+  });
+}
+
 function buildCard(
   approval: ApprovalRecord,
   context: ApprovalCardContext,
   input: {
     actionHint: string;
+    requiresLiveControl?: boolean;
     summary: string;
     title: string;
   },
@@ -171,6 +201,7 @@ function buildCard(
     kind: approval.kind,
     requestedAt: approval.createdAt,
     requestedBy: approval.requestedBy,
+    requiresLiveControl: input.requiresLiveControl ?? true,
     repoContext: context.repoContext,
     resolutionSummary:
       approval.status === "pending" ? null : buildResolutionSummary(approval),

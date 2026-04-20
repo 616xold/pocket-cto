@@ -1,3 +1,4 @@
+import type { ProofBundleManifest } from "@pocket-cto/domain";
 import { describe, expect, it, vi } from "vitest";
 import { EvidenceService } from "../evidence/service";
 import { StubMissionCompiler } from "../missions/compiler";
@@ -125,4 +126,186 @@ describe("ApprovalService", () => {
       }),
     );
   });
+
+  it("persists and resolves lender-update release approvals without live runtime continuation", async () => {
+    const missionRepository = new InMemoryMissionRepository();
+    const approvalRepository = new InMemoryApprovalRepository();
+    const replayService = new ReplayService(
+      new InMemoryReplayRepository(),
+      missionRepository,
+    );
+    const missionService = new MissionService(
+      new StubMissionCompiler(),
+      missionRepository,
+      replayService,
+      new EvidenceService(),
+    );
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> =>
+        buildProofBundleManifest(createdMissionId),
+    );
+    const liveSessionRegistry = {
+      awaitApprovalResolution: vi.fn(),
+      hasTaskSession: vi.fn(() => false),
+      tryResolveApproval: vi.fn(() => ({
+        delivered: true as const,
+      })),
+    } satisfies Pick<
+      InMemoryRuntimeSessionRegistry,
+      "awaitApprovalResolution" | "hasTaskSession" | "tryResolveApproval"
+    >;
+    const approvalService = new ApprovalService(
+      approvalRepository,
+      missionRepository,
+      replayService,
+      liveSessionRegistry,
+      {
+        refreshProofBundle,
+      },
+    );
+    const created = await missionService.createFromText({
+      text: "Review lender update release approval posture",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const createdMissionId = created.mission.id;
+    const payload = {
+      missionId: createdMissionId,
+      reportKind: "lender_update" as const,
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+      artifactId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme" as const,
+      draftOnlyStatus: "draft_only" as const,
+      summary: "Draft lender update for acme from the completed finance memo.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary:
+        "This lender update remains delivery-free until review is completed.",
+    };
+
+    const firstRequest = await approvalService.requestReportReleaseApproval({
+      missionId: createdMissionId,
+      payload,
+      requestedBy: "finance-operator",
+    });
+    const secondRequest = await approvalService.requestReportReleaseApproval({
+      missionId: created.mission.id,
+      payload,
+      requestedBy: "finance-operator",
+    });
+
+    expect(firstRequest.created).toBe(true);
+    expect(secondRequest).toEqual({
+      approval: firstRequest.approval,
+      created: false,
+    });
+
+    const resolved = await approvalService.resolveApproval({
+      approvalId: firstRequest.approval.id,
+      decision: "accept",
+      rationale: "Approved for release readiness.",
+      resolvedBy: "finance-reviewer",
+    });
+    const replay = await replayService.getMissionEvents(createdMissionId);
+
+    expect(resolved).toMatchObject({
+      id: firstRequest.approval.id,
+      kind: "report_release",
+      rationale: "Approved for release readiness.",
+      requestedBy: "finance-operator",
+      resolvedBy: "finance-reviewer",
+      status: "approved",
+      taskId: null,
+    });
+    expect(liveSessionRegistry.tryResolveApproval).not.toHaveBeenCalled();
+    expect(refreshProofBundle).toHaveBeenCalledWith({
+      missionId: createdMissionId,
+      trigger: "approval_resolution",
+    });
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.requested",
+        payload: expect.objectContaining({
+          approvalId: firstRequest.approval.id,
+          kind: "report_release",
+          requestMethod: null,
+          taskId: null,
+          threadId: null,
+          turnId: null,
+        }),
+      }),
+    );
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.resolved",
+        payload: expect.objectContaining({
+          approvalId: firstRequest.approval.id,
+          decision: "accept",
+          kind: "report_release",
+          requestMethod: null,
+          status: "approved",
+          taskId: null,
+          threadId: null,
+          turnId: null,
+        }),
+      }),
+    );
+  });
 });
+
+function buildProofBundleManifest(missionId: string): ProofBundleManifest {
+  return {
+    missionId,
+    missionTitle: "Draft lender update for acme",
+    objective: "Compile one draft lender update from stored finance evidence.",
+    sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+    sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+    companyKey: "acme",
+    questionKind: "cash_posture",
+    policySourceId: null,
+    policySourceScope: null,
+    answerSummary: "",
+    reportKind: "lender_update",
+    reportDraftStatus: "draft_only",
+    reportPublication: null,
+    releaseReadiness: null,
+    reportSummary: "Draft lender update for acme from the completed finance memo.",
+    appendixPresent: false,
+    freshnessState: "stale",
+    freshnessSummary: "Cash posture remains stale.",
+    limitationsSummary:
+      "This lender update remains delivery-free until review is completed.",
+    relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+    relatedWikiPageKeys: ["metrics/cash-posture"],
+    targetRepoFullName: null,
+    branchName: null,
+    pullRequestNumber: null,
+    pullRequestUrl: null,
+    changeSummary: "Stored lender update remains in draft-only posture.",
+    validationSummary: "",
+    verificationSummary: "Review the stored lender update and linked proof bundle.",
+    riskSummary: "",
+    rollbackSummary: "",
+    latestApproval: null,
+    evidenceCompleteness: {
+      status: "complete",
+      expectedArtifactKinds: ["lender_update"],
+      presentArtifactKinds: ["lender_update"],
+      missingArtifactKinds: [],
+      notes: [],
+    },
+    decisionTrace: [],
+    artifactIds: [],
+    artifacts: [],
+    replayEventCount: 0,
+    timestamps: {
+      missionCreatedAt: "2026-04-20T09:00:00.000Z",
+      latestPlannerEvidenceAt: null,
+      latestExecutorEvidenceAt: null,
+      latestPullRequestAt: null,
+      latestApprovalAt: null,
+      latestArtifactAt: "2026-04-20T09:00:00.000Z",
+    },
+    status: "ready",
+  };
+}

@@ -210,6 +210,96 @@ describe("ReportingService", () => {
     );
   });
 
+  it("prepares one lender-update release approval payload from a completed lender-update mission with one stored artifact", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const lenderUpdateMission = {
+      ...buildLenderUpdateMission(sourceDiscoveryMissionId, sourceReportingMissionId),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [lenderUpdateMission.id]: [
+          buildStoredLenderUpdateArtifact({
+            missionId: lenderUpdateMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [lenderUpdateMission.id]: lenderUpdateMission,
+      },
+      proofBundlesByMissionId: {
+        [lenderUpdateMission.id]: buildLenderUpdateProofBundle({
+          missionId: lenderUpdateMission.id,
+          sourceDiscoveryMissionId,
+          sourceReportingMissionId,
+        }),
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    const payload = await service.prepareLenderUpdateReleaseApproval(
+      lenderUpdateMission.id,
+    );
+
+    expect(payload).toEqual({
+      artifactId: "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb",
+      companyKey: "acme",
+      draftOnlyStatus: "draft_only",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary: "Draft-only posture remains explicit.",
+      missionId: lenderUpdateMission.id,
+      reportKind: "lender_update",
+      sourceDiscoveryMissionId,
+      sourceReportingMissionId,
+      summary: "Draft lender update for acme from the completed cash posture reporting mission.",
+    });
+  });
+
+  it("rejects lender-update release approval when the reporting mission is not lender_update", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const financeMemoMission = {
+      ...buildSucceededReportingMission(sourceDiscoveryMissionId),
+      id: sourceReportingMissionId,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [financeMemoMission.id]: buildReportingArtifacts(
+          financeMemoMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+      missionsById: {
+        [financeMemoMission.id]: financeMemoMission,
+      },
+      proofBundlesByMissionId: {
+        [financeMemoMission.id]: buildReportingProofBundle(
+          financeMemoMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    await expect(
+      service.prepareLenderUpdateReleaseApproval(financeMemoMission.id),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          code: "invalid_request",
+        },
+      },
+      statusCode: 400,
+    });
+  });
+
   it("compiles one draft diligence packet from stored finance memo and evidence appendix artifacts only", async () => {
     const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
     const sourceReportingMission = buildSucceededReportingMission(
@@ -870,6 +960,7 @@ function buildReportingProofBundle(
     riskSummary: "Draft-only posture remains explicit.",
     rollbackSummary: "No release side effect was produced.",
     latestApproval: null,
+    releaseReadiness: null,
     evidenceCompleteness: {
       status: "complete",
       expectedArtifactKinds: ["finance_memo", "evidence_appendix"],
@@ -890,6 +981,82 @@ function buildReportingProofBundle(
       latestArtifactAt: "2026-04-18T13:02:00.000Z",
     },
     status: "ready",
+  };
+}
+
+function buildStoredLenderUpdateArtifact(input: {
+  missionId: string;
+  sourceDiscoveryMissionId: string;
+  sourceReportingMissionId: string;
+}): ArtifactRecord {
+  return {
+    id: "bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb",
+    missionId: input.missionId,
+    taskId: "44444444-4444-4444-8444-444444444444",
+    kind: "lender_update",
+    uri: `pocket-cto://missions/${input.missionId}/tasks/44444444-4444-4444-8444-444444444444/lender-update`,
+    mimeType: "text/markdown",
+    sha256: null,
+    metadata: {
+      source: "stored_reporting_evidence",
+      summary:
+        "Draft lender update for acme from the completed cash posture reporting mission.",
+      reportKind: "lender_update",
+      draftStatus: "draft_only",
+      sourceReportingMissionId: input.sourceReportingMissionId,
+      sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      updateSummary:
+        "Draft lender update for acme from the completed cash posture reporting mission.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary: "Draft-only posture remains explicit.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceFinanceMemo: {
+        artifactId: "33333333-3333-4333-8333-333333333333",
+        kind: "finance_memo",
+      },
+      sourceEvidenceAppendix: {
+        artifactId: "55555555-5555-4555-8555-555555555556",
+        kind: "evidence_appendix",
+      },
+      bodyMarkdown:
+        "# Draft Lender Update\n\n## Source Finance Memo Draft\n\nCash posture remains constrained.",
+    },
+    createdAt: "2026-04-19T13:02:00.000Z",
+  };
+}
+
+function buildLenderUpdateProofBundle(input: {
+  missionId: string;
+  sourceDiscoveryMissionId: string;
+  sourceReportingMissionId: string;
+}): ProofBundleManifest {
+  return {
+    ...buildReportingProofBundle(
+      input.sourceReportingMissionId,
+      input.sourceDiscoveryMissionId,
+    ),
+    missionId: input.missionId,
+    missionTitle: "Draft lender update for acme from cash posture reporting",
+    objective:
+      "Compile one draft lender update from completed reporting mission and its stored finance memo plus evidence appendix only.",
+    sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+    sourceReportingMissionId: input.sourceReportingMissionId,
+    reportKind: "lender_update",
+    reportPublication: null,
+    reportSummary:
+      "Draft lender update for acme from the completed cash posture reporting mission.",
+    evidenceCompleteness: {
+      status: "complete",
+      expectedArtifactKinds: ["lender_update"],
+      presentArtifactKinds: ["lender_update"],
+      missingArtifactKinds: [],
+      notes: [],
+    },
   };
 }
 
@@ -1096,6 +1263,7 @@ function buildSourceProofBundle(missionId: string): ProofBundleManifest {
     rollbackSummary:
       "No code, branch, pull request, or deploy side effect was produced.",
     latestApproval: null,
+    releaseReadiness: null,
     evidenceCompleteness: {
       status: "complete",
       expectedArtifactKinds: ["discovery_answer"],

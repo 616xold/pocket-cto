@@ -493,4 +493,95 @@ describe("Proof bundle domain schema", () => {
       "diligence_packet",
     ]);
   });
+
+  it("parses lender-update release-readiness posture without redefining proof readiness", () => {
+    const parsed = ProofBundleManifestSchema.parse({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      missionTitle: "Draft lender update for acme from cash posture reporting",
+      objective:
+        "Compile one draft lender update from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+      sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+      sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      answerSummary: "",
+      reportKind: "lender_update",
+      reportDraftStatus: "draft_only",
+      reportPublication: null,
+      releaseReadiness: {
+        releaseApprovalStatus: "approved_for_release",
+        releaseReady: true,
+        approvalId: "44444444-4444-4444-8444-444444444444",
+        approvalStatus: "approved",
+        requestedAt: "2026-04-20T08:10:00.000Z",
+        requestedBy: "finance-operator",
+        resolvedAt: "2026-04-20T08:12:00.000Z",
+        resolvedBy: "finance-reviewer",
+        rationale: "The stored lender update is ready for external release.",
+        summary:
+          "Release approval was granted by finance-reviewer; the stored lender update is approved for release, but no delivery has been recorded.",
+      },
+      reportSummary:
+        "Draft lender update for acme from the completed finance memo.",
+      appendixPresent: true,
+      freshnessState: "stale",
+      freshnessSummary:
+        "Cash posture remains stale because bank coverage is stale.",
+      limitationsSummary:
+        "This lender update remains delivery-free even after approval.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      targetRepoFullName: null,
+      branchName: null,
+      pullRequestNumber: null,
+      pullRequestUrl: null,
+      changeSummary:
+        "Draft lender update for acme from the completed finance memo.",
+      validationSummary:
+        "Draft lender update was compiled deterministically without runtime drafting.",
+      verificationSummary:
+        "Review carried-forward freshness, limitations, and release-readiness posture before sharing this draft.",
+      riskSummary:
+        "This lender update is approved for release from a persisted review path, but actual delivery remains out of scope in F5C4A.",
+      rollbackSummary:
+        "No actual release side effect was produced; this slice only records approved-for-release posture.",
+      latestApproval: null,
+      evidenceCompleteness: {
+        status: "complete",
+        expectedArtifactKinds: ["lender_update"],
+        presentArtifactKinds: ["lender_update"],
+        missingArtifactKinds: [],
+        notes: [],
+      },
+      decisionTrace: [
+        "Scout task 0 terminalized as succeeded with persisted lender-update evidence.",
+        "Latest lender-update release approval is approved_for_release.",
+      ],
+      artifactIds: ["55555555-5555-4555-8555-555555555555"],
+      artifacts: [
+        {
+          id: "55555555-5555-4555-8555-555555555555",
+          kind: "lender_update",
+        },
+      ],
+      replayEventCount: 9,
+      timestamps: {
+        missionCreatedAt: "2026-04-20T08:00:00.000Z",
+        latestPlannerEvidenceAt: null,
+        latestExecutorEvidenceAt: null,
+        latestPullRequestAt: null,
+        latestApprovalAt: "2026-04-20T08:12:00.000Z",
+        latestArtifactAt: "2026-04-20T08:05:00.000Z",
+      },
+      status: "ready",
+    });
+
+    expect(parsed.status).toBe("ready");
+    expect(parsed.releaseReadiness?.releaseReady).toBe(true);
+    expect(parsed.evidenceCompleteness.expectedArtifactKinds).toEqual([
+      "lender_update",
+    ]);
+  });
 });

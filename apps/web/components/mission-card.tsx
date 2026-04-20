@@ -120,6 +120,23 @@ export function MissionCard({
                 <dt>Draft posture</dt>
                 <dd>{reportingView.draftStatus}</dd>
               </div>
+              {isLenderUpdate ? (
+                <>
+                  <div>
+                    <dt>Release approval</dt>
+                    <dd>
+                      {reportingView.releaseReadiness?.releaseApprovalStatus ??
+                        "not_requested"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Release ready</dt>
+                    <dd>
+                      {reportingView.releaseReadiness?.releaseReady ? "Yes" : "No"}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
             </>
           ) : financeDiscoveryQuestion ? (
             <>
@@ -278,6 +295,28 @@ export function MissionCard({
                 <dt>Draft posture</dt>
                 <dd>{proofBundle.reportDraftStatus ?? "Not recorded yet."}</dd>
               </div>
+              {isLenderUpdate ? (
+                <>
+                  <div>
+                    <dt>Release approval</dt>
+                    <dd>
+                      {proofBundle.releaseReadiness?.releaseApprovalStatus ??
+                        "not_requested"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Release ready</dt>
+                    <dd>{proofBundle.releaseReadiness?.releaseReady ? "Yes" : "No"}</dd>
+                  </div>
+                  <div>
+                    <dt>Release posture</dt>
+                    <dd>
+                      {proofBundle.releaseReadiness?.summary ??
+                        "Release approval posture has not been recorded yet."}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
               <div>
                 <dt>Source discovery mission</dt>
                 <dd>{proofBundle.sourceDiscoveryMissionId ?? "Not recorded yet."}</dd>

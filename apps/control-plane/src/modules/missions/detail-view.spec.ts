@@ -138,6 +138,7 @@ function buildReportingProofBundle(): ProofBundleManifest {
     riskSummary: "",
     rollbackSummary: "",
     latestApproval: null,
+    releaseReadiness: null,
     evidenceCompleteness: {
       status: "complete",
       expectedArtifactKinds: ["finance_memo", "evidence_appendix"],

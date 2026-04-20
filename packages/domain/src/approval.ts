@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FinanceCompanyKeySchema } from "./finance-twin";
 
 export const ApprovalKindSchema = z.enum([
   "command",
@@ -7,6 +8,7 @@ export const ApprovalKindSchema = z.enum([
   "deploy",
   "rollback",
   "network_escalation",
+  "report_release",
 ]);
 
 export const ApprovalStatusSchema = z.enum([
@@ -30,6 +32,21 @@ export const RuntimeApprovalRequestMethodSchema = z.enum([
   "item/permissions/requestApproval",
 ]);
 
+export const ReportReleaseApprovalPayloadSchema = z
+  .object({
+    missionId: z.string().uuid(),
+    reportKind: z.literal("lender_update"),
+    sourceReportingMissionId: z.string().uuid(),
+    sourceDiscoveryMissionId: z.string().uuid(),
+    artifactId: z.string().uuid(),
+    companyKey: FinanceCompanyKeySchema,
+    draftOnlyStatus: z.literal("draft_only"),
+    summary: z.string().min(1),
+    freshnessSummary: z.string().min(1),
+    limitationsSummary: z.string().min(1),
+  })
+  .strict();
+
 export const ApprovalRecordSchema = z.object({
   id: z.string().uuid(),
   missionId: z.string().uuid(),
@@ -50,4 +67,13 @@ export type ApprovalDecision = z.infer<typeof ApprovalDecisionSchema>;
 export type RuntimeApprovalRequestMethod = z.infer<
   typeof RuntimeApprovalRequestMethodSchema
 >;
+export type ReportReleaseApprovalPayload = z.infer<
+  typeof ReportReleaseApprovalPayloadSchema
+>;
 export type ApprovalRecord = z.infer<typeof ApprovalRecordSchema>;
+
+export function isReportReleaseApprovalPayload(
+  value: unknown,
+): value is ReportReleaseApprovalPayload {
+  return ReportReleaseApprovalPayloadSchema.safeParse(value).success;
+}

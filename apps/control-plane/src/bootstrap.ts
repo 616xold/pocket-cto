@@ -388,6 +388,7 @@ function buildSharedKernel(input: {
     },
   );
   const missionReportingActionsService = new MissionReportingActionsService({
+    approvalService,
     proofBundleAssembly,
     reportingService,
   });

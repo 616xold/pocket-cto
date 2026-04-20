@@ -11,6 +11,7 @@ import { FinanceCompanyKeySchema } from "./finance-twin";
 import {
   ReportingDraftStatusSchema,
   ReportingPublicationViewSchema,
+  ReportingReleaseReadinessViewSchema,
   ReportingMissionReportKindSchema,
 } from "./reporting-mission";
 
@@ -39,6 +40,8 @@ export const MissionListItemSchema = z.object({
   reportDraftStatus: ReportingDraftStatusSchema.nullable().default(null),
   reportSummary: z.string().nullable().default(null),
   reportPublication: ReportingPublicationViewSchema.nullable().default(null),
+  releaseReadiness:
+    ReportingReleaseReadinessViewSchema.nullable().default(null),
   appendixPresent: z.boolean().default(false),
   freshnessState: FinanceDiscoveryFreshnessStateSchema.nullable().default(null),
   status: MissionStatusSchema,

@@ -12,10 +12,11 @@ import type {
   ApprovalStatus,
   MissionRecord,
   MissionTaskRecord,
+  ReportReleaseApprovalPayload,
   RuntimeApprovalRequestMethod,
 } from "@pocket-cto/domain";
 import type { PersistenceSession } from "../../lib/persistence";
-import { MissionNotFoundError } from "../../lib/http-errors";
+import { AppHttpError, MissionNotFoundError } from "../../lib/http-errors";
 import {
   buildApprovalRequestedMissionStatusChangedPayload,
   buildApprovalResolvedMissionStatusChangedPayload,
@@ -39,6 +40,7 @@ import {
   ApprovalNotPendingError,
 } from "./errors";
 import {
+  readReportReleaseApprovalPayload,
   readRuntimeApprovalPayload,
   withApprovalContinuationFailurePayload,
 } from "./payload";
@@ -56,6 +58,17 @@ export type CancelPendingTaskApprovalsInput = {
   rationale?: string | null;
   resolvedBy: string;
   taskId: string;
+};
+
+export type RequestReportReleaseApprovalInput = {
+  missionId: string;
+  payload: ReportReleaseApprovalPayload;
+  requestedBy: string;
+};
+
+export type RequestReportReleaseApprovalResult = {
+  approval: ApprovalRecord;
+  created: boolean;
 };
 
 export class ApprovalService {
@@ -139,17 +152,152 @@ export class ApprovalService {
     return this.approvalRepository.listApprovalsByMissionId(missionId);
   }
 
+  async getApprovalById(approvalId: string) {
+    return this.getRequiredApproval(approvalId);
+  }
+
+  async requestReportReleaseApproval(
+    input: RequestReportReleaseApprovalInput,
+  ): Promise<RequestReportReleaseApprovalResult> {
+    if (input.payload.missionId !== input.missionId) {
+      throw invalidRequest(
+        "missionId",
+        "The report release approval payload must target the same mission as the request route.",
+      );
+    }
+
+    return this.missionRepository.transaction(async (session) => {
+      await this.getRequiredMission(input.missionId, session);
+      const approvals = await this.approvalRepository.listApprovalsByMissionId(
+        input.missionId,
+        session,
+      );
+      const existingApproval = readLatestReportReleaseApproval(approvals);
+
+      if (existingApproval) {
+        return {
+          approval: existingApproval,
+          created: false,
+        };
+      }
+
+      const createdApproval = await this.approvalRepository.createApproval(
+        {
+          kind: "report_release",
+          missionId: input.missionId,
+          payload: input.payload,
+          requestedBy: input.requestedBy,
+          status: "pending",
+          taskId: null,
+        },
+        session,
+      );
+
+      await this.replayService.append(
+        {
+          actor: input.requestedBy,
+          missionId: input.missionId,
+          taskId: null,
+          type: "approval.requested",
+          payload: buildApprovalRequestedPayload({
+            approvalId: createdApproval.id,
+            details: input.payload,
+            itemId: null,
+            kind: createdApproval.kind,
+            missionId: input.missionId,
+            requestId: null,
+            requestMethod: null,
+            taskId: null,
+            threadId: null,
+            turnId: null,
+          }),
+        },
+        session,
+      );
+
+      return {
+        approval: createdApproval,
+        created: true,
+      };
+    });
+  }
+
   async resolveApproval(input: ResolveApprovalInput) {
     const resolution = await this.missionRepository.transaction(
       async (session) => {
         const approval = await this.getRequiredApproval(input.approvalId, session);
-        const approvalContext = readRuntimeApprovalPayload(approval);
 
         if (approval.status !== "pending") {
           throw new ApprovalNotPendingError(approval.id, approval.status);
         }
 
+        if (
+          approval.kind === "report_release" &&
+          input.decision === "accept_for_session"
+        ) {
+          throw invalidRequest(
+            "decision",
+            "Report release approvals do not support `accept_for_session`; use `accept`, `decline`, or `cancel`.",
+          );
+        }
+
         const nextStatus = mapDecisionToApprovalStatus(input.decision);
+
+        if (approval.kind === "report_release") {
+          const approvalContext = readReportReleaseApprovalPayload(approval);
+          const updated = await this.approvalRepository.updateApproval(
+            {
+              approvalId: approval.id,
+              payload: {
+                ...approval.payload,
+                resolution: {
+                  decision: input.decision,
+                  rationale: input.rationale ?? null,
+                  resolvedBy: input.resolvedBy,
+                },
+              },
+              rationale: input.rationale ?? null,
+              resolvedBy: input.resolvedBy,
+              status: nextStatus,
+            },
+            session,
+          );
+
+          await this.replayService.append(
+            {
+              actor: input.resolvedBy,
+              missionId: updated.missionId,
+              taskId: null,
+              type: "approval.resolved",
+              payload: buildApprovalResolvedPayload({
+                approvalId: updated.id,
+                decision: input.decision,
+                details: approvalContext,
+                itemId: null,
+                kind: updated.kind,
+                missionId: updated.missionId,
+                rationale: input.rationale ?? null,
+                requestId: null,
+                requestMethod: null,
+                resolvedBy: input.resolvedBy,
+                status: updated.status,
+                taskId: null,
+                threadId: null,
+                turnId: null,
+              }),
+            },
+            session,
+          );
+
+          return {
+            approval: updated,
+            approvalContext: null,
+            shouldAttemptLiveDelivery: false,
+            shouldResumeTaskAndMission: false,
+          };
+        }
+
+        const approvalContext = readRuntimeApprovalPayload(approval);
         const updated = await this.approvalRepository.updateApproval(
           {
             approvalId: approval.id,
@@ -203,7 +351,12 @@ export class ApprovalService {
       },
     );
 
-    if (!resolution.shouldAttemptLiveDelivery) {
+    if (!resolution.shouldAttemptLiveDelivery || !resolution.approvalContext) {
+      await this.proofBundleAssembly?.refreshProofBundle({
+        missionId: resolution.approval.missionId,
+        trigger: "approval_resolution",
+      });
+
       return resolution.approval;
     }
 
@@ -592,6 +745,19 @@ export class ApprovalService {
   }
 }
 
+function readLatestReportReleaseApproval(approvals: ApprovalRecord[]) {
+  return (
+    [...approvals]
+      .filter((approval) => approval.kind === "report_release")
+      .sort(
+        (left, right) =>
+          left.createdAt.localeCompare(right.createdAt) ||
+          left.id.localeCompare(right.id),
+      )
+      .at(-1) ?? null
+  );
+}
+
 function mapCommandApprovalKind(
   input: CommandExecutionRequestApprovalParams,
 ): ApprovalKind {
@@ -626,18 +792,18 @@ function buildRuntimeApprovalResponse(
   requestMethod: RuntimeApprovalRequestMethod,
   decision: ApprovalDecision,
 ): RuntimeCodexApprovalResponse["response"] {
-    switch (requestMethod) {
-      case "item/fileChange/requestApproval":
-        return {
-          decision: mapDecisionToRuntimeDecision(decision),
+  switch (requestMethod) {
+    case "item/fileChange/requestApproval":
+      return {
+        decision: mapDecisionToRuntimeDecision(decision),
       };
     case "item/commandExecution/requestApproval":
       return {
         decision: mapDecisionToRuntimeDecision(decision),
       };
-      case "item/permissions/requestApproval":
-        throw new UnsupportedPermissionsApprovalError();
-    }
+    case "item/permissions/requestApproval":
+      throw new UnsupportedPermissionsApprovalError();
+  }
 }
 
 function mapDecisionToRuntimeDecision(decision: ApprovalDecision) {
@@ -651,4 +817,19 @@ function mapDecisionToRuntimeDecision(decision: ApprovalDecision) {
     case "cancel":
       return "cancel";
   }
+}
+
+function invalidRequest(path: string, message: string) {
+  return new AppHttpError(400, {
+    error: {
+      code: "invalid_request",
+      message: "Invalid request",
+      details: [
+        {
+          path,
+          message,
+        },
+      ],
+    },
+  });
 }

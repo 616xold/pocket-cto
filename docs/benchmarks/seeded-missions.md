@@ -96,7 +96,7 @@ Input:
 One completed `reporting` mission with `reportKind = "lender_update"`, one stored `lender_update` artifact, and the carried freshness, limitations, route, and wiki context from completed reporting work.
 
 Success:
-The system persists one finance-facing `report_release` approval request for that completed lender-update reporting mission, resolves it without live runtime continuation, derives release-readiness as `review_required`, `pending_review`, `approved_for_release`, or `not_approved_for_release`, and presents that reviewer trace without send, distribute, publish, release-log, runtime-codex drafting, or PDF or slide export behavior.
+The system persists one finance-facing `report_release` approval request for that completed lender-update reporting mission, resolves it without live runtime continuation, derives release-readiness as `not_requested`, `pending_review`, `approved_for_release`, or `not_approved_for_release`, and presents that reviewer trace without send, distribute, publish, release-log, runtime-codex drafting, or PDF or slide export behavior.
 
 ## Blocked for now
 
