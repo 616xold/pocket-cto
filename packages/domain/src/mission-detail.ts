@@ -49,6 +49,7 @@ export const MissionApprovalCardSchema = z.object({
   kind: ApprovalKindSchema,
   requestedAt: z.string(),
   requestedBy: z.string(),
+  requiresLiveControl: z.boolean().default(true),
   repoContext: MissionApprovalCardRepoContextSchema.nullable(),
   resolutionSummary: z.string().nullable(),
   resolvedAt: z.string().nullable(),

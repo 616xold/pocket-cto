@@ -20,6 +20,9 @@ This plan does not authorize actual send, distribute, publish, or release loggin
 - [x] 2026-04-20T10:36:29Z Audit the active docs, shipped F5A through F5C3 records, approval-domain contracts, reporting and evidence read models, runtime-codex boundary, and lender-update baseline before choosing the narrowest truthful F5C4 scope.
 - [x] 2026-04-20T10:36:29Z Create `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` and refresh the smallest truthful active-doc set so `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` remains the shipped F5C3 record while this file becomes the single active F5C4 implementation contract.
 - [x] 2026-04-20T10:50:51Z Run the preserved source-ingest through diligence-packet confidence ladder, targeted twin regressions, repo-wide validation, and `pnpm ci:repro:current` for this docs-and-plan handoff without starting F5C4A code.
+- [x] 2026-04-20T19:40:08Z Re-open the active F5C4A contract for the first real implementation thread, explicitly invoke the required repo skills, record the pre-edit implementation verdict, and align the plan with the exact narrow slice requested here: one singular `POST /missions/:missionId/reporting/release-approval` route plus one packaged `tools/lender-update-release-approval-smoke.mjs` proof.
+- [x] 2026-04-20T20:15:30Z Implement the additive `report_release` approval kind, lender-update release-readiness read models, persisted `api_only` approval resolution, mission-detail and mission-list UI surfaces, the additive `approval_kind` migration, and the packaged `pnpm smoke:lender-update-release-approval:local` proof without widening into board, diligence, delivery, PDF, slide, or runtime-codex behavior.
+- [x] 2026-04-20T20:45:00Z Close the slice with green targeted suites, preserved baseline smokes, the new lender-update release-approval smoke, repo-wide lint or typecheck or test, and a green `pnpm ci:repro:current` run before commit and push.
 
 ## Surprises & Discoveries
 
@@ -40,6 +43,9 @@ This plan does not authorize actual send, distribute, publish, or release loggin
 
 - Observation: the active-doc chain was partly fresh and partly one phase behind before this slice.
   Evidence: top-level docs already described F5C3 as shipped, but `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, and `docs/ops/codex-app-server.md` still framed F5C3 as the active next implementation contract.
+
+- Observation: this plan still carried two handoff-era mismatches when the first implementation thread started: it described the slice as docs-only and it named a plural release-approvals route plus a `release-readiness` smoke file even though the narrow requested contract is one singular mission route and one `lender-update-release-approval` smoke.
+  Evidence: `## Context and Orientation`, `## Artifacts and Notes`, and Concrete Steps 3 and 6 in this file before the current refresh.
 
 ## Decision Log
 
@@ -73,7 +79,7 @@ This plan does not authorize actual send, distribute, publish, or release loggin
 - Decision: add one explicit release-readiness view for reporting instead of overloading existing filing or export posture.
   Rationale: `ReportingPublicationView` already describes stored-draft, filed-page, and markdown-export posture for the finance-memo path, so release-readiness needs its own typed summary.
 
-- Decision: the first F5C4A release-readiness posture should be derived as `review_required`, `pending_review`, `approved_for_release`, or `not_approved_for_release`.
+- Decision: the first F5C4A release-readiness posture should be derived as `not_requested`, `pending_review`, `approved_for_release`, or `not_approved_for_release`.
   Rationale: those four states are enough to distinguish no request yet, pending finance review, approved posture, and resolved-but-not-approved posture without claiming that delivery already happened.
 
 - Decision: proof-bundle readiness should remain tied to stored report artifacts, while finance approval and release-readiness posture should be rendered separately.
@@ -90,6 +96,15 @@ This plan does not authorize actual send, distribute, publish, or release loggin
 
 - Decision: the later slice map after F5C4A is `F5C4B-release-log-and-broader-packet-approval-widening`, and only after that should bounded runtime-codex phrasing or formatting assistance be reconsidered if it still solves a real operator problem.
   Rationale: external-communication posture should harden in layers: first review and release-readiness, then delivery and broader packet widening, then optional bounded runtime presentation help.
+
+- Decision: the first mission-centric request path should be the singular `POST /missions/:missionId/reporting/release-approval`, and the packaged local proof should be `tools/lender-update-release-approval-smoke.mjs` behind `pnpm smoke:lender-update-release-approval:local`.
+  Rationale: the implementation thread should match the explicit F5C4A user contract exactly rather than carrying forward handoff-era naming drift.
+
+- Decision: proof bundles and reporting read models should expose `releaseReadiness` as a separate finance-review surface instead of reusing the legacy `latestApproval` summary.
+  Rationale: proof readiness still means one stored lender-update artifact exists; finance approval posture is additive release-readiness state, not a redefinition of report readiness.
+
+- Decision: `POST /approvals/:approvalId/resolve` should continue rejecting live-runtime approvals in `api_only` mode while permitting persisted `report_release` approvals to resolve without a runtime session.
+  Rationale: F5C4A needs one truthful finance-review exception, not a broad reopening of runtime approval semantics outside embedded-worker mode.
 
 ## Context and Orientation
 
@@ -146,7 +161,7 @@ The active-doc boundary for this handoff is:
 
 GitHub connector work is out of scope.
 The internal `@pocket-cto/*` package scope remains unchanged.
-This slice is docs-only and must not add runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding.
+This active slice now includes bounded runtime code, one additive schema migration, one packaged smoke command, and the smallest truthful doc refreshes required to keep the repo aligned with the shipped F5C4A implementation reality.
 
 The most relevant implementation seams for the future F5C4A code thread are:
 
@@ -206,7 +221,7 @@ Only after that later review and release posture exists should the repo reconsid
    - add one finance-facing approval kind, `report_release`
    - keep the existing approval status and resolution enums unless a concrete gap appears
    - add one typed reporting review or release-readiness view separate from `ReportingPublicationView`
-   - derive release-readiness as `review_required`, `pending_review`, `approved_for_release`, or `not_approved_for_release`
+   - derive release-readiness as `not_requested`, `pending_review`, `approved_for_release`, or `not_approved_for_release`
    - carry the latest finance approval id, status, timestamps, actors, and rationale into typed reporting and proof-bundle reads
    - keep `mission.type = "reporting"` and `reportKind = "lender_update"` unchanged
    - add one additive `approval_kind` enum value for `report_release`
@@ -237,7 +252,7 @@ Only after that later review and release posture exists should the repo reconsid
    - `apps/control-plane/src/modules/reporting/service.ts`
 
    F5C4A should:
-   - add one thin operator route such as `POST /missions/:missionId/reporting/release-approvals`
+   - add one thin operator route at `POST /missions/:missionId/reporting/release-approval`
    - require one completed `reporting` mission
    - require `reportKind = "lender_update"`
    - require one stored `lender_update` artifact
@@ -278,13 +293,13 @@ Only after that later review and release posture exists should the repo reconsid
 
 6. Add the narrowest local proof for the first lender-update review and release-readiness slice.
    Update:
-   - add `tools/lender-update-release-readiness-smoke.mjs`
+   - add `tools/lender-update-release-approval-smoke.mjs`
    - `package.json`
    - `docs/ops/local-dev.md` only if the new packaged smoke command lands in code
 
    F5C4A should:
    - mirror the shipped finance-memo, board-packet, lender-update, and diligence-packet local-proof pattern
-   - add one packaged `pnpm smoke:lender-update-release-readiness:local` command
+   - add one packaged `pnpm smoke:lender-update-release-approval:local` command
    - prove request-review, resolve-approval, and derived `approved_for_release` posture from one stored `lender_update` draft without any send or publish side effect
    - avoid new eval datasets in the first implementation pass
 
@@ -343,7 +358,7 @@ Preserved finance proof ladder:
 - `pnpm smoke:board-packet:local`
 - `pnpm smoke:lender-update:local`
 - `pnpm smoke:diligence-packet:local`
-- `pnpm smoke:lender-update-release-readiness:local`
+- `pnpm smoke:lender-update-release-approval:local`
 
 Preserved twin guardrails:
 
@@ -361,7 +376,7 @@ User-visible F5C4A acceptance should be:
 - a completed `lender_update` reporting mission can request one finance review approval without creating a new top-level mission family
 - the request persists one `report_release` approval against the existing approvals bounded context
 - approval resolution works without live runtime continuation
-- the reporting mission detail, approval cards, and proof bundle show a derived release-readiness posture of `review_required`, `pending_review`, `approved_for_release`, or `not_approved_for_release`
+- the reporting mission detail, approval cards, and proof bundle show a derived release-readiness posture of `not_requested`, `pending_review`, `approved_for_release`, or `not_approved_for_release`
 - proof-bundle readiness remains tied to stored report evidence rather than to pending review state
 - the slice stays deterministic, runtime-free, and delivery-free
 - no send, distribute, publish, release-log, PDF, or slide side effect is produced
@@ -392,7 +407,7 @@ This active F5C4A contract expects the next code thread to produce:
 - one finance-facing `report_release` approval kind and additive migration
 - one mission-centric review-request path for completed `lender_update` reporting missions
 - one derived release-readiness view across reporting detail, proof bundles, and approval cards
-- one packaged `pnpm smoke:lender-update-release-readiness:local` proof
+- one packaged `pnpm smoke:lender-update-release-approval:local` proof
 - no send, distribute, publish, or release-log side effect
 
 ## Interfaces and Dependencies
@@ -416,8 +431,8 @@ If a concrete need appears during implementation, document it in this plan, `doc
 
 ## Outcomes & Retrospective
 
-This docs-only handoff narrows later F5 work to one implementation-ready contract instead of a vague approval-release umbrella.
-It leaves `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` as the shipped F5C3 record, refreshes the active-doc chain so it no longer points contributors at F5C3 as active, and keeps the next code thread focused on one deterministic, lender-update-only approval and release-readiness slice.
+This plan started as the docs-only handoff that narrowed later F5 work to one implementation-ready contract instead of a vague approval-release umbrella.
+It keeps `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` as the shipped F5C3 record, keeps the active-doc chain pointed at this file as the single active F5C4 contract, and now serves as the live implementation record for one deterministic, lender-update-only approval and release-readiness slice.
 
-This slice does not start F5C4A code, does not reopen F5C3, does not widen into delivery semantics or F6, and does not delete GitHub or engineering-twin modules.
-What remains is implementing F5C4A exactly as described here; no additional later-F5 master-plan refresh is required before that code work begins.
+This slice still must not reopen F5C3, widen into delivery semantics or F6, or delete GitHub or engineering-twin modules.
+What remains is landing the bounded F5C4A code, proofs, and closeout exactly as described here; no additional later-F5 master-plan refresh is required before that work continues.

@@ -111,8 +111,9 @@ describe("MissionActions", () => {
     );
 
     expect(html).toContain(
-      "Lender update missions remain draft-only in F5C2. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here.",
+      "This first F5C4A slice keeps lender updates delivery-free and runtime-free, but it does allow one persisted release-approval request from one completed lender-update reporting mission with one stored lender_update artifact.",
     );
+    expect(html).toContain("Request lender update release approval");
     expect(html).not.toContain(
       "Board packet missions remain draft-only in F5C1.",
     );
@@ -191,6 +192,7 @@ function buildFinanceMemoReportingView(): MissionDetailView["reporting"] {
     boardPacket: null,
     lenderUpdate: null,
     diligencePacket: null,
+    releaseReadiness: null,
     publication: {
       storedDraft: true,
       filedMemo: null,
@@ -254,5 +256,18 @@ function buildLenderUpdateReportingView(): MissionDetailView["reporting"] {
     },
     diligencePacket: null,
     publication: null,
+    releaseReadiness: {
+      releaseApprovalStatus: "not_requested",
+      releaseReady: false,
+      approvalId: null,
+      approvalStatus: null,
+      requestedAt: null,
+      requestedBy: null,
+      resolvedAt: null,
+      resolvedBy: null,
+      rationale: null,
+      summary:
+        "Stored lender update exists, but release approval has not been requested yet.",
+    },
   } satisfies NonNullable<MissionDetailView["reporting"]>;
 }

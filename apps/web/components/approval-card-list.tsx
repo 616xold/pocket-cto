@@ -30,6 +30,12 @@ export function ApprovalCardList({ approvalCards }: ApprovalCardListProps) {
                 Action hint: {approval.actionHint}
               </p>
             ) : null}
+            {!approval.requiresLiveControl && approval.status === "pending" ? (
+              <p className="muted" style={{ marginTop: 6 }}>
+                This approval resolves from persisted mission state and does not
+                require live runtime control.
+              </p>
+            ) : null}
             {approval.resolutionSummary ? (
               <p className="muted" style={{ marginTop: 6 }}>
                 {approval.resolutionSummary}

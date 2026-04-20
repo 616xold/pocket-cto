@@ -12,6 +12,7 @@ import {
 import {
   ReportingDraftStatusSchema,
   ReportingPublicationViewSchema,
+  ReportingReleaseReadinessViewSchema,
   ReportingMissionReportKindSchema,
 } from "./reporting-mission";
 
@@ -111,6 +112,8 @@ export const ProofBundleManifestSchema = z.object({
   reportDraftStatus: ReportingDraftStatusSchema.nullable().default(null),
   reportSummary: z.string().default(""),
   reportPublication: ReportingPublicationViewSchema.nullable().default(null),
+  releaseReadiness:
+    ReportingReleaseReadinessViewSchema.nullable().default(null),
   appendixPresent: z.boolean().default(false),
   freshnessState: FinanceDiscoveryFreshnessStateSchema.nullable().default(null),
   freshnessSummary: z.string().default(""),

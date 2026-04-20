@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ApprovalStatusSchema } from "./approval";
 import { CfoWikiExportRunStatusSchema, CfoWikiPageKeySchema } from "./cfo-wiki";
 import {
   FinanceDiscoveryQuestionKindSchema,
@@ -79,6 +80,12 @@ export const FileReportingMissionArtifactsInputSchema = z
 export const ExportReportingMissionMarkdownInputSchema = z
   .object({
     triggeredBy: z.string().trim().min(1).default("operator"),
+  })
+  .strict();
+
+export const RequestReportReleaseApprovalInputSchema = z
+  .object({
+    requestedBy: z.string().trim().min(1).default("operator"),
   })
   .strict();
 
@@ -318,6 +325,29 @@ export const ReportingPublicationViewSchema = z
   })
   .strict();
 
+export const ReportingReleaseApprovalStatusSchema = z.enum([
+  "not_requested",
+  "pending_review",
+  "approved_for_release",
+  "not_approved_for_release",
+]);
+
+export const ReportingReleaseReadinessViewSchema = z
+  .object({
+    releaseApprovalStatus:
+      ReportingReleaseApprovalStatusSchema.default("not_requested"),
+    releaseReady: z.boolean().default(false),
+    approvalId: z.string().uuid().nullable().default(null),
+    approvalStatus: ApprovalStatusSchema.nullable().default(null),
+    requestedAt: z.string().nullable().default(null),
+    requestedBy: z.string().nullable().default(null),
+    resolvedAt: z.string().nullable().default(null),
+    resolvedBy: z.string().nullable().default(null),
+    rationale: z.string().nullable().default(null),
+    summary: z.string().min(1),
+  })
+  .strict();
+
 export const ReportingMissionViewSchema = z
   .object({
     reportKind: ReportingMissionReportKindSchema,
@@ -345,6 +375,8 @@ export const ReportingMissionViewSchema = z
     diligencePacket:
       DiligencePacketArtifactMetadataSchema.nullable().default(null),
     publication: ReportingPublicationViewSchema.nullable().default(null),
+    releaseReadiness:
+      ReportingReleaseReadinessViewSchema.nullable().default(null),
   })
   .strict();
 
@@ -361,6 +393,17 @@ export const ReportingMarkdownExportResultSchema = z
     missionId: z.string().uuid(),
     companyKey: FinanceCompanyKeySchema,
     publication: ReportingPublicationViewSchema,
+  })
+  .strict();
+
+export const RequestReportReleaseApprovalResultSchema = z
+  .object({
+    missionId: z.string().uuid(),
+    approvalId: z.string().uuid(),
+    created: z.boolean(),
+    approvalStatus: ApprovalStatusSchema,
+    releaseApprovalStatus: ReportingReleaseApprovalStatusSchema,
+    releaseReady: z.boolean(),
   })
   .strict();
 
@@ -388,6 +431,9 @@ export type FileReportingMissionArtifactsInput = z.infer<
 >;
 export type ExportReportingMissionMarkdownInput = z.infer<
   typeof ExportReportingMissionMarkdownInputSchema
+>;
+export type RequestReportReleaseApprovalInput = z.infer<
+  typeof RequestReportReleaseApprovalInputSchema
 >;
 export type ReportingMissionInput = z.infer<typeof ReportingMissionInputSchema>;
 export type ReportingSourceArtifactKind = z.infer<
@@ -432,12 +478,21 @@ export type ReportingMarkdownExportView = z.infer<
 export type ReportingPublicationView = z.infer<
   typeof ReportingPublicationViewSchema
 >;
+export type ReportingReleaseApprovalStatus = z.infer<
+  typeof ReportingReleaseApprovalStatusSchema
+>;
+export type ReportingReleaseReadinessView = z.infer<
+  typeof ReportingReleaseReadinessViewSchema
+>;
 export type ReportingMissionView = z.infer<typeof ReportingMissionViewSchema>;
 export type ReportingFiledArtifactsResult = z.infer<
   typeof ReportingFiledArtifactsResultSchema
 >;
 export type ReportingMarkdownExportResult = z.infer<
   typeof ReportingMarkdownExportResultSchema
+>;
+export type RequestReportReleaseApprovalResult = z.infer<
+  typeof RequestReportReleaseApprovalResultSchema
 >;
 
 export function isFinanceMemoArtifactMetadata(

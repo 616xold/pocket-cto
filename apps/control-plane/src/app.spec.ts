@@ -2702,6 +2702,7 @@ describe("control-plane app", () => {
                 resolutionSummary: null,
                 resolvedAt: null,
                 resolvedBy: null,
+                requiresLiveControl: true,
                 status: "pending",
                 summary:
                   "Allow file edits in the task workspace. Why it matters: the runtime needs workspace write access to continue.",
@@ -2909,6 +2910,7 @@ describe("control-plane app", () => {
           resolutionSummary: null,
           resolvedAt: null,
           resolvedBy: null,
+          requiresLiveControl: true,
           status: "pending",
           summary:
             "Allow file edits in the task workspace. Why it matters: the runtime needs workspace write access to continue.",
@@ -3777,6 +3779,140 @@ describe("control-plane app", () => {
     });
   });
 
+  it("POST /approvals/:approvalId/resolve allows persisted report_release approvals in api-only mode", async () => {
+    const app = await createStubApp(apps, {
+      operatorControl: {
+        approvalService: {
+          async getApprovalById(approvalId) {
+            return {
+              createdAt: "2026-03-14T10:00:00.000Z",
+              id: approvalId,
+              kind: "report_release",
+              missionId: unknownMissionId,
+              payload: {
+                artifactId: "55555555-5555-4555-8555-555555555555",
+                companyKey: "acme",
+                draftOnlyStatus: "draft_only",
+                freshnessSummary: "Freshness remains tied to the stored memo lineage.",
+                limitationsSummary:
+                  "Delivery remains out of scope for this approval slice.",
+                missionId: unknownMissionId,
+                reportKind: "lender_update",
+                sourceDiscoveryMissionId:
+                  "66666666-6666-4666-8666-666666666666",
+                sourceReportingMissionId:
+                  "77777777-7777-4777-8777-777777777777",
+                summary: "Approve the stored lender update for release posture.",
+              },
+              rationale: null,
+              requestedBy: "finance-operator",
+              resolvedBy: null,
+              status: "pending",
+              taskId: null,
+              updatedAt: "2026-03-14T10:00:00.000Z",
+            };
+          },
+          async listMissionApprovals() {
+            return [];
+          },
+          async resolveApproval(input) {
+            return {
+              createdAt: "2026-03-14T10:00:00.000Z",
+              id: input.approvalId,
+              kind: "report_release",
+              missionId: unknownMissionId,
+              payload: {
+                artifactId: "55555555-5555-4555-8555-555555555555",
+                companyKey: "acme",
+                draftOnlyStatus: "draft_only",
+                freshnessSummary: "Freshness remains tied to the stored memo lineage.",
+                limitationsSummary:
+                  "Delivery remains out of scope for this approval slice.",
+                missionId: unknownMissionId,
+                reportKind: "lender_update",
+                resolution: {
+                  decision: input.decision,
+                  rationale: input.rationale ?? null,
+                  resolvedBy: input.resolvedBy,
+                },
+                sourceDiscoveryMissionId:
+                  "66666666-6666-4666-8666-666666666666",
+                sourceReportingMissionId:
+                  "77777777-7777-4777-8777-777777777777",
+                summary: "Approve the stored lender update for release posture.",
+              },
+              rationale: input.rationale ?? null,
+              requestedBy: "finance-operator",
+              resolvedBy: input.resolvedBy,
+              status: "approved",
+              taskId: null,
+              updatedAt: "2026-03-14T10:05:00.000Z",
+            };
+          },
+        },
+        liveControl: {
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        },
+        runtimeControlService: {
+          async interruptActiveTurn() {
+            throw new Error("interrupt should not be called");
+          },
+        },
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/approvals/${unknownApprovalId}/resolve`,
+      payload: {
+        decision: "accept",
+        rationale: "Approve the lender update for release posture.",
+        resolvedBy: "finance-reviewer",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      approval: {
+        createdAt: "2026-03-14T10:00:00.000Z",
+        id: unknownApprovalId,
+        kind: "report_release",
+        missionId: unknownMissionId,
+        payload: {
+          artifactId: "55555555-5555-4555-8555-555555555555",
+          companyKey: "acme",
+          draftOnlyStatus: "draft_only",
+          freshnessSummary: "Freshness remains tied to the stored memo lineage.",
+          limitationsSummary:
+            "Delivery remains out of scope for this approval slice.",
+          missionId: unknownMissionId,
+          reportKind: "lender_update",
+          resolution: {
+            decision: "accept",
+            rationale: "Approve the lender update for release posture.",
+            resolvedBy: "finance-reviewer",
+          },
+          sourceDiscoveryMissionId: "66666666-6666-4666-8666-666666666666",
+          sourceReportingMissionId: "77777777-7777-4777-8777-777777777777",
+          summary: "Approve the stored lender update for release posture.",
+        },
+        rationale: "Approve the lender update for release posture.",
+        requestedBy: "finance-operator",
+        resolvedBy: "finance-reviewer",
+        status: "approved",
+        taskId: null,
+        updatedAt: "2026-03-14T10:05:00.000Z",
+      },
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+    });
+  });
+
   it("POST /approvals/:approvalId/resolve uses the embedded control surface when live control is enabled", async () => {
     const app = await createStubApp(apps, {
       operatorControl: {
@@ -4113,7 +4249,15 @@ async function createStubApp(
     >;
     githubWebhookService?: Partial<AppContainer["githubWebhookService"]>;
     missionService?: Partial<AppContainer["missionService"]>;
-    operatorControl?: Partial<AppContainer["operatorControl"]>;
+    operatorControl?: Omit<
+      Partial<AppContainer["operatorControl"]>,
+      "approvalService" | "runtimeControlService"
+    > & {
+      approvalService?: Partial<AppContainer["operatorControl"]["approvalService"]>;
+      runtimeControlService?: Partial<
+        AppContainer["operatorControl"]["runtimeControlService"]
+      >;
+    };
     replayService?: Partial<AppContainer["replayService"]>;
     sourceService?: Partial<AppContainer["sourceService"]>;
     twinService?: Partial<AppContainer["twinService"]>;
@@ -4147,6 +4291,14 @@ async function createStubApp(
       operatorControl: {
         ...base.operatorControl,
         ...overrides.operatorControl,
+        approvalService: {
+          ...base.operatorControl.approvalService,
+          ...overrides.operatorControl?.approvalService,
+        },
+        runtimeControlService: {
+          ...base.operatorControl.runtimeControlService,
+          ...overrides.operatorControl?.runtimeControlService,
+        },
       },
       replayService: {
         ...base.replayService,

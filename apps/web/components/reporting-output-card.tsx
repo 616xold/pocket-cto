@@ -26,6 +26,7 @@ export function ReportingOutputCard({
   const financeMemo = reporting.financeMemo;
   const evidenceAppendix = reporting.evidenceAppendix;
   const publication = reporting.publication;
+  const releaseReadiness = reporting.releaseReadiness;
   const isDiligencePacket = reporting.reportKind === "diligence_packet";
   const isBoardPacket = reporting.reportKind === "board_packet";
   const isLenderUpdate = reporting.reportKind === "lender_update";
@@ -53,6 +54,10 @@ export function ReportingOutputCard({
 
       {publication?.summary ? (
         <p className="muted">{publication.summary}</p>
+      ) : null}
+
+      {releaseReadiness?.summary ? (
+        <p className="muted">{releaseReadiness.summary}</p>
       ) : null}
 
       {reporting.reportSummary ? (
@@ -120,6 +125,26 @@ export function ReportingOutputCard({
         </div>
         {isSpecializedReporting ? (
           <>
+            {isLenderUpdate ? (
+              <>
+                <div>
+                  <dt>Release approval</dt>
+                  <dd>{releaseReadiness?.releaseApprovalStatus ?? "not_requested"}</dd>
+                </div>
+                <div>
+                  <dt>Release ready</dt>
+                  <dd>{releaseReadiness?.releaseReady ? "Yes" : "No"}</dd>
+                </div>
+                <div>
+                  <dt>Approval requested</dt>
+                  <dd>{releaseReadiness?.requestedAt ?? "Not requested yet."}</dd>
+                </div>
+                <div>
+                  <dt>Approval resolved</dt>
+                  <dd>{releaseReadiness?.resolvedAt ?? "Not resolved yet."}</dd>
+                </div>
+              </>
+            ) : null}
             <div>
               <dt>Source memo artifact</dt>
               <dd>

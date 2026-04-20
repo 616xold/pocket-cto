@@ -13,6 +13,7 @@ import {
   submitCreateDraftDiligencePacket,
   submitCreateDraftFinanceMemo,
   submitCreateDraftLenderUpdate,
+  submitRequestReportingReleaseApproval,
   submitTaskInterrupt,
 } from "./actions";
 import { ActionFeedback } from "./action-feedback";
@@ -58,6 +59,11 @@ type ExportReportingMarkdownFormProps = {
 };
 
 type FileReportingArtifactsFormProps = {
+  missionId: string;
+  operatorIdentity: string;
+};
+
+type RequestReportingReleaseApprovalFormProps = {
   missionId: string;
   operatorIdentity: string;
 };
@@ -270,6 +276,33 @@ export function ExportReportingMarkdownForm({
           className="action-button secondary"
           label="Export markdown bundle"
           pendingLabel="Exporting markdown bundle..."
+        />
+      </form>
+
+      <ActionFeedback result={result} />
+    </div>
+  );
+}
+
+export function RequestReportingReleaseApprovalForm({
+  missionId,
+  operatorIdentity,
+}: RequestReportingReleaseApprovalFormProps) {
+  const [result, formAction] = useActionState<
+    MissionActionState,
+    FormData
+  >(submitRequestReportingReleaseApproval, INITIAL_MISSION_ACTION_STATE);
+
+  return (
+    <div className="action-cluster">
+      <form action={formAction} className="stack">
+        <input name="missionId" type="hidden" value={missionId} />
+        <input name="requestedBy" type="hidden" value={operatorIdentity} />
+
+        <ActionSubmitButton
+          className="action-button"
+          label="Request lender update release approval"
+          pendingLabel="Requesting release approval..."
         />
       </form>
 

@@ -40,7 +40,8 @@ export type MissionActionKind =
   | "resolve_approval"
   | "interrupt_task"
   | "file_reporting_artifacts"
-  | "export_reporting_markdown";
+  | "export_reporting_markdown"
+  | "request_reporting_release_approval";
 
 export type MissionActionResult =
   | {
@@ -150,6 +151,28 @@ export function buildExportReportingMarkdownActionResult(
   };
 }
 
+export function buildRequestReportingReleaseApprovalActionResult(
+  operatorName: string,
+  result: ControlPlaneMutationResult<unknown>,
+): MissionActionResult {
+  if (result.ok) {
+    return {
+      ok: true,
+      kind: "request_reporting_release_approval",
+      message: `Lender update release approval requested by ${operatorName}. Mission detail refreshed.`,
+      statusCode: result.statusCode,
+    };
+  }
+
+  return {
+    ok: false,
+    kind: "request_reporting_release_approval",
+    message: describeFailure("request_reporting_release_approval", result),
+    statusCode: result.statusCode,
+    errorCode: result.errorCode,
+  };
+}
+
 function describeFailure(
   kind: MissionActionKind,
   failure: Extract<ControlPlaneMutationResult<unknown>, { ok: false }>,
@@ -184,6 +207,11 @@ function describeFailure(
             "This reporting action is unavailable from the mission's current stored state. Refresh the page and confirm the draft memo, appendix, and filing posture before retrying.",
             failure.message,
           )
+        : kind === "request_reporting_release_approval"
+          ? withRouteReason(
+              "This lender-update release approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored lender update, lineage, and approval posture before retrying.",
+              failure.message,
+            )
         : "The submitted action payload was invalid. Refresh the page and try again.";
     case "internal_error":
       return withRouteReason(
@@ -201,6 +229,10 @@ function describeFailure(
 
       if (kind === "file_reporting_artifacts") {
         return "The web app could not reach the control plane to file the draft report artifacts. Confirm the local services are running and try again.";
+      }
+
+      if (kind === "request_reporting_release_approval") {
+        return "The web app could not reach the control plane to request lender-update release approval. Confirm the local services are running and try again.";
       }
 
       return "The web app could not reach the control plane to export the markdown bundle. Confirm the local services are running and try again.";

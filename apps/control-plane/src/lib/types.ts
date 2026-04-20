@@ -52,7 +52,7 @@ export type MissionServicePort = Pick<
 
 export type MissionReportingActionServicePort = Pick<
   MissionReportingActionsService,
-  "exportMarkdownBundle" | "fileDraftArtifacts"
+  "exportMarkdownBundle" | "fileDraftArtifacts" | "requestReleaseApproval"
 >;
 
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;
@@ -158,7 +158,7 @@ export type AppContainer = {
   operatorControl: {
     approvalService: Pick<
       ApprovalService,
-      "listMissionApprovals" | "resolveApproval"
+      "getApprovalById" | "listMissionApprovals" | "resolveApproval"
     >;
     liveControl: OperatorControlAvailability;
     runtimeControlService: Pick<RuntimeControlService, "interruptActiveTurn">;

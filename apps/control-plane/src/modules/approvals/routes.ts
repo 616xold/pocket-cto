@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { LiveControlUnavailableError } from "../../lib/http-errors";
 import type { AppContainer } from "../../lib/types";
+import { ApprovalNotFoundError } from "./errors";
 import {
   approvalIdParamsSchema,
   missionApprovalsParamsSchema,
@@ -27,7 +28,19 @@ export async function registerApprovalRoutes(
     const body = resolveApprovalBodySchema.parse(request.body);
 
     if (!deps.operatorControl.liveControl.enabled) {
-      throw new LiveControlUnavailableError();
+      const approval = await deps.operatorControl.approvalService
+        .getApprovalById(approvalId)
+        .catch((error) => {
+          if (error instanceof ApprovalNotFoundError) {
+            return null;
+          }
+
+          throw error;
+        });
+
+      if (!approval || approval.kind !== "report_release") {
+        throw new LiveControlUnavailableError();
+      }
     }
 
     return {

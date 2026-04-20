@@ -1007,4 +1007,245 @@ describe("Mission detail domain schema", () => {
       ["diligence_packet"],
     );
   });
+
+  it("parses lender-update mission detail with persisted release approval posture", () => {
+    const parsed = MissionDetailViewSchema.parse({
+      mission: {
+        id: "11111111-1111-4111-8111-111111111111",
+        type: "reporting",
+        status: "succeeded",
+        title: "Draft lender update for acme from cash posture reporting",
+        objective:
+          "Compile one draft lender update from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+        sourceKind: "manual_reporting",
+        sourceRef: null,
+        createdBy: "finance-operator",
+        primaryRepo: null,
+        spec: {
+          type: "reporting",
+          title: "Draft lender update for acme from cash posture reporting",
+          objective:
+            "Compile one draft lender update from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+          repos: [],
+          acceptance: ["persist one lender_update artifact"],
+          riskBudget: {
+            sandboxMode: "read-only",
+            maxWallClockMinutes: 5,
+            maxCostUsd: 1,
+            allowNetwork: false,
+            requiresHumanApprovalFor: [],
+          },
+          deliverables: ["lender_update", "proof_bundle"],
+          input: {
+            reportingRequest: {
+              sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+              sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+              reportKind: "lender_update",
+              companyKey: "acme",
+              questionKind: "cash_posture",
+              policySourceId: null,
+              policySourceScope: null,
+            },
+          },
+        },
+        createdAt: "2026-04-20T08:00:00.000Z",
+        updatedAt: "2026-04-20T08:12:00.000Z",
+      },
+      tasks: [],
+      proofBundle: {
+        missionId: "11111111-1111-4111-8111-111111111111",
+        missionTitle: "Draft lender update for acme from cash posture reporting",
+        objective:
+          "Compile one draft lender update from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+        sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+        sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        answerSummary: "",
+        reportKind: "lender_update",
+        reportDraftStatus: "draft_only",
+        reportSummary:
+          "Draft lender update for acme from the completed finance memo.",
+        reportPublication: null,
+        releaseReadiness: {
+          releaseApprovalStatus: "pending_review",
+          releaseReady: false,
+          approvalId: "44444444-4444-4444-8444-444444444444",
+          approvalStatus: "pending",
+          requestedAt: "2026-04-20T08:10:00.000Z",
+          requestedBy: "finance-operator",
+          resolvedAt: null,
+          resolvedBy: null,
+          rationale: null,
+          summary:
+            "Release approval was requested by finance-operator; the stored lender update is not yet approved for release.",
+        },
+        appendixPresent: true,
+        freshnessState: "stale",
+        freshnessSummary:
+          "Cash posture remains stale because bank coverage is stale.",
+        limitationsSummary:
+          "This lender update remains delivery-free while review is pending.",
+        relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+        relatedWikiPageKeys: ["metrics/cash-posture"],
+        targetRepoFullName: null,
+        branchName: null,
+        pullRequestNumber: null,
+        pullRequestUrl: null,
+        changeSummary:
+          "Draft lender update for acme from the completed finance memo.",
+        validationSummary:
+          "Draft lender update was compiled deterministically without runtime drafting.",
+        verificationSummary:
+          "Review carried-forward freshness, limitations, and release-readiness posture before sharing this draft.",
+        riskSummary:
+          "This lender update stays draft-only until a persisted release approval is granted.",
+        rollbackSummary:
+          "No actual release side effect was produced; this slice only records pending review posture.",
+        latestApproval: null,
+        evidenceCompleteness: {
+          status: "complete",
+          expectedArtifactKinds: ["lender_update"],
+          presentArtifactKinds: ["lender_update"],
+          missingArtifactKinds: [],
+          notes: [],
+        },
+        decisionTrace: [
+          "Scout task 0 terminalized as succeeded with persisted lender-update evidence.",
+          "Latest lender-update release approval is pending_review.",
+        ],
+        artifactIds: ["55555555-5555-4555-8555-555555555555"],
+        artifacts: [
+          {
+            id: "55555555-5555-4555-8555-555555555555",
+            kind: "lender_update",
+          },
+        ],
+        replayEventCount: 9,
+        timestamps: {
+          missionCreatedAt: "2026-04-20T08:00:00.000Z",
+          latestPlannerEvidenceAt: null,
+          latestExecutorEvidenceAt: null,
+          latestPullRequestAt: null,
+          latestApprovalAt: "2026-04-20T08:10:00.000Z",
+          latestArtifactAt: "2026-04-20T08:05:00.000Z",
+        },
+        status: "ready",
+      },
+      discoveryAnswer: null,
+      reporting: {
+        reportKind: "lender_update",
+        draftStatus: "draft_only",
+        sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+        sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        reportSummary:
+          "Draft lender update for acme from the completed finance memo.",
+        freshnessSummary:
+          "Cash posture remains stale because bank coverage is stale.",
+        limitationsSummary:
+          "This lender update remains delivery-free while review is pending.",
+        relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+        relatedWikiPageKeys: ["metrics/cash-posture"],
+        appendixPresent: true,
+        financeMemo: null,
+        evidenceAppendix: null,
+        boardPacket: null,
+        lenderUpdate: {
+          source: "stored_reporting_evidence",
+          summary:
+            "Draft lender update for acme from the completed finance memo.",
+          reportKind: "lender_update",
+          draftStatus: "draft_only",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          updateSummary:
+            "Draft lender update for acme from the completed finance memo.",
+          freshnessSummary:
+            "Cash posture remains stale because bank coverage is stale.",
+          limitationsSummary:
+            "This lender update remains delivery-free while review is pending.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          sourceFinanceMemo: {
+            artifactId: "66666666-6666-4666-8666-666666666666",
+            kind: "finance_memo",
+          },
+          sourceEvidenceAppendix: {
+            artifactId: "77777777-7777-4777-8777-777777777777",
+            kind: "evidence_appendix",
+          },
+          bodyMarkdown:
+            "# Draft Lender Update\n\n## Release Review Posture\n\n- Status: draft_only",
+        },
+        diligencePacket: null,
+        publication: null,
+        releaseReadiness: {
+          releaseApprovalStatus: "pending_review",
+          releaseReady: false,
+          approvalId: "44444444-4444-4444-8444-444444444444",
+          approvalStatus: "pending",
+          requestedAt: "2026-04-20T08:10:00.000Z",
+          requestedBy: "finance-operator",
+          resolvedAt: null,
+          resolvedBy: null,
+          rationale: null,
+          summary:
+            "Release approval was requested by finance-operator; the stored lender update is not yet approved for release.",
+        },
+      },
+      approvals: [
+        {
+          id: "44444444-4444-4444-8444-444444444444",
+          kind: "report_release",
+          status: "pending",
+          requestedBy: "finance-operator",
+          resolvedBy: null,
+          rationale: null,
+          createdAt: "2026-04-20T08:10:00.000Z",
+          updatedAt: "2026-04-20T08:10:00.000Z",
+        },
+      ],
+      approvalCards: [
+        {
+          actionHint:
+            "Review the stored lender update summary, freshness, and limitations before deciding whether this draft is approved for release. This slice records posture only and does not deliver the report.",
+          approvalId: "44444444-4444-4444-8444-444444444444",
+          kind: "report_release",
+          requestedAt: "2026-04-20T08:10:00.000Z",
+          requestedBy: "finance-operator",
+          requiresLiveControl: false,
+          repoContext: null,
+          resolutionSummary: null,
+          resolvedAt: null,
+          resolvedBy: null,
+          status: "pending",
+          summary:
+            "Review lender update release readiness for acme. Summary: Draft lender update for acme from the completed finance memo. Freshness: Cash posture remains stale because bank coverage is stale. Limitations: This lender update remains delivery-free while review is pending.",
+          task: null,
+          title: "Review lender update release approval for acme",
+        },
+      ],
+      artifacts: [],
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+    });
+
+    expect(parsed.reporting?.releaseReadiness?.releaseApprovalStatus).toBe(
+      "pending_review",
+    );
+    expect(parsed.approvalCards[0]?.requiresLiveControl).toBe(false);
+  });
 });

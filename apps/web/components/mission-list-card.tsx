@@ -60,6 +60,12 @@ export function MissionListCard({ mission }: MissionListCardProps) {
         </p>
       ) : null}
 
+      {mission.releaseReadiness?.summary ? (
+        <p className="muted mission-summary-inline">
+          {mission.releaseReadiness.summary}
+        </p>
+      ) : null}
+
       {mission.sourceRef ? (
         <p className="muted mission-summary-inline">
           Source: {mission.sourceRef}
@@ -130,6 +136,21 @@ export function MissionListCard({ mission }: MissionListCardProps) {
                 </div>
               </>
             )}
+            {isLenderUpdate ? (
+              <>
+                <div>
+                  <dt>Release approval</dt>
+                  <dd>
+                    {mission.releaseReadiness?.releaseApprovalStatus ??
+                      "not_requested"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Release ready</dt>
+                  <dd>{mission.releaseReadiness?.releaseReady ? "Yes" : "No"}</dd>
+                </div>
+              </>
+            ) : null}
             <div>
               <dt>Source discovery</dt>
               <dd>{mission.sourceDiscoveryMissionId ?? "Not recorded yet."}</dd>

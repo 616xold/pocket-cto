@@ -10,6 +10,7 @@ import {
   FINANCE_DISCOVERY_QUESTION_KINDS,
   MissionSourceKindSchema,
   MissionStatusSchema,
+  RequestReportReleaseApprovalInputSchema,
 } from "@pocket-cto/domain";
 
 const createFinanceMissionQuestionInputSchema = z
@@ -60,6 +61,9 @@ export const fileReportingMissionArtifactsSchema =
 
 export const exportReportingMissionMarkdownSchema =
   ExportReportingMissionMarkdownInputSchema;
+
+export const requestReportingReleaseApprovalSchema =
+  RequestReportReleaseApprovalInputSchema;
 
 export const listMissionsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(50).default(20),

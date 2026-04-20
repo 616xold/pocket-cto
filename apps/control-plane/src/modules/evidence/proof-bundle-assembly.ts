@@ -235,6 +235,7 @@ export function assembleProofBundleManifest(input: {
     reportDraftStatus: facts.reportDraftStatus,
     reportSummary: facts.reportSummary ?? "",
     reportPublication: facts.reportPublication,
+    releaseReadiness: facts.releaseReadiness,
     appendixPresent: facts.appendixPresent,
     freshnessState: facts.freshnessState,
     freshnessSummary: facts.freshnessSummary ?? "",
@@ -557,9 +558,10 @@ function buildVerificationSummary(
   ) {
     return truncate(
       isBoardPacketFacts(facts) ||
-        isLenderUpdateFacts(facts) ||
         isDiligencePacketFacts(facts)
         ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.`
+        : isLenderUpdateFacts(facts)
+          ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and lender-update release-readiness posture before sharing this draft.`
         : `${facts.reportSummary} Review the linked evidence appendix, carried-forward freshness, and visible limitations before sharing this draft.`,
       SUMMARY_MAX_LENGTH,
     );
@@ -638,7 +640,13 @@ function buildRiskSummary(
       }
 
       if (status === "ready") {
-        return "This lender update is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, diligence, PDF, or slide workflow in F5C2.";
+        if (!facts.releaseReadiness?.approvalId) {
+          return "This lender update is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, diligence, PDF, or slide workflow in F5C2.";
+        }
+
+        return facts.releaseReadiness?.releaseReady
+          ? "This lender update is approved for release from a persisted review path, but actual delivery, diligence, PDF, and slide workflows remain out of scope in F5C4A."
+          : "This lender update stays draft-only until a persisted release approval is granted; actual delivery, diligence, PDF, and slide workflows remain out of scope in F5C4A.";
       }
 
       return "";
@@ -763,7 +771,13 @@ function buildRollbackSummary(
       }
 
       if (status === "ready") {
-        return "No release, approval, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
+        if (!facts.releaseReadiness?.approvalId) {
+          return "No release, approval, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
+        }
+
+        return facts.releaseReadiness?.releaseReady
+          ? "No actual release, send, wiki filing, PDF export, or slide export side effect was produced; this slice only records approved-for-release posture against the stored lender update."
+          : "No actual release, send, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
       }
 
       return "";

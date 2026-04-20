@@ -17,6 +17,7 @@ import {
   createReportingMissionSchema,
   listMissionsQuerySchema,
   missionIdParamsSchema,
+  requestReportingReleaseApprovalSchema,
 } from "./schema";
 
 export async function registerMissionRoutes(
@@ -120,4 +121,20 @@ export async function registerMissionRoutes(
     reply.code(201);
     return exported;
   });
+
+  app.post(
+    "/missions/:missionId/reporting/release-approval",
+    async (request, reply) => {
+      const params = missionIdParamsSchema.parse(request.params);
+      const body = requestReportingReleaseApprovalSchema.parse(request.body ?? {});
+      const result =
+        await deps.missionReportingActionsService.requestReleaseApproval(
+          params.missionId,
+          body,
+        );
+
+      reply.code(result.created ? 201 : 200);
+      return result;
+    },
+  );
 }

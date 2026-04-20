@@ -411,9 +411,17 @@ function createAppContainer(
       async fileDraftArtifacts() {
         throw new Error("fileDraftArtifacts should not be called in this test");
       },
+      async requestReleaseApproval() {
+        throw new Error(
+          "requestReleaseApproval should not be called in this test",
+        );
+      },
     } as AppContainer["missionReportingActionsService"],
     operatorControl: {
       approvalService: {
+        async getApprovalById() {
+          throw new Error("getApprovalById should not be called in this test");
+        },
         async listMissionApprovals() {
           return [];
         },

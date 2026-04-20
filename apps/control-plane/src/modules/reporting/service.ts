@@ -2,6 +2,7 @@ import type {
   ExportReportingMissionMarkdownInput,
   FileReportingMissionArtifactsInput,
   MissionRecord,
+  ReportReleaseApprovalPayload,
   ReportingMissionInput,
   ReportingMissionView,
 } from "@pocket-cto/domain";
@@ -10,6 +11,7 @@ import {
   CfoWikiPageRecordSchema,
   ExportReportingMissionMarkdownInputSchema,
   FileReportingMissionArtifactsInputSchema,
+  ReportReleaseApprovalPayloadSchema,
   ReportingFiledArtifactsResultSchema,
   ReportingMarkdownExportResultSchema,
   ReportingMissionInputSchema,
@@ -257,6 +259,70 @@ export class ReportingService {
       missionId,
       companyKey,
       publication: nextPublication?.publication ?? publicationFacts.publication,
+    });
+  }
+
+  async prepareLenderUpdateReleaseApproval(
+    missionId: string,
+  ): Promise<ReportReleaseApprovalPayload> {
+    const context = await this.loadReportingMissionContext(missionId);
+    const reporting = readMissionReportingView({
+      artifacts: context.artifacts,
+      proofBundle: context.proofBundle,
+    });
+
+    if (!reporting) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet expose a persisted reporting view.`,
+      );
+    }
+
+    if (reporting.reportKind !== "lender_update") {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} has report kind ${reporting.reportKind}, not lender_update.`,
+      );
+    }
+
+    if (!reporting.lenderUpdate) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet store a lender_update artifact payload.`,
+      );
+    }
+
+    if (!reporting.companyKey) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} has no company scope required for lender-update release approval.`,
+      );
+    }
+
+    if (!reporting.sourceReportingMissionId) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} is missing the source reporting mission required for lender-update release approval.`,
+      );
+    }
+
+    const lenderUpdateArtifactId = readSingleArtifactId(
+      context.artifacts,
+      "lender_update",
+      missionId,
+    );
+
+    return ReportReleaseApprovalPayloadSchema.parse({
+      artifactId: lenderUpdateArtifactId,
+      companyKey: reporting.companyKey,
+      draftOnlyStatus: reporting.lenderUpdate.draftStatus,
+      freshnessSummary: reporting.lenderUpdate.freshnessSummary,
+      limitationsSummary: reporting.lenderUpdate.limitationsSummary,
+      missionId,
+      reportKind: reporting.lenderUpdate.reportKind,
+      sourceDiscoveryMissionId: reporting.sourceDiscoveryMissionId,
+      sourceReportingMissionId: reporting.sourceReportingMissionId,
+      summary: reporting.lenderUpdate.updateSummary,
     });
   }
 
@@ -588,4 +654,38 @@ function readLatestArtifactId(
           right.id.localeCompare(left.id),
       )[0]?.id ?? null
   );
+}
+
+function readSingleArtifactId(
+  artifacts: Awaited<ReturnType<MissionRepository["listArtifactsByMissionId"]>>,
+  kind: Awaited<
+    ReturnType<MissionRepository["listArtifactsByMissionId"]>
+  >[number]["kind"],
+  missionId: string,
+) {
+  const matchingArtifacts = [...artifacts]
+    .filter((artifact) => artifact.kind === kind)
+    .sort(
+      (left, right) =>
+        right.createdAt.localeCompare(left.createdAt) ||
+        right.id.localeCompare(left.id),
+    );
+
+  if (matchingArtifacts.length !== 1) {
+    throw invalidRequest(
+      "missionId",
+      `Reporting mission ${missionId} must store exactly one ${kind} artifact before release approval can be requested.`,
+    );
+  }
+
+  const [matchingArtifact] = matchingArtifacts;
+
+  if (!matchingArtifact) {
+    throw invalidRequest(
+      "missionId",
+      `Reporting mission ${missionId} must store exactly one ${kind} artifact before release approval can be requested.`,
+    );
+  }
+
+  return matchingArtifact.id;
 }

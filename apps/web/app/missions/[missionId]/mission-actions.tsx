@@ -10,6 +10,7 @@ import {
   CreateReportForm,
   ExportReportingMarkdownForm,
   FileReportingArtifactsForm,
+  RequestReportingReleaseApprovalForm,
   TaskInterruptForm,
 } from "./mission-action-forms";
 
@@ -63,13 +64,19 @@ export function MissionActions({
     reporting?.reportKind === "finance_memo" &&
     Boolean(
       reporting?.publication?.filedMemo &&
-        reporting.publication.filedEvidenceAppendix,
+      reporting.publication.filedEvidenceAppendix,
     );
+  const canRequestLenderUpdateReleaseApproval =
+    mission.type === "reporting" &&
+    mission.status === "succeeded" &&
+    reporting?.reportKind === "lender_update" &&
+    Boolean(reporting.lenderUpdate) &&
+    reporting.releaseReadiness?.releaseApprovalStatus === "not_requested";
   const reportingFollowOnOutOfScopeNote =
     reporting?.reportKind === "board_packet"
       ? "Board packet missions remain draft-only in F5C1. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
       : reporting?.reportKind === "lender_update"
-        ? "Lender update missions remain draft-only in F5C2. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
+        ? "Lender update missions keep filing, markdown export, actual release delivery, PDF, and slide actions out of scope here. F5C4A adds only one persisted release-approval request and review path for the stored draft lender update."
         : reporting?.reportKind === "diligence_packet"
           ? "Diligence packet missions remain draft-only in F5C3. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
         : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C3 path.";
@@ -170,6 +177,26 @@ export function MissionActions({
                 </p>
               )}
             </>
+          ) : reporting?.reportKind === "lender_update" ? (
+            <>
+              <p className="muted">
+                This first F5C4A slice keeps lender updates delivery-free and
+                runtime-free, but it does allow one persisted release-approval
+                request from one completed lender-update reporting mission with
+                one stored lender_update artifact.
+              </p>
+              {canRequestLenderUpdateReleaseApproval ? (
+                <RequestReportingReleaseApprovalForm
+                  missionId={mission.id}
+                  operatorIdentity={operatorIdentity}
+                />
+              ) : (
+                <p className="muted">
+                  {reporting?.releaseReadiness?.summary ??
+                    "Release approval becomes available once the stored lender update is present and no prior release approval request exists for this mission."}
+                </p>
+              )}
+            </>
           ) : (
             <p className="muted">
               {reportingFollowOnOutOfScopeNote}
@@ -182,7 +209,7 @@ export function MissionActions({
         <h3>Approvals and interrupts</h3>
         <p className="muted">
           {controlsUnavailable
-            ? `Approval resolution and task interrupts are unavailable while the control-plane server is running in ${liveControl.mode} mode. Run pnpm dev:embedded to enable those live controls.`
+            ? `Task interrupts and runtime-backed approval resolution are unavailable while the control-plane server is running in ${liveControl.mode} mode. Persisted lender-update release approvals still resolve without live control.`
             : "These controls call the current approval-resolution and task-interrupt routes, then refresh the mission detail without optimistic updates."}
         </p>
       </div>
@@ -205,7 +232,7 @@ export function MissionActions({
 
               <ApprovalActionForm
                 approvalId={approval.approvalId}
-                disabled={controlsUnavailable}
+                disabled={controlsUnavailable && approval.requiresLiveControl}
                 missionId={mission.id}
                 operatorIdentity={operatorIdentity}
               />

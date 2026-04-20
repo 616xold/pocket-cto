@@ -15,6 +15,7 @@ import { readMissionDiscoveryAnswer } from "./discovery-answer-view";
 import { readProofBundleManifest } from "./repository-mappers";
 import { readMissionReportingView } from "../reporting/artifact";
 import { buildReportingPublicationViewFromProofBundle } from "../reporting/publication";
+import { buildReportingReleaseReadinessViewFromProofBundle } from "../reporting/release-readiness";
 
 const ARTIFACT_SUMMARY_MAX_LENGTH = 180;
 
@@ -170,5 +171,11 @@ function normalizeProofBundle(
   return {
     ...proofBundle,
     reportPublication,
+    releaseReadiness:
+      buildReportingReleaseReadinessViewFromProofBundle({
+        evidenceCompleteness: proofBundle.evidenceCompleteness,
+        releaseReadiness: proofBundle.releaseReadiness,
+        reportKind: proofBundle.reportKind,
+      }) ?? null,
   };
 }

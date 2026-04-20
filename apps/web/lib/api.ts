@@ -19,6 +19,8 @@ import {
   MissionTaskRecordSchema,
   OperatorControlAvailabilitySchema,
   ProofBundleManifestSchema,
+  RequestReportReleaseApprovalInputSchema,
+  RequestReportReleaseApprovalResultSchema,
   ReportingFiledArtifactsResultSchema,
   ReportingMarkdownExportResultSchema,
   SourceDetailViewSchema,
@@ -414,6 +416,19 @@ export async function fileReportingMissionArtifacts(input: {
       filedBy: input.filedBy,
     }),
     ReportingFiledArtifactsResultSchema,
+  );
+}
+
+export async function requestReportingReleaseApproval(input: {
+  missionId: string;
+  requestedBy: string;
+}) {
+  return postJson(
+    `/missions/${encodeURIComponent(input.missionId)}/reporting/release-approval`,
+    RequestReportReleaseApprovalInputSchema.parse({
+      requestedBy: input.requestedBy,
+    }),
+    RequestReportReleaseApprovalResultSchema,
   );
 }
 
