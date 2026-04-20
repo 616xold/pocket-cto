@@ -59,9 +59,8 @@ Codex remains valuable after that first answer path exists for:
 ## Current F5 posture
 
 The latest shipped F5 record is `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
-No later-F5 implementation contract is open in this QA pass.
-The shipped F5A through F5C4A slices already create first-class reporting missions from completed discovery missions, assemble one draft `finance_memo` plus one linked `evidence_appendix`, expose those stored bodies directly, reuse the existing CFO Wiki filed-page plus markdown export seams for the finance-memo path, compile draft `board_packet`, `lender_update`, and `diligence_packet` artifacts from completed reporting work without creating a runtime thread, and resolve one finance-facing `report_release` approval into explicit lender-update release-readiness without live runtime continuation.
-The shipped F5C4B slice builds on that baseline by recording one operator-entered external release record for an already-approved `lender_update` without introducing system delivery.
+`plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` is now the active F5C4C implementation contract.
+The shipped F5A through F5C4B slices already create first-class reporting missions from completed discovery missions, assemble one draft `finance_memo` plus one linked `evidence_appendix`, expose those stored bodies directly, reuse the existing CFO Wiki filed-page plus markdown export seams for the finance-memo path, compile draft `board_packet`, `lender_update`, and `diligence_packet` artifacts from completed reporting work without creating a runtime thread, resolve one finance-facing `report_release` approval into explicit lender-update release-readiness without live runtime continuation, and record one operator-entered lender-update release record without introducing system delivery.
 
 For shipped F5C4B, the control plane and operator surface now:
 
@@ -74,7 +73,17 @@ For shipped F5C4B, the control plane and operator surface now:
 - keep the slice deterministic, runtime-free, and delivery-free
 - keep actual send, distribute, publish, broader packet widening, bounded runtime-codex drafting, and non-markdown output formats out of the first F5C4B slice
 
-Later F5 slices may use runtime-codex only in a bounded role such as draft phrasing or formatting assistance once the deterministic packet plus approval plus release-record skeleton already exists.
+For active F5C4C, the control plane and operator surface should next:
+
+- start only from one completed `reporting` mission with `reportKind = "diligence_packet"` and one stored `diligence_packet` artifact
+- keep `mission.type = "reporting"` and `reportKind = "diligence_packet"`
+- widen the existing `report_release` approval and release-readiness seams from lender-update-only to `lender_update` plus `diligence_packet`, and no broader
+- reuse the existing approvals bounded context without live runtime continuation
+- add review request, approval resolution, and release-readiness posture only
+- keep the slice deterministic, runtime-free, delivery-free, and release-log-free
+- keep diligence release logging, board-packet review or circulation posture, actual delivery, and bounded runtime-codex drafting out of the first F5C4C slice
+
+Later F5 slices may use runtime-codex only in a bounded role such as draft phrasing or formatting assistance once the deterministic diligence approval, diligence release-log, and board-circulation foundations already exist.
 Even then, runtime-codex must not invent finance facts, override stored numbers, or become the approval authority layer.
 
 ## Prompt ownership
@@ -97,8 +106,8 @@ As the product pivots:
 - network access should remain restricted by default
 - runtime actions that change external communication posture must stay human-reviewable
 
-For F5A through shipped F5C4A, draft report compilation, body exposure, finance-memo filing/export posture, the first three packet specializations, and lender-update release-readiness should stay deterministic and draft-only or delivery-free as appropriate.
-For the shipped F5C4B implementation in `FP-0042`, release logging is persisted through the existing reporting and approvals seams without depending on live app-server continuation, and the slice still does not introduce runtime-codex approval or delivery behavior.
+For F5A through shipped F5C4B, draft report compilation, body exposure, finance-memo filing/export posture, the first three packet specializations, lender-update release-readiness, and lender-update release logging should stay deterministic and draft-only or delivery-free as appropriate.
+For the active F5C4C contract in `FP-0043`, diligence review and release-readiness should be persisted through the existing reporting and approvals seams without depending on live app-server continuation, and the slice must still avoid runtime-codex approval or delivery behavior.
 
 ## Transition note
 

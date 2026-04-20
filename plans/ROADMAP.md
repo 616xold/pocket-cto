@@ -274,8 +274,8 @@ Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
 The latest shipped implementation record for this phase is `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
-No later-F5 implementation contract is open in this QA pass.
-The next remaining execution slice should be defined by a new explicit plan before code starts; do not reopen F5C4B or start F6 early.
+`plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` is now the active later-F5 implementation contract.
+The next remaining execution slice is the narrow F5C4C diligence approval-readiness step defined there; do not reopen F5C4B or start F5C4D, F5C4E, or F6 early.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
@@ -347,16 +347,29 @@ Slice map:
       - prefer persisting release-record data as a durable extension of the existing `report_release` approval payload or its derived reporting view rather than inventing a second release-tracking subsystem
       - add `releasedAt`, `releasedBy`, and minimal release-channel metadata while keeping the slice deterministic, runtime-free, and delivery-free in the system sense
       - do not add actual send, distribute, or publish behavior
-    - `F5C4C — broader packet approval widening`
-      - widen review or approval posture to the broader external-facing packet set only after the lender-update release-record foundation is stable
-    - only after F5C4C should bounded runtime-codex phrasing or formatting assistance be reconsidered, and only if it still solves a proven operator problem
+    - `F5C4C — diligence-packet approval review and release readiness`
+      - start only from one completed `reporting` mission with `reportKind = "diligence_packet"` and one stored `diligence_packet` artifact
+      - keep `mission.type = "reporting"` and `reportKind = "diligence_packet"`
+      - reuse the existing approvals bounded context and the existing `report_release` approval kind rather than inventing a second approval system
+      - widen the existing `report_release` payload and release-readiness/reporting view seams from lender-update-only to `lender_update` plus `diligence_packet`, and no broader
+      - add review request, approval resolution, and release-readiness posture only
+      - keep the slice deterministic, runtime-free, and delivery-free
+      - do not add actual send, distribute, publish, or diligence release logging
+    - `F5C4D — release log and first diligence-packet release-record foundation`
+      - start only after F5C4C is stable
+      - add release logging and one explicit release record only for `diligence_packet`
+      - keep the slice deterministic, runtime-free, and delivery-free in the system sense
+    - `F5C4E — board-packet review or circulation-readiness foundation`
+      - start only after the diligence approval and diligence release-log foundations are stable
+      - add the first narrow board-facing review or circulation-readiness posture without widening into multi-packet delivery automation
+    - only after F5C4E should bounded runtime-codex phrasing or formatting assistance be reconsidered, and only if it still solves a proven operator problem
 
 Exit criteria:
 
 - one completed finance discovery mission can produce a first-class reporting mission
 - the first report path yields a draft `finance_memo` plus `evidence_appendix`
 - report outputs remain reproducible, evidence-linked, freshness-aware, and explicit about limitations
-- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update review and release-readiness are already shipped through F5C4A, and the active next hardening step is lender-update release logging only, with broader packet approval widening deferred to F5C4C and markdown export reuse still limited to the filed-artifact path defined in F5B
+- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update approval and release-record posture are already shipped through F5C4B, and the active next hardening step is diligence-packet approval review and release-readiness only, with diligence release logging deferred to F5C4D, board-packet review or circulation posture deferred to F5C4E, and markdown export reuse still limited to the filed-artifact path defined in F5B
 
 ## F6 — Monitoring, controls, and adoption loop
 

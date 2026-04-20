@@ -29,7 +29,7 @@ Existing `EP-*` files are Pocket CTO history and should be archived or treated a
 12. Every Finance Plan must say whether GitHub connector work is in scope or explicitly out of scope.
 13. If no unfinished Finance Plan exists for the current repo phase, create the next-phase `plans/FP-*.md` plan before changing code.
 14. Once a plan is clearly merged or shipped, update stale final publication checkboxes and outcome notes instead of leaving the plan looking unfinished.
-15. When a new phase or later sub-slice starts, keep the prior shipped plan as the historical record, add a tiny handoff note if the old plan previously claimed active status, and create exactly one new active plan that names the next implementation slice explicitly instead of leaving a broad umbrella contract.
+15. When a new phase or later sub-slice starts, keep the prior shipped plan as the historical record, add a tiny handoff note if the old plan previously claimed active status, and create exactly one new active plan that names the next implementation slice explicitly instead of leaving a broad umbrella contract; for docs-only handoffs, make that successor plan implementation-ready before ending the thread.
 
 ## Required sections
 

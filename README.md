@@ -58,6 +58,7 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C3 record: one deterministic, runtime-free, draft-only `diligence_packet` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
 `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` now serves as the shipped F5C4A record: the repo already supports one finance-facing `report_release` approval on one completed `lender_update` reporting mission, approval resolution without live runtime continuation, and explicit release-readiness posture while staying deterministic, runtime-free, and delivery-free.
 `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` now serves as the shipped F5C4B record: the repo can record that one already-approved `lender_update` was released externally, persist one explicit release record on the existing `report_release` approval seam, and stay deterministic, runtime-free, and delivery-free in the system sense. The next later-F5 thread should open a new narrow plan rather than reopening F5C4B.
+`plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` is now the active F5C4C contract: the next thread should widen the existing `report_release` approval payload and release-readiness seams from lender-update-only to `lender_update` plus `diligence_packet`, starting only from one completed `diligence_packet` reporting mission with one stored `diligence_packet` artifact, while staying deterministic, runtime-free, delivery-free, and release-log-free in the first slice.
 
 ## Product boundary for v1
 
@@ -165,6 +166,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0040-diligence-packet-specialization-and-draft-review-foundation.md
 │   ├── FP-0041-approval-review-and-first-lender-update-release-readiness.md
 │   ├── FP-0042-release-log-and-first-lender-update-release-record-foundation.md
+│   ├── FP-0043-diligence-packet-approval-review-and-release-readiness.md
 │   └── templates
 └── .agents
     └── skills

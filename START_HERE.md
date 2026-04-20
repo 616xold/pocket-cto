@@ -63,7 +63,9 @@ Suggested thread naming:
 - `F5C4-master-plan-and-doc-refresh`
 - `F5C4A-approval-review-and-first-lender-update-release-readiness`
 - `F5C4B-release-log-and-first-lender-update-release-record-foundation`
-- `F5C4C-broader-packet-approval-widening`
+- `F5C4C-diligence-packet-approval-review-and-release-readiness`
+- `F5C4D-release-log-and-first-diligence-packet-release-record-foundation`
+- `F5C4E-board-packet-review-or-circulation-readiness-foundation`
 - `F6-monitoring-and-controls`
 
 Broad F2 Finance Twin work now runs through F2O.
@@ -85,7 +87,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` is now the shipped F5C3 record.
 `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` is now the shipped F5C4A record.
 `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` is now the shipped F5C4B record.
-The next implementation thread should start from `FP-0042`'s shipped boundary and open a new narrow later-F5 plan rather than reopening F5C4B, reopening F5C4A, widening straight into broader packet approval rollout or F6, or replaying F5C2 or F5C3.
+`plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` is now the active F5C4C implementation contract.
+The next implementation thread should implement `FP-0043` rather than reopening F5C4B, reopening F5C4A, widening straight into diligence release logging, board-packet circulation posture, or F6, or replaying F5C2 or F5C3.
 
 ## Review ritual
 

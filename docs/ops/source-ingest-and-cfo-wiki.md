@@ -442,6 +442,14 @@ The shipped F4 baseline still does none of the following:
 - raw wiki pages remain derived evidence inputs, not the source of truth for the release record itself
 - actual send, distribute, publish, broader packet widening, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
+`FP-0043` now makes the active F5C4C boundary explicit:
+
+- the next thread should widen the existing `report_release` approval and release-readiness seams from lender-update-only to `lender_update` plus `diligence_packet`, and no broader
+- the new review path must start from one completed `reporting` mission with `reportKind = "diligence_packet"` and one stored `diligence_packet` artifact
+- the source reporting mission must already be completed and remain a `reporting` mission rather than a new approval-specific mission family
+- raw wiki pages remain derived evidence inputs, not the approval source of truth
+- actual send, distribute, publish, diligence release logging, board-packet review or circulation readiness, bounded runtime-codex drafting, PDF export, and slide export remain later work
+
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
 If the latest bound policy extract is missing, unsupported, or failed, the mission persists a truthful limited answer rather than inventing a digest.
@@ -452,7 +460,7 @@ The shipped F5B follow-on now hardens body visibility, filed-page reuse, and mar
 The shipped F5C1 follow-on now specializes one draft `board_packet` from that completed reporting state.
 The shipped F5C2 follow-on now specializes only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
-The active F5C4 follow-on now narrows the next step to lender-update release logging only, without widening into actual delivery, broader packet approval rollout, runtime-codex drafting, or export work.
+The active F5C4 follow-on now narrows the next step to diligence-packet approval review and release-readiness only, without widening into diligence release logging, board-packet circulation posture, actual delivery, runtime-codex drafting, or export work.
 
 ## Lint flow
 
