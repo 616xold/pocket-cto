@@ -60,6 +60,7 @@ pnpm smoke:finance-report-filed-artifact:local
 pnpm smoke:lender-update-release-approval:local
 pnpm smoke:lender-update-release-log:local
 pnpm smoke:diligence-packet-release-approval:local
+pnpm smoke:diligence-packet-release-log:local
 pnpm smoke:finance-policy-lookup:local
 pnpm eval:finance-discovery-quality
 ```
