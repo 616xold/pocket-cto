@@ -81,6 +81,15 @@ export const ReportReleaseApprovalReleaseRecordSchema = z
     summary: z.string().min(1),
   })
   .strict();
+export const ReportCirculationApprovalCirculationRecordSchema = z
+  .object({
+    circulatedAt: z.string().datetime({ offset: true }),
+    circulatedBy: z.string().min(1),
+    circulationChannel: z.string().min(1),
+    circulationNote: z.string().nullable().default(null),
+    summary: z.string().min(1),
+  })
+  .strict();
 
 export const ReportReleaseApprovalPayloadSchema = z
   .object({
@@ -113,6 +122,8 @@ export const ReportCirculationApprovalPayloadSchema = z
     limitationsSummary: z.string().min(1),
     resolution:
       ReportCirculationApprovalResolutionSchema.nullable().default(null),
+    circulationRecord:
+      ReportCirculationApprovalCirculationRecordSchema.nullable().default(null),
   })
   .strict();
 
@@ -150,6 +161,9 @@ export type ReportCirculationApprovalResolution = z.infer<
 >;
 export type ReportReleaseApprovalReleaseRecord = z.infer<
   typeof ReportReleaseApprovalReleaseRecordSchema
+>;
+export type ReportCirculationApprovalCirculationRecord = z.infer<
+  typeof ReportCirculationApprovalCirculationRecordSchema
 >;
 export type ReportReleaseApprovalPayload = z.infer<
   typeof ReportReleaseApprovalPayloadSchema

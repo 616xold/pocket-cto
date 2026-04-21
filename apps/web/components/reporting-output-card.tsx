@@ -27,6 +27,7 @@ export function ReportingOutputCard({
   const evidenceAppendix = reporting.evidenceAppendix;
   const publication = reporting.publication;
   const circulationReadiness = reporting.circulationReadiness;
+  const circulationRecord = reporting.circulationRecord;
   const releaseRecord = reporting.releaseRecord;
   const releaseReadiness = reporting.releaseReadiness;
   const isDiligencePacket = reporting.reportKind === "diligence_packet";
@@ -64,6 +65,10 @@ export function ReportingOutputCard({
 
       {supportsCirculationApproval && circulationReadiness?.summary ? (
         <p className="muted">{circulationReadiness.summary}</p>
+      ) : null}
+
+      {supportsCirculationApproval && circulationRecord?.summary ? (
+        <p className="muted">{circulationRecord.summary}</p>
       ) : null}
 
       {releaseReadiness?.summary ? (
@@ -152,6 +157,31 @@ export function ReportingOutputCard({
                 <div>
                   <dt>Circulation ready</dt>
                   <dd>{circulationReadiness?.circulationReady ? "Yes" : "No"}</dd>
+                </div>
+                <div>
+                  <dt>Circulation logged</dt>
+                  <dd>{circulationRecord?.circulated ? "Yes" : "No"}</dd>
+                </div>
+                <div>
+                  <dt>Circulated at</dt>
+                  <dd>{circulationRecord?.circulatedAt ?? "Not logged yet."}</dd>
+                </div>
+                <div>
+                  <dt>Circulated by</dt>
+                  <dd>{circulationRecord?.circulatedBy ?? "Not logged yet."}</dd>
+                </div>
+                <div>
+                  <dt>Circulation channel</dt>
+                  <dd>
+                    {circulationRecord?.circulationChannel ?? "Not logged yet."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Circulation note</dt>
+                  <dd>
+                    {circulationRecord?.circulationNote ??
+                      "No circulation note recorded."}
+                  </dd>
                 </div>
                 <div>
                   <dt>Approval requested</dt>

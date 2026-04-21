@@ -2832,6 +2832,11 @@ async function createHarness(options?: {
             "fileDraftArtifacts should not be called in orchestrator harness",
           );
         },
+        async recordCirculationLog() {
+          throw new Error(
+            "recordCirculationLog should not be called in orchestrator harness",
+          );
+        },
         async recordReleaseLog() {
           throw new Error(
             "recordReleaseLog should not be called in orchestrator harness",

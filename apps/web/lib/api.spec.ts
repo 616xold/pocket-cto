@@ -358,6 +358,75 @@ describe("web api module", () => {
     );
   });
 
+  it("posts the board-packet circulation-log route correctly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        return {
+          missionId,
+          approvalId,
+          created: true,
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote: "Circulated from the finance mailbox after approval.",
+            approvalId,
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+        };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const result = await mod.recordReportingCirculationLog({
+      missionId,
+      circulatedBy: "finance-operator",
+      circulationChannel: "email",
+      circulationNote: "Circulated from the finance mailbox after approval.",
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      statusCode: 201,
+      data: {
+        missionId,
+        approvalId,
+        created: true,
+        circulationRecord: {
+          circulated: true,
+          circulatedAt: "2026-04-21T09:10:00.000Z",
+          circulatedBy: "finance-operator",
+          circulationChannel: "email",
+          circulationNote: "Circulated from the finance mailbox after approval.",
+          approvalId,
+          summary:
+            "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+        },
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/missions/${missionId}/reporting/circulation-log`,
+      {
+        body: JSON.stringify({
+          circulatedAt: null,
+          circulatedBy: "finance-operator",
+          circulationChannel: "email",
+          circulationNote: "Circulated from the finance mailbox after approval.",
+        }),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+  });
+
   it("posts the board-packet circulation approval route correctly", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

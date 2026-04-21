@@ -31,6 +31,7 @@ import {
   readLenderUpdateArtifactMetadata,
 } from "../reporting/artifact";
 import { buildReportingCirculationReadinessView } from "../reporting/circulation-readiness";
+import { buildReportingCirculationRecordView } from "../reporting/circulation-record";
 import { buildReportingReleaseRecordView } from "../reporting/release-record";
 import { buildReportingReleaseReadinessView } from "../reporting/release-readiness";
 import { normalizeSentence, truncate } from "./text";
@@ -65,6 +66,7 @@ export type ProofBundleAssemblyFacts = {
   reportDraftStatus: ProofBundleManifest["reportDraftStatus"];
   reportKind: ProofBundleManifest["reportKind"];
   circulationReadiness: ProofBundleManifest["circulationReadiness"];
+  circulationRecord: ProofBundleManifest["circulationRecord"];
   releaseRecord: ProofBundleManifest["releaseRecord"];
   releaseReadiness: ProofBundleManifest["releaseReadiness"];
   reportSummary: string | null;
@@ -150,6 +152,14 @@ export function deriveProofBundleAssemblyFacts(input: {
   const circulationReadiness = circulationApprovalReportKind
     ? buildReportingCirculationReadinessView({
         approvals: input.approvals,
+        reportKind: circulationApprovalReportKind,
+        storedDraft: true,
+      })
+    : null;
+  const circulationRecord = circulationApprovalReportKind
+    ? buildReportingCirculationRecordView({
+        approvals: input.approvals,
+        circulationReadiness,
         reportKind: circulationApprovalReportKind,
         storedDraft: true,
       })
@@ -252,6 +262,7 @@ export function deriveProofBundleAssemblyFacts(input: {
         input.existingBundle?.reportKind ??
         null,
       circulationReadiness,
+      circulationRecord,
       latestApproval,
       releaseRecord,
       releaseReadiness,
@@ -309,6 +320,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       input.existingBundle?.reportKind ??
       null,
     circulationReadiness,
+    circulationRecord,
     releaseRecord,
     releaseReadiness,
     reportSummary:
@@ -432,6 +444,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       mission: input.mission,
       pullRequestArtifact: latestArtifacts.pullRequest,
       circulationReadiness,
+      circulationRecord,
       releaseRecord,
       releaseReadiness,
     }),
@@ -620,6 +633,7 @@ function buildDecisionTrace(input: {
   artifacts: ArtifactRecord[];
   appendixPresent: boolean;
   circulationReadiness: ProofBundleManifest["circulationReadiness"];
+  circulationRecord: ProofBundleManifest["circulationRecord"];
   reportKind:
     | BoardPacketArtifactMetadata["reportKind"]
     | DiligencePacketArtifactMetadata["reportKind"]
@@ -755,6 +769,10 @@ function buildDecisionTrace(input: {
     );
   }
 
+  if (input.circulationRecord?.circulated) {
+    lines.push(input.circulationRecord.summary);
+  }
+
   if (input.releaseReadiness?.approvalId) {
     const reportLabel =
       input.reportKind && isReleaseApprovalReportKind(input.reportKind)
@@ -822,6 +840,7 @@ function buildProofBundleTimestamps(input: {
   mission: MissionRecord;
   pullRequestArtifact: ArtifactRecord | null;
   circulationReadiness: ProofBundleManifest["circulationReadiness"];
+  circulationRecord: ProofBundleManifest["circulationRecord"];
   releaseRecord: ProofBundleManifest["releaseRecord"];
   releaseReadiness: ProofBundleManifest["releaseReadiness"];
 }): ProofBundleTimestamps {
@@ -853,6 +872,7 @@ function buildProofBundleTimestamps(input: {
     latestApprovalAt:
       [
         input.latestApproval?.updatedAt ?? null,
+        input.circulationRecord?.circulatedAt ?? null,
         input.releaseRecord?.releasedAt ?? null,
         input.releaseReadiness?.resolvedAt ?? null,
         input.releaseReadiness?.requestedAt ?? null,

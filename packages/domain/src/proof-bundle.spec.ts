@@ -270,7 +270,17 @@ describe("Proof bundle domain schema", () => {
         resolvedBy: "finance-reviewer",
         rationale: "Approved for internal circulation.",
         summary:
-          "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation, but no circulation has been logged.",
+          "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+      },
+      circulationRecord: {
+        circulated: true,
+        circulatedAt: "2026-04-19T12:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated after approval from the finance mailbox.",
+        approvalId: "55555555-5555-4555-8555-555555555555",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
       },
       reportSummary:
         "Draft board packet for acme from the completed cash posture reporting mission.",
@@ -336,6 +346,8 @@ describe("Proof bundle domain schema", () => {
     expect(
       parsed.circulationReadiness?.circulationApprovalStatus,
     ).toBe("approved_for_circulation");
+    expect(parsed.circulationRecord?.circulated).toBe(true);
+    expect(parsed.circulationRecord?.circulationChannel).toBe("email");
     expect(parsed.reportPublication).toBeNull();
     expect(parsed.evidenceCompleteness.expectedArtifactKinds).toEqual([
       "board_packet",

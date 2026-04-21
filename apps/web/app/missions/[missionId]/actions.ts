@@ -11,6 +11,7 @@ import {
   exportReportingMissionMarkdown,
   fileReportingMissionArtifacts,
   interruptMissionTask,
+  recordReportingCirculationLog,
   recordReportingReleaseLog,
   requestReportingCirculationApproval,
   requestReportingReleaseApproval,
@@ -21,6 +22,7 @@ import {
   buildExportReportingMarkdownActionResult,
   buildFileReportingArtifactsActionResult,
   buildInterruptActionResult,
+  buildRecordReportingCirculationLogActionResult,
   buildRecordReportingReleaseLogActionResult,
   buildRequestReportingCirculationApprovalActionResult,
   buildRequestReportingReleaseApprovalActionResult,
@@ -97,6 +99,19 @@ const recordReportingReleaseLogFormSchema = z.object({
   releasedBy: z.string().trim().min(1),
   releaseChannel: z.string().trim().min(1),
   releaseNote: z.preprocess(
+    (value) => (value === null || value === "" ? undefined : value),
+    z.string().trim().min(1).optional(),
+  ),
+});
+const recordReportingCirculationLogFormSchema = z.object({
+  missionId: z.string().uuid(),
+  reportKind: z.preprocess(
+    (value) => value ?? "board_packet",
+    z.literal("board_packet"),
+  ),
+  circulatedBy: z.string().trim().min(1),
+  circulationChannel: z.string().trim().min(1),
+  circulationNote: z.preprocess(
     (value) => (value === null || value === "" ? undefined : value),
     z.string().trim().min(1).optional(),
   ),
@@ -346,6 +361,38 @@ export async function submitRecordReportingReleaseLog(
 
   return buildRecordReportingReleaseLogActionResult(
     input.releasedBy,
+    input.reportKind,
+    result,
+  );
+}
+
+export async function submitRecordReportingCirculationLog(
+  _previousState: MissionActionState,
+  formData: FormData,
+) {
+  const input = recordReportingCirculationLogFormSchema.parse({
+    missionId: formData.get("missionId"),
+    reportKind: formData.get("reportKind"),
+    circulatedBy: formData.get("circulatedBy"),
+    circulationChannel: formData.get("circulationChannel"),
+    circulationNote: formData.get("circulationNote"),
+  });
+
+  const result = await recordReportingCirculationLog({
+    missionId: input.missionId,
+    circulatedBy: input.circulatedBy,
+    circulationChannel: input.circulationChannel,
+    circulationNote: input.circulationNote ?? null,
+  });
+
+  if (result.ok) {
+    revalidatePath("/");
+    revalidatePath("/missions");
+    revalidatePath(`/missions/${input.missionId}`);
+  }
+
+  return buildRecordReportingCirculationLogActionResult(
+    input.circulatedBy,
     input.reportKind,
     result,
   );

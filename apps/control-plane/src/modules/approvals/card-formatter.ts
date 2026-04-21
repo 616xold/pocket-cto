@@ -220,14 +220,29 @@ function buildReportCirculationCard(
   const payload = isReportCirculationApprovalPayload(approval.payload)
     ? approval.payload
     : null;
+  const circulationRecord = payload?.circulationRecord ?? null;
   const reportLabel = payload
     ? readReportCirculationApprovalReportKindLabel(payload.reportKind)
     : "Report";
   const reportLabelLower = reportLabel.toLowerCase();
 
+  if (payload && circulationRecord) {
+    return buildCard(approval, context, {
+      actionHint:
+        `This card records an external circulation log only. Pocket CFO did not send or distribute the ${reportLabelLower}.`,
+      requiresLiveControl: false,
+      summary: joinCompact([
+        `External ${reportLabelLower} circulation is logged for ${payload.companyKey}.`,
+        `Original approval trace remains anchored to report_circulation approval ${approval.id}.`,
+        circulationRecord.summary,
+      ]),
+      title: `${reportLabel} circulation logged for ${payload.companyKey}`,
+    });
+  }
+
   return buildCard(approval, context, {
     actionHint:
-      `Review the stored ${reportLabelLower} summary, freshness, and limitations before deciding whether this draft is approved for internal circulation. This slice records posture only and does not log circulation or deliver the packet.`,
+      `Review the stored ${reportLabelLower} summary, freshness, and limitations before deciding whether this draft is approved for internal circulation. This slice records posture only and does not deliver the packet.`,
     requiresLiveControl: false,
     summary: payload
       ? joinCompact([

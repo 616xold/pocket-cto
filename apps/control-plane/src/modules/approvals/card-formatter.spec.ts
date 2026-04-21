@@ -254,6 +254,7 @@ describe("card-formatter", () => {
           summary:
             "Draft board packet for acme from the completed finance memo.",
           resolution: null,
+          circulationRecord: null,
         },
         taskId: null,
       }),
@@ -266,7 +267,54 @@ describe("card-formatter", () => {
     );
     expect(card.summary).toContain("Draft board packet for acme");
     expect(card.requiresLiveControl).toBe(false);
-    expect(card.actionHint).toContain("does not log circulation");
+    expect(card.actionHint).toContain("does not deliver the packet");
+  });
+
+  it("formats a logged board-packet circulation as a non-delivery approval card", () => {
+    const card = buildMissionApprovalCard({
+      approval: buildApproval({
+        kind: "report_circulation",
+        rationale: "Approved for internal circulation readiness.",
+        requestedBy: "finance-operator",
+        resolvedBy: "finance-reviewer",
+        status: "approved",
+        updatedAt: "2026-04-21T09:10:00.000Z",
+        payload: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          companyKey: "acme",
+          draftOnlyStatus: "draft_only",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          missionId: "11111111-1111-4111-8111-111111111111",
+          reportKind: "board_packet",
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          summary:
+            "Draft board packet for acme from the completed finance memo.",
+          resolution: {
+            decision: "accept",
+            rationale: "Approved for internal circulation readiness.",
+            resolvedBy: "finance-reviewer",
+          },
+          circulationRecord: {
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote: "Circulated from the finance mailbox after approval.",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+        },
+        taskId: null,
+      }),
+      context: buildContext(),
+    });
+
+    expect(card.title).toBe("Board packet circulation logged for acme");
+    expect(card.summary).toContain("External board packet circulation is logged");
+    expect(card.summary).toContain("Original approval");
+    expect(card.requiresLiveControl).toBe(false);
+    expect(card.actionHint).toBeNull();
   });
 
   it("formats a logged lender-update release as a non-delivery approval card", () => {

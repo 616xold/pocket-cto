@@ -227,10 +227,10 @@ describe("MissionActions", () => {
     );
 
     expect(html).toContain(
-      "This first real F5C4E slice keeps board packets delivery-free and runtime-free",
+      "This first real F5C4F slice keeps board packets delivery-free and runtime-free",
     );
     expect(html).toContain(
-      "one persisted internal circulation-approval path from one completed board-packet reporting mission",
+      "one persisted internal circulation-approval path plus one external circulation-log path from one completed board-packet reporting mission",
     );
     expect(html).toContain("<code>board_packet</code> artifact");
     expect(html).toContain("Request board packet circulation approval");
@@ -729,6 +729,88 @@ describe("MissionActions", () => {
     );
     expect(html).not.toContain("Request diligence packet release approval");
   });
+
+  it("renders board-packet circulation-log action after circulation approval is granted", () => {
+    const html = renderToStaticMarkup(
+      <MissionActions
+        approvalCards={[]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          id: "11111111-1111-4111-8111-111111111111",
+          type: "reporting",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          title: "Draft board packet for acme",
+          objective:
+            "Compile one draft board packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+          status: "succeeded",
+          primaryRepo: null,
+          createdBy: "operator",
+          createdAt: "2026-04-19T12:00:00.000Z",
+          updatedAt: "2026-04-19T12:05:00.000Z",
+          spec: {
+            type: "reporting",
+            title: "Draft board packet for acme",
+            objective:
+              "Compile one draft board packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+            repos: [],
+            constraints: {
+              mustNot: [],
+              allowedPaths: [],
+            },
+            acceptance: [],
+            riskBudget: {
+              sandboxMode: "read-only",
+              maxWallClockMinutes: 5,
+              maxCostUsd: 1,
+              allowNetwork: false,
+              requiresHumanApprovalFor: [],
+            },
+            deliverables: ["board_packet", "proof_bundle"],
+            evidenceRequirements: [],
+          },
+        }}
+        reporting={{
+          ...buildBoardPacketReportingView(),
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Approved for internal circulation readiness.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+          },
+          circulationRecord: {
+            circulated: false,
+            circulatedAt: null,
+            circulatedBy: null,
+            circulationChannel: null,
+            circulationNote: null,
+            approvalId: null,
+            summary:
+              "Circulation approval is granted, but no external circulation has been logged yet.",
+          },
+        }}
+        tasks={[]}
+      />,
+    );
+
+    expect(html).not.toContain("Request board packet circulation approval");
+    expect(html).toContain("Record board packet as circulated");
+    expect(html).toContain(
+      "Pocket CFO still does not send or distribute the board packet. This action only records that circulation happened externally after approval.",
+    );
+  });
 });
 
 function buildFinanceMemoReportingView(): NonNullable<
@@ -805,6 +887,7 @@ function buildFinanceMemoReportingView(): NonNullable<
     boardPacket: null,
     lenderUpdate: null,
     diligencePacket: null,
+    circulationRecord: null,
     circulationReadiness: null,
     releaseRecord: null,
     releaseReadiness: null,
@@ -874,6 +957,7 @@ function buildLenderUpdateReportingView(): NonNullable<
     diligencePacket: null,
     publication: null,
     circulationReadiness: null,
+    circulationRecord: null,
     releaseRecord: null,
     releaseReadiness: {
       releaseApprovalStatus: "not_requested",
@@ -958,6 +1042,7 @@ function buildBoardPacketReportingView(): NonNullable<
       summary:
         "Stored board packet exists, but circulation approval has not been requested yet.",
     },
+    circulationRecord: null,
     releaseRecord: null,
     releaseReadiness: null,
   } satisfies NonNullable<MissionDetailView["reporting"]>;
@@ -1018,6 +1103,7 @@ function buildDiligencePacketReportingView(): NonNullable<
     },
     publication: null,
     circulationReadiness: null,
+    circulationRecord: null,
     releaseRecord: null,
     releaseReadiness: {
       releaseApprovalStatus: "not_requested",

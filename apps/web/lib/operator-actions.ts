@@ -49,6 +49,7 @@ export type MissionActionKind =
   | "interrupt_task"
   | "file_reporting_artifacts"
   | "export_reporting_markdown"
+  | "record_reporting_circulation_log"
   | "record_reporting_release_log"
   | "request_reporting_circulation_approval"
   | "request_reporting_release_approval";
@@ -242,6 +243,33 @@ export function buildRecordReportingReleaseLogActionResult(
   };
 }
 
+export function buildRecordReportingCirculationLogActionResult(
+  operatorName: string,
+  reportKind: ReportCirculationApprovalReportKind,
+  result: ControlPlaneMutationResult<unknown>,
+): MissionActionResult {
+  const reportLabel = readReportCirculationApprovalReportKindLabel(reportKind);
+
+  if (result.ok) {
+    return {
+      ok: true,
+      kind: "record_reporting_circulation_log",
+      message: `${reportLabel} circulation logged by ${operatorName}. Mission detail refreshed.`,
+      statusCode: result.statusCode,
+    };
+  }
+
+  return {
+    ok: false,
+    kind: "record_reporting_circulation_log",
+    message: describeFailure("record_reporting_circulation_log", result, {
+      reportLabel,
+    }),
+    statusCode: result.statusCode,
+    errorCode: result.errorCode,
+  };
+}
+
 function describeFailure(
   kind: MissionActionKind,
   failure: Extract<ControlPlaneMutationResult<unknown>, { ok: false }>,
@@ -287,6 +315,11 @@ function describeFailure(
               `This ${reportLabelLower} circulation approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored ${reportLabelLower}, lineage, and circulation posture before retrying.`,
               failure.message,
             )
+        : kind === "record_reporting_circulation_log"
+          ? withRouteReason(
+              `This ${reportLabelLower} circulation log action is unavailable from the mission's current stored state. Refresh the page and confirm approval, stored evidence, and circulation posture before retrying.`,
+              failure.message,
+            )
         : kind === "request_reporting_release_approval"
           ? withRouteReason(
               `This ${reportLabelLower} release approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored ${reportLabelLower}, lineage, and approval posture before retrying.`,
@@ -318,6 +351,10 @@ function describeFailure(
 
       if (kind === "request_reporting_circulation_approval") {
         return `The web app could not reach the control plane to request ${reportLabelLower} circulation approval. Confirm the local services are running and try again.`;
+      }
+
+      if (kind === "record_reporting_circulation_log") {
+        return `The web app could not reach the control plane to record the ${reportLabelLower} circulation log. Confirm the local services are running and try again.`;
       }
 
       if (kind === "request_reporting_release_approval") {

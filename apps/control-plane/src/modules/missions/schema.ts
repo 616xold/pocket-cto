@@ -10,6 +10,7 @@ import {
   FINANCE_DISCOVERY_QUESTION_KINDS,
   MissionSourceKindSchema,
   MissionStatusSchema,
+  RecordReportingCirculationLogInputSchema,
   RecordReportingReleaseLogInputSchema,
   RequestReportCirculationApprovalInputSchema,
   RequestReportReleaseApprovalInputSchema,
@@ -75,6 +76,8 @@ export const requestReportingCirculationApprovalSchema =
 
 export const recordReportingReleaseLogSchema =
   RecordReportingReleaseLogInputSchema;
+export const recordReportingCirculationLogSchema =
+  RecordReportingCirculationLogInputSchema;
 
 export const listMissionsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(50).default(20),

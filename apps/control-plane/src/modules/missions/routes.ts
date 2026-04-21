@@ -17,6 +17,7 @@ import {
   createReportingMissionSchema,
   listMissionsQuerySchema,
   missionIdParamsSchema,
+  recordReportingCirculationLogSchema,
   recordReportingReleaseLogSchema,
   requestReportingCirculationApprovalSchema,
   requestReportingReleaseApprovalSchema,
@@ -154,6 +155,24 @@ export async function registerMissionRoutes(
       );
       const result =
         await deps.missionReportingActionsService.requestReleaseApproval(
+          params.missionId,
+          body,
+        );
+
+      reply.code(result.created ? 201 : 200);
+      return result;
+    },
+  );
+
+  app.post(
+    "/missions/:missionId/reporting/circulation-log",
+    async (request, reply) => {
+      const params = missionIdParamsSchema.parse(request.params);
+      const body = recordReportingCirculationLogSchema.parse(
+        request.body ?? {},
+      );
+      const result =
+        await deps.missionReportingActionsService.recordCirculationLog(
           params.missionId,
           body,
         );

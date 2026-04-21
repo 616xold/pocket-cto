@@ -1,6 +1,8 @@
 import type {
   ExportReportingMissionMarkdownInput,
   FileReportingMissionArtifactsInput,
+  RecordReportingCirculationLogInput,
+  RecordReportingCirculationLogResult,
   RecordReportingReleaseLogInput,
   RecordReportingReleaseLogResult,
   RequestReportCirculationApprovalInput,
@@ -8,10 +10,16 @@ import type {
   RequestReportReleaseApprovalResult,
   RequestReportReleaseApprovalInput,
 } from "@pocket-cto/domain";
-import { RecordReportingReleaseLogResultSchema } from "@pocket-cto/domain";
+import {
+  RecordReportingCirculationLogResultSchema,
+  RecordReportingReleaseLogResultSchema,
+} from "@pocket-cto/domain";
 import type { ProofBundleAssemblyService } from "../evidence/proof-bundle-assembly";
 import type { ApprovalService } from "../approvals/service";
-import { readReportReleaseApprovalPayload } from "../approvals/payload";
+import {
+  readReportCirculationApprovalPayload,
+  readReportReleaseApprovalPayload,
+} from "../approvals/payload";
 import type { ReportingService } from "../reporting/service";
 
 export class MissionReportingActionsService {
@@ -23,6 +31,7 @@ export class MissionReportingActionsService {
       >;
       approvalService: Pick<
         ApprovalService,
+        | "recordReportCirculationLog"
         | "recordReportReleaseLog"
         | "requestReportCirculationApproval"
         | "requestReportReleaseApproval"
@@ -32,6 +41,7 @@ export class MissionReportingActionsService {
         | "exportMarkdownBundle"
         | "fileDraftArtifacts"
         | "prepareReportCirculationApproval"
+        | "prepareReportingCirculationLog"
         | "prepareReportingReleaseLog"
         | "prepareReportReleaseApproval"
       >;
@@ -195,6 +205,54 @@ export class MissionReportingActionsService {
         releaseNote: releaseRecord.releaseNote,
         approvalId: recorded.approval.id,
         summary: releaseRecord.summary,
+      },
+    });
+  }
+
+  async recordCirculationLog(
+    missionId: string,
+    input: RecordReportingCirculationLogInput,
+  ): Promise<RecordReportingCirculationLogResult> {
+    const prepared =
+      await this.deps.reportingService.prepareReportingCirculationLog(
+        missionId,
+        input,
+      );
+    const recorded = await this.deps.approvalService.recordReportCirculationLog(
+      {
+        approvalId: prepared.approvalId,
+        circulationRecord: prepared.circulationRecord,
+      },
+    );
+
+    if (recorded.created) {
+      await this.deps.proofBundleAssembly.refreshProofBundle({
+        missionId,
+        trigger: "circulation_logged",
+      });
+    }
+
+    const payload = readReportCirculationApprovalPayload(recorded.approval);
+    const circulationRecord = payload.circulationRecord;
+
+    if (!circulationRecord) {
+      throw new Error(
+        `Approval ${recorded.approval.id} is missing its persisted circulation record after circulation logging.`,
+      );
+    }
+
+    return RecordReportingCirculationLogResultSchema.parse({
+      missionId,
+      approvalId: recorded.approval.id,
+      created: recorded.created,
+      circulationRecord: {
+        circulated: true,
+        circulatedAt: circulationRecord.circulatedAt,
+        circulatedBy: circulationRecord.circulatedBy,
+        circulationChannel: circulationRecord.circulationChannel,
+        circulationNote: circulationRecord.circulationNote,
+        approvalId: recorded.approval.id,
+        summary: circulationRecord.summary,
       },
     });
   }

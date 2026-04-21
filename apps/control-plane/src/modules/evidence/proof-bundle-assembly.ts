@@ -244,6 +244,7 @@ export function assembleProofBundleManifest(input: {
     reportSummary: facts.reportSummary ?? "",
     reportPublication: facts.reportPublication,
     circulationReadiness: facts.circulationReadiness,
+    circulationRecord: facts.circulationRecord,
     releaseRecord: facts.releaseRecord,
     releaseReadiness: facts.releaseReadiness,
     appendixPresent: facts.appendixPresent,
@@ -573,9 +574,11 @@ function buildVerificationSummary(
     facts.reportSummary
   ) {
     const boardPacketVerificationSuffix = facts.circulationReadiness?.approvalId
-      ? facts.circulationReadiness.circulationReady
-        ? " Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and approved-for-circulation posture before sharing this draft internally."
-        : " Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and the unresolved or declined circulation-review trace before sharing this draft internally."
+      ? facts.circulationRecord?.circulated
+        ? " Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, approval trace, and external circulation-record posture before relying on this circulated draft."
+        : facts.circulationReadiness.circulationReady
+          ? " Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and approved-for-circulation posture before sharing this draft internally."
+          : " Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and the unresolved or declined circulation-review trace before sharing this draft internally."
       : " Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and board-packet circulation posture before sharing this draft internally.";
 
     return truncate(
@@ -653,13 +656,17 @@ function buildRiskSummary(
       }
 
       if (status === "ready") {
+        if (facts.circulationRecord?.circulated) {
+          return "This board packet has one persisted external circulation record linked to an approved circulation-review trace, but Pocket CFO still did not send, distribute, publish, generate PDF, or generate slides in F5C4F.";
+        }
+
         if (!facts.circulationReadiness?.approvalId) {
-          return "This board packet is draft-only, carries source-report freshness and limitations forward, and keeps the F5C1 baseline: it does not add approval, release, PDF, or slide workflow in F5C1. No circulation approval has been requested, and it does not add actual circulation logging, delivery, PDF, or slide workflow in F5C4E.";
+          return "This board packet is draft-only, carries source-report freshness and limitations forward, and keeps the F5C1 baseline: it does not add approval, release, PDF, or slide workflow in F5C1. No circulation approval has been requested, and it does not add actual circulation logging, delivery, PDF, or slide workflow in F5C4F.";
         }
 
         return facts.circulationReadiness.circulationReady
-          ? "This board packet is approved for internal circulation from a persisted review path, but no circulation has been logged and actual send, distribute, PDF, and slide workflows remain out of scope in F5C4E."
-          : "This board packet remains draft-only because circulation approval was not granted; no circulation has been logged and actual send, distribute, PDF, and slide workflows remain out of scope in F5C4E.";
+          ? "This board packet is approved for internal circulation from a persisted review path, but no circulation has been logged and actual send, distribute, PDF, and slide workflows remain out of scope in F5C4F."
+          : "This board packet remains draft-only because circulation approval was not granted; no circulation has been logged and actual send, distribute, PDF, and slide workflows remain out of scope in F5C4F.";
       }
 
       return "";
@@ -804,6 +811,10 @@ function buildRollbackSummary(
       }
 
       if (status === "ready") {
+        if (facts.circulationRecord?.circulated) {
+          return "No system circulation, send, wiki filing, PDF export, or slide export side effect was produced; this slice only records an operator-entered external circulation log against the approved board packet.";
+        }
+
         if (!facts.circulationReadiness?.approvalId) {
           return "No circulation approval, circulation log, send, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
         }

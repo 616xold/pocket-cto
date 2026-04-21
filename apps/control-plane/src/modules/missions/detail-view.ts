@@ -15,6 +15,7 @@ import { readMissionDiscoveryAnswer } from "./discovery-answer-view";
 import { readProofBundleManifest } from "./repository-mappers";
 import { readMissionReportingView } from "../reporting/artifact";
 import { buildReportingCirculationReadinessViewFromProofBundle } from "../reporting/circulation-readiness";
+import { buildReportingCirculationRecordViewFromProofBundle } from "../reporting/circulation-record";
 import { buildReportingPublicationViewFromProofBundle } from "../reporting/publication";
 import { buildReportingReleaseRecordViewFromProofBundle } from "../reporting/release-record";
 import { buildReportingReleaseReadinessViewFromProofBundle } from "../reporting/release-readiness";
@@ -175,6 +176,13 @@ function normalizeProofBundle(
     circulationReadiness:
       buildReportingCirculationReadinessViewFromProofBundle({
         circulationReadiness: proofBundle.circulationReadiness,
+        evidenceCompleteness: proofBundle.evidenceCompleteness,
+        reportKind: proofBundle.reportKind,
+      }) ?? null,
+    circulationRecord:
+      buildReportingCirculationRecordViewFromProofBundle({
+        circulationReadiness: proofBundle.circulationReadiness,
+        circulationRecord: proofBundle.circulationRecord,
         evidenceCompleteness: proofBundle.evidenceCompleteness,
         reportKind: proofBundle.reportKind,
       }) ?? null,

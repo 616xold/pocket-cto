@@ -8,14 +8,15 @@ Current responsibilities:
 - map Codex approval surfaces to runtime approval kinds
 - persist one finance-facing `report_release` approval against one completed `lender_update` or `diligence_packet` reporting mission with one stored report artifact
 - persist one finance-facing `report_circulation` approval against one completed `board_packet` reporting mission with one stored report artifact
-- append `approval.requested`, `approval.resolved`, and `approval.release_logged` replay events when the finance-facing path uses them
+- append `approval.requested`, `approval.resolved`, `approval.circulation_logged`, and `approval.release_logged` replay events when the finance-facing path uses them
 - transition tasks and missions into and out of `awaiting_approval` for runtime-gated work only
 - resume accepted runtime approvals only after the live app-server response handoff succeeds
 - resolve or cancel runtime approvals against the live in-memory runtime session registry
 - resolve `report_release` approvals as persisted, idempotent operator decisions without any live runtime continuation
 - resolve `report_circulation` approvals as persisted, idempotent operator decisions without any live runtime continuation
+- record one board-packet circulation log on the existing approved `report_circulation` seam without claiming delivery automation
 - record one lender-update or diligence-packet release log on the existing approved `report_release` seam without claiming delivery automation
-- back the thin HTTP operator routes for mission approval listing, approval resolution, and finance-release-log persistence
+- back the thin HTTP operator routes for mission approval listing, approval resolution, and finance reporting circulation-log and release-log persistence
 
 Current approval mappings:
 
@@ -32,7 +33,7 @@ Current non-goals:
 - worker-restart recovery for live runtime sessions
 - generic approval inbox or report-release dashboard widening
 - actual report delivery, PDF export, or slide export
-- board-packet circulation logging, send or distribute behavior, PDF export, and slide export beyond the first F5C4E review-only slice
+- send or distribute behavior, PDF export, and slide export beyond the shipped board-packet circulation-log and release-log slices
 
 The durable source of truth is still Postgres replay plus the `approvals` row.
 Live continuation remains intentionally single-process and in-memory for runtime approvals only.
@@ -40,5 +41,5 @@ The HTTP control surface only needs embedded-worker live control when resolving 
 `report_release` approvals are taskless, replay-backed, and safe to resolve in `api_only` mode because they do not resume a live runtime turn or claim delivery happened.
 `report_circulation` approvals are also taskless, replay-backed, and safe to resolve in `api_only` mode because they do not resume a live runtime turn or claim circulation happened.
 Today the shipped finance-facing scope covers approval request and approval resolution for `lender_update`, `diligence_packet`, and `board_packet`, plus external release logging for lender-update and diligence-packet report kinds on the existing `report_release` seam.
-The shipped F5C4E widening keeps board-packet internal review deterministic, runtime-free, and delivery-free while deriving circulation-ready posture only.
-The next later-F5 follow-on should stay narrow: `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` should add one explicit board-packet circulation record or log foundation before any broader delivery or export widening.
+The shipped F5C4F widening keeps board-packet internal review, approval resolution, and external circulation logging deterministic, runtime-free, and delivery-free while reusing the existing `report_circulation` seam.
+Any later-F5 follow-on should stay narrow and solve one concrete post-circulation operator problem before any broader delivery or export widening.

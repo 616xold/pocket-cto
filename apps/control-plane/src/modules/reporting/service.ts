@@ -1,8 +1,10 @@
 import type {
   ExportReportingMissionMarkdownInput,
   FileReportingMissionArtifactsInput,
+  RecordReportingCirculationLogInput,
   RecordReportingReleaseLogInput,
   MissionRecord,
+  ReportCirculationApprovalCirculationRecord,
   ReportCirculationApprovalPayload,
   ReportReleaseApprovalPayload,
   ReportReleaseApprovalReleaseRecord,
@@ -14,6 +16,7 @@ import {
   CfoWikiPageRecordSchema,
   ExportReportingMissionMarkdownInputSchema,
   FileReportingMissionArtifactsInputSchema,
+  RecordReportingCirculationLogInputSchema,
   RecordReportingReleaseLogInputSchema,
   ReportCirculationApprovalPayloadSchema,
   ReportReleaseApprovalPayloadSchema,
@@ -38,6 +41,7 @@ import {
   buildReportingPublicationView,
 } from "./publication";
 import { buildLoggedReleaseRecordSummary } from "./release-record";
+import { buildLoggedCirculationRecordSummary } from "./circulation-record";
 import { readMissionReportingView } from "./artifact";
 import type {
   CompiledReportingArtifacts,
@@ -507,6 +511,78 @@ export class ReportingService {
           releaseNote: request.releaseNote,
           releasedAt,
           releasedBy: request.releasedBy,
+        }),
+      },
+    };
+  }
+
+  async prepareReportingCirculationLog(
+    missionId: string,
+    rawInput: RecordReportingCirculationLogInput,
+  ): Promise<{
+    approvalId: string;
+    circulationRecord: ReportCirculationApprovalCirculationRecord;
+  }> {
+    const request = RecordReportingCirculationLogInputSchema.parse(rawInput);
+    const context = await this.loadReportingMissionContext(missionId);
+    const reporting = readMissionReportingView({
+      artifacts: context.artifacts,
+      proofBundle: context.proofBundle,
+    });
+
+    if (!reporting) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet expose a persisted reporting view.`,
+      );
+    }
+
+    if (reporting.reportKind !== "board_packet") {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} has report kind ${reporting.reportKind}, not board_packet.`,
+      );
+    }
+
+    if (!reporting.boardPacket) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet store a board_packet artifact payload.`,
+      );
+    }
+
+    if (
+      reporting.circulationReadiness?.circulationApprovalStatus !==
+        "approved_for_circulation" ||
+      !reporting.circulationReadiness.approvalId
+    ) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} must already be approved_for_circulation before external circulation can be logged.`,
+      );
+    }
+
+    readSingleArtifactId(
+      context.artifacts,
+      "board_packet",
+      missionId,
+      "board-packet circulation can be logged",
+    );
+
+    const circulatedAt = request.circulatedAt ?? new Date().toISOString();
+
+    return {
+      approvalId: reporting.circulationReadiness.approvalId,
+      circulationRecord: {
+        circulatedAt,
+        circulatedBy: request.circulatedBy,
+        circulationChannel: request.circulationChannel,
+        circulationNote: request.circulationNote,
+        summary: buildLoggedCirculationRecordSummary({
+          circulatedAt,
+          circulatedBy: request.circulatedBy,
+          circulationChannel: request.circulationChannel,
+          circulationNote: request.circulationNote,
         }),
       },
     };

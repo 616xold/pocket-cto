@@ -21,6 +21,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "finance_memo",
           reportDraftStatus: "draft_only",
           reportSummary: "Cash posture remains constrained.",
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -161,6 +162,7 @@ describe("ReportingOutputCard", () => {
           },
           boardPacket: null,
           diligencePacket: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -230,6 +232,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "board_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -321,6 +324,7 @@ describe("ReportingOutputCard", () => {
               "# Draft Board Packet\n\n## Linked Evidence Appendix Posture\n\n- Appendix remains linked.",
           },
           diligencePacket: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -356,6 +360,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "board_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          circulationRecord: null,
           circulationReadiness: {
             circulationApprovalStatus: "approved_for_circulation",
             circulationReady: true,
@@ -459,6 +464,7 @@ describe("ReportingOutputCard", () => {
               "# Draft Board Packet\n\n## Linked Evidence Appendix Posture\n\n- Appendix remains linked.",
           },
           diligencePacket: null,
+          circulationRecord: null,
           circulationReadiness: {
             circulationApprovalStatus: "approved_for_circulation",
             circulationReady: true,
@@ -505,6 +511,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "lender_update",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -596,6 +603,7 @@ describe("ReportingOutputCard", () => {
               "# Draft Lender Update\n\n## Update Summary\n\nCash posture remains constrained.",
           },
           diligencePacket: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -631,6 +639,7 @@ describe("ReportingOutputCard", () => {
           reportKind: "diligence_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -722,6 +731,7 @@ describe("ReportingOutputCard", () => {
             bodyMarkdown:
               "# Draft Diligence Packet\n\n## Packet Summary\n\nCash posture remains constrained.",
           },
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -759,6 +769,7 @@ describe("ReportingOutputCard", () => {
           reportSummary:
             "Draft lender update for acme from the completed cash posture reporting mission.",
           reportPublication: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
@@ -861,6 +872,7 @@ describe("ReportingOutputCard", () => {
           },
           diligencePacket: null,
           publication: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
@@ -904,6 +916,7 @@ describe("ReportingOutputCard", () => {
           reportDraftStatus: "draft_only",
           reportSummary:
             "Draft diligence packet for acme from the completed cash posture reporting mission.",
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
@@ -1007,6 +1020,7 @@ describe("ReportingOutputCard", () => {
               "# Draft Diligence Packet\n\n## Release Review\n\nApproved for release.",
           },
           publication: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
@@ -1052,6 +1066,7 @@ describe("ReportingOutputCard", () => {
           reportDraftStatus: "draft_only",
           reportSummary:
             "Draft diligence packet for acme from the completed cash posture reporting mission.",
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: {
             released: true,
@@ -1164,6 +1179,7 @@ describe("ReportingOutputCard", () => {
               "# Draft Diligence Packet\n\n## Release Review\n\nApproved for release.",
           },
           publication: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: {
             released: true,
@@ -1218,6 +1234,7 @@ describe("ReportingOutputCard", () => {
           reportDraftStatus: "draft_only",
           reportSummary:
             "Draft lender update for acme from the completed cash posture reporting mission.",
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: {
             released: true,
@@ -1330,6 +1347,7 @@ describe("ReportingOutputCard", () => {
           },
           diligencePacket: null,
           publication: null,
+          circulationRecord: null,
           circulationReadiness: null,
           releaseRecord: {
             released: true,

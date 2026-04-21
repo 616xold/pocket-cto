@@ -19,6 +19,8 @@ import {
   MissionTaskRecordSchema,
   OperatorControlAvailabilitySchema,
   ProofBundleManifestSchema,
+  RecordReportingCirculationLogInputSchema,
+  RecordReportingCirculationLogResultSchema,
   RecordReportingReleaseLogInputSchema,
   RecordReportingReleaseLogResultSchema,
   RequestReportCirculationApprovalInputSchema,
@@ -475,6 +477,25 @@ export async function recordReportingReleaseLog(input: {
       releaseNote: input.releaseNote ?? null,
     }),
     RecordReportingReleaseLogResultSchema,
+  );
+}
+
+export async function recordReportingCirculationLog(input: {
+  circulatedAt?: string | null;
+  circulatedBy: string;
+  circulationChannel: string;
+  circulationNote?: string | null;
+  missionId: string;
+}) {
+  return postJson(
+    `/missions/${encodeURIComponent(input.missionId)}/reporting/circulation-log`,
+    RecordReportingCirculationLogInputSchema.parse({
+      circulatedAt: input.circulatedAt ?? null,
+      circulatedBy: input.circulatedBy,
+      circulationChannel: input.circulationChannel,
+      circulationNote: input.circulationNote ?? null,
+    }),
+    RecordReportingCirculationLogResultSchema,
   );
 }
 
