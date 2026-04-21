@@ -5,7 +5,10 @@ import type {
   MissionTaskRecord,
   ProofBundleManifest,
 } from "@pocket-cto/domain";
-import { isReportReleaseApprovalPayload } from "@pocket-cto/domain";
+import {
+  isReportReleaseApprovalPayload,
+  readReportReleaseApprovalReportKindLabel,
+} from "@pocket-cto/domain";
 
 type BuildMissionApprovalCardsInput = {
   approvals: ApprovalRecord[];
@@ -167,36 +170,42 @@ function buildReportReleaseCard(
     ? approval.payload
     : null;
   const releaseRecord = payload?.releaseRecord ?? null;
+  const reportLabel = payload
+    ? readReportReleaseApprovalReportKindLabel(payload.reportKind)
+    : "Report";
+  const reportLabelLower = reportLabel.toLowerCase();
+  const reportSummaryLabelLower =
+    payload?.reportKind === "lender_update" ? "lender-update" : reportLabelLower;
 
   if (payload && releaseRecord) {
     return buildCard(approval, context, {
       actionHint:
-        "This card records an external release log only. Pocket CFO did not send or distribute the lender update.",
+        `This card records an external release log only. Pocket CFO did not send or distribute the ${reportLabelLower}.`,
       requiresLiveControl: false,
       summary: joinCompact([
-        `External lender-update release is logged for ${payload.companyKey}.`,
+        `External ${reportSummaryLabelLower} release is logged for ${payload.companyKey}.`,
         releaseRecord.summary,
         `Original approval trace remains anchored to report_release approval ${approval.id}.`,
       ]),
-      title: `Lender update release logged for ${payload.companyKey}`,
+      title: `${reportLabel} release logged for ${payload.companyKey}`,
     });
   }
 
   return buildCard(approval, context, {
     actionHint:
-      "Review the stored lender update summary, freshness, and limitations before deciding whether this draft is approved for release. This slice records posture only and does not deliver the report.",
+      `Review the stored ${reportLabelLower} summary, freshness, and limitations before deciding whether this draft is approved for release. This slice records posture only and does not deliver the report.`,
     requiresLiveControl: false,
     summary: payload
       ? joinCompact([
-          `Review lender update release readiness for ${payload.companyKey}.`,
+          `Review ${reportLabelLower} release readiness for ${payload.companyKey}.`,
           `Summary: ${normalizeSentence(payload.summary)}`,
           `Freshness: ${normalizeSentence(payload.freshnessSummary)}`,
           `Limitations: ${normalizeSentence(payload.limitationsSummary)}`,
         ])
-      : "Review lender update release readiness for a stored draft report. This approval kind carries finance reporting evidence instead of runtime task context.",
+      : "Review release readiness for a stored draft report. This approval kind carries finance reporting evidence instead of runtime task context.",
     title: payload
-      ? `Review lender update release approval for ${payload.companyKey}`
-      : "Review lender update release approval",
+      ? `Review ${reportLabelLower} release approval for ${payload.companyKey}`
+      : "Review report release approval",
   });
 }
 

@@ -249,7 +249,7 @@ describe("ReportingService", () => {
       missionRepository: repository,
     });
 
-    const payload = await service.prepareLenderUpdateReleaseApproval(
+    const payload = await service.prepareReportReleaseApproval(
       lenderUpdateMission.id,
     );
 
@@ -299,7 +299,7 @@ describe("ReportingService", () => {
     });
 
     await expect(
-      service.prepareLenderUpdateReleaseApproval(financeMemoMission.id),
+      service.prepareReportReleaseApproval(financeMemoMission.id),
     ).rejects.toMatchObject({
       body: {
         error: {
@@ -307,6 +307,62 @@ describe("ReportingService", () => {
         },
       },
       statusCode: 400,
+    });
+  });
+
+  it("prepares one diligence-packet release approval payload from a completed diligence-packet mission with one stored artifact", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const diligencePacketMission = {
+      ...buildDiligencePacketMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [diligencePacketMission.id]: [
+          buildStoredDiligencePacketArtifact({
+            missionId: diligencePacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [diligencePacketMission.id]: diligencePacketMission,
+      },
+      proofBundlesByMissionId: {
+        [diligencePacketMission.id]: buildDiligencePacketProofBundle({
+          missionId: diligencePacketMission.id,
+          sourceDiscoveryMissionId,
+          sourceReportingMissionId,
+        }),
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    const payload = await service.prepareReportReleaseApproval(
+      diligencePacketMission.id,
+    );
+
+    expect(payload).toEqual({
+      artifactId: "cccccccc-1111-4111-8111-cccccccccccc",
+      companyKey: "acme",
+      draftOnlyStatus: "draft_only",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary: "Draft-only posture remains explicit.",
+      missionId: diligencePacketMission.id,
+      reportKind: "diligence_packet",
+      releaseRecord: null,
+      resolution: null,
+      sourceDiscoveryMissionId,
+      sourceReportingMissionId,
+      summary:
+        "Draft diligence packet for acme from the completed cash posture reporting mission.",
     });
   });
 
@@ -1184,6 +1240,52 @@ function buildStoredLenderUpdateArtifact(input: {
   };
 }
 
+function buildStoredDiligencePacketArtifact(input: {
+  missionId: string;
+  sourceDiscoveryMissionId: string;
+  sourceReportingMissionId: string;
+}): ArtifactRecord {
+  return {
+    id: "cccccccc-1111-4111-8111-cccccccccccc",
+    missionId: input.missionId,
+    taskId: "44444444-4444-4444-8444-444444444444",
+    kind: "diligence_packet",
+    uri: `pocket-cto://missions/${input.missionId}/tasks/44444444-4444-4444-8444-444444444444/diligence-packet`,
+    mimeType: "text/markdown",
+    sha256: null,
+    metadata: {
+      source: "stored_reporting_evidence",
+      summary:
+        "Draft diligence packet for acme from the completed cash posture reporting mission.",
+      reportKind: "diligence_packet",
+      draftStatus: "draft_only",
+      sourceReportingMissionId: input.sourceReportingMissionId,
+      sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      packetSummary:
+        "Draft diligence packet for acme from the completed cash posture reporting mission.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary: "Draft-only posture remains explicit.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceFinanceMemo: {
+        artifactId: "33333333-3333-4333-8333-333333333333",
+        kind: "finance_memo",
+      },
+      sourceEvidenceAppendix: {
+        artifactId: "55555555-5555-4555-8555-555555555556",
+        kind: "evidence_appendix",
+      },
+      bodyMarkdown:
+        "# Draft Diligence Packet\n\n## Source Finance Memo Draft\n\nCash posture remains constrained.",
+    },
+    createdAt: "2026-04-19T13:03:00.000Z",
+  };
+}
+
 function buildLenderUpdateProofBundle(input: {
   missionId: string;
   sourceDiscoveryMissionId: string;
@@ -1209,6 +1311,38 @@ function buildLenderUpdateProofBundle(input: {
       status: "complete",
       expectedArtifactKinds: ["lender_update"],
       presentArtifactKinds: ["lender_update"],
+      missingArtifactKinds: [],
+      notes: [],
+    },
+  };
+}
+
+function buildDiligencePacketProofBundle(input: {
+  missionId: string;
+  sourceDiscoveryMissionId: string;
+  sourceReportingMissionId: string;
+}): ProofBundleManifest {
+  return {
+    ...buildReportingProofBundle(
+      input.sourceReportingMissionId,
+      input.sourceDiscoveryMissionId,
+    ),
+    missionId: input.missionId,
+    missionTitle:
+      "Draft diligence packet for acme from cash posture reporting",
+    objective:
+      "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
+    sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+    sourceReportingMissionId: input.sourceReportingMissionId,
+    reportKind: "diligence_packet",
+    reportPublication: null,
+    reportSummary:
+      "Draft diligence packet for acme from the completed cash posture reporting mission.",
+    releaseRecord: null,
+    evidenceCompleteness: {
+      status: "complete",
+      expectedArtifactKinds: ["diligence_packet"],
+      presentArtifactKinds: ["diligence_packet"],
       missingArtifactKinds: [],
       notes: [],
     },

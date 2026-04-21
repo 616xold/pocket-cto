@@ -682,7 +682,13 @@ function buildRiskSummary(
       }
 
       if (status === "ready") {
-        return "This diligence packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C3.";
+        if (!facts.releaseReadiness?.approvalId) {
+          return "This diligence packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C3.";
+        }
+
+        return facts.releaseReadiness.releaseReady
+          ? "This diligence packet is approved for release from a persisted review path, but actual delivery, release logging, board circulation, PDF, and slide workflows remain out of scope in F5C4C."
+          : "This diligence packet stays draft-only until a persisted release approval is granted; actual delivery, release logging, board circulation, PDF, and slide workflows remain out of scope in F5C4C.";
       }
 
       return "";
@@ -817,7 +823,13 @@ function buildRollbackSummary(
       }
 
       if (status === "ready") {
-        return "No release, approval, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
+        if (!facts.releaseReadiness?.approvalId) {
+          return "No release, approval, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
+        }
+
+        return facts.releaseReadiness.releaseReady
+          ? "No actual release, send, wiki filing, diligence release log, PDF export, or slide export side effect was produced; this slice only records approved-for-release posture against the stored diligence packet."
+          : "No actual release, send, wiki filing, diligence release log, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
       }
 
       return "";

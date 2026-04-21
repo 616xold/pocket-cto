@@ -19,6 +19,7 @@ export function MissionListCard({ mission }: MissionListCardProps) {
   const isDiligencePacket = mission.reportKind === "diligence_packet";
   const isBoardPacket = mission.reportKind === "board_packet";
   const isLenderUpdate = mission.reportKind === "lender_update";
+  const supportsReleaseApproval = isLenderUpdate || isDiligencePacket;
   const isSpecializedReporting =
     isBoardPacket || isLenderUpdate || isDiligencePacket;
   const isFinanceMission = mission.companyKey !== null;
@@ -147,7 +148,7 @@ export function MissionListCard({ mission }: MissionListCardProps) {
                 </div>
               </>
             )}
-            {isLenderUpdate ? (
+            {supportsReleaseApproval ? (
               <>
                 <div>
                   <dt>Release approval</dt>
@@ -157,15 +158,17 @@ export function MissionListCard({ mission }: MissionListCardProps) {
                   </dd>
                 </div>
                 <div>
-                  <dt>Release logged</dt>
-                  <dd>{mission.releaseRecord?.released ? "Yes" : "No"}</dd>
-                </div>
-                <div>
                   <dt>Release ready</dt>
                   <dd>
                     {mission.releaseReadiness?.releaseReady ? "Yes" : "No"}
                   </dd>
                 </div>
+                {isLenderUpdate ? (
+                  <div>
+                    <dt>Release logged</dt>
+                    <dd>{mission.releaseRecord?.released ? "Yes" : "No"}</dd>
+                  </div>
+                ) : null}
               </>
             ) : null}
             <div>

@@ -372,4 +372,67 @@ describe("MissionListCard", () => {
     expect(html).not.toContain("Markdown export");
     expect(html).toContain("proof ready");
   });
+
+  it("renders diligence-packet mission summaries with approved release-readiness posture", () => {
+    const html = renderToStaticMarkup(
+      <MissionListCard
+        mission={{
+          appendixPresent: true,
+          answerSummary: null,
+          companyKey: "acme",
+          createdAt: "2026-04-21T01:00:00.000Z",
+          freshnessState: "stale",
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          latestTask: {
+            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            updatedAt: "2026-04-21T01:05:00.000Z",
+          },
+          objectiveExcerpt:
+            "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix.",
+          pendingApprovalCount: 0,
+          policySourceId: null,
+          policySourceScope: null,
+          primaryRepo: null,
+          proofBundleStatus: "ready",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: "cash_posture",
+          reportDraftStatus: "draft_only",
+          reportKind: "diligence_packet",
+          reportPublication: null,
+          releaseRecord: null,
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T01:02:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T01:04:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored diligence packet is approved for release, but no delivery has been recorded.",
+          },
+          reportSummary:
+            "Draft diligence packet for acme from the completed cash posture reporting mission.",
+          sourceDiscoveryMissionId: "66666666-6666-4666-8666-666666666666",
+          sourceReportingMissionId: "77777777-7777-4777-8777-777777777777",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          status: "succeeded",
+          title: "Draft diligence packet for acme from cash posture reporting",
+          updatedAt: "2026-04-21T01:04:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("approved_for_release");
+    expect(html).toContain("Release ready");
+    expect(html).toContain("no delivery has been recorded");
+    expect(html).not.toContain("Release logged");
+  });
 });

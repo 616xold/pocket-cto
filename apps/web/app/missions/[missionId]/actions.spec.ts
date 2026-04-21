@@ -288,6 +288,35 @@ describe("mission server actions", () => {
     expect(revalidatePath).toHaveBeenNthCalledWith(2, "/missions");
     expect(revalidatePath).toHaveBeenNthCalledWith(3, `/missions/${missionId}`);
   });
+
+  it("requests diligence-packet release approval and returns report-kind-specific feedback", async () => {
+    requestReportingReleaseApproval.mockResolvedValue({
+      ok: true,
+      statusCode: 201,
+      data: {},
+    });
+
+    const mod = await import("./actions");
+    const result = await mod.submitRequestReportingReleaseApproval(
+      null,
+      buildRequestReportingReleaseApprovalFormData({
+        requestedBy: "Alicia",
+        reportKind: "diligence_packet",
+      }),
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      kind: "request_reporting_release_approval",
+      message:
+        "Diligence packet release approval requested by Alicia. Mission detail refreshed.",
+      statusCode: 201,
+    });
+    expect(requestReportingReleaseApproval).toHaveBeenCalledWith({
+      missionId,
+      requestedBy: "Alicia",
+    });
+  });
 });
 
 function buildApprovalFormData(input: {
@@ -351,9 +380,13 @@ function buildFileReportingArtifactsFormData(input: { filedBy: string }) {
 
 function buildRequestReportingReleaseApprovalFormData(input: {
   requestedBy: string;
+  reportKind?: "lender_update" | "diligence_packet";
 }) {
   const formData = new FormData();
   formData.set("missionId", missionId);
   formData.set("requestedBy", input.requestedBy);
+  if (input.reportKind) {
+    formData.set("reportKind", input.reportKind);
+  }
   return formData;
 }

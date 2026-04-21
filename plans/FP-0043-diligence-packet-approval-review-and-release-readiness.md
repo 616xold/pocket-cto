@@ -2,7 +2,7 @@
 
 ## Purpose / Big Picture
 
-This plan is the active F5 implementation contract produced by the docs-only F5C4C master-plan and active-doc refresh slice.
+This plan is the active F5 implementation contract for the first real F5C4C diligence approval-review and release-readiness slice.
 The target phase is `F5`, and the next execution slice is `F5C4C-diligence-packet-approval-review-and-release-readiness`.
 The user-visible goal is narrow and concrete: after the shipped F5A through F5C4B baseline already creates draft `finance_memo`, `board_packet`, `lender_update`, and `diligence_packet` artifacts, supports one finance-facing `report_release` approval path plus release logging for `lender_update`, and keeps delivery outside the system, Pocket CFO should next let an operator request review on one completed `diligence_packet` reporting mission, resolve that review through the existing approvals bounded context, and see one explicit release-readiness posture for diligence without widening into actual send, distribute, publish, diligence release logging, board-packet review or circulation posture, runtime-codex drafting, or non-markdown output work.
 
@@ -12,15 +12,16 @@ The next gain is therefore one narrow contract that widens the existing `report_
 
 GitHub connector work is explicitly out of scope.
 This plan does not authorize actual send, distribute, publish, diligence release logging, board-packet review or circulation readiness, bounded runtime-codex phrasing or formatting assistance, PDF export, slide export, Marp export, F6 monitoring, or any rename from `modules/reporting/**` to `modules/reports/**`.
-The current thread is docs-and-plan only: it creates this contract and refreshes stale active docs, but it does not implement F5C4C code.
+The current thread is the first real implementation pass against this contract, so the plan must stay live as domain, control-plane, web, smoke, and validation work lands.
 
 ## Progress
 
 - [x] 2026-04-20T23:45:32Z Audit the active docs, shipped F5A through F5C4B records, approval-domain contracts, reporting and evidence seams, runtime-codex boundary, and stale later-F5 wording before choosing the narrowest truthful F5C4C scope.
 - [x] 2026-04-20T23:45:32Z Create `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` and refresh the smallest truthful active-doc set so `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` remains the shipped F5C4B record while this file becomes the single active F5C4C implementation contract.
 - [x] 2026-04-20T23:55:55Z Run the requested docs-and-plan validation ladder for this master-plan handoff without starting F5C4C code.
-- [ ] 2026-04-20T23:45:32Z Implement `F5C4C-diligence-packet-approval-review-and-release-readiness` exactly as defined here: widen the existing `report_release` approval payload and release-readiness seams from lender-update-only to `lender_update` plus `diligence_packet`, add one mission-centric diligence review request path and one derived release-ready posture, and keep the slice deterministic, runtime-free, delivery-free, and release-log-free.
-- [ ] 2026-04-20T23:45:32Z Run the preserved source-ingest through lender-update-release-log confidence ladder, add the narrowest diligence-approval proof coverage, and keep repo-wide validation green without starting F5C4D, F5C4E, or F6.
+- [x] 2026-04-21T00:04:36Z Re-open the active F5C4C contract for the first real implementation thread, explicitly invoke the required repo skills in-thread, audit the current branch and active plan chain, and record the pre-edit verdict: widen only the lender-update-only approval payload, release-readiness helpers, request-preparation path, proof narratives, and operator copy so `diligence_packet` can reuse the shipped runtime-free `report_release` seam without adding diligence release logging, board circulation posture, new approval kinds, or runtime-codex behavior.
+- [x] 2026-04-21T01:06:18Z Implement `F5C4C-diligence-packet-approval-review-and-release-readiness` exactly as defined here: widen the existing `report_release` approval payload and release-readiness seams from lender-update-only to `lender_update` plus `diligence_packet`, add one mission-centric diligence review request path and one derived release-ready posture, keep the slice deterministic, runtime-free, delivery-free, and release-log-free, and preserve the shipped lender-update release-log proof contract while doing so.
+- [x] 2026-04-21T01:37:41Z Run the preserved source-ingest through lender-update-release-log confidence ladder, add the narrowest diligence-approval proof coverage, and keep repo-wide validation green without starting F5C4D, F5C4E, or F6. This thread finished green on the requested focused Vitest sweeps, the exact domain/control-plane/web validation commands, all shipped baseline smokes, the new `pnpm smoke:diligence-packet-release-approval:local`, the preserved twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 
 ## Surprises & Discoveries
 
@@ -38,6 +39,12 @@ The current thread is docs-and-plan only: it creates this contract and refreshes
 
 - Observation: the main work of this thread is active-plan truthfulness, not implementation unblockers inside the finance evidence spine.
   Evidence: source ingest, Finance Twin, CFO Wiki, discovery, reporting specialization, lender-update approval, and lender-update release logging are all already packaged and validated; the remaining gap is one narrow later-F5 successor contract plus doc truthfulness around it.
+
+- Observation: the first real implementation thread confirmed the remaining work is branchy and copy-heavy rather than infrastructural.
+  Evidence: `apps/control-plane/src/modules/reporting/service.ts`, `apps/control-plane/src/modules/reporting/release-readiness.ts`, `apps/control-plane/src/modules/reporting/release-record.ts`, `apps/control-plane/src/modules/evidence/proof-bundle-summary.ts`, `apps/control-plane/src/modules/evidence/proof-bundle-assembly.ts`, `apps/control-plane/src/modules/approvals/card-formatter.ts`, and `apps/web/app/missions/[missionId]/mission-actions.tsx` already contain the full lender-update seam, but they hard-code lender-only report-kind checks and summary copy instead of using a wider shared report-release path.
+
+- Observation: one shipped F5C4B smoke depends on lender-specific approval-card wording, so the widening had to keep that exact lender summary stable while generalizing the rest of the release-approval copy.
+  Evidence: `tools/lender-update-release-log-smoke.mjs` asserts the rendered approval summary text `External lender-update release is logged`, so `apps/control-plane/src/modules/approvals/card-formatter.ts` needed a narrow lender-only wording branch even after `report_release` widened to `diligence_packet`.
 
 ## Decision Log
 
@@ -76,6 +83,12 @@ The current thread is docs-and-plan only: it creates this contract and refreshes
 
 - Decision: preserve existing `modules/reporting/**` vocabulary and do not reopen a `modules/reports/**` rename wave.
   Rationale: the current repo already uses reporting as first-class vocabulary, and this task is about truthfulness and sequencing rather than namespace churn.
+
+- Decision: keep F5C4C additive and schema-free unless a concrete typed blocker appears during implementation.
+  Rationale: the current code audit shows the diligence gap lives in pure Zod contracts, reporting helpers, proof rendering, approval-card formatting, and operator actions rather than in Postgres enums, tables, or replay-event types, so additive code changes are the safer and narrower path.
+
+- Decision: preserve the shipped lender-update approval-card summary wording while widening the rest of the release-approval seam.
+  Rationale: the lender-update release-log proof already treats that rendered summary as part of the observable contract, so changing it inside F5C4C would create an unnecessary regression outside the diligence scope.
 
 ## Context and Orientation
 
@@ -401,14 +414,16 @@ Key dependencies and boundary rules:
 
 ## Outcomes & Retrospective
 
-This file is the output of the docs-and-plan-only F5C4C handoff slice.
-No runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding were added in this thread.
-What changed is the active implementation contract and the stale guidance around it: `FP-0042` remains the shipped F5C4B record, while this file now names the next narrow F5C4C code slice explicitly.
+This file now records the shipped first real F5C4C implementation slice rather than only the pre-code handoff.
+The repo now truthfully supports one additional external-facing report family on the existing approval seam: a completed `diligence_packet` reporting mission with exactly one stored `diligence_packet` artifact can request `report_release`, resolve that approval without any live runtime continuation, and surface `approved_for_release` or related release-readiness posture across proof bundles, mission detail, mission list, mission cards, reporting cards, and approval cards.
+The slice stayed additive and deterministic: no DB schema changes, no new approval kinds, no new artifact kinds, no diligence release logging, no actual send or distribution behavior, no board-packet widening, no PDF or slide export, and no runtime-codex drafting were introduced.
 
-What remains is the next implementation thread:
+The only active-doc refresh inside the slice was the approvals-module README plus this live plan record.
+`FP-0042` remains the shipped F5C4B lender-update release-log record.
+`FP-0043` is now complete as the shipped F5C4C diligence approval-review and release-readiness record.
 
-- widen the lender-update-only `report_release` and release-readiness seam to `diligence_packet`
-- keep the first diligence review slice deterministic, runtime-free, and delivery-free
-- leave diligence release logging for F5C4D
-- leave board-packet review or circulation posture for F5C4E
+What remains is later F5C4 sequencing rather than more F5C4C continuation:
+
+- start `F5C4D-release-log-and-first-diligence-packet-release-record-foundation` next
+- keep board-packet review or circulation posture for `F5C4E`
 - reconsider bounded runtime-codex phrasing or formatting assistance only after those later delivery-free foundations exist

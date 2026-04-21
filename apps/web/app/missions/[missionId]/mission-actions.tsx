@@ -67,11 +67,13 @@ export function MissionActions({
       reporting?.publication?.filedMemo &&
       reporting.publication.filedEvidenceAppendix,
     );
-  const canRequestLenderUpdateReleaseApproval =
+  const canRequestReportReleaseApproval =
     mission.type === "reporting" &&
     mission.status === "succeeded" &&
-    reporting?.reportKind === "lender_update" &&
-    Boolean(reporting.lenderUpdate) &&
+    ((reporting?.reportKind === "lender_update" &&
+      Boolean(reporting?.lenderUpdate)) ||
+      (reporting?.reportKind === "diligence_packet" &&
+        Boolean(reporting?.diligencePacket))) &&
     reporting.releaseReadiness?.releaseApprovalStatus === "not_requested";
   const canRecordLenderUpdateReleaseLog =
     mission.type === "reporting" &&
@@ -84,11 +86,7 @@ export function MissionActions({
   const reportingFollowOnOutOfScopeNote =
     reporting?.reportKind === "board_packet"
       ? "Board packet missions remain draft-only in F5C1. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
-      : reporting?.reportKind === "lender_update"
-        ? "Lender update missions keep filing, markdown export, actual system delivery, PDF, and slide actions out of scope here. F5C4B adds only one persisted release-approval path plus one external release-log path for the stored draft lender update."
-        : reporting?.reportKind === "diligence_packet"
-          ? "Diligence packet missions remain draft-only in F5C3. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
-          : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C3 path.";
+      : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C4C path.";
 
   return (
     <section className="card">
@@ -195,10 +193,11 @@ export function MissionActions({
                 one completed lender-update reporting mission with one stored
                 lender_update artifact.
               </p>
-              {canRequestLenderUpdateReleaseApproval ? (
+              {canRequestReportReleaseApproval ? (
                 <RequestReportingReleaseApprovalForm
                   missionId={mission.id}
                   operatorIdentity={operatorIdentity}
+                  reportKind="lender_update"
                 />
               ) : canRecordLenderUpdateReleaseLog ? (
                 <>
@@ -220,6 +219,29 @@ export function MissionActions({
                 </p>
               )}
             </>
+          ) : reporting?.reportKind === "diligence_packet" ? (
+            <>
+              <p className="muted">
+                This first real F5C4C slice keeps diligence packets
+                delivery-free and runtime-free, but it does allow one
+                persisted release-approval path from one completed
+                diligence-packet reporting mission with one stored
+                diligence_packet artifact. Release logging, board circulation,
+                PDF, and slide actions stay out of scope here.
+              </p>
+              {canRequestReportReleaseApproval ? (
+                <RequestReportingReleaseApprovalForm
+                  missionId={mission.id}
+                  operatorIdentity={operatorIdentity}
+                  reportKind="diligence_packet"
+                />
+              ) : (
+                <p className="muted">
+                  {reporting?.releaseReadiness?.summary ??
+                    "Release approval becomes available once the stored diligence packet is present and no prior release approval request exists for this mission."}
+                </p>
+              )}
+            </>
           ) : (
             <p className="muted">{reportingFollowOnOutOfScopeNote}</p>
           )}
@@ -230,7 +252,7 @@ export function MissionActions({
         <h3>Approvals and interrupts</h3>
         <p className="muted">
           {controlsUnavailable
-            ? `Task interrupts and runtime-backed approval resolution are unavailable while the control-plane server is running in ${liveControl.mode} mode. Persisted lender-update release approvals still resolve without live control.`
+            ? `Task interrupts and runtime-backed approval resolution are unavailable while the control-plane server is running in ${liveControl.mode} mode. Persisted report release approvals still resolve without live control.`
             : "These controls call the current approval-resolution and task-interrupt routes, then refresh the mission detail without optimistic updates."}
         </p>
       </div>

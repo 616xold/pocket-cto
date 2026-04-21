@@ -350,6 +350,77 @@ describe("Mission list domain schema", () => {
     );
   });
 
+  it("parses diligence-packet mission summaries with release-readiness posture and no release record", () => {
+    const parsed = MissionListViewSchema.parse({
+      filters: {
+        limit: 20,
+        status: null,
+        sourceKind: null,
+      },
+      missions: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          title:
+            "Draft diligence packet for acme from cash posture reporting",
+          objectiveExcerpt:
+            "Compile one draft diligence packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          answerSummary: null,
+          reportKind: "diligence_packet",
+          reportDraftStatus: "draft_only",
+          reportPublication: null,
+          releaseRecord: null,
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T08:10:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T08:12:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored diligence packet is approved for release, but no delivery has been recorded.",
+          },
+          reportSummary:
+            "Draft diligence packet for acme from the completed finance memo.",
+          appendixPresent: true,
+          freshnessState: "stale",
+          status: "succeeded",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          primaryRepo: null,
+          createdAt: "2026-04-21T08:00:00.000Z",
+          updatedAt: "2026-04-21T08:12:00.000Z",
+          latestTask: {
+            id: "55555555-5555-4555-8555-555555555555",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            updatedAt: "2026-04-21T08:05:00.000Z",
+          },
+          proofBundleStatus: "ready",
+          pendingApprovalCount: 0,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+        },
+      ],
+    });
+
+    expect(parsed.missions[0]?.reportKind).toBe("diligence_packet");
+    expect(parsed.missions[0]?.releaseReadiness?.releaseReady).toBe(true);
+    expect(parsed.missions[0]?.releaseReadiness?.releaseApprovalStatus).toBe(
+      "approved_for_release",
+    );
+    expect(parsed.missions[0]?.releaseRecord).toBeNull();
+  });
+
   it("parses lender-update mission summaries with an explicit release record", () => {
     const parsed = MissionListViewSchema.parse({
       filters: {

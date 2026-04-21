@@ -14,8 +14,10 @@ import type {
   ProofBundleArtifactSummary,
   ProofBundleLatestApproval,
   ProofBundleManifest,
+  ReportReleaseApprovalReportKind,
   ProofBundleTimestamps,
 } from "@pocket-cto/domain";
+import { readReportReleaseApprovalReportKindLabel } from "@pocket-cto/domain";
 import { readDiscoveryAnswerArtifactMetadata } from "./discovery-answer";
 import {
   readBoardPacketArtifactMetadata,
@@ -132,15 +134,25 @@ export function deriveProofBundleAssemblyFacts(input: {
     latestArtifacts.evidenceAppendix,
   );
   const latestApproval = readLatestApproval(input.approvals);
-  const releaseReadiness = buildReportingReleaseReadinessView({
-    approvals: input.approvals,
-    storedDraft: lenderUpdateMetadata !== null,
+  const releaseApprovalReportKind = readReleaseApprovalReportKind({
+    diligencePacketMetadata,
+    lenderUpdateMetadata,
   });
-  const releaseRecord = buildReportingReleaseRecordView({
-    approvals: input.approvals,
-    releaseReadiness,
-    storedDraft: lenderUpdateMetadata !== null,
-  });
+  const releaseReadiness = releaseApprovalReportKind
+    ? buildReportingReleaseReadinessView({
+        approvals: input.approvals,
+        reportKind: releaseApprovalReportKind,
+        storedDraft: true,
+      })
+    : null;
+  const releaseRecord =
+    releaseApprovalReportKind === "lender_update"
+      ? buildReportingReleaseRecordView({
+          approvals: input.approvals,
+          releaseReadiness,
+          storedDraft: true,
+        })
+      : null;
   const latestPlannerTask = readLatestTaskByRole(input.tasks, "planner");
   const latestExecutorTask = readLatestTaskByRole(input.tasks, "executor");
   const latestScoutTask = readLatestTaskByRole(input.tasks, "scout");
@@ -707,8 +719,15 @@ function buildDecisionTrace(input: {
   }
 
   if (input.releaseReadiness?.approvalId) {
+    const reportLabel =
+      input.reportKind && isReleaseApprovalReportKind(input.reportKind)
+        ? readReportReleaseApprovalReportKindLabel(input.reportKind)
+            .toLowerCase()
+            .replaceAll(" ", "-")
+        : "report";
+
     lines.push(
-      `Latest lender-update release approval is ${input.releaseReadiness.releaseApprovalStatus}.`,
+      `Latest ${reportLabel} release approval is ${input.releaseReadiness.releaseApprovalStatus}.`,
     );
   }
 
@@ -718,6 +737,29 @@ function buildDecisionTrace(input: {
 
   return lines.filter(
     (line, index, allLines) => allLines.indexOf(line) === index,
+  );
+}
+
+function readReleaseApprovalReportKind(input: {
+  diligencePacketMetadata: DiligencePacketArtifactMetadata | null;
+  lenderUpdateMetadata: LenderUpdateArtifactMetadata | null;
+}): ReportReleaseApprovalReportKind | null {
+  if (input.lenderUpdateMetadata) {
+    return "lender_update";
+  }
+
+  if (input.diligencePacketMetadata) {
+    return "diligence_packet";
+  }
+
+  return null;
+}
+
+function isReleaseApprovalReportKind(
+  reportKind: ProofBundleManifest["reportKind"],
+): reportKind is ReportReleaseApprovalReportKind {
+  return (
+    reportKind === "lender_update" || reportKind === "diligence_packet"
   );
 }
 

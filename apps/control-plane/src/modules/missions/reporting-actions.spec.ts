@@ -35,7 +35,7 @@ describe("MissionReportingActionsService", () => {
         prepareLenderUpdateReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
-        prepareLenderUpdateReleaseApproval: vi.fn(async () => {
+        prepareReportReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
       },
@@ -95,7 +95,7 @@ describe("MissionReportingActionsService", () => {
         prepareLenderUpdateReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
-        prepareLenderUpdateReleaseApproval: vi.fn(async () => {
+        prepareReportReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
       },
@@ -132,7 +132,7 @@ describe("MissionReportingActionsService", () => {
     const refreshProofBundle = vi.fn(
       async (): Promise<ProofBundleManifest> => buildProofBundleManifest(),
     );
-    const prepareLenderUpdateReleaseApproval = vi.fn(async () => ({
+    const prepareReportReleaseApproval = vi.fn(async () => ({
       missionId: "11111111-1111-4111-8111-111111111111",
       reportKind: "lender_update" as const,
       sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
@@ -182,7 +182,7 @@ describe("MissionReportingActionsService", () => {
         prepareLenderUpdateReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
-        prepareLenderUpdateReleaseApproval,
+        prepareReportReleaseApproval,
       },
     });
 
@@ -193,7 +193,7 @@ describe("MissionReportingActionsService", () => {
       },
     );
 
-    expect(prepareLenderUpdateReleaseApproval).toHaveBeenCalledWith(
+    expect(prepareReportReleaseApproval).toHaveBeenCalledWith(
       "11111111-1111-4111-8111-111111111111",
     );
     expect(requestReportReleaseApproval).toHaveBeenCalledWith({
@@ -302,7 +302,7 @@ describe("MissionReportingActionsService", () => {
         fileDraftArtifacts: vi.fn(async () => {
           throw new Error("not used");
         }),
-        prepareLenderUpdateReleaseApproval: vi.fn(async () => {
+        prepareReportReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareLenderUpdateReleaseLog,

@@ -280,7 +280,7 @@ export class ReportingService {
     });
   }
 
-  async prepareLenderUpdateReleaseApproval(
+  async prepareReportReleaseApproval(
     missionId: string,
   ): Promise<ReportReleaseApprovalPayload> {
     const context = await this.loadReportingMissionContext(missionId);
@@ -296,52 +296,67 @@ export class ReportingService {
       );
     }
 
-    if (reporting.reportKind !== "lender_update") {
+    if (
+      reporting.reportKind !== "lender_update" &&
+      reporting.reportKind !== "diligence_packet"
+    ) {
+      const supportedKinds = ["lender_update", "diligence_packet"].join(" or ");
       throw invalidRequest(
         "missionId",
-        `Reporting mission ${missionId} has report kind ${reporting.reportKind}, not lender_update.`,
+        `Reporting mission ${missionId} has report kind ${reporting.reportKind}, not ${supportedKinds}.`,
       );
     }
 
-    if (!reporting.lenderUpdate) {
+    const releaseApprovalArtifact =
+      reporting.reportKind === "lender_update"
+        ? reporting.lenderUpdate
+        : reporting.diligencePacket;
+    const reportKindLabel = readReportingMissionReportKindLabel(
+      reporting.reportKind,
+    ).toLowerCase();
+
+    if (!releaseApprovalArtifact) {
       throw invalidRequest(
         "missionId",
-        `Reporting mission ${missionId} does not yet store a lender_update artifact payload.`,
+        `Reporting mission ${missionId} does not yet store a ${reporting.reportKind} artifact payload.`,
       );
     }
 
     if (!reporting.companyKey) {
       throw invalidRequest(
         "missionId",
-        `Reporting mission ${missionId} has no company scope required for lender-update release approval.`,
+        `Reporting mission ${missionId} has no company scope required for ${reportKindLabel} release approval.`,
       );
     }
 
     if (!reporting.sourceReportingMissionId) {
       throw invalidRequest(
         "missionId",
-        `Reporting mission ${missionId} is missing the source reporting mission required for lender-update release approval.`,
+        `Reporting mission ${missionId} is missing the source reporting mission required for ${reportKindLabel} release approval.`,
       );
     }
 
-    const lenderUpdateArtifactId = readSingleArtifactId(
+    const reportArtifactId = readSingleArtifactId(
       context.artifacts,
-      "lender_update",
+      reporting.reportKind,
       missionId,
       "release approval can be requested",
     );
 
     return ReportReleaseApprovalPayloadSchema.parse({
-      artifactId: lenderUpdateArtifactId,
+      artifactId: reportArtifactId,
       companyKey: reporting.companyKey,
-      draftOnlyStatus: reporting.lenderUpdate.draftStatus,
-      freshnessSummary: reporting.lenderUpdate.freshnessSummary,
-      limitationsSummary: reporting.lenderUpdate.limitationsSummary,
+      draftOnlyStatus: releaseApprovalArtifact.draftStatus,
+      freshnessSummary: releaseApprovalArtifact.freshnessSummary,
+      limitationsSummary: releaseApprovalArtifact.limitationsSummary,
       missionId,
-      reportKind: reporting.lenderUpdate.reportKind,
+      reportKind: releaseApprovalArtifact.reportKind,
       sourceDiscoveryMissionId: reporting.sourceDiscoveryMissionId,
       sourceReportingMissionId: reporting.sourceReportingMissionId,
-      summary: reporting.lenderUpdate.updateSummary,
+      summary:
+        releaseApprovalArtifact.reportKind === "lender_update"
+          ? releaseApprovalArtifact.updateSummary
+          : releaseApprovalArtifact.packetSummary,
     });
   }
 

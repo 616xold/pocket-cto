@@ -67,6 +67,7 @@ type FileReportingArtifactsFormProps = {
 type RequestReportingReleaseApprovalFormProps = {
   missionId: string;
   operatorIdentity: string;
+  reportKind: "lender_update" | "diligence_packet";
 };
 
 type RecordReportingReleaseLogFormProps = {
@@ -293,22 +294,32 @@ export function ExportReportingMarkdownForm({
 export function RequestReportingReleaseApprovalForm({
   missionId,
   operatorIdentity,
+  reportKind,
 }: RequestReportingReleaseApprovalFormProps) {
   const [result, formAction] = useActionState<MissionActionState, FormData>(
     submitRequestReportingReleaseApproval,
     INITIAL_MISSION_ACTION_STATE,
   );
+  const releaseApprovalLabel =
+    reportKind === "diligence_packet"
+      ? "Request diligence packet release approval"
+      : "Request lender update release approval";
+  const pendingLabel =
+    reportKind === "diligence_packet"
+      ? "Requesting diligence packet release approval..."
+      : "Requesting lender update release approval...";
 
   return (
     <div className="action-cluster">
       <form action={formAction} className="stack">
         <input name="missionId" type="hidden" value={missionId} />
+        <input name="reportKind" type="hidden" value={reportKind} />
         <input name="requestedBy" type="hidden" value={operatorIdentity} />
 
         <ActionSubmitButton
           className="action-button"
-          label="Request lender update release approval"
-          pendingLabel="Requesting release approval..."
+          label={releaseApprovalLabel}
+          pendingLabel={pendingLabel}
         />
       </form>
 

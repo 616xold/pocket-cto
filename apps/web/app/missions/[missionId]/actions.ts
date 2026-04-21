@@ -70,6 +70,10 @@ const exportReportingMissionMarkdownFormSchema = z.object({
 
 const requestReportingReleaseApprovalFormSchema = z.object({
   missionId: z.string().uuid(),
+  reportKind: z.preprocess(
+    (value) => value ?? "lender_update",
+    z.enum(["lender_update", "diligence_packet"]),
+  ),
   requestedBy: z.string().trim().min(1),
 });
 
@@ -250,6 +254,7 @@ export async function submitRequestReportingReleaseApproval(
 ) {
   const input = requestReportingReleaseApprovalFormSchema.parse({
     missionId: formData.get("missionId"),
+    reportKind: formData.get("reportKind"),
     requestedBy: formData.get("requestedBy"),
   });
 
@@ -266,6 +271,7 @@ export async function submitRequestReportingReleaseApproval(
 
   return buildRequestReportingReleaseApprovalActionResult(
     input.requestedBy,
+    input.reportKind,
     result,
   );
 }

@@ -52,6 +52,7 @@ export function MissionCard({
   const isDiligencePacket = proofBundle.reportKind === "diligence_packet";
   const isBoardPacket = proofBundle.reportKind === "board_packet";
   const isLenderUpdate = proofBundle.reportKind === "lender_update";
+  const supportsReleaseApproval = isLenderUpdate || isDiligencePacket;
   const isSpecializedReporting =
     isBoardPacket || isLenderUpdate || isDiligencePacket;
   const reportProofBundle =
@@ -128,19 +129,13 @@ export function MissionCard({
                 <dt>Draft posture</dt>
                 <dd>{reportingView.draftStatus}</dd>
               </div>
-              {isLenderUpdate ? (
+              {supportsReleaseApproval ? (
                 <>
                   <div>
                     <dt>Release approval</dt>
                     <dd>
                       {reportingView.releaseReadiness?.releaseApprovalStatus ??
                         "not_requested"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Release logged</dt>
-                    <dd>
-                      {reportingView.releaseRecord?.released ? "Yes" : "No"}
                     </dd>
                   </div>
                   <div>
@@ -151,6 +146,14 @@ export function MissionCard({
                         : "No"}
                     </dd>
                   </div>
+                  {isLenderUpdate ? (
+                    <div>
+                      <dt>Release logged</dt>
+                      <dd>
+                        {reportingView.releaseRecord?.released ? "Yes" : "No"}
+                      </dd>
+                    </div>
+                  ) : null}
                 </>
               ) : null}
             </>
@@ -318,19 +321,13 @@ export function MissionCard({
                 <dt>Draft posture</dt>
                 <dd>{proofBundle.reportDraftStatus ?? "Not recorded yet."}</dd>
               </div>
-              {isLenderUpdate ? (
+              {supportsReleaseApproval ? (
                 <>
                   <div>
                     <dt>Release approval</dt>
                     <dd>
                       {proofBundle.releaseReadiness?.releaseApprovalStatus ??
                         "not_requested"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Release logged</dt>
-                    <dd>
-                      {proofBundle.releaseRecord?.released ? "Yes" : "No"}
                     </dd>
                   </div>
                   <div>
@@ -348,13 +345,23 @@ export function MissionCard({
                         "Release approval posture has not been recorded yet."}
                     </dd>
                   </div>
-                  <div>
-                    <dt>Release record</dt>
-                    <dd>
-                      {proofBundle.releaseRecord?.summary ??
-                        "No external release has been logged yet."}
-                    </dd>
-                  </div>
+                  {isLenderUpdate ? (
+                    <>
+                      <div>
+                        <dt>Release logged</dt>
+                        <dd>
+                          {proofBundle.releaseRecord?.released ? "Yes" : "No"}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Release record</dt>
+                        <dd>
+                          {proofBundle.releaseRecord?.summary ??
+                            "No external release has been logged yet."}
+                        </dd>
+                      </div>
+                    </>
+                  ) : null}
                 </>
               ) : null}
               <div>

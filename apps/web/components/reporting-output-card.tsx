@@ -31,6 +31,7 @@ export function ReportingOutputCard({
   const isDiligencePacket = reporting.reportKind === "diligence_packet";
   const isBoardPacket = reporting.reportKind === "board_packet";
   const isLenderUpdate = reporting.reportKind === "lender_update";
+  const supportsReleaseApproval = isLenderUpdate || isDiligencePacket;
   const isSpecializedReporting =
     isBoardPacket || isLenderUpdate || isDiligencePacket;
   const questionKindLabel =
@@ -132,17 +133,13 @@ export function ReportingOutputCard({
         </div>
         {isSpecializedReporting ? (
           <>
-            {isLenderUpdate ? (
+            {supportsReleaseApproval ? (
               <>
                 <div>
                   <dt>Release approval</dt>
                   <dd>
                     {releaseReadiness?.releaseApprovalStatus ?? "not_requested"}
                   </dd>
-                </div>
-                <div>
-                  <dt>Release logged</dt>
-                  <dd>{releaseRecord?.released ? "Yes" : "No"}</dd>
                 </div>
                 <div>
                   <dt>Release ready</dt>
@@ -158,24 +155,33 @@ export function ReportingOutputCard({
                   <dt>Approval resolved</dt>
                   <dd>{releaseReadiness?.resolvedAt ?? "Not resolved yet."}</dd>
                 </div>
-                <div>
-                  <dt>Released at</dt>
-                  <dd>{releaseRecord?.releasedAt ?? "Not logged yet."}</dd>
-                </div>
-                <div>
-                  <dt>Released by</dt>
-                  <dd>{releaseRecord?.releasedBy ?? "Not logged yet."}</dd>
-                </div>
-                <div>
-                  <dt>Release channel</dt>
-                  <dd>{releaseRecord?.releaseChannel ?? "Not logged yet."}</dd>
-                </div>
-                <div>
-                  <dt>Release note</dt>
-                  <dd>
-                    {releaseRecord?.releaseNote ?? "No release note recorded."}
-                  </dd>
-                </div>
+                {isLenderUpdate ? (
+                  <>
+                    <div>
+                      <dt>Release logged</dt>
+                      <dd>{releaseRecord?.released ? "Yes" : "No"}</dd>
+                    </div>
+                    <div>
+                      <dt>Released at</dt>
+                      <dd>{releaseRecord?.releasedAt ?? "Not logged yet."}</dd>
+                    </div>
+                    <div>
+                      <dt>Released by</dt>
+                      <dd>{releaseRecord?.releasedBy ?? "Not logged yet."}</dd>
+                    </div>
+                    <div>
+                      <dt>Release channel</dt>
+                      <dd>{releaseRecord?.releaseChannel ?? "Not logged yet."}</dd>
+                    </div>
+                    <div>
+                      <dt>Release note</dt>
+                      <dd>
+                        {releaseRecord?.releaseNote ??
+                          "No release note recorded."}
+                      </dd>
+                    </div>
+                  </>
+                ) : null}
               </>
             ) : null}
             <div>

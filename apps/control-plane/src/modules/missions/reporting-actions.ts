@@ -28,7 +28,7 @@ export class MissionReportingActionsService {
         | "exportMarkdownBundle"
         | "fileDraftArtifacts"
         | "prepareLenderUpdateReleaseLog"
-        | "prepareLenderUpdateReleaseApproval"
+        | "prepareReportReleaseApproval"
       >;
     },
   ) {}
@@ -82,9 +82,7 @@ export class MissionReportingActionsService {
     input: RequestReportReleaseApprovalInput,
   ): Promise<RequestReportReleaseApprovalResult> {
     const payload =
-      await this.deps.reportingService.prepareLenderUpdateReleaseApproval(
-        missionId,
-      );
+      await this.deps.reportingService.prepareReportReleaseApproval(missionId);
     const request =
       await this.deps.approvalService.requestReportReleaseApproval({
         missionId,

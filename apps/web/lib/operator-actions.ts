@@ -1,4 +1,8 @@
-import type { ApprovalDecision } from "@pocket-cto/domain";
+import type {
+  ApprovalDecision,
+  ReportReleaseApprovalReportKind,
+} from "@pocket-cto/domain";
+import { readReportReleaseApprovalReportKindLabel } from "@pocket-cto/domain";
 import { z } from "zod";
 
 export const controlPlaneActionErrorCodeSchema = z.enum([
@@ -154,13 +158,16 @@ export function buildExportReportingMarkdownActionResult(
 
 export function buildRequestReportingReleaseApprovalActionResult(
   operatorName: string,
+  reportKind: ReportReleaseApprovalReportKind,
   result: ControlPlaneMutationResult<unknown>,
 ): MissionActionResult {
   if (result.ok) {
+    const reportLabel = readReportReleaseApprovalReportKindLabel(reportKind);
+
     return {
       ok: true,
       kind: "request_reporting_release_approval",
-      message: `Lender update release approval requested by ${operatorName}. Mission detail refreshed.`,
+      message: `${reportLabel} release approval requested by ${operatorName}. Mission detail refreshed.`,
       statusCode: result.statusCode,
     };
   }

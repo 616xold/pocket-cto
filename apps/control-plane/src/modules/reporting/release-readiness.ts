@@ -1,9 +1,13 @@
 import type {
   ApprovalRecord,
   ProofBundleManifest,
+  ReportReleaseApprovalReportKind,
   ReportingReleaseReadinessView,
 } from "@pocket-cto/domain";
-import { ReportingReleaseReadinessViewSchema } from "@pocket-cto/domain";
+import {
+  ReportingReleaseReadinessViewSchema,
+  readReportReleaseApprovalReportKindLabel,
+} from "@pocket-cto/domain";
 
 export function readLatestReportReleaseApproval(approvals: ApprovalRecord[]) {
   return (
@@ -20,6 +24,7 @@ export function readLatestReportReleaseApproval(approvals: ApprovalRecord[]) {
 
 export function buildReportingReleaseReadinessView(input: {
   approvals: ApprovalRecord[];
+  reportKind: ReportReleaseApprovalReportKind;
   storedDraft: boolean;
 }): ReportingReleaseReadinessView | null {
   if (!input.storedDraft) {
@@ -39,8 +44,12 @@ export function buildReportingReleaseReadinessView(input: {
       requestedBy: null,
       resolvedAt: null,
       resolvedBy: null,
-      summary:
-        "Stored lender update exists, but release approval has not been requested yet.",
+      summary: buildReleaseReadinessSummary({
+        releaseApprovalStatus: "not_requested",
+        reportKind: input.reportKind,
+        requestedBy: null,
+        resolvedBy: null,
+      }),
     });
   }
 
@@ -59,6 +68,7 @@ export function buildReportingReleaseReadinessView(input: {
     resolvedBy: latestApproval.resolvedBy,
     summary: buildReleaseReadinessSummary({
       releaseApprovalStatus,
+      reportKind: input.reportKind,
       requestedBy: latestApproval.requestedBy,
       resolvedBy: latestApproval.resolvedBy,
     }),
@@ -71,12 +81,12 @@ export function buildReportingReleaseReadinessViewFromProofBundle(
     "evidenceCompleteness" | "releaseReadiness" | "reportKind"
   >,
 ) {
-  if (input.reportKind !== "lender_update") {
+  if (!isReleaseApprovalReportKind(input.reportKind)) {
     return null;
   }
 
   const storedDraft =
-    input.evidenceCompleteness.presentArtifactKinds.includes("lender_update");
+    input.evidenceCompleteness.presentArtifactKinds.includes(input.reportKind);
 
   if (!storedDraft) {
     return null;
@@ -97,10 +107,19 @@ export function buildReportingReleaseReadinessViewFromProofBundle(
     resolvedBy: existing?.resolvedBy ?? null,
     summary: buildReleaseReadinessSummary({
       releaseApprovalStatus,
+      reportKind: input.reportKind,
       requestedBy: existing?.requestedBy ?? null,
       resolvedBy: existing?.resolvedBy ?? null,
     }),
   });
+}
+
+function isReleaseApprovalReportKind(
+  reportKind: ProofBundleManifest["reportKind"],
+): reportKind is ReportReleaseApprovalReportKind {
+  return (
+    reportKind === "lender_update" || reportKind === "diligence_packet"
+  );
 }
 
 function readReleaseApprovalStatus(
@@ -120,23 +139,28 @@ function readReleaseApprovalStatus(
 
 function buildReleaseReadinessSummary(input: {
   releaseApprovalStatus: ReportingReleaseReadinessView["releaseApprovalStatus"];
+  reportKind: ReportReleaseApprovalReportKind;
   requestedBy: string | null;
   resolvedBy: string | null;
 }) {
+  const reportLabel = readReportReleaseApprovalReportKindLabel(
+    input.reportKind,
+  ).toLowerCase();
+
   switch (input.releaseApprovalStatus) {
     case "pending_review":
       return input.requestedBy
-        ? `Release approval was requested by ${input.requestedBy}; the stored lender update is not yet approved for release.`
-        : "Release approval is pending review; the stored lender update is not yet approved for release.";
+        ? `Release approval was requested by ${input.requestedBy}; the stored ${reportLabel} is not yet approved for release.`
+        : `Release approval is pending review; the stored ${reportLabel} is not yet approved for release.`;
     case "approved_for_release":
       return input.resolvedBy
-        ? `Release approval was granted by ${input.resolvedBy}; the stored lender update is approved for release, but no delivery has been recorded.`
-        : "Release approval was granted; the stored lender update is approved for release, but no delivery has been recorded.";
+        ? `Release approval was granted by ${input.resolvedBy}; the stored ${reportLabel} is approved for release, but no delivery has been recorded.`
+        : `Release approval was granted; the stored ${reportLabel} is approved for release, but no delivery has been recorded.`;
     case "not_approved_for_release":
       return input.resolvedBy
-        ? `Release approval was not granted by ${input.resolvedBy}; the stored lender update remains draft-only and delivery-free.`
-        : "Release approval was not granted; the stored lender update remains draft-only and delivery-free.";
+        ? `Release approval was not granted by ${input.resolvedBy}; the stored ${reportLabel} remains draft-only and delivery-free.`
+        : `Release approval was not granted; the stored ${reportLabel} remains draft-only and delivery-free.`;
     case "not_requested":
-      return "Stored lender update exists, but release approval has not been requested yet.";
+      return `Stored ${reportLabel} exists, but release approval has not been requested yet.`;
   }
 }

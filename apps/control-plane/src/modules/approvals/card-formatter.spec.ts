@@ -200,6 +200,41 @@ describe("card-formatter", () => {
     expect(resolvedCard.resolvedAt).toBe("2026-03-16T10:06:00.000Z");
   });
 
+  it("formats a pending diligence-packet release approval as a posture-only approval card", () => {
+    const card = buildMissionApprovalCard({
+      approval: buildApproval({
+        kind: "report_release",
+        requestedBy: "finance-operator",
+        payload: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          companyKey: "acme",
+          draftOnlyStatus: "draft_only",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary:
+            "This diligence packet remains delivery-free while review is pending.",
+          missionId: "11111111-1111-4111-8111-111111111111",
+          reportKind: "diligence_packet",
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          summary:
+            "Draft diligence packet for acme from the completed finance memo.",
+          resolution: null,
+          releaseRecord: null,
+        },
+        taskId: null,
+      }),
+      context: buildContext(),
+    });
+
+    expect(card.title).toBe("Review diligence packet release approval for acme");
+    expect(card.summary).toContain(
+      "Review diligence packet release readiness for acme",
+    );
+    expect(card.summary).toContain("Draft diligence packet for acme");
+    expect(card.requiresLiveControl).toBe(false);
+    expect(card.actionHint).toContain("does not deliver the report");
+  });
+
   it("formats a logged lender-update release as a non-delivery approval card", () => {
     const card = buildMissionApprovalCard({
       approval: buildApproval({

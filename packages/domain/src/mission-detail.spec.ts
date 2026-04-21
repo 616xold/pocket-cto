@@ -1248,4 +1248,252 @@ describe("Mission detail domain schema", () => {
     );
     expect(parsed.approvalCards[0]?.requiresLiveControl).toBe(false);
   });
+
+  it("parses diligence-packet mission detail with approved release-readiness posture and no release record", () => {
+    const parsed = MissionDetailViewSchema.parse({
+      mission: {
+        id: "11111111-1111-4111-8111-111111111111",
+        type: "reporting",
+        status: "succeeded",
+        title:
+          "Draft diligence packet for acme from cash posture reporting",
+        objective:
+          "Compile one draft diligence packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+        sourceKind: "manual_reporting",
+        sourceRef: null,
+        createdBy: "finance-operator",
+        primaryRepo: null,
+        spec: {
+          type: "reporting",
+          title:
+            "Draft diligence packet for acme from cash posture reporting",
+          objective:
+            "Compile one draft diligence packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+          repos: [],
+          acceptance: ["persist one diligence_packet artifact"],
+          riskBudget: {
+            sandboxMode: "read-only",
+            maxWallClockMinutes: 5,
+            maxCostUsd: 1,
+            allowNetwork: false,
+            requiresHumanApprovalFor: [],
+          },
+          deliverables: ["diligence_packet", "proof_bundle"],
+          input: {
+            reportingRequest: {
+              sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+              sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+              reportKind: "diligence_packet",
+              companyKey: "acme",
+              questionKind: "cash_posture",
+              policySourceId: null,
+              policySourceScope: null,
+            },
+          },
+        },
+        createdAt: "2026-04-21T08:00:00.000Z",
+        updatedAt: "2026-04-21T08:12:00.000Z",
+      },
+      tasks: [],
+      proofBundle: {
+        missionId: "11111111-1111-4111-8111-111111111111",
+        missionTitle:
+          "Draft diligence packet for acme from cash posture reporting",
+        objective:
+          "Compile one draft diligence packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+        sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+        sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        answerSummary: "",
+        reportKind: "diligence_packet",
+        reportDraftStatus: "draft_only",
+        reportSummary:
+          "Draft diligence packet for acme from the completed finance memo.",
+        reportPublication: null,
+        releaseRecord: null,
+        releaseReadiness: {
+          releaseApprovalStatus: "approved_for_release",
+          releaseReady: true,
+          approvalId: "44444444-4444-4444-8444-444444444444",
+          approvalStatus: "approved",
+          requestedAt: "2026-04-21T08:10:00.000Z",
+          requestedBy: "finance-operator",
+          resolvedAt: "2026-04-21T08:12:00.000Z",
+          resolvedBy: "finance-reviewer",
+          rationale: "Looks release-ready.",
+          summary:
+            "Release approval was granted by finance-reviewer; the stored diligence packet is approved for release, but no delivery has been recorded.",
+        },
+        appendixPresent: true,
+        freshnessState: "stale",
+        freshnessSummary:
+          "Cash posture remains stale because bank coverage is stale.",
+        limitationsSummary:
+          "This diligence packet remains delivery-free while later release logging stays out of scope.",
+        relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+        relatedWikiPageKeys: ["metrics/cash-posture"],
+        targetRepoFullName: null,
+        branchName: null,
+        pullRequestNumber: null,
+        pullRequestUrl: null,
+        changeSummary:
+          "Draft diligence packet for acme from the completed finance memo.",
+        validationSummary:
+          "Draft diligence packet was compiled deterministically without runtime drafting.",
+        verificationSummary:
+          "Review carried-forward freshness, limitations, and release-readiness posture before sharing this draft.",
+        riskSummary:
+          "This diligence packet remains delivery-free in F5C4C even after approval.",
+        rollbackSummary:
+          "No actual release side effect was produced; this slice only records review posture.",
+        latestApproval: null,
+        evidenceCompleteness: {
+          status: "complete",
+          expectedArtifactKinds: ["diligence_packet"],
+          presentArtifactKinds: ["diligence_packet"],
+          missingArtifactKinds: [],
+          notes: [],
+        },
+        decisionTrace: [
+          "Scout task 0 terminalized as succeeded with persisted diligence-packet evidence.",
+          "Latest diligence packet release approval is approved_for_release.",
+        ],
+        artifactIds: ["55555555-5555-4555-8555-555555555555"],
+        artifacts: [
+          {
+            id: "55555555-5555-4555-8555-555555555555",
+            kind: "diligence_packet",
+          },
+        ],
+        replayEventCount: 10,
+        timestamps: {
+          missionCreatedAt: "2026-04-21T08:00:00.000Z",
+          latestPlannerEvidenceAt: null,
+          latestExecutorEvidenceAt: null,
+          latestPullRequestAt: null,
+          latestApprovalAt: "2026-04-21T08:12:00.000Z",
+          latestArtifactAt: "2026-04-21T08:05:00.000Z",
+        },
+        status: "ready",
+      },
+      discoveryAnswer: null,
+      reporting: {
+        reportKind: "diligence_packet",
+        draftStatus: "draft_only",
+        sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+        sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        reportSummary:
+          "Draft diligence packet for acme from the completed finance memo.",
+        freshnessSummary:
+          "Cash posture remains stale because bank coverage is stale.",
+        limitationsSummary:
+          "This diligence packet remains delivery-free while later release logging stays out of scope.",
+        relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+        relatedWikiPageKeys: ["metrics/cash-posture"],
+        appendixPresent: true,
+        financeMemo: null,
+        evidenceAppendix: null,
+        boardPacket: null,
+        lenderUpdate: null,
+        diligencePacket: {
+          source: "stored_reporting_evidence",
+          summary:
+            "Draft diligence packet for acme from the completed finance memo.",
+          reportKind: "diligence_packet",
+          draftStatus: "draft_only",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          packetSummary:
+            "Draft diligence packet for acme from the completed finance memo.",
+          freshnessSummary:
+            "Cash posture remains stale because bank coverage is stale.",
+          limitationsSummary:
+            "This diligence packet remains delivery-free while later release logging stays out of scope.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          sourceFinanceMemo: {
+            artifactId: "66666666-6666-4666-8666-666666666666",
+            kind: "finance_memo",
+          },
+          sourceEvidenceAppendix: {
+            artifactId: "77777777-7777-4777-8777-777777777777",
+            kind: "evidence_appendix",
+          },
+          bodyMarkdown:
+            "# Draft Diligence Packet\n\n## Release Review Posture\n\n- Status: draft_only",
+        },
+        publication: null,
+        releaseRecord: null,
+        releaseReadiness: {
+          releaseApprovalStatus: "approved_for_release",
+          releaseReady: true,
+          approvalId: "44444444-4444-4444-8444-444444444444",
+          approvalStatus: "approved",
+          requestedAt: "2026-04-21T08:10:00.000Z",
+          requestedBy: "finance-operator",
+          resolvedAt: "2026-04-21T08:12:00.000Z",
+          resolvedBy: "finance-reviewer",
+          rationale: "Looks release-ready.",
+          summary:
+            "Release approval was granted by finance-reviewer; the stored diligence packet is approved for release, but no delivery has been recorded.",
+        },
+      },
+      approvals: [
+        {
+          id: "44444444-4444-4444-8444-444444444444",
+          kind: "report_release",
+          status: "approved",
+          requestedBy: "finance-operator",
+          resolvedBy: "finance-reviewer",
+          rationale: "Looks release-ready.",
+          createdAt: "2026-04-21T08:10:00.000Z",
+          updatedAt: "2026-04-21T08:12:00.000Z",
+        },
+      ],
+      approvalCards: [
+        {
+          actionHint: null,
+          approvalId: "44444444-4444-4444-8444-444444444444",
+          kind: "report_release",
+          requestedAt: "2026-04-21T08:10:00.000Z",
+          requestedBy: "finance-operator",
+          requiresLiveControl: false,
+          repoContext: null,
+          resolutionSummary:
+            "Approved by finance-reviewer at 2026-04-21T08:12:00.000Z. Rationale: Looks release-ready.",
+          resolvedAt: "2026-04-21T08:12:00.000Z",
+          resolvedBy: "finance-reviewer",
+          status: "approved",
+          summary:
+            "Review diligence packet release readiness for acme. Summary: Draft diligence packet for acme from the completed finance memo. Freshness: Cash posture remains stale because bank coverage is stale. Limitations: This diligence packet remains delivery-free while later release logging stays out of scope.",
+          task: null,
+          title: "Review diligence packet release approval for acme",
+        },
+      ],
+      artifacts: [],
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+    });
+
+    expect(parsed.reporting?.reportKind).toBe("diligence_packet");
+    expect(parsed.reporting?.releaseReadiness?.releaseApprovalStatus).toBe(
+      "approved_for_release",
+    );
+    expect(parsed.reporting?.releaseRecord).toBeNull();
+    expect(parsed.approvalCards[0]?.requiresLiveControl).toBe(false);
+  });
 });

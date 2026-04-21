@@ -264,6 +264,134 @@ describe("ApprovalService", () => {
     );
   });
 
+  it("persists and resolves diligence-packet release approvals without live runtime continuation", async () => {
+    const missionRepository = new InMemoryMissionRepository();
+    const approvalRepository = new InMemoryApprovalRepository();
+    const replayService = new ReplayService(
+      new InMemoryReplayRepository(),
+      missionRepository,
+    );
+    const missionService = new MissionService(
+      new StubMissionCompiler(),
+      missionRepository,
+      replayService,
+      new EvidenceService(),
+    );
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> =>
+        buildProofBundleManifest(createdMissionId, "diligence_packet"),
+    );
+    const liveSessionRegistry = {
+      awaitApprovalResolution: vi.fn(),
+      hasTaskSession: vi.fn(() => false),
+      tryResolveApproval: vi.fn(() => ({
+        delivered: true as const,
+      })),
+    } satisfies Pick<
+      InMemoryRuntimeSessionRegistry,
+      "awaitApprovalResolution" | "hasTaskSession" | "tryResolveApproval"
+    >;
+    const approvalService = new ApprovalService(
+      approvalRepository,
+      missionRepository,
+      replayService,
+      liveSessionRegistry,
+      {
+        refreshProofBundle,
+      },
+    );
+    const created = await missionService.createFromText({
+      text: "Review diligence packet release approval posture",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const createdMissionId = created.mission.id;
+    const payload = {
+      missionId: createdMissionId,
+      reportKind: "diligence_packet" as const,
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+      artifactId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme" as const,
+      draftOnlyStatus: "draft_only" as const,
+      summary:
+        "Draft diligence packet for acme from the completed finance memo.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary:
+        "This diligence packet remains delivery-free until review is completed.",
+      resolution: null,
+      releaseRecord: null,
+    };
+
+    const firstRequest = await approvalService.requestReportReleaseApproval({
+      missionId: createdMissionId,
+      payload,
+      requestedBy: "finance-operator",
+    });
+    const secondRequest = await approvalService.requestReportReleaseApproval({
+      missionId: created.mission.id,
+      payload,
+      requestedBy: "finance-operator",
+    });
+
+    expect(firstRequest.created).toBe(true);
+    expect(secondRequest).toEqual({
+      approval: firstRequest.approval,
+      created: false,
+    });
+
+    const resolved = await approvalService.resolveApproval({
+      approvalId: firstRequest.approval.id,
+      decision: "accept",
+      rationale: "Approved for release readiness.",
+      resolvedBy: "finance-reviewer",
+    });
+    const replay = await replayService.getMissionEvents(createdMissionId);
+
+    expect(resolved).toMatchObject({
+      id: firstRequest.approval.id,
+      kind: "report_release",
+      rationale: "Approved for release readiness.",
+      requestedBy: "finance-operator",
+      resolvedBy: "finance-reviewer",
+      status: "approved",
+      taskId: null,
+    });
+    expect(liveSessionRegistry.tryResolveApproval).not.toHaveBeenCalled();
+    expect(refreshProofBundle).toHaveBeenCalledWith({
+      missionId: createdMissionId,
+      trigger: "approval_resolution",
+    });
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.requested",
+        payload: expect.objectContaining({
+          approvalId: firstRequest.approval.id,
+          kind: "report_release",
+          requestMethod: null,
+          taskId: null,
+          threadId: null,
+          turnId: null,
+        }),
+      }),
+    );
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.resolved",
+        payload: expect.objectContaining({
+          approvalId: firstRequest.approval.id,
+          decision: "accept",
+          kind: "report_release",
+          requestMethod: null,
+          status: "approved",
+          taskId: null,
+          threadId: null,
+          turnId: null,
+        }),
+      }),
+    );
+  });
+
   it("records one release log on an approved lender-update release approval and replays it", async () => {
     const missionRepository = new InMemoryMissionRepository();
     const approvalRepository = new InMemoryApprovalRepository();
@@ -394,11 +522,17 @@ describe("ApprovalService", () => {
   });
 });
 
-function buildProofBundleManifest(missionId: string): ProofBundleManifest {
+function buildProofBundleManifest(
+  missionId: string,
+  reportKind: "lender_update" | "diligence_packet" = "lender_update",
+): ProofBundleManifest {
+  const reportLabel =
+    reportKind === "lender_update" ? "lender update" : "diligence packet";
+
   return {
     missionId,
-    missionTitle: "Draft lender update for acme",
-    objective: "Compile one draft lender update from stored finance evidence.",
+    missionTitle: `Draft ${reportLabel} for acme`,
+    objective: `Compile one draft ${reportLabel} from stored finance evidence.`,
     sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
     sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
     companyKey: "acme",
@@ -406,35 +540,39 @@ function buildProofBundleManifest(missionId: string): ProofBundleManifest {
     policySourceId: null,
     policySourceScope: null,
     answerSummary: "",
-    reportKind: "lender_update",
+    reportKind,
     reportDraftStatus: "draft_only",
     reportPublication: null,
     releaseRecord: null,
     releaseReadiness: null,
     reportSummary:
-      "Draft lender update for acme from the completed finance memo.",
+      reportKind === "lender_update"
+        ? "Draft lender update for acme from the completed finance memo."
+        : "Draft diligence packet for acme from the completed finance memo.",
     appendixPresent: false,
     freshnessState: "stale",
     freshnessSummary: "Cash posture remains stale.",
     limitationsSummary:
-      "This lender update remains delivery-free until review is completed.",
+      reportKind === "lender_update"
+        ? "This lender update remains delivery-free until review is completed."
+        : "This diligence packet remains delivery-free until review is completed.",
     relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
     relatedWikiPageKeys: ["metrics/cash-posture"],
     targetRepoFullName: null,
     branchName: null,
     pullRequestNumber: null,
     pullRequestUrl: null,
-    changeSummary: "Stored lender update remains in draft-only posture.",
+    changeSummary: `Stored ${reportLabel} remains in draft-only posture.`,
     validationSummary: "",
     verificationSummary:
-      "Review the stored lender update and linked proof bundle.",
+      `Review the stored ${reportLabel} and linked proof bundle.`,
     riskSummary: "",
     rollbackSummary: "",
     latestApproval: null,
     evidenceCompleteness: {
       status: "complete",
-      expectedArtifactKinds: ["lender_update"],
-      presentArtifactKinds: ["lender_update"],
+      expectedArtifactKinds: [reportKind],
+      presentArtifactKinds: [reportKind],
       missingArtifactKinds: [],
       notes: [],
     },

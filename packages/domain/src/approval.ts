@@ -32,6 +32,23 @@ export const RuntimeApprovalRequestMethodSchema = z.enum([
   "item/permissions/requestApproval",
 ]);
 
+export const REPORT_RELEASE_APPROVAL_REPORT_KINDS = [
+  "lender_update",
+  "diligence_packet",
+] as const;
+
+export const ReportReleaseApprovalReportKindSchema = z.enum(
+  REPORT_RELEASE_APPROVAL_REPORT_KINDS,
+);
+
+export const REPORT_RELEASE_APPROVAL_REPORT_KIND_LABELS = {
+  lender_update: "Lender update",
+  diligence_packet: "Diligence packet",
+} satisfies Record<
+  (typeof REPORT_RELEASE_APPROVAL_REPORT_KINDS)[number],
+  string
+>;
+
 export const ReportReleaseApprovalResolutionSchema = z
   .object({
     decision: ApprovalDecisionSchema,
@@ -53,7 +70,7 @@ export const ReportReleaseApprovalReleaseRecordSchema = z
 export const ReportReleaseApprovalPayloadSchema = z
   .object({
     missionId: z.string().uuid(),
-    reportKind: z.literal("lender_update"),
+    reportKind: ReportReleaseApprovalReportKindSchema,
     sourceReportingMissionId: z.string().uuid(),
     sourceDiscoveryMissionId: z.string().uuid(),
     artifactId: z.string().uuid(),
@@ -88,6 +105,9 @@ export type ApprovalDecision = z.infer<typeof ApprovalDecisionSchema>;
 export type RuntimeApprovalRequestMethod = z.infer<
   typeof RuntimeApprovalRequestMethodSchema
 >;
+export type ReportReleaseApprovalReportKind = z.infer<
+  typeof ReportReleaseApprovalReportKindSchema
+>;
 export type ReportReleaseApprovalResolution = z.infer<
   typeof ReportReleaseApprovalResolutionSchema
 >;
@@ -103,4 +123,10 @@ export function isReportReleaseApprovalPayload(
   value: unknown,
 ): value is ReportReleaseApprovalPayload {
   return ReportReleaseApprovalPayloadSchema.safeParse(value).success;
+}
+
+export function readReportReleaseApprovalReportKindLabel(
+  reportKind: ReportReleaseApprovalReportKind,
+) {
+  return REPORT_RELEASE_APPROVAL_REPORT_KIND_LABELS[reportKind];
 }

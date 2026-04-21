@@ -6,7 +6,7 @@ Current responsibilities:
 
 - persist approval requests into the `approvals` table
 - map Codex approval surfaces to runtime approval kinds
-- persist one finance-facing `report_release` approval against one completed `lender_update` reporting mission with one stored `lender_update` artifact
+- persist one finance-facing `report_release` approval against one completed `lender_update` or `diligence_packet` reporting mission with one stored report artifact
 - append `approval.requested`, `approval.resolved`, and `approval.release_logged` replay events when the finance-facing path uses them
 - transition tasks and missions into and out of `awaiting_approval` for runtime-gated work only
 - resume accepted runtime approvals only after the live app-server response handoff succeeds
@@ -20,7 +20,7 @@ Current approval mappings:
 - `item/fileChange/requestApproval` -> `file_change`
 - `item/commandExecution/requestApproval` -> `command`
 - `item/commandExecution/requestApproval` with network escalation context -> `network_escalation`
-- one completed `lender_update` reporting mission -> `report_release`
+- one completed `lender_update` or `diligence_packet` reporting mission -> `report_release`
 - `item/permissions/requestApproval` -> rejected explicitly as unsupported
 
 Current non-goals:
@@ -29,12 +29,11 @@ Current non-goals:
 - worker-restart recovery for live runtime sessions
 - generic approval inbox or report-release dashboard widening
 - actual report delivery, PDF export, or slide export
-- `diligence_packet` approval review or release-readiness until `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` lands
 - board-packet review or circulation-readiness widening
 
 The durable source of truth is still Postgres replay plus the `approvals` row.
 Live continuation remains intentionally single-process and in-memory for runtime approvals only.
 The HTTP control surface only needs embedded-worker live control when resolving runtime-gated approvals that must resume a paused session.
 `report_release` approvals are taskless, replay-backed, and safe to resolve in `api_only` mode because they do not resume a live runtime turn or claim delivery happened.
-Today the shipped finance-facing scope is still lender-update-only for approval request, approval resolution, and release logging.
-The active next plan is `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md`, which widens review and release-readiness to `diligence_packet` without changing the runtime-free and delivery-free boundary.
+Today the shipped finance-facing scope covers approval request and approval resolution for `lender_update` and `diligence_packet`, while external release logging remains lender-update-only.
+The F5C4C widening keeps diligence approval review deterministic, runtime-free, and delivery-free; board circulation, diligence release logging, PDF export, and slide export remain later-slice work.
