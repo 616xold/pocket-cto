@@ -23,6 +23,7 @@ This file now records the shipped F5C4D implementation rather than only the pre-
 - [x] 2026-04-21T14:21:00Z Implement `F5C4D-release-log-and-first-diligence-packet-release-record-foundation` exactly as defined here: widen the existing mission-scoped release-log seam from lender-update-only to lender-update-plus-diligence, persist the first diligence release record on the existing `report_release` approval seam, keep release logging deterministic and runtime-free, and avoid any actual send, distribute, publish, board-circulation, PDF, slide, or runtime-codex behavior.
 - [x] 2026-04-21T14:21:00Z Add targeted domain, control-plane, web, and smoke coverage for diligence release-log eligibility, release-record persistence, proof-bundle posture, and the new packaged `pnpm smoke:diligence-packet-release-log:local` path.
 - [x] 2026-04-21T14:32:25Z Run the full preserved confidence ladder plus the new diligence release-log proof on the final branch, finish the tiny active-doc refresh that this shipped F5C4D behavior actually makes stale, and confirm `pnpm ci:repro:current` succeeds against the current worktree snapshot.
+- [x] 2026-04-21T14:45:50Z QA follow-up corrected one stale `plans/ROADMAP.md` sentence that still described diligence release logging as the active next step after F5C4D shipped; the roadmap now points the next narrow slice at F5C4E board-packet review or circulation readiness.
 
 ## Surprises & Discoveries
 
@@ -37,6 +38,9 @@ This file now records the shipped F5C4D implementation rather than only the pre-
 
 - Observation: the active-doc chain was still one slice behind after F5C4C landed.
   Evidence: `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `docs/ops/codex-app-server.md`, `evals/README.md`, and `docs/benchmarks/seeded-missions.md` all still pointed the next thread at `FP-0043`.
+
+- Observation: one roadmap exit-criteria sentence stayed one step behind even after the broader F5C4D doc refresh landed.
+  Evidence: `plans/ROADMAP.md` still said diligence release logging was the active next hardening step instead of recording F5C4D as shipped and pointing the next slice at F5C4E.
 
 - Observation: the release-record seam becomes most truthful only after release-approval posture exists.
   Evidence: the reporting and proof read models should keep `releaseRecord` absent while release approval is still `not_requested`, then surface an explicit not-yet-released `releaseRecord` summary once `report_release` is pending, approved, or denied.

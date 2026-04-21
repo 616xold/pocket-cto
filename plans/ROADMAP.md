@@ -371,7 +371,7 @@ Exit criteria:
 - one completed finance discovery mission can produce a first-class reporting mission
 - the first report path yields a draft `finance_memo` plus `evidence_appendix`
 - report outputs remain reproducible, evidence-linked, freshness-aware, and explicit about limitations
-- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update approval and release-record posture are already shipped through F5C4B, diligence approval and release-readiness are already shipped through F5C4C, and the active next hardening step is diligence-packet release logging and first release-record posture only, with board-packet review or circulation posture deferred to F5C4E and markdown export reuse still limited to the filed-artifact path defined in F5B
+- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update approval and release-record posture are already shipped through F5C4B, diligence approval, release-readiness, and release-record posture are now shipped through F5C4D, the next hardening step is F5C4E board-packet review or circulation readiness, and markdown export reuse remains limited to the filed-artifact path defined in F5B
 
 ## F6 — Monitoring, controls, and adoption loop
 
