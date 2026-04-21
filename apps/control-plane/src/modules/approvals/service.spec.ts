@@ -520,6 +520,135 @@ describe("ApprovalService", () => {
       }),
     );
   });
+
+  it("records one release log on an approved diligence-packet release approval and replays it", async () => {
+    const missionRepository = new InMemoryMissionRepository();
+    const approvalRepository = new InMemoryApprovalRepository();
+    const replayService = new ReplayService(
+      new InMemoryReplayRepository(),
+      missionRepository,
+    );
+    const missionService = new MissionService(
+      new StubMissionCompiler(),
+      missionRepository,
+      replayService,
+      new EvidenceService(),
+    );
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> =>
+        buildProofBundleManifest(createdMissionId, "diligence_packet"),
+    );
+    const liveSessionRegistry = {
+      awaitApprovalResolution: vi.fn(),
+      hasTaskSession: vi.fn(() => false),
+      tryResolveApproval: vi.fn(() => ({
+        delivered: true as const,
+      })),
+    } satisfies Pick<
+      InMemoryRuntimeSessionRegistry,
+      "awaitApprovalResolution" | "hasTaskSession" | "tryResolveApproval"
+    >;
+    const approvalService = new ApprovalService(
+      approvalRepository,
+      missionRepository,
+      replayService,
+      liveSessionRegistry,
+      {
+        refreshProofBundle,
+      },
+    );
+    const created = await missionService.createFromText({
+      text: "Record one diligence packet as already released outside Pocket CFO",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const createdMissionId = created.mission.id;
+    const payload = {
+      missionId: createdMissionId,
+      reportKind: "diligence_packet" as const,
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+      artifactId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme" as const,
+      draftOnlyStatus: "draft_only" as const,
+      summary: "Draft diligence packet for acme from the completed finance memo.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary:
+        "This diligence packet remains delivery-free until review is completed.",
+      resolution: null,
+      releaseRecord: null,
+    };
+    const request = await approvalService.requestReportReleaseApproval({
+      missionId: createdMissionId,
+      payload,
+      requestedBy: "finance-operator",
+    });
+
+    await approvalService.resolveApproval({
+      approvalId: request.approval.id,
+      decision: "accept",
+      rationale: "Approved for release readiness.",
+      resolvedBy: "finance-reviewer",
+    });
+
+    const logged = await approvalService.recordReportReleaseLog({
+      approvalId: request.approval.id,
+      releaseRecord: {
+        releasedAt: "2026-04-21T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "secure_portal",
+        releaseNote: "Released after diligence counsel review.",
+        summary:
+          "External release was logged by finance-operator at 2026-04-21T09:10:00.000Z via secure_portal. Release note: Released after diligence counsel review..",
+      },
+    });
+    const duplicate = await approvalService.recordReportReleaseLog({
+      approvalId: request.approval.id,
+      releaseRecord: {
+        releasedAt: "2026-04-21T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "secure_portal",
+        releaseNote: "Released after diligence counsel review.",
+        summary:
+          "External release was logged by finance-operator at 2026-04-21T09:10:00.000Z via secure_portal. Release note: Released after diligence counsel review..",
+      },
+    });
+    const updatedApproval = await approvalRepository.getApprovalById(
+      request.approval.id,
+    );
+    const replay = await replayService.getMissionEvents(createdMissionId);
+
+    expect(logged.created).toBe(true);
+    expect(duplicate.created).toBe(false);
+    expect(updatedApproval?.payload).toMatchObject({
+      resolution: {
+        decision: "accept",
+        rationale: "Approved for release readiness.",
+        resolvedBy: "finance-reviewer",
+      },
+      releaseRecord: {
+        releasedAt: "2026-04-21T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "secure_portal",
+        releaseNote: "Released after diligence counsel review.",
+      },
+    });
+    expect(refreshProofBundle).toHaveBeenCalledTimes(1);
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.release_logged",
+        payload: expect.objectContaining({
+          approvalId: request.approval.id,
+          missionId: createdMissionId,
+          releaseRecord: expect.objectContaining({
+            releasedAt: "2026-04-21T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "secure_portal",
+          }),
+        }),
+      }),
+    );
+  });
 });
 
 function buildProofBundleManifest(

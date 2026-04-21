@@ -79,6 +79,10 @@ const requestReportingReleaseApprovalFormSchema = z.object({
 
 const recordReportingReleaseLogFormSchema = z.object({
   missionId: z.string().uuid(),
+  reportKind: z.preprocess(
+    (value) => value ?? "lender_update",
+    z.enum(["lender_update", "diligence_packet"]),
+  ),
   releasedBy: z.string().trim().min(1),
   releaseChannel: z.string().trim().min(1),
   releaseNote: z.preprocess(
@@ -282,6 +286,7 @@ export async function submitRecordReportingReleaseLog(
 ) {
   const input = recordReportingReleaseLogFormSchema.parse({
     missionId: formData.get("missionId"),
+    reportKind: formData.get("reportKind"),
     releasedBy: formData.get("releasedBy"),
     releaseChannel: formData.get("releaseChannel"),
     releaseNote: formData.get("releaseNote"),
@@ -300,5 +305,9 @@ export async function submitRecordReportingReleaseLog(
     revalidatePath(`/missions/${input.missionId}`);
   }
 
-  return buildRecordReportingReleaseLogActionResult(input.releasedBy, result);
+  return buildRecordReportingReleaseLogActionResult(
+    input.releasedBy,
+    input.reportKind,
+    result,
+  );
 }

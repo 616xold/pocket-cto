@@ -75,18 +75,20 @@ export function MissionActions({
       (reporting?.reportKind === "diligence_packet" &&
         Boolean(reporting?.diligencePacket))) &&
     reporting.releaseReadiness?.releaseApprovalStatus === "not_requested";
-  const canRecordLenderUpdateReleaseLog =
+  const canRecordReportingReleaseLog =
     mission.type === "reporting" &&
     mission.status === "succeeded" &&
-    reporting?.reportKind === "lender_update" &&
-    Boolean(reporting.lenderUpdate) &&
+    ((reporting?.reportKind === "lender_update" &&
+      Boolean(reporting.lenderUpdate)) ||
+      (reporting?.reportKind === "diligence_packet" &&
+        Boolean(reporting.diligencePacket))) &&
     reporting.releaseReadiness?.releaseApprovalStatus ===
       "approved_for_release" &&
     reporting.releaseRecord?.released !== true;
   const reportingFollowOnOutOfScopeNote =
     reporting?.reportKind === "board_packet"
       ? "Board packet missions remain draft-only in F5C1. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
-      : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C4C path.";
+      : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C4D path.";
 
   return (
     <section className="card">
@@ -199,7 +201,7 @@ export function MissionActions({
                   operatorIdentity={operatorIdentity}
                   reportKind="lender_update"
                 />
-              ) : canRecordLenderUpdateReleaseLog ? (
+              ) : canRecordReportingReleaseLog ? (
                 <>
                   <p className="muted">
                     Pocket CFO still does not send or distribute the lender
@@ -209,6 +211,7 @@ export function MissionActions({
                   <RecordReportingReleaseLogForm
                     missionId={mission.id}
                     operatorIdentity={operatorIdentity}
+                    reportKind="lender_update"
                   />
                 </>
               ) : (
@@ -222,12 +225,12 @@ export function MissionActions({
           ) : reporting?.reportKind === "diligence_packet" ? (
             <>
               <p className="muted">
-                This first real F5C4C slice keeps diligence packets
+                This first real F5C4D slice keeps diligence packets
                 delivery-free and runtime-free, but it does allow one
-                persisted release-approval path from one completed
-                diligence-packet reporting mission with one stored
-                diligence_packet artifact. Release logging, board circulation,
-                PDF, and slide actions stay out of scope here.
+                persisted release-approval path plus one external release-log
+                path from one completed diligence-packet reporting mission with
+                one stored diligence_packet artifact. Board circulation, PDF,
+                and slide actions stay out of scope here.
               </p>
               {canRequestReportReleaseApproval ? (
                 <RequestReportingReleaseApprovalForm
@@ -235,9 +238,23 @@ export function MissionActions({
                   operatorIdentity={operatorIdentity}
                   reportKind="diligence_packet"
                 />
+              ) : canRecordReportingReleaseLog ? (
+                <>
+                  <p className="muted">
+                    Pocket CFO still does not send or distribute the diligence
+                    packet. This action only records that release happened
+                    externally after approval.
+                  </p>
+                  <RecordReportingReleaseLogForm
+                    missionId={mission.id}
+                    operatorIdentity={operatorIdentity}
+                    reportKind="diligence_packet"
+                  />
+                </>
               ) : (
                 <p className="muted">
-                  {reporting?.releaseReadiness?.summary ??
+                  {reporting?.releaseRecord?.summary ??
+                    reporting?.releaseReadiness?.summary ??
                     "Release approval becomes available once the stored diligence packet is present and no prior release approval request exists for this mission."}
                 </p>
               )}

@@ -170,10 +170,10 @@ describe("MissionActions", () => {
     );
 
     expect(html).toContain(
-      "This first real F5C4C slice keeps diligence packets delivery-free and runtime-free, but it does allow one persisted release-approval path from one completed diligence-packet reporting mission with one stored diligence_packet artifact.",
+      "This first real F5C4D slice keeps diligence packets delivery-free and runtime-free, but it does allow one persisted release-approval path plus one external release-log path from one completed diligence-packet reporting mission with one stored diligence_packet artifact. Board circulation, PDF, and slide actions stay out of scope here.",
     );
     expect(html).toContain("Request diligence packet release approval");
-    expect(html).not.toContain("Record lender update as released");
+    expect(html).not.toContain("Record diligence packet as released");
   });
 
   it("renders lender-update release-log action after release approval is granted", () => {
@@ -246,6 +246,78 @@ describe("MissionActions", () => {
       "Pocket CFO still does not send or distribute the lender update. This action only records that release happened externally after approval.",
     );
     expect(html).not.toContain("Request lender update release approval");
+  });
+
+  it("renders diligence-packet release-log action after release approval is granted", () => {
+    const html = renderToStaticMarkup(
+      <MissionActions
+        approvalCards={[]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          id: "11111111-1111-4111-8111-111111111111",
+          type: "reporting",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          title: "Draft diligence packet for acme",
+          objective:
+            "Compile one draft diligence packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+          status: "succeeded",
+          primaryRepo: null,
+          createdBy: "operator",
+          createdAt: "2026-04-19T12:00:00.000Z",
+          updatedAt: "2026-04-19T12:05:00.000Z",
+          spec: {
+            type: "reporting",
+            title: "Draft diligence packet for acme",
+            objective:
+              "Compile one draft diligence packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+            repos: [],
+            constraints: {
+              mustNot: [],
+              allowedPaths: [],
+            },
+            acceptance: [],
+            riskBudget: {
+              sandboxMode: "read-only",
+              maxWallClockMinutes: 5,
+              maxCostUsd: 1,
+              allowNetwork: false,
+              requiresHumanApprovalFor: [],
+            },
+            deliverables: ["diligence_packet", "proof_bundle"],
+            evidenceRequirements: [],
+          },
+        }}
+        reporting={{
+          ...buildDiligencePacketReportingView(),
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored diligence packet is approved for release, but no delivery has been recorded.",
+          },
+        }}
+        tasks={[]}
+      />,
+    );
+
+    expect(html).toContain("Record diligence packet as released");
+    expect(html).toContain(
+      "Pocket CFO still does not send or distribute the diligence packet. This action only records that release happened externally after approval.",
+    );
+    expect(html).not.toContain("Request diligence packet release approval");
   });
 });
 

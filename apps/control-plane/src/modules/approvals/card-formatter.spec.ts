@@ -281,6 +281,53 @@ describe("card-formatter", () => {
     expect(card.requiresLiveControl).toBe(false);
     expect(card.actionHint).toBeNull();
   });
+
+  it("formats a logged diligence-packet release as a non-delivery approval card", () => {
+    const card = buildMissionApprovalCard({
+      approval: buildApproval({
+        kind: "report_release",
+        rationale: "Approved for release readiness.",
+        requestedBy: "finance-operator",
+        resolvedBy: "finance-reviewer",
+        status: "approved",
+        updatedAt: "2026-04-21T09:10:00.000Z",
+        payload: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          companyKey: "acme",
+          draftOnlyStatus: "draft_only",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          missionId: "11111111-1111-4111-8111-111111111111",
+          reportKind: "diligence_packet",
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          summary:
+            "Draft diligence packet for acme from the completed finance memo.",
+          resolution: {
+            decision: "accept",
+            rationale: "Approved for release readiness.",
+            resolvedBy: "finance-reviewer",
+          },
+          releaseRecord: {
+            releasedAt: "2026-04-21T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "secure_portal",
+            releaseNote: "Released after diligence counsel review.",
+            summary:
+              "External release was logged by finance-operator at 2026-04-21T09:10:00.000Z via secure_portal. Release note: Released after diligence counsel review..",
+          },
+        },
+        taskId: null,
+      }),
+      context: buildContext(),
+    });
+
+    expect(card.title).toBe("Diligence packet release logged for acme");
+    expect(card.summary).toContain("External diligence packet release is logged");
+    expect(card.summary).toContain("Original app");
+    expect(card.requiresLiveControl).toBe(false);
+    expect(card.actionHint).toBeNull();
+  });
 });
 
 function buildContext() {

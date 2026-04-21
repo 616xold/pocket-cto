@@ -1332,7 +1332,7 @@ describe("Mission detail domain schema", () => {
         freshnessSummary:
           "Cash posture remains stale because bank coverage is stale.",
         limitationsSummary:
-          "This diligence packet remains delivery-free while later release logging stays out of scope.",
+          "This diligence packet remains delivery-free while approval and external release-log posture stay explicit in F5C4D.",
         relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
         relatedWikiPageKeys: ["metrics/cash-posture"],
         targetRepoFullName: null,
@@ -1346,7 +1346,7 @@ describe("Mission detail domain schema", () => {
         verificationSummary:
           "Review carried-forward freshness, limitations, and release-readiness posture before sharing this draft.",
         riskSummary:
-          "This diligence packet remains delivery-free in F5C4C even after approval.",
+          "This diligence packet is approved for release from a persisted review path, but actual delivery, board circulation, PDF, and slide workflows remain out of scope in F5C4D, and release logging stays explicit and separate.",
         rollbackSummary:
           "No actual release side effect was produced; this slice only records review posture.",
         latestApproval: null,
@@ -1394,7 +1394,7 @@ describe("Mission detail domain schema", () => {
         freshnessSummary:
           "Cash posture remains stale because bank coverage is stale.",
         limitationsSummary:
-          "This diligence packet remains delivery-free while later release logging stays out of scope.",
+          "This diligence packet remains delivery-free while approval and external release-log posture stay explicit in F5C4D.",
         relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
         relatedWikiPageKeys: ["metrics/cash-posture"],
         appendixPresent: true,
@@ -1419,7 +1419,7 @@ describe("Mission detail domain schema", () => {
           freshnessSummary:
             "Cash posture remains stale because bank coverage is stale.",
           limitationsSummary:
-            "This diligence packet remains delivery-free while later release logging stays out of scope.",
+            "This diligence packet remains delivery-free while approval and external release-log posture stay explicit in F5C4D.",
           relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
           relatedWikiPageKeys: ["metrics/cash-posture"],
           sourceFinanceMemo: {
@@ -1476,7 +1476,7 @@ describe("Mission detail domain schema", () => {
           resolvedBy: "finance-reviewer",
           status: "approved",
           summary:
-            "Review diligence packet release readiness for acme. Summary: Draft diligence packet for acme from the completed finance memo. Freshness: Cash posture remains stale because bank coverage is stale. Limitations: This diligence packet remains delivery-free while later release logging stays out of scope.",
+            "Review diligence packet release readiness for acme. Summary: Draft diligence packet for acme from the completed finance memo. Freshness: Cash posture remains stale because bank coverage is stale. Limitations: This diligence packet remains delivery-free while approval and external release-log posture stay explicit in F5C4D.",
           task: null,
           title: "Review diligence packet release approval for acme",
         },

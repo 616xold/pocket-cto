@@ -73,6 +73,7 @@ type RequestReportingReleaseApprovalFormProps = {
 type RecordReportingReleaseLogFormProps = {
   missionId: string;
   operatorIdentity: string;
+  reportKind: "lender_update" | "diligence_packet";
 };
 
 export function ApprovalActionForm({
@@ -331,17 +332,27 @@ export function RequestReportingReleaseApprovalForm({
 export function RecordReportingReleaseLogForm({
   missionId,
   operatorIdentity,
+  reportKind,
 }: RecordReportingReleaseLogFormProps) {
   const [result, formAction] = useActionState<MissionActionState, FormData>(
     submitRecordReportingReleaseLog,
     INITIAL_MISSION_ACTION_STATE,
   );
+  const releaseLogLabel =
+    reportKind === "diligence_packet"
+      ? "Record diligence packet as released"
+      : "Record lender update as released";
+  const pendingLabel =
+    reportKind === "diligence_packet"
+      ? "Recording diligence release..."
+      : "Recording lender release...";
 
   return (
     <div className="action-cluster">
       <form action={formAction} className="stack">
         <input name="missionId" type="hidden" value={missionId} />
         <input name="releasedBy" type="hidden" value={operatorIdentity} />
+        <input name="reportKind" type="hidden" value={reportKind} />
 
         <label className="stack" htmlFor={`release-channel-${missionId}`}>
           <span>Release channel</span>
@@ -368,8 +379,8 @@ export function RecordReportingReleaseLogForm({
 
         <ActionSubmitButton
           className="action-button"
-          label="Record lender update as released"
-          pendingLabel="Recording release..."
+          label={releaseLogLabel}
+          pendingLabel={pendingLabel}
         />
       </form>
 

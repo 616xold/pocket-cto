@@ -442,9 +442,9 @@ The shipped F4 baseline still does none of the following:
 - raw wiki pages remain derived evidence inputs, not the source of truth for the release record itself
 - actual send, distribute, publish, broader packet widening, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
-`FP-0044` now makes the active F5C4D boundary explicit:
+`FP-0044` now records the shipped F5C4D boundary:
 
-- the next thread should widen the existing mission-scoped `reporting/release-log` seam from lender-update-only to lender-update-plus-diligence, and no broader
+- the repo now widens the existing mission-scoped `reporting/release-log` seam from lender-update-only to lender-update-plus-diligence, and no broader
 - the first new release-log path must start from one completed `reporting` mission with `reportKind = "diligence_packet"`, one stored `diligence_packet` artifact, and release-readiness already at `approved_for_release`
 - the source reporting mission must already be completed and remain a `reporting` mission rather than a new release-specific mission family
 - the preferred persistence anchor remains the existing resolved `report_release` approval payload plus its derived reporting and proof views
@@ -461,7 +461,7 @@ The shipped F5B follow-on now hardens body visibility, filed-page reuse, and mar
 The shipped F5C1 follow-on now specializes one draft `board_packet` from that completed reporting state.
 The shipped F5C2 follow-on now specializes only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
-The active F5C4 follow-on now narrows the next step to diligence-packet release logging and first release-record posture only, without widening into board-packet circulation posture, actual delivery, runtime-codex drafting, or export work.
+The next later-F5 follow-on should now narrow to board-packet review or circulation readiness rather than reopening diligence-packet release logging, actual delivery, runtime-codex drafting, or export work.
 
 ## Lint flow
 

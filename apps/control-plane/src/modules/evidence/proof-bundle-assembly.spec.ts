@@ -1210,9 +1210,133 @@ describe("assembleProofBundleManifest", () => {
       "approved_for_release",
     );
     expect(manifest.releaseReadiness?.releaseReady).toBe(true);
-    expect(manifest.releaseRecord).toBeNull();
+    expect(manifest.releaseRecord).toMatchObject({
+      released: false,
+      summary: "Release approval is granted, but no external release has been logged yet.",
+    });
     expect(manifest.riskSummary).toContain("approved for release");
     expect(manifest.rollbackSummary).toContain("No actual release");
+  });
+
+  it("recomputes diligence-packet proof narratives when external release is logged", () => {
+    const sourceDiscoveryMissionId = "88888888-8888-4888-8888-888888888888";
+    const sourceReportingMissionId = "99999999-9999-4999-8999-999999999999";
+    const mission = buildDiligencePacketMission(
+      sourceDiscoveryMissionId,
+      sourceReportingMissionId,
+    );
+    const diligencePacketArtifact = buildArtifact({
+      id: "11111111-dddd-4ddd-8ddd-dddddddddddd",
+      kind: "diligence_packet",
+      taskId: scoutTaskId,
+      createdAt: "2026-04-21T09:03:00.000Z",
+      metadata: {
+        source: "stored_reporting_evidence",
+        summary:
+          "Draft diligence packet for acme from the completed cash posture reporting mission.",
+        reportKind: "diligence_packet",
+        draftStatus: "draft_only",
+        sourceReportingMissionId,
+        sourceDiscoveryMissionId,
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        packetSummary:
+          "Draft diligence packet for acme from the completed cash posture reporting mission.",
+        freshnessSummary:
+          "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+        limitationsSummary:
+          "This diligence packet is draft-only and carries source reporting freshness and limitations forward.",
+        relatedRoutePaths: [
+          "/finance-twin/companies/acme/cash-posture",
+          "/finance-twin/companies/acme/bank-accounts",
+        ],
+        relatedWikiPageKeys: ["metrics/cash-posture", "concepts/cash"],
+        sourceFinanceMemo: {
+          artifactId: "11111111-bbbb-4bbb-8bbb-bbbbbbbbbbb1",
+          kind: "finance_memo",
+        },
+        sourceEvidenceAppendix: {
+          artifactId: "11111111-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+          kind: "evidence_appendix",
+        },
+        bodyMarkdown:
+          "# Draft Diligence Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
+      },
+    });
+    const existingBundle = assembleProofBundleManifest({
+      approvals: [],
+      artifacts: [diligencePacketArtifact],
+      existingBundle: buildPlaceholderBundle(mission),
+      mission,
+      replayEventCount: 9,
+      tasks: buildDiscoveryTasks("succeeded"),
+    });
+    const manifest = assembleProofBundleManifest({
+      approvals: [
+        {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          kind: "report_release",
+          missionId: mission.id,
+          payload: {
+            artifactId: diligencePacketArtifact.id,
+            companyKey: "acme",
+            draftOnlyStatus: "draft_only",
+            freshnessSummary:
+              "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+            limitationsSummary:
+              "This diligence packet is draft-only and carries source reporting freshness and limitations forward.",
+            missionId: mission.id,
+            reportKind: "diligence_packet",
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+            summary:
+              "Approve the stored diligence packet for external release posture.",
+            resolution: {
+              decision: "accept",
+              rationale: "Approved for release posture.",
+              resolvedBy: "finance-reviewer",
+            },
+            releaseRecord: {
+              releasedAt: "2026-04-21T09:10:00.000Z",
+              releasedBy: "finance-operator",
+              releaseChannel: "secure_portal",
+              releaseNote: "Released after diligence counsel review.",
+              summary:
+                "External release was logged by finance-operator at 2026-04-21T09:10:00.000Z via secure_portal. Release note: Released after diligence counsel review..",
+            },
+          },
+          rationale: "Approved for release posture.",
+          requestedBy: "finance-operator",
+          resolvedBy: "finance-reviewer",
+          status: "approved",
+          taskId: null,
+          createdAt: "2026-04-21T09:00:00.000Z",
+          updatedAt: "2026-04-21T09:10:00.000Z",
+        } satisfies ApprovalRecord,
+      ],
+      artifacts: [diligencePacketArtifact],
+      existingBundle,
+      mission,
+      replayEventCount: 12,
+      tasks: buildDiscoveryTasks("succeeded"),
+    });
+
+    expect(manifest.releaseReadiness?.releaseApprovalStatus).toBe(
+      "approved_for_release",
+    );
+    expect(manifest.releaseRecord).toMatchObject({
+      released: true,
+      releasedAt: "2026-04-21T09:10:00.000Z",
+      releasedBy: "finance-operator",
+      releaseChannel: "secure_portal",
+    });
+    expect(manifest.verificationSummary).toContain("approval trace");
+    expect(manifest.riskSummary).toContain("persisted external release record");
+    expect(manifest.rollbackSummary).toContain(
+      "operator-entered external release log",
+    );
   });
 });
 

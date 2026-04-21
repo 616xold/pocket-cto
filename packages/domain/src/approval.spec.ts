@@ -87,4 +87,38 @@ describe("Approval domain schema", () => {
     expect(parsed.releaseRecord).toBeNull();
     expect(isReportReleaseApprovalPayload(parsed)).toBe(true);
   });
+
+  it("parses a diligence-packet report release payload with a persisted release record", () => {
+    const parsed = ReportReleaseApprovalPayloadSchema.parse({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      reportKind: "diligence_packet",
+      sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+      sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+      artifactId: "44444444-4444-4444-8444-444444444444",
+      companyKey: "acme",
+      draftOnlyStatus: "draft_only",
+      summary:
+        "Draft diligence packet for acme from the completed finance memo.",
+      freshnessSummary:
+        "Cash posture remains stale because bank coverage is stale.",
+      limitationsSummary:
+        "This diligence packet remains delivery-free until release approval is granted.",
+      resolution: {
+        decision: "accept",
+        rationale: "Approved for release readiness.",
+        resolvedBy: "finance-reviewer",
+      },
+      releaseRecord: {
+        releasedAt: "2026-04-21T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "secure_portal",
+        releaseNote: "Released after diligence counsel review.",
+        summary:
+          "External release was logged by finance-operator at 2026-04-21T09:10:00.000Z via secure_portal. Release note: Released after diligence counsel review..",
+      },
+    });
+
+    expect(parsed.resolution?.decision).toBe("accept");
+    expect(parsed.releaseRecord?.releaseChannel).toBe("secure_portal");
+  });
 });

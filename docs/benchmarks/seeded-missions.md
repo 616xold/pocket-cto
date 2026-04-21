@@ -157,5 +157,5 @@ The shipped F5C3 reporting benchmark contract now lives in `plans/FP-0040-dilige
 The shipped F5C4A reporting benchmark contract now lives in `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`.
 The shipped F5C4B reporting benchmark contract now lives in `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
 The shipped F5C4C reporting benchmark contract now lives in `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md`.
-The active F5C4D reporting benchmark contract now lives in `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md`.
+The shipped F5C4D reporting benchmark contract now lives in `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md`.
 Board-packet review or circulation readiness remains later F5C4E work.

@@ -32,7 +32,7 @@ describe("MissionReportingActionsService", () => {
           throw new Error("not used");
         }),
         fileDraftArtifacts,
-        prepareLenderUpdateReleaseLog: vi.fn(async () => {
+        prepareReportingReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportReleaseApproval: vi.fn(async () => {
@@ -92,7 +92,7 @@ describe("MissionReportingActionsService", () => {
         fileDraftArtifacts: vi.fn(async () => {
           throw new Error("not used");
         }),
-        prepareLenderUpdateReleaseLog: vi.fn(async () => {
+        prepareReportingReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportReleaseApproval: vi.fn(async () => {
@@ -179,7 +179,7 @@ describe("MissionReportingActionsService", () => {
         fileDraftArtifacts: vi.fn(async () => {
           throw new Error("not used");
         }),
-        prepareLenderUpdateReleaseLog: vi.fn(async () => {
+        prepareReportingReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportReleaseApproval,
@@ -233,7 +233,7 @@ describe("MissionReportingActionsService", () => {
     const refreshProofBundle = vi.fn(
       async (): Promise<ProofBundleManifest> => buildProofBundleManifest(),
     );
-    const prepareLenderUpdateReleaseLog = vi.fn(async () => ({
+    const prepareReportingReleaseLog = vi.fn(async () => ({
       approvalId: "55555555-5555-4555-8555-555555555555",
       releaseRecord: {
         releasedAt: "2026-04-20T09:10:00.000Z",
@@ -305,7 +305,7 @@ describe("MissionReportingActionsService", () => {
         prepareReportReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
-        prepareLenderUpdateReleaseLog,
+        prepareReportingReleaseLog,
       },
     });
 
@@ -319,7 +319,7 @@ describe("MissionReportingActionsService", () => {
       },
     );
 
-    expect(prepareLenderUpdateReleaseLog).toHaveBeenCalledWith(
+    expect(prepareReportingReleaseLog).toHaveBeenCalledWith(
       "11111111-1111-4111-8111-111111111111",
       {
         releasedAt: null,

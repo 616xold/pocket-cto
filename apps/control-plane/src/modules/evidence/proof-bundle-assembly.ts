@@ -572,13 +572,19 @@ function buildVerificationSummary(
     facts.reportSummary
   ) {
     return truncate(
-      isBoardPacketFacts(facts) || isDiligencePacketFacts(facts)
+      isBoardPacketFacts(facts)
         ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.`
-        : isLenderUpdateFacts(facts)
+        : isDiligencePacketFacts(facts)
           ? facts.releaseRecord?.released
             ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, approval trace, and external release-record posture before relying on this released draft.`
-            : `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and lender-update release-readiness posture before sharing this draft.`
-          : `${facts.reportSummary} Review the linked evidence appendix, carried-forward freshness, and visible limitations before sharing this draft.`,
+            : facts.releaseReadiness?.releaseReady
+              ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and diligence-packet release-readiness posture before sharing this draft.`
+              : `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.`
+          : isLenderUpdateFacts(facts)
+            ? facts.releaseRecord?.released
+              ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, approval trace, and external release-record posture before relying on this released draft.`
+              : `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and lender-update release-readiness posture before sharing this draft.`
+            : `${facts.reportSummary} Review the linked evidence appendix, carried-forward freshness, and visible limitations before sharing this draft.`,
       SUMMARY_MAX_LENGTH,
     );
   }
@@ -682,13 +688,17 @@ function buildRiskSummary(
       }
 
       if (status === "ready") {
+        if (facts.releaseRecord?.released) {
+          return "This diligence packet has one persisted external release record linked to an approved release-review trace, but Pocket CFO still did not send, distribute, publish, start board circulation, generate PDF, or generate slides in F5C4D.";
+        }
+
         if (!facts.releaseReadiness?.approvalId) {
           return "This diligence packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C3.";
         }
 
         return facts.releaseReadiness.releaseReady
-          ? "This diligence packet is approved for release from a persisted review path, but actual delivery, release logging, board circulation, PDF, and slide workflows remain out of scope in F5C4C."
-          : "This diligence packet stays draft-only until a persisted release approval is granted; actual delivery, release logging, board circulation, PDF, and slide workflows remain out of scope in F5C4C.";
+          ? "This diligence packet is approved for release from a persisted review path, but actual delivery, board circulation, PDF, and slide workflows remain out of scope in F5C4D, and release logging stays explicit and separate."
+          : "This diligence packet stays draft-only until a persisted release approval is granted; actual delivery, board circulation, PDF, and slide workflows remain out of scope in F5C4D.";
       }
 
       return "";
@@ -823,13 +833,17 @@ function buildRollbackSummary(
       }
 
       if (status === "ready") {
+        if (facts.releaseRecord?.released) {
+          return "No system send, distribute, publish, board circulation, PDF export, or slide export side effect was produced; this slice only records an operator-entered external release log against the approved diligence packet.";
+        }
+
         if (!facts.releaseReadiness?.approvalId) {
           return "No release, approval, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
         }
 
         return facts.releaseReadiness.releaseReady
-          ? "No actual release, send, wiki filing, diligence release log, PDF export, or slide export side effect was produced; this slice only records approved-for-release posture against the stored diligence packet."
-          : "No actual release, send, wiki filing, diligence release log, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
+          ? "No actual release, send, wiki filing, PDF export, or slide export side effect was produced; this slice only records approved-for-release posture against the stored diligence packet."
+          : "No actual release, send, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
       }
 
       return "";

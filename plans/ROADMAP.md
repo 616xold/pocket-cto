@@ -273,9 +273,8 @@ Exit criteria:
 Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
-The latest shipped implementation record for this phase is `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md`.
-`plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` is now the active later-F5 implementation contract.
-The next remaining execution slice is the narrow F5C4D diligence release-log and first release-record step defined there; do not reopen F5C4C or start F5C4E or F6 early.
+The latest shipped implementation record for this phase is `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md`.
+The next remaining execution slice should be the narrow F5C4E board-packet review or circulation readiness step; do not reopen F5C4D or start F6 early.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims

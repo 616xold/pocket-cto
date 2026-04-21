@@ -53,6 +53,7 @@ export function MissionCard({
   const isBoardPacket = proofBundle.reportKind === "board_packet";
   const isLenderUpdate = proofBundle.reportKind === "lender_update";
   const supportsReleaseApproval = isLenderUpdate || isDiligencePacket;
+  const supportsReleaseLog = isLenderUpdate || isDiligencePacket;
   const isSpecializedReporting =
     isBoardPacket || isLenderUpdate || isDiligencePacket;
   const reportProofBundle =
@@ -146,7 +147,7 @@ export function MissionCard({
                         : "No"}
                     </dd>
                   </div>
-                  {isLenderUpdate ? (
+                  {supportsReleaseLog ? (
                     <div>
                       <dt>Release logged</dt>
                       <dd>

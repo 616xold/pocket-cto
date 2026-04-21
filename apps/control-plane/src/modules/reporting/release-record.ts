@@ -1,12 +1,14 @@
 import type {
   ApprovalRecord,
   ProofBundleManifest,
+  ReportReleaseApprovalReportKind,
   ReportingReleaseApprovalStatus,
   ReportingReleaseRecordView,
 } from "@pocket-cto/domain";
 import {
   ReportingReleaseRecordViewSchema,
   isReportReleaseApprovalPayload,
+  readReportReleaseApprovalReportKindLabel,
 } from "@pocket-cto/domain";
 import { readLatestReportReleaseApproval } from "./release-readiness";
 
@@ -22,6 +24,7 @@ export function buildLoggedReleaseRecordSummary(input: {
 
 export function buildReportingReleaseRecordView(input: {
   approvals: ApprovalRecord[];
+  reportKind: ReportReleaseApprovalReportKind;
   releaseReadiness: ProofBundleManifest["releaseReadiness"];
   storedDraft: boolean;
 }): ReportingReleaseRecordView | null {
@@ -32,6 +35,7 @@ export function buildReportingReleaseRecordView(input: {
   const latestApproval = readLatestReportReleaseApproval(input.approvals);
   return buildReportingReleaseRecordViewFromApproval({
     approval: latestApproval,
+    reportKind: input.reportKind,
     releaseReadiness: input.releaseReadiness,
   });
 }
@@ -42,18 +46,24 @@ export function buildReportingReleaseRecordViewFromProofBundle(
     "evidenceCompleteness" | "releaseReadiness" | "releaseRecord" | "reportKind"
   >,
 ) {
-  if (input.reportKind !== "lender_update") {
+  if (!isReleaseRecordReportKind(input.reportKind)) {
     return null;
   }
 
   const storedDraft =
-    input.evidenceCompleteness.presentArtifactKinds.includes("lender_update");
+    input.evidenceCompleteness.presentArtifactKinds.includes(input.reportKind);
 
   if (!storedDraft) {
     return null;
   }
 
   const existing = input.releaseRecord;
+  const releaseApprovalStatus =
+    input.releaseReadiness?.releaseApprovalStatus ?? "not_requested";
+
+  if (!existing && releaseApprovalStatus === "not_requested") {
+    return null;
+  }
 
   return ReportingReleaseRecordViewSchema.parse({
     released: existing?.released ?? false,
@@ -65,13 +75,15 @@ export function buildReportingReleaseRecordViewFromProofBundle(
     summary:
       existing?.summary ??
       buildMissingReleaseRecordSummary(
-        input.releaseReadiness?.releaseApprovalStatus ?? "not_requested",
+        input.reportKind,
+        releaseApprovalStatus,
       ),
   });
 }
 
 function buildReportingReleaseRecordViewFromApproval(input: {
   approval: ApprovalRecord | null;
+  reportKind: ReportReleaseApprovalReportKind;
   releaseReadiness: ProofBundleManifest["releaseReadiness"];
 }) {
   const payload =
@@ -79,6 +91,12 @@ function buildReportingReleaseRecordViewFromApproval(input: {
       ? input.approval.payload
       : null;
   const existing = payload?.releaseRecord ?? null;
+  const releaseApprovalStatus =
+    input.releaseReadiness?.releaseApprovalStatus ?? "not_requested";
+
+  if (!existing && releaseApprovalStatus === "not_requested") {
+    return null;
+  }
 
   return ReportingReleaseRecordViewSchema.parse({
     released: existing !== null,
@@ -90,14 +108,20 @@ function buildReportingReleaseRecordViewFromApproval(input: {
     summary:
       existing?.summary ??
       buildMissingReleaseRecordSummary(
-        input.releaseReadiness?.releaseApprovalStatus ?? "not_requested",
+        payload?.reportKind ?? input.reportKind,
+        releaseApprovalStatus,
       ),
   });
 }
 
 function buildMissingReleaseRecordSummary(
+  reportKind: ReportReleaseApprovalReportKind,
   releaseApprovalStatus: ReportingReleaseApprovalStatus,
 ) {
+  const reportLabel = readReportReleaseApprovalReportKindLabel(
+    reportKind,
+  ).toLowerCase();
+
   switch (releaseApprovalStatus) {
     case "approved_for_release":
       return "Release approval is granted, but no external release has been logged yet.";
@@ -106,6 +130,14 @@ function buildMissingReleaseRecordSummary(
     case "not_approved_for_release":
       return "Release approval was not granted, so no external release has been logged.";
     case "not_requested":
-      return "No external release has been logged for this lender update yet.";
+      return `No external release has been logged for this ${reportLabel} yet.`;
   }
+}
+
+function isReleaseRecordReportKind(
+  reportKind: ProofBundleManifest["reportKind"],
+): reportKind is ReportReleaseApprovalReportKind {
+  return (
+    reportKind === "lender_update" || reportKind === "diligence_packet"
+  );
 }

@@ -416,7 +416,7 @@ describe("ReportingService", () => {
       missionRepository: repository,
     });
 
-    const prepared = await service.prepareLenderUpdateReleaseLog(
+    const prepared = await service.prepareReportingReleaseLog(
       lenderUpdateMission.id,
       {
         releasedAt: "2026-04-20T09:10:00.000Z",
@@ -490,11 +490,151 @@ describe("ReportingService", () => {
     });
 
     await expect(
-      service.prepareLenderUpdateReleaseLog(lenderUpdateMission.id, {
+      service.prepareReportingReleaseLog(lenderUpdateMission.id, {
         releasedAt: null,
         releasedBy: "finance-operator",
         releaseChannel: "email",
         releaseNote: "Sent from treasury mailbox after approval.",
+      }),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          code: "invalid_request",
+        },
+      },
+      statusCode: 400,
+    });
+  });
+
+  it("prepares one diligence-packet release log only after release approval is granted", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const diligencePacketMission = {
+      ...buildDiligencePacketMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [diligencePacketMission.id]: [
+          buildStoredDiligencePacketArtifact({
+            missionId: diligencePacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [diligencePacketMission.id]: diligencePacketMission,
+      },
+      proofBundlesByMissionId: {
+        [diligencePacketMission.id]: {
+          ...buildDiligencePacketProofBundle({
+            missionId: diligencePacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored diligence packet is approved for release, but no delivery has been recorded.",
+          },
+        },
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    const prepared = await service.prepareReportingReleaseLog(
+      diligencePacketMission.id,
+      {
+        releasedAt: "2026-04-21T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "secure_portal",
+        releaseNote: "Released after diligence counsel review.",
+      },
+    );
+
+    expect(prepared).toEqual({
+      approvalId: "44444444-4444-4444-8444-444444444444",
+      releaseRecord: {
+        releasedAt: "2026-04-21T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "secure_portal",
+        releaseNote: "Released after diligence counsel review.",
+        summary:
+          "External release was logged by finance-operator at 2026-04-21T09:10:00.000Z via secure_portal. Release note: Released after diligence counsel review..",
+      },
+    });
+  });
+
+  it("rejects diligence-packet release log when release approval is still pending", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const diligencePacketMission = {
+      ...buildDiligencePacketMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [diligencePacketMission.id]: [
+          buildStoredDiligencePacketArtifact({
+            missionId: diligencePacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [diligencePacketMission.id]: diligencePacketMission,
+      },
+      proofBundlesByMissionId: {
+        [diligencePacketMission.id]: {
+          ...buildDiligencePacketProofBundle({
+            missionId: diligencePacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+          releaseReadiness: {
+            releaseApprovalStatus: "pending_review",
+            releaseReady: false,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "pending",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: null,
+            resolvedBy: null,
+            rationale: null,
+            summary:
+              "Release approval was requested by finance-operator; the stored diligence packet is not yet approved for release.",
+          },
+        },
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    await expect(
+      service.prepareReportingReleaseLog(diligencePacketMission.id, {
+        releasedAt: null,
+        releasedBy: "finance-operator",
+        releaseChannel: "secure_portal",
+        releaseNote: "Released after diligence counsel review.",
       }),
     ).rejects.toMatchObject({
       body: {

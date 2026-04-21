@@ -433,6 +433,7 @@ describe("MissionListCard", () => {
     expect(html).toContain("approved_for_release");
     expect(html).toContain("Release ready");
     expect(html).toContain("no delivery has been recorded");
-    expect(html).not.toContain("Release logged");
+    expect(html).toContain("Release logged");
+    expect(html).toContain("No");
   });
 });

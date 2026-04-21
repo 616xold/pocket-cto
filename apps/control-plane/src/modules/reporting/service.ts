@@ -360,7 +360,7 @@ export class ReportingService {
     });
   }
 
-  async prepareLenderUpdateReleaseLog(
+  async prepareReportingReleaseLog(
     missionId: string,
     rawInput: RecordReportingReleaseLogInput,
   ): Promise<{
@@ -381,17 +381,29 @@ export class ReportingService {
       );
     }
 
-    if (reporting.reportKind !== "lender_update") {
+    if (
+      reporting.reportKind !== "lender_update" &&
+      reporting.reportKind !== "diligence_packet"
+    ) {
+      const supportedKinds = ["lender_update", "diligence_packet"].join(" or ");
       throw invalidRequest(
         "missionId",
-        `Reporting mission ${missionId} has report kind ${reporting.reportKind}, not lender_update.`,
+        `Reporting mission ${missionId} has report kind ${reporting.reportKind}, not ${supportedKinds}.`,
       );
     }
 
-    if (!reporting.lenderUpdate) {
+    const releaseLogArtifact =
+      reporting.reportKind === "lender_update"
+        ? reporting.lenderUpdate
+        : reporting.diligencePacket;
+    const reportKindLabel = readReportingMissionReportKindLabel(
+      reporting.reportKind,
+    ).toLowerCase();
+
+    if (!releaseLogArtifact) {
       throw invalidRequest(
         "missionId",
-        `Reporting mission ${missionId} does not yet store a lender_update artifact payload.`,
+        `Reporting mission ${missionId} does not yet store a ${reporting.reportKind} artifact payload.`,
       );
     }
 
@@ -408,9 +420,9 @@ export class ReportingService {
 
     readSingleArtifactId(
       context.artifacts,
-      "lender_update",
+      reporting.reportKind,
       missionId,
-      "external release can be logged",
+      `${reportKindLabel} release can be logged`,
     );
 
     const releasedAt = request.releasedAt ?? new Date().toISOString();

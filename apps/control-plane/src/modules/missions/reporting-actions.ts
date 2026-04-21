@@ -27,7 +27,7 @@ export class MissionReportingActionsService {
         ReportingService,
         | "exportMarkdownBundle"
         | "fileDraftArtifacts"
-        | "prepareLenderUpdateReleaseLog"
+        | "prepareReportingReleaseLog"
         | "prepareReportReleaseApproval"
       >;
     },
@@ -116,11 +116,10 @@ export class MissionReportingActionsService {
     missionId: string,
     input: RecordReportingReleaseLogInput,
   ): Promise<RecordReportingReleaseLogResult> {
-    const prepared =
-      await this.deps.reportingService.prepareLenderUpdateReleaseLog(
-        missionId,
-        input,
-      );
+    const prepared = await this.deps.reportingService.prepareReportingReleaseLog(
+      missionId,
+      input,
+    );
     const recorded = await this.deps.approvalService.recordReportReleaseLog({
       approvalId: prepared.approvalId,
       releaseRecord: prepared.releaseRecord,

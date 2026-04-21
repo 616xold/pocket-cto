@@ -1836,7 +1836,7 @@ describe("MissionCard", () => {
           relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
           relatedWikiPageKeys: ["metrics/cash-posture"],
           riskSummary:
-            "This diligence packet is approved for release from a persisted review path, and actual delivery remains out of scope in F5C4C.",
+            "This diligence packet is approved for release from a persisted review path, but actual delivery, board circulation, PDF, and slide workflows remain out of scope in F5C4D, and release logging stays explicit and separate.",
           rollbackSummary:
             "No actual release side effect was produced; this slice only records approved-for-release posture.",
           status: "ready",
@@ -1943,6 +1943,7 @@ describe("MissionCard", () => {
     expect(html).toContain("approved_for_release");
     expect(html).toContain("Release ready");
     expect(html).toContain("no delivery has been recorded");
-    expect(html).not.toContain("Release logged");
+    expect(html).toContain("Release logged");
+    expect(html).toContain("Not logged yet.");
   });
 });

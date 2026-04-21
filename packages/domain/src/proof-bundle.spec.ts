@@ -636,7 +636,7 @@ describe("Proof bundle domain schema", () => {
       verificationSummary:
         "Review carried-forward freshness, limitations, and release-readiness posture before sharing this draft.",
       riskSummary:
-        "This diligence packet is approved for release from a persisted review path, but actual delivery remains out of scope in F5C4C.",
+        "This diligence packet is approved for release from a persisted review path, but actual delivery, board circulation, PDF, and slide workflows remain out of scope in F5C4D, and release logging stays explicit and separate.",
       rollbackSummary:
         "No actual release side effect was produced; this slice only records approved-for-release posture.",
       latestApproval: null,
@@ -676,6 +676,107 @@ describe("Proof bundle domain schema", () => {
       "diligence_packet",
     ]);
     expect(parsed.releaseRecord).toBeNull();
+  });
+
+  it("parses diligence-packet release-record posture separately from release readiness", () => {
+    const parsed = ProofBundleManifestSchema.parse({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      missionTitle:
+        "Draft diligence packet for acme from cash posture reporting",
+      objective:
+        "Compile one draft diligence packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
+      sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+      sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      answerSummary: "",
+      reportKind: "diligence_packet",
+      reportDraftStatus: "draft_only",
+      reportPublication: null,
+      releaseRecord: {
+        released: true,
+        releasedAt: "2026-04-21T09:10:00.000Z",
+        releasedBy: "finance-operator",
+        releaseChannel: "secure_portal",
+        releaseNote: "Released after diligence counsel review.",
+        approvalId: "44444444-4444-4444-8444-444444444444",
+        summary:
+          "External release was logged by finance-operator at 2026-04-21T09:10:00.000Z via secure_portal. Release note: Released after diligence counsel review..",
+      },
+      releaseReadiness: {
+        releaseApprovalStatus: "approved_for_release",
+        releaseReady: true,
+        approvalId: "44444444-4444-4444-8444-444444444444",
+        approvalStatus: "approved",
+        requestedAt: "2026-04-21T08:10:00.000Z",
+        requestedBy: "finance-operator",
+        resolvedAt: "2026-04-21T08:12:00.000Z",
+        resolvedBy: "finance-reviewer",
+        rationale: "The stored diligence packet is ready for external release.",
+        summary:
+          "Release approval was granted by finance-reviewer; the stored diligence packet is approved for release, but no delivery has been recorded.",
+      },
+      reportSummary:
+        "Draft diligence packet for acme from the completed finance memo.",
+      appendixPresent: true,
+      freshnessState: "stale",
+      freshnessSummary:
+        "Cash posture remains stale because bank coverage is stale.",
+      limitationsSummary:
+        "This diligence packet remains delivery-free even after approval.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      targetRepoFullName: null,
+      branchName: null,
+      pullRequestNumber: null,
+      pullRequestUrl: null,
+      changeSummary:
+        "Draft diligence packet for acme from the completed finance memo.",
+      validationSummary:
+        "Draft diligence packet was compiled deterministically without runtime drafting.",
+      verificationSummary:
+        "An operator-entered external release log is present while Pocket CFO still did not send or distribute the diligence packet.",
+      riskSummary:
+        "This diligence packet has one persisted external release record linked to an approved release-review trace, but Pocket CFO still did not send, distribute, publish, start board circulation, generate PDF, or generate slides in F5C4D.",
+      rollbackSummary:
+        "No system send, distribute, publish, board circulation, PDF export, or slide export side effect was produced; this slice only records an operator-entered external release log against the approved diligence packet.",
+      latestApproval: null,
+      evidenceCompleteness: {
+        status: "complete",
+        expectedArtifactKinds: ["diligence_packet"],
+        presentArtifactKinds: ["diligence_packet"],
+        missingArtifactKinds: [],
+        notes: [],
+      },
+      decisionTrace: [
+        "Scout task 0 terminalized as succeeded with persisted diligence-packet evidence.",
+        "Latest diligence packet release approval is approved_for_release.",
+        "An external release log is attached to the approved report_release record.",
+      ],
+      artifactIds: ["55555555-5555-4555-8555-555555555555"],
+      artifacts: [
+        {
+          id: "55555555-5555-4555-8555-555555555555",
+          kind: "diligence_packet",
+        },
+      ],
+      replayEventCount: 10,
+      timestamps: {
+        missionCreatedAt: "2026-04-21T08:00:00.000Z",
+        latestPlannerEvidenceAt: null,
+        latestExecutorEvidenceAt: null,
+        latestPullRequestAt: null,
+        latestApprovalAt: "2026-04-21T09:10:00.000Z",
+        latestArtifactAt: "2026-04-21T08:05:00.000Z",
+      },
+      status: "ready",
+    });
+
+    expect(parsed.releaseReadiness?.releaseReady).toBe(true);
+    expect(parsed.releaseRecord?.released).toBe(true);
+    expect(parsed.releaseRecord?.releaseChannel).toBe("secure_portal");
   });
 
   it("parses lender-update release-record posture separately from release readiness", () => {

@@ -32,6 +32,7 @@ export function ReportingOutputCard({
   const isBoardPacket = reporting.reportKind === "board_packet";
   const isLenderUpdate = reporting.reportKind === "lender_update";
   const supportsReleaseApproval = isLenderUpdate || isDiligencePacket;
+  const supportsReleaseLog = isLenderUpdate || isDiligencePacket;
   const isSpecializedReporting =
     isBoardPacket || isLenderUpdate || isDiligencePacket;
   const questionKindLabel =
@@ -63,7 +64,7 @@ export function ReportingOutputCard({
         <p className="muted">{releaseReadiness.summary}</p>
       ) : null}
 
-      {isLenderUpdate && releaseRecord?.summary ? (
+      {supportsReleaseLog && releaseRecord?.summary ? (
         <p className="muted">{releaseRecord.summary}</p>
       ) : null}
 
@@ -155,7 +156,7 @@ export function ReportingOutputCard({
                   <dt>Approval resolved</dt>
                   <dd>{releaseReadiness?.resolvedAt ?? "Not resolved yet."}</dd>
                 </div>
-                {isLenderUpdate ? (
+                {supportsReleaseLog ? (
                   <>
                     <div>
                       <dt>Release logged</dt>

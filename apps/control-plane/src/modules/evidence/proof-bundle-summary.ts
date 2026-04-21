@@ -145,14 +145,14 @@ export function deriveProofBundleAssemblyFacts(input: {
         storedDraft: true,
       })
     : null;
-  const releaseRecord =
-    releaseApprovalReportKind === "lender_update"
-      ? buildReportingReleaseRecordView({
-          approvals: input.approvals,
-          releaseReadiness,
-          storedDraft: true,
-        })
-      : null;
+  const releaseRecord = releaseApprovalReportKind
+    ? buildReportingReleaseRecordView({
+        approvals: input.approvals,
+        reportKind: releaseApprovalReportKind,
+        releaseReadiness,
+        storedDraft: true,
+      })
+    : null;
   const latestPlannerTask = readLatestTaskByRole(input.tasks, "planner");
   const latestExecutorTask = readLatestTaskByRole(input.tasks, "executor");
   const latestScoutTask = readLatestTaskByRole(input.tasks, "scout");

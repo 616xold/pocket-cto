@@ -175,7 +175,9 @@ export function buildRequestReportingReleaseApprovalActionResult(
   return {
     ok: false,
     kind: "request_reporting_release_approval",
-    message: describeFailure("request_reporting_release_approval", result),
+    message: describeFailure("request_reporting_release_approval", result, {
+      reportKind,
+    }),
     statusCode: result.statusCode,
     errorCode: result.errorCode,
   };
@@ -183,13 +185,16 @@ export function buildRequestReportingReleaseApprovalActionResult(
 
 export function buildRecordReportingReleaseLogActionResult(
   operatorName: string,
+  reportKind: ReportReleaseApprovalReportKind,
   result: ControlPlaneMutationResult<unknown>,
 ): MissionActionResult {
   if (result.ok) {
+    const reportLabel = readReportReleaseApprovalReportKindLabel(reportKind);
+
     return {
       ok: true,
       kind: "record_reporting_release_log",
-      message: `Lender update release logged by ${operatorName}. Mission detail refreshed.`,
+      message: `${reportLabel} release logged by ${operatorName}. Mission detail refreshed.`,
       statusCode: result.statusCode,
     };
   }
@@ -197,7 +202,9 @@ export function buildRecordReportingReleaseLogActionResult(
   return {
     ok: false,
     kind: "record_reporting_release_log",
-    message: describeFailure("record_reporting_release_log", result),
+    message: describeFailure("record_reporting_release_log", result, {
+      reportKind,
+    }),
     statusCode: result.statusCode,
     errorCode: result.errorCode,
   };
@@ -206,7 +213,15 @@ export function buildRecordReportingReleaseLogActionResult(
 function describeFailure(
   kind: MissionActionKind,
   failure: Extract<ControlPlaneMutationResult<unknown>, { ok: false }>,
+  context?: {
+    reportKind?: ReportReleaseApprovalReportKind;
+  },
 ) {
+  const reportLabel = context?.reportKind
+    ? readReportReleaseApprovalReportKindLabel(context.reportKind)
+    : "Report";
+  const reportLabelLower = reportLabel.toLowerCase();
+
   switch (failure.errorCode) {
     case "live_control_unavailable":
       return "Live control is unavailable in this process. Run `pnpm dev:embedded` to enable approval resolution and task interrupts.";
@@ -239,12 +254,12 @@ function describeFailure(
           )
         : kind === "request_reporting_release_approval"
           ? withRouteReason(
-              "This lender-update release approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored lender update, lineage, and approval posture before retrying.",
+              `This ${reportLabelLower} release approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored ${reportLabelLower}, lineage, and approval posture before retrying.`,
               failure.message,
             )
           : kind === "record_reporting_release_log"
             ? withRouteReason(
-                "This lender-update release log action is unavailable from the mission's current stored state. Refresh the page and confirm approval, stored evidence, and release posture before retrying.",
+                `This ${reportLabelLower} release log action is unavailable from the mission's current stored state. Refresh the page and confirm approval, stored evidence, and release posture before retrying.`,
                 failure.message,
               )
             : "The submitted action payload was invalid. Refresh the page and try again.";
@@ -267,11 +282,11 @@ function describeFailure(
       }
 
       if (kind === "request_reporting_release_approval") {
-        return "The web app could not reach the control plane to request lender-update release approval. Confirm the local services are running and try again.";
+        return `The web app could not reach the control plane to request ${reportLabelLower} release approval. Confirm the local services are running and try again.`;
       }
 
       if (kind === "record_reporting_release_log") {
-        return "The web app could not reach the control plane to record the lender-update release log. Confirm the local services are running and try again.";
+        return `The web app could not reach the control plane to record the ${reportLabelLower} release log. Confirm the local services are running and try again.`;
       }
 
       return "The web app could not reach the control plane to export the markdown bundle. Confirm the local services are running and try again.";

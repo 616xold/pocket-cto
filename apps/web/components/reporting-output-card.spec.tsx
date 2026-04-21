@@ -726,7 +726,7 @@ describe("ReportingOutputCard", () => {
     expect(html).toContain("no delivery has been recorded");
   });
 
-  it("renders diligence-packet release-readiness posture without implying release logging", () => {
+  it("renders diligence-packet release-readiness posture with explicit release-log placeholders", () => {
     const html = renderToStaticMarkup(
       <ReportingOutputCard
         proofBundle={{
@@ -868,7 +868,172 @@ describe("ReportingOutputCard", () => {
     expect(html).toContain("approved_for_release");
     expect(html).toContain("Release ready");
     expect(html).toContain("no delivery has been recorded");
-    expect(html).not.toContain("Release logged");
+    expect(html).toContain("Release logged");
+    expect(html).toContain("Not logged yet.");
+  });
+
+  it("renders diligence-packet release-record posture after external release is logged", () => {
+    const html = renderToStaticMarkup(
+      <ReportingOutputCard
+        proofBundle={{
+          missionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          missionTitle: "Draft diligence packet for acme",
+          objective:
+            "Compile one draft diligence packet from stored finance memo and evidence appendix artifacts.",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          answerSummary: "",
+          reportKind: "diligence_packet",
+          reportDraftStatus: "draft_only",
+          reportSummary:
+            "Draft diligence packet for acme from the completed cash posture reporting mission.",
+          releaseRecord: {
+            released: true,
+            releasedAt: "2026-04-21T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "secure_portal",
+            releaseNote: "Released after diligence counsel review.",
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            summary:
+              "External release was logged by finance-operator at 2026-04-21T09:10:00.000Z via secure_portal. Release note: Released after diligence counsel review..",
+          },
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored diligence packet is approved for release, but no delivery has been recorded.",
+          },
+          reportPublication: null,
+          appendixPresent: true,
+          freshnessState: "stale",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          targetRepoFullName: null,
+          branchName: null,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          changeSummary: "",
+          validationSummary: "",
+          verificationSummary: "",
+          riskSummary: "",
+          rollbackSummary: "",
+          latestApproval: null,
+          evidenceCompleteness: {
+            status: "complete",
+            expectedArtifactKinds: ["diligence_packet"],
+            presentArtifactKinds: ["diligence_packet"],
+            missingArtifactKinds: [],
+            notes: [],
+          },
+          decisionTrace: [],
+          artifactIds: [],
+          artifacts: [],
+          replayEventCount: 0,
+          timestamps: {
+            missionCreatedAt: "2026-04-21T09:00:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPullRequestAt: null,
+            latestApprovalAt: "2026-04-21T09:10:00.000Z",
+            latestArtifactAt: "2026-04-21T09:02:00.000Z",
+          },
+          status: "ready",
+        }}
+        reporting={{
+          reportKind: "diligence_packet",
+          draftStatus: "draft_only",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          reportSummary:
+            "Draft diligence packet for acme from the completed cash posture reporting mission.",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          appendixPresent: true,
+          financeMemo: null,
+          evidenceAppendix: null,
+          boardPacket: null,
+          lenderUpdate: null,
+          diligencePacket: {
+            source: "stored_reporting_evidence",
+            summary:
+              "Draft diligence packet for acme from the completed cash posture reporting mission.",
+            reportKind: "diligence_packet",
+            draftStatus: "draft_only",
+            sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+            sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+            companyKey: "acme",
+            questionKind: "cash_posture",
+            policySourceId: null,
+            policySourceScope: null,
+            packetSummary:
+              "Draft diligence packet for acme from the completed cash posture reporting mission.",
+            freshnessSummary: "Cash posture remains stale.",
+            limitationsSummary: "Draft-only posture remains explicit.",
+            relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+            relatedWikiPageKeys: ["metrics/cash-posture"],
+            sourceFinanceMemo: {
+              artifactId: "55555555-5555-4555-8555-555555555555",
+              kind: "finance_memo",
+            },
+            sourceEvidenceAppendix: {
+              artifactId: "66666666-6666-4666-8666-666666666666",
+              kind: "evidence_appendix",
+            },
+            bodyMarkdown:
+              "# Draft Diligence Packet\n\n## Release Review\n\nApproved for release.",
+          },
+          publication: null,
+          releaseRecord: {
+            released: true,
+            releasedAt: "2026-04-21T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "secure_portal",
+            releaseNote: "Released after diligence counsel review.",
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            summary:
+              "External release was logged by finance-operator at 2026-04-21T09:10:00.000Z via secure_portal. Release note: Released after diligence counsel review..",
+          },
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored diligence packet is approved for release, but no delivery has been recorded.",
+          },
+        }}
+      />,
+    );
+
+    expect(html).toContain("Release logged");
+    expect(html).toContain("2026-04-21T09:10:00.000Z");
+    expect(html).toContain("finance-operator");
+    expect(html).toContain("secure_portal");
+    expect(html).toContain("Released after diligence counsel review.");
   });
 
   it("renders lender-update release-record posture after external release is logged", () => {

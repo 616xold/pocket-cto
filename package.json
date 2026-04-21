@@ -74,6 +74,7 @@
     "smoke:lender-update:local": "tsx tools/lender-update-smoke.mjs",
     "smoke:diligence-packet:local": "tsx tools/diligence-packet-smoke.mjs",
     "smoke:diligence-packet-release-approval:local": "tsx tools/diligence-packet-release-approval-smoke.mjs",
+    "smoke:diligence-packet-release-log:local": "tsx tools/diligence-packet-release-log-smoke.mjs",
     "smoke:finance-report-filed-artifact:local": "tsx tools/finance-report-filed-artifact-smoke.mjs",
     "smoke:lender-update-release-approval:local": "tsx tools/lender-update-release-approval-smoke.mjs",
     "smoke:lender-update-release-log:local": "tsx tools/lender-update-release-log-smoke.mjs",

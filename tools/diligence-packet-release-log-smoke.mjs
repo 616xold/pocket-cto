@@ -11,11 +11,9 @@ import {
 import { closeAllPools } from "../packages/db/src/client.ts";
 import { buildRunTag, loadNearestEnvFile, wait } from "./m2-exit-utils.mjs";
 
-const DEFAULT_COMPANY_KEY =
-  "local-diligence-packet-release-approval-company";
-const DEFAULT_COMPANY_NAME =
-  "Local Diligence Packet Release Approval Company";
-const DEFAULT_CREATED_BY = "diligence-packet-release-approval-smoke";
+const DEFAULT_COMPANY_KEY = "local-diligence-packet-release-log-company";
+const DEFAULT_COMPANY_NAME = "Local Diligence Packet Release Log Company";
+const DEFAULT_CREATED_BY = "diligence-packet-release-log-smoke";
 const MODULE_PATH = fileURLToPath(import.meta.url);
 const POLL_INTERVAL_MS = 250;
 const MAX_POLLS = 40;
@@ -70,8 +68,8 @@ function buildFixture(input) {
   const seedText = JSON.stringify(
     {
       createdBy: input.createdBy,
-      note: "Seed snapshot for the packaged F5C4C diligence-packet release-approval smoke.",
-      requestedBy: "diligence_packet_release_approval_smoke",
+      note: "Seed snapshot for the packaged F5C4D diligence-packet release-log smoke.",
+      requestedBy: "diligence_packet_release_log_smoke",
       runTag: input.runTag,
     },
     null,
@@ -89,11 +87,11 @@ function buildFixture(input) {
     createdBy: input.createdBy,
     companyKey: `${input.companyKey}-${input.runTag.toLowerCase()}`,
     companyName: `${input.companyName} ${input.runTag}`,
-    sourceName: `Diligence packet release approval smoke ${input.runTag}`,
+    sourceName: `Diligence packet release log smoke ${input.runTag}`,
     seed: {
       body: Buffer.from(`${seedText}\n`, "utf8"),
       mediaType: "application/json",
-      originalFileName: `diligence-packet-release-approval-seed-${input.runTag}.json`,
+      originalFileName: `diligence-packet-release-log-seed-${input.runTag}.json`,
     },
     upload: {
       body: Buffer.from(`${uploadText}\n`, "utf8"),
@@ -138,7 +136,7 @@ async function main() {
           payload: {
             createdBy: fixture.createdBy,
             description:
-              "Packaged F5C4C diligence packet release-approval smoke source.",
+              "Packaged F5C4D diligence packet release-log smoke source.",
             kind: "dataset",
             name: fixture.sourceName,
             snapshot: {
@@ -360,85 +358,177 @@ async function main() {
       "Expected report_release resolution to succeed in api-only mode without live continuation.",
     );
 
-    const finalDetail = await injectJson(apiApp, {
+    const approvedDetail = await injectJson(apiApp, {
       expectedStatus: 200,
       method: "GET",
       url: `/missions/${diligencePacketDetail.mission.id}`,
     });
-    const finalMissionList = await injectJson(apiApp, {
+    const approvedMissionList = await injectJson(apiApp, {
       expectedStatus: 200,
       method: "GET",
       url: "/missions?limit=20",
     });
-    const finalApprovalCard =
-      finalDetail.approvalCards.find(
+    const approvedApprovalCard =
+      approvedDetail.approvalCards.find(
         (card) => card.approvalId === requestedApproval.approvalId,
       ) ?? null;
-    const listedDiligencePacketMission =
-      finalMissionList.missions.find(
+    const approvedMissionListItem =
+      approvedMissionList.missions.find(
         (mission) => mission.id === diligencePacketDetail.mission.id,
       ) ?? null;
-    const replay = await injectJson(apiApp, {
+    const approvedReplay = await injectJson(apiApp, {
       expectedStatus: 200,
       method: "GET",
       url: `/missions/${diligencePacketDetail.mission.id}/events`,
     });
-    const replayTypes = Array.isArray(replay)
-      ? replay.map((event) => event.type)
+    const approvedReplayTypes = Array.isArray(approvedReplay)
+      ? approvedReplay.map((event) => event.type)
       : [];
 
     assert(
-      finalDetail.mission.status === "succeeded" &&
-        finalDetail.reporting?.releaseReadiness?.releaseApprovalStatus ===
+      approvedDetail.mission.status === "succeeded" &&
+        approvedDetail.reporting?.releaseReadiness?.releaseApprovalStatus ===
           "approved_for_release" &&
-        finalDetail.reporting?.releaseReadiness?.releaseReady === true &&
-        finalDetail.proofBundle.releaseReadiness?.releaseApprovalStatus ===
+        approvedDetail.reporting?.releaseReadiness?.releaseReady === true &&
+        approvedDetail.proofBundle.releaseReadiness?.releaseApprovalStatus ===
           "approved_for_release" &&
-        finalDetail.proofBundle.releaseReadiness?.releaseReady === true,
+        approvedDetail.proofBundle.releaseReadiness?.releaseReady === true,
       "Expected the diligence-packet mission to become approved_for_release while remaining a succeeded reporting mission.",
     );
     assert(
-      finalDetail.reporting?.releaseRecord?.released === false &&
-        finalDetail.proofBundle.releaseRecord?.released === false &&
-        finalApprovalCard?.status === "approved" &&
-        finalApprovalCard?.requiresLiveControl === false &&
-        listedDiligencePacketMission?.releaseReadiness
-          ?.releaseApprovalStatus === "approved_for_release" &&
-        listedDiligencePacketMission?.releaseReadiness?.releaseReady === true,
+      approvedDetail.reporting?.releaseRecord?.released === false &&
+        approvedDetail.proofBundle.releaseRecord?.released === false &&
+        approvedApprovalCard?.status === "approved" &&
+        approvedApprovalCard?.requiresLiveControl === false &&
+        approvedMissionListItem?.releaseReadiness?.releaseApprovalStatus ===
+          "approved_for_release" &&
+        approvedMissionListItem?.releaseReadiness?.releaseReady === true,
       "Expected approval cards and mission-list read models to render approved-for-release diligence posture with an explicit not-yet-released release-record seam.",
     );
     assert(
-      finalDetail.reporting?.publication === null &&
-        finalDetail.proofBundle.reportPublication === null &&
-        finalDetail.proofBundle.riskSummary.includes("actual delivery") &&
-        finalDetail.proofBundle.riskSummary.includes("release logging") &&
-        finalDetail.proofBundle.riskSummary.includes("PDF") &&
-        finalDetail.proofBundle.riskSummary.includes("slide") &&
-        finalDetail.proofBundle.rollbackSummary.includes(
-          "No actual release",
-        ),
-      `Expected the proof bundle to stay delivery-free, release-log-free, PDF-free, and slide-free even after approval. Received ${JSON.stringify(
+      approvedDetail.reporting?.publication === null &&
+        approvedDetail.proofBundle.reportPublication === null &&
+        approvedDetail.proofBundle.riskSummary.includes("actual delivery") &&
+        approvedDetail.proofBundle.riskSummary.includes("release logging") &&
+        approvedDetail.proofBundle.riskSummary.includes("PDF") &&
+        approvedDetail.proofBundle.riskSummary.includes("slide") &&
+        approvedDetail.proofBundle.rollbackSummary.includes("No actual release"),
+      `Expected the proof bundle to stay delivery-free, release-ready, PDF-free, and slide-free before logging release. Received ${JSON.stringify(
         {
-          reportingPublication: finalDetail.reporting?.publication ?? null,
-          reportPublication: finalDetail.proofBundle.reportPublication ?? null,
-          releaseRecord: finalDetail.proofBundle.releaseRecord ?? null,
-          riskSummary: finalDetail.proofBundle.riskSummary,
-          rollbackSummary: finalDetail.proofBundle.rollbackSummary,
+          reportingPublication: approvedDetail.reporting?.publication ?? null,
+          reportPublication:
+            approvedDetail.proofBundle.reportPublication ?? null,
+          releaseRecord: approvedDetail.proofBundle.releaseRecord ?? null,
+          riskSummary: approvedDetail.proofBundle.riskSummary,
+          rollbackSummary: approvedDetail.proofBundle.rollbackSummary,
         },
       )}`,
     );
     assert(
-      replayTypes.includes("approval.requested") &&
-        replayTypes.includes("approval.resolved") &&
-        !replayTypes.includes("approval.release_logged"),
-      "Expected the diligence replay to capture approval.requested and approval.resolved without a release-log event.",
+      approvedReplayTypes.includes("approval.requested") &&
+        approvedReplayTypes.includes("approval.resolved") &&
+        !approvedReplayTypes.includes("approval.release_logged"),
+      "Expected the diligence replay to capture approval.requested and approval.resolved without a release-log event before release is logged.",
+    );
+
+    const releaseLoggedAt = new Date(
+      now.getTime() + 10 * 60 * 1000,
+    ).toISOString();
+    const releaseNote =
+      "Logged from the packaged F5C4D smoke after external diligence release.";
+    const loggedRelease = await injectJson(apiApp, {
+      expectedStatus: 201,
+      method: "POST",
+      payload: {
+        releasedAt: releaseLoggedAt,
+        releasedBy: fixture.createdBy,
+        releaseChannel: "secure_portal",
+        releaseNote,
+      },
+      url: `/missions/${diligencePacketDetail.mission.id}/reporting/release-log`,
+    });
+    assert(
+      loggedRelease.created === true &&
+        loggedRelease.releaseRecord?.released === true &&
+        loggedRelease.releaseRecord?.releasedAt === releaseLoggedAt,
+      "Expected one external diligence-packet release log to persist after approval.",
+    );
+
+    const releasedDetail = await injectJson(apiApp, {
+      expectedStatus: 200,
+      method: "GET",
+      url: `/missions/${diligencePacketDetail.mission.id}`,
+    });
+    const releasedMissionList = await injectJson(apiApp, {
+      expectedStatus: 200,
+      method: "GET",
+      url: "/missions?limit=20",
+    });
+    const releasedApprovalCard =
+      releasedDetail.approvalCards.find(
+        (card) => card.approvalId === requestedApproval.approvalId,
+      ) ?? null;
+    const releasedMissionListItem =
+      releasedMissionList.missions.find(
+        (mission) => mission.id === diligencePacketDetail.mission.id,
+      ) ?? null;
+    const releasedReplay = await injectJson(apiApp, {
+      expectedStatus: 200,
+      method: "GET",
+      url: `/missions/${diligencePacketDetail.mission.id}/events`,
+    });
+    const releasedReplayTypes = Array.isArray(releasedReplay)
+      ? releasedReplay.map((event) => event.type)
+      : [];
+
+    assert(
+      releasedDetail.reporting?.releaseReadiness?.releaseApprovalStatus ===
+        "approved_for_release" &&
+        releasedDetail.reporting?.releaseRecord?.released === true &&
+        releasedDetail.reporting?.releaseRecord?.releaseChannel ===
+          "secure_portal" &&
+        releasedDetail.proofBundle.releaseRecord?.released === true &&
+        releasedDetail.proofBundle.releaseRecord?.releaseChannel ===
+          "secure_portal",
+      "Expected mission detail and proof bundle read models to show one logged external diligence-packet release while preserving approved_for_release posture.",
+    );
+    assert(
+      releasedApprovalCard?.status === "approved" &&
+        releasedApprovalCard?.requiresLiveControl === false &&
+        releasedApprovalCard?.summary?.includes(
+          "External diligence packet release is logged",
+        ) &&
+        releasedMissionListItem?.releaseRecord?.released === true &&
+        releasedMissionListItem?.releaseRecord?.releaseChannel ===
+          "secure_portal",
+      "Expected approval cards and mission-list read models to surface the logged external diligence-packet release without live control.",
+    );
+    assert(
+      releasedDetail.reporting?.publication === null &&
+        releasedDetail.proofBundle.reportPublication === null &&
+        releasedDetail.proofBundle.releaseRecord?.released === true &&
+        releasedDetail.proofBundle.riskSummary.includes("did not send") &&
+        releasedDetail.proofBundle.riskSummary.includes("generate PDF") &&
+        releasedDetail.proofBundle.riskSummary.includes("generate slides") &&
+        releasedReplayTypes.includes("approval.release_logged"),
+      `Expected the logged-release proof bundle to stay delivery-free while replay adds approval.release_logged. Received ${JSON.stringify(
+        {
+          reportingPublication: releasedDetail.reporting?.publication ?? null,
+          reportPublication:
+            releasedDetail.proofBundle.reportPublication ?? null,
+          releaseRecord: releasedDetail.proofBundle.releaseRecord ?? null,
+          verificationSummary: releasedDetail.proofBundle.verificationSummary,
+          riskSummary: releasedDetail.proofBundle.riskSummary,
+          replayTail: releasedReplayTypes.slice(-8),
+        },
+      )}`,
     );
 
     console.log(
       JSON.stringify(
         {
           generatedAt: new Date().toISOString(),
-          mode: "api_only_persisted_diligence_report_release_approval",
+          mode: "api_only_persisted_diligence_report_release_log",
           company: {
             companyKey: fixture.companyKey,
             displayName: fixture.companyName,
@@ -472,19 +562,29 @@ async function main() {
             requestedStatus:
               pendingDetail.reporting.releaseReadiness.releaseApprovalStatus,
             resolvedStatus:
-              finalDetail.reporting.releaseReadiness.releaseApprovalStatus,
-            releaseReady: finalDetail.reporting.releaseReadiness.releaseReady,
+              approvedDetail.reporting.releaseReadiness.releaseApprovalStatus,
+            releaseReady: approvedDetail.reporting.releaseReadiness.releaseReady,
             approvalCardRequiresLiveControl:
-              finalApprovalCard.requiresLiveControl,
+              approvedApprovalCard.requiresLiveControl,
+          },
+          releaseLog: {
+            released: releasedDetail.reporting.releaseRecord.released,
+            releasedAt: releasedDetail.reporting.releaseRecord.releasedAt,
+            releasedBy: releasedDetail.reporting.releaseRecord.releasedBy,
+            releaseChannel:
+              releasedDetail.reporting.releaseRecord.releaseChannel,
+            releaseNote: releasedDetail.reporting.releaseRecord.releaseNote,
+            approvalCardRequiresLiveControl:
+              releasedApprovalCard.requiresLiveControl,
           },
           proofBundle: {
-            status: finalDetail.proofBundle.status,
-            riskSummary: finalDetail.proofBundle.riskSummary,
-            rollbackSummary: finalDetail.proofBundle.rollbackSummary,
-            releaseRecord: finalDetail.proofBundle.releaseRecord,
-            reportPublication: finalDetail.proofBundle.reportPublication,
+            status: releasedDetail.proofBundle.status,
+            verificationSummary: releasedDetail.proofBundle.verificationSummary,
+            riskSummary: releasedDetail.proofBundle.riskSummary,
+            rollbackSummary: releasedDetail.proofBundle.rollbackSummary,
+            reportPublication: releasedDetail.proofBundle.reportPublication,
           },
-          replayTail: replayTypes.slice(-8),
+          replayTail: releasedReplayTypes.slice(-8),
         },
         null,
         2,
@@ -505,7 +605,7 @@ async function main() {
 
 async function writeSeedSnapshot(seed) {
   const directory = await mkdtemp(
-    join(tmpdir(), "pocket-cfo-diligence-packet-release-approval-smoke-"),
+    join(tmpdir(), "pocket-cfo-diligence-packet-release-log-smoke-"),
   );
   const storageRef = join(directory, seed.originalFileName);
 

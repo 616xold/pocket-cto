@@ -2,8 +2,8 @@
 
 ## Purpose / Big Picture
 
-This plan is the active F5 implementation contract for the first real F5C4D diligence release-log and release-record slice.
-The target phase is `F5`, and the next execution slice is `F5C4D-release-log-and-first-diligence-packet-release-record-foundation`.
+This plan now serves as the shipped F5 implementation record for the first real F5C4D diligence release-log and release-record slice.
+The target phase is `F5`, and the executed slice recorded here is `F5C4D-release-log-and-first-diligence-packet-release-record-foundation`.
 The user-visible goal is narrow and concrete: after the shipped F5A through F5C4C baseline already creates draft `finance_memo`, `board_packet`, `lender_update`, and `diligence_packet` artifacts, supports one finance-facing `report_release` approval path plus lender-update release logging, and now supports diligence approval and release-readiness without delivery, Pocket CFO should next let an operator record that one already-approved `diligence_packet` was released externally and surface one explicit release record without widening into actual send, distribute, publish, board-packet circulation posture, runtime-codex drafting, or non-markdown output work.
 
 This matters now because the remaining repo gap is no longer diligence approval-readiness.
@@ -13,15 +13,16 @@ The next gain is therefore one narrow contract that widens the existing lender-u
 
 GitHub connector work is explicitly out of scope.
 This plan does not authorize actual send, distribute, publish, board-packet review or circulation posture, broader packet release widening beyond `diligence_packet`, bounded runtime-codex phrasing or formatting assistance, PDF export, slide export, Marp export, F6 monitoring, or any rename from `modules/reporting/**` to `modules/reports/**`.
-The current thread is docs-and-plan only, so this file must become implementation-ready without starting F5C4D runtime code.
+This file now records the shipped F5C4D implementation rather than only the pre-code handoff.
 
 ## Progress
 
 - [x] 2026-04-21T12:29:00Z Audit the shipped F5A through F5C4C plan chain, the existing lender-update-only release-record seam, and the stale active-doc guidance before narrowing the first real F5C4D contract.
 - [x] 2026-04-21T12:29:00Z Create `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` and refresh the smallest truthful active-doc set so `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` remains the shipped F5C4C record while this file becomes the single active F5C4D implementation contract.
 - [x] 2026-04-21T12:38:15Z Run the requested docs-and-plan validation ladder for this handoff without starting F5C4D code.
-- [ ] 2026-04-21T12:29:00Z Implement `F5C4D-release-log-and-first-diligence-packet-release-record-foundation` exactly as defined here, without reopening F5C4C or widening into F5C4E, F6, runtime-codex delivery behavior, or multi-packet release logging.
-- [ ] 2026-04-21T12:29:00Z Run the preserved confidence ladder plus one new diligence release-log proof after code lands, then refresh only the small doc set that the shipped F5C4D behavior actually makes stale.
+- [x] 2026-04-21T14:21:00Z Implement `F5C4D-release-log-and-first-diligence-packet-release-record-foundation` exactly as defined here: widen the existing mission-scoped release-log seam from lender-update-only to lender-update-plus-diligence, persist the first diligence release record on the existing `report_release` approval seam, keep release logging deterministic and runtime-free, and avoid any actual send, distribute, publish, board-circulation, PDF, slide, or runtime-codex behavior.
+- [x] 2026-04-21T14:21:00Z Add targeted domain, control-plane, web, and smoke coverage for diligence release-log eligibility, release-record persistence, proof-bundle posture, and the new packaged `pnpm smoke:diligence-packet-release-log:local` path.
+- [x] 2026-04-21T14:32:25Z Run the full preserved confidence ladder plus the new diligence release-log proof on the final branch, finish the tiny active-doc refresh that this shipped F5C4D behavior actually makes stale, and confirm `pnpm ci:repro:current` succeeds against the current worktree snapshot.
 
 ## Surprises & Discoveries
 
@@ -36,6 +37,9 @@ The current thread is docs-and-plan only, so this file must become implementatio
 
 - Observation: the active-doc chain was still one slice behind after F5C4C landed.
   Evidence: `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `docs/ops/codex-app-server.md`, `evals/README.md`, and `docs/benchmarks/seeded-missions.md` all still pointed the next thread at `FP-0043`.
+
+- Observation: the release-record seam becomes most truthful only after release-approval posture exists.
+  Evidence: the reporting and proof read models should keep `releaseRecord` absent while release approval is still `not_requested`, then surface an explicit not-yet-released `releaseRecord` summary once `report_release` is pending, approved, or denied.
 
 ## Decision Log
 
@@ -263,8 +267,8 @@ Only after that later review posture exists should the repo reconsider bounded r
 
 ## Validation and Acceptance
 
-The current docs-only handoff thread should rerun the full requested validation ladder without starting F5C4D code.
-The next F5C4D implementation thread should rerun that preserved ladder plus one new diligence release-log proof.
+The shipped F5C4D implementation reran the full preserved confidence ladder on the working branch and added the new diligence release-log proof.
+The commands below now describe the validation set that passed for this slice, including the final `pnpm ci:repro:current` clean-worktree reproduction.
 
 Targeted future test batches:
 
@@ -339,15 +343,12 @@ If a concrete implementation blocker appears that truly requires schema work, pa
 
 ## Artifacts and Notes
 
-This docs-only handoff should leave:
+This shipped F5C4D slice leaves:
 
-- one new active plan at `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md`
-- refreshed active docs that point the next contributor at this exact F5C4D contract
+- `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` as the shipped implementation record
+- refreshed active docs that now point the next contributor at later-F5 work rather than back at `FP-0043`
 - `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` preserved as the shipped F5C4C record
-
-The next F5C4D implementation thread should produce:
-
-- one persisted diligence `releaseRecord` on one completed approved-for-release `diligence_packet` reporting mission
+- one persisted diligence `releaseRecord` on one completed approved-for-release `diligence_packet` reporting mission through the existing `report_release` approval seam
 - one derived diligence release-record view across reporting, proof, mission, and approval-card surfaces
 - one packaged `pnpm smoke:diligence-packet-release-log:local` proof
 - no system delivery, no board-packet circulation posture, and no runtime-codex artifacts
@@ -372,13 +373,12 @@ Keep runtime-codex out of the first F5C4D implementation path.
 
 ## Outcomes & Retrospective
 
-This docs-and-plan slice does not ship runtime code.
-It establishes `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` as the single active implementation-ready F5C4D contract, refreshes the stale active-doc chain that still pointed contributors at `FP-0043`, and leaves the requested pre-implementation validation ladder green.
+This file now records the shipped first real F5C4D implementation slice rather than only the pre-code handoff.
+The slice widens the existing mission-scoped release-log seam from lender-update-only to lender-update-plus-diligence, persists the first diligence release record on the existing resolved `report_release` approval payload, surfaces explicit release-record posture across reporting, mission, proof-bundle, approval-card, and web read models, and adds one packaged `pnpm smoke:diligence-packet-release-log:local` proof without claiming delivery automation.
 `FP-0043` remains the shipped F5C4C diligence approval and release-readiness record.
 
-What remains is the actual F5C4D implementation:
+What remains after this shipped F5C4D slice is later-F5 sequencing rather than more design work inside F5C4D:
 
-- widen the existing release-log seam to one approved-for-release `diligence_packet`
-- preserve the shipped lender-update release-log path
-- keep board-packet review or circulation posture for `F5C4E`
+- preserve the shipped lender-update and diligence release-log paths
+- narrow the next implementation step to F5C4E board-packet review or circulation readiness
 - reconsider bounded runtime-codex phrasing or formatting assistance only after those later delivery-free foundations exist
