@@ -273,9 +273,9 @@ Exit criteria:
 Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
-The latest shipped implementation record for this phase is `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
-`plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` is now the active later-F5 implementation contract.
-The next remaining execution slice is the narrow F5C4C diligence approval-readiness step defined there; do not reopen F5C4B or start F5C4D, F5C4E, or F6 early.
+The latest shipped implementation record for this phase is `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md`.
+`plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` is now the active later-F5 implementation contract.
+The next remaining execution slice is the narrow F5C4D diligence release-log and first release-record step defined there; do not reopen F5C4C or start F5C4E or F6 early.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
@@ -356,9 +356,12 @@ Slice map:
       - keep the slice deterministic, runtime-free, and delivery-free
       - do not add actual send, distribute, publish, or diligence release logging
     - `F5C4D — release log and first diligence-packet release-record foundation`
-      - start only after F5C4C is stable
+      - start only from one completed `reporting` mission with `reportKind = "diligence_packet"`, one stored `diligence_packet` artifact, and release-readiness already at `approved_for_release`
+      - keep `mission.type = "reporting"` and `reportKind = "diligence_packet"`
       - add release logging and one explicit release record only for `diligence_packet`
-      - keep the slice deterministic, runtime-free, and delivery-free in the system sense
+      - prefer persisting release-record data as a durable extension of the existing `report_release` approval payload or its derived reporting view rather than inventing a second release-tracking subsystem
+      - add `releasedAt`, `releasedBy`, and minimal release-channel metadata while keeping the slice deterministic, runtime-free, and delivery-free in the system sense
+      - do not add actual send, distribute, or publish behavior
     - `F5C4E — board-packet review or circulation-readiness foundation`
       - start only after the diligence approval and diligence release-log foundations are stable
       - add the first narrow board-facing review or circulation-readiness posture without widening into multi-packet delivery automation
@@ -369,7 +372,7 @@ Exit criteria:
 - one completed finance discovery mission can produce a first-class reporting mission
 - the first report path yields a draft `finance_memo` plus `evidence_appendix`
 - report outputs remain reproducible, evidence-linked, freshness-aware, and explicit about limitations
-- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update approval and release-record posture are already shipped through F5C4B, and the active next hardening step is diligence-packet approval review and release-readiness only, with diligence release logging deferred to F5C4D, board-packet review or circulation posture deferred to F5C4E, and markdown export reuse still limited to the filed-artifact path defined in F5B
+- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update approval and release-record posture are already shipped through F5C4B, diligence approval and release-readiness are already shipped through F5C4C, and the active next hardening step is diligence-packet release logging and first release-record posture only, with board-packet review or circulation posture deferred to F5C4E and markdown export reuse still limited to the filed-artifact path defined in F5B
 
 ## F6 — Monitoring, controls, and adoption loop
 

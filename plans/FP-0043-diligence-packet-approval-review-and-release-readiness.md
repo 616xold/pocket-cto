@@ -2,8 +2,9 @@
 
 ## Purpose / Big Picture
 
-This plan is the active F5 implementation contract for the first real F5C4C diligence approval-review and release-readiness slice.
-The target phase is `F5`, and the next execution slice is `F5C4C-diligence-packet-approval-review-and-release-readiness`.
+This plan now serves as the shipped F5C4C record.
+`plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` is the active F5C4D implementation contract that follows it.
+The target phase is `F5`, and the executed slice recorded here is `F5C4C-diligence-packet-approval-review-and-release-readiness`.
 The user-visible goal is narrow and concrete: after the shipped F5A through F5C4B baseline already creates draft `finance_memo`, `board_packet`, `lender_update`, and `diligence_packet` artifacts, supports one finance-facing `report_release` approval path plus release logging for `lender_update`, and keeps delivery outside the system, Pocket CFO should next let an operator request review on one completed `diligence_packet` reporting mission, resolve that review through the existing approvals bounded context, and see one explicit release-readiness posture for diligence without widening into actual send, distribute, publish, diligence release logging, board-packet review or circulation posture, runtime-codex drafting, or non-markdown output work.
 
 This matters now because the remaining repo gap is no longer packet specialization and no longer lender-update release recording.
@@ -136,7 +137,7 @@ The active-doc boundary for this handoff is:
 - `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`
 - `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`
 - `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`
-- this active plan, `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md`
+- this shipped F5C4C record, `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md`
 - `docs/ops/local-dev.md`
 - `docs/ops/source-ingest-and-cfo-wiki.md`
 - `docs/ops/codex-app-server.md`
@@ -148,7 +149,7 @@ GitHub connector work is out of scope.
 The internal `@pocket-cto/*` package scope remains unchanged.
 This thread is docs-only and must not add runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding.
 
-The most relevant implementation seams for the next F5C4C code thread are:
+The most relevant implementation seams for the landed F5C4C work were:
 
 - `packages/domain/src/approval.ts`
 - `packages/domain/src/reporting-mission.ts`
@@ -302,8 +303,8 @@ Only after those later review and delivery-free foundations exist should the rep
 
 ## Validation and Acceptance
 
-The current docs-only handoff thread should rerun the full requested validation ladder without starting F5C4C code.
-The next F5C4C implementation thread should rerun that preserved ladder plus one new diligence-approval proof.
+The original docs-only handoff thread reran the full requested validation ladder without starting F5C4C code.
+The landed F5C4C implementation thread reran that preserved ladder plus one new diligence-approval proof.
 
 Targeted future test batches:
 
@@ -365,7 +366,7 @@ Implementation acceptance for F5C4C is:
 
 ## Idempotence and Recovery
 
-This docs-only handoff is safe to rerun because it only creates one new plan and refreshes active guidance.
+The original docs-only handoff was safe to rerun because it only created one new plan and refreshed active guidance.
 If this thread uncovers a broader problem than handoff truthfulness, stop and record it here rather than widening into runtime code.
 
 The planned F5C4C implementation should remain additive and code-only.
@@ -376,13 +377,13 @@ If a concrete implementation blocker appears that truly requires schema work, pa
 
 ## Artifacts and Notes
 
-This docs-only handoff should leave:
+The original docs-only handoff left:
 
 - one new active plan at `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md`
-- refreshed active docs that point the next contributor at this exact F5C4C contract
+- refreshed active docs that pointed the next contributor at this exact F5C4C contract
 - `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` preserved as the shipped F5C4B record
 
-The next F5C4C implementation thread should produce:
+The shipped F5C4C implementation thread produced:
 
 - one persisted `report_release` approval trace on one completed `diligence_packet` reporting mission
 - one derived diligence release-readiness view across reporting, proof, mission, and approval-card surfaces

@@ -57,8 +57,9 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0039-lender-update-specialization-and-draft-review-foundation.md` now serves as the shipped F5C2 record: one deterministic, runtime-free, draft-only `lender_update` specialization path from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
 `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md` now serves as the shipped F5C3 record: one deterministic, runtime-free, draft-only `diligence_packet` specialization from one completed reporting mission with stored `finance_memo` plus stored `evidence_appendix`.
 `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md` now serves as the shipped F5C4A record: the repo already supports one finance-facing `report_release` approval on one completed `lender_update` reporting mission, approval resolution without live runtime continuation, and explicit release-readiness posture while staying deterministic, runtime-free, and delivery-free.
-`plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` now serves as the shipped F5C4B record: the repo can record that one already-approved `lender_update` was released externally, persist one explicit release record on the existing `report_release` approval seam, and stay deterministic, runtime-free, and delivery-free in the system sense. The next later-F5 thread should open a new narrow plan rather than reopening F5C4B.
-`plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` is now the active F5C4C contract: the next thread should widen the existing `report_release` approval payload and release-readiness seams from lender-update-only to `lender_update` plus `diligence_packet`, starting only from one completed `diligence_packet` reporting mission with one stored `diligence_packet` artifact, while staying deterministic, runtime-free, delivery-free, and release-log-free in the first slice.
+`plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` now serves as the shipped F5C4B record: the repo can record that one already-approved `lender_update` was released externally, persist one explicit release record on the existing `report_release` approval seam, and stay deterministic, runtime-free, and delivery-free in the system sense.
+`plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` now serves as the shipped F5C4C record: the repo can request and resolve one finance-facing `report_release` approval for one completed `diligence_packet` reporting mission, derive explicit diligence release-readiness posture without live runtime continuation, and keep the slice deterministic, runtime-free, delivery-free, and release-log-free.
+`plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` is now the active F5C4D contract: the next thread should add release logging and the first explicit release record only for one completed approved-for-release `diligence_packet` reporting mission, reuse the existing `report_release` approval seam as the persistence anchor, and stay deterministic, runtime-free, delivery-free, and multi-artifact-free in the first slice.
 
 ## Product boundary for v1
 
@@ -167,6 +168,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0041-approval-review-and-first-lender-update-release-readiness.md
 │   ├── FP-0042-release-log-and-first-lender-update-release-record-foundation.md
 │   ├── FP-0043-diligence-packet-approval-review-and-release-readiness.md
+│   ├── FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md
 │   └── templates
 └── .agents
     └── skills

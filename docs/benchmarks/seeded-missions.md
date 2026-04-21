@@ -114,6 +114,14 @@ One completed `reporting` mission with `reportKind = "diligence_packet"`, one st
 Success:
 The system persists one finance-facing `report_release` approval request for that completed diligence-packet reporting mission, resolves it without live runtime continuation, derives release-readiness as `not_requested`, `pending_review`, `approved_for_release`, or `not_approved_for_release`, and presents that reviewer trace without send, distribute, publish, release-log, board-packet circulation widening, runtime-codex drafting, or PDF or slide export behavior.
 
+### 13. F5C4D release log and first diligence-packet release record foundation
+
+Input:
+One completed `reporting` mission with `reportKind = "diligence_packet"`, one stored `diligence_packet` artifact, derived release-readiness already at `approved_for_release`, and the carried freshness, limitations, route, and wiki context from completed reporting work.
+
+Success:
+The system records one explicit external-release record for that already-approved diligence packet, surfaces one release-logged posture plus `releasedAt`, `releasedBy`, and minimal release-channel metadata, preserves the original approval trace, and does so without send, distribute, publish, board-packet circulation widening, runtime-codex drafting, or PDF or slide export behavior.
+
 ## Blocked for now
 
 These discovery families should stay out of the shipped F4A through F4C2 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
@@ -148,5 +156,6 @@ The current finance-native eval-hook proof for the shipped F4A through F4C2 disc
 The shipped F5C3 reporting benchmark contract now lives in `plans/FP-0040-diligence-packet-specialization-and-draft-review-foundation.md`.
 The shipped F5C4A reporting benchmark contract now lives in `plans/FP-0041-approval-review-and-first-lender-update-release-readiness.md`.
 The shipped F5C4B reporting benchmark contract now lives in `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md`.
-The active F5C4C reporting benchmark contract now lives in `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md`.
-Diligence release logging and board-packet review or circulation readiness remain later F5C4D and F5C4E work.
+The shipped F5C4C reporting benchmark contract now lives in `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md`.
+The active F5C4D reporting benchmark contract now lives in `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md`.
+Board-packet review or circulation readiness remains later F5C4E work.
