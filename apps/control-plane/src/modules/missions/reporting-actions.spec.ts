@@ -390,7 +390,7 @@ describe("MissionReportingActionsService", () => {
         circulationChannel: "email",
         circulationNote: "Circulated from the finance mailbox after approval.",
         summary:
-          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
       },
     }));
     const recordReportCirculationLog = vi.fn(async () => ({
@@ -427,7 +427,7 @@ describe("MissionReportingActionsService", () => {
             circulationNote:
               "Circulated from the finance mailbox after approval.",
             summary:
-              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
           },
         },
         createdAt: "2026-04-20T09:00:00.000Z",
@@ -498,7 +498,7 @@ describe("MissionReportingActionsService", () => {
         circulationChannel: "email",
         circulationNote: "Circulated from the finance mailbox after approval.",
         summary:
-          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
       },
     });
     expect(refreshProofBundle).toHaveBeenCalledWith({
@@ -517,7 +517,7 @@ describe("MissionReportingActionsService", () => {
         circulationNote: "Circulated from the finance mailbox after approval.",
         approvalId: "55555555-5555-4555-8555-555555555555",
         summary:
-          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
       },
     });
   });

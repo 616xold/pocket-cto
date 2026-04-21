@@ -269,7 +269,7 @@ describe("mission reporting action routes", () => {
         circulationNote: "Circulated from the finance mailbox after approval.",
         approvalId: "22222222-2222-4222-8222-222222222222",
         summary:
-          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
       },
     }));
     const app = await createTestApp(apps, {

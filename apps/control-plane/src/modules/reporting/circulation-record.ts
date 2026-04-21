@@ -19,7 +19,7 @@ export function buildLoggedCirculationRecordSummary(input: {
   circulationNote: string | null;
 }) {
   const note = input.circulationNote
-    ? ` Circulation note: ${input.circulationNote}.`
+    ? ` Circulation note: ${ensureSentencePunctuation(input.circulationNote)}`
     : "";
   return `External circulation was logged by ${input.circulatedBy} at ${input.circulatedAt} via ${input.circulationChannel}.${note}`;
 }
@@ -143,4 +143,9 @@ function isCirculationRecordReportKind(
   reportKind: ProofBundleManifest["reportKind"],
 ): reportKind is ReportCirculationApprovalReportKind {
   return reportKind === "board_packet";
+}
+
+function ensureSentencePunctuation(value: string) {
+  const trimmed = value.trimEnd();
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }

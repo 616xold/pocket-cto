@@ -273,9 +273,9 @@ Exit criteria:
 Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
-The latest shipped implementation records for this phase are `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` for F5C4D and `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` for F5C4E.
-`plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the active F5C4F implementation contract.
-The next remaining execution slice should implement that narrow board-packet circulation-log and first circulation-record step; do not reopen F5C4E, author another broad later-F5 umbrella plan, or start F6 early.
+The latest shipped implementation records for this phase are `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` for F5C4D, `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` for F5C4E, and `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` for F5C4F.
+`plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` now serves as the current later-F5 handoff reference.
+The next remaining execution slice should decide whether one narrower post-log F5C4F continuation is needed before broader later-F5 or F6 work; do not reopen F5C4E, author another broad later-F5 umbrella plan, or start F6 early.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
@@ -383,7 +383,7 @@ Exit criteria:
 - one completed finance discovery mission can produce a first-class reporting mission
 - the first report path yields a draft `finance_memo` plus `evidence_appendix`
 - report outputs remain reproducible, evidence-linked, freshness-aware, and explicit about limitations
-- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update approval and release-record posture are already shipped through F5C4B, diligence approval, release-readiness, and release-record posture are now shipped through F5C4D, board circulation-readiness is now shipped through F5C4E, `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is the active F5C4F contract for the next narrow board-packet circulation-log and first circulation-record slice, and markdown export reuse remains limited to the filed-artifact path defined in F5B
+- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update approval and release-record posture are already shipped through F5C4B, diligence approval, release-readiness, and release-record posture are now shipped through F5C4D, board circulation-readiness is now shipped through F5C4E, board circulation-log and first circulation-record posture are now shipped through F5C4F, and markdown export reuse remains limited to the filed-artifact path defined in F5B
 
 ## F6 — Monitoring, controls, and adoption loop
 

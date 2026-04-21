@@ -918,7 +918,7 @@ describe("Mission detail domain schema", () => {
             "Circulated after approval from the finance mailbox.",
           approvalId: "55555555-5555-4555-8555-555555555555",
           summary:
-            "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox..",
+            "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
         },
         releaseRecord: null,
         releaseReadiness: null,
@@ -954,7 +954,7 @@ describe("Mission detail domain schema", () => {
         },
         decisionTrace: [
           "Scout task 0 terminalized as succeeded with persisted board-packet evidence.",
-          "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox..",
+          "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
         ],
         artifactIds: ["dddddddd-dddd-4ddd-8ddd-dddddddddddd"],
         artifacts: [
@@ -1050,7 +1050,7 @@ describe("Mission detail domain schema", () => {
             "Circulated after approval from the finance mailbox.",
           approvalId: "55555555-5555-4555-8555-555555555555",
           summary:
-            "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox..",
+            "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
         },
         releaseRecord: null,
         releaseReadiness: null,

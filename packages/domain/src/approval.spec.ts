@@ -178,7 +178,7 @@ describe("Approval domain schema", () => {
         circulationChannel: "email",
         circulationNote: "Circulated from the finance mailbox after approval.",
         summary:
-          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
       },
     });
 

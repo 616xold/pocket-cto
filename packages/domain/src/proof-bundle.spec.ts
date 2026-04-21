@@ -280,7 +280,7 @@ describe("Proof bundle domain schema", () => {
         circulationNote: "Circulated after approval from the finance mailbox.",
         approvalId: "55555555-5555-4555-8555-555555555555",
         summary:
-          "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox..",
+          "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
       },
       reportSummary:
         "Draft board packet for acme from the completed cash posture reporting mission.",

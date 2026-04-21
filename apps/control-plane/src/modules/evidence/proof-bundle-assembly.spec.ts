@@ -901,7 +901,7 @@ describe("assembleProofBundleManifest", () => {
               circulationNote:
                 "Circulated after approval from the finance mailbox.",
               summary:
-                "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox..",
+                "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
             },
             sourceDiscoveryMissionId,
             sourceReportingMissionId,
@@ -972,7 +972,7 @@ describe("assembleProofBundleManifest", () => {
       circulationChannel: "email",
     });
     expect(manifest.decisionTrace).toContain(
-      "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox..",
+      "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
     );
     expect(manifest.riskSummary).toContain(
       "persisted external circulation record",

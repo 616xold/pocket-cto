@@ -456,16 +456,16 @@ The shipped F4 baseline still does none of the following:
 - the first new board-facing review path must start from one completed `reporting` mission with `reportKind = "board_packet"` and one stored `board_packet` artifact
 - the source reporting mission must already be completed and remain a `reporting` mission rather than a new circulation-specific mission family
 - the approvals bounded context remains the durable substrate, but the first board-facing path must add `report_circulation` rather than reusing external-facing `report_release`
-- the first new posture is review request plus approval resolution plus `approved_for_circulation` or circulation-ready state only
+- the shipped F5C4E posture is review request plus approval resolution plus `approved_for_circulation` or circulation-ready state only
 - raw wiki pages remain derived evidence inputs, not the source of truth for circulation-ready posture
-- actual circulation logging, send, distribute, publish, bounded runtime-codex drafting, PDF export, and slide export remain later work
+- actual send, distribute, publish, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
-`FP-0046` is now the active F5C4F contract:
+`FP-0046` is now the shipped F5C4F implementation record:
 
-- the first new board circulation-log path must start from one completed `reporting` mission with `reportKind = "board_packet"`, one stored `board_packet` artifact, and circulation readiness already at `approved_for_circulation`
-- the source reporting mission must already be completed and remain a `reporting` mission rather than a new circulation-specific mission family
+- the shipped board circulation-log path starts from one completed `reporting` mission with `reportKind = "board_packet"`, one stored `board_packet` artifact, and circulation readiness already at `approved_for_circulation`
+- the source reporting mission already remains a completed `reporting` mission rather than a new circulation-specific mission family
 - the preferred persistence anchor remains the existing resolved `report_circulation` approval payload plus its derived reporting and proof views
-- the first new posture is one explicit circulation record plus circulated state only, separate from existing circulation readiness
+- the shipped posture is one explicit circulation record plus circulated state only, separate from existing circulation readiness
 - raw wiki pages remain derived evidence inputs, not the source of truth for the circulation record itself
 - actual send, distribute, publish, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
@@ -479,7 +479,7 @@ The shipped F5B follow-on now hardens body visibility, filed-page reuse, and mar
 The shipped F5C1 follow-on now specializes one draft `board_packet` from that completed reporting state.
 The shipped F5C2 follow-on now specializes only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
-`plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the active later-F5 implementation contract. The next later-F5 follow-on should execute that narrow board-packet circulation-log and first circulation-record slice rather than reopening F5C4E, diligence-packet release logging, actual delivery, runtime-codex drafting, or export work.
+`plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record and the current later-F5 handoff reference. The next later-F5 follow-on should decide whether one narrower post-log F5C4F continuation is needed before reopening other packet work, actual delivery, runtime-codex drafting, or export widening.
 
 ## Lint flow
 
