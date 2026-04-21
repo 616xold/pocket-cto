@@ -214,6 +214,61 @@ describe("ReportingService", () => {
     );
   });
 
+  it("prepares one board-packet circulation approval payload from a completed board-packet mission with one stored artifact", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const boardPacketMission = {
+      ...buildBoardPacketMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [boardPacketMission.id]: [
+          buildStoredBoardPacketArtifact({
+            missionId: boardPacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [boardPacketMission.id]: boardPacketMission,
+      },
+      proofBundlesByMissionId: {
+        [boardPacketMission.id]: buildBoardPacketProofBundle({
+          missionId: boardPacketMission.id,
+          sourceDiscoveryMissionId,
+          sourceReportingMissionId,
+        }),
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    const payload = await service.prepareReportCirculationApproval(
+      boardPacketMission.id,
+    );
+
+    expect(payload).toEqual({
+      artifactId: "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa",
+      companyKey: "acme",
+      draftOnlyStatus: "draft_only",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary: "Draft-only posture remains explicit.",
+      missionId: boardPacketMission.id,
+      reportKind: "board_packet",
+      resolution: null,
+      sourceDiscoveryMissionId,
+      sourceReportingMissionId,
+      summary:
+        "Draft board packet for acme from the completed cash posture reporting mission.",
+    });
+  });
+
   it("prepares one lender-update release approval payload from a completed lender-update mission with one stored artifact", async () => {
     const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
     const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
@@ -300,6 +355,46 @@ describe("ReportingService", () => {
 
     await expect(
       service.prepareReportReleaseApproval(financeMemoMission.id),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          code: "invalid_request",
+        },
+      },
+      statusCode: 400,
+    });
+  });
+
+  it("rejects board-packet circulation approval when the reporting mission is not board_packet", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const financeMemoMission = {
+      ...buildSucceededReportingMission(sourceDiscoveryMissionId),
+      id: sourceReportingMissionId,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [financeMemoMission.id]: buildReportingArtifacts(
+          financeMemoMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+      missionsById: {
+        [financeMemoMission.id]: financeMemoMission,
+      },
+      proofBundlesByMissionId: {
+        [financeMemoMission.id]: buildReportingProofBundle(
+          financeMemoMission.id,
+          sourceDiscoveryMissionId,
+        ),
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    await expect(
+      service.prepareReportCirculationApproval(financeMemoMission.id),
     ).rejects.toMatchObject({
       body: {
         error: {
@@ -1293,6 +1388,7 @@ function buildReportingProofBundle(
       summary:
         "Draft memo and evidence appendix are stored. Neither draft artifact has been filed into the CFO Wiki yet. No markdown export run has been recorded yet.",
     },
+    circulationReadiness: null,
     releaseRecord: null,
     appendixPresent: true,
     freshnessState: "stale",
@@ -1331,6 +1427,52 @@ function buildReportingProofBundle(
       latestArtifactAt: "2026-04-18T13:02:00.000Z",
     },
     status: "ready",
+  };
+}
+
+function buildStoredBoardPacketArtifact(input: {
+  missionId: string;
+  sourceDiscoveryMissionId: string;
+  sourceReportingMissionId: string;
+}): ArtifactRecord {
+  return {
+    id: "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa",
+    missionId: input.missionId,
+    taskId: "44444444-4444-4444-8444-444444444444",
+    kind: "board_packet",
+    uri: `pocket-cto://missions/${input.missionId}/tasks/44444444-4444-4444-8444-444444444444/board-packet`,
+    mimeType: "text/markdown",
+    sha256: null,
+    metadata: {
+      source: "stored_reporting_evidence",
+      summary:
+        "Draft board packet for acme from the completed cash posture reporting mission.",
+      reportKind: "board_packet",
+      draftStatus: "draft_only",
+      sourceReportingMissionId: input.sourceReportingMissionId,
+      sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      policySourceId: null,
+      policySourceScope: null,
+      packetSummary:
+        "Draft board packet for acme from the completed cash posture reporting mission.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary: "Draft-only posture remains explicit.",
+      relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+      relatedWikiPageKeys: ["metrics/cash-posture"],
+      sourceFinanceMemo: {
+        artifactId: "33333333-3333-4333-8333-333333333333",
+        kind: "finance_memo",
+      },
+      sourceEvidenceAppendix: {
+        artifactId: "55555555-5555-4555-8555-555555555556",
+        kind: "evidence_appendix",
+      },
+      bodyMarkdown:
+        "# Draft Board Packet\n\n## Source Finance Memo Draft\n\nCash posture remains constrained.",
+    },
+    createdAt: "2026-04-19T13:01:00.000Z",
   };
 }
 
@@ -1451,6 +1593,36 @@ function buildLenderUpdateProofBundle(input: {
       status: "complete",
       expectedArtifactKinds: ["lender_update"],
       presentArtifactKinds: ["lender_update"],
+      missingArtifactKinds: [],
+      notes: [],
+    },
+  };
+}
+
+function buildBoardPacketProofBundle(input: {
+  missionId: string;
+  sourceDiscoveryMissionId: string;
+  sourceReportingMissionId: string;
+}): ProofBundleManifest {
+  return {
+    ...buildReportingProofBundle(
+      input.sourceReportingMissionId,
+      input.sourceDiscoveryMissionId,
+    ),
+    missionId: input.missionId,
+    missionTitle: "Draft board packet for acme from cash posture reporting",
+    objective:
+      "Compile one draft board packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
+    sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,
+    sourceReportingMissionId: input.sourceReportingMissionId,
+    reportKind: "board_packet",
+    reportPublication: null,
+    reportSummary:
+      "Draft board packet for acme from the completed cash posture reporting mission.",
+    evidenceCompleteness: {
+      status: "complete",
+      expectedArtifactKinds: ["board_packet"],
+      presentArtifactKinds: ["board_packet"],
       missingArtifactKinds: [],
       notes: [],
     },
@@ -1666,6 +1838,7 @@ function buildSourceProofBundle(missionId: string): ProofBundleManifest {
     reportDraftStatus: null,
     reportPublication: null,
     reportSummary: "",
+    circulationReadiness: null,
     releaseRecord: null,
     appendixPresent: false,
     freshnessState: "stale",

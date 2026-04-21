@@ -672,6 +672,19 @@ describe("Mission detail domain schema", () => {
         reportKind: "board_packet",
         reportDraftStatus: "draft_only",
         reportPublication: null,
+        circulationReadiness: {
+          circulationApprovalStatus: "not_requested",
+          circulationReady: false,
+          approvalId: null,
+          approvalStatus: null,
+          requestedAt: null,
+          requestedBy: null,
+          resolvedAt: null,
+          resolvedBy: null,
+          rationale: null,
+          summary:
+            "Stored board packet exists, but circulation approval has not been requested yet.",
+        },
         reportSummary:
           "Draft board packet for acme from the completed cash posture reporting mission.",
         appendixPresent: true,
@@ -691,11 +704,11 @@ describe("Mission detail domain schema", () => {
         validationSummary:
           "Draft board packet was compiled deterministically from one completed reporting mission and its stored finance memo plus evidence appendix without running the Codex runtime.",
         verificationSummary:
-          "Draft board packet for acme from the completed cash posture reporting mission. Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.",
+          "Draft board packet for acme from the completed cash posture reporting mission. Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and board-packet circulation posture before sharing this draft internally.",
         riskSummary:
-          "This board packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C1.",
+          "This board packet is draft-only, carries source-report freshness and limitations forward, and does not add actual circulation logging, delivery, PDF, or slide workflow in F5C4E.",
         rollbackSummary:
-          "Safe fallback: refresh or rerun the source finance-memo reporting mission truthfully, then retry draft board-packet compilation; no release, send, or wiki filing side effect was produced.",
+          "No circulation approval, circulation log, send, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.",
         latestApproval: null,
         evidenceCompleteness: {
           status: "complete",
@@ -778,6 +791,19 @@ describe("Mission detail domain schema", () => {
             "# Draft Board Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
         },
         publication: null,
+        circulationReadiness: {
+          circulationApprovalStatus: "not_requested",
+          circulationReady: false,
+          approvalId: null,
+          approvalStatus: null,
+          requestedAt: null,
+          requestedBy: null,
+          resolvedAt: null,
+          resolvedBy: null,
+          rationale: null,
+          summary:
+            "Stored board packet exists, but circulation approval has not been requested yet.",
+        },
       },
       approvals: [],
       approvalCards: [],
@@ -796,6 +822,9 @@ describe("Mission detail domain schema", () => {
     expect(parsed.reporting?.boardPacket?.sourceFinanceMemo.kind).toBe(
       "finance_memo",
     );
+    expect(
+      parsed.reporting?.circulationReadiness?.circulationApprovalStatus,
+    ).toBe("not_requested");
     expect(parsed.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual(
       ["board_packet"],
     );

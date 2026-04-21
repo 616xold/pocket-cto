@@ -14,6 +14,7 @@ import {
   submitCreateDraftFinanceMemo,
   submitCreateDraftLenderUpdate,
   submitRecordReportingReleaseLog,
+  submitRequestReportingCirculationApproval,
   submitRequestReportingReleaseApproval,
   submitTaskInterrupt,
 } from "./actions";
@@ -68,6 +69,12 @@ type RequestReportingReleaseApprovalFormProps = {
   missionId: string;
   operatorIdentity: string;
   reportKind: "lender_update" | "diligence_packet";
+};
+
+type RequestReportingCirculationApprovalFormProps = {
+  missionId: string;
+  operatorIdentity: string;
+  reportKind: "board_packet";
 };
 
 type RecordReportingReleaseLogFormProps = {
@@ -321,6 +328,35 @@ export function RequestReportingReleaseApprovalForm({
           className="action-button"
           label={releaseApprovalLabel}
           pendingLabel={pendingLabel}
+        />
+      </form>
+
+      <ActionFeedback result={result} />
+    </div>
+  );
+}
+
+export function RequestReportingCirculationApprovalForm({
+  missionId,
+  operatorIdentity,
+  reportKind,
+}: RequestReportingCirculationApprovalFormProps) {
+  const [result, formAction] = useActionState<MissionActionState, FormData>(
+    submitRequestReportingCirculationApproval,
+    INITIAL_MISSION_ACTION_STATE,
+  );
+
+  return (
+    <div className="action-cluster">
+      <form action={formAction} className="stack">
+        <input name="missionId" type="hidden" value={missionId} />
+        <input name="reportKind" type="hidden" value={reportKind} />
+        <input name="requestedBy" type="hidden" value={operatorIdentity} />
+
+        <ActionSubmitButton
+          className="action-button"
+          label="Request board packet circulation approval"
+          pendingLabel="Requesting board packet circulation approval..."
         />
       </form>
 

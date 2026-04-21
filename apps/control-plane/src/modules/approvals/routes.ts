@@ -38,7 +38,11 @@ export async function registerApprovalRoutes(
           throw error;
         });
 
-      if (!approval || approval.kind !== "report_release") {
+      if (
+        !approval ||
+        (approval.kind !== "report_release" &&
+          approval.kind !== "report_circulation")
+      ) {
         throw new LiveControlUnavailableError();
       }
     }

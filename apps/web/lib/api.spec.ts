@@ -358,6 +358,56 @@ describe("web api module", () => {
     );
   });
 
+  it("posts the board-packet circulation approval route correctly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        return {
+          missionId,
+          approvalId,
+          created: true,
+          approvalStatus: "pending",
+          circulationApprovalStatus: "pending_review",
+          circulationReady: false,
+        };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const result = await mod.requestReportingCirculationApproval({
+      missionId,
+      requestedBy: "finance-operator",
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      statusCode: 201,
+      data: {
+        missionId,
+        approvalId,
+        created: true,
+        approvalStatus: "pending",
+        circulationApprovalStatus: "pending_review",
+        circulationReady: false,
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/missions/${missionId}/reporting/circulation-approval`,
+      {
+        body: JSON.stringify({
+          requestedBy: "finance-operator",
+        }),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+  });
+
   it("posts the finance analysis mission-create route correctly", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

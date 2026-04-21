@@ -2,7 +2,7 @@
 
 ## Purpose / Big Picture
 
-This plan is the active implementation-ready F5C4E contract created by the docs-and-plan-only handoff slice.
+This plan is the active F5C4E implementation contract and now also records the first real implementation thread against that contract.
 `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` remains the shipped F5C4D record that precedes it.
 The target phase is `F5`, and the next execution slice is `F5C4E-board-packet-review-or-circulation-readiness-foundation`.
 The user-visible goal is narrow and concrete: after the shipped F5A through F5C4D baseline already creates draft `finance_memo`, `board_packet`, `lender_update`, and `diligence_packet` artifacts, supports external-facing `report_release` approval and release-log posture for `lender_update` and `diligence_packet`, and keeps delivery outside the system, Pocket CFO should next let an operator request and resolve one internal board-packet review and derive one explicit circulation-ready posture from one completed `board_packet` reporting mission with one stored `board_packet` artifact without widening into actual circulation logging, actual circulation or delivery, runtime-codex drafting, or broader packet rollout.
@@ -19,8 +19,9 @@ This plan does not authorize actual circulation logging, actual send, distribute
 
 - [x] 2026-04-21T16:20:00Z Audit the shipped F5A through F5C4D plan chain, active docs, approvals seams, reporting seams, proof-bundle posture, runtime-codex boundary, and board-packet operator surfaces before choosing the narrowest truthful F5C4E contract.
 - [x] 2026-04-21T16:20:00Z Create `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` and refresh the smallest truthful active-doc chain so `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` remains the shipped F5C4D record while this file becomes the single active implementation contract.
-- [ ] 2026-04-21T16:20:00Z Implement one additive board-packet internal review or circulation-readiness slice: add `report_circulation`, one mission-scoped board-packet circulation-approval request path, one derived circulation-ready posture, and the smallest truthful proof or UI widening without adding circulation logging or delivery behavior.
-- [ ] 2026-04-21T16:20:00Z Run the targeted domain, control-plane, web, smoke, twin, repo-wide, and clean-tree CI reproduction ladder for F5C4E after the first real implementation lands.
+- [x] 2026-04-21T15:55:00Z Re-open the active F5C4E contract for the first real implementation thread, explicitly invoke the required repo skills in-thread, audit the current branch and active code seams, and record the pre-edit verdict: add one additive `report_circulation` approval kind, one mission-scoped board-packet circulation-approval route, and one board-only circulation-readiness view on the existing approvals substrate without reusing `report_release`, without adding circulation logging, and without changing proof readiness.
+- [x] 2026-04-21T18:49:00Z Implement one additive board-packet internal review or circulation-readiness slice: add `report_circulation`, one mission-scoped board-packet circulation-approval request path, one derived circulation-ready posture, and the smallest truthful proof or UI widening without adding circulation logging or delivery behavior.
+- [x] 2026-04-21T18:49:00Z Run the targeted domain, control-plane, web, smoke, twin, repo-wide, and clean-tree CI reproduction ladder for F5C4E after the first real implementation lands, including the new `pnpm smoke:board-packet-circulation-approval:local` proof and `pnpm ci:repro:current`.
 
 ## Surprises & Discoveries
 
@@ -38,6 +39,12 @@ This plan does not authorize actual circulation logging, actual send, distribute
 
 - Observation: the `report_release` seam should stay external-facing rather than becoming the board-circulation path.
   Evidence: `packages/domain/src/approval.ts`, `apps/control-plane/src/modules/reporting/service.ts`, `apps/control-plane/src/modules/approvals/card-formatter.ts`, and the shipped lender or diligence release smokes all anchor that seam to explicit external release and release logging posture.
+
+- Observation: the existing lender or diligence release-readiness plumbing already gives F5C4E the right implementation shape if the board path gets its own helper and read-model field instead of overloading release posture.
+  Evidence: `apps/control-plane/src/modules/reporting/release-readiness.ts`, `apps/control-plane/src/modules/reporting/release-record.ts`, `apps/control-plane/src/modules/evidence/proof-bundle-summary.ts`, `apps/control-plane/src/modules/evidence/proof-bundle-assembly.ts`, and `apps/control-plane/src/modules/missions/detail-view.ts`.
+
+- Observation: the additive `report_circulation` enum migration was not sufficient on its own because the local Drizzle journal metadata initially omitted the new migration entry and snapshot, so `pnpm db:migrate` skipped the enum widening until the metadata was repaired.
+  Evidence: `packages/db/drizzle/0036_busy_ken_hale.sql`, `packages/db/drizzle/meta/_journal.json`, `packages/db/drizzle/meta/0036_snapshot.json`, the failed `pnpm smoke:board-packet-circulation-approval:local` run with `invalid input value for enum approval_kind: "report_circulation"`, and the succeeding rerun after the metadata fix plus `pnpm db:migrate`.
 
 ## Decision Log
 
@@ -88,6 +95,9 @@ This plan does not authorize actual circulation logging, actual send, distribute
 
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reopen a `modules/reports/**` rename wave.
   Rationale: the current repo already uses `reporting` as first-class vocabulary, and this task is about truthfulness and sequencing rather than namespace churn.
+
+- Decision: keep the board-packet proof-bundle draft-only risk wording backward-compatible with the shipped F5C1 proof text while adding explicit F5C4E circulation truth.
+  Rationale: the F5C4E slice should add circulation-readiness posture without regressing the established board-packet smoke expectation or falsely implying PDF, slide, or delivery behavior now exists.
 
 ## Context and Orientation
 
@@ -148,8 +158,7 @@ The active-doc boundary for this plan is:
 
 GitHub connector work is out of scope.
 The internal `@pocket-cto/*` package scope remains unchanged.
-This thread is docs-and-plan only and must not add runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding.
-The next implementation thread should change code only inside the bounded seams this plan names.
+This thread now includes the first real F5C4E implementation pass, so additive runtime code, schema changes, one additive migration, one packaged smoke command, and the smallest truthful doc refreshes are in scope as long as they stay inside the bounded seams this plan names.
 
 The most relevant implementation seams for the next F5C4E code thread are:
 
@@ -442,6 +451,17 @@ The active runtime boundary stays the same: Codex App Server remains a transport
 
 ## Outcomes & Retrospective
 
-This thread did not start F5C4E runtime code.
-It created one implementation-ready later-F5 contract and refreshed the active docs so `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` remains the shipped F5C4D record while this file becomes the single active successor plan.
-What remains is the actual `report_circulation` implementation, the additive approval-kind migration, the board-specific operator and proof surfaces, the packaged local proof, and the full validation ladder defined above.
+This thread completed the first real F5C4E implementation.
+It shipped one additive `report_circulation` approval kind, one mission-scoped `POST /missions/:missionId/reporting/circulation-approval` route, one board-only circulation-readiness view, one packaged `pnpm smoke:board-packet-circulation-approval:local` proof, and the smallest truthful read-model and operator-surface widening needed to show internal board circulation posture without adding circulation logging, delivery, runtime-codex drafting, PDF export, or slide export.
+
+The active-doc boundary stayed narrow.
+No broader README or roadmap refresh proved necessary in this implementation thread.
+The only slice-adjacent checked-in doc refresh outside this plan was the small approvals bounded-context note in `apps/control-plane/src/modules/approvals/README.md`.
+
+The main implementation surprise was operational rather than architectural: the additive approval-kind migration needed the matching Drizzle journal and snapshot metadata before `pnpm db:migrate` would actually widen the enum in local validation.
+The other notable polish fix was keeping the board-packet proof-bundle draft-only wording backward-compatible with the shipped F5C1 smoke while still stating the new F5C4E circulation truth explicitly.
+
+The full validation ladder for this slice is now green, including the targeted domain, control-plane, and web tests; the preserved finance discovery, finance memo, reporting, lender-update, diligence-packet, and new board-packet circulation smokes; the twin guardrails; `pnpm lint`; `pnpm typecheck`; `pnpm test`; and `pnpm ci:repro:current`.
+
+What remains is later work, not more unfinished implementation inside this slice.
+The next truthful successor is `F5C4F-circulation-log-and-first-board-packet-circulation-record-foundation`.

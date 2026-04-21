@@ -6,7 +6,9 @@ import type {
   ProofBundleManifest,
 } from "@pocket-cto/domain";
 import {
+  isReportCirculationApprovalPayload,
   isReportReleaseApprovalPayload,
+  readReportCirculationApprovalReportKindLabel,
   readReportReleaseApprovalReportKindLabel,
 } from "@pocket-cto/domain";
 
@@ -57,6 +59,8 @@ export function buildMissionApprovalCard(input: {
       return buildCommandCard(input.approval, details, input.context);
     case "network_escalation":
       return buildNetworkEscalationCard(input.approval, details, input.context);
+    case "report_circulation":
+      return buildReportCirculationCard(input.approval, input.context);
     case "report_release":
       return buildReportReleaseCard(input.approval, input.context);
     default:
@@ -206,6 +210,36 @@ function buildReportReleaseCard(
     title: payload
       ? `Review ${reportLabelLower} release approval for ${payload.companyKey}`
       : "Review report release approval",
+  });
+}
+
+function buildReportCirculationCard(
+  approval: ApprovalRecord,
+  context: ApprovalCardContext,
+): MissionApprovalCard {
+  const payload = isReportCirculationApprovalPayload(approval.payload)
+    ? approval.payload
+    : null;
+  const reportLabel = payload
+    ? readReportCirculationApprovalReportKindLabel(payload.reportKind)
+    : "Report";
+  const reportLabelLower = reportLabel.toLowerCase();
+
+  return buildCard(approval, context, {
+    actionHint:
+      `Review the stored ${reportLabelLower} summary, freshness, and limitations before deciding whether this draft is approved for internal circulation. This slice records posture only and does not log circulation or deliver the packet.`,
+    requiresLiveControl: false,
+    summary: payload
+      ? joinCompact([
+          `Review ${reportLabelLower} circulation readiness for ${payload.companyKey}.`,
+          `Summary: ${normalizeSentence(payload.summary)}`,
+          `Freshness: ${normalizeSentence(payload.freshnessSummary)}`,
+          `Limitations: ${normalizeSentence(payload.limitationsSummary)}`,
+        ])
+      : "Review internal circulation readiness for a stored draft report. This approval kind carries finance reporting evidence instead of runtime task context.",
+    title: payload
+      ? `Review ${reportLabelLower} circulation approval for ${payload.companyKey}`
+      : "Review report circulation approval",
   });
 }
 

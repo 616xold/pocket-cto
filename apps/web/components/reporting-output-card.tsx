@@ -26,11 +26,13 @@ export function ReportingOutputCard({
   const financeMemo = reporting.financeMemo;
   const evidenceAppendix = reporting.evidenceAppendix;
   const publication = reporting.publication;
+  const circulationReadiness = reporting.circulationReadiness;
   const releaseRecord = reporting.releaseRecord;
   const releaseReadiness = reporting.releaseReadiness;
   const isDiligencePacket = reporting.reportKind === "diligence_packet";
   const isBoardPacket = reporting.reportKind === "board_packet";
   const isLenderUpdate = reporting.reportKind === "lender_update";
+  const supportsCirculationApproval = isBoardPacket;
   const supportsReleaseApproval = isLenderUpdate || isDiligencePacket;
   const supportsReleaseLog = isLenderUpdate || isDiligencePacket;
   const isSpecializedReporting =
@@ -58,6 +60,10 @@ export function ReportingOutputCard({
 
       {publication?.summary ? (
         <p className="muted">{publication.summary}</p>
+      ) : null}
+
+      {supportsCirculationApproval && circulationReadiness?.summary ? (
+        <p className="muted">{circulationReadiness.summary}</p>
       ) : null}
 
       {releaseReadiness?.summary ? (
@@ -134,6 +140,45 @@ export function ReportingOutputCard({
         </div>
         {isSpecializedReporting ? (
           <>
+            {supportsCirculationApproval ? (
+              <>
+                <div>
+                  <dt>Circulation approval</dt>
+                  <dd>
+                    {circulationReadiness?.circulationApprovalStatus ??
+                      "not_requested"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Circulation ready</dt>
+                  <dd>{circulationReadiness?.circulationReady ? "Yes" : "No"}</dd>
+                </div>
+                <div>
+                  <dt>Approval requested</dt>
+                  <dd>
+                    {circulationReadiness?.requestedAt ?? "Not requested yet."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Requested by</dt>
+                  <dd>
+                    {circulationReadiness?.requestedBy ?? "Not requested yet."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Approval resolved</dt>
+                  <dd>
+                    {circulationReadiness?.resolvedAt ?? "Not resolved yet."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Resolved by</dt>
+                  <dd>
+                    {circulationReadiness?.resolvedBy ?? "Not resolved yet."}
+                  </dd>
+                </div>
+              </>
+            ) : null}
             {supportsReleaseApproval ? (
               <>
                 <div>

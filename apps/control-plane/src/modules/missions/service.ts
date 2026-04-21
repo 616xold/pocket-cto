@@ -31,6 +31,7 @@ import { buildDiscoveryMissionCreationInput } from "./discovery";
 import { buildQueuedMissionStatusChangedPayload } from "./events";
 import { buildLenderUpdateMissionCreationInput } from "./lender-update";
 import { buildReportingMissionCreationInput } from "./reporting";
+import { buildReportingCirculationReadinessViewFromProofBundle } from "../reporting/circulation-readiness";
 import type { MissionRepository } from "./repository";
 import { buildReportingPublicationViewFromProofBundle } from "../reporting/publication";
 import { buildReportingReleaseRecordViewFromProofBundle } from "../reporting/release-record";
@@ -418,6 +419,12 @@ function summarizeMission(input: {
         evidenceCompleteness: input.proofBundle.evidenceCompleteness,
         reportKind: input.proofBundle.reportKind,
         reportPublication: input.proofBundle.reportPublication,
+      }) ?? null,
+    circulationReadiness:
+      buildReportingCirculationReadinessViewFromProofBundle({
+        circulationReadiness: input.proofBundle.circulationReadiness,
+        evidenceCompleteness: input.proofBundle.evidenceCompleteness,
+        reportKind: input.proofBundle.reportKind,
       }) ?? null,
     releaseRecord:
       buildReportingReleaseRecordViewFromProofBundle({

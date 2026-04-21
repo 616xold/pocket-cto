@@ -1095,6 +1095,7 @@ function buildReadyFinanceMemoProofBundle(input: {
     rollbackSummary:
       "No release side effect was produced; rerun only after the stored discovery evidence is refreshed first.",
     latestApproval: null,
+    circulationReadiness: null,
     releaseRecord: null,
     releaseReadiness: null,
     evidenceCompleteness: {

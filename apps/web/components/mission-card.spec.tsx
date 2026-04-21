@@ -175,6 +175,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
@@ -313,6 +314,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
@@ -432,6 +434,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
@@ -573,6 +576,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
@@ -782,6 +786,7 @@ describe("MissionCard", () => {
           reportDraftStatus: "draft_only",
           reportKind: "finance_memo",
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
@@ -884,6 +889,7 @@ describe("MissionCard", () => {
           policySourceScope: null,
           boardPacket: null,
           diligencePacket: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           publication: null,
@@ -1204,6 +1210,7 @@ describe("MissionCard", () => {
           reportKind: null,
           reportDraftStatus: null,
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary: "",
@@ -1265,7 +1272,7 @@ describe("MissionCard", () => {
     expect(html).toContain("apps/control-plane/src/modules/github-app/auth.ts");
   });
 
-  it("renders board-packet mission detail with source-report lineage and draft-only proof posture", () => {
+  it("renders board-packet mission detail with source-report lineage and circulation-readiness posture", () => {
     const html = renderToStaticMarkup(
       <MissionCard
         approvalCards={[]}
@@ -1364,6 +1371,19 @@ describe("MissionCard", () => {
           reportKind: "board_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "77777777-7777-4777-8777-777777777777",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T10:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T10:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Ready for internal board circulation.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation, but no circulation has been logged.",
+          },
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
@@ -1381,9 +1401,9 @@ describe("MissionCard", () => {
           relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
           relatedWikiPageKeys: ["metrics/cash-posture"],
           riskSummary:
-            "This board packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C1.",
+            "This board packet remains draft-only, approval-backed for internal circulation only when explicitly granted, and still records no actual circulation, PDF export, slide export, or runtime drafting in F5C4E.",
           rollbackSummary:
-            "Safe fallback: refresh or rerun the source finance-memo reporting mission truthfully, then retry draft board-packet compilation; no release, send, or wiki filing side effect was produced.",
+            "Safe fallback: resolve or revisit the circulation approval truthfully, then refresh or rerun the source finance-memo reporting mission before recompiling; no actual circulation side effect was produced.",
           status: "ready",
           targetRepoFullName: null,
           timestamps: {
@@ -1448,6 +1468,19 @@ describe("MissionCard", () => {
               "# Draft Board Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
           },
           diligencePacket: null,
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "77777777-7777-4777-8777-777777777777",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T10:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T10:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Ready for internal board circulation.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation, but no circulation has been logged.",
+          },
           releaseRecord: null,
           releaseReadiness: null,
           publication: null,
@@ -1477,11 +1510,14 @@ describe("MissionCard", () => {
     expect(html).toContain("Source reporting mission");
     expect(html).toContain("33333333-3333-4333-8333-333333333333");
     expect(html).toContain("Linked appendix posture");
+    expect(html).toContain("approved_for_circulation");
+    expect(html).toContain("Circulation ready");
+    expect(html).toContain("finance-reviewer");
     expect(html).toContain(
       "The proof bundle now reads like a draft board-packet review package",
     );
     expect(html).toContain(
-      "does not add approval, release, PDF, or slide workflow in F5C1",
+      "records no actual circulation, PDF export, slide export, or runtime drafting in F5C4E",
     );
   });
 
@@ -1585,6 +1621,7 @@ describe("MissionCard", () => {
           reportKind: "diligence_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
@@ -1669,6 +1706,7 @@ describe("MissionCard", () => {
             bodyMarkdown:
               "# Draft Diligence Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
           },
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           publication: null,
@@ -1807,6 +1845,7 @@ describe("MissionCard", () => {
           reportKind: "diligence_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
             releaseApprovalStatus: "approved_for_release",
@@ -1903,6 +1942,7 @@ describe("MissionCard", () => {
             bodyMarkdown:
               "# Draft Diligence Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
           },
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
             releaseApprovalStatus: "approved_for_release",

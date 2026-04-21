@@ -392,6 +392,133 @@ describe("ApprovalService", () => {
     );
   });
 
+  it("persists and resolves board-packet circulation approvals without live runtime continuation", async () => {
+    const missionRepository = new InMemoryMissionRepository();
+    const approvalRepository = new InMemoryApprovalRepository();
+    const replayService = new ReplayService(
+      new InMemoryReplayRepository(),
+      missionRepository,
+    );
+    const missionService = new MissionService(
+      new StubMissionCompiler(),
+      missionRepository,
+      replayService,
+      new EvidenceService(),
+    );
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> =>
+        buildProofBundleManifest(createdMissionId, "board_packet"),
+    );
+    const liveSessionRegistry = {
+      awaitApprovalResolution: vi.fn(),
+      hasTaskSession: vi.fn(() => false),
+      tryResolveApproval: vi.fn(() => ({
+        delivered: true as const,
+      })),
+    } satisfies Pick<
+      InMemoryRuntimeSessionRegistry,
+      "awaitApprovalResolution" | "hasTaskSession" | "tryResolveApproval"
+    >;
+    const approvalService = new ApprovalService(
+      approvalRepository,
+      missionRepository,
+      replayService,
+      liveSessionRegistry,
+      {
+        refreshProofBundle,
+      },
+    );
+    const created = await missionService.createFromText({
+      text: "Review board packet circulation approval posture",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const createdMissionId = created.mission.id;
+    const payload = {
+      missionId: createdMissionId,
+      reportKind: "board_packet" as const,
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+      artifactId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme" as const,
+      draftOnlyStatus: "draft_only" as const,
+      summary: "Draft board packet for acme from the completed finance memo.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary:
+        "This board packet remains delivery-free until review is completed.",
+      resolution: null,
+    };
+
+    const firstRequest = await approvalService.requestReportCirculationApproval({
+      missionId: createdMissionId,
+      payload,
+      requestedBy: "finance-operator",
+    });
+    const secondRequest =
+      await approvalService.requestReportCirculationApproval({
+        missionId: created.mission.id,
+        payload,
+        requestedBy: "finance-operator",
+      });
+
+    expect(firstRequest.created).toBe(true);
+    expect(secondRequest).toEqual({
+      approval: firstRequest.approval,
+      created: false,
+    });
+
+    const resolved = await approvalService.resolveApproval({
+      approvalId: firstRequest.approval.id,
+      decision: "accept",
+      rationale: "Approved for internal circulation readiness.",
+      resolvedBy: "finance-reviewer",
+    });
+    const replay = await replayService.getMissionEvents(createdMissionId);
+
+    expect(resolved).toMatchObject({
+      id: firstRequest.approval.id,
+      kind: "report_circulation",
+      rationale: "Approved for internal circulation readiness.",
+      requestedBy: "finance-operator",
+      resolvedBy: "finance-reviewer",
+      status: "approved",
+      taskId: null,
+    });
+    expect(liveSessionRegistry.tryResolveApproval).not.toHaveBeenCalled();
+    expect(refreshProofBundle).toHaveBeenCalledWith({
+      missionId: createdMissionId,
+      trigger: "approval_resolution",
+    });
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.requested",
+        payload: expect.objectContaining({
+          approvalId: firstRequest.approval.id,
+          kind: "report_circulation",
+          requestMethod: null,
+          taskId: null,
+          threadId: null,
+          turnId: null,
+        }),
+      }),
+    );
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.resolved",
+        payload: expect.objectContaining({
+          approvalId: firstRequest.approval.id,
+          decision: "accept",
+          kind: "report_circulation",
+          requestMethod: null,
+          status: "approved",
+          taskId: null,
+          threadId: null,
+          turnId: null,
+        }),
+      }),
+    );
+  });
+
   it("records one release log on an approved lender-update release approval and replays it", async () => {
     const missionRepository = new InMemoryMissionRepository();
     const approvalRepository = new InMemoryApprovalRepository();
@@ -653,10 +780,15 @@ describe("ApprovalService", () => {
 
 function buildProofBundleManifest(
   missionId: string,
-  reportKind: "lender_update" | "diligence_packet" = "lender_update",
+  reportKind: "board_packet" | "lender_update" | "diligence_packet" =
+    "lender_update",
 ): ProofBundleManifest {
   const reportLabel =
-    reportKind === "lender_update" ? "lender update" : "diligence packet";
+    reportKind === "board_packet"
+      ? "board packet"
+      : reportKind === "lender_update"
+        ? "lender update"
+        : "diligence packet";
 
   return {
     missionId,
@@ -672,6 +804,7 @@ function buildProofBundleManifest(
     reportKind,
     reportDraftStatus: "draft_only",
     reportPublication: null,
+    circulationReadiness: null,
     releaseRecord: null,
     releaseReadiness: null,
     reportSummary:

@@ -11,6 +11,7 @@ import {
   ExportReportingMarkdownForm,
   FileReportingArtifactsForm,
   RecordReportingReleaseLogForm,
+  RequestReportingCirculationApprovalForm,
   RequestReportingReleaseApprovalForm,
   TaskInterruptForm,
 } from "./mission-action-forms";
@@ -75,6 +76,13 @@ export function MissionActions({
       (reporting?.reportKind === "diligence_packet" &&
         Boolean(reporting?.diligencePacket))) &&
     reporting.releaseReadiness?.releaseApprovalStatus === "not_requested";
+  const canRequestReportCirculationApproval =
+    mission.type === "reporting" &&
+    mission.status === "succeeded" &&
+    reporting?.reportKind === "board_packet" &&
+    Boolean(reporting?.boardPacket) &&
+    reporting.circulationReadiness?.circulationApprovalStatus ===
+      "not_requested";
   const canRecordReportingReleaseLog =
     mission.type === "reporting" &&
     mission.status === "succeeded" &&
@@ -87,7 +95,7 @@ export function MissionActions({
     reporting.releaseRecord?.released !== true;
   const reportingFollowOnOutOfScopeNote =
     reporting?.reportKind === "board_packet"
-      ? "Board packet missions remain draft-only in F5C1. Filing, markdown export, approval, release, PDF, and slide actions stay out of scope here."
+      ? "Board packet circulation remains delivery-free and runtime-free in F5C4E. This surface can request one persisted internal circulation approval only; circulation logging, send or distribute behavior, PDF export, and slide export stay out of scope here."
       : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C4D path.";
 
   return (
@@ -256,6 +264,29 @@ export function MissionActions({
                   {reporting?.releaseRecord?.summary ??
                     reporting?.releaseReadiness?.summary ??
                     "Release approval becomes available once the stored diligence packet is present and no prior release approval request exists for this mission."}
+                </p>
+              )}
+            </>
+          ) : reporting?.reportKind === "board_packet" ? (
+            <>
+              <p className="muted">
+                This first real F5C4E slice keeps board packets delivery-free
+                and runtime-free, but it does allow one persisted internal
+                circulation-approval path from one completed board-packet
+                reporting mission with one stored <code>board_packet</code>{" "}
+                artifact. No circulation log, send or distribute behavior, PDF
+                export, slide export, or runtime drafting is added here.
+              </p>
+              {canRequestReportCirculationApproval ? (
+                <RequestReportingCirculationApprovalForm
+                  missionId={mission.id}
+                  operatorIdentity={operatorIdentity}
+                  reportKind="board_packet"
+                />
+              ) : (
+                <p className="muted">
+                  {reporting?.circulationReadiness?.summary ??
+                    "Circulation approval becomes available once the stored board packet is present and no prior circulation approval request exists for this mission."}
                 </p>
               )}
             </>

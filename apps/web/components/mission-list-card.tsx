@@ -19,6 +19,7 @@ export function MissionListCard({ mission }: MissionListCardProps) {
   const isDiligencePacket = mission.reportKind === "diligence_packet";
   const isBoardPacket = mission.reportKind === "board_packet";
   const isLenderUpdate = mission.reportKind === "lender_update";
+  const supportsCirculationApproval = isBoardPacket;
   const supportsReleaseApproval = isLenderUpdate || isDiligencePacket;
   const supportsReleaseLog = isLenderUpdate || isDiligencePacket;
   const isSpecializedReporting =
@@ -65,6 +66,12 @@ export function MissionListCard({ mission }: MissionListCardProps) {
       {mission.releaseReadiness?.summary ? (
         <p className="muted mission-summary-inline">
           {mission.releaseReadiness.summary}
+        </p>
+      ) : null}
+
+      {mission.circulationReadiness?.summary ? (
+        <p className="muted mission-summary-inline">
+          {mission.circulationReadiness.summary}
         </p>
       ) : null}
 
@@ -170,6 +177,25 @@ export function MissionListCard({ mission }: MissionListCardProps) {
                     <dd>{mission.releaseRecord?.released ? "Yes" : "No"}</dd>
                   </div>
                 ) : null}
+              </>
+            ) : null}
+            {supportsCirculationApproval ? (
+              <>
+                <div>
+                  <dt>Circulation approval</dt>
+                  <dd>
+                    {mission.circulationReadiness?.circulationApprovalStatus ??
+                      "not_requested"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Circulation ready</dt>
+                  <dd>
+                    {mission.circulationReadiness?.circulationReady
+                      ? "Yes"
+                      : "No"}
+                  </dd>
+                </div>
               </>
             ) : null}
             <div>

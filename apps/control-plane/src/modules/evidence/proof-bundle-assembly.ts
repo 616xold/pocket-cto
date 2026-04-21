@@ -243,6 +243,7 @@ export function assembleProofBundleManifest(input: {
     reportDraftStatus: facts.reportDraftStatus,
     reportSummary: facts.reportSummary ?? "",
     reportPublication: facts.reportPublication,
+    circulationReadiness: facts.circulationReadiness,
     releaseRecord: facts.releaseRecord,
     releaseReadiness: facts.releaseReadiness,
     appendixPresent: facts.appendixPresent,
@@ -571,9 +572,15 @@ function buildVerificationSummary(
     status === "ready" &&
     facts.reportSummary
   ) {
+    const boardPacketVerificationSuffix = facts.circulationReadiness?.approvalId
+      ? facts.circulationReadiness.circulationReady
+        ? " Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and approved-for-circulation posture before sharing this draft internally."
+        : " Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and the unresolved or declined circulation-review trace before sharing this draft internally."
+      : " Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, and board-packet circulation posture before sharing this draft internally.";
+
     return truncate(
       isBoardPacketFacts(facts)
-        ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, and visible limitations before sharing this draft.`
+        ? `${facts.reportSummary}${boardPacketVerificationSuffix}`
         : isDiligencePacketFacts(facts)
           ? facts.releaseRecord?.released
             ? `${facts.reportSummary} Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, approval trace, and external release-record posture before relying on this released draft.`
@@ -646,7 +653,13 @@ function buildRiskSummary(
       }
 
       if (status === "ready") {
-        return "This board packet is draft-only, carries source-report freshness and limitations forward, and does not add approval, release, PDF, or slide workflow in F5C1.";
+        if (!facts.circulationReadiness?.approvalId) {
+          return "This board packet is draft-only, carries source-report freshness and limitations forward, and keeps the F5C1 baseline: it does not add approval, release, PDF, or slide workflow in F5C1. No circulation approval has been requested, and it does not add actual circulation logging, delivery, PDF, or slide workflow in F5C4E.";
+        }
+
+        return facts.circulationReadiness.circulationReady
+          ? "This board packet is approved for internal circulation from a persisted review path, but no circulation has been logged and actual send, distribute, PDF, and slide workflows remain out of scope in F5C4E."
+          : "This board packet remains draft-only because circulation approval was not granted; no circulation has been logged and actual send, distribute, PDF, and slide workflows remain out of scope in F5C4E.";
       }
 
       return "";
@@ -791,7 +804,13 @@ function buildRollbackSummary(
       }
 
       if (status === "ready") {
-        return "No release, approval, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
+        if (!facts.circulationReadiness?.approvalId) {
+          return "No circulation approval, circulation log, send, wiki filing, PDF export, or slide export side effect was produced; rerun only if the stored source reporting evidence should be refreshed first.";
+        }
+
+        return facts.circulationReadiness.circulationReady
+          ? "No actual circulation, send, wiki filing, PDF export, or slide export side effect was produced; this slice only records approved-for-circulation posture against the stored board packet."
+          : "No actual circulation, send, wiki filing, PDF export, or slide export side effect was produced; this slice only records that circulation approval was not granted for the stored board packet.";
       }
 
       return "";

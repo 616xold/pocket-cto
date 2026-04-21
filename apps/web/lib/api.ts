@@ -21,6 +21,8 @@ import {
   ProofBundleManifestSchema,
   RecordReportingReleaseLogInputSchema,
   RecordReportingReleaseLogResultSchema,
+  RequestReportCirculationApprovalInputSchema,
+  RequestReportCirculationApprovalResultSchema,
   RequestReportReleaseApprovalInputSchema,
   RequestReportReleaseApprovalResultSchema,
   ReportingFiledArtifactsResultSchema,
@@ -441,6 +443,19 @@ export async function requestReportingReleaseApproval(input: {
       requestedBy: input.requestedBy,
     }),
     RequestReportReleaseApprovalResultSchema,
+  );
+}
+
+export async function requestReportingCirculationApproval(input: {
+  missionId: string;
+  requestedBy: string;
+}) {
+  return postJson(
+    `/missions/${encodeURIComponent(input.missionId)}/reporting/circulation-approval`,
+    RequestReportCirculationApprovalInputSchema.parse({
+      requestedBy: input.requestedBy,
+    }),
+    RequestReportCirculationApprovalResultSchema,
   );
 }
 

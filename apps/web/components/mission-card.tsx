@@ -52,6 +52,7 @@ export function MissionCard({
   const isDiligencePacket = proofBundle.reportKind === "diligence_packet";
   const isBoardPacket = proofBundle.reportKind === "board_packet";
   const isLenderUpdate = proofBundle.reportKind === "lender_update";
+  const supportsCirculationApproval = isBoardPacket;
   const supportsReleaseApproval = isLenderUpdate || isDiligencePacket;
   const supportsReleaseLog = isLenderUpdate || isDiligencePacket;
   const isSpecializedReporting =
@@ -130,6 +131,39 @@ export function MissionCard({
                 <dt>Draft posture</dt>
                 <dd>{reportingView.draftStatus}</dd>
               </div>
+              {supportsCirculationApproval ? (
+                <>
+                  <div>
+                    <dt>Circulation approval</dt>
+                    <dd>
+                      {reportingView.circulationReadiness
+                        ?.circulationApprovalStatus ?? "not_requested"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Circulation ready</dt>
+                    <dd>
+                      {reportingView.circulationReadiness?.circulationReady
+                        ? "Yes"
+                        : "No"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Approval requested</dt>
+                    <dd>
+                      {reportingView.circulationReadiness?.requestedAt ??
+                        "Not requested yet."}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Approval resolved</dt>
+                    <dd>
+                      {reportingView.circulationReadiness?.resolvedAt ??
+                        "Not resolved yet."}
+                    </dd>
+                  </div>
+                </>
+              ) : null}
               {supportsReleaseApproval ? (
                 <>
                   <div>

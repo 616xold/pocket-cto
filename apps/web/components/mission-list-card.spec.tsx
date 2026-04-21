@@ -33,6 +33,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: null,
           reportKind: null,
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary: null,
@@ -86,6 +87,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: null,
           reportKind: null,
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary: null,
@@ -149,6 +151,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: null,
           reportKind: null,
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary: null,
@@ -236,6 +239,7 @@ describe("MissionListCard", () => {
             summary:
               "Draft memo and evidence appendix are stored. Both filed pages exist in the CFO Wiki: `filed/reporting-44444444-4444-4444-8444-444444444444-finance_memo` and `filed/reporting-44444444-4444-4444-8444-444444444444-evidence_appendix`. Markdown export run 66666666-6666-4666-8666-666666666666 includes the latest filed report pages.",
           },
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
@@ -296,6 +300,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: "draft_only",
           reportKind: "board_packet",
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
@@ -316,6 +321,70 @@ describe("MissionListCard", () => {
     expect(html).toContain(sourceReportingMissionId);
     expect(html).toContain("66666666-6666-4666-8666-666666666666");
     expect(html).not.toContain("Markdown export");
+    expect(html).toContain("proof ready");
+  });
+
+  it("renders board-packet mission summaries with circulation-readiness posture", () => {
+    const html = renderToStaticMarkup(
+      <MissionListCard
+        mission={{
+          appendixPresent: true,
+          answerSummary: null,
+          companyKey: "acme",
+          createdAt: "2026-04-21T01:00:00.000Z",
+          freshnessState: "stale",
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          latestTask: {
+            id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            role: "scout",
+            sequence: 0,
+            status: "succeeded",
+            updatedAt: "2026-04-21T01:05:00.000Z",
+          },
+          objectiveExcerpt:
+            "Compile one draft board packet from completed reporting mission and its stored finance memo plus evidence appendix.",
+          pendingApprovalCount: 0,
+          policySourceId: null,
+          policySourceScope: null,
+          primaryRepo: null,
+          proofBundleStatus: "ready",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: "cash_posture",
+          reportDraftStatus: "draft_only",
+          reportKind: "board_packet",
+          reportPublication: null,
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T01:02:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T01:04:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Ready for internal board circulation.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation, but no circulation has been logged.",
+          },
+          releaseRecord: null,
+          releaseReadiness: null,
+          reportSummary:
+            "Draft board packet for acme from the completed cash posture reporting mission.",
+          sourceDiscoveryMissionId: "66666666-6666-4666-8666-666666666666",
+          sourceReportingMissionId: "77777777-7777-4777-8777-777777777777",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          status: "succeeded",
+          title: "Draft board packet for acme from cash posture reporting",
+          updatedAt: "2026-04-21T01:04:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("approved_for_circulation");
+    expect(html).toContain("Circulation ready");
+    expect(html).toContain("no circulation has been logged");
     expect(html).toContain("proof ready");
   });
 
@@ -350,6 +419,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: "draft_only",
           reportKind: "diligence_packet",
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
           reportSummary:
@@ -403,6 +473,7 @@ describe("MissionListCard", () => {
           reportDraftStatus: "draft_only",
           reportKind: "diligence_packet",
           reportPublication: null,
+          circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
             releaseApprovalStatus: "approved_for_release",

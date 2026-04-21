@@ -5,12 +5,13 @@ import {
   CreateLenderUpdateMissionInputSchema,
   CreateMissionFromTextInputSchema,
   ExportReportingMissionMarkdownInputSchema,
-  RecordReportingReleaseLogInputSchema,
   CreateReportingMissionInputSchema,
   FileReportingMissionArtifactsInputSchema,
   FINANCE_DISCOVERY_QUESTION_KINDS,
   MissionSourceKindSchema,
   MissionStatusSchema,
+  RecordReportingReleaseLogInputSchema,
+  RequestReportCirculationApprovalInputSchema,
   RequestReportReleaseApprovalInputSchema,
 } from "@pocket-cto/domain";
 
@@ -68,6 +69,9 @@ export const exportReportingMissionMarkdownSchema =
 
 export const requestReportingReleaseApprovalSchema =
   RequestReportReleaseApprovalInputSchema;
+
+export const requestReportingCirculationApprovalSchema =
+  RequestReportCirculationApprovalInputSchema;
 
 export const recordReportingReleaseLogSchema =
   RecordReportingReleaseLogInputSchema;

@@ -1,10 +1,12 @@
 import type { JsonRpcId } from "@pocket-cto/codex-runtime";
 import type {
   ApprovalRecord,
+  ReportCirculationApprovalPayload,
   ReportReleaseApprovalPayload,
   RuntimeApprovalRequestMethod,
 } from "@pocket-cto/domain";
 import {
+  isReportCirculationApprovalPayload,
   isReportReleaseApprovalPayload,
 } from "@pocket-cto/domain";
 
@@ -80,6 +82,18 @@ export function readReportReleaseApprovalPayload(
   if (!isReportReleaseApprovalPayload(approval.payload)) {
     throw new Error(
       `Approval ${approval.id} does not contain a valid report-release payload`,
+    );
+  }
+
+  return approval.payload;
+}
+
+export function readReportCirculationApprovalPayload(
+  approval: ApprovalRecord,
+): ReportCirculationApprovalPayload {
+  if (!isReportCirculationApprovalPayload(approval.payload)) {
+    throw new Error(
+      `Approval ${approval.id} does not contain a valid report-circulation payload`,
     );
   }
 

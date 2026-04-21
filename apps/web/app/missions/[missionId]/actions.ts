@@ -12,6 +12,7 @@ import {
   fileReportingMissionArtifacts,
   interruptMissionTask,
   recordReportingReleaseLog,
+  requestReportingCirculationApproval,
   requestReportingReleaseApproval,
   resolveMissionApproval,
 } from "../../../lib/api";
@@ -21,6 +22,7 @@ import {
   buildFileReportingArtifactsActionResult,
   buildInterruptActionResult,
   buildRecordReportingReleaseLogActionResult,
+  buildRequestReportingCirculationApprovalActionResult,
   buildRequestReportingReleaseApprovalActionResult,
   type MissionActionState,
 } from "../../../lib/operator-actions";
@@ -73,6 +75,15 @@ const requestReportingReleaseApprovalFormSchema = z.object({
   reportKind: z.preprocess(
     (value) => value ?? "lender_update",
     z.enum(["lender_update", "diligence_packet"]),
+  ),
+  requestedBy: z.string().trim().min(1),
+});
+
+const requestReportingCirculationApprovalFormSchema = z.object({
+  missionId: z.string().uuid(),
+  reportKind: z.preprocess(
+    (value) => value ?? "board_packet",
+    z.literal("board_packet"),
   ),
   requestedBy: z.string().trim().min(1),
 });
@@ -274,6 +285,34 @@ export async function submitRequestReportingReleaseApproval(
   }
 
   return buildRequestReportingReleaseApprovalActionResult(
+    input.requestedBy,
+    input.reportKind,
+    result,
+  );
+}
+
+export async function submitRequestReportingCirculationApproval(
+  _previousState: MissionActionState,
+  formData: FormData,
+) {
+  const input = requestReportingCirculationApprovalFormSchema.parse({
+    missionId: formData.get("missionId"),
+    reportKind: formData.get("reportKind"),
+    requestedBy: formData.get("requestedBy"),
+  });
+
+  const result = await requestReportingCirculationApproval({
+    missionId: input.missionId,
+    requestedBy: input.requestedBy,
+  });
+
+  if (result.ok) {
+    revalidatePath("/");
+    revalidatePath("/missions");
+    revalidatePath(`/missions/${input.missionId}`);
+  }
+
+  return buildRequestReportingCirculationApprovalActionResult(
     input.requestedBy,
     input.reportKind,
     result,

@@ -137,6 +137,7 @@ function buildReportingProofBundle(): ProofBundleManifest {
     riskSummary: "",
     rollbackSummary: "",
     latestApproval: null,
+    circulationReadiness: null,
     releaseRecord: null,
     releaseReadiness: null,
     evidenceCompleteness: {

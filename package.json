@@ -71,6 +71,7 @@
     "smoke:finance-discovery-quality:local": "tsx tools/finance-discovery-quality-hardening-smoke.mjs",
     "smoke:finance-memo:local": "tsx tools/finance-memo-smoke.mjs",
     "smoke:board-packet:local": "tsx tools/board-packet-smoke.mjs",
+    "smoke:board-packet-circulation-approval:local": "tsx tools/board-packet-circulation-approval-smoke.mjs",
     "smoke:lender-update:local": "tsx tools/lender-update-smoke.mjs",
     "smoke:diligence-packet:local": "tsx tools/diligence-packet-smoke.mjs",
     "smoke:diligence-packet-release-approval:local": "tsx tools/diligence-packet-release-approval-smoke.mjs",

@@ -12,6 +12,7 @@ import type {
   ApprovalStatus,
   MissionRecord,
   MissionTaskRecord,
+  ReportCirculationApprovalPayload,
   ReportReleaseApprovalPayload,
   ReportReleaseApprovalReleaseRecord,
   RuntimeApprovalRequestMethod,
@@ -41,6 +42,7 @@ import {
   ApprovalNotPendingError,
 } from "./errors";
 import {
+  readReportCirculationApprovalPayload,
   readReportReleaseApprovalPayload,
   readRuntimeApprovalPayload,
   withApprovalContinuationFailurePayload,
@@ -68,6 +70,17 @@ export type RequestReportReleaseApprovalInput = {
 };
 
 export type RequestReportReleaseApprovalResult = {
+  approval: ApprovalRecord;
+  created: boolean;
+};
+
+export type RequestReportCirculationApprovalInput = {
+  missionId: string;
+  payload: ReportCirculationApprovalPayload;
+  requestedBy: string;
+};
+
+export type RequestReportCirculationApprovalResult = {
   approval: ApprovalRecord;
   created: boolean;
 };
@@ -181,7 +194,10 @@ export class ApprovalService {
         input.missionId,
         session,
       );
-      const existingApproval = readLatestReportReleaseApproval(approvals);
+      const existingApproval = readLatestReportApproval(
+        approvals,
+        "report_release",
+      );
 
       if (existingApproval) {
         return {
@@ -193,6 +209,75 @@ export class ApprovalService {
       const createdApproval = await this.approvalRepository.createApproval(
         {
           kind: "report_release",
+          missionId: input.missionId,
+          payload: input.payload,
+          requestedBy: input.requestedBy,
+          status: "pending",
+          taskId: null,
+        },
+        session,
+      );
+
+      await this.replayService.append(
+        {
+          actor: input.requestedBy,
+          missionId: input.missionId,
+          taskId: null,
+          type: "approval.requested",
+          payload: buildApprovalRequestedPayload({
+            approvalId: createdApproval.id,
+            details: input.payload,
+            itemId: null,
+            kind: createdApproval.kind,
+            missionId: input.missionId,
+            requestId: null,
+            requestMethod: null,
+            taskId: null,
+            threadId: null,
+            turnId: null,
+          }),
+        },
+        session,
+      );
+
+      return {
+        approval: createdApproval,
+        created: true,
+      };
+    });
+  }
+
+  async requestReportCirculationApproval(
+    input: RequestReportCirculationApprovalInput,
+  ): Promise<RequestReportCirculationApprovalResult> {
+    if (input.payload.missionId !== input.missionId) {
+      throw invalidRequest(
+        "missionId",
+        "The report circulation approval payload must target the same mission as the request route.",
+      );
+    }
+
+    return this.missionRepository.transaction(async (session) => {
+      await this.getRequiredMission(input.missionId, session);
+      const approvals = await this.approvalRepository.listApprovalsByMissionId(
+        input.missionId,
+        session,
+      );
+      const existingApproval = readLatestReportApproval(
+        approvals,
+        "report_circulation",
+      );
+
+      if (existingApproval) {
+        return {
+          approval: existingApproval,
+          created: false,
+        };
+      }
+
+      const createdApproval = await this.approvalRepository.createApproval(
+        {
+          kind: "report_circulation",
           missionId: input.missionId,
           payload: input.payload,
           requestedBy: input.requestedBy,
@@ -312,19 +397,26 @@ export class ApprovalService {
         }
 
         if (
-          approval.kind === "report_release" &&
+          (approval.kind === "report_release" ||
+            approval.kind === "report_circulation") &&
           input.decision === "accept_for_session"
         ) {
           throw invalidRequest(
             "decision",
-            "Report release approvals do not support `accept_for_session`; use `accept`, `decline`, or `cancel`.",
+            `${approval.kind === "report_release" ? "Report release" : "Report circulation"} approvals do not support \`accept_for_session\`; use \`accept\`, \`decline\`, or \`cancel\`.`,
           );
         }
 
         const nextStatus = mapDecisionToApprovalStatus(input.decision);
 
-        if (approval.kind === "report_release") {
-          const approvalContext = readReportReleaseApprovalPayload(approval);
+        if (
+          approval.kind === "report_release" ||
+          approval.kind === "report_circulation"
+        ) {
+          const approvalContext =
+            approval.kind === "report_release"
+              ? readReportReleaseApprovalPayload(approval)
+              : readReportCirculationApprovalPayload(approval);
           const updated = await this.approvalRepository.updateApproval(
             {
               approvalId: approval.id,
@@ -834,10 +926,13 @@ export class ApprovalService {
   }
 }
 
-function readLatestReportReleaseApproval(approvals: ApprovalRecord[]) {
+function readLatestReportApproval(
+  approvals: ApprovalRecord[],
+  kind: ApprovalRecord["kind"],
+) {
   return (
     [...approvals]
-      .filter((approval) => approval.kind === "report_release")
+      .filter((approval) => approval.kind === kind)
       .sort(
         (left, right) =>
           left.createdAt.localeCompare(right.createdAt) ||

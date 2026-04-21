@@ -9,6 +9,7 @@ import {
 } from "./discovery-mission";
 import { FinanceCompanyKeySchema } from "./finance-twin";
 import {
+  ReportingCirculationReadinessViewSchema,
   ReportingDraftStatusSchema,
   ReportingPublicationViewSchema,
   ReportingReleaseRecordViewSchema,
@@ -40,6 +41,8 @@ export const MissionListItemSchema = z.object({
   reportDraftStatus: ReportingDraftStatusSchema.nullable().default(null),
   reportSummary: z.string().nullable().default(null),
   reportPublication: ReportingPublicationViewSchema.nullable().default(null),
+  circulationReadiness:
+    ReportingCirculationReadinessViewSchema.nullable().default(null),
   releaseRecord: ReportingReleaseRecordViewSchema.nullable().default(null),
   releaseReadiness:
     ReportingReleaseReadinessViewSchema.nullable().default(null),

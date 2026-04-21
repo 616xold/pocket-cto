@@ -9,6 +9,7 @@ export const ApprovalKindSchema = z.enum([
   "rollback",
   "network_escalation",
   "report_release",
+  "report_circulation",
 ]);
 
 export const ApprovalStatusSchema = z.enum([
@@ -36,9 +37,15 @@ export const REPORT_RELEASE_APPROVAL_REPORT_KINDS = [
   "lender_update",
   "diligence_packet",
 ] as const;
+export const REPORT_CIRCULATION_APPROVAL_REPORT_KINDS = [
+  "board_packet",
+] as const;
 
 export const ReportReleaseApprovalReportKindSchema = z.enum(
   REPORT_RELEASE_APPROVAL_REPORT_KINDS,
+);
+export const ReportCirculationApprovalReportKindSchema = z.enum(
+  REPORT_CIRCULATION_APPROVAL_REPORT_KINDS,
 );
 
 export const REPORT_RELEASE_APPROVAL_REPORT_KIND_LABELS = {
@@ -46,6 +53,12 @@ export const REPORT_RELEASE_APPROVAL_REPORT_KIND_LABELS = {
   diligence_packet: "Diligence packet",
 } satisfies Record<
   (typeof REPORT_RELEASE_APPROVAL_REPORT_KINDS)[number],
+  string
+>;
+export const REPORT_CIRCULATION_APPROVAL_REPORT_KIND_LABELS = {
+  board_packet: "Board packet",
+} satisfies Record<
+  (typeof REPORT_CIRCULATION_APPROVAL_REPORT_KINDS)[number],
   string
 >;
 
@@ -56,6 +69,8 @@ export const ReportReleaseApprovalResolutionSchema = z
     resolvedBy: z.string().min(1),
   })
   .strict();
+export const ReportCirculationApprovalResolutionSchema =
+  ReportReleaseApprovalResolutionSchema;
 
 export const ReportReleaseApprovalReleaseRecordSchema = z
   .object({
@@ -84,6 +99,22 @@ export const ReportReleaseApprovalPayloadSchema = z
       ReportReleaseApprovalReleaseRecordSchema.nullable().default(null),
   })
   .strict();
+export const ReportCirculationApprovalPayloadSchema = z
+  .object({
+    missionId: z.string().uuid(),
+    reportKind: ReportCirculationApprovalReportKindSchema,
+    sourceReportingMissionId: z.string().uuid(),
+    sourceDiscoveryMissionId: z.string().uuid(),
+    artifactId: z.string().uuid(),
+    companyKey: FinanceCompanyKeySchema,
+    draftOnlyStatus: z.literal("draft_only"),
+    summary: z.string().min(1),
+    freshnessSummary: z.string().min(1),
+    limitationsSummary: z.string().min(1),
+    resolution:
+      ReportCirculationApprovalResolutionSchema.nullable().default(null),
+  })
+  .strict();
 
 export const ApprovalRecordSchema = z.object({
   id: z.string().uuid(),
@@ -108,14 +139,23 @@ export type RuntimeApprovalRequestMethod = z.infer<
 export type ReportReleaseApprovalReportKind = z.infer<
   typeof ReportReleaseApprovalReportKindSchema
 >;
+export type ReportCirculationApprovalReportKind = z.infer<
+  typeof ReportCirculationApprovalReportKindSchema
+>;
 export type ReportReleaseApprovalResolution = z.infer<
   typeof ReportReleaseApprovalResolutionSchema
+>;
+export type ReportCirculationApprovalResolution = z.infer<
+  typeof ReportCirculationApprovalResolutionSchema
 >;
 export type ReportReleaseApprovalReleaseRecord = z.infer<
   typeof ReportReleaseApprovalReleaseRecordSchema
 >;
 export type ReportReleaseApprovalPayload = z.infer<
   typeof ReportReleaseApprovalPayloadSchema
+>;
+export type ReportCirculationApprovalPayload = z.infer<
+  typeof ReportCirculationApprovalPayloadSchema
 >;
 export type ApprovalRecord = z.infer<typeof ApprovalRecordSchema>;
 
@@ -125,8 +165,20 @@ export function isReportReleaseApprovalPayload(
   return ReportReleaseApprovalPayloadSchema.safeParse(value).success;
 }
 
+export function isReportCirculationApprovalPayload(
+  value: unknown,
+): value is ReportCirculationApprovalPayload {
+  return ReportCirculationApprovalPayloadSchema.safeParse(value).success;
+}
+
 export function readReportReleaseApprovalReportKindLabel(
   reportKind: ReportReleaseApprovalReportKind,
 ) {
   return REPORT_RELEASE_APPROVAL_REPORT_KIND_LABELS[reportKind];
+}
+
+export function readReportCirculationApprovalReportKindLabel(
+  reportKind: ReportCirculationApprovalReportKind,
+) {
+  return REPORT_CIRCULATION_APPROVAL_REPORT_KIND_LABELS[reportKind];
 }

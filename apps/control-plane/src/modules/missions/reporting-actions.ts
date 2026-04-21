@@ -3,6 +3,8 @@ import type {
   FileReportingMissionArtifactsInput,
   RecordReportingReleaseLogInput,
   RecordReportingReleaseLogResult,
+  RequestReportCirculationApprovalInput,
+  RequestReportCirculationApprovalResult,
   RequestReportReleaseApprovalResult,
   RequestReportReleaseApprovalInput,
 } from "@pocket-cto/domain";
@@ -21,12 +23,15 @@ export class MissionReportingActionsService {
       >;
       approvalService: Pick<
         ApprovalService,
-        "recordReportReleaseLog" | "requestReportReleaseApproval"
+        | "recordReportReleaseLog"
+        | "requestReportCirculationApproval"
+        | "requestReportReleaseApproval"
       >;
       reportingService: Pick<
         ReportingService,
         | "exportMarkdownBundle"
         | "fileDraftArtifacts"
+        | "prepareReportCirculationApproval"
         | "prepareReportingReleaseLog"
         | "prepareReportReleaseApproval"
       >;
@@ -75,6 +80,43 @@ export class MissionReportingActionsService {
     });
 
     return filed;
+  }
+
+  async requestCirculationApproval(
+    missionId: string,
+    input: RequestReportCirculationApprovalInput,
+  ): Promise<RequestReportCirculationApprovalResult> {
+    const payload =
+      await this.deps.reportingService.prepareReportCirculationApproval(
+        missionId,
+      );
+    const request =
+      await this.deps.approvalService.requestReportCirculationApproval({
+        missionId,
+        payload,
+        requestedBy: input.requestedBy,
+      });
+
+    if (request.created) {
+      await this.deps.proofBundleAssembly.refreshProofBundle({
+        missionId,
+        trigger: "approval_requested",
+      });
+    }
+
+    return {
+      missionId,
+      approvalId: request.approval.id,
+      created: request.created,
+      approvalStatus: request.approval.status,
+      circulationApprovalStatus:
+        request.approval.status === "approved"
+          ? "approved_for_circulation"
+          : request.approval.status === "pending"
+            ? "pending_review"
+            : "not_approved_for_circulation",
+      circulationReady: request.approval.status === "approved",
+    };
   }
 
   async requestReleaseApproval(

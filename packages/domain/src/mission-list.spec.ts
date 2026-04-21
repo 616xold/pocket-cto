@@ -193,6 +193,19 @@ describe("Mission list domain schema", () => {
           reportKind: "board_packet",
           reportDraftStatus: "draft_only",
           reportPublication: null,
+          circulationReadiness: {
+            circulationApprovalStatus: "pending_review",
+            circulationReady: false,
+            approvalId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            approvalStatus: "pending",
+            requestedAt: "2026-04-19T12:04:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: null,
+            resolvedBy: null,
+            rationale: null,
+            summary:
+              "Circulation approval was requested by finance-operator; the stored board packet is not yet approved for internal circulation.",
+          },
           reportSummary:
             "Draft board packet for acme from the completed cash posture reporting mission.",
           appendixPresent: true,
@@ -222,6 +235,9 @@ describe("Mission list domain schema", () => {
     expect(parsed.missions[0]?.sourceReportingMissionId).toBe(
       "33333333-3333-4333-8333-333333333333",
     );
+    expect(
+      parsed.missions[0]?.circulationReadiness?.circulationApprovalStatus,
+    ).toBe("pending_review");
     expect(parsed.missions[0]?.reportPublication).toBeNull();
     expect(parsed.missions[0]?.appendixPresent).toBe(true);
   });

@@ -235,6 +235,40 @@ describe("card-formatter", () => {
     expect(card.actionHint).toContain("does not deliver the report");
   });
 
+  it("formats a pending board-packet circulation approval as a posture-only approval card", () => {
+    const card = buildMissionApprovalCard({
+      approval: buildApproval({
+        kind: "report_circulation",
+        requestedBy: "finance-operator",
+        payload: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          companyKey: "acme",
+          draftOnlyStatus: "draft_only",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary:
+            "This board packet remains delivery-free while review is pending.",
+          missionId: "11111111-1111-4111-8111-111111111111",
+          reportKind: "board_packet",
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          summary:
+            "Draft board packet for acme from the completed finance memo.",
+          resolution: null,
+        },
+        taskId: null,
+      }),
+      context: buildContext(),
+    });
+
+    expect(card.title).toBe("Review board packet circulation approval for acme");
+    expect(card.summary).toContain(
+      "Review board packet circulation readiness for acme",
+    );
+    expect(card.summary).toContain("Draft board packet for acme");
+    expect(card.requiresLiveControl).toBe(false);
+    expect(card.actionHint).toContain("does not log circulation");
+  });
+
   it("formats a logged lender-update release as a non-delivery approval card", () => {
     const card = buildMissionApprovalCard({
       approval: buildApproval({

@@ -2842,6 +2842,11 @@ async function createHarness(options?: {
             "requestReleaseApproval should not be called in orchestrator harness",
           );
         },
+        async requestCirculationApproval() {
+          throw new Error(
+            "requestCirculationApproval should not be called in orchestrator harness",
+          );
+        },
       } as AppContainer["missionReportingActionsService"],
       operatorControl: {
         approvalService,

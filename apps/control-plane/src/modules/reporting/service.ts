@@ -3,6 +3,7 @@ import type {
   FileReportingMissionArtifactsInput,
   RecordReportingReleaseLogInput,
   MissionRecord,
+  ReportCirculationApprovalPayload,
   ReportReleaseApprovalPayload,
   ReportReleaseApprovalReleaseRecord,
   ReportingMissionInput,
@@ -14,6 +15,7 @@ import {
   ExportReportingMissionMarkdownInputSchema,
   FileReportingMissionArtifactsInputSchema,
   RecordReportingReleaseLogInputSchema,
+  ReportCirculationApprovalPayloadSchema,
   ReportReleaseApprovalPayloadSchema,
   ReportingFiledArtifactsResultSchema,
   ReportingMarkdownExportResultSchema,
@@ -357,6 +359,72 @@ export class ReportingService {
         releaseApprovalArtifact.reportKind === "lender_update"
           ? releaseApprovalArtifact.updateSummary
           : releaseApprovalArtifact.packetSummary,
+    });
+  }
+
+  async prepareReportCirculationApproval(
+    missionId: string,
+  ): Promise<ReportCirculationApprovalPayload> {
+    const context = await this.loadReportingMissionContext(missionId);
+    const reporting = readMissionReportingView({
+      artifacts: context.artifacts,
+      proofBundle: context.proofBundle,
+    });
+
+    if (!reporting) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet expose a persisted reporting view.`,
+      );
+    }
+
+    if (reporting.reportKind !== "board_packet") {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} has report kind ${reporting.reportKind}, not board_packet.`,
+      );
+    }
+
+    if (!reporting.boardPacket) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet store a board_packet artifact payload.`,
+      );
+    }
+
+    if (!reporting.companyKey) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} has no company scope required for board-packet circulation approval.`,
+      );
+    }
+
+    if (!reporting.sourceReportingMissionId) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} is missing the source reporting mission required for board-packet circulation approval.`,
+      );
+    }
+
+    const reportArtifactId = readSingleArtifactId(
+      context.artifacts,
+      "board_packet",
+      missionId,
+      "circulation approval can be requested",
+    );
+
+    return ReportCirculationApprovalPayloadSchema.parse({
+      artifactId: reportArtifactId,
+      companyKey: reporting.companyKey,
+      draftOnlyStatus: reporting.boardPacket.draftStatus,
+      freshnessSummary: reporting.boardPacket.freshnessSummary,
+      limitationsSummary: reporting.boardPacket.limitationsSummary,
+      missionId,
+      reportKind: reporting.boardPacket.reportKind,
+      resolution: null,
+      sourceDiscoveryMissionId: reporting.sourceDiscoveryMissionId,
+      sourceReportingMissionId: reporting.sourceReportingMissionId,
+      summary: reporting.boardPacket.packetSummary,
     });
   }
 

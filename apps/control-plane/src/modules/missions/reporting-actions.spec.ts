@@ -20,6 +20,9 @@ describe("MissionReportingActionsService", () => {
         recordReportReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
+        requestReportCirculationApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         requestReportReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -33,6 +36,9 @@ describe("MissionReportingActionsService", () => {
         }),
         fileDraftArtifacts,
         prepareReportingReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportCirculationApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportReleaseApproval: vi.fn(async () => {
@@ -80,6 +86,9 @@ describe("MissionReportingActionsService", () => {
         recordReportReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
+        requestReportCirculationApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         requestReportReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -90,6 +99,9 @@ describe("MissionReportingActionsService", () => {
       reportingService: {
         exportMarkdownBundle,
         fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportCirculationApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportingReleaseLog: vi.fn(async () => {
@@ -167,6 +179,9 @@ describe("MissionReportingActionsService", () => {
         recordReportReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
+        requestReportCirculationApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         requestReportReleaseApproval,
       },
       proofBundleAssembly: {
@@ -177,6 +192,9 @@ describe("MissionReportingActionsService", () => {
           throw new Error("not used");
         }),
         fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportCirculationApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportingReleaseLog: vi.fn(async () => {
@@ -226,6 +244,111 @@ describe("MissionReportingActionsService", () => {
       approvalStatus: "pending",
       releaseApprovalStatus: "pending_review",
       releaseReady: false,
+    });
+  });
+
+  it("refreshes proof posture after requesting board-packet circulation approval", async () => {
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> => buildProofBundleManifest(),
+    );
+    const prepareReportCirculationApproval = vi.fn(async () => ({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      reportKind: "board_packet" as const,
+      sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+      sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+      artifactId: "44444444-4444-4444-8444-444444444444",
+      companyKey: "acme" as const,
+      draftOnlyStatus: "draft_only" as const,
+      summary: "Draft board packet for acme from the completed finance memo.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary: "Draft-only posture remains explicit.",
+      resolution: null,
+    }));
+    const requestReportCirculationApproval = vi.fn(async () => ({
+      approval: {
+        id: "55555555-5555-4555-8555-555555555555",
+        missionId: "11111111-1111-4111-8111-111111111111",
+        taskId: null,
+        kind: "report_circulation" as const,
+        status: "pending" as const,
+        requestedBy: "finance-operator",
+        resolvedBy: null,
+        rationale: null,
+        payload: {},
+        createdAt: "2026-04-20T09:00:00.000Z",
+        updatedAt: "2026-04-20T09:00:00.000Z",
+      },
+      created: true,
+    }));
+    const service = new MissionReportingActionsService({
+      approvalService: {
+        recordReportReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        requestReportCirculationApproval,
+        requestReportReleaseApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+      },
+      proofBundleAssembly: {
+        refreshProofBundle,
+      },
+      reportingService: {
+        exportMarkdownBundle: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportCirculationApproval,
+        prepareReportingReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportReleaseApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+      },
+    });
+
+    const result = await service.requestCirculationApproval(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        requestedBy: "finance-operator",
+      },
+    );
+
+    expect(prepareReportCirculationApproval).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+    );
+    expect(requestReportCirculationApproval).toHaveBeenCalledWith({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      payload: {
+        artifactId: "44444444-4444-4444-8444-444444444444",
+        companyKey: "acme",
+        draftOnlyStatus: "draft_only",
+        freshnessSummary: "Cash posture remains stale.",
+        limitationsSummary: "Draft-only posture remains explicit.",
+        missionId: "11111111-1111-4111-8111-111111111111",
+        reportKind: "board_packet",
+        resolution: null,
+        sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+        sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+        summary:
+          "Draft board packet for acme from the completed finance memo.",
+      },
+      requestedBy: "finance-operator",
+    });
+    expect(refreshProofBundle).toHaveBeenCalledWith({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      trigger: "approval_requested",
+    });
+    expect(result).toEqual({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      created: true,
+      approvalStatus: "pending",
+      circulationApprovalStatus: "pending_review",
+      circulationReady: false,
     });
   });
 
@@ -288,6 +411,9 @@ describe("MissionReportingActionsService", () => {
     const service = new MissionReportingActionsService({
       approvalService: {
         recordReportReleaseLog,
+        requestReportCirculationApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         requestReportReleaseApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -300,6 +426,9 @@ describe("MissionReportingActionsService", () => {
           throw new Error("not used");
         }),
         fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportCirculationApproval: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportReleaseApproval: vi.fn(async () => {
@@ -377,6 +506,7 @@ function buildProofBundleManifest(): ProofBundleManifest {
     reportKind: "finance_memo",
     reportDraftStatus: "draft_only",
     reportPublication: buildPublication(true),
+    circulationReadiness: null,
     reportSummary:
       "Draft finance memo summarizing stored payables pressure and carried evidence posture.",
     appendixPresent: true,

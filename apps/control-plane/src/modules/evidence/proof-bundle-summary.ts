@@ -14,10 +14,14 @@ import type {
   ProofBundleArtifactSummary,
   ProofBundleLatestApproval,
   ProofBundleManifest,
+  ReportCirculationApprovalReportKind,
   ReportReleaseApprovalReportKind,
   ProofBundleTimestamps,
 } from "@pocket-cto/domain";
-import { readReportReleaseApprovalReportKindLabel } from "@pocket-cto/domain";
+import {
+  readReportCirculationApprovalReportKindLabel,
+  readReportReleaseApprovalReportKindLabel,
+} from "@pocket-cto/domain";
 import { readDiscoveryAnswerArtifactMetadata } from "./discovery-answer";
 import {
   readBoardPacketArtifactMetadata,
@@ -26,6 +30,7 @@ import {
   readFinanceMemoArtifactMetadata,
   readLenderUpdateArtifactMetadata,
 } from "../reporting/artifact";
+import { buildReportingCirculationReadinessView } from "../reporting/circulation-readiness";
 import { buildReportingReleaseRecordView } from "../reporting/release-record";
 import { buildReportingReleaseReadinessView } from "../reporting/release-readiness";
 import { normalizeSentence, truncate } from "./text";
@@ -59,6 +64,7 @@ export type ProofBundleAssemblyFacts = {
   reportPublication: ProofBundleManifest["reportPublication"];
   reportDraftStatus: ProofBundleManifest["reportDraftStatus"];
   reportKind: ProofBundleManifest["reportKind"];
+  circulationReadiness: ProofBundleManifest["circulationReadiness"];
   releaseRecord: ProofBundleManifest["releaseRecord"];
   releaseReadiness: ProofBundleManifest["releaseReadiness"];
   reportSummary: string | null;
@@ -134,10 +140,20 @@ export function deriveProofBundleAssemblyFacts(input: {
     latestArtifacts.evidenceAppendix,
   );
   const latestApproval = readLatestApproval(input.approvals);
+  const circulationApprovalReportKind = readCirculationApprovalReportKind({
+    boardPacketMetadata,
+  });
   const releaseApprovalReportKind = readReleaseApprovalReportKind({
     diligencePacketMetadata,
     lenderUpdateMetadata,
   });
+  const circulationReadiness = circulationApprovalReportKind
+    ? buildReportingCirculationReadinessView({
+        approvals: input.approvals,
+        reportKind: circulationApprovalReportKind,
+        storedDraft: true,
+      })
+    : null;
   const releaseReadiness = releaseApprovalReportKind
     ? buildReportingReleaseReadinessView({
         approvals: input.approvals,
@@ -235,6 +251,7 @@ export function deriveProofBundleAssemblyFacts(input: {
         evidenceAppendixMetadata?.reportKind ??
         input.existingBundle?.reportKind ??
         null,
+      circulationReadiness,
       latestApproval,
       releaseRecord,
       releaseReadiness,
@@ -291,6 +308,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       evidenceAppendixMetadata?.reportKind ??
       input.existingBundle?.reportKind ??
       null,
+    circulationReadiness,
     releaseRecord,
     releaseReadiness,
     reportSummary:
@@ -413,6 +431,7 @@ export function deriveProofBundleAssemblyFacts(input: {
       latestApproval,
       mission: input.mission,
       pullRequestArtifact: latestArtifacts.pullRequest,
+      circulationReadiness,
       releaseRecord,
       releaseReadiness,
     }),
@@ -569,7 +588,11 @@ function readLatestApproval(
 ): ProofBundleLatestApproval | null {
   const latestApproval =
     [...approvals]
-      .filter((approval) => approval.kind !== "report_release")
+      .filter(
+        (approval) =>
+          approval.kind !== "report_release" &&
+          approval.kind !== "report_circulation",
+      )
       .sort(
         (left, right) =>
           left.createdAt.localeCompare(right.createdAt) ||
@@ -596,6 +619,7 @@ function readLatestApproval(
 function buildDecisionTrace(input: {
   artifacts: ArtifactRecord[];
   appendixPresent: boolean;
+  circulationReadiness: ProofBundleManifest["circulationReadiness"];
   reportKind:
     | BoardPacketArtifactMetadata["reportKind"]
     | DiligencePacketArtifactMetadata["reportKind"]
@@ -718,6 +742,19 @@ function buildDecisionTrace(input: {
     );
   }
 
+  if (input.circulationReadiness?.approvalId) {
+    const reportLabel =
+      input.reportKind && isCirculationApprovalReportKind(input.reportKind)
+        ? readReportCirculationApprovalReportKindLabel(input.reportKind)
+            .toLowerCase()
+            .replaceAll(" ", "-")
+        : "report";
+
+    lines.push(
+      `Latest ${reportLabel} circulation approval is ${input.circulationReadiness.circulationApprovalStatus}.`,
+    );
+  }
+
   if (input.releaseReadiness?.approvalId) {
     const reportLabel =
       input.reportKind && isReleaseApprovalReportKind(input.reportKind)
@@ -740,6 +777,16 @@ function buildDecisionTrace(input: {
   );
 }
 
+function readCirculationApprovalReportKind(input: {
+  boardPacketMetadata: BoardPacketArtifactMetadata | null;
+}): ReportCirculationApprovalReportKind | null {
+  if (input.boardPacketMetadata) {
+    return "board_packet";
+  }
+
+  return null;
+}
+
 function readReleaseApprovalReportKind(input: {
   diligencePacketMetadata: DiligencePacketArtifactMetadata | null;
   lenderUpdateMetadata: LenderUpdateArtifactMetadata | null;
@@ -755,6 +802,12 @@ function readReleaseApprovalReportKind(input: {
   return null;
 }
 
+function isCirculationApprovalReportKind(
+  reportKind: ProofBundleManifest["reportKind"],
+): reportKind is ReportCirculationApprovalReportKind {
+  return reportKind === "board_packet";
+}
+
 function isReleaseApprovalReportKind(
   reportKind: ProofBundleManifest["reportKind"],
 ): reportKind is ReportReleaseApprovalReportKind {
@@ -768,6 +821,7 @@ function buildProofBundleTimestamps(input: {
   latestApproval: ProofBundleLatestApproval | null;
   mission: MissionRecord;
   pullRequestArtifact: ArtifactRecord | null;
+  circulationReadiness: ProofBundleManifest["circulationReadiness"];
   releaseRecord: ProofBundleManifest["releaseRecord"];
   releaseReadiness: ProofBundleManifest["releaseReadiness"];
 }): ProofBundleTimestamps {
@@ -797,11 +851,17 @@ function buildProofBundleTimestamps(input: {
     latestExecutorEvidenceAt,
     latestPullRequestAt,
     latestApprovalAt:
-      input.latestApproval?.updatedAt ??
-      input.releaseRecord?.releasedAt ??
-      input.releaseReadiness?.resolvedAt ??
-      input.releaseReadiness?.requestedAt ??
-      null,
+      [
+        input.latestApproval?.updatedAt ?? null,
+        input.releaseRecord?.releasedAt ?? null,
+        input.releaseReadiness?.resolvedAt ?? null,
+        input.releaseReadiness?.requestedAt ?? null,
+        input.circulationReadiness?.resolvedAt ?? null,
+        input.circulationReadiness?.requestedAt ?? null,
+      ]
+        .filter((value): value is string => Boolean(value))
+        .sort()
+        .at(-1) ?? null,
     latestArtifactAt,
   };
 }

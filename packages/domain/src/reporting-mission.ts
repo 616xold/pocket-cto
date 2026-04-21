@@ -85,6 +85,11 @@ export const RequestReportReleaseApprovalInputSchema = z
     requestedBy: z.string().trim().min(1).default("operator"),
   })
   .strict();
+export const RequestReportCirculationApprovalInputSchema = z
+  .object({
+    requestedBy: z.string().trim().min(1).default("operator"),
+  })
+  .strict();
 
 export const RecordReportingReleaseLogInputSchema = z
   .object({
@@ -330,12 +335,33 @@ export const ReportingReleaseApprovalStatusSchema = z.enum([
   "approved_for_release",
   "not_approved_for_release",
 ]);
+export const ReportingCirculationApprovalStatusSchema = z.enum([
+  "not_requested",
+  "pending_review",
+  "approved_for_circulation",
+  "not_approved_for_circulation",
+]);
 
 export const ReportingReleaseReadinessViewSchema = z
   .object({
     releaseApprovalStatus:
       ReportingReleaseApprovalStatusSchema.default("not_requested"),
     releaseReady: z.boolean().default(false),
+    approvalId: z.string().uuid().nullable().default(null),
+    approvalStatus: ApprovalStatusSchema.nullable().default(null),
+    requestedAt: z.string().nullable().default(null),
+    requestedBy: z.string().nullable().default(null),
+    resolvedAt: z.string().nullable().default(null),
+    resolvedBy: z.string().nullable().default(null),
+    rationale: z.string().nullable().default(null),
+    summary: z.string().min(1),
+  })
+  .strict();
+export const ReportingCirculationReadinessViewSchema = z
+  .object({
+    circulationApprovalStatus:
+      ReportingCirculationApprovalStatusSchema.default("not_requested"),
+    circulationReady: z.boolean().default(false),
     approvalId: z.string().uuid().nullable().default(null),
     approvalStatus: ApprovalStatusSchema.nullable().default(null),
     requestedAt: z.string().nullable().default(null),
@@ -384,6 +410,8 @@ export const ReportingMissionViewSchema = z
     diligencePacket:
       DiligencePacketArtifactMetadataSchema.nullable().default(null),
     publication: ReportingPublicationViewSchema.nullable().default(null),
+    circulationReadiness:
+      ReportingCirculationReadinessViewSchema.nullable().default(null),
     releaseRecord: ReportingReleaseRecordViewSchema.nullable().default(null),
     releaseReadiness:
       ReportingReleaseReadinessViewSchema.nullable().default(null),
@@ -414,6 +442,16 @@ export const RequestReportReleaseApprovalResultSchema = z
     approvalStatus: ApprovalStatusSchema,
     releaseApprovalStatus: ReportingReleaseApprovalStatusSchema,
     releaseReady: z.boolean(),
+  })
+  .strict();
+export const RequestReportCirculationApprovalResultSchema = z
+  .object({
+    missionId: z.string().uuid(),
+    approvalId: z.string().uuid(),
+    created: z.boolean(),
+    approvalStatus: ApprovalStatusSchema,
+    circulationApprovalStatus: ReportingCirculationApprovalStatusSchema,
+    circulationReady: z.boolean(),
   })
   .strict();
 
@@ -453,6 +491,9 @@ export type ExportReportingMissionMarkdownInput = z.infer<
 >;
 export type RequestReportReleaseApprovalInput = z.infer<
   typeof RequestReportReleaseApprovalInputSchema
+>;
+export type RequestReportCirculationApprovalInput = z.infer<
+  typeof RequestReportCirculationApprovalInputSchema
 >;
 export type RecordReportingReleaseLogInput = z.infer<
   typeof RecordReportingReleaseLogInputSchema
@@ -503,8 +544,14 @@ export type ReportingPublicationView = z.infer<
 export type ReportingReleaseApprovalStatus = z.infer<
   typeof ReportingReleaseApprovalStatusSchema
 >;
+export type ReportingCirculationApprovalStatus = z.infer<
+  typeof ReportingCirculationApprovalStatusSchema
+>;
 export type ReportingReleaseReadinessView = z.infer<
   typeof ReportingReleaseReadinessViewSchema
+>;
+export type ReportingCirculationReadinessView = z.infer<
+  typeof ReportingCirculationReadinessViewSchema
 >;
 export type ReportingReleaseRecordView = z.infer<
   typeof ReportingReleaseRecordViewSchema
@@ -518,6 +565,9 @@ export type ReportingMarkdownExportResult = z.infer<
 >;
 export type RequestReportReleaseApprovalResult = z.infer<
   typeof RequestReportReleaseApprovalResultSchema
+>;
+export type RequestReportCirculationApprovalResult = z.infer<
+  typeof RequestReportCirculationApprovalResultSchema
 >;
 export type RecordReportingReleaseLogResult = z.infer<
   typeof RecordReportingReleaseLogResultSchema

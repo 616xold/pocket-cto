@@ -186,6 +186,34 @@ describe("mission reporting action routes", () => {
     );
   });
 
+  it("POST /missions/:missionId/reporting/circulation-approval defaults requestedBy and returns 201", async () => {
+    const requestCirculationApproval = vi.fn(async () => ({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      approvalId: "22222222-2222-4222-8222-222222222222",
+      created: true,
+      approvalStatus: "pending" as const,
+      circulationApprovalStatus: "pending_review" as const,
+      circulationReady: false,
+    }));
+    const app = await createTestApp(apps, {
+      requestCirculationApproval,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/11111111-1111-4111-8111-111111111111/reporting/circulation-approval",
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(requestCirculationApproval).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        requestedBy: "operator",
+      },
+    );
+  });
+
   it("POST /missions/:missionId/reporting/release-log returns 201 with the supplied release details", async () => {
     const recordReleaseLog = vi.fn(async () => ({
       missionId: "11111111-1111-4111-8111-111111111111",
@@ -262,6 +290,11 @@ async function createTestApp(
   if (overrides.fileDraftArtifacts) {
     container.missionReportingActionsService.fileDraftArtifacts =
       overrides.fileDraftArtifacts;
+  }
+
+  if (overrides.requestCirculationApproval) {
+    container.missionReportingActionsService.requestCirculationApproval =
+      overrides.requestCirculationApproval;
   }
 
   if (overrides.requestReleaseApproval) {

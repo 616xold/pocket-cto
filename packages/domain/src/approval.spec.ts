@@ -1,13 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
   ApprovalKindSchema,
+  ReportCirculationApprovalPayloadSchema,
   ReportReleaseApprovalPayloadSchema,
+  isReportCirculationApprovalPayload,
   isReportReleaseApprovalPayload,
 } from "./approval";
 
 describe("Approval domain schema", () => {
   it("parses the report_release approval kind", () => {
     expect(ApprovalKindSchema.parse("report_release")).toBe("report_release");
+  });
+
+  it("parses the report_circulation approval kind", () => {
+    expect(ApprovalKindSchema.parse("report_circulation")).toBe(
+      "report_circulation",
+    );
   });
 
   it("parses the lender-update report release approval payload", () => {
@@ -120,5 +128,27 @@ describe("Approval domain schema", () => {
 
     expect(parsed.resolution?.decision).toBe("accept");
     expect(parsed.releaseRecord?.releaseChannel).toBe("secure_portal");
+  });
+
+  it("parses the board-packet report circulation approval payload", () => {
+    const parsed = ReportCirculationApprovalPayloadSchema.parse({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      reportKind: "board_packet",
+      sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+      sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+      artifactId: "44444444-4444-4444-8444-444444444444",
+      companyKey: "acme",
+      draftOnlyStatus: "draft_only",
+      summary: "Draft board packet for acme from the completed finance memo.",
+      freshnessSummary:
+        "Cash posture remains stale because bank coverage is stale.",
+      limitationsSummary:
+        "This board packet remains delivery-free and circulation-log-free until circulation approval is granted.",
+    });
+
+    expect(parsed.reportKind).toBe("board_packet");
+    expect(parsed.companyKey).toBe("acme");
+    expect(parsed.resolution).toBeNull();
+    expect(isReportCirculationApprovalPayload(parsed)).toBe(true);
   });
 });

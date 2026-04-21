@@ -417,6 +417,11 @@ function createAppContainer(
           "requestReleaseApproval should not be called in this test",
         );
       },
+      async requestCirculationApproval() {
+        throw new Error(
+          "requestCirculationApproval should not be called in this test",
+        );
+      },
     } as AppContainer["missionReportingActionsService"],
     operatorControl: {
       approvalService: {

@@ -259,6 +259,19 @@ describe("Proof bundle domain schema", () => {
       reportKind: "board_packet",
       reportDraftStatus: "draft_only",
       reportPublication: null,
+      circulationReadiness: {
+        circulationApprovalStatus: "approved_for_circulation",
+        circulationReady: true,
+        approvalId: "55555555-5555-4555-8555-555555555555",
+        approvalStatus: "approved",
+        requestedAt: "2026-04-19T12:04:00.000Z",
+        requestedBy: "finance-operator",
+        resolvedAt: "2026-04-19T12:06:00.000Z",
+        resolvedBy: "finance-reviewer",
+        rationale: "Approved for internal circulation.",
+        summary:
+          "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation, but no circulation has been logged.",
+      },
       reportSummary:
         "Draft board packet for acme from the completed cash posture reporting mission.",
       appendixPresent: true,
@@ -320,6 +333,9 @@ describe("Proof bundle domain schema", () => {
     expect(parsed.sourceReportingMissionId).toBe(
       "33333333-3333-4333-8333-333333333333",
     );
+    expect(
+      parsed.circulationReadiness?.circulationApprovalStatus,
+    ).toBe("approved_for_circulation");
     expect(parsed.reportPublication).toBeNull();
     expect(parsed.evidenceCompleteness.expectedArtifactKinds).toEqual([
       "board_packet",

@@ -1,8 +1,12 @@
 import type {
   ApprovalDecision,
+  ReportCirculationApprovalReportKind,
   ReportReleaseApprovalReportKind,
 } from "@pocket-cto/domain";
-import { readReportReleaseApprovalReportKindLabel } from "@pocket-cto/domain";
+import {
+  readReportCirculationApprovalReportKindLabel,
+  readReportReleaseApprovalReportKindLabel,
+} from "@pocket-cto/domain";
 import { z } from "zod";
 
 export const controlPlaneActionErrorCodeSchema = z.enum([
@@ -46,6 +50,7 @@ export type MissionActionKind =
   | "file_reporting_artifacts"
   | "export_reporting_markdown"
   | "record_reporting_release_log"
+  | "request_reporting_circulation_approval"
   | "request_reporting_release_approval";
 
 export type MissionActionResult =
@@ -161,9 +166,9 @@ export function buildRequestReportingReleaseApprovalActionResult(
   reportKind: ReportReleaseApprovalReportKind,
   result: ControlPlaneMutationResult<unknown>,
 ): MissionActionResult {
-  if (result.ok) {
-    const reportLabel = readReportReleaseApprovalReportKindLabel(reportKind);
+  const reportLabel = readReportReleaseApprovalReportKindLabel(reportKind);
 
+  if (result.ok) {
     return {
       ok: true,
       kind: "request_reporting_release_approval",
@@ -176,7 +181,34 @@ export function buildRequestReportingReleaseApprovalActionResult(
     ok: false,
     kind: "request_reporting_release_approval",
     message: describeFailure("request_reporting_release_approval", result, {
-      reportKind,
+      reportLabel,
+    }),
+    statusCode: result.statusCode,
+    errorCode: result.errorCode,
+  };
+}
+
+export function buildRequestReportingCirculationApprovalActionResult(
+  operatorName: string,
+  reportKind: ReportCirculationApprovalReportKind,
+  result: ControlPlaneMutationResult<unknown>,
+): MissionActionResult {
+  const reportLabel = readReportCirculationApprovalReportKindLabel(reportKind);
+
+  if (result.ok) {
+    return {
+      ok: true,
+      kind: "request_reporting_circulation_approval",
+      message: `${reportLabel} circulation approval requested by ${operatorName}. Mission detail refreshed.`,
+      statusCode: result.statusCode,
+    };
+  }
+
+  return {
+    ok: false,
+    kind: "request_reporting_circulation_approval",
+    message: describeFailure("request_reporting_circulation_approval", result, {
+      reportLabel,
     }),
     statusCode: result.statusCode,
     errorCode: result.errorCode,
@@ -188,9 +220,9 @@ export function buildRecordReportingReleaseLogActionResult(
   reportKind: ReportReleaseApprovalReportKind,
   result: ControlPlaneMutationResult<unknown>,
 ): MissionActionResult {
-  if (result.ok) {
-    const reportLabel = readReportReleaseApprovalReportKindLabel(reportKind);
+  const reportLabel = readReportReleaseApprovalReportKindLabel(reportKind);
 
+  if (result.ok) {
     return {
       ok: true,
       kind: "record_reporting_release_log",
@@ -203,7 +235,7 @@ export function buildRecordReportingReleaseLogActionResult(
     ok: false,
     kind: "record_reporting_release_log",
     message: describeFailure("record_reporting_release_log", result, {
-      reportKind,
+      reportLabel,
     }),
     statusCode: result.statusCode,
     errorCode: result.errorCode,
@@ -214,12 +246,10 @@ function describeFailure(
   kind: MissionActionKind,
   failure: Extract<ControlPlaneMutationResult<unknown>, { ok: false }>,
   context?: {
-    reportKind?: ReportReleaseApprovalReportKind;
+    reportLabel?: string;
   },
 ) {
-  const reportLabel = context?.reportKind
-    ? readReportReleaseApprovalReportKindLabel(context.reportKind)
-    : "Report";
+  const reportLabel = context?.reportLabel ?? "Report";
   const reportLabelLower = reportLabel.toLowerCase();
 
   switch (failure.errorCode) {
@@ -252,6 +282,11 @@ function describeFailure(
             "This reporting action is unavailable from the mission's current stored state. Refresh the page and confirm the draft memo, appendix, and filing posture before retrying.",
             failure.message,
           )
+        : kind === "request_reporting_circulation_approval"
+          ? withRouteReason(
+              `This ${reportLabelLower} circulation approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored ${reportLabelLower}, lineage, and circulation posture before retrying.`,
+              failure.message,
+            )
         : kind === "request_reporting_release_approval"
           ? withRouteReason(
               `This ${reportLabelLower} release approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored ${reportLabelLower}, lineage, and approval posture before retrying.`,
@@ -279,6 +314,10 @@ function describeFailure(
 
       if (kind === "file_reporting_artifacts") {
         return "The web app could not reach the control plane to file the draft report artifacts. Confirm the local services are running and try again.";
+      }
+
+      if (kind === "request_reporting_circulation_approval") {
+        return `The web app could not reach the control plane to request ${reportLabelLower} circulation approval. Confirm the local services are running and try again.`;
       }
 
       if (kind === "request_reporting_release_approval") {
