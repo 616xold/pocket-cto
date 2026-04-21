@@ -29,11 +29,12 @@ Current non-goals:
 - worker-restart recovery for live runtime sessions
 - generic approval inbox or report-release dashboard widening
 - actual report delivery, PDF export, or slide export
-- board-packet review or circulation-readiness widening
+- board-packet review or circulation-readiness widening until `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` lands in code
 
 The durable source of truth is still Postgres replay plus the `approvals` row.
 Live continuation remains intentionally single-process and in-memory for runtime approvals only.
 The HTTP control surface only needs embedded-worker live control when resolving runtime-gated approvals that must resume a paused session.
 `report_release` approvals are taskless, replay-backed, and safe to resolve in `api_only` mode because they do not resume a live runtime turn or claim delivery happened.
 Today the shipped finance-facing scope covers approval request and approval resolution for `lender_update` and `diligence_packet`, plus external release logging for both report kinds on the existing `report_release` seam.
-The shipped F5C4D widening keeps diligence release logging deterministic, runtime-free, and delivery-free; board circulation, PDF export, and slide export remain later-slice work.
+The shipped F5C4D widening keeps diligence release logging deterministic, runtime-free, and delivery-free.
+The active next widening is now `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md`, which should add one internal `report_circulation` review path plus circulation-ready posture for `board_packet` only while keeping circulation logging, PDF export, and slide export as later-slice work.

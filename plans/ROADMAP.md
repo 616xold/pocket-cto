@@ -274,7 +274,8 @@ Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
 The latest shipped implementation record for this phase is `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md`.
-The next remaining execution slice should be the narrow F5C4E board-packet review or circulation readiness step; do not reopen F5C4D or start F6 early.
+`plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` is now the active implementation-ready F5C4E contract.
+The next remaining execution slice should execute that narrow board-packet internal review or circulation-readiness step; do not reopen F5C4D or start F6 early.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
@@ -362,16 +363,27 @@ Slice map:
       - add `releasedAt`, `releasedBy`, and minimal release-channel metadata while keeping the slice deterministic, runtime-free, and delivery-free in the system sense
       - do not add actual send, distribute, or publish behavior
     - `F5C4E — board-packet review or circulation-readiness foundation`
-      - start only after the diligence approval and diligence release-log foundations are stable
-      - add the first narrow board-facing review or circulation-readiness posture without widening into multi-packet delivery automation
-    - only after F5C4E should bounded runtime-codex phrasing or formatting assistance be reconsidered, and only if it still solves a proven operator problem
+      - start only from one completed `reporting` mission with `reportKind = "board_packet"` and one stored `board_packet` artifact
+      - keep `mission.type = "reporting"` and `reportKind = "board_packet"`
+      - reuse the existing approvals bounded context but add one new finance-facing approval kind:
+        - `report_circulation`
+      - add review request, approval resolution, and `approved_for_circulation` or circulation-ready posture only
+      - keep the slice deterministic, runtime-free, and delivery-free
+      - do not add actual circulation logging, send, distribute, or publish behavior
+    - `F5C4F — circulation log and first board-packet circulation-record foundation`
+      - start only from one completed approved-for-circulation `board_packet` reporting mission with one stored `board_packet` artifact
+      - keep `mission.type = "reporting"` and `reportKind = "board_packet"`
+      - add circulation logging and one explicit circulation record only
+      - keep the slice deterministic, runtime-free, and delivery-free in the system sense
+      - do not add actual send, distribute, or publish behavior
+    - only after F5C4F should bounded runtime-codex phrasing or formatting assistance be reconsidered, and only if it still solves a proven operator problem
 
 Exit criteria:
 
 - one completed finance discovery mission can produce a first-class reporting mission
 - the first report path yields a draft `finance_memo` plus `evidence_appendix`
 - report outputs remain reproducible, evidence-linked, freshness-aware, and explicit about limitations
-- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update approval and release-record posture are already shipped through F5C4B, diligence approval, release-readiness, and release-record posture are now shipped through F5C4D, the next hardening step is F5C4E board-packet review or circulation readiness, and markdown export reuse remains limited to the filed-artifact path defined in F5B
+- packet specialization now includes shipped `board_packet`, `lender_update`, and `diligence_packet` draft-review paths, lender-update approval and release-record posture are already shipped through F5C4B, diligence approval, release-readiness, and release-record posture are now shipped through F5C4D, the active next hardening step is `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md`, and markdown export reuse remains limited to the filed-artifact path defined in F5B
 
 ## F6 — Monitoring, controls, and adoption loop
 

@@ -451,6 +451,15 @@ The shipped F4 baseline still does none of the following:
 - raw wiki pages remain derived evidence inputs, not the source of truth for the release record itself
 - actual send, distribute, publish, board-packet review or circulation readiness, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
+`FP-0045` now defines the active F5C4E boundary:
+
+- the first new board-facing review path must start from one completed `reporting` mission with `reportKind = "board_packet"` and one stored `board_packet` artifact
+- the source reporting mission must already be completed and remain a `reporting` mission rather than a new circulation-specific mission family
+- the approvals bounded context remains the durable substrate, but the first board-facing path must add `report_circulation` rather than reusing external-facing `report_release`
+- the first new posture is review request plus approval resolution plus `approved_for_circulation` or circulation-ready state only
+- raw wiki pages remain derived evidence inputs, not the source of truth for circulation-ready posture
+- actual circulation logging, send, distribute, publish, bounded runtime-codex drafting, PDF export, and slide export remain later work
+
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
 If the latest bound policy extract is missing, unsupported, or failed, the mission persists a truthful limited answer rather than inventing a digest.
@@ -461,7 +470,7 @@ The shipped F5B follow-on now hardens body visibility, filed-page reuse, and mar
 The shipped F5C1 follow-on now specializes one draft `board_packet` from that completed reporting state.
 The shipped F5C2 follow-on now specializes only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
-The next later-F5 follow-on should now narrow to board-packet review or circulation readiness rather than reopening diligence-packet release logging, actual delivery, runtime-codex drafting, or export work.
+The next later-F5 follow-on is no longer abstract: it is `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md`, and that implementation should narrow to board-packet internal review or circulation-ready posture rather than reopening diligence-packet release logging, actual delivery, runtime-codex drafting, or export work.
 
 ## Lint flow
 

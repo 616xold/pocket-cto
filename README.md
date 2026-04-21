@@ -60,6 +60,7 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0042-release-log-and-first-lender-update-release-record-foundation.md` now serves as the shipped F5C4B record: the repo can record that one already-approved `lender_update` was released externally, persist one explicit release record on the existing `report_release` approval seam, and stay deterministic, runtime-free, and delivery-free in the system sense.
 `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` now serves as the shipped F5C4C record: the repo can request and resolve one finance-facing `report_release` approval for one completed `diligence_packet` reporting mission, derive explicit diligence release-readiness posture without live runtime continuation, and keep the slice deterministic, runtime-free, delivery-free, and release-log-free.
 `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` now serves as the shipped F5C4D record: the repo can record one explicit external release record only for one completed approved-for-release `diligence_packet` reporting mission, surface that release-record posture across reporting, mission, proof-bundle, and approval-card views, reuse the existing `report_release` approval seam as the persistence anchor, and stay deterministic, runtime-free, delivery-free, and multi-artifact-free in the first slice.
+`plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` is now the active F5C4E implementation contract: the next code thread should add one internal `report_circulation` review path plus derived circulation-ready posture for one completed `board_packet` reporting mission with one stored `board_packet` artifact, while keeping the slice deterministic, runtime-free, delivery-free, and circulation-log-free.
 
 ## Product boundary for v1
 
@@ -169,6 +170,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0042-release-log-and-first-lender-update-release-record-foundation.md
 │   ├── FP-0043-diligence-packet-approval-review-and-release-readiness.md
 │   ├── FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md
+│   ├── FP-0045-board-packet-review-or-circulation-readiness-foundation.md
 │   └── templates
 └── .agents
     └── skills
