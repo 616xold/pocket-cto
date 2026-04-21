@@ -409,6 +409,9 @@ function createAppContainer(
       async fileDraftArtifacts() {
         throw new Error("fileDraftArtifacts should not be called in this test");
       },
+      async recordCirculationLog() {
+        throw new Error("recordCirculationLog should not be called in this test");
+      },
       async recordReleaseLog() {
         throw new Error("recordReleaseLog should not be called in this test");
       },

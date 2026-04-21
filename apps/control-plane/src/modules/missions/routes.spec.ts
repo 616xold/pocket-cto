@@ -255,6 +255,48 @@ describe("mission reporting action routes", () => {
       },
     );
   });
+
+  it("POST /missions/:missionId/reporting/circulation-log returns 201 with the supplied circulation details", async () => {
+    const recordCirculationLog = vi.fn(async () => ({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      approvalId: "22222222-2222-4222-8222-222222222222",
+      created: true,
+      circulationRecord: {
+        circulated: true,
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        approvalId: "22222222-2222-4222-8222-222222222222",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+      },
+    }));
+    const app = await createTestApp(apps, {
+      recordCirculationLog,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/11111111-1111-4111-8111-111111111111/reporting/circulation-log",
+      payload: {
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(recordCirculationLog).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        circulatedAt: null,
+      },
+    );
+  });
 });
 
 async function createTestApp(
@@ -305,6 +347,11 @@ async function createTestApp(
   if (overrides.recordReleaseLog) {
     container.missionReportingActionsService.recordReleaseLog =
       overrides.recordReleaseLog;
+  }
+
+  if (overrides.recordCirculationLog) {
+    container.missionReportingActionsService.recordCirculationLog =
+      overrides.recordCirculationLog;
   }
 
   const app = await buildApp({ container });

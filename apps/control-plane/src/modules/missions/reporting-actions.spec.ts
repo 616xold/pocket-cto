@@ -17,6 +17,9 @@ describe("MissionReportingActionsService", () => {
     );
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -36,6 +39,9 @@ describe("MissionReportingActionsService", () => {
         }),
         fileDraftArtifacts,
         prepareReportingReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportingCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportCirculationApproval: vi.fn(async () => {
@@ -83,6 +89,9 @@ describe("MissionReportingActionsService", () => {
     );
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -99,6 +108,9 @@ describe("MissionReportingActionsService", () => {
       reportingService: {
         exportMarkdownBundle,
         fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportingCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportCirculationApproval: vi.fn(async () => {
@@ -176,6 +188,9 @@ describe("MissionReportingActionsService", () => {
     }));
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -192,6 +207,9 @@ describe("MissionReportingActionsService", () => {
           throw new Error("not used");
         }),
         fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportingCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportCirculationApproval: vi.fn(async () => {
@@ -263,6 +281,7 @@ describe("MissionReportingActionsService", () => {
       freshnessSummary: "Cash posture remains stale.",
       limitationsSummary: "Draft-only posture remains explicit.",
       resolution: null,
+      circulationRecord: null,
     }));
     const requestReportCirculationApproval = vi.fn(async () => ({
       approval: {
@@ -282,6 +301,9 @@ describe("MissionReportingActionsService", () => {
     }));
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportReleaseLog: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -298,6 +320,9 @@ describe("MissionReportingActionsService", () => {
           throw new Error("not used");
         }),
         fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportingCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportCirculationApproval,
@@ -331,6 +356,7 @@ describe("MissionReportingActionsService", () => {
         missionId: "11111111-1111-4111-8111-111111111111",
         reportKind: "board_packet",
         resolution: null,
+        circulationRecord: null,
         sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
         sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
         summary:
@@ -349,6 +375,150 @@ describe("MissionReportingActionsService", () => {
       approvalStatus: "pending",
       circulationApprovalStatus: "pending_review",
       circulationReady: false,
+    });
+  });
+
+  it("refreshes proof posture after logging one external board-packet circulation", async () => {
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> => buildProofBundleManifest(),
+    );
+    const prepareReportingCirculationLog = vi.fn(async () => ({
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      circulationRecord: {
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+      },
+    }));
+    const recordReportCirculationLog = vi.fn(async () => ({
+      approval: {
+        id: "55555555-5555-4555-8555-555555555555",
+        missionId: "11111111-1111-4111-8111-111111111111",
+        taskId: null,
+        kind: "report_circulation" as const,
+        status: "approved" as const,
+        requestedBy: "finance-operator",
+        resolvedBy: "finance-reviewer",
+        rationale: "Approved for internal circulation readiness.",
+        payload: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          companyKey: "acme",
+          draftOnlyStatus: "draft_only",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          missionId: "11111111-1111-4111-8111-111111111111",
+          reportKind: "board_packet" as const,
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          summary:
+            "Draft board packet for acme from the completed finance memo.",
+          resolution: {
+            decision: "accept" as const,
+            rationale: "Approved for internal circulation readiness.",
+            resolvedBy: "finance-reviewer",
+          },
+          circulationRecord: {
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote:
+              "Circulated from the finance mailbox after approval.",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+          },
+        },
+        createdAt: "2026-04-20T09:00:00.000Z",
+        updatedAt: "2026-04-21T09:10:00.000Z",
+      },
+      created: true,
+    }));
+    const service = new MissionReportingActionsService({
+      approvalService: {
+        recordReportCirculationLog,
+        recordReportReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        requestReportCirculationApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        requestReportReleaseApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+      },
+      proofBundleAssembly: {
+        refreshProofBundle,
+      },
+      reportingService: {
+        exportMarkdownBundle: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportCirculationApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportingCirculationLog,
+        prepareReportingReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportReleaseApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+      },
+    });
+
+    const result = await service.recordCirculationLog(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        circulatedAt: null,
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+      },
+    );
+
+    expect(prepareReportingCirculationLog).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        circulatedAt: null,
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+      },
+    );
+    expect(recordReportCirculationLog).toHaveBeenCalledWith({
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      circulationRecord: {
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+      },
+    });
+    expect(refreshProofBundle).toHaveBeenCalledWith({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      trigger: "circulation_logged",
+    });
+    expect(result).toEqual({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      created: true,
+      circulationRecord: {
+        circulated: true,
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        approvalId: "55555555-5555-4555-8555-555555555555",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+      },
     });
   });
 
@@ -410,6 +580,9 @@ describe("MissionReportingActionsService", () => {
     }));
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportReleaseLog,
         requestReportCirculationApproval: vi.fn(async () => {
           throw new Error("not used");
@@ -426,6 +599,9 @@ describe("MissionReportingActionsService", () => {
           throw new Error("not used");
         }),
         fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportingCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
         prepareReportCirculationApproval: vi.fn(async () => {
@@ -507,6 +683,7 @@ function buildProofBundleManifest(): ProofBundleManifest {
     reportDraftStatus: "draft_only",
     reportPublication: buildPublication(true),
     circulationReadiness: null,
+    circulationRecord: null,
     reportSummary:
       "Draft finance memo summarizing stored payables pressure and carried evidence posture.",
     appendixPresent: true,

@@ -206,6 +206,16 @@ describe("Mission list domain schema", () => {
             summary:
               "Circulation approval was requested by finance-operator; the stored board packet is not yet approved for internal circulation.",
           },
+          circulationRecord: {
+            circulated: false,
+            circulatedAt: null,
+            circulatedBy: null,
+            circulationChannel: null,
+            circulationNote: null,
+            approvalId: null,
+            summary:
+              "Circulation approval is still pending review, so no external circulation has been logged yet.",
+          },
           reportSummary:
             "Draft board packet for acme from the completed cash posture reporting mission.",
           appendixPresent: true,
@@ -238,6 +248,7 @@ describe("Mission list domain schema", () => {
     expect(
       parsed.missions[0]?.circulationReadiness?.circulationApprovalStatus,
     ).toBe("pending_review");
+    expect(parsed.missions[0]?.circulationRecord?.circulated).toBe(false);
     expect(parsed.missions[0]?.reportPublication).toBeNull();
     expect(parsed.missions[0]?.appendixPresent).toBe(true);
   });

@@ -830,6 +830,246 @@ describe("Mission detail domain schema", () => {
     );
   });
 
+  it("parses board-packet reporting mission detail with a persisted circulation record", () => {
+    const parsed = MissionDetailViewSchema.parse({
+      mission: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        type: "reporting",
+        status: "succeeded",
+        title: "Draft board packet for acme from cash posture reporting",
+        objective:
+          "Compile one draft board packet from completed reporting mission 11111111-1111-4111-8111-111111111111 and its stored finance memo plus evidence appendix.",
+        sourceKind: "manual_reporting",
+        sourceRef: null,
+        createdBy: "finance-operator",
+        primaryRepo: null,
+        spec: {
+          type: "reporting",
+          title: "Draft board packet for acme from cash posture reporting",
+          objective:
+            "Compile one draft board packet from completed reporting mission 11111111-1111-4111-8111-111111111111 and its stored finance memo plus evidence appendix.",
+          repos: [],
+          constraints: {
+            mustNot: [],
+            allowedPaths: [],
+          },
+          acceptance: ["persist one durable board-packet artifact"],
+          riskBudget: {
+            sandboxMode: "read-only",
+            maxWallClockMinutes: 5,
+            maxCostUsd: 1,
+            allowNetwork: false,
+            requiresHumanApprovalFor: [],
+          },
+          deliverables: ["board_packet", "proof_bundle"],
+          evidenceRequirements: ["stored board-packet artifact"],
+          input: {
+            reportingRequest: {
+              sourceDiscoveryMissionId:
+                "22222222-2222-4222-8222-222222222222",
+              sourceReportingMissionId:
+                "11111111-1111-4111-8111-111111111111",
+              reportKind: "board_packet",
+              companyKey: "acme",
+              questionKind: "cash_posture",
+            },
+          },
+        },
+        createdAt: "2026-04-19T12:00:00.000Z",
+        updatedAt: "2026-04-19T12:03:00.000Z",
+      },
+      tasks: [],
+      proofBundle: {
+        missionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        missionTitle: "Draft board packet for acme from cash posture reporting",
+        objective:
+          "Compile one draft board packet from completed reporting mission 11111111-1111-4111-8111-111111111111 and its stored finance memo plus evidence appendix.",
+        sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+        sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        answerSummary: "",
+        reportKind: "board_packet",
+        reportDraftStatus: "draft_only",
+        reportSummary:
+          "Draft board packet for acme from the completed cash posture reporting mission.",
+        reportPublication: null,
+        circulationReadiness: {
+          circulationApprovalStatus: "approved_for_circulation",
+          circulationReady: true,
+          approvalId: "55555555-5555-4555-8555-555555555555",
+          approvalStatus: "approved",
+          requestedAt: "2026-04-19T12:04:00.000Z",
+          requestedBy: "finance-operator",
+          resolvedAt: "2026-04-19T12:06:00.000Z",
+          resolvedBy: "finance-reviewer",
+          rationale: "Approved for internal circulation.",
+          summary:
+            "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+        },
+        circulationRecord: {
+          circulated: true,
+          circulatedAt: "2026-04-19T12:10:00.000Z",
+          circulatedBy: "finance-operator",
+          circulationChannel: "email",
+          circulationNote:
+            "Circulated after approval from the finance mailbox.",
+          approvalId: "55555555-5555-4555-8555-555555555555",
+          summary:
+            "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox..",
+        },
+        releaseRecord: null,
+        releaseReadiness: null,
+        appendixPresent: true,
+        freshnessState: "stale",
+        freshnessSummary:
+          "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+        limitationsSummary:
+          "This board packet is draft-only and carries source reporting freshness and limitations forward.",
+        relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+        relatedWikiPageKeys: ["metrics/cash-posture"],
+        targetRepoFullName: null,
+        branchName: null,
+        pullRequestNumber: null,
+        pullRequestUrl: null,
+        changeSummary:
+          "Draft board packet for acme from the completed cash posture reporting mission.",
+        validationSummary:
+          "Draft board packet was compiled deterministically from one completed reporting mission and its stored finance memo plus evidence appendix without running the Codex runtime.",
+        verificationSummary:
+          "Draft board packet for acme from the completed cash posture reporting mission. Review the source reporting lineage, linked evidence appendix posture, carried-forward freshness, visible limitations, approval trace, and external circulation-record posture before relying on this circulated draft.",
+        riskSummary:
+          "This board packet has one persisted external circulation record linked to an approved circulation-review trace, but Pocket CFO still did not send, distribute, publish, generate PDF, or generate slides in F5C4F.",
+        rollbackSummary:
+          "No system circulation, send, wiki filing, PDF export, or slide export side effect was produced; this slice only records an operator-entered external circulation log against the approved board packet.",
+        latestApproval: null,
+        evidenceCompleteness: {
+          status: "complete",
+          expectedArtifactKinds: ["board_packet"],
+          presentArtifactKinds: ["board_packet"],
+          missingArtifactKinds: [],
+          notes: [],
+        },
+        decisionTrace: [
+          "Scout task 0 terminalized as succeeded with persisted board-packet evidence.",
+          "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox..",
+        ],
+        artifactIds: ["dddddddd-dddd-4ddd-8ddd-dddddddddddd"],
+        artifacts: [
+          {
+            id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+            kind: "board_packet",
+          },
+        ],
+        replayEventCount: 11,
+        timestamps: {
+          missionCreatedAt: "2026-04-19T12:00:00.000Z",
+          latestPlannerEvidenceAt: null,
+          latestExecutorEvidenceAt: null,
+          latestPullRequestAt: null,
+          latestApprovalAt: "2026-04-19T12:10:00.000Z",
+          latestArtifactAt: "2026-04-19T12:03:00.000Z",
+        },
+        status: "ready",
+      },
+      reporting: {
+        reportKind: "board_packet",
+        draftStatus: "draft_only",
+        sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+        sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        questionKind: "cash_posture",
+        policySourceId: null,
+        policySourceScope: null,
+        reportSummary:
+          "Draft board packet for acme from the completed cash posture reporting mission.",
+        freshnessSummary:
+          "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+        limitationsSummary:
+          "This board packet is draft-only and carries source reporting freshness and limitations forward.",
+        relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+        relatedWikiPageKeys: ["metrics/cash-posture"],
+        appendixPresent: true,
+        financeMemo: null,
+        evidenceAppendix: null,
+        boardPacket: {
+          source: "stored_reporting_evidence",
+          summary:
+            "Draft board packet for acme from the completed cash posture reporting mission.",
+          reportKind: "board_packet",
+          draftStatus: "draft_only",
+          sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          packetSummary:
+            "Draft board packet for acme from the completed cash posture reporting mission.",
+          freshnessSummary:
+            "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+          limitationsSummary:
+            "This board packet is draft-only and carries source reporting freshness and limitations forward.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          sourceFinanceMemo: {
+            artifactId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+            kind: "finance_memo",
+          },
+          sourceEvidenceAppendix: {
+            artifactId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+            kind: "evidence_appendix",
+          },
+          bodyMarkdown:
+            "# Draft Board Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
+        },
+        lenderUpdate: null,
+        diligencePacket: null,
+        publication: null,
+        circulationReadiness: {
+          circulationApprovalStatus: "approved_for_circulation",
+          circulationReady: true,
+          approvalId: "55555555-5555-4555-8555-555555555555",
+          approvalStatus: "approved",
+          requestedAt: "2026-04-19T12:04:00.000Z",
+          requestedBy: "finance-operator",
+          resolvedAt: "2026-04-19T12:06:00.000Z",
+          resolvedBy: "finance-reviewer",
+          rationale: "Approved for internal circulation.",
+          summary:
+            "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+        },
+        circulationRecord: {
+          circulated: true,
+          circulatedAt: "2026-04-19T12:10:00.000Z",
+          circulatedBy: "finance-operator",
+          circulationChannel: "email",
+          circulationNote:
+            "Circulated after approval from the finance mailbox.",
+          approvalId: "55555555-5555-4555-8555-555555555555",
+          summary:
+            "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox..",
+        },
+        releaseRecord: null,
+        releaseReadiness: null,
+      },
+      approvals: [],
+      approvalCards: [],
+      artifacts: [],
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+    });
+
+    expect(parsed.reporting?.circulationRecord?.circulated).toBe(true);
+    expect(parsed.reporting?.circulationRecord?.circulationChannel).toBe("email");
+    expect(parsed.proofBundle.circulationRecord?.circulated).toBe(true);
+  });
+
   it("parses diligence-packet reporting mission detail with source-report lineage", () => {
     const parsed = MissionDetailViewSchema.parse({
       mission: {

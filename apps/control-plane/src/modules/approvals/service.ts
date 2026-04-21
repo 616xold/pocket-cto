@@ -12,6 +12,7 @@ import type {
   ApprovalStatus,
   MissionRecord,
   MissionTaskRecord,
+  ReportCirculationApprovalCirculationRecord,
   ReportCirculationApprovalPayload,
   ReportReleaseApprovalPayload,
   ReportReleaseApprovalReleaseRecord,
@@ -91,6 +92,16 @@ export type RecordReportReleaseLogInput = {
 };
 
 export type RecordReportReleaseLogResult = {
+  approval: ApprovalRecord;
+  created: boolean;
+};
+
+export type RecordReportCirculationLogInput = {
+  approvalId: string;
+  circulationRecord: ReportCirculationApprovalCirculationRecord;
+};
+
+export type RecordReportCirculationLogResult = {
   approval: ApprovalRecord;
   created: boolean;
 };
@@ -372,6 +383,74 @@ export class ApprovalService {
             approvalId: updated.id,
             missionId: updated.missionId,
             releaseRecord: input.releaseRecord,
+          },
+        },
+        session,
+      );
+
+      return {
+        approval: updated,
+        created: true,
+      };
+    });
+  }
+
+  async recordReportCirculationLog(
+    input: RecordReportCirculationLogInput,
+  ): Promise<RecordReportCirculationLogResult> {
+    return this.missionRepository.transaction(async (session) => {
+      const approval = await this.getRequiredApproval(
+        input.approvalId,
+        session,
+      );
+
+      if (approval.kind !== "report_circulation") {
+        throw invalidRequest(
+          "approvalId",
+          `Approval ${approval.id} is ${approval.kind}, not report_circulation.`,
+        );
+      }
+
+      if (approval.status !== "approved") {
+        throw invalidRequest(
+          "approvalId",
+          `Approval ${approval.id} must already be approved before external circulation can be logged.`,
+        );
+      }
+
+      const payload = readReportCirculationApprovalPayload(approval);
+
+      if (payload.circulationRecord) {
+        return {
+          approval,
+          created: false,
+        };
+      }
+
+      const updated = await this.approvalRepository.updateApproval(
+        {
+          approvalId: approval.id,
+          payload: {
+            ...approval.payload,
+            circulationRecord: input.circulationRecord,
+          },
+          rationale: approval.rationale,
+          resolvedBy: approval.resolvedBy,
+          status: approval.status,
+        },
+        session,
+      );
+
+      await this.replayService.append(
+        {
+          actor: input.circulationRecord.circulatedBy,
+          missionId: updated.missionId,
+          taskId: null,
+          type: "approval.circulation_logged",
+          payload: {
+            approvalId: updated.id,
+            circulationRecord: input.circulationRecord,
+            missionId: updated.missionId,
           },
         },
         session,

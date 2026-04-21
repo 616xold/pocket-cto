@@ -153,6 +153,7 @@ function buildDemoMissionDetail(): MissionDetailView {
       reportDraftStatus: null,
       reportPublication: null,
       circulationReadiness: null,
+      circulationRecord: null,
       releaseRecord: null,
       releaseReadiness: null,
       reportSummary: "",

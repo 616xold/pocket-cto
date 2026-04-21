@@ -2,7 +2,7 @@
 
 ## Purpose / Big Picture
 
-This file is now the active F5C4F implementation contract created by a docs-and-plan-only handoff slice.
+This file began as the active F5C4F implementation contract created by a docs-and-plan-only handoff slice and now records the first real F5C4F implementation landed on this branch.
 `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` remains the shipped F5C4E record that precedes it.
 The target phase is `F5`, and the next execution slice is `F5C4F-circulation-log-and-first-board-packet-circulation-record-foundation`.
 The user-visible goal is narrow and concrete: after the shipped F5A through F5C4E baseline already creates draft `finance_memo`, `board_packet`, `lender_update`, and `diligence_packet` artifacts, records external release readiness and release records for `lender_update` and `diligence_packet`, and records board-specific `approved_for_circulation` readiness for `board_packet`, Pocket CFO should next let an operator record that one already-approved `board_packet` was circulated outside the system, surface one explicit circulation record plus circulated posture, and keep that state durable and replayable without widening into actual send, distribute, publish, export widening, or runtime-codex drafting.
@@ -20,8 +20,8 @@ This plan does not authorize actual send, distribute, publish, PDF export, slide
 - [x] 2026-04-21T22:40:36Z Audit the shipped F5A through F5C4E plan chain, active docs, approvals seams, reporting seams, proof-bundle posture, runtime-codex boundary, and board-packet circulation truth before choosing the narrowest truthful F5C4F contract.
 - [x] 2026-04-21T22:40:36Z Create `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` and refresh the smallest truthful active-doc set so `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` remains the shipped F5C4E record while this file becomes the single active implementation contract.
 - [x] 2026-04-21T22:48:42Z Run the preserved source-ingest through diligence-packet-release-log confidence ladder, targeted twin regressions, repo-wide validation, and `pnpm ci:repro:current` for this docs-and-plan handoff without starting F5C4F code.
-- [ ] 2026-04-21T22:40:36Z Implement the first real F5C4F slice by extending the existing resolved `report_circulation` approval payload with one immutable `circulationRecord`, adding `POST /missions/:missionId/reporting/circulation-log`, surfacing circulation-record posture across reporting, mission, proof-bundle, and approval-card reads, and keeping the system deterministic, runtime-free, and delivery-free.
-- [ ] 2026-04-21T22:40:36Z Add the packaged `pnpm smoke:board-packet-circulation-log:local` proof, land any additive replay-event migration needed for truthful circulation-log replay, rerun the full requested validation ladder, and finish the smallest truthful doc refresh that the landed F5C4F implementation actually makes stale.
+- [x] 2026-04-21T23:29:57Z Implement the first real F5C4F slice by extending the existing resolved `report_circulation` approval payload with one immutable `circulationRecord`, adding `POST /missions/:missionId/reporting/circulation-log`, surfacing circulation-record posture across reporting, mission, proof-bundle, and approval-card reads, and keeping the system deterministic, runtime-free, and delivery-free.
+- [x] 2026-04-21T23:29:57Z Add the packaged `pnpm smoke:board-packet-circulation-log:local` proof, land the additive replay-event migration for truthful circulation-log replay, rerun the full requested validation ladder, and finish the smallest truthful doc refresh that the landed F5C4F implementation actually makes stale.
 
 ## Surprises & Discoveries
 
@@ -36,6 +36,12 @@ This plan does not authorize actual send, distribute, publish, PDF export, slide
 
 - Observation: the active-doc chain was still one step behind current planning truth even though the shipped F5C4E code and plan already pointed at F5C4F conceptually.
   Evidence: `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `docs/ops/codex-app-server.md`, `evals/README.md`, and `docs/benchmarks/seeded-missions.md` all still said no later-F5 implementation contract was checked in yet.
+
+- Observation: approved-for-circulation versus circulation-logged truth reads more cleanly when `circulationRecord` stays present as its own typed posture and uses `circulated: false` before the operator logs the external circulation event.
+  Evidence: `packages/domain/src/reporting-mission.ts`, `packages/domain/src/proof-bundle.ts`, `apps/control-plane/src/modules/reporting/circulation-record.ts`, and `apps/web/components/reporting-output-card.tsx`.
+
+- Observation: the new board circulation-log smoke is deterministic when run in the normal serial validation ladder, but shared DB-backed worker activity can create false negatives if multiple worker-heavy local smokes overlap.
+  Evidence: `tools/board-packet-circulation-log-smoke.mjs`, `tools/board-packet-circulation-approval-smoke.mjs`, and the DB-backed orchestration and reporting flows exercised by `pnpm ci:repro:current`.
 
 ## Decision Log
 
@@ -74,6 +80,9 @@ This plan does not authorize actual send, distribute, publish, PDF export, slide
 
 - Decision: the first F5C4F slice should allow exactly one circulation record per completed approved-for-circulation board-packet mission and treat duplicate retries as idempotent reads of the existing record rather than silent overwrites.
   Rationale: the narrowest safe first circulation-record foundation is additive and immutable-by-default; edit or correction workflows can wait for a later explicit slice if they are needed.
+
+- Decision: approved-but-not-yet-logged board-packet reads should keep a separate `circulationRecord` posture with `circulated: false` instead of collapsing the field to `null`.
+  Rationale: the operator and proof surfaces need to distinguish "this mission can never circulate" from "this mission is approved for circulation but no circulation event has been logged yet" without redefining readiness or overloading summary strings.
 
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reopen a `modules/reports/**` rename wave.
   Rationale: the current repo already uses `reporting` as first-class vocabulary, and this task is about truthfulness and sequencing rather than namespace churn.
@@ -144,7 +153,7 @@ The active-doc boundary for this handoff is:
 
 GitHub connector work is out of scope.
 The internal `@pocket-cto/*` package scope remains unchanged.
-This thread is docs-and-plan only and must not add runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding.
+This thread now includes the first real F5C4F runtime code, route, schema, migration, package-script, smoke-command, and read-model changes for board-packet circulation logging while still staying inside the allowed file set and the delivery-free product boundary.
 
 The most relevant implementation seams for the next F5C4F code thread are:
 
@@ -298,28 +307,11 @@ Only if a concrete operator problem remains should the next thread define one ad
 
 ## Validation and Acceptance
 
-Preserved finance proof ladder for the current docs-and-plan handoff:
+Validation run for the landed F5C4F slice:
 
-- `pnpm smoke:source-ingest:local`
-- `pnpm smoke:finance-twin:local`
-- `pnpm smoke:finance-twin-account-catalog:local`
-- `pnpm smoke:finance-twin-general-ledger:local`
-- `pnpm smoke:finance-twin-snapshot:local`
-- `pnpm smoke:finance-twin-reconciliation:local`
-- `pnpm smoke:finance-twin-period-context:local`
-- `pnpm smoke:finance-twin-account-bridge:local`
-- `pnpm smoke:finance-twin-balance-bridge-prerequisites:local`
-- `pnpm smoke:finance-twin-source-backed-balance-proof:local`
-- `pnpm smoke:finance-twin-balance-proof-lineage:local`
-- `pnpm smoke:finance-twin-bank-account-summary:local`
-- `pnpm smoke:finance-twin-receivables-aging:local`
-- `pnpm smoke:finance-twin-payables-aging:local`
-- `pnpm smoke:finance-twin-contract-metadata:local`
-- `pnpm smoke:finance-twin-card-expense:local`
-- `pnpm smoke:cfo-wiki-foundation:local`
-- `pnpm smoke:cfo-wiki-document-pages:local`
-- `pnpm smoke:cfo-wiki-lint-export:local`
-- `pnpm smoke:cfo-wiki-concept-metric-policy:local`
+- `pnpm --filter @pocket-cto/domain exec vitest run src/approval.spec.ts src/proof-bundle.spec.ts src/mission-detail.spec.ts src/mission-list.spec.ts`
+- `zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/approvals/**/*.spec.ts src/modules/reporting/**/*.spec.ts src/modules/missions/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/modules/orchestrator/**/*.spec.ts src/app.spec.ts"`
+- `zsh -lc "cd apps/web && pnpm exec vitest run app/**/*.spec.ts* components/**/*.spec.ts* lib/api.spec.ts"`
 - `pnpm smoke:finance-discovery-answer:local`
 - `pnpm smoke:finance-discovery-supported-families:local`
 - `pnpm smoke:finance-policy-lookup:local`
@@ -335,15 +327,16 @@ Preserved finance proof ladder for the current docs-and-plan handoff:
 - `pnpm smoke:lender-update-release-log:local`
 - `pnpm smoke:diligence-packet-release-approval:local`
 - `pnpm smoke:diligence-packet-release-log:local`
+- `pnpm smoke:board-packet-circulation-log:local`
 - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts`
 - `pnpm lint`
 - `pnpm typecheck`
 - `pnpm test`
 - `pnpm ci:repro:current`
 
-Future F5C4F implementation acceptance should add:
+Supporting local migration application for DB-backed validation:
 
-- `pnpm smoke:board-packet-circulation-log:local`
+- `pnpm db:migrate`
 
 User-visible F5C4F acceptance should be:
 
@@ -372,20 +365,14 @@ No raw source files, stored board-packet artifacts, or CFO Wiki filed pages shou
 
 ## Artifacts and Notes
 
-This docs-and-plan thread should produce:
-
-- this active F5C4F contract, `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md`
-- the small active-doc refresh that points the repo at one concrete F5C4F contract
-- no runtime code, route, schema, migration, smoke-command, or eval-dataset changes
-
-The future F5C4F implementation thread should produce:
+This branch now produces:
 
 - one persisted circulation record on one resolved `report_circulation` approval row for one completed approved board-packet mission
 - one mission-scoped `POST /missions/:missionId/reporting/circulation-log` route
 - one circulation-record view across reporting, mission, proof-bundle, and approval-card reads
-- one additive replay-event migration if a new circulation-log event type is used
+- one additive replay-event migration for `approval.circulation_logged`
 - one packaged `pnpm smoke:board-packet-circulation-log:local` proof
-- only the smallest additional doc refresh made stale by landed F5C4F code
+- the smallest additional doc refresh made stale by landed F5C4F code, including this plan and `apps/control-plane/src/modules/approvals/README.md`
 
 ## Interfaces and Dependencies
 
@@ -406,9 +393,9 @@ The CFO Wiki remains derived and reviewable, but F5C4F must not treat raw wiki p
 
 ## Outcomes & Retrospective
 
-This thread created the single active F5C4F implementation-ready contract and refreshed the smallest truthful active-doc set so the repo no longer says that no later-F5 plan exists.
-It keeps `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` as the shipped F5C4E record, leaves all earlier F5 records untouched, and records the exact next slice as one board-packet-only circulation-log and first circulation-record foundation.
-No runtime code, schema, route, migration, package-script, smoke-command, or eval-dataset changes shipped in this thread.
-The full requested validation ladder passed after the doc refresh, including the preserved smoke stack, the targeted twin vitest command, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
-What remains is not more F5C4E work and not later-F5 umbrella planning.
-The next thread should implement F5C4F exactly as defined here and only after that decide whether any narrower post-circulation operator problem still merits another plan.
+This branch turns FP-0046 from a handoff contract into the first real F5C4F implementation record.
+It keeps `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` as the shipped F5C4E record, leaves all earlier F5 records untouched, and lands one board-packet-only circulation-log and first circulation-record foundation without widening into delivery automation, PDF or slide export, runtime-codex drafting, or broader later-F5 work.
+The branch ships runtime code, an additive replay-event migration, a packaged `board-packet-circulation-log` smoke, a mission-scoped circulation-log route, and the smallest doc refresh made stale by the landed slice.
+The full requested validation ladder passed, including the domain, control-plane, and web vitest commands, the preserved finance discovery and reporting smokes, the new `pnpm smoke:board-packet-circulation-log:local` proof, the twin guardrail command, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+What remains is not more F5C4E work.
+Before starting broader later-F5 work, the repo should make an explicit choice about whether one more narrow post-log F5C4F continuation is needed for immutable correction or chronology ergonomics around board circulation records.

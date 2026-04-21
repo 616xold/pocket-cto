@@ -13,6 +13,7 @@ import {
   submitCreateDraftDiligencePacket,
   submitCreateDraftFinanceMemo,
   submitCreateDraftLenderUpdate,
+  submitRecordReportingCirculationLog,
   submitRecordReportingReleaseLog,
   submitRequestReportingCirculationApproval,
   submitRequestReportingReleaseApproval,
@@ -81,6 +82,12 @@ type RecordReportingReleaseLogFormProps = {
   missionId: string;
   operatorIdentity: string;
   reportKind: "lender_update" | "diligence_packet";
+};
+
+type RecordReportingCirculationLogFormProps = {
+  missionId: string;
+  operatorIdentity: string;
+  reportKind: "board_packet";
 };
 
 export function ApprovalActionForm({
@@ -417,6 +424,58 @@ export function RecordReportingReleaseLogForm({
           className="action-button"
           label={releaseLogLabel}
           pendingLabel={pendingLabel}
+        />
+      </form>
+
+      <ActionFeedback result={result} />
+    </div>
+  );
+}
+
+export function RecordReportingCirculationLogForm({
+  missionId,
+  operatorIdentity,
+  reportKind,
+}: RecordReportingCirculationLogFormProps) {
+  const [result, formAction] = useActionState<MissionActionState, FormData>(
+    submitRecordReportingCirculationLog,
+    INITIAL_MISSION_ACTION_STATE,
+  );
+
+  return (
+    <div className="action-cluster">
+      <form action={formAction} className="stack">
+        <input name="missionId" type="hidden" value={missionId} />
+        <input name="circulatedBy" type="hidden" value={operatorIdentity} />
+        <input name="reportKind" type="hidden" value={reportKind} />
+
+        <label className="stack" htmlFor={`circulation-channel-${missionId}`}>
+          <span>Circulation channel</span>
+          <input
+            className="text-input"
+            defaultValue="email"
+            id={`circulation-channel-${missionId}`}
+            name="circulationChannel"
+            required
+            type="text"
+          />
+        </label>
+
+        <label className="stack" htmlFor={`circulation-note-${missionId}`}>
+          <span>Circulation note</span>
+          <textarea
+            className="text-input"
+            id={`circulation-note-${missionId}`}
+            name="circulationNote"
+            placeholder="Optional context about the externally completed circulation."
+            rows={3}
+          />
+        </label>
+
+        <ActionSubmitButton
+          className="action-button"
+          label="Record board packet as circulated"
+          pendingLabel="Recording board circulation..."
         />
       </form>
 

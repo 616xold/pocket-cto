@@ -149,6 +149,40 @@ describe("Approval domain schema", () => {
     expect(parsed.reportKind).toBe("board_packet");
     expect(parsed.companyKey).toBe("acme");
     expect(parsed.resolution).toBeNull();
+    expect(parsed.circulationRecord).toBeNull();
     expect(isReportCirculationApprovalPayload(parsed)).toBe(true);
+  });
+
+  it("parses a board-packet report circulation payload with a persisted circulation record", () => {
+    const parsed = ReportCirculationApprovalPayloadSchema.parse({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      reportKind: "board_packet",
+      sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+      sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+      artifactId: "44444444-4444-4444-8444-444444444444",
+      companyKey: "acme",
+      draftOnlyStatus: "draft_only",
+      summary: "Draft board packet for acme from the completed finance memo.",
+      freshnessSummary:
+        "Cash posture remains stale because bank coverage is stale.",
+      limitationsSummary:
+        "This board packet remains delivery-free and circulation-log-free until circulation approval is granted.",
+      resolution: {
+        decision: "accept",
+        rationale: "Approved for internal circulation readiness.",
+        resolvedBy: "finance-reviewer",
+      },
+      circulationRecord: {
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+      },
+    });
+
+    expect(parsed.resolution?.decision).toBe("accept");
+    expect(parsed.circulationRecord?.circulationChannel).toBe("email");
   });
 });

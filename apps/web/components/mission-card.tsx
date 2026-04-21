@@ -149,6 +149,14 @@ export function MissionCard({
                     </dd>
                   </div>
                   <div>
+                    <dt>Circulation logged</dt>
+                    <dd>
+                      {reportingView.circulationRecord?.circulated
+                        ? "Yes"
+                        : "No"}
+                    </dd>
+                  </div>
+                  <div>
                     <dt>Approval requested</dt>
                     <dd>
                       {reportingView.circulationReadiness?.requestedAt ??
@@ -397,6 +405,17 @@ export function MissionCard({
                       </div>
                     </>
                   ) : null}
+                </>
+              ) : null}
+              {supportsCirculationApproval ? (
+                <>
+                  <div>
+                    <dt>Circulation record</dt>
+                    <dd>
+                      {proofBundle.circulationRecord?.summary ??
+                        "No external circulation has been logged yet."}
+                    </dd>
+                  </div>
                 </>
               ) : null}
               <div>

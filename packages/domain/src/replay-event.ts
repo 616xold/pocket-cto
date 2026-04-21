@@ -17,6 +17,7 @@ export const ReplayEventTypeSchema = z.enum([
   "proof_bundle.refreshed",
   "approval.requested",
   "approval.resolved",
+  "approval.circulation_logged",
   "approval.release_logged",
   "runtime.thread_replaced",
   "runtime.thread_started",
@@ -197,6 +198,7 @@ export const ProofBundleRefreshTriggerSchema = z.enum([
   "pull_request_link",
   "approval_requested",
   "approval_resolution",
+  "circulation_logged",
   "release_logged",
 ]);
 

@@ -447,6 +447,7 @@ describe("ApprovalService", () => {
       limitationsSummary:
         "This board packet remains delivery-free until review is completed.",
       resolution: null,
+      circulationRecord: null,
     };
 
     const firstRequest = await approvalService.requestReportCirculationApproval({
@@ -701,6 +702,7 @@ describe("ApprovalService", () => {
       limitationsSummary:
         "This board packet remains delivery-free until review is completed.",
       resolution: null,
+      circulationRecord: null,
     };
 
     const firstRequest = await approvalService.requestReportCirculationApproval({
@@ -772,6 +774,135 @@ describe("ApprovalService", () => {
       "cancelled",
       "pending",
     ]);
+  });
+
+  it("records one circulation log on an approved board-packet circulation approval and replays it", async () => {
+    const missionRepository = new InMemoryMissionRepository();
+    const approvalRepository = new InMemoryApprovalRepository();
+    const replayService = new ReplayService(
+      new InMemoryReplayRepository(),
+      missionRepository,
+    );
+    const missionService = new MissionService(
+      new StubMissionCompiler(),
+      missionRepository,
+      replayService,
+      new EvidenceService(),
+    );
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> =>
+        buildProofBundleManifest(createdMissionId, "board_packet"),
+    );
+    const liveSessionRegistry = {
+      awaitApprovalResolution: vi.fn(),
+      hasTaskSession: vi.fn(() => false),
+      tryResolveApproval: vi.fn(() => ({
+        delivered: true as const,
+      })),
+    } satisfies Pick<
+      InMemoryRuntimeSessionRegistry,
+      "awaitApprovalResolution" | "hasTaskSession" | "tryResolveApproval"
+    >;
+    const approvalService = new ApprovalService(
+      approvalRepository,
+      missionRepository,
+      replayService,
+      liveSessionRegistry,
+      {
+        refreshProofBundle,
+      },
+    );
+    const created = await missionService.createFromText({
+      text: "Record one board packet as already circulated outside Pocket CFO",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const createdMissionId = created.mission.id;
+    const payload = {
+      missionId: createdMissionId,
+      reportKind: "board_packet" as const,
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+      artifactId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme" as const,
+      draftOnlyStatus: "draft_only" as const,
+      summary: "Draft board packet for acme from the completed finance memo.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary:
+        "This board packet remains delivery-free until review is completed.",
+      resolution: null,
+      circulationRecord: null,
+    };
+    const request = await approvalService.requestReportCirculationApproval({
+      missionId: createdMissionId,
+      payload,
+      requestedBy: "finance-operator",
+    });
+
+    await approvalService.resolveApproval({
+      approvalId: request.approval.id,
+      decision: "accept",
+      rationale: "Approved for internal circulation readiness.",
+      resolvedBy: "finance-reviewer",
+    });
+
+    const logged = await approvalService.recordReportCirculationLog({
+      approvalId: request.approval.id,
+      circulationRecord: {
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+      },
+    });
+    const duplicate = await approvalService.recordReportCirculationLog({
+      approvalId: request.approval.id,
+      circulationRecord: {
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval..",
+      },
+    });
+    const updatedApproval = await approvalRepository.getApprovalById(
+      request.approval.id,
+    );
+    const replay = await replayService.getMissionEvents(createdMissionId);
+
+    expect(logged.created).toBe(true);
+    expect(duplicate.created).toBe(false);
+    expect(updatedApproval?.payload).toMatchObject({
+      resolution: {
+        decision: "accept",
+        rationale: "Approved for internal circulation readiness.",
+        resolvedBy: "finance-reviewer",
+      },
+      circulationRecord: {
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+      },
+    });
+    expect(refreshProofBundle).toHaveBeenCalledTimes(1);
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.circulation_logged",
+        payload: expect.objectContaining({
+          approvalId: request.approval.id,
+          missionId: createdMissionId,
+          circulationRecord: expect.objectContaining({
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+          }),
+        }),
+      }),
+    );
   });
 
   it("records one release log on an approved lender-update release approval and replays it", async () => {
@@ -1059,6 +1190,7 @@ function buildProofBundleManifest(
     reportKind,
     reportDraftStatus: "draft_only",
     reportPublication: null,
+    circulationRecord: null,
     circulationReadiness: null,
     releaseRecord: null,
     releaseReadiness: null,
