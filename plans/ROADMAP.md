@@ -275,7 +275,7 @@ Turn shipped discovery outputs into reviewable finance reporting artifacts witho
 
 The latest shipped implementation records for this phase are `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` for F5C4D, `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` for F5C4E, and `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` for F5C4F.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` now serves as the current later-F5 handoff reference.
-The next remaining execution slice should decide whether one narrower post-log F5C4F continuation is needed before broader later-F5 or F6 work; do not reopen F5C4E, author another broad later-F5 umbrella plan, or start F6 early.
+The next remaining execution slice should define and/or execute one narrow F5C4G board circulation-record correction/chronology slice before broader later-F5 or F6 work; do not reopen F5C4E, author another broad later-F5 umbrella plan, or start F6 early.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
