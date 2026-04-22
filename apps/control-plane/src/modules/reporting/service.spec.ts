@@ -270,6 +270,85 @@ describe("ReportingService", () => {
     });
   });
 
+  it("rejects board-packet circulation approval after external circulation is already logged", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const boardPacketMission = {
+      ...buildBoardPacketMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [boardPacketMission.id]: [
+          buildStoredBoardPacketArtifact({
+            missionId: boardPacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [boardPacketMission.id]: boardPacketMission,
+      },
+      proofBundlesByMissionId: {
+        [boardPacketMission.id]: {
+          ...buildBoardPacketProofBundle({
+            missionId: boardPacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Approved for internal circulation.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+          },
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote:
+              "Circulated from the finance mailbox after approval.",
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+        },
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    await expect(
+      service.prepareReportCirculationApproval(boardPacketMission.id),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          code: "invalid_request",
+          details: [
+            {
+              path: "missionId",
+              message: `Reporting mission ${boardPacketMission.id} already records external board-packet circulation, so a new circulation approval request cannot be prepared.`,
+            },
+          ],
+        },
+      },
+      statusCode: 400,
+    });
+  });
+
   it("prepares one board-packet circulation log only after circulation approval is granted", async () => {
     const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
     const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
@@ -460,6 +539,84 @@ describe("ReportingService", () => {
       sourceReportingMissionId,
       summary:
         "Draft lender update for acme from the completed cash posture reporting mission.",
+    });
+  });
+
+  it("rejects lender-update release approval after external release is already logged", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const lenderUpdateMission = {
+      ...buildLenderUpdateMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [lenderUpdateMission.id]: [
+          buildStoredLenderUpdateArtifact({
+            missionId: lenderUpdateMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [lenderUpdateMission.id]: lenderUpdateMission,
+      },
+      proofBundlesByMissionId: {
+        [lenderUpdateMission.id]: {
+          ...buildLenderUpdateProofBundle({
+            missionId: lenderUpdateMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-20T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-20T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored lender update is approved for release, but no delivery has been recorded.",
+          },
+          releaseRecord: {
+            released: true,
+            releasedAt: "2026-04-20T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "email",
+            releaseNote: "Sent from treasury mailbox after approval.",
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            summary:
+              "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval.",
+          },
+        },
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    await expect(
+      service.prepareReportReleaseApproval(lenderUpdateMission.id),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          code: "invalid_request",
+          details: [
+            {
+              path: "missionId",
+              message: `Reporting mission ${lenderUpdateMission.id} already records an external lender update release, so a new release approval request cannot be prepared.`,
+            },
+          ],
+        },
+      },
+      statusCode: 400,
     });
   });
 

@@ -55,6 +55,7 @@ pnpm smoke:finance-discovery-quality:local
 pnpm smoke:finance-memo:local
 pnpm smoke:board-packet:local
 pnpm smoke:board-packet-circulation-approval:local
+pnpm smoke:board-packet-circulation-log:local
 pnpm smoke:lender-update:local
 pnpm smoke:diligence-packet:local
 pnpm smoke:finance-report-filed-artifact:local
@@ -145,8 +146,8 @@ Today, steps 1 through 5 exist in a narrow form:
 
 Step 6 remains later-phase work.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
-The latest shipped later-F5 reporting records are `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` for F5C4D and `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` for F5C4E.
-Do not reopen F4C2, do not repeat F5A through F5C4F work, and do not start F6 early; the next code thread should decide whether one narrower post-log F5C4F continuation is needed before authoring any broader later-F5 umbrella plan.
+`plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is the latest shipped later-F5 reporting record and handoff reference.
+Do not reopen F4C2, do not repeat F5A through F5C4F work, and do not start F6 early; the next code thread should define and/or execute one narrow F5C4G board circulation-record correction/chronology slice before any broader later-F5 umbrella plan.
 
 The active finance-twin read surface is currently backend-first:
 

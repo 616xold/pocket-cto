@@ -23,6 +23,7 @@ This plan does not authorize actual send, distribute, publish, PDF export, slide
 - [x] 2026-04-21T23:29:57Z Implement the first real F5C4F slice by extending the existing resolved `report_circulation` approval payload with one immutable `circulationRecord`, adding `POST /missions/:missionId/reporting/circulation-log`, surfacing circulation-record posture across reporting, mission, proof-bundle, and approval-card reads, and keeping the system deterministic, runtime-free, and delivery-free.
 - [x] 2026-04-21T23:29:57Z Add the packaged `pnpm smoke:board-packet-circulation-log:local` proof, land the additive replay-event migration for truthful circulation-log replay, rerun the full requested validation ladder, and finish the smallest truthful doc refresh that the landed F5C4F implementation actually makes stale.
 - [x] 2026-04-21T23:36:04Z Run a strict F5C4F QA pass, confirm the branch and PR state, and correct the stale active-doc wording that still described F5C4F as the next slice to implement after the code was already shipped.
+- [x] 2026-04-22T00:28:13Z Land one narrow post-merge polish pass on the shipped F5C4F baseline: hard-stop finance approval request preparation once a later release or circulation record already exists, preserve pending-request idempotence plus approved-but-not-yet-logged reuse, refresh the smallest stale docs, and keep F5C4G implementation out of scope in this thread.
 
 ## Surprises & Discoveries
 
@@ -96,6 +97,9 @@ This plan does not authorize actual send, distribute, publish, PDF export, slide
 
 - Decision: until a narrower successor slice is explicitly planned, `FP-0046` should remain the latest shipped F5 record and the current later-F5 handoff reference rather than being described as an unimplemented next step.
   Rationale: active docs should describe shipped behavior and the current sequencing truthfully, especially after a QA pass verifies that the circulation-log slice is already landed and validated.
+
+- Decision: treat the remaining post-log request-path correction as one polish pass against shipped `FP-0046` instead of creating a new plan number.
+  Rationale: the gap is a narrow operator-safety correction plus doc freshness cleanup, not a new product capability; the next thread should define the narrow F5C4G board circulation-record correction/chronology slice explicitly rather than treating this polish pass as that implementation contract.
 
 ## Context and Orientation
 
@@ -406,4 +410,4 @@ The branch ships runtime code, an additive replay-event migration, a packaged `b
 The full requested validation ladder passed, including the domain, control-plane, and web vitest commands, the preserved finance discovery and reporting smokes, the new `pnpm smoke:board-packet-circulation-log:local` proof, the twin guardrail command, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 The follow-on QA pass corrected the stale active-doc wording that still described F5C4F as future work after the branch had already shipped it.
 What remains is not more F5C4E work.
-Before starting broader later-F5 work, the repo should make an explicit choice about whether one more narrow post-log F5C4F continuation is needed for immutable correction or chronology ergonomics around board circulation records.
+Before starting broader later-F5 work, the next thread should define and/or execute one narrow F5C4G board circulation-record correction/chronology slice rather than reopening shipped F5C4F scope or creating a broad umbrella follow-on.

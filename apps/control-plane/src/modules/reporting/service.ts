@@ -342,6 +342,13 @@ export class ReportingService {
       );
     }
 
+    if (reporting.releaseRecord?.released) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} already records an external ${reportKindLabel} release, so a new release approval request cannot be prepared.`,
+      );
+    }
+
     const reportArtifactId = readSingleArtifactId(
       context.artifacts,
       reporting.reportKind,
@@ -407,6 +414,13 @@ export class ReportingService {
       throw invalidRequest(
         "missionId",
         `Reporting mission ${missionId} is missing the source reporting mission required for board-packet circulation approval.`,
+      );
+    }
+
+    if (reporting.circulationRecord?.circulated) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} already records external board-packet circulation, so a new circulation approval request cannot be prepared.`,
       );
     }
 

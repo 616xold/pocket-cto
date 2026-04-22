@@ -262,6 +262,17 @@ describe("ApprovalService", () => {
         }),
       }),
     );
+
+    const approvedReuse = await approvalService.requestReportReleaseApproval({
+      missionId: createdMissionId,
+      payload,
+      requestedBy: "finance-operator",
+    });
+
+    expect(approvedReuse).toEqual({
+      approval: resolved,
+      created: false,
+    });
   });
 
   it("persists and resolves diligence-packet release approvals without live runtime continuation", async () => {
@@ -390,6 +401,17 @@ describe("ApprovalService", () => {
         }),
       }),
     );
+
+    const approvedReuse = await approvalService.requestReportReleaseApproval({
+      missionId: createdMissionId,
+      payload,
+      requestedBy: "finance-operator",
+    });
+
+    expect(approvedReuse).toEqual({
+      approval: resolved,
+      created: false,
+    });
   });
 
   it("persists and resolves board-packet circulation approvals without live runtime continuation", async () => {
@@ -518,6 +540,18 @@ describe("ApprovalService", () => {
         }),
       }),
     );
+
+    const approvedReuse =
+      await approvalService.requestReportCirculationApproval({
+        missionId: createdMissionId,
+        payload,
+        requestedBy: "finance-operator",
+      });
+
+    expect(approvedReuse).toEqual({
+      approval: resolved,
+      created: false,
+    });
   });
 
   it("allows lender-update release approvals to be re-requested after decline or cancel while keeping pending requests idempotent", async () => {

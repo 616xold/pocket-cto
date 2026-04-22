@@ -811,6 +811,226 @@ describe("MissionActions", () => {
       "Pocket CFO still does not send or distribute the board packet. This action only records that circulation happened externally after approval.",
     );
   });
+
+  it("keeps lender-update release actions hidden after external release is already logged", () => {
+    const html = renderToStaticMarkup(
+      <MissionActions
+        approvalCards={[]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          id: "11111111-1111-4111-8111-111111111111",
+          type: "reporting",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          title: "Draft lender update for acme",
+          objective:
+            "Compile one draft lender update from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+          status: "succeeded",
+          primaryRepo: null,
+          createdBy: "operator",
+          createdAt: "2026-04-19T12:00:00.000Z",
+          updatedAt: "2026-04-19T12:05:00.000Z",
+          spec: {
+            type: "reporting",
+            title: "Draft lender update for acme",
+            objective:
+              "Compile one draft lender update from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+            repos: [],
+            constraints: {
+              mustNot: [],
+              allowedPaths: [],
+            },
+            acceptance: [],
+            riskBudget: {
+              sandboxMode: "read-only",
+              maxWallClockMinutes: 5,
+              maxCostUsd: 1,
+              allowNetwork: false,
+              requiresHumanApprovalFor: [],
+            },
+            deliverables: ["lender_update", "proof_bundle"],
+            evidenceRequirements: [],
+          },
+        }}
+        reporting={{
+          ...buildLenderUpdateReportingView(),
+          releaseReadiness: {
+            releaseApprovalStatus: "approved_for_release",
+            releaseReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-20T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-20T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Looks release-ready.",
+            summary:
+              "Release approval was granted by finance-reviewer; the stored lender update is approved for release, but no delivery has been recorded.",
+          },
+          releaseRecord: {
+            released: true,
+            releasedAt: "2026-04-20T09:10:00.000Z",
+            releasedBy: "finance-operator",
+            releaseChannel: "email",
+            releaseNote: "Sent from treasury mailbox after approval.",
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            summary:
+              "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval.",
+          },
+        }}
+        tasks={[]}
+      />,
+    );
+
+    expect(html).not.toContain("Request lender update release approval");
+    expect(html).not.toContain("Record lender update as released");
+    expect(html).toContain(
+      "External release was logged by finance-operator at 2026-04-20T09:10:00.000Z via email. Release note: Sent from treasury mailbox after approval.",
+    );
+  });
+
+  it("keeps board-packet circulation actions hidden after external circulation is already logged", () => {
+    const html = renderToStaticMarkup(
+      <MissionActions
+        approvalCards={[]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          id: "11111111-1111-4111-8111-111111111111",
+          type: "reporting",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          title: "Draft board packet for acme",
+          objective:
+            "Compile one draft board packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+          status: "succeeded",
+          primaryRepo: null,
+          createdBy: "operator",
+          createdAt: "2026-04-19T12:00:00.000Z",
+          updatedAt: "2026-04-19T12:05:00.000Z",
+          spec: {
+            type: "reporting",
+            title: "Draft board packet for acme",
+            objective:
+              "Compile one draft board packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+            repos: [],
+            constraints: {
+              mustNot: [],
+              allowedPaths: [],
+            },
+            acceptance: [],
+            riskBudget: {
+              sandboxMode: "read-only",
+              maxWallClockMinutes: 5,
+              maxCostUsd: 1,
+              allowNetwork: false,
+              requiresHumanApprovalFor: [],
+            },
+            deliverables: ["board_packet", "proof_bundle"],
+            evidenceRequirements: [],
+          },
+        }}
+        reporting={{
+          ...buildBoardPacketReportingView(),
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Approved for internal circulation readiness.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+          },
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote:
+              "Circulated from the finance mailbox after approval.",
+            approvalId: "44444444-4444-4444-8444-444444444444",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+        }}
+        tasks={[]}
+      />,
+    );
+
+    expect(html).not.toContain("Request board packet circulation approval");
+    expect(html).not.toContain("Record board packet as circulated");
+    expect(html).toContain(
+      "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+    );
+  });
+
+  it("explains that persisted finance approvals still resolve without live control", () => {
+    const html = renderToStaticMarkup(
+      <MissionActions
+        approvalCards={[]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          id: "11111111-1111-4111-8111-111111111111",
+          type: "reporting",
+          sourceKind: "manual_reporting",
+          sourceRef: null,
+          title: "Draft board packet for acme",
+          objective:
+            "Compile one draft board packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+          status: "succeeded",
+          primaryRepo: null,
+          createdBy: "operator",
+          createdAt: "2026-04-19T12:00:00.000Z",
+          updatedAt: "2026-04-19T12:05:00.000Z",
+          spec: {
+            type: "reporting",
+            title: "Draft board packet for acme",
+            objective:
+              "Compile one draft board packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix only.",
+            repos: [],
+            constraints: {
+              mustNot: [],
+              allowedPaths: [],
+            },
+            acceptance: [],
+            riskBudget: {
+              sandboxMode: "read-only",
+              maxWallClockMinutes: 5,
+              maxCostUsd: 1,
+              allowNetwork: false,
+              requiresHumanApprovalFor: [],
+            },
+            deliverables: ["board_packet", "proof_bundle"],
+            evidenceRequirements: [],
+          },
+        }}
+        reporting={buildBoardPacketReportingView()}
+        tasks={[]}
+      />,
+    );
+
+    expect(html).toContain(
+      "Persisted report release and report circulation approvals still resolve from stored mission state without live control.",
+    );
+  });
 });
 
 function buildFinanceMemoReportingView(): NonNullable<

@@ -239,7 +239,7 @@ export function MissionActions({
                 <p className="muted">
                   {reporting?.releaseRecord?.summary ??
                     reporting?.releaseReadiness?.summary ??
-                    "Release approval becomes available once the stored lender update is present and no unresolved release approval request is already open for this mission."}
+                    "Release approval becomes available once the stored lender update is present and no unresolved release approval request remains for this mission."}
                 </p>
               )}
             </>
@@ -276,7 +276,7 @@ export function MissionActions({
                 <p className="muted">
                   {reporting?.releaseRecord?.summary ??
                     reporting?.releaseReadiness?.summary ??
-                    "Release approval becomes available once the stored diligence packet is present and no unresolved release approval request is already open for this mission."}
+                    "Release approval becomes available once the stored diligence packet is present and no unresolved release approval request remains for this mission."}
                 </p>
               )}
             </>
@@ -314,7 +314,7 @@ export function MissionActions({
                 <p className="muted">
                   {reporting?.circulationRecord?.summary ??
                     reporting?.circulationReadiness?.summary ??
-                    "Circulation approval becomes available once the stored board packet is present and no unresolved circulation approval request is already open for this mission."}
+                    "Circulation approval becomes available once the stored board packet is present and no unresolved circulation approval request remains for this mission."}
                 </p>
               )}
             </>
@@ -328,7 +328,7 @@ export function MissionActions({
         <h3>Approvals and interrupts</h3>
         <p className="muted">
           {controlsUnavailable
-            ? `Task interrupts and runtime-backed approval resolution are unavailable while the control-plane server is running in ${liveControl.mode} mode. Persisted report release approvals still resolve without live control.`
+            ? `Task interrupts and runtime-backed approval resolution are unavailable while the control-plane server is running in ${liveControl.mode} mode. Persisted report release and report circulation approvals still resolve from stored mission state without live control.`
             : "These controls call the current approval-resolution and task-interrupt routes, then refresh the mission detail without optimistic updates."}
         </p>
       </div>
