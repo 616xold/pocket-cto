@@ -96,7 +96,12 @@ export const ReportCirculationApprovalCirculationCorrectionSchema = z
     correctedAt: z.string().datetime({ offset: true }),
     correctedBy: z.string().min(1),
     correctionReason: z.string().min(1),
-    circulatedAt: z.string().datetime({ offset: true }).nullable().default(null),
+    circulatedAt: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .default(null),
+    circulatedBy: z.string().min(1).nullable().default(null),
     circulationChannel: z.string().min(1).nullable().default(null),
     circulationNote: z.string().min(1).nullable().default(null),
     summary: z.string().min(1),

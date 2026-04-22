@@ -503,6 +503,7 @@ export async function recordReportingCirculationLog(input: {
 
 export async function recordReportingCirculationLogCorrection(input: {
   circulatedAt?: string | null;
+  circulatedBy?: string | null;
   circulationChannel?: string | null;
   circulationNote?: string | null;
   correctedAt?: string | null;
@@ -519,6 +520,7 @@ export async function recordReportingCirculationLogCorrection(input: {
       correctedBy: input.correctedBy,
       correctionReason: input.correctionReason,
       circulatedAt: input.circulatedAt ?? null,
+      circulatedBy: input.circulatedBy ?? null,
       circulationChannel: input.circulationChannel ?? null,
       circulationNote: input.circulationNote ?? null,
     }),

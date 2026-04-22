@@ -2,10 +2,10 @@
 
 ## Purpose / Big Picture
 
-This file is the active F5C4H implementation contract created by a docs-and-plan-only handoff slice.
+This file is the active F5C4H implementation contract for the first real board-packet circulation actor-correction slice.
 `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remains the shipped F5C4G record that precedes it.
-The target phase is `F5`, and the next execution slice is `F5C4H-board-packet-circulation-actor-correction-and-chronology-hardening`.
-The user-visible goal is narrow and concrete: after the shipped F5A through F5C4G baseline already creates one draft `board_packet`, resolves one internal `report_circulation` approval, records one immutable original circulation record, and appends correction history plus derived chronology on that same seam, Pocket CFO should next let an operator append actor-attribution corrections to that existing circulation history and see one truthful current effective actor identity alongside the original immutable record and chronology summary without widening into actual send, distribute, publish, export widening, runtime-codex drafting, or a broader later-F5 umbrella.
+The target phase is `F5`, and the current delivered slice inside this plan is `F5C4H-board-packet-circulation-actor-correction-and-chronology-hardening`.
+The user-visible goal is narrow and concrete: after the shipped F5A through F5C4G baseline already creates one draft `board_packet`, resolves one internal `report_circulation` approval, records one immutable original circulation record, and appends correction history plus derived chronology on that same seam, Pocket CFO now lets an operator append actor-attribution corrections to that existing circulation history and see one truthful current effective actor identity alongside the original immutable record and chronology summary without widening into actual send, distribute, publish, export widening, runtime-codex drafting, or a broader later-F5 umbrella.
 
 This matters now because the repo no longer lacks board review posture, circulation logging, or append-only chronology.
 The verified remaining gap is narrower: correction entries can currently amend `circulatedAt`, `circulationChannel`, and `circulationNote`, but they cannot carry a corrected `circulatedBy`, so the current effective actor identity always falls through from the original immutable record even when a later actor correction is required.
@@ -20,9 +20,10 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 - [x] 2026-04-22T10:43:13Z Audit the shipped F5A through F5C4G plan chain, active docs, approvals seams, reporting seams, proof-bundle posture, runtime-codex boundary, and board-circulation contracts to verify whether any concrete later-F5 gap still exists.
 - [x] 2026-04-22T10:43:13Z Confirm the narrow remaining gap in repo truth: the current append-only correction schema and derived effective chronology do not support corrected `circulatedBy`, so actor-attribution correction is the only implementation-ready F5C4H continuation worth planning.
 - [x] 2026-04-22T10:43:13Z Create `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` and refresh only the smallest truthful active-doc set so `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remains the shipped F5C4G record while this file becomes the sole active implementation contract.
-- [ ] 2026-04-22T10:43:13Z Run the requested source-ingest-through-reporting confidence ladder, targeted twin guardrails, repo-wide validation, and `pnpm ci:repro:current` for this docs-and-plan handoff without starting F5C4H code.
-  Status: every requested smoke, the targeted twin vitest run, `pnpm lint`, `pnpm typecheck`, and `pnpm test` passed on 2026-04-22, but `pnpm ci:repro:current` failed in a clean temporary worktree on the pre-existing `packages/codex-runtime/src/protocol.spec.ts` notification assertion, so this handoff remains validation-blocked for commit/push/PR purposes.
-- [ ] 2026-04-22T10:43:13Z Start the real F5C4H implementation thread: add optional corrected `circulatedBy` support on append-only correction entries, derive corrected effective actor chronology on the existing `report_circulation` seam, update the smallest truthful reporting and proof surfaces, and rerun the full validation ladder after code lands.
+- [x] 2026-04-22T11:30:33Z Start the real F5C4H implementation thread: add optional corrected `circulatedBy` support on append-only correction entries, derive corrected effective actor chronology on the existing `report_circulation` seam, update the smallest truthful reporting and proof surfaces, and add the packaged actor-correction smoke.
+  Status: shipped on the existing `report_circulation` seam with immutable original `circulationRecord` preservation, append-only actor correction history, original-versus-effective actor chronology across reporting and mission surfaces, proof-bundle chronology hardening, and the dedicated `pnpm smoke:board-packet-circulation-actor-correction:local` proof.
+- [x] 2026-04-22T11:30:33Z Run the requested targeted tests, shipped baseline proofs, new actor-correction proof, preserved twin guardrails, repo-wide validation, and `pnpm ci:repro:current` for the landed F5C4H code.
+  Status: all required commands passed on 2026-04-22, including `pnpm ci:repro:current` in the clean temporary worktree at `/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-ci-repro-qLGLKh/repo`.
 
 ## Surprises & Discoveries
 
@@ -35,11 +36,11 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 - Observation: the existing `report_circulation` approval payload and `approval.circulation_log_corrected` replay event are already the right persistence and replay anchors for the next slice.
   Evidence: `apps/control-plane/src/modules/approvals/service.ts`, `apps/control-plane/src/modules/approvals/payload.ts`, and `apps/control-plane/src/modules/reporting/service.ts` already append corrections safely by `correctionKey` on the resolved approval payload and emit `approval.circulation_log_corrected`.
 
-- Observation: the active-doc chain was still intentionally stopping at “reevaluate later-F5” wording rather than naming one active successor plan.
-  Evidence: `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `docs/ops/codex-app-server.md`, `evals/README.md`, `docs/benchmarks/seeded-missions.md`, and `apps/control-plane/src/modules/approvals/README.md` all described FP-0047 as shipped but did not yet point the next thread at one concrete F5C4H contract.
+- Observation: preserving the shipped F5C4G correction smoke while adding one dedicated F5C4H actor-correction smoke kept the baseline proof stable and matched the narrower acceptance contract for this slice.
+  Evidence: `tools/board-packet-circulation-log-correction-smoke.mjs` remained untouched while `tools/board-packet-circulation-actor-correction-smoke.mjs` and the `pnpm smoke:board-packet-circulation-actor-correction:local` package script were added for actor-only chronology proof.
 
-- Observation: the requested docs-only validation ladder is fully green except for one unrelated clean-tree repro failure outside this slice.
-  Evidence: `pnpm ci:repro:current` failed on 2026-04-22 in the temporary worktree during `@pocket-cto/codex-runtime` test execution because `packages/codex-runtime/src/protocol.spec.ts` expected `item/commandExecution/terminalInteraction` notifications that were not present, while all requested smokes, the targeted twin vitest run, `pnpm lint`, `pnpm typecheck`, and `pnpm test` passed beforehand.
+- Observation: the full requested implementation ladder is green for this slice, including clean-tree reproduction.
+  Evidence: the targeted domain, control-plane, and web vitest commands, the preserved baseline smokes, the new actor-correction smoke, the twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all passed on 2026-04-22.
 
 ## Decision Log
 
@@ -72,6 +73,12 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 
 - Decision: F5C4H stays delivery-free in the system sense.
   Rationale: Pocket CFO may record actor-attribution correction around an external circulation event, but it must not actually send, distribute, publish, or circulate anything itself in this slice.
+
+- Decision: preserve the shipped F5C4G correction smoke and add one dedicated F5C4H actor-correction smoke.
+  Rationale: keeping `pnpm smoke:board-packet-circulation-log-correction:local` unchanged preserves the prior baseline truth, while `pnpm smoke:board-packet-circulation-actor-correction:local` proves the new actor-only widening directly.
+
+- Decision: leave approval-card rendering unchanged in this first F5C4H slice.
+  Rationale: actor chronology is already visible in reporting output, mission detail, mission card, mission list, and proof-bundle surfaces, while approval posture itself remains unchanged on the existing `report_circulation` seam.
 
 - Decision: after F5C4H, the repo should reevaluate whether any later-F5 work is still justified before F6, and this docs-only handoff must not create `FP-0049`.
   Rationale: the current remaining operator problem is concrete and narrow, so the next successor should be chosen only after this actor-correction slice either ships or proves unnecessary in practice.
@@ -150,10 +157,9 @@ The next real F5C4H implementation thread should stay inside the existing approv
 
 ## Plan of Work
 
-First, keep this slice docs-only and make the active handoff truthful.
-That means authoring one concrete FP-0048 plan, refreshing the smallest active-doc chain that still pointed at a generic post-F5C4G reevaluation, and preserving FP-0047 as the shipped F5C4G record rather than reopening it.
+First, ship the narrowest truthful actor-correction widening on the existing `report_circulation` seam and preserve FP-0047 as the shipped F5C4G record rather than reopening it.
 
-Second, in the next real implementation thread, widen the pure approval and reporting contracts just enough to let append-only correction entries carry optional corrected `circulatedBy` on the existing `report_circulation` seam.
+Second, widen the pure approval and reporting contracts just enough to let append-only correction entries carry optional corrected `circulatedBy` on the existing `report_circulation` seam.
 The original `circulationRecord` must remain immutable, and the correction history must remain append-only and idempotent by `correctionKey`.
 
 Third, retarget the existing mission-scoped correction write path rather than inventing a new subsystem.
@@ -162,7 +168,7 @@ The current `POST /missions/:missionId/reporting/circulation-log-correction` sea
 Fourth, widen reporting, proof-bundle, mission, approval-card, and operator read surfaces only enough to make original-versus-effective actor identity visible.
 The repo should keep current freshness, limitation, provenance, and reviewer-trace posture explicit and should still avoid any delivery automation or runtime-codex widening.
 
-Finally, after F5C4H lands, pause before opening another plan number.
+Finally, after this first F5C4H slice, pause before opening another plan number.
 Only if a concrete operator problem still remains should the repo decide whether any later-F5 continuation is justified before F6.
 
 ## Concrete Steps
@@ -236,9 +242,9 @@ Only if a concrete operator problem still remains should the repo decide whether
    - render original circulation actor and effective circulation actor separately
    - keep send buttons, distribution automation, PDF export, slide export, and runtime-codex drafting controls out of scope
 
-5. Extend the existing proof coverage instead of inventing a new smoke family.
+5. Extend the existing proof coverage and add one dedicated actor-correction smoke.
    Update:
-   - `tools/board-packet-circulation-log-correction-smoke.mjs`
+   - `tools/board-packet-circulation-actor-correction-smoke.mjs`
    - `apps/control-plane/src/modules/approvals/service.spec.ts`
    - `apps/control-plane/src/modules/reporting/service.spec.ts`
    - `apps/control-plane/src/modules/evidence/proof-bundle-assembly.spec.ts`
@@ -248,7 +254,8 @@ Only if a concrete operator problem still remains should the repo decide whether
    F5C4H should:
    - preserve the shipped `pnpm smoke:board-packet-circulation-approval:local` proof
    - preserve the shipped `pnpm smoke:board-packet-circulation-log:local` proof
-   - preserve the shipped `pnpm smoke:board-packet-circulation-log-correction:local` command and widen its assertions rather than adding a new smoke command
+   - preserve the shipped `pnpm smoke:board-packet-circulation-log-correction:local` proof as the F5C4G baseline
+   - add `pnpm smoke:board-packet-circulation-actor-correction:local` as the dedicated F5C4H actor-only proof
    - assert that the original `circulationRecord` stays unchanged while the derived effective actor and chronology update
    - keep the proof deterministic, runtime-free, and delivery-free
 
@@ -267,32 +274,14 @@ Only if a concrete operator problem still remains should the repo decide whether
 
 ## Validation and Acceptance
 
-For this docs-and-plan handoff thread, rerun the preserved confidence ladder to prove the guidance refresh stayed truthful without starting F5C4H code.
-The next real implementation thread should rerun the same ladder after code lands.
+For the first real F5C4H implementation thread, rerun the narrow validation ladder requested for this slice and finish only on a full green pass.
 
 Required command set:
 
 ```bash
-pnpm smoke:source-ingest:local
-pnpm smoke:finance-twin:local
-pnpm smoke:finance-twin-account-catalog:local
-pnpm smoke:finance-twin-general-ledger:local
-pnpm smoke:finance-twin-snapshot:local
-pnpm smoke:finance-twin-reconciliation:local
-pnpm smoke:finance-twin-period-context:local
-pnpm smoke:finance-twin-account-bridge:local
-pnpm smoke:finance-twin-balance-bridge-prerequisites:local
-pnpm smoke:finance-twin-source-backed-balance-proof:local
-pnpm smoke:finance-twin-balance-proof-lineage:local
-pnpm smoke:finance-twin-bank-account-summary:local
-pnpm smoke:finance-twin-receivables-aging:local
-pnpm smoke:finance-twin-payables-aging:local
-pnpm smoke:finance-twin-contract-metadata:local
-pnpm smoke:finance-twin-card-expense:local
-pnpm smoke:cfo-wiki-foundation:local
-pnpm smoke:cfo-wiki-document-pages:local
-pnpm smoke:cfo-wiki-lint-export:local
-pnpm smoke:cfo-wiki-concept-metric-policy:local
+pnpm --filter @pocket-cto/domain exec vitest run src/approval.spec.ts src/proof-bundle.spec.ts src/mission-detail.spec.ts src/mission-list.spec.ts
+zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/approvals/**/*.spec.ts src/modules/reporting/**/*.spec.ts src/modules/missions/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/modules/orchestrator/**/*.spec.ts src/app.spec.ts"
+zsh -lc "cd apps/web && pnpm exec vitest run app/**/*.spec.ts* components/**/*.spec.ts* lib/api.spec.ts"
 pnpm smoke:finance-discovery-answer:local
 pnpm smoke:finance-discovery-supported-families:local
 pnpm smoke:finance-policy-lookup:local
@@ -310,6 +299,7 @@ pnpm smoke:lender-update-release-approval:local
 pnpm smoke:lender-update-release-log:local
 pnpm smoke:diligence-packet-release-approval:local
 pnpm smoke:diligence-packet-release-log:local
+pnpm smoke:board-packet-circulation-actor-correction:local
 pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts
 pnpm lint
 pnpm typecheck
@@ -317,51 +307,49 @@ pnpm test
 pnpm ci:repro:current
 ```
 
-Current docs-only run status on 2026-04-22:
+Current implementation run status on 2026-04-22:
 
-- passed: every requested smoke command from `pnpm smoke:source-ingest:local` through `pnpm smoke:diligence-packet-release-log:local`
+- passed: `pnpm --filter @pocket-cto/domain exec vitest run src/approval.spec.ts src/proof-bundle.spec.ts src/mission-detail.spec.ts src/mission-list.spec.ts`
+- passed: `zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/approvals/**/*.spec.ts src/modules/reporting/**/*.spec.ts src/modules/missions/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/modules/orchestrator/**/*.spec.ts src/app.spec.ts"`
+- passed: `zsh -lc "cd apps/web && pnpm exec vitest run app/**/*.spec.ts* components/**/*.spec.ts* lib/api.spec.ts"`
+- passed: the shipped baseline proofs from `pnpm smoke:finance-discovery-answer:local` through `pnpm smoke:diligence-packet-release-log:local`
+- passed: `pnpm smoke:board-packet-circulation-actor-correction:local`
 - passed: `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts`
 - passed: `pnpm lint`
 - passed: `pnpm typecheck`
 - passed: `pnpm test`
-- failed: `pnpm ci:repro:current`
-  Failure detail: the clean temporary worktree run failed inside `@pocket-cto/codex-runtime` on `packages/codex-runtime/src/protocol.spec.ts` because the expected `item/commandExecution/terminalInteraction` notification array was empty.
-  Planning consequence: because the user required the full ladder to be green before commit, push, or PR creation, this docs-only slice stops at a truthful handoff rather than widening into unrelated runtime work.
+- passed: `pnpm ci:repro:current`
+  Detail: clean temporary worktree reproduction succeeded at `/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-ci-repro-qLGLKh/repo`.
 
-User-visible acceptance for the future F5C4H implementation thread:
+User-visible acceptance now proven on 2026-04-22:
 
 - one completed approved-for-circulation `board_packet` reporting mission with one stored `board_packet` artifact and one existing logged `circulationRecord` can append a correction that optionally changes the effective `circulatedBy`
 - the original immutable `circulationRecord` still preserves the original logged `circulatedBy`
 - append-only `circulationCorrections` remain safe to retry by `correctionKey`
-- derived reporting, mission, proof-bundle, and approval-card surfaces show original actor truth, current effective actor truth, and chronology clearly
+- derived reporting, mission, and proof-bundle surfaces show original actor truth, current effective actor truth, correction count, latest correction summary, and chronology clearly
 - no new approval kind, no new mission family, no system send or delivery behavior, no runtime-codex widening, and no broader packet widening are introduced
 - provenance, freshness, reviewer trace, and limitations remain visible wherever circulation chronology is shown
 
 ## Idempotence and Recovery
 
-This docs-only handoff is safe to rerun because it adds one new plan file and refreshes active guidance only.
-If the same doc patch needs to be applied again, reread the current active-doc chain first so the active plan pointer is not duplicated or drifted.
+This slice is safe to rerun because it is additive: it widens append-only correction entries with optional corrected actor identity, preserves the original circulation record, and reuses the existing approval and replay anchors.
+If the same patch needs to be applied again, reread the current effective record first and preserve idempotent retries through the existing `correctionKey` contract.
 
-For the future implementation thread, retries should stay keyed by the existing `correctionKey` contract so replays of the same actor-correction request remain idempotent.
+Retries should stay keyed by the existing `correctionKey` contract so replays of the same actor-correction request remain idempotent.
 If a correction write partially fails after the approval payload updates, use the replay and approval row as the durable source of truth rather than rewriting raw evidence or mutating the original circulation record.
 
-If the future implementation unexpectedly requires a new migration or replay-type widening, stop and update this plan explicitly before landing that change.
+If any later F5C4H continuation unexpectedly requires a new migration or replay-type widening, stop and update this plan explicitly before landing that change.
 Rollback should prefer reverting the narrow F5C4H commit series rather than widening the correction subsystem further.
 
 ## Artifacts and Notes
 
-This docs-only slice should produce:
+This slice should produce:
 
-- `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` as the sole active implementation contract
-- the smallest truthful active-doc refresh that points the next thread at FP-0048 rather than a generic post-F5C4G reevaluation
-- a truthful validation record showing that the docs refresh did not regress the shipped baseline across the requested smokes, targeted twin guardrails, lint, typecheck, and test, while also recording the unrelated `pnpm ci:repro:current` clean-tree blocker
+- widened board-circulation correction contracts on the existing `report_circulation` seam with optional corrected `circulatedBy`
+- updated reporting, mission, and proof surfaces that distinguish original actor from effective actor
+- `tools/board-packet-circulation-actor-correction-smoke.mjs` plus the `pnpm smoke:board-packet-circulation-actor-correction:local` package script
+- the smallest truthful active-doc refresh that stops describing corrected `circulatedBy` as unshipped
 - one local commit, push, and PR only if the full requested validation ladder is green
-
-The future implementation slice should produce:
-
-- widened board-circulation correction contracts on the existing `report_circulation` seam
-- updated proof and operator surfaces that distinguish original actor from effective actor
-- updated tests and widened assertions inside the existing board circulation correction smoke
 
 ## Interfaces and Dependencies
 
@@ -371,15 +359,14 @@ The future implementation slice should produce:
 - `apps/control-plane/src/modules/evidence` remains the owner of proof-bundle summaries and manifest assembly.
 - `apps/web` remains read-model and form wiring only; it must not import DB code directly.
 - `packages/codex-runtime` and runtime-codex prompts stay unchanged in F5C4H.
-- `tools/board-packet-circulation-log-correction-smoke.mjs` remains the existing packaged proof seam; do not add a new smoke command family for actor correction.
+- `tools/board-packet-circulation-log-correction-smoke.mjs` remains the shipped F5C4G proof seam, and `tools/board-packet-circulation-actor-correction-smoke.mjs` is the shipped F5C4H proof seam.
 - GitHub connector work stays out of scope, and `$github-app-integration-guard` remains unused for this slice.
 - No new environment variables are expected.
 
 ## Outcomes & Retrospective
 
-This thread is intentionally docs-and-plan only.
-What shipped here is one implementation-ready F5C4H contract and the smallest truthful active-doc refresh needed to make it the sole active next step.
-No runtime code, route, schema, migration, package-script, smoke-command, or eval-dataset changes shipped in this slice.
+This thread shipped the first real F5C4H implementation.
+What landed is one narrow append-only actor-correction widening on the existing board `report_circulation` seam, one truthful original-versus-effective actor chronology across reporting and proof surfaces, one dedicated packaged actor-correction smoke, and the smallest active-doc refresh needed to stop describing corrected actor attribution as future-only work.
 
-The main change from the prior “reevaluate later-F5” posture is that the repo now has enough concrete truth to justify exactly one narrow successor plan: append-only actor-attribution correction on the existing board `report_circulation` seam.
-What remains is still narrow: first resolve or consciously waive the unrelated `pnpm ci:repro:current` clean-tree failure, then start the actual F5C4H implementation thread, rerun the full ladder, and close out once that code either ships or proves unnecessary.
+The main change from the prior “reevaluate later-F5” posture is that the repo now has concrete shipped truth for corrected board circulation actor attribution without widening into delivery, export, or runtime-codex behavior.
+What remains should stay narrow: if any follow-on work is still justified, keep it inside FP-0048 hardening rather than reopening broader later-F5 scope or starting F6 early.

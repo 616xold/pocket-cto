@@ -538,6 +538,20 @@ export function RecordReportingCirculationLogCorrectionForm({
 
         <label
           className="stack"
+          htmlFor={`corrected-circulated-by-${missionId}`}
+        >
+          <span>Correct circulated-by actor</span>
+          <input
+            className="text-input"
+            id={`corrected-circulated-by-${missionId}`}
+            name="circulatedBy"
+            placeholder="board-chair@example.com"
+            type="text"
+          />
+        </label>
+
+        <label
+          className="stack"
           htmlFor={`corrected-circulation-channel-${missionId}`}
         >
           <span>Correct circulation channel</span>

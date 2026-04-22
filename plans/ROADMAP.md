@@ -274,8 +274,8 @@ Goal:
 Turn shipped discovery outputs into reviewable finance reporting artifacts without pretending the repo already has full packet, export, or release workflows.
 
 The latest shipped implementation records for this phase are `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` for F5C4E, `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` for F5C4F, and `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` for F5C4G.
-`plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` now serves as the active F5C4H implementation-ready contract.
-The next remaining execution slice is one narrow board circulation actor-correction and chronology-hardening follow-on on top of the existing `report_circulation` seam; do not reopen F5C4E through F5C4G, author a broad `FP-0049` umbrella, or start F6 early.
+`plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` now serves as the active F5C4H contract and records the first shipped board circulation actor-correction slice on top of the existing `report_circulation` seam.
+Any next execution should stay inside that same narrow FP-0048 hardening scope; do not reopen F5C4E through F5C4G, author a broad `FP-0049` umbrella, or start F6 early.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims

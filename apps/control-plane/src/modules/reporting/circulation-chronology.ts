@@ -21,15 +21,19 @@ export function buildLoggedCirculationCorrectionSummary(input: {
   correctedBy: string;
   correctionReason: string;
   circulatedAt: string | null;
+  circulatedBy: string | null;
   circulationChannel: string | null;
   circulationNote: string | null;
 }) {
   const correctedValues = [
     input.circulatedAt ? `circulatedAt -> ${input.circulatedAt}` : null,
+    input.circulatedBy ? `circulatedBy -> ${input.circulatedBy}` : null,
     input.circulationChannel
       ? `circulationChannel -> ${input.circulationChannel}`
       : null,
-    input.circulationNote ? `circulationNote -> ${input.circulationNote}` : null,
+    input.circulationNote
+      ? `circulationNote -> ${input.circulationNote}`
+      : null,
   ].filter((value): value is string => Boolean(value));
   const correctedValuesSummary =
     correctedValues.length > 0
@@ -81,7 +85,8 @@ export function buildReportingCirculationChronologyViewFromApprovalRecord(
   return ReportingCirculationChronologyViewSchema.parse({
     correctionCount,
     corrections,
-    effectiveRecord: latestCorrection?.effectiveRecord ?? originalEffectiveRecord,
+    effectiveRecord:
+      latestCorrection?.effectiveRecord ?? originalEffectiveRecord,
     hasCorrections: correctionCount > 0,
     latestCorrection,
     latestCorrectionSummary: latestCorrection?.summary ?? null,
@@ -105,8 +110,9 @@ export function buildReportingCirculationChronologyViewFromProofBundle(
     return null;
   }
 
-  const storedDraft =
-    input.evidenceCompleteness.presentArtifactKinds.includes(input.reportKind);
+  const storedDraft = input.evidenceCompleteness.presentArtifactKinds.includes(
+    input.reportKind,
+  );
 
   if (!storedDraft) {
     return null;
@@ -168,6 +174,7 @@ function buildDerivedCorrectionViews(input: {
       correctedBy: correction.correctedBy,
       correctionReason: correction.correctionReason,
       circulatedAt: correction.circulatedAt,
+      circulatedBy: correction.circulatedBy,
       circulationChannel: correction.circulationChannel,
       circulationNote: correction.circulationNote,
       effectiveRecord: currentEffective,
@@ -210,22 +217,26 @@ function buildCorrectedEffectiveRecordView(input: {
     circulated: true,
     circulatedAt:
       input.correction.circulatedAt ?? input.currentEffective.circulatedAt,
-    circulatedBy: input.currentEffective.circulatedBy,
+    circulatedBy:
+      input.correction.circulatedBy ?? input.currentEffective.circulatedBy,
     circulationChannel:
       input.correction.circulationChannel ??
       input.currentEffective.circulationChannel,
     circulationNote:
-      input.correction.circulationNote ?? input.currentEffective.circulationNote,
+      input.correction.circulationNote ??
+      input.currentEffective.circulationNote,
     approvalId: input.approvalId,
     summary: buildEffectiveRecordSummary({
       circulationChannel:
         input.correction.circulationChannel ??
         input.currentEffective.circulationChannel,
       circulationNote:
-        input.correction.circulationNote ?? input.currentEffective.circulationNote,
+        input.correction.circulationNote ??
+        input.currentEffective.circulationNote,
       circulatedAt:
         input.correction.circulatedAt ?? input.currentEffective.circulatedAt,
-      circulatedBy: input.currentEffective.circulatedBy,
+      circulatedBy:
+        input.correction.circulatedBy ?? input.currentEffective.circulatedBy,
       correctedAt: input.correction.correctedAt,
       correctedBy: input.correction.correctedBy,
       source: "latest_correction",

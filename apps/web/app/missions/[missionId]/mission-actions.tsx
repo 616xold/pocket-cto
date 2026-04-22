@@ -117,7 +117,7 @@ export function MissionActions({
     reporting.circulationRecord?.circulated === true;
   const reportingFollowOnOutOfScopeNote =
     reporting?.reportKind === "board_packet"
-      ? "Board packet circulation remains delivery-free and runtime-free in F5C4G. This surface can request one persisted internal circulation approval, record one external circulation log, and append immutable correction chronology only; send or distribute behavior, PDF export, and slide export stay out of scope here."
+      ? "Board packet circulation remains delivery-free and runtime-free in F5C4H. This surface can request one persisted internal circulation approval, record one external circulation log, and append immutable correction chronology including actor attribution only; send or distribute behavior, PDF export, and slide export stay out of scope here."
       : "Reporting follow-on actions are available only from completed finance memo missions in the shipped F5A through F5C4D path.";
 
   return (
@@ -256,11 +256,11 @@ export function MissionActions({
             <>
               <p className="muted">
                 This first real F5C4D slice keeps diligence packets
-                delivery-free and runtime-free, but it does allow one
-                persisted release-approval path plus one external release-log
-                path from one completed diligence-packet reporting mission with
-                one stored diligence_packet artifact. Board circulation, PDF,
-                and slide actions stay out of scope here.
+                delivery-free and runtime-free, but it does allow one persisted
+                release-approval path plus one external release-log path from
+                one completed diligence-packet reporting mission with one stored
+                diligence_packet artifact. Board circulation, PDF, and slide
+                actions stay out of scope here.
               </p>
               {canRequestReportReleaseApproval ? (
                 <RequestReportingReleaseApprovalForm
@@ -292,14 +292,15 @@ export function MissionActions({
           ) : reporting?.reportKind === "board_packet" ? (
             <>
               <p className="muted">
-                This first real F5C4G slice keeps board packets delivery-free
+                This first real F5C4H slice keeps board packets delivery-free
                 and runtime-free, but it now allows one persisted internal
                 circulation-approval path, one external circulation-log path,
                 and one append-only circulation-correction path on the same{" "}
                 <code>report_circulation</code> seam for one completed
                 board-packet mission with one stored <code>board_packet</code>{" "}
-                artifact. No send or distribute behavior, PDF export, slide
-                export, or runtime drafting is added here.
+                artifact, including narrow actor-attribution corrections to the
+                effective circulated-by value. No send or distribute behavior,
+                PDF export, slide export, or runtime drafting is added here.
               </p>
               {canRequestReportCirculationApproval ? (
                 <RequestReportingCirculationApprovalForm
@@ -326,7 +327,8 @@ export function MissionActions({
                     Pocket CFO still does not send or distribute the board
                     packet. This action only appends chronology to the existing
                     external circulation record so the original log remains
-                    visible while the latest effective record can be corrected.
+                    visible while the latest effective record, including actor
+                    attribution, can be corrected.
                   </p>
                   <RecordReportingCirculationLogCorrectionForm
                     missionId={mission.id}

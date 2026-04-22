@@ -508,7 +508,8 @@ export class ApprovalService {
 
       const existingCorrection = payload.circulationCorrections.find(
         (correction) =>
-          correction.correctionKey === input.circulationCorrection.correctionKey,
+          correction.correctionKey ===
+          input.circulationCorrection.correctionKey,
       );
 
       if (existingCorrection) {
@@ -1163,6 +1164,7 @@ function reportCirculationCorrectionEquals(
     left.correctedBy === right.correctedBy &&
     left.correctionReason === right.correctionReason &&
     left.circulatedAt === right.circulatedAt &&
+    left.circulatedBy === right.circulatedBy &&
     left.circulationChannel === right.circulationChannel &&
     left.circulationNote === right.circulationNote &&
     left.summary === right.summary

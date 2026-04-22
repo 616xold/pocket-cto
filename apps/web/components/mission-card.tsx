@@ -51,6 +51,10 @@ export function MissionCard({
     reportingView?.publication ?? proofBundle.reportPublication ?? null;
   const circulationChronology =
     reportingView?.circulationChronology ?? proofBundle.circulationChronology;
+  const circulationRecord =
+    reportingView?.circulationRecord ?? proofBundle.circulationRecord;
+  const effectiveCirculationRecord =
+    circulationChronology?.effectiveRecord ?? circulationRecord;
   const isDiligencePacket = proofBundle.reportKind === "diligence_packet";
   const isBoardPacket = proofBundle.reportKind === "board_packet";
   const isLenderUpdate = proofBundle.reportKind === "lender_update";
@@ -152,10 +156,19 @@ export function MissionCard({
                   </div>
                   <div>
                     <dt>Circulation logged</dt>
+                    <dd>{circulationRecord?.circulated ? "Yes" : "No"}</dd>
+                  </div>
+                  <div>
+                    <dt>Original circulated by</dt>
                     <dd>
-                      {reportingView.circulationRecord?.circulated
-                        ? "Yes"
-                        : "No"}
+                      {circulationRecord?.circulatedBy ?? "Not logged yet."}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Effective circulated by</dt>
+                    <dd>
+                      {effectiveCirculationRecord?.circulatedBy ??
+                        "Not logged yet."}
                     </dd>
                   </div>
                   <div>

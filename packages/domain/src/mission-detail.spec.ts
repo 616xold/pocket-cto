@@ -924,7 +924,7 @@ describe("Mission detail domain schema", () => {
           hasCorrections: true,
           correctionCount: 1,
           latestCorrectionSummary:
-            "Circulation record correction was appended by finance-operator at 2026-04-19T12:15:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: The original log captured draft completion time.",
+            "Circulation record correction was appended by finance-operator at 2026-04-19T12:15:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com. Reason: The original log captured draft completion time.",
           latestCorrection: {
             correctionKey: "board-circulation-correction-1",
             correctedAt: "2026-04-19T12:15:00.000Z",
@@ -932,34 +932,35 @@ describe("Mission detail domain schema", () => {
             correctionReason:
               "The original log captured draft completion time.",
             circulatedAt: "2026-04-19T12:12:00.000Z",
+            circulatedBy: "board-chair@example.com",
             circulationChannel: null,
             circulationNote: null,
             effectiveRecord: {
               source: "latest_correction",
               circulated: true,
               circulatedAt: "2026-04-19T12:12:00.000Z",
-              circulatedBy: "finance-operator",
+              circulatedBy: "board-chair@example.com",
               circulationChannel: "email",
               circulationNote:
                 "Circulated after approval from the finance mailbox.",
               approvalId: "55555555-5555-4555-8555-555555555555",
               summary:
-                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:15:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:15:00.000Z: circulated by board-chair@example.com at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
             },
             summary:
-              "Circulation record correction was appended by finance-operator at 2026-04-19T12:15:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: The original log captured draft completion time.",
+              "Circulation record correction was appended by finance-operator at 2026-04-19T12:15:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com. Reason: The original log captured draft completion time.",
           },
           effectiveRecord: {
             source: "latest_correction",
             circulated: true,
             circulatedAt: "2026-04-19T12:12:00.000Z",
-            circulatedBy: "finance-operator",
+            circulatedBy: "board-chair@example.com",
             circulationChannel: "email",
             circulationNote:
               "Circulated after approval from the finance mailbox.",
             approvalId: "55555555-5555-4555-8555-555555555555",
             summary:
-              "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:15:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+              "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:15:00.000Z: circulated by board-chair@example.com at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
           },
           corrections: [
             {
@@ -969,22 +970,23 @@ describe("Mission detail domain schema", () => {
               correctionReason:
                 "The original log captured draft completion time.",
               circulatedAt: "2026-04-19T12:12:00.000Z",
+              circulatedBy: "board-chair@example.com",
               circulationChannel: null,
               circulationNote: null,
               effectiveRecord: {
                 source: "latest_correction",
                 circulated: true,
                 circulatedAt: "2026-04-19T12:12:00.000Z",
-                circulatedBy: "finance-operator",
+                circulatedBy: "board-chair@example.com",
                 circulationChannel: "email",
                 circulationNote:
                   "Circulated after approval from the finance mailbox.",
                 approvalId: "55555555-5555-4555-8555-555555555555",
                 summary:
-                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:15:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:15:00.000Z: circulated by board-chair@example.com at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
               },
               summary:
-                "Circulation record correction was appended by finance-operator at 2026-04-19T12:15:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: The original log captured draft completion time.",
+                "Circulation record correction was appended by finance-operator at 2026-04-19T12:15:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com. Reason: The original log captured draft completion time.",
             },
           ],
           summary:
@@ -1126,7 +1128,7 @@ describe("Mission detail domain schema", () => {
           hasCorrections: true,
           correctionCount: 1,
           latestCorrectionSummary:
-            "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: Corrected the original send timestamp after mailbox review.",
+            "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com. Reason: Corrected the original send timestamp after mailbox review.",
           latestCorrection: {
             correctionKey: "board-packet-correction-1",
             correctedAt: "2026-04-19T12:20:00.000Z",
@@ -1134,34 +1136,35 @@ describe("Mission detail domain schema", () => {
             correctionReason:
               "Corrected the original send timestamp after mailbox review",
             circulatedAt: "2026-04-19T12:12:00.000Z",
+            circulatedBy: "board-chair@example.com",
             circulationChannel: null,
             circulationNote: null,
             effectiveRecord: {
               source: "latest_correction",
               circulated: true,
               circulatedAt: "2026-04-19T12:12:00.000Z",
-              circulatedBy: "finance-operator",
+              circulatedBy: "board-chair@example.com",
               circulationChannel: "email",
               circulationNote:
                 "Circulated after approval from the finance mailbox.",
               approvalId: "55555555-5555-4555-8555-555555555555",
               summary:
-                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:20:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:20:00.000Z: circulated by board-chair@example.com at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
             },
             summary:
-              "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: Corrected the original send timestamp after mailbox review.",
+              "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com. Reason: Corrected the original send timestamp after mailbox review.",
           },
           effectiveRecord: {
             source: "latest_correction",
             circulated: true,
             circulatedAt: "2026-04-19T12:12:00.000Z",
-            circulatedBy: "finance-operator",
+            circulatedBy: "board-chair@example.com",
             circulationChannel: "email",
             circulationNote:
               "Circulated after approval from the finance mailbox.",
             approvalId: "55555555-5555-4555-8555-555555555555",
             summary:
-              "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:20:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+              "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:20:00.000Z: circulated by board-chair@example.com at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
           },
           corrections: [
             {
@@ -1171,22 +1174,23 @@ describe("Mission detail domain schema", () => {
               correctionReason:
                 "Corrected the original send timestamp after mailbox review",
               circulatedAt: "2026-04-19T12:12:00.000Z",
+              circulatedBy: "board-chair@example.com",
               circulationChannel: null,
               circulationNote: null,
               effectiveRecord: {
                 source: "latest_correction",
                 circulated: true,
                 circulatedAt: "2026-04-19T12:12:00.000Z",
-                circulatedBy: "finance-operator",
+                circulatedBy: "board-chair@example.com",
                 circulationChannel: "email",
                 circulationNote:
                   "Circulated after approval from the finance mailbox.",
                 approvalId: "55555555-5555-4555-8555-555555555555",
                 summary:
-                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:20:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:20:00.000Z: circulated by board-chair@example.com at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
               },
               summary:
-                "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: Corrected the original send timestamp after mailbox review.",
+                "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com. Reason: Corrected the original send timestamp after mailbox review.",
             },
           ],
           summary:
@@ -1210,6 +1214,9 @@ describe("Mission detail domain schema", () => {
     expect(parsed.reporting?.circulationChronology?.correctionCount).toBe(1);
     expect(parsed.reporting?.circulationChronology?.effectiveRecord?.circulatedAt).toBe(
       "2026-04-19T12:12:00.000Z",
+    );
+    expect(parsed.reporting?.circulationChronology?.effectiveRecord?.circulatedBy).toBe(
+      "board-chair@example.com",
     );
     expect(parsed.proofBundle.circulationRecord?.circulated).toBe(true);
   });

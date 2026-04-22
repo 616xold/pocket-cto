@@ -557,6 +557,7 @@ describe("ReportingService", () => {
         correctionReason:
           "Corrected the original send timestamp after mailbox review",
         circulatedAt: "2026-04-21T09:12:00.000Z",
+        circulatedBy: "board-chair@example.com",
         circulationChannel: "email",
         circulationNote: "Corrected after finance mailbox audit.",
       },
@@ -571,11 +572,173 @@ describe("ReportingService", () => {
         correctionReason:
           "Corrected the original send timestamp after mailbox review",
         circulatedAt: "2026-04-21T09:12:00.000Z",
+        circulatedBy: "board-chair@example.com",
         circulationChannel: null,
         circulationNote: "Corrected after finance mailbox audit.",
         summary:
-          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
       },
+    });
+  });
+
+  it("rejects board-packet circulation correction when the submitted actor and fields already match the current effective record", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const boardPacketMission = {
+      ...buildBoardPacketMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [boardPacketMission.id]: [
+          buildStoredBoardPacketArtifact({
+            missionId: boardPacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [boardPacketMission.id]: boardPacketMission,
+      },
+      proofBundlesByMissionId: {
+        [boardPacketMission.id]: {
+          ...buildBoardPacketProofBundle({
+            missionId: boardPacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Approved for internal circulation.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+          },
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote:
+              "Circulated from the finance mailbox after approval.",
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+          circulationChronology: {
+            hasCorrections: true,
+            correctionCount: 1,
+            latestCorrectionSummary:
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedBy -> board-chair@example.com. Reason: Updated the operator attribution after board office review.",
+            latestCorrection: {
+              correctionKey: "board-packet-correction-1",
+              correctedAt: "2026-04-21T09:20:00.000Z",
+              correctedBy: "finance-operator",
+              correctionReason:
+                "Updated the operator attribution after board office review.",
+              circulatedAt: null,
+              circulatedBy: "board-chair@example.com",
+              circulationChannel: null,
+              circulationNote: null,
+              effectiveRecord: {
+                source: "latest_correction",
+                circulated: true,
+                circulatedAt: "2026-04-21T09:10:00.000Z",
+                circulatedBy: "board-chair@example.com",
+                circulationChannel: "email",
+                circulationNote:
+                  "Circulated from the finance mailbox after approval.",
+                approvalId: "55555555-5555-4555-8555-555555555555",
+                summary:
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:10:00.000Z via email. Effective note: Circulated from the finance mailbox after approval.",
+              },
+              summary:
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedBy -> board-chair@example.com. Reason: Updated the operator attribution after board office review.",
+            },
+            effectiveRecord: {
+              source: "latest_correction",
+              circulated: true,
+              circulatedAt: "2026-04-21T09:10:00.000Z",
+              circulatedBy: "board-chair@example.com",
+              circulationChannel: "email",
+              circulationNote:
+                "Circulated from the finance mailbox after approval.",
+              approvalId: "55555555-5555-4555-8555-555555555555",
+              summary:
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:10:00.000Z via email. Effective note: Circulated from the finance mailbox after approval.",
+            },
+            corrections: [
+              {
+                correctionKey: "board-packet-correction-1",
+                correctedAt: "2026-04-21T09:20:00.000Z",
+                correctedBy: "finance-operator",
+                correctionReason:
+                  "Updated the operator attribution after board office review.",
+                circulatedAt: null,
+                circulatedBy: "board-chair@example.com",
+                circulationChannel: null,
+                circulationNote: null,
+                effectiveRecord: {
+                  source: "latest_correction",
+                  circulated: true,
+                  circulatedAt: "2026-04-21T09:10:00.000Z",
+                  circulatedBy: "board-chair@example.com",
+                  circulationChannel: "email",
+                  circulationNote:
+                    "Circulated from the finance mailbox after approval.",
+                  approvalId: "55555555-5555-4555-8555-555555555555",
+                  summary:
+                    "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:10:00.000Z via email. Effective note: Circulated from the finance mailbox after approval.",
+                },
+                summary:
+                  "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedBy -> board-chair@example.com. Reason: Updated the operator attribution after board office review.",
+              },
+            ],
+            summary:
+              "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-21T09:20:00.000Z.",
+          },
+        },
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    await expect(
+      service.prepareReportingCirculationLogCorrection(boardPacketMission.id, {
+        correctionKey: "board-packet-correction-2",
+        correctedAt: "2026-04-21T09:25:00.000Z",
+        correctedBy: "finance-operator",
+        correctionReason:
+          "Attempted duplicate actor correction after the existing correction already landed",
+        circulatedAt: null,
+        circulatedBy: "board-chair@example.com",
+        circulationChannel: null,
+        circulationNote: null,
+      }),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          code: "invalid_request",
+          details: [
+            {
+              path: "missionId",
+              message: `Reporting mission ${boardPacketMission.id} already exposes those actor and circulation values as the current effective record, so this correction would not append any new chronology.`,
+            },
+          ],
+        },
+      },
+      statusCode: 400,
     });
   });
 
@@ -638,6 +801,7 @@ describe("ReportingService", () => {
         correctionReason:
           "Corrected the original send timestamp after mailbox review",
         circulatedAt: "2026-04-21T09:12:00.000Z",
+        circulatedBy: null,
         circulationChannel: "email",
         circulationNote: "Corrected after finance mailbox audit.",
       }),
@@ -2108,8 +2272,7 @@ function buildDiligencePacketProofBundle(input: {
       input.sourceDiscoveryMissionId,
     ),
     missionId: input.missionId,
-    missionTitle:
-      "Draft diligence packet for acme from cash posture reporting",
+    missionTitle: "Draft diligence packet for acme from cash posture reporting",
     objective:
       "Compile one draft diligence packet from completed reporting mission and its stored finance memo plus evidence appendix only.",
     sourceDiscoveryMissionId: input.sourceDiscoveryMissionId,

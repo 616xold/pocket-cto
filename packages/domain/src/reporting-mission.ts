@@ -114,11 +114,7 @@ export const RecordReportingCirculationLogInputSchema = z
 export const RecordReportingCirculationLogCorrectionInputSchema = z
   .object({
     correctionKey: z.string().trim().min(1),
-    correctedAt: z
-      .string()
-      .datetime({ offset: true })
-      .nullable()
-      .default(null),
+    correctedAt: z.string().datetime({ offset: true }).nullable().default(null),
     correctedBy: z.string().trim().min(1).default("operator"),
     correctionReason: z.string().trim().min(1),
     circulatedAt: z
@@ -126,6 +122,7 @@ export const RecordReportingCirculationLogCorrectionInputSchema = z
       .datetime({ offset: true })
       .nullable()
       .default(null),
+    circulatedBy: z.string().trim().min(1).nullable().default(null),
     circulationChannel: z.string().trim().min(1).nullable().default(null),
     circulationNote: z.string().trim().min(1).nullable().default(null),
   })
@@ -133,13 +130,14 @@ export const RecordReportingCirculationLogCorrectionInputSchema = z
   .superRefine((input, ctx) => {
     if (
       input.circulatedAt === null &&
+      input.circulatedBy === null &&
       input.circulationChannel === null &&
       input.circulationNote === null
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "At least one circulation field must be corrected.",
-        path: ["circulationChannel"],
+        message: "At least one circulation field or actor must be corrected.",
+        path: ["circulatedBy"],
       });
     }
   });
@@ -450,7 +448,9 @@ export const ReportingCirculationEffectiveRecordSourceSchema = z.enum([
 export const ReportingCirculationEffectiveRecordViewSchema = z
   .object({
     source:
-      ReportingCirculationEffectiveRecordSourceSchema.default("original_record"),
+      ReportingCirculationEffectiveRecordSourceSchema.default(
+        "original_record",
+      ),
     circulated: z.boolean().default(false),
     circulatedAt: z
       .string()
@@ -475,6 +475,7 @@ export const ReportingCirculationCorrectionViewSchema = z
       .datetime({ offset: true })
       .nullable()
       .default(null),
+    circulatedBy: z.string().nullable().default(null),
     circulationChannel: z.string().nullable().default(null),
     circulationNote: z.string().nullable().default(null),
     effectiveRecord: ReportingCirculationEffectiveRecordViewSchema,

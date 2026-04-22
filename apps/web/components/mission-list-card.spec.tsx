@@ -334,7 +334,7 @@ describe("MissionListCard", () => {
     expect(html).toContain("proof ready");
   });
 
-  it("renders board-packet mission summaries with circulation-readiness posture", () => {
+  it("renders board-packet mission summaries with circulation-readiness and actor-correction posture", () => {
     const html = renderToStaticMarkup(
       <MissionListCard
         mission={{
@@ -364,8 +364,89 @@ describe("MissionListCard", () => {
           reportDraftStatus: "draft_only",
           reportKind: "board_packet",
           reportPublication: null,
-          circulationRecord: null,
-          circulationChronology: null,
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T01:06:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote:
+              "Circulated from the finance mailbox after approval.",
+            approvalId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T01:06:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+          circulationChronology: {
+            hasCorrections: true,
+            correctionCount: 1,
+            latestCorrectionSummary:
+              "Circulation record correction was appended by finance-operator at 2026-04-21T01:10:00.000Z. Corrected values: circulatedBy -> board-chair@example.com. Reason: Updated the operator attribution after board office review.",
+            latestCorrection: {
+              correctionKey: "board-packet-correction-1",
+              correctedAt: "2026-04-21T01:10:00.000Z",
+              correctedBy: "finance-operator",
+              correctionReason:
+                "Updated the operator attribution after board office review",
+              circulatedAt: null,
+              circulatedBy: "board-chair@example.com",
+              circulationChannel: null,
+              circulationNote: null,
+              effectiveRecord: {
+                source: "latest_correction",
+                circulated: true,
+                circulatedAt: "2026-04-21T01:06:00.000Z",
+                circulatedBy: "board-chair@example.com",
+                circulationChannel: "email",
+                circulationNote:
+                  "Circulated from the finance mailbox after approval.",
+                approvalId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+                summary:
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T01:10:00.000Z: circulated by board-chair@example.com at 2026-04-21T01:06:00.000Z via email. Effective note: Circulated from the finance mailbox after approval.",
+              },
+              summary:
+                "Circulation record correction was appended by finance-operator at 2026-04-21T01:10:00.000Z. Corrected values: circulatedBy -> board-chair@example.com. Reason: Updated the operator attribution after board office review.",
+            },
+            effectiveRecord: {
+              source: "latest_correction",
+              circulated: true,
+              circulatedAt: "2026-04-21T01:06:00.000Z",
+              circulatedBy: "board-chair@example.com",
+              circulationChannel: "email",
+              circulationNote:
+                "Circulated from the finance mailbox after approval.",
+              approvalId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+              summary:
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T01:10:00.000Z: circulated by board-chair@example.com at 2026-04-21T01:06:00.000Z via email. Effective note: Circulated from the finance mailbox after approval.",
+            },
+            corrections: [
+              {
+                correctionKey: "board-packet-correction-1",
+                correctedAt: "2026-04-21T01:10:00.000Z",
+                correctedBy: "finance-operator",
+                correctionReason:
+                  "Updated the operator attribution after board office review",
+                circulatedAt: null,
+                circulatedBy: "board-chair@example.com",
+                circulationChannel: null,
+                circulationNote: null,
+                effectiveRecord: {
+                  source: "latest_correction",
+                  circulated: true,
+                  circulatedAt: "2026-04-21T01:06:00.000Z",
+                  circulatedBy: "board-chair@example.com",
+                  circulationChannel: "email",
+                  circulationNote:
+                    "Circulated from the finance mailbox after approval.",
+                  approvalId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+                  summary:
+                    "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T01:10:00.000Z: circulated by board-chair@example.com at 2026-04-21T01:06:00.000Z via email. Effective note: Circulated from the finance mailbox after approval.",
+                },
+                summary:
+                  "Circulation record correction was appended by finance-operator at 2026-04-21T01:10:00.000Z. Corrected values: circulatedBy -> board-chair@example.com. Reason: Updated the operator attribution after board office review.",
+              },
+            ],
+            summary:
+              "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-21T01:10:00.000Z.",
+          },
           circulationReadiness: {
             circulationApprovalStatus: "approved_for_circulation",
             circulationReady: true,
@@ -396,7 +477,10 @@ describe("MissionListCard", () => {
 
     expect(html).toContain("approved_for_circulation");
     expect(html).toContain("Circulation ready");
-    expect(html).toContain("no circulation has been logged");
+    expect(html).toContain("Original circulated by");
+    expect(html).toContain("finance-operator");
+    expect(html).toContain("Effective circulated by");
+    expect(html).toContain("board-chair@example.com");
     expect(html).toContain("proof ready");
   });
 

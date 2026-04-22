@@ -522,7 +522,8 @@ describe("ReportingOutputCard", () => {
             circulatedAt: "2026-04-21T09:10:00.000Z",
             circulatedBy: "finance-operator",
             circulationChannel: "email",
-            circulationNote: "Circulated from the finance mailbox after approval.",
+            circulationNote:
+              "Circulated from the finance mailbox after approval.",
             approvalId: "66666666-6666-4666-8666-666666666666",
             summary:
               "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
@@ -531,7 +532,7 @@ describe("ReportingOutputCard", () => {
             hasCorrections: true,
             correctionCount: 1,
             latestCorrectionSummary:
-              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
             latestCorrection: {
               correctionKey: "board-packet-correction-1",
               correctedAt: "2026-04-21T09:20:00.000Z",
@@ -539,32 +540,33 @@ describe("ReportingOutputCard", () => {
               correctionReason:
                 "Corrected the original send timestamp after mailbox review",
               circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulatedBy: "board-chair@example.com",
               circulationChannel: null,
               circulationNote: "Corrected after finance mailbox audit.",
               effectiveRecord: {
                 source: "latest_correction",
                 circulated: true,
                 circulatedAt: "2026-04-21T09:12:00.000Z",
-                circulatedBy: "finance-operator",
+                circulatedBy: "board-chair@example.com",
                 circulationChannel: "email",
                 circulationNote: "Corrected after finance mailbox audit.",
                 approvalId: "66666666-6666-4666-8666-666666666666",
                 summary:
-                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
               },
               summary:
-                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
             },
             effectiveRecord: {
               source: "latest_correction",
               circulated: true,
               circulatedAt: "2026-04-21T09:12:00.000Z",
-              circulatedBy: "finance-operator",
+              circulatedBy: "board-chair@example.com",
               circulationChannel: "email",
               circulationNote: "Corrected after finance mailbox audit.",
               approvalId: "66666666-6666-4666-8666-666666666666",
               summary:
-                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
             },
             corrections: [
               {
@@ -574,21 +576,22 @@ describe("ReportingOutputCard", () => {
                 correctionReason:
                   "Corrected the original send timestamp after mailbox review",
                 circulatedAt: "2026-04-21T09:12:00.000Z",
+                circulatedBy: "board-chair@example.com",
                 circulationChannel: null,
                 circulationNote: "Corrected after finance mailbox audit.",
                 effectiveRecord: {
                   source: "latest_correction",
                   circulated: true,
                   circulatedAt: "2026-04-21T09:12:00.000Z",
-                  circulatedBy: "finance-operator",
+                  circulatedBy: "board-chair@example.com",
                   circulationChannel: "email",
                   circulationNote: "Corrected after finance mailbox audit.",
                   approvalId: "66666666-6666-4666-8666-666666666666",
                   summary:
-                    "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+                    "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
                 },
                 summary:
-                  "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+                  "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
               },
             ],
             summary:
@@ -702,7 +705,8 @@ describe("ReportingOutputCard", () => {
             circulatedAt: "2026-04-21T09:10:00.000Z",
             circulatedBy: "finance-operator",
             circulationChannel: "email",
-            circulationNote: "Circulated from the finance mailbox after approval.",
+            circulationNote:
+              "Circulated from the finance mailbox after approval.",
             approvalId: "66666666-6666-4666-8666-666666666666",
             summary:
               "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
@@ -711,7 +715,7 @@ describe("ReportingOutputCard", () => {
             hasCorrections: true,
             correctionCount: 1,
             latestCorrectionSummary:
-              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
             latestCorrection: {
               correctionKey: "board-packet-correction-1",
               correctedAt: "2026-04-21T09:20:00.000Z",
@@ -719,32 +723,33 @@ describe("ReportingOutputCard", () => {
               correctionReason:
                 "Corrected the original send timestamp after mailbox review",
               circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulatedBy: "board-chair@example.com",
               circulationChannel: null,
               circulationNote: "Corrected after finance mailbox audit.",
               effectiveRecord: {
                 source: "latest_correction",
                 circulated: true,
                 circulatedAt: "2026-04-21T09:12:00.000Z",
-                circulatedBy: "finance-operator",
+                circulatedBy: "board-chair@example.com",
                 circulationChannel: "email",
                 circulationNote: "Corrected after finance mailbox audit.",
                 approvalId: "66666666-6666-4666-8666-666666666666",
                 summary:
-                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
               },
               summary:
-                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
             },
             effectiveRecord: {
               source: "latest_correction",
               circulated: true,
               circulatedAt: "2026-04-21T09:12:00.000Z",
-              circulatedBy: "finance-operator",
+              circulatedBy: "board-chair@example.com",
               circulationChannel: "email",
               circulationNote: "Corrected after finance mailbox audit.",
               approvalId: "66666666-6666-4666-8666-666666666666",
               summary:
-                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
             },
             corrections: [
               {
@@ -754,21 +759,22 @@ describe("ReportingOutputCard", () => {
                 correctionReason:
                   "Corrected the original send timestamp after mailbox review",
                 circulatedAt: "2026-04-21T09:12:00.000Z",
+                circulatedBy: "board-chair@example.com",
                 circulationChannel: null,
                 circulationNote: "Corrected after finance mailbox audit.",
                 effectiveRecord: {
                   source: "latest_correction",
                   circulated: true,
                   circulatedAt: "2026-04-21T09:12:00.000Z",
-                  circulatedBy: "finance-operator",
+                  circulatedBy: "board-chair@example.com",
                   circulationChannel: "email",
                   circulationNote: "Corrected after finance mailbox audit.",
                   approvalId: "66666666-6666-4666-8666-666666666666",
                   summary:
-                    "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+                    "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
                 },
                 summary:
-                  "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+                  "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
               },
             ],
             summary:
@@ -799,6 +805,8 @@ describe("ReportingOutputCard", () => {
     expect(html).toContain("Effective record source");
     expect(html).toContain("latest_correction");
     expect(html).toContain("2026-04-21T09:12:00.000Z");
+    expect(html).toContain("Effective circulated by");
+    expect(html).toContain("board-chair@example.com");
     expect(html).toContain("Corrected after finance mailbox audit.");
     expect(html).toContain("Circulation chronology");
     expect(html).toContain(

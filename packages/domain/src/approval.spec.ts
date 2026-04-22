@@ -222,10 +222,11 @@ describe("Approval domain schema", () => {
           correctedBy: "finance-operator",
           correctionReason: "Original timestamp used the send-draft time.",
           circulatedAt: "2026-04-21T09:12:00.000Z",
+          circulatedBy: "board-chair@example.com",
           circulationChannel: null,
           circulationNote: "Corrected to the actual external circulation time.",
           summary:
-            "Circulation record correction was appended by finance-operator at 2026-04-21T09:15:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected to the actual external circulation time.. Reason: Original timestamp used the send-draft time.",
+            "Circulation record correction was appended by finance-operator at 2026-04-21T09:15:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected to the actual external circulation time.. Reason: Original timestamp used the send-draft time.",
         },
       ],
     });
@@ -236,6 +237,9 @@ describe("Approval domain schema", () => {
     );
     expect(parsed.circulationCorrections[0]?.circulatedAt).toBe(
       "2026-04-21T09:12:00.000Z",
+    );
+    expect(parsed.circulationCorrections[0]?.circulatedBy).toBe(
+      "board-chair@example.com",
     );
   });
 });

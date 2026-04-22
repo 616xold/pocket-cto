@@ -131,6 +131,10 @@ const recordReportingCirculationLogCorrectionFormSchema = z.object({
     (value) => (value === null || value === "" ? undefined : value),
     z.string().datetime({ offset: true }).optional(),
   ),
+  circulatedBy: z.preprocess(
+    (value) => (value === null || value === "" ? undefined : value),
+    z.string().trim().min(1).optional(),
+  ),
   circulationChannel: z.preprocess(
     (value) => (value === null || value === "" ? undefined : value),
     z.string().trim().min(1).optional(),
@@ -433,6 +437,7 @@ export async function submitRecordReportingCirculationLogCorrection(
     correctedBy: formData.get("correctedBy"),
     correctionReason: formData.get("correctionReason"),
     circulatedAt: formData.get("circulatedAt"),
+    circulatedBy: formData.get("circulatedBy"),
     circulationChannel: formData.get("circulationChannel"),
     circulationNote: formData.get("circulationNote"),
   });
@@ -443,6 +448,7 @@ export async function submitRecordReportingCirculationLogCorrection(
     correctedBy: input.correctedBy,
     correctionReason: input.correctionReason,
     circulatedAt: input.circulatedAt ?? null,
+    circulatedBy: input.circulatedBy ?? null,
     circulationChannel: input.circulationChannel ?? null,
     circulationNote: input.circulationNote ?? null,
   });

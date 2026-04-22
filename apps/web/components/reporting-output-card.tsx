@@ -166,7 +166,9 @@ export function ReportingOutputCard({
                 </div>
                 <div>
                   <dt>Circulation ready</dt>
-                  <dd>{circulationReadiness?.circulationReady ? "Yes" : "No"}</dd>
+                  <dd>
+                    {circulationReadiness?.circulationReady ? "Yes" : "No"}
+                  </dd>
                 </div>
                 <div>
                   <dt>Circulation logged</dt>
@@ -174,11 +176,15 @@ export function ReportingOutputCard({
                 </div>
                 <div>
                   <dt>Original circulated at</dt>
-                  <dd>{circulationRecord?.circulatedAt ?? "Not logged yet."}</dd>
+                  <dd>
+                    {circulationRecord?.circulatedAt ?? "Not logged yet."}
+                  </dd>
                 </div>
                 <div>
                   <dt>Original circulated by</dt>
-                  <dd>{circulationRecord?.circulatedBy ?? "Not logged yet."}</dd>
+                  <dd>
+                    {circulationRecord?.circulatedBy ?? "Not logged yet."}
+                  </dd>
                 </div>
                 <div>
                   <dt>Original circulation channel</dt>
@@ -212,6 +218,13 @@ export function ReportingOutputCard({
                   <dt>Effective circulated at</dt>
                   <dd>
                     {effectiveCirculationRecord?.circulatedAt ??
+                      "Not logged yet."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Effective circulated by</dt>
+                  <dd>
+                    {effectiveCirculationRecord?.circulatedBy ??
                       "Not logged yet."}
                   </dd>
                 </div>
@@ -293,7 +306,9 @@ export function ReportingOutputCard({
                     </div>
                     <div>
                       <dt>Release channel</dt>
-                      <dd>{releaseRecord?.releaseChannel ?? "Not logged yet."}</dd>
+                      <dd>
+                        {releaseRecord?.releaseChannel ?? "Not logged yet."}
+                      </dd>
                     </div>
                     <div>
                       <dt>Release note</dt>

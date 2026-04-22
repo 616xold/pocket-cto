@@ -19,6 +19,8 @@ export function MissionListCard({ mission }: MissionListCardProps) {
   const isDiligencePacket = mission.reportKind === "diligence_packet";
   const isBoardPacket = mission.reportKind === "board_packet";
   const isLenderUpdate = mission.reportKind === "lender_update";
+  const effectiveCirculationRecord =
+    mission.circulationChronology?.effectiveRecord ?? mission.circulationRecord;
   const supportsCirculationApproval = isBoardPacket;
   const supportsReleaseApproval = isLenderUpdate || isDiligencePacket;
   const supportsReleaseLog = isLenderUpdate || isDiligencePacket;
@@ -210,7 +212,23 @@ export function MissionListCard({ mission }: MissionListCardProps) {
                 </div>
                 <div>
                   <dt>Circulation logged</dt>
-                  <dd>{mission.circulationRecord?.circulated ? "Yes" : "No"}</dd>
+                  <dd>
+                    {mission.circulationRecord?.circulated ? "Yes" : "No"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Original circulated by</dt>
+                  <dd>
+                    {mission.circulationRecord?.circulatedBy ??
+                      "Not logged yet."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Effective circulated by</dt>
+                  <dd>
+                    {effectiveCirculationRecord?.circulatedBy ??
+                      "Not logged yet."}
+                  </dd>
                 </div>
                 <div>
                   <dt>Correction count</dt>

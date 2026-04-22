@@ -682,6 +682,10 @@ export class ReportingService {
       request.circulatedAt,
       currentEffectiveRecord.circulatedAt,
     );
+    const correctedCirculatedBy = readChangedCorrectionValue(
+      request.circulatedBy,
+      currentEffectiveRecord.circulatedBy,
+    );
     const correctedCirculationChannel = readChangedCorrectionValue(
       request.circulationChannel,
       currentEffectiveRecord.circulationChannel,
@@ -693,12 +697,13 @@ export class ReportingService {
 
     if (
       correctedCirculatedAt === null &&
+      correctedCirculatedBy === null &&
       correctedCirculationChannel === null &&
       correctedCirculationNote === null
     ) {
       throw invalidRequest(
         "missionId",
-        `Reporting mission ${missionId} already exposes those circulation values as the current effective record, so this correction would not append any new chronology.`,
+        `Reporting mission ${missionId} already exposes those actor and circulation values as the current effective record, so this correction would not append any new chronology.`,
       );
     }
 
@@ -712,6 +717,7 @@ export class ReportingService {
         correctedBy: request.correctedBy,
         correctionReason: request.correctionReason,
         circulatedAt: correctedCirculatedAt,
+        circulatedBy: correctedCirculatedBy,
         circulationChannel: correctedCirculationChannel,
         circulationNote: correctedCirculationNote,
         summary: buildLoggedCirculationCorrectionSummary({
@@ -719,6 +725,7 @@ export class ReportingService {
           correctedBy: request.correctedBy,
           correctionReason: request.correctionReason,
           circulatedAt: correctedCirculatedAt,
+          circulatedBy: correctedCirculatedBy,
           circulationChannel: correctedCirculationChannel,
           circulationNote: correctedCirculationNote,
         }),

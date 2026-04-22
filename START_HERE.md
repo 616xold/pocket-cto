@@ -95,8 +95,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` is now the shipped F5C4E record.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record.
 `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the shipped F5C4G implementation record.
-`plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is now the active F5C4H implementation-ready contract.
-The next thread should continue that one narrow board-packet actor-correction slice only rather than reopening F5C4E through F5C4G, authoring a broad umbrella plan, or starting F6 early.
+`plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is now the active F5C4H contract and already includes the first shipped board-packet actor-correction slice.
+The next thread should stay inside that same narrow FP-0048 hardening scope rather than reopening F5C4E through F5C4G, authoring a broad umbrella plan, or starting F6 early.
 
 ## Review ritual
 
