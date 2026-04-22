@@ -573,7 +573,7 @@ describe("MissionReportingActionsService", () => {
           hasCorrections: true,
           correctionCount: 1,
           latestCorrectionSummary:
-            "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
           latestCorrection: {
             correctionKey: "board-packet-correction-1",
             correctedAt: "2026-04-21T09:20:00.000Z",
@@ -596,7 +596,7 @@ describe("MissionReportingActionsService", () => {
                 "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
             },
             summary:
-              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
           },
           effectiveRecord: {
             source: "latest_correction",
@@ -632,7 +632,7 @@ describe("MissionReportingActionsService", () => {
                   "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
               },
               summary:
-                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
             },
           ],
           summary:
@@ -653,7 +653,7 @@ describe("MissionReportingActionsService", () => {
         circulationChannel: null,
         circulationNote: "Corrected after finance mailbox audit.",
         summary:
-          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
       },
     }));
     const recordReportCirculationLogCorrection = vi.fn(async () => ({
@@ -704,7 +704,7 @@ describe("MissionReportingActionsService", () => {
               circulationChannel: null,
               circulationNote: "Corrected after finance mailbox audit.",
               summary:
-                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
             },
           ],
         },
@@ -797,7 +797,7 @@ describe("MissionReportingActionsService", () => {
         circulationChannel: null,
         circulationNote: "Corrected after finance mailbox audit.",
         summary:
-          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
       },
     });
     expect(refreshProofBundle).toHaveBeenCalledWith({
@@ -822,7 +822,7 @@ describe("MissionReportingActionsService", () => {
         hasCorrections: true,
         correctionCount: 1,
         latestCorrectionSummary:
-          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
         latestCorrection: {
           correctionKey: "board-packet-correction-1",
           correctedAt: "2026-04-21T09:20:00.000Z",
@@ -845,7 +845,7 @@ describe("MissionReportingActionsService", () => {
               "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
           },
           summary:
-            "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
         },
         effectiveRecord: {
           source: "latest_correction",
@@ -881,7 +881,7 @@ describe("MissionReportingActionsService", () => {
                 "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by board-chair@example.com at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
             },
             summary:
-              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
           },
         ],
         summary:

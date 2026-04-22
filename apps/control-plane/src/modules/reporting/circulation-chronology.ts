@@ -37,7 +37,7 @@ export function buildLoggedCirculationCorrectionSummary(input: {
   ].filter((value): value is string => Boolean(value));
   const correctedValuesSummary =
     correctedValues.length > 0
-      ? ` Corrected values: ${correctedValues.join("; ")}.`
+      ? ` Corrected values: ${ensureSentencePunctuation(correctedValues.join("; "))}`
       : "";
 
   return `Circulation record correction was appended by ${input.correctedBy} at ${input.correctedAt}.${correctedValuesSummary} Reason: ${ensureSentencePunctuation(input.correctionReason)}`;
