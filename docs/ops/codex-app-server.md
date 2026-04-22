@@ -60,6 +60,7 @@ Codex remains valuable after that first answer path exists for:
 
 The latest shipped F5 records are `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` for F5C4D, `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` for F5C4E, and `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` for F5C4F.
 `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` now serves as the shipped F5C4G implementation record.
+`plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is now the active F5C4H implementation-ready contract and keeps the next slice runtime-free as well.
 The shipped F5A through F5C4F slices already create first-class reporting missions from completed discovery missions, assemble one draft `finance_memo` plus one linked `evidence_appendix`, expose those stored bodies directly, reuse the existing CFO Wiki filed-page plus markdown export seams for the finance-memo path, compile draft `board_packet`, `lender_update`, and `diligence_packet` artifacts from completed reporting work without creating a runtime thread, resolve one finance-facing `report_release` approval into explicit release-readiness for both `lender_update` and `diligence_packet` without live runtime continuation, record one operator-entered release record for both `lender_update` and `diligence_packet` without introducing system delivery, resolve one board-facing `report_circulation` approval into explicit circulation-ready posture for `board_packet`, and record one operator-entered external circulation record for that approved board packet without introducing system delivery.
 
 For shipped F5C4B, the control plane and operator surface now:
@@ -92,7 +93,7 @@ For shipped F5C4E, the repo now:
 - keep the slice deterministic, runtime-free, and delivery-free
 - keep circulation logging, actual delivery, and bounded runtime-codex drafting out of the shipped F5C4E slice
 
-Later F5 slices may use runtime-codex only in a bounded role such as draft phrasing or formatting assistance once the deterministic diligence approval, diligence release-log, board circulation-readiness, and board circulation-log foundations already exist.
+Later F5 slices may use runtime-codex only in a bounded role such as draft phrasing or formatting assistance once the deterministic diligence approval, diligence release-log, board circulation-readiness, board circulation-log, and any still-justified board actor-correction foundation already exist.
 Even then, runtime-codex must not invent finance facts, override stored numbers, or become the approval authority layer.
 
 ## Prompt ownership
@@ -117,6 +118,7 @@ As the product pivots:
 
 For F5A through shipped F5C4F, draft report compilation, body exposure, finance-memo filing/export posture, the first three packet specializations, lender-update and diligence release logging, explicit release-record posture, and board circulation approval plus circulation-log posture should stay deterministic and draft-only or delivery-free as appropriate.
 The most recent later-F5 shipped step is F5C4G: it keeps the original board `circulationRecord` immutable, appends correction history on the existing `report_circulation` seam, derives a current effective circulation view plus chronology summary, and avoids any broader delivery, export, or runtime-codex widening.
+The active next step is F5C4H under `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md`: correct actor attribution only on that same seam, with no new runtime-codex behavior and no delivery widening.
 
 ## Transition note
 

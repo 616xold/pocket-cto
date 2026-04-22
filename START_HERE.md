@@ -68,6 +68,7 @@ Suggested thread naming:
 - `F5C4E-board-packet-review-or-circulation-readiness-foundation`
 - `F5C4F-circulation-log-and-first-board-packet-circulation-record-foundation`
 - `F5C4G-board-packet-circulation-record-correction-and-chronology-foundation`
+- `F5C4H-board-packet-circulation-actor-correction-and-chronology-hardening`
 - `F6-monitoring-and-controls`
 
 Broad F2 Finance Twin work now runs through F2O.
@@ -94,7 +95,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` is now the shipped F5C4E record.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record.
 `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the shipped F5C4G implementation record.
-Before broader later-F5 work or F6 starts, the repo should reevaluate whether one more narrow board circulation-record continuation is still warranted rather than reopening F5C4E or authoring another broad umbrella plan.
+`plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is now the active F5C4H implementation-ready contract.
+The next thread should continue that one narrow board-packet actor-correction slice only rather than reopening F5C4E through F5C4G, authoring a broad umbrella plan, or starting F6 early.
 
 ## Review ritual
 

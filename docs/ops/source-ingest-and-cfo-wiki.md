@@ -478,6 +478,14 @@ The shipped F4 baseline still does none of the following:
 - raw wiki pages remain derived evidence inputs, not the source of truth for the correction history or the effective circulation fact itself
 - actual send, distribute, publish, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
+`FP-0048` is now the active F5C4H implementation-ready contract:
+
+- the next slice starts from that same completed approved-for-circulation `board_packet` reporting mission, stored artifact, immutable original circulation record, and append-only correction history
+- the persistence anchor remains the existing resolved `report_circulation` approval payload plus the same derived reporting and proof views
+- the only planned widening is optional corrected `circulatedBy` on correction entries plus derived effective actor chronology on that same seam
+- raw wiki pages remain derived evidence inputs, not the source of truth for the corrected actor identity itself
+- actual send, distribute, publish, bounded runtime-codex drafting, PDF export, and slide export remain out of scope
+
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
 If the latest bound policy extract is missing, unsupported, or failed, the mission persists a truthful limited answer rather than inventing a digest.
@@ -489,7 +497,7 @@ The shipped F5C1 follow-on now specializes one draft `board_packet` from that co
 The shipped F5C2 follow-on now specializes only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record.
-`plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the latest shipped later-F5 record. Before reopening other packet work, actual delivery, runtime-codex drafting, or export widening, reevaluate whether one more narrow board-specific continuation is still justified from that shipped baseline.
+`plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is now the active later-F5 record, and `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remains the latest shipped one. Do not reopen other packet work, actual delivery, runtime-codex drafting, or export widening while FP-0048 remains the active board-specific actor-correction contract.
 
 ## Lint flow
 
