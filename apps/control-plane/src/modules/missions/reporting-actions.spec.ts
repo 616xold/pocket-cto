@@ -17,6 +17,9 @@ describe("MissionReportingActionsService", () => {
     );
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -34,6 +37,9 @@ describe("MissionReportingActionsService", () => {
         refreshProofBundle,
       },
       reportingService: {
+        prepareReportingCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         exportMarkdownBundle: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -89,6 +95,9 @@ describe("MissionReportingActionsService", () => {
     );
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -106,6 +115,9 @@ describe("MissionReportingActionsService", () => {
         refreshProofBundle,
       },
       reportingService: {
+        prepareReportingCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         exportMarkdownBundle,
         fileDraftArtifacts: vi.fn(async () => {
           throw new Error("not used");
@@ -188,6 +200,9 @@ describe("MissionReportingActionsService", () => {
     }));
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -203,6 +218,9 @@ describe("MissionReportingActionsService", () => {
         refreshProofBundle,
       },
       reportingService: {
+        prepareReportingCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         exportMarkdownBundle: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -282,6 +300,7 @@ describe("MissionReportingActionsService", () => {
       limitationsSummary: "Draft-only posture remains explicit.",
       resolution: null,
       circulationRecord: null,
+      circulationCorrections: [],
     }));
     const requestReportCirculationApproval = vi.fn(async () => ({
       approval: {
@@ -301,6 +320,9 @@ describe("MissionReportingActionsService", () => {
     }));
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -316,6 +338,9 @@ describe("MissionReportingActionsService", () => {
         refreshProofBundle,
       },
       reportingService: {
+        prepareReportingCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         exportMarkdownBundle: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -357,6 +382,7 @@ describe("MissionReportingActionsService", () => {
         reportKind: "board_packet",
         resolution: null,
         circulationRecord: null,
+        circulationCorrections: [],
         sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
         sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
         summary:
@@ -437,6 +463,9 @@ describe("MissionReportingActionsService", () => {
     }));
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportCirculationLog,
         recordReportReleaseLog: vi.fn(async () => {
           throw new Error("not used");
@@ -452,6 +481,9 @@ describe("MissionReportingActionsService", () => {
         refreshProofBundle,
       },
       reportingService: {
+        prepareReportingCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         exportMarkdownBundle: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -522,6 +554,333 @@ describe("MissionReportingActionsService", () => {
     });
   });
 
+  it("refreshes proof posture after appending one board-packet circulation correction", async () => {
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> => ({
+        ...buildProofBundleManifest(),
+        reportKind: "board_packet",
+        circulationRecord: {
+          circulated: true,
+          circulatedAt: "2026-04-21T09:10:00.000Z",
+          circulatedBy: "finance-operator",
+          circulationChannel: "email",
+          circulationNote: "Circulated from the finance mailbox after approval.",
+          approvalId: "55555555-5555-4555-8555-555555555555",
+          summary:
+            "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+        },
+        circulationChronology: {
+          hasCorrections: true,
+          correctionCount: 1,
+          latestCorrectionSummary:
+            "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+          latestCorrection: {
+            correctionKey: "board-packet-correction-1",
+            correctedAt: "2026-04-21T09:20:00.000Z",
+            correctedBy: "finance-operator",
+            correctionReason:
+              "Corrected the original send timestamp after mailbox review",
+            circulatedAt: "2026-04-21T09:12:00.000Z",
+            circulationChannel: null,
+            circulationNote: "Corrected after finance mailbox audit.",
+            effectiveRecord: {
+              source: "latest_correction",
+              circulated: true,
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulatedBy: "finance-operator",
+              circulationChannel: "email",
+              circulationNote: "Corrected after finance mailbox audit.",
+              approvalId: "55555555-5555-4555-8555-555555555555",
+              summary:
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+            },
+            summary:
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+          },
+          effectiveRecord: {
+            source: "latest_correction",
+            circulated: true,
+            circulatedAt: "2026-04-21T09:12:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote: "Corrected after finance mailbox audit.",
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            summary:
+              "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+          },
+          corrections: [
+            {
+              correctionKey: "board-packet-correction-1",
+              correctedAt: "2026-04-21T09:20:00.000Z",
+              correctedBy: "finance-operator",
+              correctionReason:
+                "Corrected the original send timestamp after mailbox review",
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulationChannel: null,
+              circulationNote: "Corrected after finance mailbox audit.",
+              effectiveRecord: {
+                source: "latest_correction",
+                circulated: true,
+                circulatedAt: "2026-04-21T09:12:00.000Z",
+                circulatedBy: "finance-operator",
+                circulationChannel: "email",
+                circulationNote: "Corrected after finance mailbox audit.",
+                approvalId: "55555555-5555-4555-8555-555555555555",
+                summary:
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+              },
+              summary:
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            },
+          ],
+          summary:
+            "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-21T09:20:00.000Z.",
+        },
+      }),
+    );
+    const prepareReportingCirculationLogCorrection = vi.fn(async () => ({
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      circulationCorrection: {
+        correctionKey: "board-packet-correction-1",
+        correctedAt: "2026-04-21T09:20:00.000Z",
+        correctedBy: "finance-operator",
+        correctionReason:
+          "Corrected the original send timestamp after mailbox review",
+        circulatedAt: "2026-04-21T09:12:00.000Z",
+        circulationChannel: null,
+        circulationNote: "Corrected after finance mailbox audit.",
+        summary:
+          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+      },
+    }));
+    const recordReportCirculationLogCorrection = vi.fn(async () => ({
+      approval: {
+        id: "55555555-5555-4555-8555-555555555555",
+        missionId: "11111111-1111-4111-8111-111111111111",
+        taskId: null,
+        kind: "report_circulation" as const,
+        status: "approved" as const,
+        requestedBy: "finance-operator",
+        resolvedBy: "finance-reviewer",
+        rationale: "Approved for internal circulation readiness.",
+        payload: {
+          artifactId: "44444444-4444-4444-8444-444444444444",
+          companyKey: "acme",
+          draftOnlyStatus: "draft_only",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          missionId: "11111111-1111-4111-8111-111111111111",
+          reportKind: "board_packet" as const,
+          sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+          sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+          summary:
+            "Draft board packet for acme from the completed finance memo.",
+          resolution: {
+            decision: "accept" as const,
+            rationale: "Approved for internal circulation readiness.",
+            resolvedBy: "finance-reviewer",
+          },
+          circulationRecord: {
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote:
+              "Circulated from the finance mailbox after approval.",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+          circulationCorrections: [
+            {
+              correctionKey: "board-packet-correction-1",
+              correctedAt: "2026-04-21T09:20:00.000Z",
+              correctedBy: "finance-operator",
+              correctionReason:
+                "Corrected the original send timestamp after mailbox review",
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulationChannel: null,
+              circulationNote: "Corrected after finance mailbox audit.",
+              summary:
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            },
+          ],
+        },
+        createdAt: "2026-04-20T09:00:00.000Z",
+        updatedAt: "2026-04-21T09:20:00.000Z",
+      },
+      created: true,
+    }));
+    const service = new MissionReportingActionsService({
+      approvalService: {
+        recordReportCirculationLogCorrection,
+        recordReportCirculationLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        recordReportReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        requestReportCirculationApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        requestReportReleaseApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+      },
+      proofBundleAssembly: {
+        refreshProofBundle,
+      },
+      reportingService: {
+        prepareReportingCirculationLogCorrection,
+        exportMarkdownBundle: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        fileDraftArtifacts: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportingCirculationLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportCirculationApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportingReleaseLog: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+        prepareReportReleaseApproval: vi.fn(async () => {
+          throw new Error("not used");
+        }),
+      },
+    });
+
+    const result = await service.recordCirculationLogCorrection(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        correctionKey: "board-packet-correction-1",
+        correctedAt: "2026-04-21T09:20:00.000Z",
+        correctedBy: "finance-operator",
+        correctionReason:
+          "Corrected the original send timestamp after mailbox review",
+        circulatedAt: "2026-04-21T09:12:00.000Z",
+        circulationChannel: null,
+        circulationNote: "Corrected after finance mailbox audit.",
+      },
+    );
+
+    expect(prepareReportingCirculationLogCorrection).toHaveBeenCalledWith(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        correctionKey: "board-packet-correction-1",
+        correctedAt: "2026-04-21T09:20:00.000Z",
+        correctedBy: "finance-operator",
+        correctionReason:
+          "Corrected the original send timestamp after mailbox review",
+        circulatedAt: "2026-04-21T09:12:00.000Z",
+        circulationChannel: null,
+        circulationNote: "Corrected after finance mailbox audit.",
+      },
+    );
+    expect(recordReportCirculationLogCorrection).toHaveBeenCalledWith({
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      circulationCorrection: {
+        correctionKey: "board-packet-correction-1",
+        correctedAt: "2026-04-21T09:20:00.000Z",
+        correctedBy: "finance-operator",
+        correctionReason:
+          "Corrected the original send timestamp after mailbox review",
+        circulatedAt: "2026-04-21T09:12:00.000Z",
+        circulationChannel: null,
+        circulationNote: "Corrected after finance mailbox audit.",
+        summary:
+          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+      },
+    });
+    expect(refreshProofBundle).toHaveBeenCalledWith({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      trigger: "circulation_log_corrected",
+    });
+    expect(result).toEqual({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      created: true,
+      circulationRecord: {
+        circulated: true,
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        approvalId: "55555555-5555-4555-8555-555555555555",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+      },
+      circulationChronology: {
+        hasCorrections: true,
+        correctionCount: 1,
+        latestCorrectionSummary:
+          "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+        latestCorrection: {
+          correctionKey: "board-packet-correction-1",
+          correctedAt: "2026-04-21T09:20:00.000Z",
+          correctedBy: "finance-operator",
+          correctionReason:
+            "Corrected the original send timestamp after mailbox review",
+          circulatedAt: "2026-04-21T09:12:00.000Z",
+          circulationChannel: null,
+          circulationNote: "Corrected after finance mailbox audit.",
+          effectiveRecord: {
+            source: "latest_correction",
+            circulated: true,
+            circulatedAt: "2026-04-21T09:12:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote: "Corrected after finance mailbox audit.",
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            summary:
+              "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+          },
+          summary:
+            "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+        },
+        effectiveRecord: {
+          source: "latest_correction",
+          circulated: true,
+          circulatedAt: "2026-04-21T09:12:00.000Z",
+          circulatedBy: "finance-operator",
+          circulationChannel: "email",
+          circulationNote: "Corrected after finance mailbox audit.",
+          approvalId: "55555555-5555-4555-8555-555555555555",
+          summary:
+            "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+        },
+        corrections: [
+          {
+            correctionKey: "board-packet-correction-1",
+            correctedAt: "2026-04-21T09:20:00.000Z",
+            correctedBy: "finance-operator",
+            correctionReason:
+              "Corrected the original send timestamp after mailbox review",
+            circulatedAt: "2026-04-21T09:12:00.000Z",
+            circulationChannel: null,
+            circulationNote: "Corrected after finance mailbox audit.",
+            effectiveRecord: {
+              source: "latest_correction",
+              circulated: true,
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulatedBy: "finance-operator",
+              circulationChannel: "email",
+              circulationNote: "Corrected after finance mailbox audit.",
+              approvalId: "55555555-5555-4555-8555-555555555555",
+              summary:
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+            },
+            summary:
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+          },
+        ],
+        summary:
+          "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-21T09:20:00.000Z.",
+      },
+    });
+  });
+
   it("refreshes proof posture after logging one external lender-update release", async () => {
     const refreshProofBundle = vi.fn(
       async (): Promise<ProofBundleManifest> => buildProofBundleManifest(),
@@ -580,6 +939,9 @@ describe("MissionReportingActionsService", () => {
     }));
     const service = new MissionReportingActionsService({
       approvalService: {
+        recordReportCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         recordReportCirculationLog: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -595,6 +957,9 @@ describe("MissionReportingActionsService", () => {
         refreshProofBundle,
       },
       reportingService: {
+        prepareReportingCirculationLogCorrection: vi.fn(async () => {
+          throw new Error("not used");
+        }),
         exportMarkdownBundle: vi.fn(async () => {
           throw new Error("not used");
         }),
@@ -684,6 +1049,7 @@ function buildProofBundleManifest(): ProofBundleManifest {
     reportPublication: buildPublication(true),
     circulationReadiness: null,
     circulationRecord: null,
+    circulationChronology: null,
     reportSummary:
       "Draft finance memo summarizing stored payables pressure and carried evidence posture.",
     appendixPresent: true,

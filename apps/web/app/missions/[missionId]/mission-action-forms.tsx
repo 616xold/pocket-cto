@@ -13,6 +13,7 @@ import {
   submitCreateDraftDiligencePacket,
   submitCreateDraftFinanceMemo,
   submitCreateDraftLenderUpdate,
+  submitRecordReportingCirculationLogCorrection,
   submitRecordReportingCirculationLog,
   submitRecordReportingReleaseLog,
   submitRequestReportingCirculationApproval,
@@ -85,6 +86,12 @@ type RecordReportingReleaseLogFormProps = {
 };
 
 type RecordReportingCirculationLogFormProps = {
+  missionId: string;
+  operatorIdentity: string;
+  reportKind: "board_packet";
+};
+
+type RecordReportingCirculationLogCorrectionFormProps = {
   missionId: string;
   operatorIdentity: string;
   reportKind: "board_packet";
@@ -476,6 +483,91 @@ export function RecordReportingCirculationLogForm({
           className="action-button"
           label="Record board packet as circulated"
           pendingLabel="Recording board circulation..."
+        />
+      </form>
+
+      <ActionFeedback result={result} />
+    </div>
+  );
+}
+
+export function RecordReportingCirculationLogCorrectionForm({
+  missionId,
+  operatorIdentity,
+  reportKind,
+}: RecordReportingCirculationLogCorrectionFormProps) {
+  const [result, formAction] = useActionState<MissionActionState, FormData>(
+    submitRecordReportingCirculationLogCorrection,
+    INITIAL_MISSION_ACTION_STATE,
+  );
+  const [correctionKey] = React.useState(() => crypto.randomUUID());
+
+  return (
+    <div className="action-cluster">
+      <form action={formAction} className="stack">
+        <input name="missionId" type="hidden" value={missionId} />
+        <input name="correctedBy" type="hidden" value={operatorIdentity} />
+        <input name="reportKind" type="hidden" value={reportKind} />
+        <input name="correctionKey" type="hidden" value={correctionKey} />
+
+        <label className="stack" htmlFor={`correction-reason-${missionId}`}>
+          <span>Correction reason</span>
+          <textarea
+            className="text-input"
+            id={`correction-reason-${missionId}`}
+            name="correctionReason"
+            placeholder="Why does the stored circulation record need a chronology correction?"
+            required
+            rows={3}
+          />
+        </label>
+
+        <label
+          className="stack"
+          htmlFor={`corrected-circulated-at-${missionId}`}
+        >
+          <span>Correct circulated at</span>
+          <input
+            className="text-input"
+            id={`corrected-circulated-at-${missionId}`}
+            name="circulatedAt"
+            placeholder="2026-04-22T12:00:00+00:00"
+            type="text"
+          />
+        </label>
+
+        <label
+          className="stack"
+          htmlFor={`corrected-circulation-channel-${missionId}`}
+        >
+          <span>Correct circulation channel</span>
+          <input
+            className="text-input"
+            id={`corrected-circulation-channel-${missionId}`}
+            name="circulationChannel"
+            placeholder="email"
+            type="text"
+          />
+        </label>
+
+        <label
+          className="stack"
+          htmlFor={`corrected-circulation-note-${missionId}`}
+        >
+          <span>Correct circulation note</span>
+          <textarea
+            className="text-input"
+            id={`corrected-circulation-note-${missionId}`}
+            name="circulationNote"
+            placeholder="Optional corrected note. Leave any field blank to keep the current effective value."
+            rows={3}
+          />
+        </label>
+
+        <ActionSubmitButton
+          className="action-button"
+          label="Correct board packet circulation record"
+          pendingLabel="Recording circulation correction..."
         />
       </form>
 

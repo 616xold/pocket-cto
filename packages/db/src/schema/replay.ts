@@ -20,6 +20,7 @@ export const replayEventTypeEnum = pgEnum("replay_event_type", [
   "approval.requested",
   "approval.resolved",
   "approval.circulation_logged",
+  "approval.circulation_log_corrected",
   "approval.release_logged",
   "runtime.thread_replaced",
   "runtime.thread_started",

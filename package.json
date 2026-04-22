@@ -73,6 +73,7 @@
     "smoke:board-packet:local": "tsx tools/board-packet-smoke.mjs",
     "smoke:board-packet-circulation-approval:local": "tsx tools/board-packet-circulation-approval-smoke.mjs",
     "smoke:board-packet-circulation-log:local": "tsx tools/board-packet-circulation-log-smoke.mjs",
+    "smoke:board-packet-circulation-log-correction:local": "tsx tools/board-packet-circulation-log-correction-smoke.mjs",
     "smoke:lender-update:local": "tsx tools/lender-update-smoke.mjs",
     "smoke:diligence-packet:local": "tsx tools/diligence-packet-smoke.mjs",
     "smoke:diligence-packet-release-approval:local": "tsx tools/diligence-packet-release-approval-smoke.mjs",

@@ -470,6 +470,7 @@ describe("ApprovalService", () => {
         "This board packet remains delivery-free until review is completed.",
       resolution: null,
       circulationRecord: null,
+      circulationCorrections: [],
     };
 
     const firstRequest = await approvalService.requestReportCirculationApproval({
@@ -737,6 +738,7 @@ describe("ApprovalService", () => {
         "This board packet remains delivery-free until review is completed.",
       resolution: null,
       circulationRecord: null,
+      circulationCorrections: [],
     };
 
     const firstRequest = await approvalService.requestReportCirculationApproval({
@@ -866,6 +868,7 @@ describe("ApprovalService", () => {
         "This board packet remains delivery-free until review is completed.",
       resolution: null,
       circulationRecord: null,
+      circulationCorrections: [],
     };
     const request = await approvalService.requestReportCirculationApproval({
       missionId: createdMissionId,
@@ -933,6 +936,150 @@ describe("ApprovalService", () => {
             circulatedAt: "2026-04-21T09:10:00.000Z",
             circulatedBy: "finance-operator",
             circulationChannel: "email",
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("appends one board-packet circulation correction without mutating the original record", async () => {
+    const missionRepository = new InMemoryMissionRepository();
+    const approvalRepository = new InMemoryApprovalRepository();
+    const replayService = new ReplayService(
+      new InMemoryReplayRepository(),
+      missionRepository,
+    );
+    const missionService = new MissionService(
+      new StubMissionCompiler(),
+      missionRepository,
+      replayService,
+      new EvidenceService(),
+    );
+    const refreshProofBundle = vi.fn(
+      async (): Promise<ProofBundleManifest> =>
+        buildProofBundleManifest(createdMissionId, "board_packet"),
+    );
+    const liveSessionRegistry = {
+      awaitApprovalResolution: vi.fn(),
+      hasTaskSession: vi.fn(() => false),
+      tryResolveApproval: vi.fn(() => ({
+        delivered: true as const,
+      })),
+    } satisfies Pick<
+      InMemoryRuntimeSessionRegistry,
+      "awaitApprovalResolution" | "hasTaskSession" | "tryResolveApproval"
+    >;
+    const approvalService = new ApprovalService(
+      approvalRepository,
+      missionRepository,
+      replayService,
+      liveSessionRegistry,
+      {
+        refreshProofBundle,
+      },
+    );
+    const created = await missionService.createFromText({
+      text: "Correct one existing board packet circulation record",
+      sourceKind: "manual_text",
+      requestedBy: "operator",
+    });
+    const createdMissionId = created.mission.id;
+    const payload = {
+      missionId: createdMissionId,
+      reportKind: "board_packet" as const,
+      sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
+      sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+      artifactId: "33333333-3333-4333-8333-333333333333",
+      companyKey: "acme" as const,
+      draftOnlyStatus: "draft_only" as const,
+      summary: "Draft board packet for acme from the completed finance memo.",
+      freshnessSummary: "Cash posture remains stale.",
+      limitationsSummary:
+        "This board packet remains delivery-free until review is completed.",
+      resolution: null,
+      circulationRecord: null,
+      circulationCorrections: [],
+    };
+    const request = await approvalService.requestReportCirculationApproval({
+      missionId: createdMissionId,
+      payload,
+      requestedBy: "finance-operator",
+    });
+
+    await approvalService.resolveApproval({
+      approvalId: request.approval.id,
+      decision: "accept",
+      rationale: "Approved for internal circulation readiness.",
+      resolvedBy: "finance-reviewer",
+    });
+
+    await approvalService.recordReportCirculationLog({
+      approvalId: request.approval.id,
+      circulationRecord: {
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+      },
+    });
+
+    const correction = {
+      correctionKey: "board-packet-correction-1",
+      correctedAt: "2026-04-21T09:20:00.000Z",
+      correctedBy: "finance-operator",
+      correctionReason:
+        "Corrected the original send timestamp after mailbox review",
+      circulatedAt: "2026-04-21T09:12:00.000Z",
+      circulationChannel: null,
+      circulationNote: "Corrected after finance mailbox audit.",
+      summary:
+        "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+    };
+    const recorded = await approvalService.recordReportCirculationLogCorrection({
+      approvalId: request.approval.id,
+      circulationCorrection: correction,
+    });
+    const duplicate =
+      await approvalService.recordReportCirculationLogCorrection({
+        approvalId: request.approval.id,
+        circulationCorrection: correction,
+      });
+    const updatedApproval = await approvalRepository.getApprovalById(
+      request.approval.id,
+    );
+    const replay = await replayService.getMissionEvents(createdMissionId);
+
+    expect(recorded.created).toBe(true);
+    expect(duplicate.created).toBe(false);
+    expect(updatedApproval?.payload).toMatchObject({
+      circulationRecord: {
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+      },
+      circulationCorrections: [
+        expect.objectContaining({
+          correctionKey: "board-packet-correction-1",
+          correctedAt: "2026-04-21T09:20:00.000Z",
+          circulatedAt: "2026-04-21T09:12:00.000Z",
+          circulationChannel: null,
+          circulationNote: "Corrected after finance mailbox audit.",
+        }),
+      ],
+    });
+    expect(replay).toContainEqual(
+      expect.objectContaining({
+        type: "approval.circulation_log_corrected",
+        payload: expect.objectContaining({
+          approvalId: request.approval.id,
+          correctionCount: 1,
+          missionId: createdMissionId,
+          circulationCorrection: expect.objectContaining({
+            correctionKey: "board-packet-correction-1",
+            correctedAt: "2026-04-21T09:20:00.000Z",
           }),
         }),
       }),
@@ -1225,6 +1372,7 @@ function buildProofBundleManifest(
     reportDraftStatus: "draft_only",
     reportPublication: null,
     circulationRecord: null,
+    circulationChronology: null,
     circulationReadiness: null,
     releaseRecord: null,
     releaseReadiness: null,

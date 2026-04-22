@@ -49,6 +49,7 @@ export type MissionActionKind =
   | "interrupt_task"
   | "file_reporting_artifacts"
   | "export_reporting_markdown"
+  | "record_reporting_circulation_log_correction"
   | "record_reporting_circulation_log"
   | "record_reporting_release_log"
   | "request_reporting_circulation_approval"
@@ -270,6 +271,37 @@ export function buildRecordReportingCirculationLogActionResult(
   };
 }
 
+export function buildRecordReportingCirculationLogCorrectionActionResult(
+  operatorName: string,
+  reportKind: ReportCirculationApprovalReportKind,
+  result: ControlPlaneMutationResult<unknown>,
+): MissionActionResult {
+  const reportLabel = readReportCirculationApprovalReportKindLabel(reportKind);
+
+  if (result.ok) {
+    return {
+      ok: true,
+      kind: "record_reporting_circulation_log_correction",
+      message: `${reportLabel} circulation correction recorded by ${operatorName}. Mission detail refreshed.`,
+      statusCode: result.statusCode,
+    };
+  }
+
+  return {
+    ok: false,
+    kind: "record_reporting_circulation_log_correction",
+    message: describeFailure(
+      "record_reporting_circulation_log_correction",
+      result,
+      {
+        reportLabel,
+      },
+    ),
+    statusCode: result.statusCode,
+    errorCode: result.errorCode,
+  };
+}
+
 function describeFailure(
   kind: MissionActionKind,
   failure: Extract<ControlPlaneMutationResult<unknown>, { ok: false }>,
@@ -304,33 +336,52 @@ function describeFailure(
     case "mission_not_found":
       return "This mission could not be found anymore. Return to the mission list and reopen it.";
     case "invalid_request":
-      return kind === "file_reporting_artifacts" ||
+      if (
+        kind === "file_reporting_artifacts" ||
         kind === "export_reporting_markdown"
-        ? withRouteReason(
-            "This reporting action is unavailable from the mission's current stored state. Refresh the page and confirm the draft memo, appendix, and filing posture before retrying.",
-            failure.message,
-          )
-        : kind === "request_reporting_circulation_approval"
-          ? withRouteReason(
-              `This ${reportLabelLower} circulation approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored ${reportLabelLower}, lineage, and circulation posture before retrying.`,
-              failure.message,
-            )
-        : kind === "record_reporting_circulation_log"
-          ? withRouteReason(
-              `This ${reportLabelLower} circulation log action is unavailable from the mission's current stored state. Refresh the page and confirm approval, stored evidence, and circulation posture before retrying.`,
-              failure.message,
-            )
-        : kind === "request_reporting_release_approval"
-          ? withRouteReason(
-              `This ${reportLabelLower} release approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored ${reportLabelLower}, lineage, and approval posture before retrying.`,
-              failure.message,
-            )
-          : kind === "record_reporting_release_log"
-            ? withRouteReason(
-                `This ${reportLabelLower} release log action is unavailable from the mission's current stored state. Refresh the page and confirm approval, stored evidence, and release posture before retrying.`,
-                failure.message,
-              )
-            : "The submitted action payload was invalid. Refresh the page and try again.";
+      ) {
+        return withRouteReason(
+          "This reporting action is unavailable from the mission's current stored state. Refresh the page and confirm the draft memo, appendix, and filing posture before retrying.",
+          failure.message,
+        );
+      }
+
+      if (kind === "request_reporting_circulation_approval") {
+        return withRouteReason(
+          `This ${reportLabelLower} circulation approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored ${reportLabelLower}, lineage, and circulation posture before retrying.`,
+          failure.message,
+        );
+      }
+
+      if (kind === "record_reporting_circulation_log") {
+        return withRouteReason(
+          `This ${reportLabelLower} circulation log action is unavailable from the mission's current stored state. Refresh the page and confirm approval, stored evidence, and circulation posture before retrying.`,
+          failure.message,
+        );
+      }
+
+      if (kind === "record_reporting_circulation_log_correction") {
+        return withRouteReason(
+          `This ${reportLabelLower} circulation correction action is unavailable from the mission's current stored state. Refresh the page and confirm the original circulation log, approval posture, and current effective chronology before retrying.`,
+          failure.message,
+        );
+      }
+
+      if (kind === "request_reporting_release_approval") {
+        return withRouteReason(
+          `This ${reportLabelLower} release approval request is unavailable from the mission's current stored state. Refresh the page and confirm the stored ${reportLabelLower}, lineage, and approval posture before retrying.`,
+          failure.message,
+        );
+      }
+
+      if (kind === "record_reporting_release_log") {
+        return withRouteReason(
+          `This ${reportLabelLower} release log action is unavailable from the mission's current stored state. Refresh the page and confirm approval, stored evidence, and release posture before retrying.`,
+          failure.message,
+        );
+      }
+
+      return "The submitted action payload was invalid. Refresh the page and try again.";
     case "internal_error":
       return withRouteReason(
         "The control plane reported an internal error while processing this action.",
@@ -355,6 +406,10 @@ function describeFailure(
 
       if (kind === "record_reporting_circulation_log") {
         return `The web app could not reach the control plane to record the ${reportLabelLower} circulation log. Confirm the local services are running and try again.`;
+      }
+
+      if (kind === "record_reporting_circulation_log_correction") {
+        return `The web app could not reach the control plane to record the ${reportLabelLower} circulation correction. Confirm the local services are running and try again.`;
       }
 
       if (kind === "request_reporting_release_approval") {

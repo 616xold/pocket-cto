@@ -750,7 +750,7 @@ describe("assembleProofBundleManifest", () => {
       "Draft board packet was compiled deterministically from one completed reporting mission and its stored finance memo plus evidence appendix without running the Codex runtime.",
     );
     expect(manifest.riskSummary).toContain(
-      "does not add actual circulation logging, delivery, PDF, or slide workflow in F5C4F",
+      "does not add actual circulation logging, delivery, PDF, or slide workflow",
     );
     expect(manifest.decisionTrace[0]).toContain(
       "persisted board-packet evidence",
@@ -903,6 +903,7 @@ describe("assembleProofBundleManifest", () => {
               summary:
                 "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
             },
+            circulationCorrections: [],
             sourceDiscoveryMissionId,
             sourceReportingMissionId,
             summary:
@@ -982,6 +983,148 @@ describe("assembleProofBundleManifest", () => {
     );
     expect(manifest.timestamps.latestApprovalAt).toBe(
       "2026-04-19T12:10:00.000Z",
+    );
+  });
+
+  it("derives board-packet circulation chronology after one append-only correction is logged", () => {
+    const sourceDiscoveryMissionId = "88888888-8888-4888-8888-888888888888";
+    const sourceReportingMissionId = "99999999-9999-4999-8999-999999999999";
+    const mission = buildBoardPacketMission(
+      sourceDiscoveryMissionId,
+      sourceReportingMissionId,
+    );
+    const manifest = assembleProofBundleManifest({
+      approvals: [
+        {
+          id: "22222222-dddd-4ddd-8ddd-dddddddddddd",
+          kind: "report_circulation",
+          missionId: mission.id,
+          payload: {
+            artifactId: "11111111-dddd-4ddd-8ddd-dddddddddddd",
+            companyKey: "acme",
+            draftOnlyStatus: "draft_only",
+            freshnessSummary:
+              "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+            limitationsSummary:
+              "This board packet is draft-only and carries source reporting freshness and limitations forward.",
+            missionId: mission.id,
+            reportKind: "board_packet",
+            resolution: {
+              decision: "accept",
+              rationale: "Approved for internal circulation readiness.",
+              resolvedBy: "finance-reviewer",
+            },
+            circulationRecord: {
+              circulatedAt: "2026-04-19T12:10:00.000Z",
+              circulatedBy: "finance-operator",
+              circulationChannel: "email",
+              circulationNote:
+                "Circulated after approval from the finance mailbox.",
+              summary:
+                "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
+            },
+            circulationCorrections: [
+              {
+                correctionKey: "board-packet-correction-1",
+                correctedAt: "2026-04-19T12:20:00.000Z",
+                correctedBy: "finance-operator",
+                correctionReason:
+                  "Corrected the original send timestamp after mailbox review",
+                circulatedAt: "2026-04-19T12:12:00.000Z",
+                circulationChannel: null,
+                circulationNote: "Corrected after finance mailbox audit.",
+                summary:
+                  "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+              },
+            ],
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+            summary:
+              "Draft board packet for acme from the completed cash posture reporting mission.",
+          },
+          rationale: "Approved for internal circulation readiness.",
+          requestedBy: "finance-operator",
+          resolvedBy: "finance-reviewer",
+          status: "approved",
+          taskId: null,
+          createdAt: "2026-04-19T12:04:00.000Z",
+          updatedAt: "2026-04-19T12:20:00.000Z",
+        } satisfies ApprovalRecord,
+      ],
+      artifacts: [
+        buildArtifact({
+          id: "11111111-dddd-4ddd-8ddd-dddddddddddd",
+          kind: "board_packet",
+          taskId: scoutTaskId,
+          createdAt: "2026-04-19T12:03:00.000Z",
+          metadata: {
+            source: "stored_reporting_evidence",
+            summary:
+              "Draft board packet for acme from the completed cash posture reporting mission.",
+            reportKind: "board_packet",
+            draftStatus: "draft_only",
+            sourceReportingMissionId,
+            sourceDiscoveryMissionId,
+            companyKey: "acme",
+            questionKind: "cash_posture",
+            policySourceId: null,
+            policySourceScope: null,
+            packetSummary:
+              "Draft board packet for acme from the completed cash posture reporting mission.",
+            freshnessSummary:
+              "Cash posture remains stale because the latest bank account summary sync is older than the freshness threshold.",
+            limitationsSummary:
+              "This board packet is draft-only and carries source reporting freshness and limitations forward.",
+            relatedRoutePaths: [
+              "/finance-twin/companies/acme/cash-posture",
+              "/finance-twin/companies/acme/bank-accounts",
+            ],
+            relatedWikiPageKeys: ["metrics/cash-posture", "concepts/cash"],
+            sourceFinanceMemo: {
+              artifactId: "11111111-bbbb-4bbb-8bbb-bbbbbbbbbbb1",
+              kind: "finance_memo",
+            },
+            sourceEvidenceAppendix: {
+              artifactId: "11111111-bbbb-4bbb-8bbb-bbbbbbbbbbb2",
+              kind: "evidence_appendix",
+            },
+            bodyMarkdown:
+              "# Draft Board Packet\n\n## Draft Review Posture\n\n- Status: draft_only",
+          },
+        }),
+      ],
+      existingBundle: buildPlaceholderBundle(mission),
+      mission,
+      replayEventCount: 13,
+      tasks: buildDiscoveryTasks("succeeded"),
+    });
+
+    expect(manifest.circulationRecord).toMatchObject({
+      circulated: true,
+      circulatedAt: "2026-04-19T12:10:00.000Z",
+      circulatedBy: "finance-operator",
+      circulationChannel: "email",
+    });
+    expect(manifest.circulationChronology).toMatchObject({
+      hasCorrections: true,
+      correctionCount: 1,
+      latestCorrectionSummary:
+        "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+      effectiveRecord: {
+        source: "latest_correction",
+        circulatedAt: "2026-04-19T12:12:00.000Z",
+        circulationChannel: "email",
+        circulationNote: "Corrected after finance mailbox audit.",
+      },
+    });
+    expect(manifest.decisionTrace).toContain(
+      "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-19T12:20:00.000Z.",
+    );
+    expect(manifest.decisionTrace).toContain(
+      "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+    );
+    expect(manifest.timestamps.latestApprovalAt).toBe(
+      "2026-04-19T12:20:00.000Z",
     );
   });
 

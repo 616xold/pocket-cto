@@ -18,6 +18,7 @@ import {
 } from "@pocket-cto/domain";
 import type { EvidenceArtifactDraft } from "../evidence/service";
 import { buildReportingCirculationReadinessViewFromProofBundle } from "./circulation-readiness";
+import { buildReportingCirculationChronologyViewFromProofBundle } from "./circulation-chronology";
 import { buildReportingCirculationRecordViewFromProofBundle } from "./circulation-record";
 import { buildReportingPublicationViewFromProofBundle } from "./publication";
 import { buildReportingReleaseRecordViewFromProofBundle } from "./release-record";
@@ -311,6 +312,13 @@ export function readMissionReportingView(input: {
     circulationRecord:
       buildReportingCirculationRecordViewFromProofBundle({
         circulationReadiness: input.proofBundle.circulationReadiness,
+        circulationRecord: input.proofBundle.circulationRecord,
+        evidenceCompleteness: input.proofBundle.evidenceCompleteness,
+        reportKind,
+      }) ?? null,
+    circulationChronology:
+      buildReportingCirculationChronologyViewFromProofBundle({
+        circulationChronology: input.proofBundle.circulationChronology,
         circulationRecord: input.proofBundle.circulationRecord,
         evidenceCompleteness: input.proofBundle.evidenceCompleteness,
         reportKind,

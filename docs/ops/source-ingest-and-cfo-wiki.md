@@ -469,12 +469,12 @@ The shipped F4 baseline still does none of the following:
 - raw wiki pages remain derived evidence inputs, not the source of truth for the circulation record itself
 - actual send, distribute, publish, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
-`FP-0047` is now the active F5C4G implementation contract:
+`FP-0047` is now the shipped F5C4G implementation record:
 
-- the next board-specific follow-on still starts from one completed `reporting` mission with `reportKind = "board_packet"`, one stored `board_packet` artifact, circulation readiness already at `approved_for_circulation`, and one existing logged circulation record
+- the shipped correction path starts from one completed `reporting` mission with `reportKind = "board_packet"`, one stored `board_packet` artifact, circulation readiness already at `approved_for_circulation`, and one existing logged circulation record
 - the source reporting mission must remain a completed `reporting` mission rather than a new correction-specific mission family
-- the preferred persistence anchor remains the existing resolved `report_circulation` approval payload plus its derived reporting and proof views
-- the next slice keeps the original `circulationRecord` immutable, adds append-only correction history on that same seam, and derives one current effective circulation view plus one explicit chronology summary
+- the persistence anchor remains the existing resolved `report_circulation` approval payload plus its derived reporting and proof views
+- the shipped slice keeps the original `circulationRecord` immutable, adds append-only correction history on that same seam, and derives one current effective circulation view plus one explicit chronology summary
 - raw wiki pages remain derived evidence inputs, not the source of truth for the correction history or the effective circulation fact itself
 - actual send, distribute, publish, bounded runtime-codex drafting, PDF export, and slide export remain later work
 
@@ -489,7 +489,7 @@ The shipped F5C1 follow-on now specializes one draft `board_packet` from that co
 The shipped F5C2 follow-on now specializes only one draft `lender_update` from that same completed reporting state without widening into diligence, approval-release, runtime-codex, or export work.
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record.
-`plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the active later-F5 handoff reference. The next later-F5 follow-on should execute that narrow correction-and-chronology slice before reopening other packet work, actual delivery, runtime-codex drafting, or export widening.
+`plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the latest shipped later-F5 record. Before reopening other packet work, actual delivery, runtime-codex drafting, or export widening, reevaluate whether one more narrow board-specific continuation is still justified from that shipped baseline.
 
 ## Lint flow
 

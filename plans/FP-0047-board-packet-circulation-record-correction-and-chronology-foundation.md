@@ -2,7 +2,7 @@
 
 ## Purpose / Big Picture
 
-This file is now the active F5C4G implementation contract created by a docs-and-plan-only handoff slice.
+This file began as the active F5C4G implementation contract created by a docs-and-plan-only handoff slice and now records the shipped implementation.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` remains the shipped F5C4F record that precedes it.
 The target phase is `F5`, and the next execution slice is `F5C4G-board-packet-circulation-record-correction-and-chronology-foundation`.
 The user-visible goal is narrow and concrete: after the shipped F5A through F5C4F baseline already creates one draft `board_packet`, resolves one internal `report_circulation` approval, and records one explicit board-packet circulation record on that same approval seam, Pocket CFO should next let an operator append immutable corrections to that existing circulation record and see one explicit chronology plus one derived current effective circulation view without widening into actual send, distribute, publish, PDF or slide export, runtime-codex drafting, or a broader later-F5 umbrella.
@@ -20,6 +20,10 @@ This plan does not authorize actual send, distribute, publish, external communic
 - [x] 2026-04-22T00:55:41Z Audit the shipped F5A through F5C4F chain, active docs, reporting and approvals seams, proof-bundle posture, runtime-codex boundary, and current board-circulation truth before choosing the narrowest truthful F5C4G successor contract.
 - [x] 2026-04-22T00:55:41Z Create `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` and refresh the smallest truthful active-doc set so `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` remains the shipped F5C4F record while this file becomes the single active implementation contract.
 - [x] 2026-04-22T01:05:41Z Run the requested docs-and-plan validation ladder for this handoff without starting F5C4G code; the preserved smokes, targeted twin Vitest sweep, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all finished green, and the few shell-mangled commands from the first interactive batch were rerun exactly and passed.
+- [x] 2026-04-22T02:55:00Z Land the additive F5C4G implementation on the existing `report_circulation` seam: append-only `circulationCorrections`, derived circulation chronology read models, replay event `approval.circulation_log_corrected`, mission route `POST /missions/:missionId/reporting/circulation-log-correction`, and operator surfaces that keep the slice deterministic, runtime-free, and delivery-free.
+- [x] 2026-04-22T02:55:00Z Add the narrowest F5C4G proof coverage: targeted domain/control-plane/web tests for correction eligibility, append-only persistence, chronology posture, and the packaged `tools/board-packet-circulation-log-correction-smoke.mjs` proof wired through `pnpm smoke:board-packet-circulation-log-correction:local`.
+- [x] 2026-04-22T02:00:51Z Run the full required validation ladder for this implementation slice, fix only in-scope failures, and only then commit, push, and open or update the PR. The requested domain, control-plane, web, baseline-smoke, F5C4G smoke, twin-guardrail, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` gates all finished green after one in-slice replay-event migration and a few local contract-tightening fixes.
+- [x] 2026-04-22T02:11:09Z Run the F5C4G QA pass after landing. The narrow code-path tests, preserved discovery/reporting/release smokes, twin guardrails, and `pnpm ci:repro:current` all reran green; the only in-scope correction was refreshing active docs and approval-context guidance so FP-0047 is described truthfully as the shipped F5C4G record rather than a future handoff.
 
 ## Surprises & Discoveries
 
@@ -37,6 +41,9 @@ This plan does not authorize actual send, distribute, publish, external communic
 
 - Observation: stale repo guidance was not claiming the wrong shipped behavior, but it was still one step short of a truly implementation-ready successor contract.
   Evidence: `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, and `docs/ops/codex-app-server.md` all pointed generally at a narrow F5C4G correction/chronology follow-on without naming one active plan file.
+
+- Observation: after the implementation landed, several active-doc references still described FP-0047 as the next unshipped slice rather than the shipped F5C4G record.
+  Evidence: the QA pass found stale handoff wording in `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `docs/ops/codex-app-server.md`, `evals/README.md`, `docs/benchmarks/seeded-missions.md`, and `apps/control-plane/src/modules/approvals/README.md` even though the branch, PR, smokes, and proof surfaces already reflected the landed implementation.
 
 ## Decision Log
 
@@ -64,8 +71,8 @@ This plan does not authorize actual send, distribute, publish, external communic
 - Decision: derive one current effective circulation view plus one explicit chronology summary from the original record and any later correction entries.
   Rationale: operators need both truths at once: what was first recorded, and what the current effective board-circulation fact is after later correction.
 
-- Decision: the preferred first mission-scoped write seam is one thin route at `POST /missions/:missionId/reporting/circulation-correction`.
-  Rationale: the repo already uses mission-scoped `release-approval`, `release-log`, `circulation-approval`, and `circulation-log` actions, so a matching singular correction route is the narrowest discoverable operator seam.
+- Decision: the preferred first mission-scoped write seam is one thin route at `POST /missions/:missionId/reporting/circulation-log-correction`.
+  Rationale: the repo already uses mission-scoped `release-approval`, `release-log`, `circulation-approval`, and `circulation-log` actions, so a matching correction route that stays explicitly anchored to the existing log semantics is the narrowest discoverable operator seam.
 
 - Decision: each correction entry should record who corrected the circulation fact, when the correction was recorded, why the correction was needed, and the corrected effective circulation facts.
   Rationale: chronology ergonomics are only reviewable if the repo preserves both the correction act and the corrected effective fact, rather than replacing one timestamp in place.
@@ -78,6 +85,9 @@ This plan does not authorize actual send, distribute, publish, external communic
 
 - Decision: F5C4G stays delivery-free in the system sense.
   Rationale: Pocket CFO may record and correct circulation chronology around an external circulation event, but it must not actually send, distribute, publish, or circulate anything itself in this slice.
+
+- Decision: replay widening should stay additive with one new event type, `approval.circulation_log_corrected`.
+  Rationale: replay event type is enum-backed in persistence, so the narrowest truthful chronology extension is one additive event that marks append-only correction logging without widening approval kinds or introducing a second circulation subsystem.
 
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reopen a `modules/reports/**` rename wave.
   Rationale: the current repo already uses `reporting` as first-class vocabulary, and this task is about truthfulness and sequencing rather than namespace churn.
@@ -148,7 +158,7 @@ The active-doc boundary for this handoff is:
 
 GitHub connector work is out of scope.
 The internal `@pocket-cto/*` package scope remains unchanged.
-This current thread is docs-only and must not add runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding.
+This plan began as a docs-only handoff, but the active thread is now the real F5C4G implementation slice and may land the additive runtime code, route, replay migration, package script, smoke proof, and tests described below.
 
 The most relevant implementation seams for the next F5C4G code thread are:
 
@@ -180,7 +190,7 @@ The most relevant implementation seams for the next F5C4G code thread are:
 - `apps/web/lib/api.ts`
 - preserve `tools/board-packet-circulation-approval-smoke.mjs`
 - preserve `tools/board-packet-circulation-log-smoke.mjs`
-- add `tools/board-packet-circulation-correction-smoke.mjs`
+- add `tools/board-packet-circulation-log-correction-smoke.mjs`
 - update `package.json`
 
 ## Plan of Work
@@ -199,7 +209,7 @@ Reporting detail, proof-bundle narratives, mission cards, mission lists, and app
 
 Fourth, keep future sequencing explicit.
 After F5C4G lands, the repo should reevaluate whether any concrete later-F5 operator problem still exists before opening another plan number.
-Do not author `FP-0048` in advance from this docs-only slice.
+Do not author `FP-0048` in advance from this slice.
 
 ## Concrete Steps
 
@@ -233,7 +243,7 @@ Do not author `FP-0048` in advance from this docs-only slice.
    - `apps/control-plane/src/modules/missions/service.ts`
 
    F5C4G should:
-   - add one thin operator route at `POST /missions/:missionId/reporting/circulation-correction`
+   - add one thin operator route at `POST /missions/:missionId/reporting/circulation-log-correction`
    - require one completed `reporting` mission with `reportKind = "board_packet"`
    - require one stored `board_packet` artifact
    - require derived circulation readiness already at `approved_for_circulation`
@@ -279,14 +289,14 @@ Do not author `FP-0048` in advance from this docs-only slice.
 
 5. Add the narrowest proof coverage for the new correction-and-chronology path.
    Update:
-   - add `tools/board-packet-circulation-correction-smoke.mjs`
+   - add `tools/board-packet-circulation-log-correction-smoke.mjs`
    - update `package.json`
    - add or update the narrowest domain, control-plane, and web tests near the touched seams
 
    F5C4G should:
    - preserve the shipped `pnpm smoke:board-packet-circulation-approval:local` proof
    - preserve the shipped `pnpm smoke:board-packet-circulation-log:local` proof
-   - add one packaged `pnpm smoke:board-packet-circulation-correction:local` proof for the append-only correction path
+   - add one packaged `pnpm smoke:board-packet-circulation-log-correction:local` proof for the append-only correction path
    - assert that the original `circulationRecord` stays unchanged while the derived effective view and chronology update
    - keep the proof deterministic, runtime-free, and delivery-free
 
@@ -307,7 +317,7 @@ Do not author `FP-0048` in advance from this docs-only slice.
 
 Run the preserved confidence ladder from the current shipped baseline, add the new narrow correction smoke when it exists, and then rerun the required repo-wide gates.
 
-Required command set for this docs-and-plan handoff and the next F5C4G implementation thread:
+Required command set for the active F5C4G implementation thread:
 
 - `pnpm smoke:source-ingest:local`
 - `pnpm smoke:finance-twin:local`
@@ -339,7 +349,7 @@ Required command set for this docs-and-plan handoff and the next F5C4G implement
 - `pnpm smoke:board-packet:local`
 - `pnpm smoke:board-packet-circulation-approval:local`
 - `pnpm smoke:board-packet-circulation-log:local`
-- `pnpm smoke:board-packet-circulation-correction:local` once implemented
+- `pnpm smoke:board-packet-circulation-log-correction:local`
 - `pnpm smoke:lender-update:local`
 - `pnpm smoke:diligence-packet:local`
 - `pnpm smoke:lender-update-release-approval:local`
@@ -363,8 +373,8 @@ Acceptance for the future F5C4G code thread is observable only if all of the fol
 
 ## Idempotence and Recovery
 
-This docs-and-plan slice is retry-safe because it only adds one new plan file and narrows active-doc wording.
-The next F5C4G implementation thread should preserve additive safety by never mutating or deleting the original `circulationRecord`.
+This implementation slice is retry-safe because it only adds additive correction history, replay typing, read models, tests, and one packaged smoke on top of the shipped F5C4F seam.
+The active F5C4G implementation should preserve additive safety by never mutating or deleting the original `circulationRecord`.
 If correction persistence fails, the write should roll back transactionally so no partial correction or partial chronology state becomes visible.
 Retries should reuse a stable correction key or another explicit idempotence mechanism so the same operator correction does not append duplicate entries accidentally.
 Rollback should consist of reverting the additive code, any replay-event widening, and any new smoke command or tests, while keeping the shipped F5C4F baseline intact.
@@ -373,15 +383,10 @@ Rollback should consist of reverting the additive code, any replay-event widenin
 
 This thread should end with:
 
-- `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` as the single active implementation contract
-- the smallest truthful active-doc refresh pointing the next thread at this plan
-- no runtime code, no routes, no schema changes, no migrations, no new smoke commands, no eval datasets, and no implementation scaffolding
-
-The next F5C4G implementation thread is expected to produce:
-
-- one packaged `pnpm smoke:board-packet-circulation-correction:local` proof
-- additive domain, control-plane, and web tests near the touched seams
-- updated proof-bundle and approval-card narratives for correction history and chronology
+- `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` updated as the active implementation contract
+- additive domain, control-plane, and web code that keeps the original circulation log immutable and appends chronology on the existing `report_circulation` seam
+- one packaged `pnpm smoke:board-packet-circulation-log-correction:local` proof plus narrow tests near the touched seams
+- updated proof-bundle, mission, and approval narratives for correction history and chronology
 
 ## Interfaces and Dependencies
 
@@ -406,8 +411,8 @@ The slice should extend that seam additively rather than creating a second circu
 
 ## Outcomes & Retrospective
 
-This thread intentionally shipped a docs-and-plan-only handoff, not runtime code.
-`plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the active implementation contract, and `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` remains the shipped F5C4F record.
-The active-doc boundary now points the next thread at one narrow correction-and-chronology slice instead of a generic post-log continuation.
-No runtime code, routes, schema changes, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding were added in this slice, and the requested docs-and-plan validation ladder finished green before handoff.
-What remains is the next narrow implementation thread that executes the concrete steps above and then reevaluates whether any later-F5 work is still justified before F6.
+This thread shipped the first real F5C4G implementation, not another handoff.
+`plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` now serves as both the active contract and the shipped record for the append-only board-packet circulation correction and chronology slice, while `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` remains the shipped F5C4F predecessor.
+The landed code kept the original `circulationRecord` immutable, appended `circulationCorrections` on the existing `report_circulation` seam, added the additive replay event `approval.circulation_log_corrected`, exposed chronology truth in proof-bundle and mission/reporting read models, and added the packaged `pnpm smoke:board-packet-circulation-log-correction:local` proof without widening into delivery, PDF or slide export, or runtime-codex drafting.
+The requested F5C4G validation ladder finished green, including the targeted Vitest sweeps, preserved baseline smokes, the new correction smoke, twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+What remains is a product decision, not unfinished implementation in this slice: reevaluate whether one more narrow board-packet continuation is justified before any broader later-F5 work starts.

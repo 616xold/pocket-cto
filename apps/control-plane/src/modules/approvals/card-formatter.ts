@@ -221,10 +221,27 @@ function buildReportCirculationCard(
     ? approval.payload
     : null;
   const circulationRecord = payload?.circulationRecord ?? null;
+  const circulationCorrections = payload?.circulationCorrections ?? [];
+  const latestCorrection = circulationCorrections.at(-1) ?? null;
   const reportLabel = payload
     ? readReportCirculationApprovalReportKindLabel(payload.reportKind)
     : "Report";
   const reportLabelLower = reportLabel.toLowerCase();
+
+  if (payload && circulationRecord && circulationCorrections.length > 0) {
+    return buildCard(approval, context, {
+      actionHint:
+        `This card records external circulation chronology only. Pocket CFO did not send or distribute the ${reportLabelLower}.`,
+      requiresLiveControl: false,
+      summary: joinCompact([
+        `External ${reportLabelLower} circulation was logged for ${payload.companyKey}, and ${circulationCorrections.length} append-only correction${circulationCorrections.length === 1 ? "" : "s"} ${circulationCorrections.length === 1 ? "has" : "have"} been recorded afterward.`,
+        `Original approval trace remains anchored to report_circulation approval ${approval.id}.`,
+        circulationRecord.summary,
+        latestCorrection?.summary ?? null,
+      ]),
+      title: `${reportLabel} circulation corrected for ${payload.companyKey}`,
+    });
+  }
 
   if (payload && circulationRecord) {
     return buildCard(approval, context, {

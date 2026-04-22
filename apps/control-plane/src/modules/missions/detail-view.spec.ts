@@ -138,6 +138,7 @@ function buildReportingProofBundle(): ProofBundleManifest {
     rollbackSummary: "",
     latestApproval: null,
     circulationRecord: null,
+    circulationChronology: null,
     circulationReadiness: null,
     releaseRecord: null,
     releaseReadiness: null,

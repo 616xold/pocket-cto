@@ -54,6 +54,7 @@ export type MissionReportingActionServicePort = Pick<
   MissionReportingActionsService,
   | "exportMarkdownBundle"
   | "fileDraftArtifacts"
+  | "recordCirculationLogCorrection"
   | "recordCirculationLog"
   | "recordReleaseLog"
   | "requestCirculationApproval"

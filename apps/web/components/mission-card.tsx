@@ -49,6 +49,8 @@ export function MissionCard({
   const reportingView = reporting;
   const reportingPublication =
     reportingView?.publication ?? proofBundle.reportPublication ?? null;
+  const circulationChronology =
+    reportingView?.circulationChronology ?? proofBundle.circulationChronology;
   const isDiligencePacket = proofBundle.reportKind === "diligence_packet";
   const isBoardPacket = proofBundle.reportKind === "board_packet";
   const isLenderUpdate = proofBundle.reportKind === "lender_update";
@@ -157,6 +159,10 @@ export function MissionCard({
                     </dd>
                   </div>
                   <div>
+                    <dt>Correction count</dt>
+                    <dd>{circulationChronology?.correctionCount ?? 0}</dd>
+                  </div>
+                  <div>
                     <dt>Approval requested</dt>
                     <dd>
                       {reportingView.circulationReadiness?.requestedAt ??
@@ -168,6 +174,13 @@ export function MissionCard({
                     <dd>
                       {reportingView.circulationReadiness?.resolvedAt ??
                         "Not resolved yet."}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Latest correction</dt>
+                    <dd>
+                      {circulationChronology?.latestCorrectionSummary ??
+                        "No corrections recorded."}
                     </dd>
                   </div>
                 </>

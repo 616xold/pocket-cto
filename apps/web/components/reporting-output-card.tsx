@@ -28,6 +28,12 @@ export function ReportingOutputCard({
   const publication = reporting.publication;
   const circulationReadiness = reporting.circulationReadiness;
   const circulationRecord = reporting.circulationRecord;
+  const circulationChronology = reporting.circulationChronology;
+  const effectiveCirculationRecord =
+    circulationChronology?.effectiveRecord ?? circulationRecord;
+  const effectiveCirculationSource =
+    circulationChronology?.effectiveRecord?.source ??
+    (circulationRecord?.circulated ? "original_record" : null);
   const releaseRecord = reporting.releaseRecord;
   const releaseReadiness = reporting.releaseReadiness;
   const isDiligencePacket = reporting.reportKind === "diligence_packet";
@@ -69,6 +75,10 @@ export function ReportingOutputCard({
 
       {supportsCirculationApproval && circulationRecord?.summary ? (
         <p className="muted">{circulationRecord.summary}</p>
+      ) : null}
+
+      {supportsCirculationApproval && circulationChronology?.summary ? (
+        <p className="muted">{circulationChronology.summary}</p>
       ) : null}
 
       {releaseReadiness?.summary ? (
@@ -163,24 +173,60 @@ export function ReportingOutputCard({
                   <dd>{circulationRecord?.circulated ? "Yes" : "No"}</dd>
                 </div>
                 <div>
-                  <dt>Circulated at</dt>
+                  <dt>Original circulated at</dt>
                   <dd>{circulationRecord?.circulatedAt ?? "Not logged yet."}</dd>
                 </div>
                 <div>
-                  <dt>Circulated by</dt>
+                  <dt>Original circulated by</dt>
                   <dd>{circulationRecord?.circulatedBy ?? "Not logged yet."}</dd>
                 </div>
                 <div>
-                  <dt>Circulation channel</dt>
+                  <dt>Original circulation channel</dt>
                   <dd>
                     {circulationRecord?.circulationChannel ?? "Not logged yet."}
                   </dd>
                 </div>
                 <div>
-                  <dt>Circulation note</dt>
+                  <dt>Original circulation note</dt>
                   <dd>
                     {circulationRecord?.circulationNote ??
                       "No circulation note recorded."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Correction count</dt>
+                  <dd>{circulationChronology?.correctionCount ?? 0}</dd>
+                </div>
+                <div>
+                  <dt>Latest correction</dt>
+                  <dd>
+                    {circulationChronology?.latestCorrectionSummary ??
+                      "No corrections recorded."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Effective record source</dt>
+                  <dd>{effectiveCirculationSource ?? "Not logged yet."}</dd>
+                </div>
+                <div>
+                  <dt>Effective circulated at</dt>
+                  <dd>
+                    {effectiveCirculationRecord?.circulatedAt ??
+                      "Not logged yet."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Effective circulation channel</dt>
+                  <dd>
+                    {effectiveCirculationRecord?.circulationChannel ??
+                      "Not logged yet."}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Effective circulation note</dt>
+                  <dd>
+                    {effectiveCirculationRecord?.circulationNote ??
+                      "No effective circulation note recorded."}
                   </dd>
                 </div>
                 <div>
@@ -356,6 +402,18 @@ export function ReportingOutputCard({
           bodyMarkdown={boardPacket.bodyMarkdown}
           title="Draft board packet body"
         />
+      ) : null}
+
+      {supportsCirculationApproval && circulationChronology?.hasCorrections ? (
+        <div className="stack" style={{ marginTop: 18 }}>
+          <h3>Circulation chronology</h3>
+          <p className="muted">{circulationRecord?.summary}</p>
+          {circulationChronology.corrections.map((correction) => (
+            <p key={correction.correctionKey} className="muted">
+              {correction.summary}
+            </p>
+          ))}
+        </div>
       ) : null}
 
       {lenderUpdate ? (

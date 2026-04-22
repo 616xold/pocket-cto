@@ -1,6 +1,8 @@
 import type {
   ExportReportingMissionMarkdownInput,
   FileReportingMissionArtifactsInput,
+  RecordReportingCirculationLogCorrectionInput,
+  RecordReportingCirculationLogCorrectionResult,
   RecordReportingCirculationLogInput,
   RecordReportingCirculationLogResult,
   RecordReportingReleaseLogInput,
@@ -11,6 +13,7 @@ import type {
   RequestReportReleaseApprovalInput,
 } from "@pocket-cto/domain";
 import {
+  RecordReportingCirculationLogCorrectionResultSchema,
   RecordReportingCirculationLogResultSchema,
   RecordReportingReleaseLogResultSchema,
 } from "@pocket-cto/domain";
@@ -20,6 +23,7 @@ import {
   readReportCirculationApprovalPayload,
   readReportReleaseApprovalPayload,
 } from "../approvals/payload";
+import { buildReportingCirculationChronologyViewFromApprovalRecord } from "../reporting/circulation-chronology";
 import type { ReportingService } from "../reporting/service";
 
 export class MissionReportingActionsService {
@@ -32,6 +36,7 @@ export class MissionReportingActionsService {
       approvalService: Pick<
         ApprovalService,
         | "recordReportCirculationLog"
+        | "recordReportCirculationLogCorrection"
         | "recordReportReleaseLog"
         | "requestReportCirculationApproval"
         | "requestReportReleaseApproval"
@@ -41,6 +46,7 @@ export class MissionReportingActionsService {
         | "exportMarkdownBundle"
         | "fileDraftArtifacts"
         | "prepareReportCirculationApproval"
+        | "prepareReportingCirculationLogCorrection"
         | "prepareReportingCirculationLog"
         | "prepareReportingReleaseLog"
         | "prepareReportReleaseApproval"
@@ -254,6 +260,64 @@ export class MissionReportingActionsService {
         approvalId: recorded.approval.id,
         summary: circulationRecord.summary,
       },
+    });
+  }
+
+  async recordCirculationLogCorrection(
+    missionId: string,
+    input: RecordReportingCirculationLogCorrectionInput,
+  ): Promise<RecordReportingCirculationLogCorrectionResult> {
+    const prepared =
+      await this.deps.reportingService.prepareReportingCirculationLogCorrection(
+        missionId,
+        input,
+      );
+    const recorded =
+      await this.deps.approvalService.recordReportCirculationLogCorrection({
+        approvalId: prepared.approvalId,
+        circulationCorrection: prepared.circulationCorrection,
+      });
+    const payload = readReportCirculationApprovalPayload(recorded.approval);
+    const circulationRecord = payload.circulationRecord;
+
+    if (!circulationRecord) {
+      throw new Error(
+        `Approval ${recorded.approval.id} is missing its original circulation record after circulation correction logging.`,
+      );
+    }
+
+    const refreshedProofBundle = recorded.created
+      ? await this.deps.proofBundleAssembly.refreshProofBundle({
+          missionId,
+          trigger: "circulation_log_corrected",
+        })
+      : null;
+    const circulationChronology =
+      refreshedProofBundle?.circulationChronology ??
+      buildReportingCirculationChronologyViewFromApprovalRecord(
+        recorded.approval,
+      );
+
+    if (!circulationChronology) {
+      throw new Error(
+        `Approval ${recorded.approval.id} is missing its persisted circulation chronology after circulation correction logging.`,
+      );
+    }
+
+    return RecordReportingCirculationLogCorrectionResultSchema.parse({
+      missionId,
+      approvalId: recorded.approval.id,
+      created: recorded.created,
+      circulationRecord: {
+        circulated: true,
+        circulatedAt: circulationRecord.circulatedAt,
+        circulatedBy: circulationRecord.circulatedBy,
+        circulationChannel: circulationRecord.circulationChannel,
+        circulationNote: circulationRecord.circulationNote,
+        approvalId: recorded.approval.id,
+        summary: circulationRecord.summary,
+      },
+      circulationChronology,
     });
   }
 }

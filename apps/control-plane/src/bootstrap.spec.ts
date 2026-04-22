@@ -412,6 +412,11 @@ function createAppContainer(
       async recordCirculationLog() {
         throw new Error("recordCirculationLog should not be called in this test");
       },
+      async recordCirculationLogCorrection() {
+        throw new Error(
+          "recordCirculationLogCorrection should not be called in this test",
+        );
+      },
       async recordReleaseLog() {
         throw new Error("recordReleaseLog should not be called in this test");
       },

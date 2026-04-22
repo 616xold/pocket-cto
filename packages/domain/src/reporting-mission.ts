@@ -111,6 +111,38 @@ export const RecordReportingCirculationLogInputSchema = z
     circulationNote: z.string().trim().min(1).nullable().default(null),
   })
   .strict();
+export const RecordReportingCirculationLogCorrectionInputSchema = z
+  .object({
+    correctionKey: z.string().trim().min(1),
+    correctedAt: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .default(null),
+    correctedBy: z.string().trim().min(1).default("operator"),
+    correctionReason: z.string().trim().min(1),
+    circulatedAt: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .default(null),
+    circulationChannel: z.string().trim().min(1).nullable().default(null),
+    circulationNote: z.string().trim().min(1).nullable().default(null),
+  })
+  .strict()
+  .superRefine((input, ctx) => {
+    if (
+      input.circulatedAt === null &&
+      input.circulationChannel === null &&
+      input.circulationNote === null
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "At least one circulation field must be corrected.",
+        path: ["circulationChannel"],
+      });
+    }
+  });
 
 export const ReportingMissionInputSchema = z
   .object({
@@ -411,6 +443,57 @@ export const ReportingCirculationRecordViewSchema = z
     summary: z.string().min(1),
   })
   .strict();
+export const ReportingCirculationEffectiveRecordSourceSchema = z.enum([
+  "original_record",
+  "latest_correction",
+]);
+export const ReportingCirculationEffectiveRecordViewSchema = z
+  .object({
+    source:
+      ReportingCirculationEffectiveRecordSourceSchema.default("original_record"),
+    circulated: z.boolean().default(false),
+    circulatedAt: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .default(null),
+    circulatedBy: z.string().nullable().default(null),
+    circulationChannel: z.string().nullable().default(null),
+    circulationNote: z.string().nullable().default(null),
+    approvalId: z.string().uuid().nullable().default(null),
+    summary: z.string().min(1),
+  })
+  .strict();
+export const ReportingCirculationCorrectionViewSchema = z
+  .object({
+    correctionKey: z.string().min(1),
+    correctedAt: z.string().datetime({ offset: true }),
+    correctedBy: z.string().min(1),
+    correctionReason: z.string().min(1),
+    circulatedAt: z
+      .string()
+      .datetime({ offset: true })
+      .nullable()
+      .default(null),
+    circulationChannel: z.string().nullable().default(null),
+    circulationNote: z.string().nullable().default(null),
+    effectiveRecord: ReportingCirculationEffectiveRecordViewSchema,
+    summary: z.string().min(1),
+  })
+  .strict();
+export const ReportingCirculationChronologyViewSchema = z
+  .object({
+    hasCorrections: z.boolean().default(false),
+    correctionCount: z.number().int().nonnegative().default(0),
+    latestCorrectionSummary: z.string().nullable().default(null),
+    latestCorrection:
+      ReportingCirculationCorrectionViewSchema.nullable().default(null),
+    effectiveRecord:
+      ReportingCirculationEffectiveRecordViewSchema.nullable().default(null),
+    corrections: z.array(ReportingCirculationCorrectionViewSchema).default([]),
+    summary: z.string().min(1),
+  })
+  .strict();
 
 export const ReportingMissionViewSchema = z
   .object({
@@ -441,6 +524,8 @@ export const ReportingMissionViewSchema = z
       ReportingCirculationReadinessViewSchema.nullable().default(null),
     circulationRecord:
       ReportingCirculationRecordViewSchema.nullable().default(null),
+    circulationChronology:
+      ReportingCirculationChronologyViewSchema.nullable().default(null),
     releaseRecord: ReportingReleaseRecordViewSchema.nullable().default(null),
     releaseReadiness:
       ReportingReleaseReadinessViewSchema.nullable().default(null),
@@ -500,6 +585,15 @@ export const RecordReportingCirculationLogResultSchema = z
     circulationRecord: ReportingCirculationRecordViewSchema,
   })
   .strict();
+export const RecordReportingCirculationLogCorrectionResultSchema = z
+  .object({
+    missionId: z.string().uuid(),
+    approvalId: z.string().uuid(),
+    created: z.boolean(),
+    circulationRecord: ReportingCirculationRecordViewSchema,
+    circulationChronology: ReportingCirculationChronologyViewSchema,
+  })
+  .strict();
 
 export type ReportingMissionReportKind = z.infer<
   typeof ReportingMissionReportKindSchema
@@ -534,6 +628,9 @@ export type RequestReportCirculationApprovalInput = z.infer<
 >;
 export type RecordReportingCirculationLogInput = z.infer<
   typeof RecordReportingCirculationLogInputSchema
+>;
+export type RecordReportingCirculationLogCorrectionInput = z.infer<
+  typeof RecordReportingCirculationLogCorrectionInputSchema
 >;
 export type RecordReportingReleaseLogInput = z.infer<
   typeof RecordReportingReleaseLogInputSchema
@@ -596,6 +693,18 @@ export type ReportingCirculationReadinessView = z.infer<
 export type ReportingCirculationRecordView = z.infer<
   typeof ReportingCirculationRecordViewSchema
 >;
+export type ReportingCirculationEffectiveRecordSource = z.infer<
+  typeof ReportingCirculationEffectiveRecordSourceSchema
+>;
+export type ReportingCirculationEffectiveRecordView = z.infer<
+  typeof ReportingCirculationEffectiveRecordViewSchema
+>;
+export type ReportingCirculationCorrectionView = z.infer<
+  typeof ReportingCirculationCorrectionViewSchema
+>;
+export type ReportingCirculationChronologyView = z.infer<
+  typeof ReportingCirculationChronologyViewSchema
+>;
 export type ReportingReleaseRecordView = z.infer<
   typeof ReportingReleaseRecordViewSchema
 >;
@@ -614,6 +723,9 @@ export type RequestReportCirculationApprovalResult = z.infer<
 >;
 export type RecordReportingCirculationLogResult = z.infer<
   typeof RecordReportingCirculationLogResultSchema
+>;
+export type RecordReportingCirculationLogCorrectionResult = z.infer<
+  typeof RecordReportingCirculationLogCorrectionResultSchema
 >;
 export type RecordReportingReleaseLogResult = z.infer<
   typeof RecordReportingReleaseLogResultSchema

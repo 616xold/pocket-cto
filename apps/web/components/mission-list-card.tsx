@@ -81,6 +81,12 @@ export function MissionListCard({ mission }: MissionListCardProps) {
         </p>
       ) : null}
 
+      {mission.circulationChronology?.summary ? (
+        <p className="muted mission-summary-inline">
+          {mission.circulationChronology.summary}
+        </p>
+      ) : null}
+
       {mission.releaseRecord?.summary ? (
         <p className="muted mission-summary-inline">
           {mission.releaseRecord.summary}
@@ -205,6 +211,10 @@ export function MissionListCard({ mission }: MissionListCardProps) {
                 <div>
                   <dt>Circulation logged</dt>
                   <dd>{mission.circulationRecord?.circulated ? "Yes" : "No"}</dd>
+                </div>
+                <div>
+                  <dt>Correction count</dt>
+                  <dd>{mission.circulationChronology?.correctionCount ?? 0}</dd>
                 </div>
               </>
             ) : null}

@@ -93,8 +93,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` is now the shipped F5C4D implementation record.
 `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` is now the shipped F5C4E record.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record.
-`plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the active F5C4G implementation contract.
-The next implementation thread should continue that narrow board circulation-record correction/chronology slice before broader later-F5 work or F6, rather than reopening F5C4E or authoring another broad umbrella plan.
+`plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the shipped F5C4G implementation record.
+Before broader later-F5 work or F6 starts, the repo should reevaluate whether one more narrow board circulation-record continuation is still warranted rather than reopening F5C4E or authoring another broad umbrella plan.
 
 ## Review ritual
 

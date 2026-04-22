@@ -245,6 +245,7 @@ export function assembleProofBundleManifest(input: {
     reportPublication: facts.reportPublication,
     circulationReadiness: facts.circulationReadiness,
     circulationRecord: facts.circulationRecord,
+    circulationChronology: facts.circulationChronology,
     releaseRecord: facts.releaseRecord,
     releaseReadiness: facts.releaseReadiness,
     appendixPresent: facts.appendixPresent,

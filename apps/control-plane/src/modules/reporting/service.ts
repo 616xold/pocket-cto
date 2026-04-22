@@ -1,9 +1,11 @@
 import type {
   ExportReportingMissionMarkdownInput,
   FileReportingMissionArtifactsInput,
+  RecordReportingCirculationLogCorrectionInput,
   RecordReportingCirculationLogInput,
   RecordReportingReleaseLogInput,
   MissionRecord,
+  ReportCirculationApprovalCirculationCorrection,
   ReportCirculationApprovalCirculationRecord,
   ReportCirculationApprovalPayload,
   ReportReleaseApprovalPayload,
@@ -16,6 +18,7 @@ import {
   CfoWikiPageRecordSchema,
   ExportReportingMissionMarkdownInputSchema,
   FileReportingMissionArtifactsInputSchema,
+  RecordReportingCirculationLogCorrectionInputSchema,
   RecordReportingCirculationLogInputSchema,
   RecordReportingReleaseLogInputSchema,
   ReportCirculationApprovalPayloadSchema,
@@ -42,6 +45,7 @@ import {
 } from "./publication";
 import { buildLoggedReleaseRecordSummary } from "./release-record";
 import { buildLoggedCirculationRecordSummary } from "./circulation-record";
+import { buildLoggedCirculationCorrectionSummary } from "./circulation-chronology";
 import { readMissionReportingView } from "./artifact";
 import type {
   CompiledReportingArtifacts,
@@ -602,6 +606,126 @@ export class ReportingService {
     };
   }
 
+  async prepareReportingCirculationLogCorrection(
+    missionId: string,
+    rawInput: RecordReportingCirculationLogCorrectionInput,
+  ): Promise<{
+    approvalId: string;
+    circulationCorrection: ReportCirculationApprovalCirculationCorrection;
+  }> {
+    const request =
+      RecordReportingCirculationLogCorrectionInputSchema.parse(rawInput);
+    const context = await this.loadReportingMissionContext(missionId);
+    const reporting = readMissionReportingView({
+      artifacts: context.artifacts,
+      proofBundle: context.proofBundle,
+    });
+
+    if (!reporting) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet expose a persisted reporting view.`,
+      );
+    }
+
+    if (reporting.reportKind !== "board_packet") {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} has report kind ${reporting.reportKind}, not board_packet.`,
+      );
+    }
+
+    if (!reporting.boardPacket) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} does not yet store a board_packet artifact payload.`,
+      );
+    }
+
+    if (
+      reporting.circulationReadiness?.circulationApprovalStatus !==
+        "approved_for_circulation" ||
+      !reporting.circulationReadiness.approvalId
+    ) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} must already be approved_for_circulation before an external circulation correction can be appended.`,
+      );
+    }
+
+    if (!reporting.circulationRecord?.circulated) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} must already store the original external circulation record before a correction can append chronology.`,
+      );
+    }
+
+    readSingleArtifactId(
+      context.artifacts,
+      "board_packet",
+      missionId,
+      "board-packet circulation corrections can be logged",
+    );
+
+    const currentEffectiveRecord =
+      reporting.circulationChronology?.effectiveRecord ??
+      reporting.circulationRecord;
+
+    if (!currentEffectiveRecord?.circulated) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} is missing the current effective circulation state required to append a correction.`,
+      );
+    }
+
+    const correctedCirculatedAt = readChangedCorrectionValue(
+      request.circulatedAt,
+      currentEffectiveRecord.circulatedAt,
+    );
+    const correctedCirculationChannel = readChangedCorrectionValue(
+      request.circulationChannel,
+      currentEffectiveRecord.circulationChannel,
+    );
+    const correctedCirculationNote = readChangedCorrectionValue(
+      request.circulationNote,
+      currentEffectiveRecord.circulationNote,
+    );
+
+    if (
+      correctedCirculatedAt === null &&
+      correctedCirculationChannel === null &&
+      correctedCirculationNote === null
+    ) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} already exposes those circulation values as the current effective record, so this correction would not append any new chronology.`,
+      );
+    }
+
+    const correctedAt = request.correctedAt ?? new Date().toISOString();
+
+    return {
+      approvalId: reporting.circulationReadiness.approvalId,
+      circulationCorrection: {
+        correctionKey: request.correctionKey,
+        correctedAt,
+        correctedBy: request.correctedBy,
+        correctionReason: request.correctionReason,
+        circulatedAt: correctedCirculatedAt,
+        circulationChannel: correctedCirculationChannel,
+        circulationNote: correctedCirculationNote,
+        summary: buildLoggedCirculationCorrectionSummary({
+          correctedAt,
+          correctedBy: request.correctedBy,
+          correctionReason: request.correctionReason,
+          circulatedAt: correctedCirculatedAt,
+          circulationChannel: correctedCirculationChannel,
+          circulationNote: correctedCirculationNote,
+        }),
+      },
+    };
+  }
+
   private async loadDiscoverySourceBundle(
     reportingRequest: ReportingMissionInput,
   ): Promise<DiscoveryReportingSourceBundle> {
@@ -921,6 +1045,17 @@ function invalidRequest(path: string, message: string) {
       ],
     },
   });
+}
+
+function readChangedCorrectionValue(
+  requestedValue: string | null,
+  currentValue: string | null,
+) {
+  if (requestedValue === null) {
+    return null;
+  }
+
+  return requestedValue === currentValue ? null : requestedValue;
 }
 
 function parsePageRecord(page: unknown) {

@@ -90,6 +90,18 @@ export const ReportCirculationApprovalCirculationRecordSchema = z
     summary: z.string().min(1),
   })
   .strict();
+export const ReportCirculationApprovalCirculationCorrectionSchema = z
+  .object({
+    correctionKey: z.string().min(1),
+    correctedAt: z.string().datetime({ offset: true }),
+    correctedBy: z.string().min(1),
+    correctionReason: z.string().min(1),
+    circulatedAt: z.string().datetime({ offset: true }).nullable().default(null),
+    circulationChannel: z.string().min(1).nullable().default(null),
+    circulationNote: z.string().min(1).nullable().default(null),
+    summary: z.string().min(1),
+  })
+  .strict();
 
 export const ReportReleaseApprovalPayloadSchema = z
   .object({
@@ -124,6 +136,9 @@ export const ReportCirculationApprovalPayloadSchema = z
       ReportCirculationApprovalResolutionSchema.nullable().default(null),
     circulationRecord:
       ReportCirculationApprovalCirculationRecordSchema.nullable().default(null),
+    circulationCorrections: z
+      .array(ReportCirculationApprovalCirculationCorrectionSchema)
+      .default([]),
   })
   .strict();
 
@@ -164,6 +179,9 @@ export type ReportReleaseApprovalReleaseRecord = z.infer<
 >;
 export type ReportCirculationApprovalCirculationRecord = z.infer<
   typeof ReportCirculationApprovalCirculationRecordSchema
+>;
+export type ReportCirculationApprovalCirculationCorrection = z.infer<
+  typeof ReportCirculationApprovalCirculationCorrectionSchema
 >;
 export type ReportReleaseApprovalPayload = z.infer<
   typeof ReportReleaseApprovalPayloadSchema

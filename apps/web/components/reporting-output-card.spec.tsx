@@ -22,6 +22,7 @@ describe("ReportingOutputCard", () => {
           reportDraftStatus: "draft_only",
           reportSummary: "Cash posture remains constrained.",
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -163,6 +164,7 @@ describe("ReportingOutputCard", () => {
           boardPacket: null,
           diligencePacket: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -233,6 +235,7 @@ describe("ReportingOutputCard", () => {
           reportDraftStatus: "draft_only",
           reportPublication: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -325,6 +328,7 @@ describe("ReportingOutputCard", () => {
           },
           diligencePacket: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -361,6 +365,7 @@ describe("ReportingOutputCard", () => {
           reportDraftStatus: "draft_only",
           reportPublication: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: {
             circulationApprovalStatus: "approved_for_circulation",
             circulationReady: true,
@@ -465,6 +470,7 @@ describe("ReportingOutputCard", () => {
           },
           diligencePacket: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: {
             circulationApprovalStatus: "approved_for_circulation",
             circulationReady: true,
@@ -493,6 +499,313 @@ describe("ReportingOutputCard", () => {
     expect(html).not.toContain("Release approval");
   });
 
+  it("renders board-packet circulation chronology after one append-only correction", () => {
+    const html = renderToStaticMarkup(
+      <ReportingOutputCard
+        proofBundle={{
+          missionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaac",
+          missionTitle: "Draft board packet for acme",
+          objective:
+            "Compile one draft board packet from stored finance memo and evidence appendix artifacts.",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          answerSummary: "",
+          reportKind: "board_packet",
+          reportDraftStatus: "draft_only",
+          reportPublication: null,
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote: "Circulated from the finance mailbox after approval.",
+            approvalId: "66666666-6666-4666-8666-666666666666",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+          circulationChronology: {
+            hasCorrections: true,
+            correctionCount: 1,
+            latestCorrectionSummary:
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            latestCorrection: {
+              correctionKey: "board-packet-correction-1",
+              correctedAt: "2026-04-21T09:20:00.000Z",
+              correctedBy: "finance-operator",
+              correctionReason:
+                "Corrected the original send timestamp after mailbox review",
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulationChannel: null,
+              circulationNote: "Corrected after finance mailbox audit.",
+              effectiveRecord: {
+                source: "latest_correction",
+                circulated: true,
+                circulatedAt: "2026-04-21T09:12:00.000Z",
+                circulatedBy: "finance-operator",
+                circulationChannel: "email",
+                circulationNote: "Corrected after finance mailbox audit.",
+                approvalId: "66666666-6666-4666-8666-666666666666",
+                summary:
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+              },
+              summary:
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            },
+            effectiveRecord: {
+              source: "latest_correction",
+              circulated: true,
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulatedBy: "finance-operator",
+              circulationChannel: "email",
+              circulationNote: "Corrected after finance mailbox audit.",
+              approvalId: "66666666-6666-4666-8666-666666666666",
+              summary:
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+            },
+            corrections: [
+              {
+                correctionKey: "board-packet-correction-1",
+                correctedAt: "2026-04-21T09:20:00.000Z",
+                correctedBy: "finance-operator",
+                correctionReason:
+                  "Corrected the original send timestamp after mailbox review",
+                circulatedAt: "2026-04-21T09:12:00.000Z",
+                circulationChannel: null,
+                circulationNote: "Corrected after finance mailbox audit.",
+                effectiveRecord: {
+                  source: "latest_correction",
+                  circulated: true,
+                  circulatedAt: "2026-04-21T09:12:00.000Z",
+                  circulatedBy: "finance-operator",
+                  circulationChannel: "email",
+                  circulationNote: "Corrected after finance mailbox audit.",
+                  approvalId: "66666666-6666-4666-8666-666666666666",
+                  summary:
+                    "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+                },
+                summary:
+                  "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+              },
+            ],
+            summary:
+              "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-21T09:20:00.000Z.",
+          },
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "66666666-6666-4666-8666-666666666666",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Ready for internal board circulation.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+          },
+          releaseRecord: null,
+          releaseReadiness: null,
+          reportSummary:
+            "Draft board packet for acme from the completed cash posture reporting mission.",
+          appendixPresent: true,
+          freshnessState: "stale",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          targetRepoFullName: null,
+          branchName: null,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          changeSummary: "",
+          validationSummary: "",
+          verificationSummary: "",
+          riskSummary: "",
+          rollbackSummary: "",
+          latestApproval: null,
+          evidenceCompleteness: {
+            status: "complete",
+            expectedArtifactKinds: ["board_packet"],
+            presentArtifactKinds: ["board_packet"],
+            missingArtifactKinds: [],
+            notes: [],
+          },
+          decisionTrace: [],
+          artifactIds: [],
+          artifacts: [],
+          replayEventCount: 0,
+          timestamps: {
+            missionCreatedAt: "2026-04-19T13:00:00.000Z",
+            latestPlannerEvidenceAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPullRequestAt: null,
+            latestApprovalAt: "2026-04-21T09:20:00.000Z",
+            latestArtifactAt: "2026-04-19T13:02:00.000Z",
+          },
+          status: "ready",
+        }}
+        reporting={{
+          reportKind: "board_packet",
+          draftStatus: "draft_only",
+          sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+          sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+          companyKey: "acme",
+          questionKind: "cash_posture",
+          policySourceId: null,
+          policySourceScope: null,
+          reportSummary:
+            "Draft board packet for acme from the completed cash posture reporting mission.",
+          freshnessSummary: "Cash posture remains stale.",
+          limitationsSummary: "Draft-only posture remains explicit.",
+          relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+          relatedWikiPageKeys: ["metrics/cash-posture"],
+          appendixPresent: true,
+          lenderUpdate: null,
+          financeMemo: null,
+          evidenceAppendix: null,
+          boardPacket: {
+            source: "stored_reporting_evidence",
+            summary:
+              "Draft board packet for acme from the completed cash posture reporting mission.",
+            reportKind: "board_packet",
+            draftStatus: "draft_only",
+            sourceReportingMissionId: "33333333-3333-4333-8333-333333333333",
+            sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+            companyKey: "acme",
+            questionKind: "cash_posture",
+            policySourceId: null,
+            policySourceScope: null,
+            packetSummary:
+              "Draft board packet for acme from the completed cash posture reporting mission.",
+            freshnessSummary: "Cash posture remains stale.",
+            limitationsSummary: "Draft-only posture remains explicit.",
+            relatedRoutePaths: ["/finance-twin/companies/acme/cash-posture"],
+            relatedWikiPageKeys: ["metrics/cash-posture"],
+            sourceFinanceMemo: {
+              artifactId: "44444444-4444-4444-8444-444444444444",
+              kind: "finance_memo",
+            },
+            sourceEvidenceAppendix: {
+              artifactId: "55555555-5555-4555-8555-555555555555",
+              kind: "evidence_appendix",
+            },
+            bodyMarkdown:
+              "# Draft Board Packet\n\n## Linked Evidence Appendix Posture\n\n- Appendix remains linked.",
+          },
+          diligencePacket: null,
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote: "Circulated from the finance mailbox after approval.",
+            approvalId: "66666666-6666-4666-8666-666666666666",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+          circulationChronology: {
+            hasCorrections: true,
+            correctionCount: 1,
+            latestCorrectionSummary:
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            latestCorrection: {
+              correctionKey: "board-packet-correction-1",
+              correctedAt: "2026-04-21T09:20:00.000Z",
+              correctedBy: "finance-operator",
+              correctionReason:
+                "Corrected the original send timestamp after mailbox review",
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulationChannel: null,
+              circulationNote: "Corrected after finance mailbox audit.",
+              effectiveRecord: {
+                source: "latest_correction",
+                circulated: true,
+                circulatedAt: "2026-04-21T09:12:00.000Z",
+                circulatedBy: "finance-operator",
+                circulationChannel: "email",
+                circulationNote: "Corrected after finance mailbox audit.",
+                approvalId: "66666666-6666-4666-8666-666666666666",
+                summary:
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+              },
+              summary:
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            },
+            effectiveRecord: {
+              source: "latest_correction",
+              circulated: true,
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulatedBy: "finance-operator",
+              circulationChannel: "email",
+              circulationNote: "Corrected after finance mailbox audit.",
+              approvalId: "66666666-6666-4666-8666-666666666666",
+              summary:
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+            },
+            corrections: [
+              {
+                correctionKey: "board-packet-correction-1",
+                correctedAt: "2026-04-21T09:20:00.000Z",
+                correctedBy: "finance-operator",
+                correctionReason:
+                  "Corrected the original send timestamp after mailbox review",
+                circulatedAt: "2026-04-21T09:12:00.000Z",
+                circulationChannel: null,
+                circulationNote: "Corrected after finance mailbox audit.",
+                effectiveRecord: {
+                  source: "latest_correction",
+                  circulated: true,
+                  circulatedAt: "2026-04-21T09:12:00.000Z",
+                  circulatedBy: "finance-operator",
+                  circulationChannel: "email",
+                  circulationNote: "Corrected after finance mailbox audit.",
+                  approvalId: "66666666-6666-4666-8666-666666666666",
+                  summary:
+                    "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+                },
+                summary:
+                  "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+              },
+            ],
+            summary:
+              "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-21T09:20:00.000Z.",
+          },
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "66666666-6666-4666-8666-666666666666",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Ready for internal board circulation.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+          },
+          releaseRecord: null,
+          releaseReadiness: null,
+          publication: null,
+        }}
+      />,
+    );
+
+    expect(html).toContain("Correction count");
+    expect(html).toContain("Latest correction");
+    expect(html).toContain("Effective record source");
+    expect(html).toContain("latest_correction");
+    expect(html).toContain("2026-04-21T09:12:00.000Z");
+    expect(html).toContain("Corrected after finance mailbox audit.");
+    expect(html).toContain("Circulation chronology");
+    expect(html).toContain(
+      "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-21T09:20:00.000Z.",
+    );
+  });
+
   it("renders a lender update with source reporting lineage and linked appendix posture", () => {
     const html = renderToStaticMarkup(
       <ReportingOutputCard
@@ -512,6 +825,7 @@ describe("ReportingOutputCard", () => {
           reportDraftStatus: "draft_only",
           reportPublication: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -604,6 +918,7 @@ describe("ReportingOutputCard", () => {
           },
           diligencePacket: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -640,6 +955,7 @@ describe("ReportingOutputCard", () => {
           reportDraftStatus: "draft_only",
           reportPublication: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -732,6 +1048,7 @@ describe("ReportingOutputCard", () => {
               "# Draft Diligence Packet\n\n## Packet Summary\n\nCash posture remains constrained.",
           },
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: null,
@@ -770,6 +1087,7 @@ describe("ReportingOutputCard", () => {
             "Draft lender update for acme from the completed cash posture reporting mission.",
           reportPublication: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
@@ -873,6 +1191,7 @@ describe("ReportingOutputCard", () => {
           diligencePacket: null,
           publication: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
@@ -917,6 +1236,7 @@ describe("ReportingOutputCard", () => {
           reportSummary:
             "Draft diligence packet for acme from the completed cash posture reporting mission.",
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
@@ -1021,6 +1341,7 @@ describe("ReportingOutputCard", () => {
           },
           publication: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: null,
           releaseReadiness: {
@@ -1067,6 +1388,7 @@ describe("ReportingOutputCard", () => {
           reportSummary:
             "Draft diligence packet for acme from the completed cash posture reporting mission.",
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: {
             released: true,
@@ -1180,6 +1502,7 @@ describe("ReportingOutputCard", () => {
           },
           publication: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: {
             released: true,
@@ -1235,6 +1558,7 @@ describe("ReportingOutputCard", () => {
           reportSummary:
             "Draft lender update for acme from the completed cash posture reporting mission.",
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: {
             released: true,
@@ -1348,6 +1672,7 @@ describe("ReportingOutputCard", () => {
           diligencePacket: null,
           publication: null,
           circulationRecord: null,
+          circulationChronology: null,
           circulationReadiness: null,
           releaseRecord: {
             released: true,

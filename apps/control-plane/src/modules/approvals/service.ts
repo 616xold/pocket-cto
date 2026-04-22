@@ -12,6 +12,7 @@ import type {
   ApprovalStatus,
   MissionRecord,
   MissionTaskRecord,
+  ReportCirculationApprovalCirculationCorrection,
   ReportCirculationApprovalCirculationRecord,
   ReportCirculationApprovalPayload,
   ReportReleaseApprovalPayload,
@@ -102,6 +103,16 @@ export type RecordReportCirculationLogInput = {
 };
 
 export type RecordReportCirculationLogResult = {
+  approval: ApprovalRecord;
+  created: boolean;
+};
+
+export type RecordReportCirculationLogCorrectionInput = {
+  approvalId: string;
+  circulationCorrection: ReportCirculationApprovalCirculationCorrection;
+};
+
+export type RecordReportCirculationLogCorrectionResult = {
   approval: ApprovalRecord;
   created: boolean;
 };
@@ -450,6 +461,103 @@ export class ApprovalService {
           payload: {
             approvalId: updated.id,
             circulationRecord: input.circulationRecord,
+            missionId: updated.missionId,
+          },
+        },
+        session,
+      );
+
+      return {
+        approval: updated,
+        created: true,
+      };
+    });
+  }
+
+  async recordReportCirculationLogCorrection(
+    input: RecordReportCirculationLogCorrectionInput,
+  ): Promise<RecordReportCirculationLogCorrectionResult> {
+    return this.missionRepository.transaction(async (session) => {
+      const approval = await this.getRequiredApproval(
+        input.approvalId,
+        session,
+      );
+
+      if (approval.kind !== "report_circulation") {
+        throw invalidRequest(
+          "approvalId",
+          `Approval ${approval.id} is ${approval.kind}, not report_circulation.`,
+        );
+      }
+
+      if (approval.status !== "approved") {
+        throw invalidRequest(
+          "approvalId",
+          `Approval ${approval.id} must already be approved before a circulation correction can be logged.`,
+        );
+      }
+
+      const payload = readReportCirculationApprovalPayload(approval);
+
+      if (!payload.circulationRecord) {
+        throw invalidRequest(
+          "approvalId",
+          `Approval ${approval.id} does not yet store the original circulation record required before corrections can append chronology.`,
+        );
+      }
+
+      const existingCorrection = payload.circulationCorrections.find(
+        (correction) =>
+          correction.correctionKey === input.circulationCorrection.correctionKey,
+      );
+
+      if (existingCorrection) {
+        if (
+          reportCirculationCorrectionEquals(
+            existingCorrection,
+            input.circulationCorrection,
+          )
+        ) {
+          return {
+            approval,
+            created: false,
+          };
+        }
+
+        throw invalidRequest(
+          "approvalId",
+          `Approval ${approval.id} already stores a different circulation correction for correctionKey ${input.circulationCorrection.correctionKey}.`,
+        );
+      }
+
+      const circulationCorrections = [
+        ...payload.circulationCorrections,
+        input.circulationCorrection,
+      ];
+      const updated = await this.approvalRepository.updateApproval(
+        {
+          approvalId: approval.id,
+          payload: {
+            ...payload,
+            circulationCorrections,
+          },
+          rationale: approval.rationale,
+          resolvedBy: approval.resolvedBy,
+          status: approval.status,
+        },
+        session,
+      );
+
+      await this.replayService.append(
+        {
+          actor: input.circulationCorrection.correctedBy,
+          missionId: updated.missionId,
+          taskId: null,
+          type: "approval.circulation_log_corrected",
+          payload: {
+            approvalId: updated.id,
+            circulationCorrection: input.circulationCorrection,
+            correctionCount: circulationCorrections.length,
             missionId: updated.missionId,
           },
         },
@@ -1043,6 +1151,22 @@ function readExistingFinanceReportApprovalForRequest(
   }
 
   return null;
+}
+
+function reportCirculationCorrectionEquals(
+  left: ReportCirculationApprovalCirculationCorrection,
+  right: ReportCirculationApprovalCirculationCorrection,
+) {
+  return (
+    left.correctionKey === right.correctionKey &&
+    left.correctedAt === right.correctedAt &&
+    left.correctedBy === right.correctedBy &&
+    left.correctionReason === right.correctionReason &&
+    left.circulatedAt === right.circulatedAt &&
+    left.circulationChannel === right.circulationChannel &&
+    left.circulationNote === right.circulationNote &&
+    left.summary === right.summary
+  );
 }
 
 function mapCommandApprovalKind(

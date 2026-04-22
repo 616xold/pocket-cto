@@ -11,6 +11,7 @@ import {
   exportReportingMissionMarkdown,
   fileReportingMissionArtifacts,
   interruptMissionTask,
+  recordReportingCirculationLogCorrection,
   recordReportingCirculationLog,
   recordReportingReleaseLog,
   requestReportingCirculationApproval,
@@ -22,6 +23,7 @@ import {
   buildExportReportingMarkdownActionResult,
   buildFileReportingArtifactsActionResult,
   buildInterruptActionResult,
+  buildRecordReportingCirculationLogCorrectionActionResult,
   buildRecordReportingCirculationLogActionResult,
   buildRecordReportingReleaseLogActionResult,
   buildRequestReportingCirculationApprovalActionResult,
@@ -111,6 +113,28 @@ const recordReportingCirculationLogFormSchema = z.object({
   ),
   circulatedBy: z.string().trim().min(1),
   circulationChannel: z.string().trim().min(1),
+  circulationNote: z.preprocess(
+    (value) => (value === null || value === "" ? undefined : value),
+    z.string().trim().min(1).optional(),
+  ),
+});
+const recordReportingCirculationLogCorrectionFormSchema = z.object({
+  missionId: z.string().uuid(),
+  reportKind: z.preprocess(
+    (value) => value ?? "board_packet",
+    z.literal("board_packet"),
+  ),
+  correctionKey: z.string().trim().min(1),
+  correctedBy: z.string().trim().min(1),
+  correctionReason: z.string().trim().min(1),
+  circulatedAt: z.preprocess(
+    (value) => (value === null || value === "" ? undefined : value),
+    z.string().datetime({ offset: true }).optional(),
+  ),
+  circulationChannel: z.preprocess(
+    (value) => (value === null || value === "" ? undefined : value),
+    z.string().trim().min(1).optional(),
+  ),
   circulationNote: z.preprocess(
     (value) => (value === null || value === "" ? undefined : value),
     z.string().trim().min(1).optional(),
@@ -393,6 +417,44 @@ export async function submitRecordReportingCirculationLog(
 
   return buildRecordReportingCirculationLogActionResult(
     input.circulatedBy,
+    input.reportKind,
+    result,
+  );
+}
+
+export async function submitRecordReportingCirculationLogCorrection(
+  _previousState: MissionActionState,
+  formData: FormData,
+) {
+  const input = recordReportingCirculationLogCorrectionFormSchema.parse({
+    missionId: formData.get("missionId"),
+    reportKind: formData.get("reportKind"),
+    correctionKey: formData.get("correctionKey"),
+    correctedBy: formData.get("correctedBy"),
+    correctionReason: formData.get("correctionReason"),
+    circulatedAt: formData.get("circulatedAt"),
+    circulationChannel: formData.get("circulationChannel"),
+    circulationNote: formData.get("circulationNote"),
+  });
+
+  const result = await recordReportingCirculationLogCorrection({
+    missionId: input.missionId,
+    correctionKey: input.correctionKey,
+    correctedBy: input.correctedBy,
+    correctionReason: input.correctionReason,
+    circulatedAt: input.circulatedAt ?? null,
+    circulationChannel: input.circulationChannel ?? null,
+    circulationNote: input.circulationNote ?? null,
+  });
+
+  if (result.ok) {
+    revalidatePath("/");
+    revalidatePath("/missions");
+    revalidatePath(`/missions/${input.missionId}`);
+  }
+
+  return buildRecordReportingCirculationLogCorrectionActionResult(
+    input.correctedBy,
     input.reportKind,
     result,
   );

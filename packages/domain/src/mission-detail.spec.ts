@@ -920,6 +920,76 @@ describe("Mission detail domain schema", () => {
           summary:
             "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
         },
+        circulationChronology: {
+          hasCorrections: true,
+          correctionCount: 1,
+          latestCorrectionSummary:
+            "Circulation record correction was appended by finance-operator at 2026-04-19T12:15:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: The original log captured draft completion time.",
+          latestCorrection: {
+            correctionKey: "board-circulation-correction-1",
+            correctedAt: "2026-04-19T12:15:00.000Z",
+            correctedBy: "finance-operator",
+            correctionReason:
+              "The original log captured draft completion time.",
+            circulatedAt: "2026-04-19T12:12:00.000Z",
+            circulationChannel: null,
+            circulationNote: null,
+            effectiveRecord: {
+              source: "latest_correction",
+              circulated: true,
+              circulatedAt: "2026-04-19T12:12:00.000Z",
+              circulatedBy: "finance-operator",
+              circulationChannel: "email",
+              circulationNote:
+                "Circulated after approval from the finance mailbox.",
+              approvalId: "55555555-5555-4555-8555-555555555555",
+              summary:
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:15:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+            },
+            summary:
+              "Circulation record correction was appended by finance-operator at 2026-04-19T12:15:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: The original log captured draft completion time.",
+          },
+          effectiveRecord: {
+            source: "latest_correction",
+            circulated: true,
+            circulatedAt: "2026-04-19T12:12:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote:
+              "Circulated after approval from the finance mailbox.",
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            summary:
+              "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:15:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+          },
+          corrections: [
+            {
+              correctionKey: "board-circulation-correction-1",
+              correctedAt: "2026-04-19T12:15:00.000Z",
+              correctedBy: "finance-operator",
+              correctionReason:
+                "The original log captured draft completion time.",
+              circulatedAt: "2026-04-19T12:12:00.000Z",
+              circulationChannel: null,
+              circulationNote: null,
+              effectiveRecord: {
+                source: "latest_correction",
+                circulated: true,
+                circulatedAt: "2026-04-19T12:12:00.000Z",
+                circulatedBy: "finance-operator",
+                circulationChannel: "email",
+                circulationNote:
+                  "Circulated after approval from the finance mailbox.",
+                approvalId: "55555555-5555-4555-8555-555555555555",
+                summary:
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:15:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+              },
+              summary:
+                "Circulation record correction was appended by finance-operator at 2026-04-19T12:15:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: The original log captured draft completion time.",
+            },
+          ],
+          summary:
+            "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-19T12:15:00.000Z.",
+        },
         releaseRecord: null,
         releaseReadiness: null,
         appendixPresent: true,
@@ -1052,6 +1122,76 @@ describe("Mission detail domain schema", () => {
           summary:
             "External circulation was logged by finance-operator at 2026-04-19T12:10:00.000Z via email. Circulation note: Circulated after approval from the finance mailbox.",
         },
+        circulationChronology: {
+          hasCorrections: true,
+          correctionCount: 1,
+          latestCorrectionSummary:
+            "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: Corrected the original send timestamp after mailbox review.",
+          latestCorrection: {
+            correctionKey: "board-packet-correction-1",
+            correctedAt: "2026-04-19T12:20:00.000Z",
+            correctedBy: "finance-operator",
+            correctionReason:
+              "Corrected the original send timestamp after mailbox review",
+            circulatedAt: "2026-04-19T12:12:00.000Z",
+            circulationChannel: null,
+            circulationNote: null,
+            effectiveRecord: {
+              source: "latest_correction",
+              circulated: true,
+              circulatedAt: "2026-04-19T12:12:00.000Z",
+              circulatedBy: "finance-operator",
+              circulationChannel: "email",
+              circulationNote:
+                "Circulated after approval from the finance mailbox.",
+              approvalId: "55555555-5555-4555-8555-555555555555",
+              summary:
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:20:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+            },
+            summary:
+              "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: Corrected the original send timestamp after mailbox review.",
+          },
+          effectiveRecord: {
+            source: "latest_correction",
+            circulated: true,
+            circulatedAt: "2026-04-19T12:12:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote:
+              "Circulated after approval from the finance mailbox.",
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            summary:
+              "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:20:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+          },
+          corrections: [
+            {
+              correctionKey: "board-packet-correction-1",
+              correctedAt: "2026-04-19T12:20:00.000Z",
+              correctedBy: "finance-operator",
+              correctionReason:
+                "Corrected the original send timestamp after mailbox review",
+              circulatedAt: "2026-04-19T12:12:00.000Z",
+              circulationChannel: null,
+              circulationNote: null,
+              effectiveRecord: {
+                source: "latest_correction",
+                circulated: true,
+                circulatedAt: "2026-04-19T12:12:00.000Z",
+                circulatedBy: "finance-operator",
+                circulationChannel: "email",
+                circulationNote:
+                  "Circulated after approval from the finance mailbox.",
+                approvalId: "55555555-5555-4555-8555-555555555555",
+                summary:
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-19T12:20:00.000Z: circulated by finance-operator at 2026-04-19T12:12:00.000Z via email. Effective note: Circulated after approval from the finance mailbox.",
+              },
+              summary:
+                "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z. Reason: Corrected the original send timestamp after mailbox review.",
+            },
+          ],
+          summary:
+            "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-19T12:20:00.000Z.",
+        },
         releaseRecord: null,
         releaseReadiness: null,
       },
@@ -1067,6 +1207,10 @@ describe("Mission detail domain schema", () => {
 
     expect(parsed.reporting?.circulationRecord?.circulated).toBe(true);
     expect(parsed.reporting?.circulationRecord?.circulationChannel).toBe("email");
+    expect(parsed.reporting?.circulationChronology?.correctionCount).toBe(1);
+    expect(parsed.reporting?.circulationChronology?.effectiveRecord?.circulatedAt).toBe(
+      "2026-04-19T12:12:00.000Z",
+    );
     expect(parsed.proofBundle.circulationRecord?.circulated).toBe(true);
   });
 

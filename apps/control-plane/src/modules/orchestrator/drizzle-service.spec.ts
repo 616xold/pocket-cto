@@ -2837,6 +2837,11 @@ async function createHarness(options?: {
             "recordCirculationLog should not be called in orchestrator harness",
           );
         },
+        async recordCirculationLogCorrection() {
+          throw new Error(
+            "recordCirculationLogCorrection should not be called in orchestrator harness",
+          );
+        },
         async recordReleaseLog() {
           throw new Error(
             "recordReleaseLog should not be called in orchestrator harness",

@@ -19,6 +19,8 @@ import {
   MissionTaskRecordSchema,
   OperatorControlAvailabilitySchema,
   ProofBundleManifestSchema,
+  RecordReportingCirculationLogCorrectionInputSchema,
+  RecordReportingCirculationLogCorrectionResultSchema,
   RecordReportingCirculationLogInputSchema,
   RecordReportingCirculationLogResultSchema,
   RecordReportingReleaseLogInputSchema,
@@ -496,6 +498,31 @@ export async function recordReportingCirculationLog(input: {
       circulationNote: input.circulationNote ?? null,
     }),
     RecordReportingCirculationLogResultSchema,
+  );
+}
+
+export async function recordReportingCirculationLogCorrection(input: {
+  circulatedAt?: string | null;
+  circulationChannel?: string | null;
+  circulationNote?: string | null;
+  correctedAt?: string | null;
+  correctedBy: string;
+  correctionKey: string;
+  correctionReason: string;
+  missionId: string;
+}) {
+  return postJson(
+    `/missions/${encodeURIComponent(input.missionId)}/reporting/circulation-log-correction`,
+    RecordReportingCirculationLogCorrectionInputSchema.parse({
+      correctionKey: input.correctionKey,
+      correctedAt: input.correctedAt ?? null,
+      correctedBy: input.correctedBy,
+      correctionReason: input.correctionReason,
+      circulatedAt: input.circulatedAt ?? null,
+      circulationChannel: input.circulationChannel ?? null,
+      circulationNote: input.circulationNote ?? null,
+    }),
+    RecordReportingCirculationLogCorrectionResultSchema,
   );
 }
 

@@ -9,6 +9,7 @@ import {
 } from "./discovery-mission";
 import { FinanceCompanyKeySchema } from "./finance-twin";
 import {
+  ReportingCirculationChronologyViewSchema,
   ReportingCirculationRecordViewSchema,
   ReportingCirculationReadinessViewSchema,
   ReportingDraftStatusSchema,
@@ -46,6 +47,8 @@ export const MissionListItemSchema = z.object({
     ReportingCirculationReadinessViewSchema.nullable().default(null),
   circulationRecord:
     ReportingCirculationRecordViewSchema.nullable().default(null),
+  circulationChronology:
+    ReportingCirculationChronologyViewSchema.nullable().default(null),
   releaseRecord: ReportingReleaseRecordViewSchema.nullable().default(null),
   releaseReadiness:
     ReportingReleaseReadinessViewSchema.nullable().default(null),

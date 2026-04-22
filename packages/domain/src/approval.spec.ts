@@ -150,6 +150,7 @@ describe("Approval domain schema", () => {
     expect(parsed.companyKey).toBe("acme");
     expect(parsed.resolution).toBeNull();
     expect(parsed.circulationRecord).toBeNull();
+    expect(parsed.circulationCorrections).toEqual([]);
     expect(isReportCirculationApprovalPayload(parsed)).toBe(true);
   });
 
@@ -184,5 +185,57 @@ describe("Approval domain schema", () => {
 
     expect(parsed.resolution?.decision).toBe("accept");
     expect(parsed.circulationRecord?.circulationChannel).toBe("email");
+    expect(parsed.circulationCorrections).toEqual([]);
+  });
+
+  it("parses a board-packet report circulation payload with append-only corrections", () => {
+    const parsed = ReportCirculationApprovalPayloadSchema.parse({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      reportKind: "board_packet",
+      sourceReportingMissionId: "22222222-2222-4222-8222-222222222222",
+      sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
+      artifactId: "44444444-4444-4444-8444-444444444444",
+      companyKey: "acme",
+      draftOnlyStatus: "draft_only",
+      summary: "Draft board packet for acme from the completed finance memo.",
+      freshnessSummary:
+        "Cash posture remains stale because bank coverage is stale.",
+      limitationsSummary:
+        "This board packet remains delivery-free and circulation-log-free until circulation approval is granted.",
+      resolution: {
+        decision: "accept",
+        rationale: "Approved for internal circulation readiness.",
+        resolvedBy: "finance-reviewer",
+      },
+      circulationRecord: {
+        circulatedAt: "2026-04-21T09:10:00.000Z",
+        circulatedBy: "finance-operator",
+        circulationChannel: "email",
+        circulationNote: "Circulated from the finance mailbox after approval.",
+        summary:
+          "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+      },
+      circulationCorrections: [
+        {
+          correctionKey: "board-circulation-correction-1",
+          correctedAt: "2026-04-21T09:15:00.000Z",
+          correctedBy: "finance-operator",
+          correctionReason: "Original timestamp used the send-draft time.",
+          circulatedAt: "2026-04-21T09:12:00.000Z",
+          circulationChannel: null,
+          circulationNote: "Corrected to the actual external circulation time.",
+          summary:
+            "Circulation record correction was appended by finance-operator at 2026-04-21T09:15:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected to the actual external circulation time.. Reason: Original timestamp used the send-draft time.",
+        },
+      ],
+    });
+
+    expect(parsed.circulationCorrections).toHaveLength(1);
+    expect(parsed.circulationCorrections[0]?.correctionKey).toBe(
+      "board-circulation-correction-1",
+    );
+    expect(parsed.circulationCorrections[0]?.circulatedAt).toBe(
+      "2026-04-21T09:12:00.000Z",
+    );
   });
 });

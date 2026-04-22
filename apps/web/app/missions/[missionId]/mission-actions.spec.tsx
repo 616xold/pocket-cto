@@ -227,10 +227,10 @@ describe("MissionActions", () => {
     );
 
     expect(html).toContain(
-      "This first real F5C4F slice keeps board packets delivery-free and runtime-free",
+      "This first real F5C4G slice keeps board packets delivery-free and runtime-free",
     );
     expect(html).toContain(
-      "one persisted internal circulation-approval path plus one external circulation-log path from one completed board-packet reporting mission",
+      "one persisted internal circulation-approval path, one external circulation-log path, and one append-only circulation-correction path on the same",
     );
     expect(html).toContain("<code>board_packet</code> artifact");
     expect(html).toContain("Request board packet circulation approval");
@@ -894,7 +894,7 @@ describe("MissionActions", () => {
     );
   });
 
-  it("keeps board-packet circulation actions hidden after external circulation is already logged", () => {
+  it("renders the board-packet correction action after external circulation is already logged", () => {
     const html = renderToStaticMarkup(
       <MissionActions
         approvalCards={[]}
@@ -972,8 +972,9 @@ describe("MissionActions", () => {
 
     expect(html).not.toContain("Request board packet circulation approval");
     expect(html).not.toContain("Record board packet as circulated");
+    expect(html).toContain("Correct board packet circulation record");
     expect(html).toContain(
-      "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+      "This action only appends chronology to the existing external circulation record",
     );
   });
 
@@ -1108,6 +1109,7 @@ function buildFinanceMemoReportingView(): NonNullable<
     lenderUpdate: null,
     diligencePacket: null,
     circulationRecord: null,
+    circulationChronology: null,
     circulationReadiness: null,
     releaseRecord: null,
     releaseReadiness: null,
@@ -1178,6 +1180,7 @@ function buildLenderUpdateReportingView(): NonNullable<
     publication: null,
     circulationReadiness: null,
     circulationRecord: null,
+    circulationChronology: null,
     releaseRecord: null,
     releaseReadiness: {
       releaseApprovalStatus: "not_requested",
@@ -1263,6 +1266,7 @@ function buildBoardPacketReportingView(): NonNullable<
         "Stored board packet exists, but circulation approval has not been requested yet.",
     },
     circulationRecord: null,
+    circulationChronology: null,
     releaseRecord: null,
     releaseReadiness: null,
   } satisfies NonNullable<MissionDetailView["reporting"]>;
@@ -1324,6 +1328,7 @@ function buildDiligencePacketReportingView(): NonNullable<
     publication: null,
     circulationReadiness: null,
     circulationRecord: null,
+    circulationChronology: null,
     releaseRecord: null,
     releaseReadiness: {
       releaseApprovalStatus: "not_requested",

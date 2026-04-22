@@ -427,6 +427,135 @@ describe("web api module", () => {
     );
   });
 
+  it("posts the board-packet circulation-log-correction route correctly", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        return {
+          missionId,
+          approvalId,
+          created: true,
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote: "Circulated from the finance mailbox after approval.",
+            approvalId,
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+          circulationChronology: {
+            hasCorrections: true,
+            correctionCount: 1,
+            latestCorrectionSummary:
+              "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            latestCorrection: {
+              correctionKey: "board-packet-correction-1",
+              correctedAt: "2026-04-21T09:20:00.000Z",
+              correctedBy: "finance-operator",
+              correctionReason:
+                "Corrected the original send timestamp after mailbox review",
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulationChannel: null,
+              circulationNote: "Corrected after finance mailbox audit.",
+              effectiveRecord: {
+                source: "latest_correction",
+                circulated: true,
+                circulatedAt: "2026-04-21T09:12:00.000Z",
+                circulatedBy: "finance-operator",
+                circulationChannel: "email",
+                circulationNote: "Corrected after finance mailbox audit.",
+                approvalId,
+                summary:
+                  "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+              },
+              summary:
+                "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+            },
+            effectiveRecord: {
+              source: "latest_correction",
+              circulated: true,
+              circulatedAt: "2026-04-21T09:12:00.000Z",
+              circulatedBy: "finance-operator",
+              circulationChannel: "email",
+              circulationNote: "Corrected after finance mailbox audit.",
+              approvalId,
+              summary:
+                "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+            },
+            corrections: [
+              {
+                correctionKey: "board-packet-correction-1",
+                correctedAt: "2026-04-21T09:20:00.000Z",
+                correctedBy: "finance-operator",
+                correctionReason:
+                  "Corrected the original send timestamp after mailbox review",
+                circulatedAt: "2026-04-21T09:12:00.000Z",
+                circulationChannel: null,
+                circulationNote: "Corrected after finance mailbox audit.",
+                effectiveRecord: {
+                  source: "latest_correction",
+                  circulated: true,
+                  circulatedAt: "2026-04-21T09:12:00.000Z",
+                  circulatedBy: "finance-operator",
+                  circulationChannel: "email",
+                  circulationNote: "Corrected after finance mailbox audit.",
+                  approvalId,
+                  summary:
+                    "Current effective circulation reflects the latest correction logged by finance-operator at 2026-04-21T09:20:00.000Z: circulated by finance-operator at 2026-04-21T09:12:00.000Z via email. Effective note: Corrected after finance mailbox audit.",
+                },
+                summary:
+                  "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+              },
+            ],
+            summary:
+              "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-21T09:20:00.000Z.",
+          },
+        };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const result = await mod.recordReportingCirculationLogCorrection({
+      missionId,
+      correctionKey: "board-packet-correction-1",
+      correctedBy: "finance-operator",
+      correctionReason:
+        "Corrected the original send timestamp after mailbox review",
+      circulatedAt: "2026-04-21T09:12:00.000Z",
+      circulationNote: "Corrected after finance mailbox audit.",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(`Expected successful correction result, got ${result.errorCode}`);
+    }
+    expect(result.data.circulationChronology.correctionCount).toBe(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/missions/${missionId}/reporting/circulation-log-correction`,
+      {
+        body: JSON.stringify({
+          correctionKey: "board-packet-correction-1",
+          correctedAt: null,
+          correctedBy: "finance-operator",
+          correctionReason:
+            "Corrected the original send timestamp after mailbox review",
+          circulatedAt: "2026-04-21T09:12:00.000Z",
+          circulationChannel: null,
+          circulationNote: "Corrected after finance mailbox audit.",
+        }),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+  });
+
   it("posts the board-packet circulation approval route correctly", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
