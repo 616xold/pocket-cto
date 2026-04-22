@@ -23,6 +23,7 @@ This plan does not authorize actual send, distribute, publish, external communic
 - [x] 2026-04-22T02:55:00Z Land the additive F5C4G implementation on the existing `report_circulation` seam: append-only `circulationCorrections`, derived circulation chronology read models, replay event `approval.circulation_log_corrected`, mission route `POST /missions/:missionId/reporting/circulation-log-correction`, and operator surfaces that keep the slice deterministic, runtime-free, and delivery-free.
 - [x] 2026-04-22T02:55:00Z Add the narrowest F5C4G proof coverage: targeted domain/control-plane/web tests for correction eligibility, append-only persistence, chronology posture, and the packaged `tools/board-packet-circulation-log-correction-smoke.mjs` proof wired through `pnpm smoke:board-packet-circulation-log-correction:local`.
 - [x] 2026-04-22T02:00:51Z Run the full required validation ladder for this implementation slice, fix only in-scope failures, and only then commit, push, and open or update the PR. The requested domain, control-plane, web, baseline-smoke, F5C4G smoke, twin-guardrail, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` gates all finished green after one in-slice replay-event migration and a few local contract-tightening fixes.
+- [x] 2026-04-22T02:11:09Z Run the F5C4G QA pass after landing. The narrow code-path tests, preserved discovery/reporting/release smokes, twin guardrails, and `pnpm ci:repro:current` all reran green; the only in-scope correction was refreshing active docs and approval-context guidance so FP-0047 is described truthfully as the shipped F5C4G record rather than a future handoff.
 
 ## Surprises & Discoveries
 
@@ -40,6 +41,9 @@ This plan does not authorize actual send, distribute, publish, external communic
 
 - Observation: stale repo guidance was not claiming the wrong shipped behavior, but it was still one step short of a truly implementation-ready successor contract.
   Evidence: `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, and `docs/ops/codex-app-server.md` all pointed generally at a narrow F5C4G correction/chronology follow-on without naming one active plan file.
+
+- Observation: after the implementation landed, several active-doc references still described FP-0047 as the next unshipped slice rather than the shipped F5C4G record.
+  Evidence: the QA pass found stale handoff wording in `README.md`, `START_HERE.md`, `docs/ACTIVE_DOCS.md`, `plans/ROADMAP.md`, `docs/ops/local-dev.md`, `docs/ops/source-ingest-and-cfo-wiki.md`, `docs/ops/codex-app-server.md`, `evals/README.md`, `docs/benchmarks/seeded-missions.md`, and `apps/control-plane/src/modules/approvals/README.md` even though the branch, PR, smokes, and proof surfaces already reflected the landed implementation.
 
 ## Decision Log
 
