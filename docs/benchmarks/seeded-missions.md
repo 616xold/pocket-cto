@@ -176,3 +176,4 @@ The shipped F5C4C reporting benchmark contract now lives in `plans/FP-0043-dilig
 The shipped F5C4D reporting benchmark contract now lives in `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md`.
 The shipped F5C4E reporting benchmark contract now lives in `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md`.
 The shipped F5C4F reporting benchmark contract now lives in `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md`.
+The active unshipped reporting benchmark contract now lives in `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md`, which narrows the next board-specific work to immutable circulation-record correction plus chronology on the existing `report_circulation` seam.

@@ -59,7 +59,7 @@ Codex remains valuable after that first answer path exists for:
 ## Current F5 posture
 
 The latest shipped F5 records are `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` for F5C4D, `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` for F5C4E, and `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` for F5C4F.
-`plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` now serves as the current later-F5 handoff reference.
+`plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` now serves as the active F5C4G implementation contract.
 The shipped F5A through F5C4F slices already create first-class reporting missions from completed discovery missions, assemble one draft `finance_memo` plus one linked `evidence_appendix`, expose those stored bodies directly, reuse the existing CFO Wiki filed-page plus markdown export seams for the finance-memo path, compile draft `board_packet`, `lender_update`, and `diligence_packet` artifacts from completed reporting work without creating a runtime thread, resolve one finance-facing `report_release` approval into explicit release-readiness for both `lender_update` and `diligence_packet` without live runtime continuation, record one operator-entered release record for both `lender_update` and `diligence_packet` without introducing system delivery, resolve one board-facing `report_circulation` approval into explicit circulation-ready posture for `board_packet`, and record one operator-entered external circulation record for that approved board packet without introducing system delivery.
 
 For shipped F5C4B, the control plane and operator surface now:
@@ -116,7 +116,7 @@ As the product pivots:
 - runtime actions that change external communication posture must stay human-reviewable
 
 For F5A through shipped F5C4F, draft report compilation, body exposure, finance-memo filing/export posture, the first three packet specializations, lender-update and diligence release logging, explicit release-record posture, and board circulation approval plus circulation-log posture should stay deterministic and draft-only or delivery-free as appropriate.
-The next later-F5 step should decide whether one narrower post-log F5C4F continuation is needed before any broader delivery, export, or runtime-codex widening.
+The next later-F5 step is the active F5C4G correction-and-chronology contract: keep the original board `circulationRecord` immutable, append correction history on the existing `report_circulation` seam, derive a current effective circulation view plus chronology summary, and avoid any broader delivery, export, or runtime-codex widening.
 
 ## Transition note
 

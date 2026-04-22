@@ -61,7 +61,8 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0043-diligence-packet-approval-review-and-release-readiness.md` now serves as the shipped F5C4C record: the repo can request and resolve one finance-facing `report_release` approval for one completed `diligence_packet` reporting mission, derive explicit diligence release-readiness posture without live runtime continuation, and keep the slice deterministic, runtime-free, delivery-free, and release-log-free.
 `plans/FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md` now serves as the shipped F5C4D record: the repo can record one explicit external release record only for one completed approved-for-release `diligence_packet` reporting mission, surface that release-record posture across reporting, mission, proof-bundle, and approval-card views, reuse the existing `report_release` approval seam as the persistence anchor, and stay deterministic, runtime-free, delivery-free, and multi-artifact-free in the first slice.
 `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` now serves as the shipped F5C4E record: the repo already supports one internal `report_circulation` review path plus derived circulation-ready posture for one completed `board_packet` reporting mission with one stored `board_packet` artifact while staying deterministic, runtime-free, delivery-free, and circulation-log-free.
-`plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record and the current later-F5 handoff reference: the repo already supports one explicit board-packet circulation record on the existing `report_circulation` seam for one completed approved-for-circulation `board_packet` reporting mission with one stored artifact, and the next thread should define and/or execute one narrow F5C4G board circulation-record correction/chronology slice before broader later-F5 or F6 work.
+`plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record: the repo already supports one explicit board-packet circulation record on the existing `report_circulation` seam for one completed approved-for-circulation `board_packet` reporting mission with one stored artifact.
+`plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the active F5C4G implementation contract: the next thread should execute one narrow board-packet correction-and-chronology slice on that same `report_circulation` seam, keep the original `circulationRecord` immutable, derive a current effective circulation view plus explicit chronology summary, and stay deterministic, runtime-free, and delivery-free.
 
 ## Product boundary for v1
 
@@ -173,6 +174,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0044-release-log-and-first-diligence-packet-release-record-foundation.md
 │   ├── FP-0045-board-packet-review-or-circulation-readiness-foundation.md
 │   ├── FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md
+│   ├── FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md
 │   └── templates
 └── .agents
     └── skills
