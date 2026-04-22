@@ -2,7 +2,7 @@
 
 ## Purpose / Big Picture
 
-This file is the active F5C4H implementation contract for the first real board-packet circulation actor-correction slice.
+This file is the shipped F5C4H record for the first real board-packet circulation actor-correction slice.
 `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remains the shipped F5C4G record that precedes it.
 The target phase is `F5`, and the current delivered slice inside this plan is `F5C4H-board-packet-circulation-actor-correction-and-chronology-hardening`.
 The user-visible goal is narrow and concrete: after the shipped F5A through F5C4G baseline already creates one draft `board_packet`, resolves one internal `report_circulation` approval, records one immutable original circulation record, and appends correction history plus derived chronology on that same seam, Pocket CFO now lets an operator append actor-attribution corrections to that existing circulation history and see one truthful current effective actor identity alongside the original immutable record and chronology summary without widening into actual send, distribute, publish, export widening, runtime-codex drafting, or a broader later-F5 umbrella.
@@ -19,7 +19,7 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 
 - [x] 2026-04-22T10:43:13Z Audit the shipped F5A through F5C4G plan chain, active docs, approvals seams, reporting seams, proof-bundle posture, runtime-codex boundary, and board-circulation contracts to verify whether any concrete later-F5 gap still exists.
 - [x] 2026-04-22T10:43:13Z Confirm the narrow remaining gap in repo truth: the current append-only correction schema and derived effective chronology do not support corrected `circulatedBy`, so actor-attribution correction is the only implementation-ready F5C4H continuation worth planning.
-- [x] 2026-04-22T10:43:13Z Create `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` and refresh only the smallest truthful active-doc set so `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remains the shipped F5C4G record while this file becomes the sole active implementation contract.
+- [x] 2026-04-22T10:43:13Z Create `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` and refresh only the smallest truthful active-doc set so `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remains the shipped F5C4G record while this file serves as the F5C4H implementation contract for that thread.
 - [x] 2026-04-22T11:30:33Z Start the real F5C4H implementation thread: add optional corrected `circulatedBy` support on append-only correction entries, derive corrected effective actor chronology on the existing `report_circulation` seam, update the smallest truthful reporting and proof surfaces, and add the packaged actor-correction smoke.
   Status: shipped on the existing `report_circulation` seam with immutable original `circulationRecord` preservation, append-only actor correction history, original-versus-effective actor chronology across reporting and mission surfaces, proof-bundle chronology hardening, and the dedicated `pnpm smoke:board-packet-circulation-actor-correction:local` proof.
 - [x] 2026-04-22T11:30:33Z Run the requested targeted tests, shipped baseline proofs, new actor-correction proof, preserved twin guardrails, repo-wide validation, and `pnpm ci:repro:current` for the landed F5C4H code.
@@ -28,6 +28,8 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
   Status: the targeted F5C4H specs, required smoke ladder, and preserved twin guardrails all passed during QA. The only issue found was stale implementation-contract wording inside this plan, which was corrected without widening scope.
 - [x] 2026-04-22T18:54:01Z Run the narrow post-merge F5C4H polish pass: refresh stale post-merge active-doc wording, add the missing local actor-correction smoke alias, and normalize shipped correction-summary punctuation without widening scope.
   Status: FP-0048 now reads as the shipped F5C4H record across the active-doc layer, `docs/ops/local-dev.md` lists `pnpm smoke:board-packet-circulation-actor-correction:local`, and correction summaries no longer render doubled punctuation before `Reason:` when the corrected `circulationNote` already ends with punctuation.
+- [x] 2026-04-22T19:11:50Z Run the strict post-merge QA pass on the F5C4H polish slice, verify the branch and PR state, and correct any last stale active-contract wording left inside FP-0048 itself.
+  Status: the only remaining QA issue was that FP-0048 still used current-tense active-contract wording in a few places; this plan now reads consistently as the shipped F5C4H record, while the branch and PR remain clean and correctly linked.
 
 ## Surprises & Discoveries
 
@@ -51,6 +53,9 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 
 - Observation: after the shipped actor-correction merge, the remaining repo-truth gaps were documentation freshness plus one summary-formatting defect, not another later-F5 capability gap.
   Evidence: active docs still described FP-0048 as the active next contract, `docs/ops/local-dev.md` omitted the packaged actor-correction smoke alias, and `buildLoggedCirculationCorrectionSummary` could emit `.. Reason:` when the corrected note already ended with punctuation.
+
+- Observation: the strict QA pass still found a few current-tense "active contract" references inside FP-0048 even after the broader active-doc refresh had been corrected.
+  Evidence: the plan opening sentence, active-doc boundary bullet, and closeout language still described FP-0048 as current implementation scope instead of the shipped F5C4H record.
 
 ## Decision Log
 
@@ -98,6 +103,9 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 
 - Decision: keep this post-merge polish inside FP-0048 rather than creating `FP-0049`.
   Rationale: the work corrects shipped wording and one formatting defect only; it does not introduce a new later-F5 product contract.
+
+- Decision: after this QA correction, FP-0048 should describe only the shipped F5C4H record, and any later-F5 continuation must use a new checked-in contract rather than extending current-tense scope inside this file.
+  Rationale: preserving one truthful shipped record avoids implying that later-F5 work is already authorized when no successor contract has been approved.
 
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reopen a `modules/reports/**` rename wave.
   Rationale: the current repo already uses `reporting` as first-class vocabulary, and this task is about truthfulness and sequencing rather than namespace churn.
@@ -158,7 +166,7 @@ The active-doc boundary for this handoff is:
 - `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md`
 - `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md`
 - `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md`
-- this active implementation contract, `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md`
+- the shipped F5C4H record, `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md`
 - `docs/ops/local-dev.md`
 - `docs/ops/source-ingest-and-cfo-wiki.md`
 - `docs/ops/codex-app-server.md`
@@ -385,4 +393,4 @@ This thread shipped the first real F5C4H implementation.
 What landed is one narrow append-only actor-correction widening on the existing board `report_circulation` seam, one truthful original-versus-effective actor chronology across reporting and proof surfaces, one dedicated packaged actor-correction smoke, and the smallest active-doc refresh needed to stop describing corrected actor attribution as future-only work.
 
 The main change from the prior “reevaluate later-F5” posture is that the repo now has concrete shipped truth for corrected board circulation actor attribution without widening into delivery, export, or runtime-codex behavior.
-What remains should stay narrow: if any follow-on work is still justified, keep it inside FP-0048 hardening rather than reopening broader later-F5 scope or starting F6 early.
+What remains should stay narrow: if any follow-on work is still justified, capture it in a new checked-in later-F5 contract rather than reopening broader scope or starting F6 early from this shipped record.
