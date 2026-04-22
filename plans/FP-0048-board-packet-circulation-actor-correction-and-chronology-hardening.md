@@ -26,6 +26,8 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
   Status: all required commands passed on 2026-04-22, including `pnpm ci:repro:current` in the clean temporary worktree at `/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-ci-repro-qLGLKh/repo`.
 - [x] 2026-04-22T11:40:43Z Run the post-landing QA pass for the shipped F5C4H slice, confirm the feature remains narrow and delivery-free, and refresh any stale FP-0048 wording that still described actor correction as future work or the thread as docs-only.
   Status: the targeted F5C4H specs, required smoke ladder, and preserved twin guardrails all passed during QA. The only issue found was stale implementation-contract wording inside this plan, which was corrected without widening scope.
+- [x] 2026-04-22T18:54:01Z Run the narrow post-merge F5C4H polish pass: refresh stale post-merge active-doc wording, add the missing local actor-correction smoke alias, and normalize shipped correction-summary punctuation without widening scope.
+  Status: FP-0048 now reads as the shipped F5C4H record across the active-doc layer, `docs/ops/local-dev.md` lists `pnpm smoke:board-packet-circulation-actor-correction:local`, and correction summaries no longer render doubled punctuation before `Reason:` when the corrected `circulationNote` already ends with punctuation.
 
 ## Surprises & Discoveries
 
@@ -46,6 +48,9 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 
 - Observation: the only QA defect after landing was stale FP-0048 narrative text that still described corrected actor attribution as unshipped future work and still described the thread as docs-only.
   Evidence: the plan's `Purpose / Big Picture` and `Context and Orientation` sections still said corrected `circulatedBy` was a remaining gap and that no runtime code or smoke commands had shipped, despite the validated F5C4H implementation.
+
+- Observation: after the shipped actor-correction merge, the remaining repo-truth gaps were documentation freshness plus one summary-formatting defect, not another later-F5 capability gap.
+  Evidence: active docs still described FP-0048 as the active next contract, `docs/ops/local-dev.md` omitted the packaged actor-correction smoke alias, and `buildLoggedCirculationCorrectionSummary` could emit `.. Reason:` when the corrected note already ended with punctuation.
 
 ## Decision Log
 
@@ -90,6 +95,9 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 
 - Decision: keep FP-0048 itself post-landing truthful during QA, even when the only correction is documentation.
   Rationale: this plan is part of the active contract surface, so stale future-tense wording about shipped behavior is a slice-local correctness issue, not optional polish.
+
+- Decision: keep this post-merge polish inside FP-0048 rather than creating `FP-0049`.
+  Rationale: the work corrects shipped wording and one formatting defect only; it does not introduce a new later-F5 product contract.
 
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reopen a `modules/reports/**` rename wave.
   Rationale: the current repo already uses `reporting` as first-class vocabulary, and this task is about truthfulness and sequencing rather than namespace churn.

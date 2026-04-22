@@ -1035,7 +1035,7 @@ describe("assembleProofBundleManifest", () => {
                 circulationChannel: null,
                 circulationNote: "Corrected after finance mailbox audit.",
                 summary:
-                  "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+                  "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
               },
             ],
             sourceDiscoveryMissionId,
@@ -1110,7 +1110,7 @@ describe("assembleProofBundleManifest", () => {
       hasCorrections: true,
       correctionCount: 1,
       latestCorrectionSummary:
-        "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+        "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
       effectiveRecord: {
         source: "latest_correction",
         circulatedAt: "2026-04-19T12:12:00.000Z",
@@ -1119,11 +1119,14 @@ describe("assembleProofBundleManifest", () => {
         circulationNote: "Corrected after finance mailbox audit.",
       },
     });
+    expect(manifest.circulationChronology?.latestCorrectionSummary).not.toContain(
+      ".. Reason:",
+    );
     expect(manifest.decisionTrace).toContain(
       "1 circulation correction has been appended. The latest effective circulation fact reflects the correction logged by finance-operator at 2026-04-19T12:20:00.000Z.",
     );
     expect(manifest.decisionTrace).toContain(
-      "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit.. Reason: Corrected the original send timestamp after mailbox review.",
+      "Circulation record correction was appended by finance-operator at 2026-04-19T12:20:00.000Z. Corrected values: circulatedAt -> 2026-04-19T12:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
     );
     expect(manifest.timestamps.latestApprovalAt).toBe(
       "2026-04-19T12:20:00.000Z",
