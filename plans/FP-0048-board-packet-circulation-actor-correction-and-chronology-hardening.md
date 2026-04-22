@@ -7,10 +7,10 @@ This file is the active F5C4H implementation contract for the first real board-p
 The target phase is `F5`, and the current delivered slice inside this plan is `F5C4H-board-packet-circulation-actor-correction-and-chronology-hardening`.
 The user-visible goal is narrow and concrete: after the shipped F5A through F5C4G baseline already creates one draft `board_packet`, resolves one internal `report_circulation` approval, records one immutable original circulation record, and appends correction history plus derived chronology on that same seam, Pocket CFO now lets an operator append actor-attribution corrections to that existing circulation history and see one truthful current effective actor identity alongside the original immutable record and chronology summary without widening into actual send, distribute, publish, export widening, runtime-codex drafting, or a broader later-F5 umbrella.
 
-This matters now because the repo no longer lacks board review posture, circulation logging, or append-only chronology.
-The verified remaining gap is narrower: correction entries can currently amend `circulatedAt`, `circulationChannel`, and `circulationNote`, but they cannot carry a corrected `circulatedBy`, so the current effective actor identity always falls through from the original immutable record even when a later actor correction is required.
+This matters now because the repo no longer lacks board review posture, circulation logging, append-only chronology, or actor-attribution correction on that seam.
+The shipped F5C4H widening closes the last previously verified board-specific gap: correction entries can now carry corrected `circulatedBy`, so the current effective actor identity may diverge truthfully from the immutable original record when later chronology requires it.
 The next gain is therefore not more packet families, not delivery behavior, and not F6.
-It is one implementation-ready board-specific actor-correction contract that a new thread can execute directly.
+It is one shipped board-specific actor-correction contract that any later narrow continuation must preserve truthfully.
 
 GitHub connector work is explicitly out of scope.
 This plan does not authorize runtime-codex drafting, runtime-codex circulation behavior, actual send, distribute, or publish behavior, PDF export, slide export, Marp export, broader packet widening, a new approval kind, a new mission family, or any rename from `modules/reporting/**` to `modules/reports/**`.
@@ -24,6 +24,8 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
   Status: shipped on the existing `report_circulation` seam with immutable original `circulationRecord` preservation, append-only actor correction history, original-versus-effective actor chronology across reporting and mission surfaces, proof-bundle chronology hardening, and the dedicated `pnpm smoke:board-packet-circulation-actor-correction:local` proof.
 - [x] 2026-04-22T11:30:33Z Run the requested targeted tests, shipped baseline proofs, new actor-correction proof, preserved twin guardrails, repo-wide validation, and `pnpm ci:repro:current` for the landed F5C4H code.
   Status: all required commands passed on 2026-04-22, including `pnpm ci:repro:current` in the clean temporary worktree at `/var/folders/41/pj1kw0tj2xd832wl_62gn73m0000gn/T/pocket-cto-ci-repro-qLGLKh/repo`.
+- [x] 2026-04-22T11:40:43Z Run the post-landing QA pass for the shipped F5C4H slice, confirm the feature remains narrow and delivery-free, and refresh any stale FP-0048 wording that still described actor correction as future work or the thread as docs-only.
+  Status: the targeted F5C4H specs, required smoke ladder, and preserved twin guardrails all passed during QA. The only issue found was stale implementation-contract wording inside this plan, which was corrected without widening scope.
 
 ## Surprises & Discoveries
 
@@ -41,6 +43,9 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 
 - Observation: the full requested implementation ladder is green for this slice, including clean-tree reproduction.
   Evidence: the targeted domain, control-plane, and web vitest commands, the preserved baseline smokes, the new actor-correction smoke, the twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all passed on 2026-04-22.
+
+- Observation: the only QA defect after landing was stale FP-0048 narrative text that still described corrected actor attribution as unshipped future work and still described the thread as docs-only.
+  Evidence: the plan's `Purpose / Big Picture` and `Context and Orientation` sections still said corrected `circulatedBy` was a remaining gap and that no runtime code or smoke commands had shipped, despite the validated F5C4H implementation.
 
 ## Decision Log
 
@@ -80,8 +85,11 @@ This plan does not authorize runtime-codex drafting, runtime-codex circulation b
 - Decision: leave approval-card rendering unchanged in this first F5C4H slice.
   Rationale: actor chronology is already visible in reporting output, mission detail, mission card, mission list, and proof-bundle surfaces, while approval posture itself remains unchanged on the existing `report_circulation` seam.
 
-- Decision: after F5C4H, the repo should reevaluate whether any later-F5 work is still justified before F6, and this docs-only handoff must not create `FP-0049`.
-  Rationale: the current remaining operator problem is concrete and narrow, so the next successor should be chosen only after this actor-correction slice either ships or proves unnecessary in practice.
+- Decision: after this first shipped F5C4H slice, the repo should reevaluate whether any later-F5 work is still justified before F6, and it should not create a broad `FP-0049` umbrella prematurely.
+  Rationale: the current remaining operator problem is concrete and narrow, so the next successor should be chosen only after this actor-correction slice is audited and any residual gap is proven real.
+
+- Decision: keep FP-0048 itself post-landing truthful during QA, even when the only correction is documentation.
+  Rationale: this plan is part of the active contract surface, so stale future-tense wording about shipped behavior is a slice-local correctness issue, not optional polish.
 
 - Decision: preserve the current `modules/reporting/**` vocabulary and do not reopen a `modules/reports/**` rename wave.
   Rationale: the current repo already uses `reporting` as first-class vocabulary, and this task is about truthfulness and sequencing rather than namespace churn.
@@ -119,8 +127,8 @@ That shipped baseline already means all of the following are repo truth today:
 - one board-packet circulation-log and immutable original circulation-record path on the existing `report_circulation` seam
 - one append-only correction history plus derived chronology on that same seam
 
-The verified remaining gap is that correction entries still cannot carry corrected actor identity.
-The active successor contract must therefore stay board-specific, approval-payload-backed, additive, deterministic, runtime-free, and delivery-free.
+The shipped F5C4H widening now means correction entries can carry corrected actor identity while preserving the original immutable record.
+Any active successor contract must therefore stay board-specific, approval-payload-backed, additive, deterministic, runtime-free, and delivery-free instead of reopening broader later-F5 scope.
 
 The active-doc boundary for this handoff is:
 
@@ -152,8 +160,8 @@ The active-doc boundary for this handoff is:
 
 GitHub connector work is out of scope.
 The internal `@pocket-cto/*` package scope remains unchanged.
-This thread is docs-only, so no runtime code, routes, schema, migrations, package scripts, smoke commands, eval datasets, or implementation scaffolding are in scope now.
-The next real F5C4H implementation thread should stay inside the existing approvals, reporting, evidence, and web read-model seams.
+This shipped slice already landed runtime code, schema widening, read-model updates, tests, and one dedicated smoke command, all inside the existing approvals, reporting, evidence, and web read-model seams.
+Any next real F5C4H continuation should stay inside those same seams.
 
 ## Plan of Work
 
