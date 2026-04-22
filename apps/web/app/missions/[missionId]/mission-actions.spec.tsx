@@ -227,12 +227,14 @@ describe("MissionActions", () => {
     );
 
     expect(html).toContain(
-      "This first real F5C4H slice keeps board packets delivery-free and runtime-free",
+      "This first real F5C4I slice keeps board packets delivery-free and runtime-free",
     );
     expect(html).toContain(
       "one persisted internal circulation-approval path, one external circulation-log path, and one append-only circulation-correction path on the same",
     );
-    expect(html).toContain("actor-attribution corrections to the effective circulated-by value");
+    expect(html).toContain(
+      "narrow actor-attribution corrections plus explicit effective-note reset semantics on that same seam",
+    );
     expect(html).toContain("<code>board_packet</code> artifact");
     expect(html).toContain("Request board packet circulation approval");
     expect(html).not.toContain("Record board packet as circulated");

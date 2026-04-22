@@ -103,6 +103,7 @@ export const ReportCirculationApprovalCirculationCorrectionSchema = z
       .default(null),
     circulatedBy: z.string().min(1).nullable().default(null),
     circulationChannel: z.string().min(1).nullable().default(null),
+    clearCirculationNote: z.boolean().default(false),
     circulationNote: z.string().min(1).nullable().default(null),
     summary: z.string().min(1),
   })

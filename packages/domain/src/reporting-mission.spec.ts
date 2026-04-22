@@ -9,6 +9,7 @@ import {
   EvidenceAppendixArtifactMetadataSchema,
   FinanceMemoArtifactMetadataSchema,
   LenderUpdateArtifactMetadataSchema,
+  RecordReportingCirculationLogCorrectionInputSchema,
   ReportingMissionViewSchema,
   readReportingMissionReportKindLabel,
 } from "./reporting-mission";
@@ -59,6 +60,30 @@ describe("Reporting mission domain schemas", () => {
       "11111111-1111-4111-8111-111111111111",
     );
     expect(parsed.requestedBy).toBe("finance-operator");
+  });
+
+  it("parses one board-packet circulation correction input with explicit note clear intent", () => {
+    const parsed = RecordReportingCirculationLogCorrectionInputSchema.parse({
+      correctionKey: "board-packet-correction-1",
+      correctedBy: "finance-operator",
+      correctionReason: "Clear the mistakenly logged note after approval.",
+      clearCirculationNote: true,
+    });
+
+    expect(parsed.clearCirculationNote).toBe(true);
+    expect(parsed.circulationNote).toBeNull();
+  });
+
+  it("rejects a board-packet circulation correction that both replaces and clears the note", () => {
+    expect(() =>
+      RecordReportingCirculationLogCorrectionInputSchema.parse({
+        correctionKey: "board-packet-correction-1",
+        correctedBy: "finance-operator",
+        correctionReason: "Conflicting note instructions.",
+        clearCirculationNote: true,
+        circulationNote: "Replacement note",
+      }),
+    ).toThrow(/both replace and clear the effective note/i);
   });
 
   it("parses finance memo and evidence appendix metadata", () => {

@@ -23,6 +23,7 @@ export function buildLoggedCirculationCorrectionSummary(input: {
   circulatedAt: string | null;
   circulatedBy: string | null;
   circulationChannel: string | null;
+  clearCirculationNote: boolean;
   circulationNote: string | null;
 }) {
   const correctedValues = [
@@ -31,7 +32,9 @@ export function buildLoggedCirculationCorrectionSummary(input: {
     input.circulationChannel
       ? `circulationChannel -> ${input.circulationChannel}`
       : null,
-    input.circulationNote
+    input.clearCirculationNote
+      ? "circulationNote cleared to absent"
+      : input.circulationNote
       ? `circulationNote -> ${input.circulationNote}`
       : null,
   ].filter((value): value is string => Boolean(value));
@@ -212,6 +215,13 @@ function buildCorrectedEffectiveRecordView(input: {
   correction: ReportCirculationApprovalCirculationCorrection;
   currentEffective: ReportingCirculationEffectiveRecordView;
 }) {
+  const clearsCurrentCirculationNote =
+    input.correction.clearCirculationNote === true;
+  const effectiveCirculationNote = clearsCurrentCirculationNote
+    ? null
+    : input.correction.circulationNote ??
+      input.currentEffective.circulationNote;
+
   return ReportingCirculationEffectiveRecordViewSchema.parse({
     source: "latest_correction",
     circulated: true,
@@ -222,21 +232,18 @@ function buildCorrectedEffectiveRecordView(input: {
     circulationChannel:
       input.correction.circulationChannel ??
       input.currentEffective.circulationChannel,
-    circulationNote:
-      input.correction.circulationNote ??
-      input.currentEffective.circulationNote,
+    circulationNote: effectiveCirculationNote,
     approvalId: input.approvalId,
     summary: buildEffectiveRecordSummary({
       circulationChannel:
         input.correction.circulationChannel ??
         input.currentEffective.circulationChannel,
-      circulationNote:
-        input.correction.circulationNote ??
-        input.currentEffective.circulationNote,
+      circulationNote: effectiveCirculationNote,
       circulatedAt:
         input.correction.circulatedAt ?? input.currentEffective.circulatedAt,
       circulatedBy:
         input.correction.circulatedBy ?? input.currentEffective.circulatedBy,
+      clearCirculationNote: clearsCurrentCirculationNote,
       correctedAt: input.correction.correctedAt,
       correctedBy: input.correction.correctedBy,
       source: "latest_correction",
@@ -264,13 +271,16 @@ function buildEffectiveRecordSummary(input: {
   circulationNote: string | null;
   circulatedAt: string | null;
   circulatedBy: string | null;
+  clearCirculationNote?: boolean;
   correctedAt: string | null;
   correctedBy: string | null;
   source: ReportingCirculationEffectiveRecordView["source"];
 }) {
   const note = input.circulationNote
     ? ` Effective note: ${ensureSentencePunctuation(input.circulationNote)}`
-    : "";
+    : input.clearCirculationNote
+      ? " No effective circulation note remains after this correction."
+      : "";
 
   if (input.source === "latest_correction") {
     return `Current effective circulation reflects the latest correction logged by ${input.correctedBy ?? "the operator"} at ${input.correctedAt ?? "an unknown time"}: circulated by ${input.circulatedBy ?? "an unknown operator"} at ${input.circulatedAt ?? "an unknown time"} via ${input.circulationChannel ?? "an unknown channel"}.${note}`;

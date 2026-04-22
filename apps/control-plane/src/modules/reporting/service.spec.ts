@@ -574,9 +574,100 @@ describe("ReportingService", () => {
         circulatedAt: "2026-04-21T09:12:00.000Z",
         circulatedBy: "board-chair@example.com",
         circulationChannel: null,
+        clearCirculationNote: false,
         circulationNote: "Corrected after finance mailbox audit.",
         summary:
           "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
+      },
+    });
+  });
+
+  it("prepares one board-packet circulation correction that explicitly clears the effective note", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const boardPacketMission = {
+      ...buildBoardPacketMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [boardPacketMission.id]: [
+          buildStoredBoardPacketArtifact({
+            missionId: boardPacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [boardPacketMission.id]: boardPacketMission,
+      },
+      proofBundlesByMissionId: {
+        [boardPacketMission.id]: {
+          ...buildBoardPacketProofBundle({
+            missionId: boardPacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Approved for internal circulation.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+          },
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote:
+              "Circulated from the finance mailbox after approval.",
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email. Circulation note: Circulated from the finance mailbox after approval.",
+          },
+        },
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    const prepared = await service.prepareReportingCirculationLogCorrection(
+      boardPacketMission.id,
+      {
+        correctionKey: "board-packet-correction-note-reset",
+        correctedAt: "2026-04-21T09:22:00.000Z",
+        correctedBy: "finance-operator",
+        correctionReason: "Clear the mistakenly logged circulation note.",
+        clearCirculationNote: true,
+      },
+    );
+
+    expect(prepared).toEqual({
+      approvalId: "55555555-5555-4555-8555-555555555555",
+      circulationCorrection: {
+        correctionKey: "board-packet-correction-note-reset",
+        correctedAt: "2026-04-21T09:22:00.000Z",
+        correctedBy: "finance-operator",
+        correctionReason: "Clear the mistakenly logged circulation note.",
+        circulatedAt: null,
+        circulatedBy: null,
+        circulationChannel: null,
+        clearCirculationNote: true,
+        circulationNote: null,
+        summary:
+          "Circulation record correction was appended by finance-operator at 2026-04-21T09:22:00.000Z. Corrected values: circulationNote cleared to absent. Reason: Clear the mistakenly logged circulation note.",
       },
     });
   });
@@ -813,6 +904,90 @@ describe("ReportingService", () => {
             {
               path: "missionId",
               message: `Reporting mission ${boardPacketMission.id} must already store the original external circulation record before a correction can append chronology.`,
+            },
+          ],
+        },
+      },
+      statusCode: 400,
+    });
+  });
+
+  it("rejects board-packet circulation correction when the operator tries to clear an already-absent effective note", async () => {
+    const sourceDiscoveryMissionId = "11111111-1111-4111-8111-111111111111";
+    const sourceReportingMissionId = "22222222-2222-4222-8222-222222222222";
+    const boardPacketMission = {
+      ...buildBoardPacketMission(
+        sourceDiscoveryMissionId,
+        sourceReportingMissionId,
+      ),
+      status: "succeeded" as const,
+    };
+    const repository = createMissionRepositoryStub({
+      artifactsByMissionId: {
+        [boardPacketMission.id]: [
+          buildStoredBoardPacketArtifact({
+            missionId: boardPacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+        ],
+      },
+      missionsById: {
+        [boardPacketMission.id]: boardPacketMission,
+      },
+      proofBundlesByMissionId: {
+        [boardPacketMission.id]: {
+          ...buildBoardPacketProofBundle({
+            missionId: boardPacketMission.id,
+            sourceDiscoveryMissionId,
+            sourceReportingMissionId,
+          }),
+          circulationReadiness: {
+            circulationApprovalStatus: "approved_for_circulation",
+            circulationReady: true,
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            approvalStatus: "approved",
+            requestedAt: "2026-04-21T09:00:00.000Z",
+            requestedBy: "finance-operator",
+            resolvedAt: "2026-04-21T09:05:00.000Z",
+            resolvedBy: "finance-reviewer",
+            rationale: "Approved for internal circulation.",
+            summary:
+              "Circulation approval was granted by finance-reviewer; the stored board packet is approved for internal circulation.",
+          },
+          circulationRecord: {
+            circulated: true,
+            circulatedAt: "2026-04-21T09:10:00.000Z",
+            circulatedBy: "finance-operator",
+            circulationChannel: "email",
+            circulationNote: null,
+            approvalId: "55555555-5555-4555-8555-555555555555",
+            summary:
+              "External circulation was logged by finance-operator at 2026-04-21T09:10:00.000Z via email.",
+          },
+        },
+      },
+    });
+    const service = new ReportingService({
+      missionRepository: repository,
+    });
+
+    await expect(
+      service.prepareReportingCirculationLogCorrection(boardPacketMission.id, {
+        correctionKey: "board-packet-correction-note-reset",
+        correctedAt: "2026-04-21T09:25:00.000Z",
+        correctedBy: "finance-operator",
+        correctionReason: "Attempted to clear a note that is already absent.",
+        clearCirculationNote: true,
+      }),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          code: "invalid_request",
+          details: [
+            {
+              path: "missionId",
+              message: `Reporting mission ${boardPacketMission.id} already exposes no effective circulation note to clear, so this correction would not append any new chronology.`,
             },
           ],
         },

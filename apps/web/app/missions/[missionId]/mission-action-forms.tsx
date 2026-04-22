@@ -578,6 +578,23 @@ export function RecordReportingCirculationLogCorrectionForm({
           />
         </label>
 
+        <label
+          className="stack"
+          htmlFor={`clear-circulation-note-${missionId}`}
+        >
+          <span>Clear effective circulation note</span>
+          <input
+            id={`clear-circulation-note-${missionId}`}
+            name="clearCirculationNote"
+            type="checkbox"
+            value="on"
+          />
+          <span className="muted">
+            Use this only to remove the current effective note. Leave the
+            corrected note blank when this is checked.
+          </span>
+        </label>
+
         <ActionSubmitButton
           className="action-button"
           label="Correct board packet circulation record"

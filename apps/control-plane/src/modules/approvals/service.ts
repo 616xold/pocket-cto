@@ -1166,6 +1166,7 @@ function reportCirculationCorrectionEquals(
     left.circulatedAt === right.circulatedAt &&
     left.circulatedBy === right.circulatedBy &&
     left.circulationChannel === right.circulationChannel &&
+    left.clearCirculationNote === right.clearCirculationNote &&
     left.circulationNote === right.circulationNote &&
     left.summary === right.summary
   );

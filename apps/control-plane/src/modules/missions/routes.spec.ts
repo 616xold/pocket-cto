@@ -414,6 +414,7 @@ describe("mission reporting action routes", () => {
         circulatedAt: "2026-04-21T09:12:00.000Z",
         circulatedBy: "board-chair@example.com",
         circulationChannel: null,
+        clearCirculationNote: false,
         circulationNote: "Corrected after finance mailbox audit.",
       },
     );

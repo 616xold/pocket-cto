@@ -690,16 +690,31 @@ export class ReportingService {
       request.circulationChannel,
       currentEffectiveRecord.circulationChannel,
     );
-    const correctedCirculationNote = readChangedCorrectionValue(
-      request.circulationNote,
-      currentEffectiveRecord.circulationNote,
-    );
+    const clearsCurrentCirculationNote = request.clearCirculationNote === true;
+
+    if (
+      clearsCurrentCirculationNote &&
+      currentEffectiveRecord.circulationNote === null
+    ) {
+      throw invalidRequest(
+        "missionId",
+        `Reporting mission ${missionId} already exposes no effective circulation note to clear, so this correction would not append any new chronology.`,
+      );
+    }
+
+    const correctedCirculationNote = clearsCurrentCirculationNote
+      ? null
+      : readChangedCorrectionValue(
+          request.circulationNote,
+          currentEffectiveRecord.circulationNote,
+        );
 
     if (
       correctedCirculatedAt === null &&
       correctedCirculatedBy === null &&
       correctedCirculationChannel === null &&
-      correctedCirculationNote === null
+      correctedCirculationNote === null &&
+      clearsCurrentCirculationNote === false
     ) {
       throw invalidRequest(
         "missionId",
@@ -719,6 +734,7 @@ export class ReportingService {
         circulatedAt: correctedCirculatedAt,
         circulatedBy: correctedCirculatedBy,
         circulationChannel: correctedCirculationChannel,
+        clearCirculationNote: clearsCurrentCirculationNote,
         circulationNote: correctedCirculationNote,
         summary: buildLoggedCirculationCorrectionSummary({
           correctedAt,
@@ -727,6 +743,7 @@ export class ReportingService {
           circulatedAt: correctedCirculatedAt,
           circulatedBy: correctedCirculatedBy,
           circulationChannel: correctedCirculationChannel,
+          clearCirculationNote: clearsCurrentCirculationNote,
           circulationNote: correctedCirculationNote,
         }),
       },

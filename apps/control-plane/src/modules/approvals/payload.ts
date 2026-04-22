@@ -6,8 +6,8 @@ import type {
   RuntimeApprovalRequestMethod,
 } from "@pocket-cto/domain";
 import {
-  isReportCirculationApprovalPayload,
-  isReportReleaseApprovalPayload,
+  ReportCirculationApprovalPayloadSchema,
+  ReportReleaseApprovalPayloadSchema,
 } from "@pocket-cto/domain";
 
 export type RuntimeApprovalPayload = {
@@ -79,23 +79,23 @@ export function withApprovalContinuationFailurePayload(
 export function readReportReleaseApprovalPayload(
   approval: ApprovalRecord,
 ): ReportReleaseApprovalPayload {
-  if (!isReportReleaseApprovalPayload(approval.payload)) {
+  try {
+    return ReportReleaseApprovalPayloadSchema.parse(approval.payload);
+  } catch {
     throw new Error(
       `Approval ${approval.id} does not contain a valid report-release payload`,
     );
   }
-
-  return approval.payload;
 }
 
 export function readReportCirculationApprovalPayload(
   approval: ApprovalRecord,
 ): ReportCirculationApprovalPayload {
-  if (!isReportCirculationApprovalPayload(approval.payload)) {
+  try {
+    return ReportCirculationApprovalPayloadSchema.parse(approval.payload);
+  } catch {
     throw new Error(
       `Approval ${approval.id} does not contain a valid report-circulation payload`,
     );
   }
-
-  return approval.payload;
 }

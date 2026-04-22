@@ -75,6 +75,7 @@
     "smoke:board-packet-circulation-log:local": "tsx tools/board-packet-circulation-log-smoke.mjs",
     "smoke:board-packet-circulation-log-correction:local": "tsx tools/board-packet-circulation-log-correction-smoke.mjs",
     "smoke:board-packet-circulation-actor-correction:local": "tsx tools/board-packet-circulation-actor-correction-smoke.mjs",
+    "smoke:board-packet-circulation-note-reset:local": "tsx tools/board-packet-circulation-note-reset-smoke.mjs",
     "smoke:lender-update:local": "tsx tools/lender-update-smoke.mjs",
     "smoke:diligence-packet:local": "tsx tools/diligence-packet-smoke.mjs",
     "smoke:diligence-packet-release-approval:local": "tsx tools/diligence-packet-release-approval-smoke.mjs",

@@ -124,15 +124,26 @@ export const RecordReportingCirculationLogCorrectionInputSchema = z
       .default(null),
     circulatedBy: z.string().trim().min(1).nullable().default(null),
     circulationChannel: z.string().trim().min(1).nullable().default(null),
+    clearCirculationNote: z.boolean().default(false),
     circulationNote: z.string().trim().min(1).nullable().default(null),
   })
   .strict()
   .superRefine((input, ctx) => {
+    if (input.clearCirculationNote && input.circulationNote !== null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "A circulation correction cannot both replace and clear the effective note.",
+        path: ["clearCirculationNote"],
+      });
+    }
+
     if (
       input.circulatedAt === null &&
       input.circulatedBy === null &&
       input.circulationChannel === null &&
-      input.circulationNote === null
+      input.circulationNote === null &&
+      input.clearCirculationNote === false
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -630,7 +641,7 @@ export type RequestReportCirculationApprovalInput = z.infer<
 export type RecordReportingCirculationLogInput = z.infer<
   typeof RecordReportingCirculationLogInputSchema
 >;
-export type RecordReportingCirculationLogCorrectionInput = z.infer<
+export type RecordReportingCirculationLogCorrectionInput = z.input<
   typeof RecordReportingCirculationLogCorrectionInputSchema
 >;
 export type RecordReportingReleaseLogInput = z.infer<

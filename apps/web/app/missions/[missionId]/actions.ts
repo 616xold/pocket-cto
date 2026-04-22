@@ -31,6 +31,11 @@ import {
   type MissionActionState,
 } from "../../../lib/operator-actions";
 
+const checkboxBooleanSchema = z.preprocess(
+  (value) => value === true || value === "true" || value === "on",
+  z.boolean(),
+);
+
 const approvalResolutionFormSchema = z.object({
   approvalId: z.string().uuid(),
   decision: z.enum(["accept", "decline"]),
@@ -139,6 +144,7 @@ const recordReportingCirculationLogCorrectionFormSchema = z.object({
     (value) => (value === null || value === "" ? undefined : value),
     z.string().trim().min(1).optional(),
   ),
+  clearCirculationNote: checkboxBooleanSchema,
   circulationNote: z.preprocess(
     (value) => (value === null || value === "" ? undefined : value),
     z.string().trim().min(1).optional(),
@@ -439,6 +445,7 @@ export async function submitRecordReportingCirculationLogCorrection(
     circulatedAt: formData.get("circulatedAt"),
     circulatedBy: formData.get("circulatedBy"),
     circulationChannel: formData.get("circulationChannel"),
+    clearCirculationNote: formData.get("clearCirculationNote"),
     circulationNote: formData.get("circulationNote"),
   });
 
@@ -450,6 +457,7 @@ export async function submitRecordReportingCirculationLogCorrection(
     circulatedAt: input.circulatedAt ?? null,
     circulatedBy: input.circulatedBy ?? null,
     circulationChannel: input.circulationChannel ?? null,
+    clearCirculationNote: input.clearCirculationNote,
     circulationNote: input.circulationNote ?? null,
   });
 

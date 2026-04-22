@@ -651,6 +651,7 @@ describe("MissionReportingActionsService", () => {
         circulatedAt: "2026-04-21T09:12:00.000Z",
         circulatedBy: "board-chair@example.com",
         circulationChannel: null,
+        clearCirculationNote: false,
         circulationNote: "Corrected after finance mailbox audit.",
         summary:
           "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",
@@ -766,6 +767,7 @@ describe("MissionReportingActionsService", () => {
         circulatedAt: "2026-04-21T09:12:00.000Z",
         circulatedBy: null,
         circulationChannel: null,
+        clearCirculationNote: false,
         circulationNote: "Corrected after finance mailbox audit.",
       },
     );
@@ -781,6 +783,7 @@ describe("MissionReportingActionsService", () => {
         circulatedAt: "2026-04-21T09:12:00.000Z",
         circulatedBy: null,
         circulationChannel: null,
+        clearCirculationNote: false,
         circulationNote: "Corrected after finance mailbox audit.",
       },
     );
@@ -795,6 +798,7 @@ describe("MissionReportingActionsService", () => {
         circulatedAt: "2026-04-21T09:12:00.000Z",
         circulatedBy: "board-chair@example.com",
         circulationChannel: null,
+        clearCirculationNote: false,
         circulationNote: "Corrected after finance mailbox audit.",
         summary:
           "Circulation record correction was appended by finance-operator at 2026-04-21T09:20:00.000Z. Corrected values: circulatedAt -> 2026-04-21T09:12:00.000Z; circulatedBy -> board-chair@example.com; circulationNote -> Corrected after finance mailbox audit. Reason: Corrected the original send timestamp after mailbox review.",

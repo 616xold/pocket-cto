@@ -2,17 +2,17 @@
 
 ## Purpose / Big Picture
 
-This file is the active F5C4I implementation contract created by a docs-and-plan-only master-plan slice.
+This file started as the active F5C4I implementation contract created by a docs-and-plan-only master-plan slice and now records the landed F5C4I implementation.
 `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` remains the shipped F5C4H record that precedes it.
 The target phase is `F5`, and the next execution slice is `F5C4I-board-packet-circulation-note-reset-and-effective-record-hardening`.
-The user-visible goal is narrow and concrete: after the shipped F5A through F5C4H baseline already creates one draft `board_packet`, resolves one internal `report_circulation` approval, records one immutable original circulation record, appends correction history on that same seam, and supports corrected actor attribution, Pocket CFO should next let an operator explicitly clear a previously non-null effective `circulationNote` back to truthful absence while keeping the original record immutable, the correction history append-only, and the derived effective chronology honest.
+The user-visible goal is narrow and concrete: after the shipped F5A through F5C4H baseline already creates one draft `board_packet`, resolves one internal `report_circulation` approval, records one immutable original circulation record, appends correction history on that same seam, and supports corrected actor attribution, Pocket CFO now lets an operator explicitly clear a previously non-null effective `circulationNote` back to truthful absence while keeping the original record immutable, the correction history append-only, and the derived effective chronology honest.
 
 This matters now because the current correction contract already supports append-only correction for `circulatedAt`, `circulatedBy`, `circulationChannel`, and note replacement, but it still cannot distinguish unchanged from explicit clear for `circulationNote`.
 `null` still means "no change" in the correction input contract and in the effective chronology fallback logic, so a mistakenly recorded non-null note cannot currently be corrected back to absent.
 That is a real operator-facing truthfulness gap on an already-shipped board circulation seam, and it is the only later-F5 continuation justified by current repo truth.
 
 GitHub connector work is explicitly out of scope.
-This master-plan slice is docs-only: do not add runtime code, routes, schema migrations, replay-event migrations, package scripts, smoke commands, eval datasets, implementation scaffolding, actual send or distribute behavior, bounded runtime-codex drafting, or any rename from `modules/reporting/**` to `modules/reports/**` here.
+This landed slice stayed narrow: it added no schema migration, no replay-event migration, no new approval kind, no new correction route, no runtime-codex drafting, no send/distribute/publish behavior, no PDF export, no slide export, and no `modules/reporting/**` rename wave.
 
 ## Progress
 
@@ -20,8 +20,9 @@ This master-plan slice is docs-only: do not add runtime code, routes, schema mig
 - [x] 2026-04-22T19:21:55Z Confirm from current code that `circulationNote` correction still uses `null` as "no change", so a previously non-null effective note cannot be corrected back to absent on the existing `report_circulation` seam.
 - [x] 2026-04-22T19:21:55Z Create `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` and refresh only the smallest truthful active-doc set so FP-0048 remains the shipped F5C4H record while this file becomes the single active later-F5 implementation contract.
 - [x] 2026-04-22T19:21:55Z Run the docs-and-plan validation ladder for this handoff, including the preserved smoke stack through `pnpm smoke:board-packet-circulation-actor-correction:local`, the twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
-- [ ] Next implementation thread: land explicit note-reset semantics on the existing `report_circulation` correction seam, keep the original `circulationRecord` immutable, keep correction history append-only, reuse `approval.circulation_log_corrected`, and harden the derived effective note plus chronology without widening scope.
-- [ ] Next implementation thread: run the narrow targeted suites near the touched seams plus the preserved full confidence ladder, then commit, push, and open or update the PR only if every required validation is green.
+- [x] 2026-04-22T19:55:15Z Reconcile the implementation contract with the current F5C4I mission instructions: keep the slice note-reset-only, preserve the shipped actor-correction smoke, and explicitly require the new packaged `tools/board-packet-circulation-note-reset-smoke.mjs` proof plus `pnpm smoke:board-packet-circulation-note-reset:local`.
+- [x] 2026-04-22T20:08:06Z Land explicit note-reset semantics on the existing `report_circulation` correction seam, keep the original `circulationRecord` immutable, keep correction history append-only, reuse `approval.circulation_log_corrected`, and harden the derived effective note plus chronology without widening scope.
+- [x] 2026-04-22T20:20:05Z Run the preserved full confidence ladder end to end, including the new note-reset smoke, the preserved actor-correction smoke, twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`, and confirm FP-0049 lands without widening into broader later-F5 or F6 work.
 
 ## Surprises & Discoveries
 
@@ -39,6 +40,12 @@ This master-plan slice is docs-only: do not add runtime code, routes, schema mig
 
 - Observation: the current actor-correction smoke is already the right proof seam for the next slice.
   Evidence: `pnpm smoke:board-packet-circulation-actor-correction:local` already exercises the append-only correction path on the existing board seam, so the next implementation can extend that proof instead of inventing a new smoke alias.
+
+- Observation: the current implementation request now explicitly requires a dedicated packaged note-reset smoke in addition to the preserved actor-correction proof.
+  Evidence: the current thread instructions require `tools/board-packet-circulation-note-reset-smoke.mjs` and `pnpm smoke:board-packet-circulation-note-reset:local`, so the active plan must name that proof artifact instead of treating a new smoke alias as out of scope by default.
+
+- Observation: the landing thread's allowed write scope is narrower than the usual active-doc refresh surface.
+  Evidence: the implementation instructions for this thread explicitly allow FP-0049 plus the touched domain, control-plane, web, package, smoke, and testkit seams, but do not authorize broader README or `docs/**` churn.
 
 ## Decision Log
 
@@ -66,8 +73,8 @@ This master-plan slice is docs-only: do not add runtime code, routes, schema mig
 - Decision: reuse the existing `report_circulation` approval seam, existing `POST /missions/:missionId/reporting/circulation-log-correction` route, and existing `approval.circulation_log_corrected` replay event.
   Rationale: the narrowest truthful continuation is to widen the existing correction payload and derived views rather than inventing a new subsystem, a new route family, a new approval kind, or a new replay event by default.
 
-- Decision: do not plan a database migration, replay-event migration, or new package script by default.
-  Rationale: the current board circulation correction path is JSON-payload-backed, the replay event already exists, and the current actor-correction smoke is a reusable proof seam for note-reset hardening.
+- Decision: do not plan a database migration or replay-event migration for F5C4I, but do plan one dedicated packaged note-reset smoke and package script because the current mission requires it.
+  Rationale: the current board circulation correction path is JSON-payload-backed and the replay event already exists, but the implementation request explicitly calls for a new deterministic note-reset proof while preserving the shipped actor-correction smoke.
 
 - Decision: F5C4I stays deterministic, runtime-free, and delivery-free.
   Rationale: stored reporting artifacts plus the existing approvals seam are sufficient for note-reset hardening, so runtime-codex behavior, actual send or distribute behavior, and broader export widening remain out of scope.
@@ -77,6 +84,9 @@ This master-plan slice is docs-only: do not add runtime code, routes, schema mig
 
 - Decision: after FP-0049, the repo should reevaluate whether any later-F5 work is still justified before F6.
   Rationale: current evidence points to exactly one remaining board-specific operator gap, not a broader later-F5 program.
+
+- Decision: keep the post-landing doc update inside FP-0049 and the slice-local approvals README only for this thread.
+  Rationale: the user-scoped write boundary for this landing is narrower than the normal active-doc refresh surface, so broader repo-doc changes should wait for an explicitly authorized follow-up if they are still needed.
 
 ## Context and Orientation
 
@@ -113,8 +123,8 @@ That shipped baseline already means all of the following are repo truth today:
 - append-only `circulationCorrections` on that same seam
 - truthful effective actor chronology from shipped F5C4H
 
-The current remaining gap is narrower: a previously non-null effective `circulationNote` cannot be corrected back to absent because the current contract still interprets `null` as "no change".
-The active F5C4I successor must therefore stay board-specific, approval-payload-backed, additive, deterministic, runtime-free, and delivery-free.
+The current remaining gap was narrower: a previously non-null effective `circulationNote` could not be corrected back to absent because the current contract still interpreted `null` as "no change".
+The landed F5C4I slice therefore stays board-specific, approval-payload-backed, additive, deterministic, runtime-free, and delivery-free.
 
 The active-doc boundary for this handoff is:
 
@@ -124,7 +134,7 @@ The active-doc boundary for this handoff is:
 - `PLANS.md`
 - `plans/ROADMAP.md`
 - `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md`
-- this active contract, `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md`
+- this shipped record, `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md`
 - `docs/ops/local-dev.md`
 - `docs/ops/source-ingest-and-cfo-wiki.md`
 - `docs/ops/codex-app-server.md`
@@ -134,7 +144,7 @@ The active-doc boundary for this handoff is:
 
 GitHub connector work is out of scope.
 The internal `@pocket-cto/*` package scope remains unchanged.
-This thread is docs-only, but the next implementation thread is expected to stay inside the existing approvals, reporting, evidence, and web read-model seams.
+This landed implementation stayed inside the existing approvals, reporting, evidence, and web read-model seams.
 
 ## Plan of Work
 
@@ -149,8 +159,8 @@ The current `POST /missions/:missionId/reporting/circulation-log-correction` sea
 Fourth, harden the derived effective record and chronology summary so the system stops falling back to an old note after an explicit clear.
 Reporting detail, mission detail, mission list, proof bundles, and operator surfaces should show whether the effective note remains present, was replaced, or was explicitly cleared, while keeping the original immutable record visible.
 
-Finally, preserve the current proof seam and validation posture.
-The next thread should extend the existing actor-correction proof and targeted tests rather than adding a new subsystem or a new smoke alias, then rerun the preserved confidence ladder end to end before publication.
+Finally, preserve the current proof seam and validation posture while adding the one new proof artifact the mission explicitly required.
+This landed thread adds one dedicated packaged note-reset smoke, keeps the shipped actor-correction smoke intact, avoids any second subsystem, and reruns the preserved confidence ladder end to end before publication.
 
 ## Concrete Steps
 
@@ -225,9 +235,11 @@ The next thread should extend the existing actor-correction proof and targeted t
    - show "no effective note" or equivalent truthful absence after an explicit clear instead of silently showing the old note
    - keep send, distribute, publish, PDF export, slide export, and runtime-codex drafting out of scope
 
-5. Extend the existing proof coverage without adding a new smoke alias by default.
+5. Extend the existing proof coverage with one dedicated packaged note-reset smoke while preserving the shipped actor-correction proof.
    Update:
+   - `tools/board-packet-circulation-note-reset-smoke.mjs`
    - `tools/board-packet-circulation-actor-correction-smoke.mjs`
+   - `package.json`
    - `apps/control-plane/src/modules/reporting/service.spec.ts`
    - `apps/control-plane/src/modules/approvals/service.spec.ts`
    - `apps/control-plane/src/modules/evidence/proof-bundle-assembly.spec.ts`
@@ -237,8 +249,8 @@ The next thread should extend the existing actor-correction proof and targeted t
 
    F5C4I should:
    - preserve `pnpm smoke:board-packet-circulation-log-correction:local` as the shipped F5C4G baseline proof
-   - preserve `pnpm smoke:board-packet-circulation-actor-correction:local` as the active correction proof seam and extend it to cover explicit note clear
-   - avoid adding a new package script or a new smoke command by default
+   - preserve `pnpm smoke:board-packet-circulation-actor-correction:local` as the shipped actor-correction proof seam
+   - add `pnpm smoke:board-packet-circulation-note-reset:local` as the dedicated F5C4I note-reset proof seam
    - assert that the original `circulationRecord` stays unchanged while the derived effective note becomes absent after a clear correction
    - keep the proof deterministic, runtime-free, and delivery-free
 
@@ -257,9 +269,9 @@ The next thread should extend the existing actor-correction proof and targeted t
 
 ## Validation and Acceptance
 
-This master-plan slice is docs-only, but it should still finish on the preserved docs-and-plan validation ladder, and the next implementation thread should keep that ladder intact while adding only the narrowest targeted suites near the touched seams.
+This landed F5C4I slice finished on the preserved confidence ladder while adding only the narrowest targeted suites near the touched seams.
 
-Required docs-and-plan confidence ladder:
+Required F5C4I confidence ladder:
 
 - `pnpm smoke:source-ingest:local`
 - `pnpm smoke:finance-twin:local`
@@ -293,6 +305,7 @@ Required docs-and-plan confidence ladder:
 - `pnpm smoke:board-packet-circulation-log:local`
 - `pnpm smoke:board-packet-circulation-log-correction:local`
 - `pnpm smoke:board-packet-circulation-actor-correction:local`
+- `pnpm smoke:board-packet-circulation-note-reset:local`
 - `pnpm smoke:lender-update:local`
 - `pnpm smoke:diligence-packet:local`
 - `pnpm smoke:lender-update-release-approval:local`
@@ -305,7 +318,7 @@ Required docs-and-plan confidence ladder:
 - `pnpm test`
 - `pnpm ci:repro:current`
 
-Acceptance for the future F5C4I code thread is observable only if all of the following are true:
+Acceptance for the landed F5C4I code is observable only if all of the following are true:
 
 - one completed approved-and-logged `board_packet` reporting mission can append one correction that explicitly clears the effective `circulationNote`
 - the original immutable `circulationRecord` stays unchanged and remains visible
@@ -316,25 +329,25 @@ Acceptance for the future F5C4I code thread is observable only if all of the fol
 
 ## Idempotence and Recovery
 
-This docs-and-plan slice is retry-safe because it only adds one active Finance Plan and refreshes active guidance.
-The future F5C4I implementation should stay additive by never mutating or deleting the original `circulationRecord`, by keeping correction history append-only, and by preserving `correctionKey` as the retry boundary.
+This landed F5C4I slice remains retry-safe because it extends the existing correction seam additively.
+The landed F5C4I implementation stays additive by never mutating or deleting the original `circulationRecord`, by keeping correction history append-only, and by preserving `correctionKey` as the retry boundary.
 If note-reset persistence fails, the write should roll back transactionally so no partial correction becomes visible.
 Rollback should consist of reverting the additive domain, reporting, proof, and UI changes while leaving the shipped F5C4H baseline intact.
 No database or replay-event migration is planned by default, so recovery should not depend on a destructive schema rollback.
 
 ## Artifacts and Notes
 
-This master-plan thread should end with:
+This landed thread ends with:
 
-- `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` as the single active later-F5 implementation contract
-- the smallest truthful active-doc refresh that points readers to FP-0049 where needed
-- green docs-and-plan validation results on the preserved confidence ladder
-
-The next implementation thread should end with:
-
+- `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` as the shipped F5C4I record
 - additive contract, service, proof, and UI changes on the existing board correction seam
+- green validation results on the preserved confidence ladder
+
+The landed implementation also includes:
+
 - extended targeted tests near the touched seams
-- an updated `tools/board-packet-circulation-actor-correction-smoke.mjs` proof rather than a new smoke alias by default
+- a new `tools/board-packet-circulation-note-reset-smoke.mjs` proof plus `pnpm smoke:board-packet-circulation-note-reset:local`
+- the preserved shipped `tools/board-packet-circulation-actor-correction-smoke.mjs` proof
 
 ## Interfaces and Dependencies
 
@@ -342,8 +355,8 @@ Package boundaries remain unchanged:
 
 - `packages/domain` owns pure approval, reporting, proof-bundle, mission-detail, and mission-list contracts
 - `apps/control-plane/src/modules/approvals` remains the persistence anchor for `report_circulation`
-- `apps/control-plane/src/modules/reporting` should own correction preparation plus derived effective-note and chronology logic
-- `apps/control-plane/src/modules/evidence` should surface note-reset truth in proof bundles without redefining proof readiness
+- `apps/control-plane/src/modules/reporting` owns correction preparation plus derived effective-note and chronology logic
+- `apps/control-plane/src/modules/evidence` surfaces note-reset truth in proof bundles without redefining proof readiness
 - `apps/web` stays read-model and operator-action only and must not import database logic
 
 The runtime seam stays stable:
@@ -358,8 +371,8 @@ The slice should extend that seam additively rather than creating a second circu
 
 ## Outcomes & Retrospective
 
-This thread did not start F5C4I code.
-It confirmed that explicit clear-to-absent semantics for `circulationNote` are still a real operator-facing truthfulness gap after shipped F5C4H, created exactly one active successor contract for that narrow gap, and refreshed the smallest truthful active-doc set so the next Codex thread can start one implementation-ready board-packet note-reset slice cleanly.
+This thread landed the first real F5C4I code slice.
+Pocket CFO now supports one explicit append-only `circulationNote` clear-to-absent correction on the existing board-packet `report_circulation` seam, keeps the original circulation record immutable, keeps correction history append-only, derives a truthful null effective note after the reset, and preserves deterministic delivery-free posture with no runtime-codex, PDF, slide, or release widening.
 
-FP-0048 remains the shipped F5C4H record.
-What remains is one narrow code slice only: add explicit note-reset semantics on the existing board correction seam, harden the derived effective note plus chronology, preserve deterministic delivery-free posture, and then reevaluate whether anything later in F5 is still justified before F6.
+FP-0048 remains the shipped F5C4H predecessor record, and FP-0049 now serves as the shipped F5C4I record.
+What remains is not an automatic next slice; the repo should reevaluate whether any later-F5 continuation is still justified before F6 and create a new narrow Finance Plan only if current repo truth reveals another concrete gap.
