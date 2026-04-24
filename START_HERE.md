@@ -111,15 +111,19 @@ After each slice:
 5. run the listed validation commands
 6. only then move to the next slice
 
-## Use the repo skills
+## Use the Pocket CFO Codex plugin
 
 Explicitly invoke these when useful:
 
+- `$finance-plan-orchestrator`
 - `$execplan-orchestrator`
 - `$modular-architecture-guard`
 - `$source-provenance-guard`
 - `$cfo-wiki-maintainer`
 - `$evidence-bundle-auditor`
+- `$f6-monitoring-semantics-guard`
+- `$validation-ladder-composer`
+- `$pocket-cfo-handoff-auditor`
 
 Use `$github-app-integration-guard` only when touching the optional GitHub connector path.
 

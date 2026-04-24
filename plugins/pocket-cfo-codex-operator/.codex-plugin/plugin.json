@@ -1,0 +1,30 @@
+{
+  "name": "pocket-cfo-codex-operator",
+  "version": "0.1.0",
+  "description": "Pocket CFO Codex workflows for Finance Plans, evidence truthfulness, module boundaries, GitHub connector guardrails, F6 monitoring semantics, validation ladders, and handoffs.",
+  "author": {
+    "name": "Pocket CFO"
+  },
+  "license": "UNLICENSED",
+  "keywords": [
+    "pocket-cfo",
+    "codex",
+    "finance-plans",
+    "monitoring",
+    "evidence",
+    "github"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Pocket CFO Codex Operator",
+    "shortDescription": "Pocket CFO repo workflows, connector guardrails, and F6 monitoring.",
+    "longDescription": "Bundles Pocket CFO planning, architecture, provenance, evidence, docs, GitHub connector, F6 monitoring, validation, and handoff skills used to keep Codex slices narrow, truthful, and CI-safe.",
+    "developerName": "Pocket CFO",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#0F766E"
+  }
+}

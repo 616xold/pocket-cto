@@ -1,0 +1,6 @@
+interface:
+  display_name: "F6 Monitoring Semantics Guard"
+  short_description: "Pocket CFO f6 monitoring semantics guard skill"
+  brand_color: "#0F766E"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,20 @@
+{
+  "name": "pocket-cfo-local-plugins",
+  "interface": {
+    "displayName": "Pocket CFO Local Plugins"
+  },
+  "plugins": [
+    {
+      "name": "pocket-cfo-codex-operator",
+      "source": {
+        "source": "local",
+        "path": "./plugins/pocket-cfo-codex-operator"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

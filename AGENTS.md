@@ -124,17 +124,22 @@ pnpm db:migrate
 docker compose up -d
 ```
 
-## Skills in this repo
+## Pocket CFO Codex plugin
 
-Skills live in `.agents/skills`.
+Use the `pocket-cfo-codex-operator` plugin instead of repo-local skills.
+The repo-local marketplace entry lives at `.agents/plugins/marketplace.json`, and the plugin bundle lives at `plugins/pocket-cfo-codex-operator/`.
 
-Use them deliberately:
+Use the bundled skills deliberately:
 
-- `$execplan-orchestrator` for any complex slice or refactor
+- `$finance-plan-orchestrator` for Finance Plan truthfulness, active roadmap docs, phase handoffs, and plan-scoped execution
+- `$execplan-orchestrator` for any complex slice or refactor that needs a step-by-step execution document
 - `$modular-architecture-guard` when implementing or refactoring code
 - `$source-provenance-guard` when touching source ingest, lineage, or freshness
 - `$cfo-wiki-maintainer` when compiling or maintaining the markdown knowledge layer
 - `$evidence-bundle-auditor` when shipping answers, reports, approvals, or proof logic
+- `$f6-monitoring-semantics-guard` when touching F6 monitoring semantics
+- `$validation-ladder-composer` when composing validation or smoke-test ladders
+- `$pocket-cfo-handoff-auditor` when preparing or auditing handoffs
 - `$github-app-integration-guard` only for GitHub connector work
 
 ## Files you should usually read before large changes

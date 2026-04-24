@@ -1,0 +1,6 @@
+interface:
+  display_name: "Source Provenance Guard"
+  short_description: "Pocket CFO source provenance guard skill"
+  brand_color: "#0F766E"
+policy:
+  allow_implicit_invocation: true
