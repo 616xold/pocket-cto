@@ -1,0 +1,6 @@
+interface:
+  display_name: "Validation Ladder Composer"
+  short_description: "Pocket CFO validation ladder composer skill"
+  brand_color: "#0F766E"
+policy:
+  allow_implicit_invocation: true

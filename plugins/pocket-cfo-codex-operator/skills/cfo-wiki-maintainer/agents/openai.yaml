@@ -1,0 +1,6 @@
+interface:
+  display_name: "Cfo Wiki Maintainer"
+  short_description: "Pocket CFO cfo wiki maintainer skill"
+  brand_color: "#0F766E"
+policy:
+  allow_implicit_invocation: true
