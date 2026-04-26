@@ -27,54 +27,120 @@ export class DrizzleMonitoringRepository implements MonitoringRepository {
   }
 
   async upsertMonitorResult(result: MonitorResult) {
+    const existing = await this.getMonitorResultByScope(result);
+
+    if (existing) {
+      return this.updateExistingMonitorResult(result, existing);
+    }
+
+    const stored = canonicalizeMonitorResultForScope(result, null);
     const [row] = await this.db
       .insert(monitorResults)
       .values({
-        id: result.id,
-        alertCard: result.alertCard,
-        companyId: result.companyId,
-        companyKey: result.companyKey,
-        conditionDetails: result.conditions,
-        limitations: result.limitations,
-        monitorKind: result.monitorKind,
-        proofBundlePosture: result.proofBundlePosture,
-        resultJson: result,
-        runKey: result.runKey,
-        severity: result.severity,
-        sourceFreshnessPosture: result.sourceFreshnessPosture,
-        sourceLineageRefs: result.sourceLineageRefs,
-        status: result.status,
-        triggeredBy: result.triggeredBy,
+        id: stored.id,
+        alertCard: stored.alertCard,
+        companyId: stored.companyId,
+        companyKey: stored.companyKey,
+        conditionDetails: stored.conditions,
+        createdAt: new Date(stored.createdAt),
+        limitations: stored.limitations,
+        monitorKind: stored.monitorKind,
+        proofBundlePosture: stored.proofBundlePosture,
+        resultJson: stored,
+        runKey: stored.runKey,
+        severity: stored.severity,
+        sourceFreshnessPosture: stored.sourceFreshnessPosture,
+        sourceLineageRefs: stored.sourceLineageRefs,
+        status: stored.status,
+        triggeredBy: stored.triggeredBy,
+        updatedAt: new Date(),
       })
-      .onConflictDoUpdate({
+      .onConflictDoNothing({
         target: [
           monitorResults.companyId,
           monitorResults.monitorKind,
           monitorResults.runKey,
         ],
-        set: {
-          alertCard: result.alertCard,
-          companyKey: result.companyKey,
-          conditionDetails: result.conditions,
-          limitations: result.limitations,
-          proofBundlePosture: result.proofBundlePosture,
-          resultJson: result,
-          severity: result.severity,
-          sourceFreshnessPosture: result.sourceFreshnessPosture,
-          sourceLineageRefs: result.sourceLineageRefs,
-          status: result.status,
-          triggeredBy: result.triggeredBy,
-          updatedAt: new Date(),
-        },
       })
       .returning();
 
+    if (row) {
+      return mapMonitorResultRow(row);
+    }
+
+    const conflicted = await this.getMonitorResultByScope(result);
+    if (!conflicted) {
+      throw new Error("Monitor result upsert conflict did not return a row");
+    }
+
+    return this.updateExistingMonitorResult(result, conflicted);
+  }
+
+  private async getMonitorResultByScope(result: MonitorResult) {
+    const [row] = await this.db
+      .select()
+      .from(monitorResults)
+      .where(
+        and(
+          eq(monitorResults.companyId, result.companyId),
+          eq(monitorResults.monitorKind, result.monitorKind),
+          eq(monitorResults.runKey, result.runKey),
+        ),
+      )
+      .limit(1);
+
+    return row ? mapMonitorResultRow(row) : null;
+  }
+
+  private async updateExistingMonitorResult(
+    result: MonitorResult,
+    existing: MonitorResult,
+  ) {
+    const stored = canonicalizeMonitorResultForScope(result, existing);
+    const [row] = await this.db
+      .update(monitorResults)
+      .set({
+        alertCard: stored.alertCard,
+        companyKey: stored.companyKey,
+        conditionDetails: stored.conditions,
+        limitations: stored.limitations,
+        proofBundlePosture: stored.proofBundlePosture,
+        resultJson: stored,
+        severity: stored.severity,
+        sourceFreshnessPosture: stored.sourceFreshnessPosture,
+        sourceLineageRefs: stored.sourceLineageRefs,
+        status: stored.status,
+        triggeredBy: stored.triggeredBy,
+        updatedAt: new Date(),
+      })
+      .where(eq(monitorResults.id, existing.id))
+      .returning();
+
     if (!row) {
-      throw new Error("Monitor result upsert did not return a row");
+      throw new Error("Monitor result update did not return a row");
     }
 
     return mapMonitorResultRow(row);
   }
+}
+
+function canonicalizeMonitorResultForScope(
+  result: MonitorResult,
+  existing: MonitorResult | null,
+) {
+  const createdAt = existing?.createdAt ?? result.createdAt;
+
+  return MonitorResultSchema.parse({
+    ...result,
+    alertCard: result.alertCard
+      ? {
+          ...result.alertCard,
+          createdAt,
+        }
+      : null,
+    createdAt,
+    id: existing?.id ?? result.id,
+  });
 }
 
 function mapMonitorResultRow(row: typeof monitorResults.$inferSelect) {

@@ -138,7 +138,7 @@ One completed `reporting` mission with `reportKind = "board_packet"`, one stored
 Success:
 The system records one explicit circulation record for that already-approved board packet, surfaces one circulated posture plus `circulatedAt`, `circulatedBy`, and minimal circulation-channel metadata, preserves the original approval trace, and does so without send, distribute, publish, runtime-codex drafting, or PDF or slide export behavior.
 
-### 16. Planned F6A cash-posture monitor result and alert-card foundation
+### 16. Shipped F6A cash-posture monitor result and alert-card foundation
 
 Input:
 One company `companyKey` with stored source-backed cash-posture or bank-account-summary Finance Twin state, including explicit source freshness or missing-source posture.
@@ -187,4 +187,4 @@ The shipped F5C4F reporting benchmark contract now lives in `plans/FP-0046-circu
 `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is the shipped F5C4G reporting benchmark record and adds immutable circulation-record correction plus chronology on the existing `report_circulation` seam.
 `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is now the shipped F5C4H benchmark record and already covers shipped optional corrected `circulatedBy` plus derived effective actor chronology on that same seam only.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the latest shipped F5C4I benchmark record and covers explicit `circulationNote` clear-to-absent semantics plus derived effective-note chronology on that same seam, without widening into actual delivery, PDF export, slide or Marp export, or runtime-codex drafting behavior.
-`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is the active planned F6A benchmark contract. Do not add a benchmark dataset for F6A until the deterministic cash-posture monitor smoke exists.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is the shipped F6A benchmark record. `pnpm smoke:cash-posture-monitor:local` is the current deterministic proof for this first monitor before any broader F6 benchmark dataset is added.

@@ -153,7 +153,7 @@ Today, steps 1 through 5 exist in a narrow form:
 Step 6 now starts with the FP-0050 monitoring record and the first F6A cash-posture monitor implementation.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is the latest shipped later-F5 reporting record, `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is the shipped F5C4H predecessor, `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is the shipped F5C4G predecessor, and `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` remains the shipped predecessor for the first board circulation-log path.
-`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` should be treated as the first F6A implementation record once validation is green. Do not reopen F4C2, repeat F5A through F5C4I, or start F6B without a new Finance Plan.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is the shipped first F6A implementation record. Do not reopen F4C2, repeat F5A through F5C4I, or start F6B without a new Finance Plan.
 
 The active finance-twin read surface is currently backend-first:
 

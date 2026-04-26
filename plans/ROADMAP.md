@@ -436,7 +436,7 @@ Slice map:
 
 - `F6A — monitoring foundation and first cash posture alert`
   - start only from one company `companyKey`
-  - read existing stored cash-posture or finance-discovery state, including source freshness or missing-source posture
+  - read existing stored Finance Twin cash-posture state through `FinanceTwinService.getCashPosture(companyKey)`, including source freshness or missing-source posture
   - define one `monitor_result` concept and one `cash_posture` monitor kind
   - produce one alert-card read model only when deterministic source-backed conditions warrant it
   - include severity, source freshness, source lineage, limitations, proof-bundle posture, and a recommended human-review action

@@ -2,17 +2,17 @@
 
 ## Purpose / Big Picture
 
-This file is the active F6 implementation contract created by the F6 master-plan-and-doc-refresh slice.
+This file is the shipped F6A implementation record created by the F6 master-plan-and-doc-refresh slice and completed by the first cash-posture monitor implementation.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` remains the shipped F5C4I record.
-The target phase is `F6`, and the next execution slice is `F6A-monitoring-foundation-and-first-cash-posture-alert`.
+The target phase is `F6`, and the shipped execution slice is `F6A-monitoring-foundation-and-first-cash-posture-alert`.
 
 The user-visible goal is narrow: after the shipped F5A through F5C4I baseline already covers finance memos, board packets, lender updates, diligence packets, external release approval and logs for lender updates and diligence packets, and internal board-packet circulation approval, log, correction, actor, and note-reset posture, Pocket CFO should begin F6 with one deterministic source-backed monitor.
 The first monitor family is exactly `cash_posture`.
-It should read existing stored Finance Twin or finance-discovery posture for one `companyKey`, record one deterministic monitor result, and expose one operator-visible alert-card posture only when the stored state shows a freshness threshold breach, missing source, failed source, or equivalent source-backed cash-posture gap.
+It reads existing stored Finance Twin cash-posture state for one `companyKey`, records one deterministic monitor result, and exposes one operator-visible alert-card posture only when the stored state shows a freshness threshold breach, missing source, failed source, coverage gap, data-quality diagnostic, or equivalent source-backed cash-posture gap.
 
 F6A must not invent finance facts, create autonomous finance actions, reopen F5 reporting or approval semantics, invoke runtime-codex, create investigation missions, send notifications, move money, book journals, file taxes, or publish external communications.
 GitHub connector work is explicitly out of scope.
-This plan is implementation-ready, but the thread that created it is docs-and-plan-only and must not add runtime code, routes, schema, migrations, package scripts, smoke commands, eval datasets, or scaffolding.
+This record is no longer an unimplemented contract. Post-merge polish may audit and correct only the shipped F6A truthfulness, idempotency, alert-card, smoke, and docs-freshness surface; F6B and FP-0051 remain out of scope.
 
 ## Progress
 
@@ -22,6 +22,7 @@ This plan is implementation-ready, but the thread that created it is docs-and-pl
 - [x] 2026-04-24T01:44:06Z Run the docs-and-plan validation ladder from this plan-refresh thread and record the result here.
 - [x] 2026-04-26T18:57:00Z Implement the first F6A slice: one pure `cash_posture` monitor contract, additive `monitor_results` persistence, a monitoring bounded context, run/latest HTTP routes, an operator alert-card read model, and `pnpm smoke:cash-posture-monitor:local`.
 - [x] 2026-04-26T19:08:08Z Complete and record the full F6A validation ladder from the implementation thread, including `pnpm smoke:cash-posture-monitor:local` and `pnpm ci:repro:current`.
+- [x] 2026-04-26T21:24:18Z Complete the post-merge F6A QA/polish pass: confirm the shipped monitor remains one `cash_posture` family, preserve idempotent result identity and alert-card timestamps for repeated run keys, refresh stale shipped-F6A docs, and rerun the required validation ladder through `pnpm ci:repro:current`.
 
 ## Surprises & Discoveries
 
@@ -43,6 +44,12 @@ This plan is implementation-ready, but the thread that created it is docs-and-pl
 - Observation: the clean reproduced Next.js build caught one page-signature polish issue in the new monitoring page.
   Evidence: `pnpm ci:repro:current` initially failed because `apps/web/app/monitoring/page.tsx` allowed object-shaped `searchParams`; the implementation now uses the Next 15 promise-shaped page prop, and the rerun passed.
 
+- Observation: the post-merge QA pass found a narrow idempotency polish issue in the Drizzle persistence adapter.
+  Evidence: the unique `(company_id, monitor_kind, run_key)` constraint prevented duplicate rows, but a retried run could refresh the result and alert-card `createdAt` values; the adapter now preserves the canonical stored identity and timestamps for the same run key while still updating derived posture details.
+
+- Observation: several active docs still described F6A as a planned target rather than the shipped baseline.
+  Evidence: the post-merge docs pass refreshed FP-0050-adjacent wording in local-dev, source-ingest/CFO Wiki, Codex App Server, eval, benchmark, and roadmap docs without starting F6B or creating FP-0051.
+
 ## Decision Log
 
 - Decision: the first real F6 scope is `F6A-monitoring-foundation-and-first-cash-posture-alert`.
@@ -52,7 +59,7 @@ This plan is implementation-ready, but the thread that created it is docs-and-pl
   Rationale: `cash_posture` is already a shipped Finance Twin read and shipped discovery family, so F6A can stay source-backed without adding new extractors or new discovery families.
 
 - Decision: F6A starts from stored finance state, not generic chat and not report artifacts.
-  Rationale: the monitor input contract is one `companyKey` plus one source-backed Finance Twin cash-posture or finance-discovery posture, explicit freshness or missing-source posture, and no invented facts. `finance_memo`, `board_packet`, `lender_update`, and `diligence_packet` are not primary monitor inputs.
+  Rationale: the monitor input contract is one `companyKey` plus stored Finance Twin cash-posture state read through `FinanceTwinService.getCashPosture(companyKey)`, explicit freshness or missing-source posture, and no invented facts. `finance_memo`, `board_packet`, `lender_update`, and `diligence_packet` are not primary monitor inputs.
 
 - Decision: F6A defines one deterministic monitor result concept and one alert-card read model.
   Rationale: the first monitoring proof should be a persisted, reviewable finding over stored state; alert cards are operator read models, not advice, not accounting action, and not external messages.
@@ -81,6 +88,9 @@ This plan is implementation-ready, but the thread that created it is docs-and-pl
 - Decision: F6A records source-backed proof posture without pretending alerts are missions or reports.
   Rationale: alert results expose `source_backed` or a `limited_by_*` monitor proof posture, not a mission proof bundle. The monitor result also records that runtime-codex, delivery actions, investigation missions, and autonomous finance actions were not used.
 
+- Decision: idempotent monitor retries preserve the first stored result identity and creation posture for the same run key.
+  Rationale: `monitor_results` is additive and latest-read friendly; repeated `runKey` or `idempotencyKey` executions must not make one logical monitor run look like a fresh duplicate alert. The repository keeps the existing result id, result `createdAt`, and alert-card `createdAt` while updating derived posture and `updatedAt`.
+
 ## Context and Orientation
 
 Pocket CFO has shipped the full current evidence spine through:
@@ -92,7 +102,7 @@ Pocket CFO has shipped the full current evidence spine through:
 - F5A through F5C4I deterministic reporting, memo, packet, approval, release, circulation, correction, actor, and note-reset posture
 
 FP-0049 is the shipped F5C4I record.
-FP-0050 is now the single active implementation contract.
+FP-0050 is now the shipped F6A implementation record.
 There is no active later-F5 contract after FP-0049, and this plan must not reopen F5 report, approval, circulation, release, correction, export, or runtime-codex behavior.
 
 The relevant existing implementation seams for F6A are:
@@ -143,7 +153,7 @@ Do not add eval datasets or multi-monitor coverage in F6A unless this plan is ex
 
    The contract should define:
    - monitor kind: `cash_posture`
-   - monitor result source: stored Finance Twin or stored discovery posture only
+   - monitor result source: `FinanceTwinService.getCashPosture(companyKey)` over stored Finance Twin cash-posture state only
    - result status: enough to distinguish no alert from alert
    - severity: deterministic, finite, and source-backed
    - condition kinds: missing source, failed source, stale source, coverage gap, and any explicitly named threshold breach that is backed by existing stored freshness thresholds or operator-owned config
@@ -278,7 +288,7 @@ The implementation thread reran the confidence ladder required by the implementa
 
 Acceptance for F6A implementation is observable only if all of the following are true:
 
-- one `companyKey` can be monitored for `cash_posture` using stored Finance Twin or stored discovery posture only
+- one `companyKey` can be monitored for `cash_posture` using `FinanceTwinService.getCashPosture(companyKey)` over stored Finance Twin cash-posture state only
 - the monitor records or returns one deterministic monitor result without inventing finance facts
 - an alert card appears only when deterministic source-backed conditions warrant it
 - every alert card includes source lineage, source freshness or missing-source posture, deterministic severity rationale, limitations summary, proof-bundle posture, and a human-review next step
@@ -344,7 +354,8 @@ Do not delete GitHub or engineering-twin modules as part of F6A.
 
 The docs-and-plan thread created FP-0050, refreshed the active-doc spine, and left FP-0049 as the shipped F5C4I record.
 The implementation thread then added the first source-backed F6A cash-posture monitor while preserving the shipped F5 reporting and approval lifecycles.
-Implementation validation is tracked in the Progress section and final handoff for this branch.
+The post-merge QA/polish pass tightened monitor-result idempotency, refreshed stale shipped-F6A docs, and confirmed the latest-read, alert-card, source/freshness/proof posture, runtime-free, delivery-free, and F5-preserving boundaries.
+Implementation and post-merge validation are tracked in the Progress section and final handoff for this branch.
 
-FP-0050 now records the first F6A implementation slice once the validation ladder is green.
+FP-0050 now records the first F6A implementation slice after the validation ladder was green.
 F6B must still start from a separate explicit Finance Plan; do not create an investigation mission path, additional monitor family, delivery path, runtime-codex drafting path, or threshold-policy monitor by extending this F6A slice.
