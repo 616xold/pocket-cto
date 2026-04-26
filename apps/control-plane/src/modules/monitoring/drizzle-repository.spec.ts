@@ -47,6 +47,7 @@ describe("DrizzleMonitoringRepository", () => {
       companyKey: "acme",
       monitorKind: "cash_posture",
     });
+    const byId = await repository.getMonitorResultById(first.id);
 
     expect(second.id).toBe(first.id);
     expect(second.createdAt).toBe(first.createdAt);
@@ -54,6 +55,10 @@ describe("DrizzleMonitoringRepository", () => {
     expect(second.triggeredBy).toBe("finance-controller");
     expect(latest?.id).toBe(first.id);
     expect(latest?.alertCard?.createdAt).toBe(first.alertCard?.createdAt);
+    expect(byId?.id).toBe(first.id);
+    expect(await repository.getMonitorResultById(
+      "99999999-9999-4999-8999-999999999999",
+    )).toBeNull();
   });
 });
 

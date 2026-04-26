@@ -2,6 +2,121 @@ import { describe, expect, it } from "vitest";
 import { MissionDetailViewSchema } from "./mission-detail";
 
 describe("Mission detail domain schema", () => {
+  it("parses monitor-alert investigation mission detail", () => {
+    const seed = buildMonitorInvestigationSeed();
+    const parsed = MissionDetailViewSchema.parse({
+      mission: {
+        id: "11111111-1111-4111-8111-111111111111",
+        type: "discovery",
+        status: "succeeded",
+        title: "Investigate cash-posture alert for acme",
+        objective:
+          "Manual F6B investigation handoff from stored cash_posture alert.",
+        sourceKind: "alert",
+        sourceRef: seed.sourceRef,
+        createdBy: "finance-operator",
+        primaryRepo: null,
+        spec: {
+          type: "discovery",
+          title: "Investigate cash-posture alert for acme",
+          objective:
+            "Manual F6B investigation handoff from stored cash_posture alert.",
+          repos: [],
+          constraints: {
+            allowedPaths: [],
+            mustNot: ["invoke runtime-Codex"],
+          },
+          acceptance: ["open one deterministic alert investigation handoff"],
+          riskBudget: {
+            sandboxMode: "read-only",
+            maxWallClockMinutes: 5,
+            maxCostUsd: 1,
+            allowNetwork: false,
+            requiresHumanApprovalFor: [],
+          },
+          deliverables: ["monitor alert investigation seed"],
+          input: {
+            monitorInvestigation: seed,
+          },
+        },
+        createdAt: "2026-04-26T12:00:00.000Z",
+        updatedAt: "2026-04-26T12:01:00.000Z",
+      },
+      tasks: [],
+      proofBundle: {
+        missionId: "11111111-1111-4111-8111-111111111111",
+        missionTitle: "Investigate cash-posture alert for acme",
+        objective:
+          "Manual F6B investigation handoff from stored cash_posture alert.",
+        companyKey: "acme",
+        questionKind: null,
+        answerSummary: "",
+        reportKind: null,
+        reportDraftStatus: null,
+        reportSummary: "",
+        monitorInvestigation: seed,
+        appendixPresent: false,
+        freshnessState: "missing",
+        freshnessSummary: "No successful cash-posture source is stored.",
+        limitationsSummary:
+          "The monitor reports source posture only and does not infer runway.",
+        relatedRoutePaths: ["/monitoring?companyKey=acme"],
+        relatedWikiPageKeys: [],
+        targetRepoFullName: null,
+        branchName: null,
+        pullRequestNumber: null,
+        pullRequestUrl: null,
+        changeSummary: "Opened deterministic F6B investigation handoff.",
+        validationSummary:
+          "The handoff was assembled without rerunning the monitor.",
+        verificationSummary: "Review stored monitor alert posture.",
+        riskSummary:
+          "No delivery, report artifact, approval, or autonomous finance action was created.",
+        rollbackSummary: "Cancel or supersede only this handoff.",
+        latestApproval: null,
+        evidenceCompleteness: {
+          status: "complete",
+          expectedArtifactKinds: [],
+          presentArtifactKinds: [],
+          missingArtifactKinds: [],
+          notes: [],
+        },
+        decisionTrace: [
+          "Stored monitor result 66666666-6666-4666-8666-666666666666 is the investigation source of truth.",
+        ],
+        artifactIds: [],
+        artifacts: [],
+        replayEventCount: 3,
+        timestamps: {
+          missionCreatedAt: "2026-04-26T12:00:00.000Z",
+          latestPlannerEvidenceAt: null,
+          latestExecutorEvidenceAt: null,
+          latestPullRequestAt: null,
+          latestApprovalAt: null,
+          latestArtifactAt: null,
+        },
+        status: "ready",
+      },
+      monitorInvestigation: seed,
+      discoveryAnswer: null,
+      reporting: null,
+      approvals: [],
+      approvalCards: [],
+      artifacts: [],
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+    });
+
+    expect(parsed.monitorInvestigation?.monitorResultId).toBe(
+      "66666666-6666-4666-8666-666666666666",
+    );
+    expect(parsed.tasks).toEqual([]);
+    expect(parsed.proofBundle.status).toBe("ready");
+  });
+
   it("parses finance discovery mission detail with a stored answer artifact", () => {
     const parsed = MissionDetailViewSchema.parse({
       mission: {
@@ -1917,3 +2032,69 @@ describe("Mission detail domain schema", () => {
     expect(parsed.approvalCards[0]?.requiresLiveControl).toBe(false);
   });
 });
+
+function buildMonitorInvestigationSeed() {
+  return {
+    monitorResultId: "66666666-6666-4666-8666-666666666666",
+    companyKey: "acme",
+    monitorKind: "cash_posture" as const,
+    monitorResultStatus: "alert" as const,
+    alertSeverity: "critical" as const,
+    deterministicSeverityRationale:
+      "Critical because missing_source was detected from stored cash-posture freshness.",
+    conditions: [
+      {
+        kind: "missing_source" as const,
+        severity: "critical" as const,
+        summary: "No successful bank-account-summary slice exists.",
+        evidencePath: "freshness.state",
+      },
+    ],
+    conditionSummaries: ["No successful bank-account-summary slice exists."],
+    sourceFreshnessPosture: {
+      state: "missing" as const,
+      latestAttemptedSyncRunId: null,
+      latestSuccessfulSyncRunId: null,
+      latestSuccessfulSource: null,
+      missingSource: true,
+      failedSource: false,
+      summary: "No successful cash-posture source is stored.",
+    },
+    sourceLineageRefs: [],
+    sourceLineageSummary:
+      "No bank-account-summary source lineage is available.",
+    limitations: [
+      "The monitor reports source posture only and does not infer runway.",
+    ],
+    proofBundlePosture: {
+      state: "limited_by_missing_source" as const,
+      summary:
+        "The monitor proof is limited because no bank-account-summary source backs the cash posture.",
+    },
+    humanReviewNextStep:
+      "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+    runtimeBoundary: {
+      monitorResultRuntimeBoundary: {
+        runtimeCodexUsed: false as const,
+        deliveryActionUsed: false as const,
+        investigationMissionCreated: false as const,
+        autonomousFinanceActionUsed: false as const,
+        summary:
+          "The result was produced by deterministic stored-state evaluation only.",
+      },
+      monitorRerunUsed: false as const,
+      runtimeCodexUsed: false as const,
+      deliveryActionUsed: false as const,
+      scheduledAutomationUsed: false as const,
+      reportArtifactCreated: false as const,
+      approvalCreated: false as const,
+      autonomousFinanceActionUsed: false as const,
+      summary:
+        "The handoff opened a deterministic investigation mission without runtime or delivery action.",
+    },
+    sourceRef:
+      "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+    monitorResultCreatedAt: "2026-04-26T12:00:00.000Z",
+    alertCardCreatedAt: "2026-04-26T12:00:00.000Z",
+  };
+}

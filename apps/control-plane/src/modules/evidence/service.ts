@@ -46,10 +46,13 @@ export class EvidenceService {
     const isDiscoveryMission = mission.type === "discovery";
     const isReportingMission = mission.type === "reporting";
     const discoveryQuestion = mission.spec.input?.discoveryQuestion;
+    const monitorInvestigation = mission.spec.input?.monitorInvestigation;
     const reportingRequest = mission.spec.input?.reportingRequest;
     const financeCompanyKey =
       isReportingMission && reportingRequest
         ? reportingRequest.companyKey
+        : monitorInvestigation
+          ? monitorInvestigation.companyKey
         : isFinanceDiscoveryQuestion(discoveryQuestion)
           ? discoveryQuestion.companyKey
           : null;
@@ -91,11 +94,23 @@ export class EvidenceService {
           : null,
       reportDraftStatus: isReportingMission ? "draft_only" : null,
       reportSummary: "",
+      monitorInvestigation: monitorInvestigation ?? null,
       appendixPresent: false,
-      freshnessState: null,
-      freshnessSummary: "",
-      limitationsSummary: "",
-      relatedRoutePaths: [],
+      freshnessState: monitorInvestigation
+        ? monitorInvestigation.sourceFreshnessPosture.state
+        : null,
+      freshnessSummary:
+        monitorInvestigation?.sourceFreshnessPosture.summary ?? "",
+      limitationsSummary: monitorInvestigation
+        ? monitorInvestigation.limitations.join(" ")
+        : "",
+      relatedRoutePaths: monitorInvestigation
+        ? [
+            `/monitoring?companyKey=${encodeURIComponent(
+              monitorInvestigation.companyKey,
+            )}`,
+          ]
+        : [],
       relatedWikiPageKeys: [],
       targetRepoFullName:
         mission.primaryRepo && mission.primaryRepo.includes("/")
@@ -111,18 +126,21 @@ export class EvidenceService {
       rollbackSummary: "",
       latestApproval: null,
       evidenceCompleteness: {
-        status: "missing",
+        status: monitorInvestigation ? "complete" : "missing",
         expectedArtifactKinds: readExpectedArtifactKinds({
           isDiscoveryMission,
+          monitorInvestigation: monitorInvestigation ?? null,
           reportingRequest,
         }),
         presentArtifactKinds: [],
         missingArtifactKinds: readExpectedArtifactKinds({
           isDiscoveryMission,
+          monitorInvestigation: monitorInvestigation ?? null,
           reportingRequest,
         }),
         notes: readMissingArtifactNotes({
           isDiscoveryMission,
+          monitorInvestigation: monitorInvestigation ?? null,
           reportingRequest,
         }),
       },
@@ -138,7 +156,7 @@ export class EvidenceService {
         latestApprovalAt: null,
         latestArtifactAt: null,
       },
-      status: "placeholder",
+      status: monitorInvestigation ? "ready" : "placeholder",
     });
   }
 
@@ -337,8 +355,15 @@ export class EvidenceService {
 
 function readExpectedArtifactKinds(input: {
   isDiscoveryMission: boolean;
+  monitorInvestigation:
+    | NonNullable<MissionRecord["spec"]["input"]>["monitorInvestigation"]
+    | null;
   reportingRequest: ReportingRequest | undefined;
 }) {
+  if (input.monitorInvestigation) {
+    return [] satisfies ArtifactKind[];
+  }
+
   if (input.reportingRequest?.reportKind === "board_packet") {
     return ["board_packet"] satisfies ArtifactKind[];
   }
@@ -364,8 +389,15 @@ function readExpectedArtifactKinds(input: {
 
 function readMissingArtifactNotes(input: {
   isDiscoveryMission: boolean;
+  monitorInvestigation:
+    | NonNullable<MissionRecord["spec"]["input"]>["monitorInvestigation"]
+    | null;
   reportingRequest: ReportingRequest | undefined;
 }) {
+  if (input.monitorInvestigation) {
+    return [] satisfies string[];
+  }
+
   if (input.reportingRequest?.reportKind === "board_packet") {
     return ["Draft board packet evidence is missing."];
   }

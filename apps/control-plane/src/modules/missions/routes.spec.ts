@@ -11,6 +11,42 @@ describe("mission reporting action routes", () => {
     await Promise.all(apps.splice(0).map((app) => app.close()));
   });
 
+  it("POST /missions/monitoring-investigations creates or opens an alert investigation", async () => {
+    const createOrOpenMonitorInvestigation = vi.fn(async () => ({
+      created: true,
+      mission: {
+        id: "66666666-6666-4666-8666-666666666666",
+      },
+      tasks: [],
+      proofBundle: {
+        monitorInvestigation: {
+          monitorResultId: "11111111-1111-4111-8111-111111111111",
+        },
+      },
+    }));
+    const app = await createTestApp(apps, {
+      createOrOpenMonitorInvestigation:
+        createOrOpenMonitorInvestigation as unknown as AppContainer["missionService"]["createOrOpenMonitorInvestigation"],
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/missions/monitoring-investigations",
+      payload: {
+        monitorResultId: "11111111-1111-4111-8111-111111111111",
+        companyKey: "acme",
+        requestedBy: "finance-operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(createOrOpenMonitorInvestigation).toHaveBeenCalledWith({
+      monitorResultId: "11111111-1111-4111-8111-111111111111",
+      companyKey: "acme",
+      requestedBy: "finance-operator",
+    });
+  });
+
   it("POST /missions/reporting/board-packets defaults requestedBy and returns 201", async () => {
     const createBoardPacket = vi.fn(async () => ({
       mission: {
@@ -427,7 +463,10 @@ async function createTestApp(
     Partial<
       Pick<
         AppContainer["missionService"],
-        "createBoardPacket" | "createDiligencePacket" | "createLenderUpdate"
+        | "createBoardPacket"
+        | "createDiligencePacket"
+        | "createLenderUpdate"
+        | "createOrOpenMonitorInvestigation"
       >
     >,
 ) {
@@ -444,6 +483,11 @@ async function createTestApp(
   if (overrides.createDiligencePacket) {
     container.missionService.createDiligencePacket =
       overrides.createDiligencePacket;
+  }
+
+  if (overrides.createOrOpenMonitorInvestigation) {
+    container.missionService.createOrOpenMonitorInvestigation =
+      overrides.createOrOpenMonitorInvestigation;
   }
 
   if (overrides.exportMarkdownBundle) {

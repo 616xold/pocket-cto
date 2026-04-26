@@ -7,6 +7,16 @@ import type { MonitoringRepository } from "./repository";
 export class DrizzleMonitoringRepository implements MonitoringRepository {
   constructor(private readonly db: Db) {}
 
+  async getMonitorResultById(monitorResultId: string) {
+    const [row] = await this.db
+      .select()
+      .from(monitorResults)
+      .where(eq(monitorResults.id, monitorResultId))
+      .limit(1);
+
+    return row ? mapMonitorResultRow(row) : null;
+  }
+
   async getLatestMonitorResult(input: {
     companyKey: string;
     monitorKind: MonitorKind;

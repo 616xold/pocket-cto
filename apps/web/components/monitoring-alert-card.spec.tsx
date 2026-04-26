@@ -5,9 +5,13 @@ import type { MonitorAlertCard } from "@pocket-cto/domain";
 import { MonitoringAlertCard } from "./monitoring-alert-card";
 
 describe("MonitoringAlertCard", () => {
-  it("renders source-backed cash-posture alert posture without action controls", () => {
+  it("renders source-backed cash-posture alert posture with a manual investigation action", () => {
     const html = renderToStaticMarkup(
-      <MonitoringAlertCard alertCard={buildAlertCard()} />,
+      <MonitoringAlertCard
+        alertCard={buildAlertCard()}
+        monitorResultId="66666666-6666-4666-8666-666666666666"
+        requestedBy="finance-operator"
+      />,
     );
 
     expect(html).toContain("Cash posture monitor");
@@ -23,6 +27,8 @@ describe("MonitoringAlertCard", () => {
     expect(html).toContain("No bank-account-summary source lineage is available.");
     expect(html).toContain("limited_by_missing_source");
     expect(html).toContain("Human review next step");
+    expect(html).toContain("Create/open investigation");
+    expect(html).toContain("66666666-6666-4666-8666-666666666666");
 
     for (const forbidden of [
       "send",
@@ -33,7 +39,6 @@ describe("MonitoringAlertCard", () => {
       "pay",
       "book journal",
       "file tax",
-      "create investigation mission",
     ]) {
       expect(html.toLowerCase()).not.toContain(forbidden);
     }

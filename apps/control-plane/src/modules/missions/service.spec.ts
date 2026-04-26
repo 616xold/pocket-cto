@@ -3,6 +3,7 @@ import {
   FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS,
   type ApprovalRecord,
   type CfoWikiCompanySourceListView,
+  type MonitorResult,
   type ProofBundleManifest,
 } from "@pocket-cto/domain";
 import { InMemoryMissionRepository } from "./repository";
@@ -15,6 +16,9 @@ import { MissionService } from "./service";
 function createService(options?: {
   companySources?: CfoWikiCompanySourceListView;
   listMissionApprovals?: (missionId: string) => Promise<ApprovalRecord[]>;
+  monitorResultReader?: {
+    getMonitorResultById(monitorResultId: string): Promise<unknown | null>;
+  };
 }) {
   const repository = new InMemoryMissionRepository();
   const replayRepository = new InMemoryReplayRepository();
@@ -50,6 +54,7 @@ function createService(options?: {
             );
           },
         },
+        monitorResultReader: options?.monitorResultReader,
       },
     ),
   };
@@ -231,6 +236,218 @@ describe("MissionService", () => {
       "mission.status_changed",
       "artifact.created",
     ]);
+  });
+
+  it("creates or opens one taskless monitor-alert investigation mission from a persisted alert", async () => {
+    const alertResult = buildAlertMonitorResult();
+    const { replayService, repository, service } = createService({
+      monitorResultReader: {
+        async getMonitorResultById(monitorResultId) {
+          expect(monitorResultId).toBe(alertResult.id);
+          return alertResult;
+        },
+      },
+    });
+
+    const first = await service.createOrOpenMonitorInvestigation({
+      monitorResultId: alertResult.id,
+      companyKey: "acme",
+      requestedBy: "finance-operator",
+    });
+    const second = await service.createOrOpenMonitorInvestigation({
+      monitorResultId: alertResult.id,
+      companyKey: "acme",
+      requestedBy: "finance-operator",
+    });
+
+    expect(first.created).toBe(true);
+    expect(second.created).toBe(false);
+    expect(second.mission.id).toBe(first.mission.id);
+    expect(first.mission).toMatchObject({
+      type: "discovery",
+      status: "succeeded",
+      sourceKind: "alert",
+      sourceRef: `pocket-cfo://monitor-results/${alertResult.id}`,
+      primaryRepo: null,
+    });
+    expect(first.tasks).toEqual([]);
+    expect(first.proofBundle).toMatchObject({
+      status: "ready",
+      companyKey: "acme",
+      questionKind: null,
+      reportKind: null,
+      monitorInvestigation: {
+        monitorResultId: alertResult.id,
+        companyKey: "acme",
+        monitorKind: "cash_posture",
+        monitorResultStatus: "alert",
+        alertSeverity: "critical",
+        sourceLineageSummary:
+          "No bank-account-summary source lineage is available.",
+        proofBundlePosture: {
+          state: "limited_by_missing_source",
+        },
+        runtimeBoundary: {
+          monitorRerunUsed: false,
+          runtimeCodexUsed: false,
+          deliveryActionUsed: false,
+          scheduledAutomationUsed: false,
+          reportArtifactCreated: false,
+          approvalCreated: false,
+          autonomousFinanceActionUsed: false,
+        },
+      },
+      evidenceCompleteness: {
+        status: "complete",
+        expectedArtifactKinds: [],
+        missingArtifactKinds: [],
+      },
+    });
+
+    const events = await replayService.listByMissionId(first.mission.id);
+    expect(events.map((event) => event.type)).toEqual([
+      "mission.created",
+      "mission.status_changed",
+      "artifact.created",
+    ]);
+    expect(events[1]?.payload).toEqual({
+      from: "planned",
+      to: "succeeded",
+      reason: "monitor_investigation_handoff_ready",
+    });
+    expect(await repository.claimNextRunnableTask()).toBeNull();
+  });
+
+  it("rejects missing, non-alert, non-cash, and alert-card-less monitor results", async () => {
+    const alertResult = buildAlertMonitorResult();
+    const cases: Array<{
+      expectedPath: string;
+      result: unknown | null;
+    }> = [
+      {
+        expectedPath: "monitorResultId",
+        result: null,
+      },
+      {
+        expectedPath: "monitorResultId",
+        result: {
+          ...alertResult,
+          alertCard: null,
+          conditions: [],
+          severity: "none",
+          status: "no_alert",
+        } satisfies MonitorResult,
+      },
+      {
+        expectedPath: "monitorKind",
+        result: {
+          ...alertResult,
+          monitorKind: "collections_pressure",
+        },
+      },
+      {
+        expectedPath: "monitorResultId",
+        result: {
+          ...alertResult,
+          alertCard: null,
+        },
+      },
+    ];
+
+    for (const testCase of cases) {
+      const { service } = createService({
+        monitorResultReader: {
+          async getMonitorResultById() {
+            return testCase.result;
+          },
+        },
+      });
+
+      await expect(
+        service.createOrOpenMonitorInvestigation({
+          monitorResultId: alertResult.id,
+          companyKey: "acme",
+          requestedBy: "finance-operator",
+        }),
+      ).rejects.toMatchObject({
+        body: {
+          error: {
+            details: [
+              {
+                path: testCase.expectedPath,
+              },
+            ],
+          },
+        },
+        statusCode: 400,
+      });
+    }
+  });
+
+  it("rejects monitor investigation requests for the wrong company", async () => {
+    const alertResult = buildAlertMonitorResult();
+    const { service } = createService({
+      monitorResultReader: {
+        async getMonitorResultById() {
+          return alertResult;
+        },
+      },
+    });
+
+    await expect(
+      service.createOrOpenMonitorInvestigation({
+        monitorResultId: alertResult.id,
+        companyKey: "other-company",
+        requestedBy: "finance-operator",
+      }),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          details: [
+            {
+              path: "companyKey",
+            },
+          ],
+        },
+      },
+      statusCode: 400,
+    });
+  });
+
+  it("rejects wrong-company monitor investigation opens even after the alert mission exists", async () => {
+    const alertResult = buildAlertMonitorResult();
+    const { service } = createService({
+      monitorResultReader: {
+        async getMonitorResultById() {
+          return alertResult;
+        },
+      },
+    });
+
+    await service.createOrOpenMonitorInvestigation({
+      monitorResultId: alertResult.id,
+      companyKey: "acme",
+      requestedBy: "finance-operator",
+    });
+
+    await expect(
+      service.createOrOpenMonitorInvestigation({
+        monitorResultId: alertResult.id,
+        companyKey: "other-company",
+        requestedBy: "finance-operator",
+      }),
+    ).rejects.toMatchObject({
+      body: {
+        error: {
+          details: [
+            {
+              path: "companyKey",
+            },
+          ],
+        },
+      },
+      statusCode: 400,
+    });
   });
 
   it("rejects policy lookup missions when the source is unknown or not policy_document", async () => {
@@ -1122,5 +1339,84 @@ function buildReadyFinanceMemoProofBundle(input: {
       latestArtifactAt: "2026-04-18T12:03:00.000Z",
     },
     status: "ready",
+  };
+}
+
+function buildAlertMonitorResult(): MonitorResult {
+  const sourceFreshnessPosture = {
+    state: "missing" as const,
+    latestAttemptedSyncRunId: null,
+    latestSuccessfulSyncRunId: null,
+    latestSuccessfulSource: null,
+    missingSource: true,
+    failedSource: false,
+    summary: "No successful bank-account-summary source is stored.",
+  };
+  const proofBundlePosture = {
+    state: "limited_by_missing_source" as const,
+    summary:
+      "The monitor proof is limited because no bank-account-summary source backs the cash posture.",
+  };
+
+  return {
+    id: "66666666-6666-4666-8666-666666666666",
+    companyId: "11111111-1111-4111-8111-111111111111",
+    companyKey: "acme",
+    monitorKind: "cash_posture",
+    runKey: "cash_posture:acme:missing-source",
+    triggeredBy: "finance-operator",
+    status: "alert",
+    severity: "critical",
+    conditions: [
+      {
+        kind: "missing_source",
+        severity: "critical",
+        summary: "No successful bank-account-summary slice exists.",
+        evidencePath: "freshness.state",
+      },
+    ],
+    sourceFreshnessPosture,
+    sourceLineageRefs: [],
+    deterministicSeverityRationale:
+      "Critical because missing_source was detected from stored cash-posture freshness.",
+    limitations: [
+      "The monitor reports source posture only and does not infer runway.",
+    ],
+    proofBundlePosture,
+    replayPosture: {
+      state: "not_appended",
+      reason:
+        "F6A monitor results are persisted company-scoped records and are not appended to mission replay.",
+    },
+    runtimeBoundary: {
+      runtimeCodexUsed: false,
+      deliveryActionUsed: false,
+      investigationMissionCreated: false,
+      autonomousFinanceActionUsed: false,
+      summary:
+        "The result was produced by deterministic stored-state evaluation only.",
+    },
+    humanReviewNextStep:
+      "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+    alertCard: {
+      companyKey: "acme",
+      monitorKind: "cash_posture",
+      status: "alert",
+      severity: "critical",
+      deterministicSeverityRationale:
+        "Critical because missing_source was detected from stored cash-posture freshness.",
+      conditionSummaries: ["No successful bank-account-summary slice exists."],
+      sourceFreshnessPosture,
+      sourceLineageSummary:
+        "No bank-account-summary source lineage is available.",
+      limitations: [
+        "The monitor reports source posture only and does not infer runway.",
+      ],
+      proofBundlePosture,
+      humanReviewNextStep:
+        "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+      createdAt: "2026-04-26T12:00:00.000Z",
+    },
+    createdAt: "2026-04-26T12:00:00.000Z",
   };
 }

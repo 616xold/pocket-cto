@@ -7,6 +7,7 @@ import {
   FinanceDiscoveryFreshnessStateSchema,
 } from "./discovery-mission";
 import { FinanceCompanyKeySchema } from "./finance-twin";
+import { MonitorInvestigationSeedSchema } from "./monitoring";
 import {
   ReportingCirculationChronologyViewSchema,
   ReportingCirculationRecordViewSchema,
@@ -112,6 +113,7 @@ export const ProofBundleManifestSchema = z.object({
   reportKind: ReportingMissionReportKindSchema.nullable().default(null),
   reportDraftStatus: ReportingDraftStatusSchema.nullable().default(null),
   reportSummary: z.string().default(""),
+  monitorInvestigation: MonitorInvestigationSeedSchema.nullable().optional(),
   reportPublication: ReportingPublicationViewSchema.nullable().default(null),
   circulationReadiness:
     ReportingCirculationReadinessViewSchema.nullable().default(null),

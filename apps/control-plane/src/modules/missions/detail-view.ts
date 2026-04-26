@@ -37,6 +37,7 @@ export function buildMissionDetailView(input: {
     mission: input.mission,
     tasks: input.tasks,
     proofBundle,
+    monitorInvestigation: proofBundle.monitorInvestigation,
     discoveryAnswer: readMissionDiscoveryAnswer(input.artifacts),
     reporting: readMissionReportingView({
       artifacts: input.artifacts,
@@ -156,6 +157,7 @@ function truncate(value: string) {
 function isFinanceProofBundle(manifest: ProofBundleManifest) {
   return (
     manifest.reportKind === null &&
+    manifest.monitorInvestigation === null &&
     (manifest.companyKey !== null ||
       isFinanceDiscoveryQuestionKind(manifest.questionKind))
   );

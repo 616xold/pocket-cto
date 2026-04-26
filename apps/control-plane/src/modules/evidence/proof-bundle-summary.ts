@@ -82,6 +82,7 @@ export type ProofBundleAssemblyFacts = {
   latestScoutTask: MissionTaskRecord | null;
   limitationsSummary: string | null;
   missionType: MissionRecord["type"];
+  monitorInvestigation: ProofBundleManifest["monitorInvestigation"];
   presentArtifactKinds: ArtifactKind[];
   pullRequestIsDraft: boolean | null;
   pullRequestNumber: number | null;
@@ -192,6 +193,10 @@ export function deriveProofBundleAssemblyFacts(input: {
   const latestExecutorTask = readLatestTaskByRole(input.tasks, "executor");
   const latestScoutTask = readLatestTaskByRole(input.tasks, "scout");
   const discoveryQuestion = input.mission.spec.input?.discoveryQuestion ?? null;
+  const monitorInvestigation =
+    input.mission.spec.input?.monitorInvestigation ??
+    input.existingBundle?.monitorInvestigation ??
+    null;
   const targetRepoFullName =
     (isLegacyDiscoveryAnswerMetadata(discoveryAnswerMetadata)
       ? discoveryAnswerMetadata.repoFullName
@@ -381,6 +386,7 @@ export function deriveProofBundleAssemblyFacts(input: {
         : null) ??
       normalizeSentence(input.existingBundle?.limitationsSummary ?? null),
     missionType: input.mission.type,
+    monitorInvestigation,
     presentArtifactKinds: readPresentArtifactKinds(evidenceArtifacts),
     pullRequestIsDraft,
     pullRequestNumber,

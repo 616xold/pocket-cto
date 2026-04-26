@@ -11,6 +11,7 @@ import {
   createDiscoveryMissionSchema,
   createDiligencePacketMissionSchema,
   createLenderUpdateMissionSchema,
+  createMonitorInvestigationMissionSchema,
   exportReportingMissionMarkdownSchema,
   fileReportingMissionArtifactsSchema,
   createMissionFromTextSchema,
@@ -88,6 +89,16 @@ export async function registerMissionRoutes(
     const created = await deps.missionService.createDiligencePacket(body);
     reply.code(201);
     return created;
+  });
+
+  app.post("/missions/monitoring-investigations", async (request, reply) => {
+    const body = createMonitorInvestigationMissionSchema.parse(request.body);
+    const result = await deps.missionService.createOrOpenMonitorInvestigation(
+      body,
+    );
+
+    reply.code(result.created ? 201 : 200);
+    return result;
   });
 
   app.get("/missions/:missionId", async (request) => {

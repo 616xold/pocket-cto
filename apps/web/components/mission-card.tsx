@@ -47,6 +47,10 @@ export function MissionCard({
     ? discoveryAnswer
     : null;
   const reportingView = reporting;
+  const monitorInvestigation =
+    proofBundle.monitorInvestigation ??
+    mission.spec.input?.monitorInvestigation ??
+    null;
   const reportingPublication =
     reportingView?.publication ?? proofBundle.reportPublication ?? null;
   const circulationChronology =
@@ -65,8 +69,11 @@ export function MissionCard({
     isBoardPacket || isLenderUpdate || isDiligencePacket;
   const reportProofBundle =
     proofBundle.reportKind !== null || reportingView !== null;
+  const monitorInvestigationProofBundle = monitorInvestigation !== null;
   const financeProofBundle =
-    !reportProofBundle && isFinanceProofBundle(proofBundle);
+    !monitorInvestigationProofBundle &&
+    !reportProofBundle &&
+    isFinanceProofBundle(proofBundle);
   const policySourceScope =
     reportingView?.policySourceScope ??
     financeDiscoveryAnswer?.policySourceScope ??
@@ -89,7 +96,38 @@ export function MissionCard({
         </div>
 
         <div className="meta-grid">
-          {reportingView ? (
+          {monitorInvestigation ? (
+            <>
+              <div>
+                <dt>Mission type</dt>
+                <dd>{mission.type}</dd>
+              </div>
+              <div>
+                <dt>Company</dt>
+                <dd>{monitorInvestigation.companyKey}</dd>
+              </div>
+              <div>
+                <dt>Monitor kind</dt>
+                <dd>{monitorInvestigation.monitorKind}</dd>
+              </div>
+              <div>
+                <dt>Monitor result</dt>
+                <dd>{monitorInvestigation.monitorResultId}</dd>
+              </div>
+              <div>
+                <dt>Alert severity</dt>
+                <dd>{monitorInvestigation.alertSeverity}</dd>
+              </div>
+              <div>
+                <dt>Freshness</dt>
+                <dd>
+                  {readFreshnessLabel(
+                    monitorInvestigation.sourceFreshnessPosture.state,
+                  )}
+                </dd>
+              </div>
+            </>
+          ) : reportingView ? (
             <>
               <div>
                 <dt>Mission type</dt>
@@ -272,7 +310,9 @@ export function MissionCard({
         </div>
       </section>
 
-      {reportingView ? (
+      {monitorInvestigation ? (
+        <MonitorInvestigationCard seed={monitorInvestigation} />
+      ) : reportingView ? (
         <ReportingOutputCard
           proofBundle={proofBundle}
           reporting={reportingView}
@@ -370,7 +410,38 @@ export function MissionCard({
             <dt>Completeness</dt>
             <dd>{proofBundle.evidenceCompleteness.status}</dd>
           </div>
-          {reportProofBundle ? (
+          {monitorInvestigationProofBundle && monitorInvestigation ? (
+            <>
+              <div>
+                <dt>Company</dt>
+                <dd>{monitorInvestigation.companyKey}</dd>
+              </div>
+              <div>
+                <dt>Monitor kind</dt>
+                <dd>{monitorInvestigation.monitorKind}</dd>
+              </div>
+              <div>
+                <dt>Monitor result</dt>
+                <dd>{monitorInvestigation.monitorResultId}</dd>
+              </div>
+              <div>
+                <dt>Alert severity</dt>
+                <dd>{monitorInvestigation.alertSeverity}</dd>
+              </div>
+              <div>
+                <dt>Source freshness</dt>
+                <dd>
+                  {readFreshnessLabel(
+                    monitorInvestigation.sourceFreshnessPosture.state,
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Proof posture</dt>
+                <dd>{monitorInvestigation.proofBundlePosture.state}</dd>
+              </div>
+            </>
+          ) : reportProofBundle ? (
             <>
               <div>
                 <dt>Company</dt>
@@ -628,7 +699,22 @@ export function MissionCard({
             <dt>Change summary</dt>
             <dd>{proofBundle.changeSummary || "Not recorded yet."}</dd>
           </div>
-          {reportProofBundle ? (
+          {monitorInvestigationProofBundle && monitorInvestigation ? (
+            <>
+              <div>
+                <dt>Freshness posture</dt>
+                <dd>{monitorInvestigation.sourceFreshnessPosture.summary}</dd>
+              </div>
+              <div>
+                <dt>Lineage summary</dt>
+                <dd>{monitorInvestigation.sourceLineageSummary}</dd>
+              </div>
+              <div>
+                <dt>Limitations</dt>
+                <dd>{monitorInvestigation.limitations.join(" ")}</dd>
+              </div>
+            </>
+          ) : reportProofBundle ? (
             <>
               <div>
                 <dt>Report summary</dt>
@@ -694,7 +780,9 @@ export function MissionCard({
           <h3>Key timestamps</h3>
           <ul className="list-clean">
             <li>Mission created: {proofBundle.timestamps.missionCreatedAt}</li>
-            {reportProofBundle || financeProofBundle ? (
+            {reportProofBundle ||
+            financeProofBundle ||
+            monitorInvestigationProofBundle ? (
               <li>
                 Latest artifact:{" "}
                 {proofBundle.timestamps.latestArtifactAt ?? "Not recorded yet."}
@@ -726,7 +814,9 @@ export function MissionCard({
           </ul>
         </div>
 
-        {reportProofBundle || financeProofBundle ? (
+        {reportProofBundle ||
+        financeProofBundle ||
+        monitorInvestigationProofBundle ? (
           <>
             <div className="stack" style={{ marginTop: 18 }}>
               <h3>Related routes</h3>
@@ -779,6 +869,79 @@ export function MissionCard({
   );
 }
 
+function MonitorInvestigationCard(input: {
+  seed: NonNullable<MissionCardProps["proofBundle"]["monitorInvestigation"]>;
+}) {
+  const seed = input.seed;
+
+  return (
+    <section className="card">
+      <div className="section-head">
+        <div>
+          <p className="kicker">Monitor alert source</p>
+          <h2>Stored cash-posture alert</h2>
+        </div>
+        <StatusPill
+          label={seed.alertSeverity}
+          tone={seed.alertSeverity === "critical" ? "warn" : "default"}
+        />
+      </div>
+
+      <p className="muted">{seed.deterministicSeverityRationale}</p>
+
+      <div className="meta-grid">
+        <div>
+          <dt>Source ref</dt>
+          <dd>{seed.sourceRef}</dd>
+        </div>
+        <div>
+          <dt>Freshness state</dt>
+          <dd>{readFreshnessLabel(seed.sourceFreshnessPosture.state)}</dd>
+        </div>
+        <div>
+          <dt>Lineage refs</dt>
+          <dd>{seed.sourceLineageRefs.length}</dd>
+        </div>
+        <div>
+          <dt>Proof posture</dt>
+          <dd>{seed.proofBundlePosture.state}</dd>
+        </div>
+      </div>
+
+      <div className="stack" style={{ marginTop: 18 }}>
+        <h3>Conditions</h3>
+        <ul className="list-clean">
+          {seed.conditions.map((condition) => (
+            <li key={`${condition.kind}:${condition.summary}`}>
+              <strong>{condition.kind}</strong> · {condition.summary}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="stack" style={{ marginTop: 18 }}>
+        <h3>Source posture</h3>
+        <p className="muted">{seed.sourceFreshnessPosture.summary}</p>
+        <p className="muted">{seed.sourceLineageSummary}</p>
+      </div>
+
+      <div className="stack" style={{ marginTop: 18 }}>
+        <h3>Limitations</h3>
+        <ul className="list-clean">
+          {seed.limitations.map((limitation) => (
+            <li key={limitation}>{limitation}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="stack" style={{ marginTop: 18 }}>
+        <h3>Human review next step</h3>
+        <p className="muted">{seed.humanReviewNextStep}</p>
+      </div>
+    </section>
+  );
+}
+
 function readStatusTone(status: string) {
   if (status === "succeeded" || status === "approved" || status === "ready") {
     return "good" as const;
@@ -799,6 +962,14 @@ function readStatusTone(status: string) {
 function buildProofBundleReadinessMessage(
   proofBundle: MissionCardProps["proofBundle"],
 ) {
+  if (proofBundle.monitorInvestigation) {
+    if (proofBundle.status === "ready") {
+      return "The proof bundle is a monitor-alert investigation handoff package sourced from the stored monitor result, with freshness, lineage, limitations, proof posture, and human review next step preserved.";
+    }
+
+    return "The monitor-alert investigation proof posture is incomplete. Review the stored monitor result before relying on this mission.";
+  }
+
   if (proofBundle.reportKind === "diligence_packet") {
     if (proofBundle.status === "ready") {
       return "The proof bundle now reads like a draft diligence-packet review package with source reporting lineage, linked appendix posture, carried freshness, and visible limitations tied together.";
@@ -897,6 +1068,7 @@ function buildProofBundleReadinessMessage(
 function isFinanceProofBundle(proofBundle: MissionCardProps["proofBundle"]) {
   return (
     proofBundle.reportKind === null &&
+    proofBundle.monitorInvestigation === null &&
     (proofBundle.companyKey !== null ||
       isFinanceDiscoveryQuestionKind(proofBundle.questionKind))
   );

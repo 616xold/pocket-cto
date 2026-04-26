@@ -4,6 +4,148 @@ import { describe, expect, it } from "vitest";
 import { MissionCard } from "./mission-card";
 
 describe("MissionCard", () => {
+  it("renders monitor-alert investigation seed posture without report or runtime cues", () => {
+    const seed = buildMonitorInvestigationSeed();
+    const html = renderToStaticMarkup(
+      <MissionCard
+        approvalCards={[]}
+        artifacts={[
+          {
+            createdAt: "2026-04-26T01:01:00.000Z",
+            id: "77777777-7777-4777-8777-777777777777",
+            kind: "proof_bundle_manifest",
+            summary: "Monitor alert handoff proof bundle.",
+            taskId: null,
+            uri: "pocket-cfo://missions/11111111-1111-4111-8111-111111111111/proof-bundle-manifest",
+          },
+        ]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          createdAt: "2026-04-26T01:00:00.000Z",
+          createdBy: "operator",
+          id: "11111111-1111-4111-8111-111111111111",
+          objective:
+            "Manual F6B handoff from a stored cash-posture alert without runtime execution.",
+          primaryRepo: null,
+          sourceKind: "alert",
+          sourceRef: seed.sourceRef,
+          spec: {
+            acceptance: ["Open one deterministic alert handoff."],
+            constraints: {
+              allowedPaths: [],
+              mustNot: ["invoke runtime-Codex", "create report artifacts"],
+            },
+            deliverables: ["monitor alert investigation seed"],
+            evidenceRequirements: ["stored monitor_result"],
+            input: {
+              monitorInvestigation: seed,
+            },
+            objective:
+              "Manual F6B handoff from a stored cash-posture alert without runtime execution.",
+            repos: [],
+            riskBudget: {
+              allowNetwork: false,
+              maxCostUsd: 1,
+              maxWallClockMinutes: 5,
+              requiresHumanApprovalFor: [],
+              sandboxMode: "read-only",
+            },
+            title: "Investigate cash-posture alert for acme",
+            type: "discovery",
+          },
+          status: "succeeded",
+          title: "Investigate cash-posture alert for acme",
+          type: "discovery",
+          updatedAt: "2026-04-26T01:01:00.000Z",
+        }}
+        proofBundle={{
+          answerSummary: "",
+          appendixPresent: false,
+          artifactIds: [],
+          artifacts: [],
+          branchName: null,
+          changeSummary:
+            "Opened deterministic F6B investigation handoff from stored cash_posture alert.",
+          circulationChronology: null,
+          circulationReadiness: null,
+          circulationRecord: null,
+          companyKey: seed.companyKey,
+          decisionTrace: [
+            "Stored monitor result is the investigation source of truth.",
+          ],
+          evidenceCompleteness: {
+            expectedArtifactKinds: [],
+            missingArtifactKinds: [],
+            notes: [],
+            presentArtifactKinds: [],
+            status: "complete",
+          },
+          freshnessState: seed.sourceFreshnessPosture.state,
+          freshnessSummary: seed.sourceFreshnessPosture.summary,
+          latestApproval: null,
+          limitationsSummary: seed.limitations.join(" "),
+          missionId: "11111111-1111-4111-8111-111111111111",
+          missionTitle: "Investigate cash-posture alert for acme",
+          monitorInvestigation: seed,
+          objective:
+            "Manual F6B handoff from a stored cash-posture alert without runtime execution.",
+          policySourceId: null,
+          policySourceScope: null,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: null,
+          relatedRoutePaths: ["/monitoring?companyKey=acme"],
+          relatedWikiPageKeys: [],
+          reportDraftStatus: null,
+          reportKind: null,
+          reportPublication: null,
+          reportSummary: "",
+          releaseReadiness: null,
+          releaseRecord: null,
+          riskSummary:
+            "The monitor proof is limited by a missing source. No delivery, report artifact, approval, or autonomous finance action was created.",
+          rollbackSummary:
+            "Cancel only this handoff; raw sources and monitor result remain unchanged.",
+          sourceDiscoveryMissionId: null,
+          sourceReportingMissionId: null,
+          status: "ready",
+          targetRepoFullName: null,
+          timestamps: {
+            latestApprovalAt: null,
+            latestArtifactAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPlannerEvidenceAt: null,
+            latestPullRequestAt: null,
+            missionCreatedAt: "2026-04-26T01:00:00.000Z",
+          },
+          validationSummary:
+            "Handoff assembled from persisted monitor result without rerun.",
+          verificationSummary:
+            "Review source freshness, lineage, limitations, and human-review next step.",
+          replayEventCount: 3,
+        }}
+        reporting={null}
+        tasks={[]}
+      />,
+    );
+
+    expect(html).toContain("Monitor alert source");
+    expect(html).toContain("Stored cash-posture alert");
+    expect(html).toContain(seed.sourceRef);
+    expect(html).toContain("cash_posture");
+    expect(html).toContain(seed.monitorResultId);
+    expect(html).toContain("limited_by_missing_source");
+    expect(html).toContain("No source lineage refs are available.");
+    expect(html).toContain("Review source coverage before relying");
+    expect(html).not.toContain("Discovery answer");
+    expect(html).not.toContain("Report kind");
+  });
+
   it("renders approval and artifact sections without the stale mission-spine placeholder copy", () => {
     const html = renderToStaticMarkup(
       <MissionCard
@@ -2179,3 +2321,66 @@ describe("MissionCard", () => {
     expect(html).toContain("Not logged yet.");
   });
 });
+
+function buildMonitorInvestigationSeed() {
+  return {
+    alertCardCreatedAt: "2026-04-26T00:01:00.000Z",
+    alertSeverity: "critical" as const,
+    companyKey: "acme",
+    conditionSummaries: ["No successful bank-account-summary source exists."],
+    conditions: [
+      {
+        evidencePath: "sourceFreshnessPosture.missingSource",
+        kind: "missing_source" as const,
+        severity: "critical" as const,
+        summary: "No successful bank-account-summary source exists.",
+      },
+    ],
+    deterministicSeverityRationale:
+      "Critical because the stored cash-posture monitor lacks required bank-account-summary evidence.",
+    humanReviewNextStep:
+      "Review source coverage before relying on the alert investigation.",
+    limitations: [
+      "The investigation handoff carries stored monitor evidence only.",
+    ],
+    monitorKind: "cash_posture" as const,
+    monitorResultCreatedAt: "2026-04-26T00:00:00.000Z",
+    monitorResultId: "66666666-6666-4666-8666-666666666666",
+    monitorResultStatus: "alert" as const,
+    proofBundlePosture: {
+      state: "limited_by_missing_source" as const,
+      summary: "The monitor proof is limited by a missing source.",
+    },
+    runtimeBoundary: {
+      approvalCreated: false as const,
+      autonomousFinanceActionUsed: false as const,
+      deliveryActionUsed: false as const,
+      monitorRerunUsed: false as const,
+      monitorResultRuntimeBoundary: {
+        autonomousFinanceActionUsed: false as const,
+        deliveryActionUsed: false as const,
+        investigationMissionCreated: false as const,
+        runtimeCodexUsed: false as const,
+        summary: "Stored monitor result used deterministic evaluation only.",
+      },
+      reportArtifactCreated: false as const,
+      runtimeCodexUsed: false as const,
+      scheduledAutomationUsed: false as const,
+      summary:
+        "F6B opened a deterministic handoff without runtime, delivery, reports, or approvals.",
+    },
+    sourceFreshnessPosture: {
+      failedSource: false,
+      latestAttemptedSyncRunId: null,
+      latestSuccessfulSource: null,
+      latestSuccessfulSyncRunId: null,
+      missingSource: true,
+      state: "missing" as const,
+      summary: "No successful source backs the cash posture.",
+    },
+    sourceLineageRefs: [],
+    sourceLineageSummary: "No source lineage refs are available.",
+    sourceRef:
+      "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+  };
+}

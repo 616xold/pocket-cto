@@ -16,6 +16,7 @@ type MissionListCardProps = {
 
 export function MissionListCard({ mission }: MissionListCardProps) {
   const isReportingMission = mission.reportKind !== null;
+  const monitorInvestigation = mission.monitorInvestigation;
   const isDiligencePacket = mission.reportKind === "diligence_packet";
   const isBoardPacket = mission.reportKind === "board_packet";
   const isLenderUpdate = mission.reportKind === "lender_update";
@@ -102,7 +103,34 @@ export function MissionListCard({ mission }: MissionListCardProps) {
       ) : null}
 
       <dl className="mission-summary-meta">
-        {isReportingMission ? (
+        {monitorInvestigation ? (
+          <>
+            <div>
+              <dt>Company</dt>
+              <dd>{monitorInvestigation.companyKey}</dd>
+            </div>
+            <div>
+              <dt>Monitor kind</dt>
+              <dd>{monitorInvestigation.monitorKind}</dd>
+            </div>
+            <div>
+              <dt>Alert severity</dt>
+              <dd>{monitorInvestigation.alertSeverity}</dd>
+            </div>
+            <div>
+              <dt>Freshness</dt>
+              <dd>
+                {readFreshnessLabel(
+                  monitorInvestigation.sourceFreshnessPosture.state,
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>Proof posture</dt>
+              <dd>{monitorInvestigation.proofBundlePosture.state}</dd>
+            </div>
+          </>
+        ) : isReportingMission ? (
           <>
             <div>
               <dt>Company</dt>
@@ -327,6 +355,10 @@ export function MissionListCard({ mission }: MissionListCardProps) {
 }
 
 function readLatestTaskLabel(mission: MissionListItem) {
+  if (mission.monitorInvestigation) {
+    return "Taskless monitor-alert handoff; no runtime task is queued.";
+  }
+
   if (!mission.latestTask) {
     return "Task materialization is still pending.";
   }

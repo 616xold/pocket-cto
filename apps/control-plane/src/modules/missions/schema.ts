@@ -3,6 +3,7 @@ import {
   CreateBoardPacketMissionInputSchema,
   CreateDiligencePacketMissionInputSchema,
   CreateLenderUpdateMissionInputSchema,
+  CreateMonitorInvestigationMissionInputSchema,
   CreateMissionFromTextInputSchema,
   ExportReportingMissionMarkdownInputSchema,
   CreateReportingMissionInputSchema,
@@ -57,6 +58,8 @@ export const createDiligencePacketMissionSchema =
   CreateDiligencePacketMissionInputSchema;
 export const createLenderUpdateMissionSchema =
   CreateLenderUpdateMissionInputSchema;
+export const createMonitorInvestigationMissionSchema =
+  CreateMonitorInvestigationMissionInputSchema;
 export const createMissionFromTextSchema = CreateMissionFromTextInputSchema;
 
 export const missionIdParamsSchema = z.object({

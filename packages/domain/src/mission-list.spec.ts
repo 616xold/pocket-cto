@@ -2,6 +2,46 @@ import { describe, expect, it } from "vitest";
 import { MissionListViewSchema } from "./mission-list";
 
 describe("Mission list domain schema", () => {
+  it("parses monitor-alert investigation mission summaries", () => {
+    const parsed = MissionListViewSchema.parse({
+      filters: {
+        limit: 20,
+        status: null,
+        sourceKind: null,
+      },
+      missions: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          title: "Investigate cash-posture alert for acme",
+          objectiveExcerpt:
+            "Manual F6B investigation handoff from stored cash_posture alert.",
+          companyKey: "acme",
+          monitorInvestigation: buildMonitorInvestigationSeed(),
+          answerSummary: null,
+          freshnessState: "missing",
+          status: "succeeded",
+          sourceKind: "alert",
+          sourceRef:
+            "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+          primaryRepo: null,
+          createdAt: "2026-04-26T12:00:00.000Z",
+          updatedAt: "2026-04-26T12:01:00.000Z",
+          latestTask: null,
+          proofBundleStatus: "ready",
+          pendingApprovalCount: 0,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+        },
+      ],
+    });
+
+    expect(parsed.missions[0]?.sourceKind).toBe("alert");
+    expect(parsed.missions[0]?.monitorInvestigation?.alertSeverity).toBe(
+      "critical",
+    );
+    expect(parsed.missions[0]?.questionKind).toBeNull();
+  });
+
   it("parses finance discovery mission summaries", () => {
     const parsed = MissionListViewSchema.parse({
       filters: {
@@ -691,3 +731,69 @@ describe("Mission list domain schema", () => {
     );
   });
 });
+
+function buildMonitorInvestigationSeed() {
+  return {
+    monitorResultId: "66666666-6666-4666-8666-666666666666",
+    companyKey: "acme",
+    monitorKind: "cash_posture" as const,
+    monitorResultStatus: "alert" as const,
+    alertSeverity: "critical" as const,
+    deterministicSeverityRationale:
+      "Critical because missing_source was detected from stored cash-posture freshness.",
+    conditions: [
+      {
+        kind: "missing_source" as const,
+        severity: "critical" as const,
+        summary: "No successful bank-account-summary slice exists.",
+        evidencePath: "freshness.state",
+      },
+    ],
+    conditionSummaries: ["No successful bank-account-summary slice exists."],
+    sourceFreshnessPosture: {
+      state: "missing" as const,
+      latestAttemptedSyncRunId: null,
+      latestSuccessfulSyncRunId: null,
+      latestSuccessfulSource: null,
+      missingSource: true,
+      failedSource: false,
+      summary: "No successful cash-posture source is stored.",
+    },
+    sourceLineageRefs: [],
+    sourceLineageSummary:
+      "No bank-account-summary source lineage is available.",
+    limitations: [
+      "The monitor reports source posture only and does not infer runway.",
+    ],
+    proofBundlePosture: {
+      state: "limited_by_missing_source" as const,
+      summary:
+        "The monitor proof is limited because no bank-account-summary source backs the cash posture.",
+    },
+    humanReviewNextStep:
+      "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+    runtimeBoundary: {
+      monitorResultRuntimeBoundary: {
+        runtimeCodexUsed: false as const,
+        deliveryActionUsed: false as const,
+        investigationMissionCreated: false as const,
+        autonomousFinanceActionUsed: false as const,
+        summary:
+          "The result was produced by deterministic stored-state evaluation only.",
+      },
+      monitorRerunUsed: false as const,
+      runtimeCodexUsed: false as const,
+      deliveryActionUsed: false as const,
+      scheduledAutomationUsed: false as const,
+      reportArtifactCreated: false as const,
+      approvalCreated: false as const,
+      autonomousFinanceActionUsed: false as const,
+      summary:
+        "The handoff opened a deterministic investigation mission without runtime or delivery action.",
+    },
+    sourceRef:
+      "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+    monitorResultCreatedAt: "2026-04-26T12:00:00.000Z",
+    alertCardCreatedAt: "2026-04-26T12:00:00.000Z",
+  };
+}

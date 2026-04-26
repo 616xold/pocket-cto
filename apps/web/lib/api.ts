@@ -5,6 +5,7 @@ import {
   CreateDiligencePacketMissionInputSchema,
   CreateDiscoveryMissionInputSchema,
   CreateLenderUpdateMissionInputSchema,
+  CreateMonitorInvestigationMissionInputSchema,
   CreateReportingMissionInputSchema,
   CreateSourceInputSchema,
   ExportReportingMissionMarkdownInputSchema,
@@ -105,6 +106,7 @@ const cashPostureMonitorRunSchema = MonitorRunResultSchema;
 const liveControlSchema = OperatorControlAvailabilitySchema;
 
 const createMissionResponseSchema = z.object({
+  created: z.boolean().optional(),
   mission: MissionRecordSchema,
   proofBundle: ProofBundleManifestSchema,
   tasks: z.array(MissionTaskRecordSchema),
@@ -316,6 +318,18 @@ export async function runCashPostureMonitor(input: {
       triggeredBy: input.triggeredBy,
     },
     cashPostureMonitorRunSchema,
+  );
+}
+
+export async function createOrOpenMonitorInvestigation(input: {
+  companyKey: string;
+  monitorResultId: string;
+  requestedBy: string;
+}) {
+  return postJsonStrict(
+    "/missions/monitoring-investigations",
+    CreateMonitorInvestigationMissionInputSchema.parse(input),
+    createMissionResponseSchema,
   );
 }
 

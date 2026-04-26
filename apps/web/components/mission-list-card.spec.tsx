@@ -4,6 +4,61 @@ import { describe, expect, it } from "vitest";
 import { MissionListCard } from "./mission-list-card";
 
 describe("MissionListCard", () => {
+  it("renders taskless monitor-alert investigation seed posture", () => {
+    const seed = buildMonitorInvestigationSeed();
+    const html = renderToStaticMarkup(
+      <MissionListCard
+        mission={{
+          appendixPresent: false,
+          answerSummary: null,
+          companyKey: seed.companyKey,
+          createdAt: "2026-04-26T01:00:00.000Z",
+          freshnessState: seed.sourceFreshnessPosture.state,
+          id: "11111111-1111-4111-8111-111111111111",
+          latestTask: null,
+          monitorInvestigation: seed,
+          objectiveExcerpt:
+            "Manual F6B handoff from a stored cash-posture alert.",
+          pendingApprovalCount: 0,
+          policySourceId: null,
+          policySourceScope: null,
+          primaryRepo: null,
+          proofBundleStatus: "ready",
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: null,
+          reportDraftStatus: null,
+          reportKind: null,
+          reportPublication: null,
+          circulationRecord: null,
+          circulationChronology: null,
+          circulationReadiness: null,
+          releaseRecord: null,
+          releaseReadiness: null,
+          reportSummary: null,
+          sourceDiscoveryMissionId: null,
+          sourceKind: "alert",
+          sourceRef: seed.sourceRef,
+          sourceReportingMissionId: null,
+          status: "succeeded",
+          title: "Investigate cash-posture alert for acme",
+          updatedAt: "2026-04-26T01:01:00.000Z",
+        }}
+      />,
+    );
+
+    expect(html).toContain("alert");
+    expect(html).toContain("Investigate cash-posture alert for acme");
+    expect(html).toContain(seed.sourceRef);
+    expect(html).toContain("cash_posture");
+    expect(html).toContain("critical");
+    expect(html).toContain("limited_by_missing_source");
+    expect(html).toContain(
+      "Taskless monitor-alert handoff; no runtime task is queued.",
+    );
+    expect(html).toContain("/missions/11111111-1111-4111-8111-111111111111");
+  });
+
   it("renders summary-shaped mission evidence and links into detail", () => {
     const html = renderToStaticMarkup(
       <MissionListCard
@@ -608,3 +663,66 @@ describe("MissionListCard", () => {
     expect(html).toContain("No");
   });
 });
+
+function buildMonitorInvestigationSeed() {
+  return {
+    alertCardCreatedAt: "2026-04-26T00:01:00.000Z",
+    alertSeverity: "critical" as const,
+    companyKey: "acme",
+    conditionSummaries: ["No successful bank-account-summary source exists."],
+    conditions: [
+      {
+        evidencePath: "sourceFreshnessPosture.missingSource",
+        kind: "missing_source" as const,
+        severity: "critical" as const,
+        summary: "No successful bank-account-summary source exists.",
+      },
+    ],
+    deterministicSeverityRationale:
+      "Critical because the stored cash-posture monitor lacks required bank-account-summary evidence.",
+    humanReviewNextStep:
+      "Review source coverage before relying on the alert investigation.",
+    limitations: [
+      "The investigation handoff carries stored monitor evidence only.",
+    ],
+    monitorKind: "cash_posture" as const,
+    monitorResultCreatedAt: "2026-04-26T00:00:00.000Z",
+    monitorResultId: "66666666-6666-4666-8666-666666666666",
+    monitorResultStatus: "alert" as const,
+    proofBundlePosture: {
+      state: "limited_by_missing_source" as const,
+      summary: "The monitor proof is limited by a missing source.",
+    },
+    runtimeBoundary: {
+      approvalCreated: false as const,
+      autonomousFinanceActionUsed: false as const,
+      deliveryActionUsed: false as const,
+      monitorRerunUsed: false as const,
+      monitorResultRuntimeBoundary: {
+        autonomousFinanceActionUsed: false as const,
+        deliveryActionUsed: false as const,
+        investigationMissionCreated: false as const,
+        runtimeCodexUsed: false as const,
+        summary: "Stored monitor result used deterministic evaluation only.",
+      },
+      reportArtifactCreated: false as const,
+      runtimeCodexUsed: false as const,
+      scheduledAutomationUsed: false as const,
+      summary:
+        "F6B opened a deterministic handoff without runtime, delivery, reports, or approvals.",
+    },
+    sourceFreshnessPosture: {
+      failedSource: false,
+      latestAttemptedSyncRunId: null,
+      latestSuccessfulSource: null,
+      latestSuccessfulSyncRunId: null,
+      missingSource: true,
+      state: "missing" as const,
+      summary: "No successful source backs the cash posture.",
+    },
+    sourceLineageRefs: [],
+    sourceLineageSummary: "No source lineage refs are available.",
+    sourceRef:
+      "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+  };
+}

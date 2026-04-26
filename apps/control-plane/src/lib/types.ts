@@ -45,6 +45,7 @@ export type MissionServicePort = Pick<
   | "createDiligencePacket"
   | "createDiscovery"
   | "createLenderUpdate"
+  | "createOrOpenMonitorInvestigation"
   | "createReporting"
   | "createFromText"
   | "getMissionDetail"

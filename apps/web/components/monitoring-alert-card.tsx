@@ -1,12 +1,19 @@
 import React from "react";
 import type { MonitorAlertCard } from "@pocket-cto/domain";
+import { submitCreateOrOpenMonitorInvestigation } from "../app/monitoring/actions";
 import { StatusPill } from "./status-pill";
 
 type MonitoringAlertCardProps = {
   alertCard: MonitorAlertCard | null;
+  monitorResultId?: string | null;
+  requestedBy?: string | null;
 };
 
-export function MonitoringAlertCard({ alertCard }: MonitoringAlertCardProps) {
+export function MonitoringAlertCard({
+  alertCard,
+  monitorResultId,
+  requestedBy,
+}: MonitoringAlertCardProps) {
   if (!alertCard) {
     return null;
   }
@@ -41,7 +48,28 @@ export function MonitoringAlertCard({ alertCard }: MonitoringAlertCardProps) {
           <dt>Proof posture</dt>
           <dd>{alertCard.proofBundlePosture.state}</dd>
         </div>
+        {monitorResultId ? (
+          <div>
+            <dt>Monitor result</dt>
+            <dd>{monitorResultId}</dd>
+          </div>
+        ) : null}
       </dl>
+
+      {monitorResultId ? (
+        <form action={submitCreateOrOpenMonitorInvestigation} className="button-row">
+          <input type="hidden" name="companyKey" value={alertCard.companyKey} />
+          <input type="hidden" name="monitorResultId" value={monitorResultId} />
+          <input
+            type="hidden"
+            name="requestedBy"
+            value={requestedBy ?? "operator"}
+          />
+          <button type="submit" className="button">
+            Create/open investigation
+          </button>
+        </form>
+      ) : null}
 
       <section className="stack">
         <div>
