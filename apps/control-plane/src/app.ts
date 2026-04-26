@@ -7,6 +7,7 @@ import { registerGitHubAppRoutes } from "./modules/github-app/routes";
 import { registerGitHubIssueIntakeRoutes } from "./modules/github-app/issue-intake-routes";
 import { registerGitHubWebhookRoutes } from "./modules/github-app/webhook-routes";
 import { registerMissionRoutes } from "./modules/missions/routes";
+import { registerMonitoringRoutes } from "./modules/monitoring/routes";
 import { registerReplayRoutes } from "./modules/replay/routes";
 import { registerApprovalRoutes } from "./modules/approvals/routes";
 import { registerCfoWikiRoutes } from "./modules/wiki/routes";
@@ -47,6 +48,11 @@ export async function buildApp(options?: { container?: AppContainer }) {
     missionReportingActionsService: container.missionReportingActionsService,
     missionService: container.missionService,
   });
+  if (container.monitoringService) {
+    await registerMonitoringRoutes(app, {
+      monitoringService: container.monitoringService,
+    });
+  }
   await registerReplayRoutes(app, {
     replayService: container.replayService,
   });

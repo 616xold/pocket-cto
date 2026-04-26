@@ -20,7 +20,8 @@ This plan is implementation-ready, but the thread that created it is docs-and-pl
 - [x] 2026-04-24T01:36:02Z Create this FP-0050 contract as the single active first-F6 implementation plan while leaving FP-0049 as the shipped F5C4I record.
 - [x] 2026-04-24T01:36:02Z Refresh the active docs so future threads continue FP-0050 rather than treating F5 or a broad F6 umbrella as active scope.
 - [x] 2026-04-24T01:44:06Z Run the docs-and-plan validation ladder from this plan-refresh thread and record the result here.
-- [ ] Implement F6A in a later thread only after starting from this checked-in Finance Plan.
+- [x] 2026-04-26T18:57:00Z Implement the first F6A slice: one pure `cash_posture` monitor contract, additive `monitor_results` persistence, a monitoring bounded context, run/latest HTTP routes, an operator alert-card read model, and `pnpm smoke:cash-posture-monitor:local`.
+- [x] 2026-04-26T19:08:08Z Complete and record the full F6A validation ladder from the implementation thread, including `pnpm smoke:cash-posture-monitor:local` and `pnpm ci:repro:current`.
 
 ## Surprises & Discoveries
 
@@ -35,6 +36,12 @@ This plan is implementation-ready, but the thread that created it is docs-and-pl
 
 - Observation: F5 reporting and approval lifecycles are already closed enough for F6A planning.
   Evidence: FP-0049 records F5C4I as shipped, and current active docs describe the completed F5A through F5C4I reporting/circulation/release baseline without a later active F5 contract.
+
+- Observation: the implementation did not need a replay event helper.
+  Evidence: monitor results are company-scoped persisted records in `monitor_results`; each result records `replayPosture.state = not_appended` with the reason that F6A monitor results are not mission replay events.
+
+- Observation: the clean reproduced Next.js build caught one page-signature polish issue in the new monitoring page.
+  Evidence: `pnpm ci:repro:current` initially failed because `apps/web/app/monitoring/page.tsx` allowed object-shaped `searchParams`; the implementation now uses the Next 15 promise-shaped page prop, and the rerun passed.
 
 ## Decision Log
 
@@ -64,6 +71,15 @@ This plan is implementation-ready, but the thread that created it is docs-and-pl
 
 - Decision: later F6 slices are likely `F6B-alert-to-investigation-mission-foundation`, `F6C-collections-or-payables-pressure-monitor-foundation`, `F6D-policy-or-covenant-threshold-monitor-foundation`, and `F6E-monitor-demo-replay-and-stack-pack-foundation`.
   Rationale: those are separate product questions and must not be created as FP-0051 or implemented in this planning slice.
+
+- Decision: F6A persists monitor results in one additive `monitor_results` table.
+  Rationale: recurring monitoring needs idempotent, reviewable state. The first implementation stores the full monitor result JSON plus condition details, source freshness posture, lineage refs, limitations, proof-bundle posture, alert-card posture, company, monitor kind, run key, trigger, status, severity, and timestamps.
+
+- Decision: F6A adds both a run route and a latest-read route.
+  Rationale: `POST /monitoring/companies/:companyKey/cash-posture/run` proves deterministic execution, while `GET /monitoring/companies/:companyKey/cash-posture/latest` is the smallest truthful operator UI read surface for the latest persisted result.
+
+- Decision: F6A records source-backed proof posture without pretending alerts are missions or reports.
+  Rationale: alert results expose `source_backed` or a `limited_by_*` monitor proof posture, not a mission proof bundle. The monitor result also records that runtime-codex, delivery actions, investigation missions, and autonomous finance actions were not used.
 
 ## Context and Orientation
 
@@ -252,7 +268,13 @@ The docs-and-plan thread that creates FP-0050 should run the preserved confidenc
 - `pnpm test`
 - `pnpm ci:repro:current`
 
-The later F6A implementation thread should add and run one new cash-posture monitor proof, then rerun the confidence ladder required by that implementation prompt.
+The F6A implementation thread added:
+
+- `pnpm smoke:cash-posture-monitor:local`
+
+This proof creates one company from an existing non-bank Finance Twin sync before running the monitor to prove missing-source or coverage-gap alert posture, then creates one clean bank-account-summary company to prove `no_alert` posture. It also asserts the shipped discovery family list remains unchanged and no mission, report artifact, runtime-codex thread, outbox delivery, investigation mission, or autonomous finance action is created.
+
+The implementation thread reran the confidence ladder required by the implementation prompt before this plan was treated as the shipped F6A record.
 
 Acceptance for F6A implementation is observable only if all of the following are true:
 
@@ -278,15 +300,10 @@ If source state is missing, stale, failed, partial, or conflicting, the monitor 
 
 ## Artifacts and Notes
 
-This docs-and-plan thread should end with:
-
-- `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` as the active F6A implementation contract
-- minimal active-doc refresh that points future work at FP-0050
-- no runtime code, schema, migrations, routes, package scripts, smoke commands, eval datasets, or implementation scaffolding
-
-The later F6A implementation thread is expected to produce:
+The F6A implementation thread produced:
 
 - one monitoring domain contract
+- one additive `monitor_results` persistence path
 - one deterministic cash-posture monitor result path
 - one operator-visible alert-card read model
 - one narrow implementation smoke
@@ -326,8 +343,8 @@ Do not delete GitHub or engineering-twin modules as part of F6A.
 ## Outcomes & Retrospective
 
 The docs-and-plan thread created FP-0050, refreshed the active-doc spine, and left FP-0049 as the shipped F5C4I record.
-No runtime code, schema, migrations, routes, package scripts, smoke commands, eval datasets, or implementation scaffolding were added.
-The full docs-and-plan validation ladder passed, including the preserved source, Finance Twin, CFO Wiki, finance discovery, reporting, board-packet, lender-update, diligence-packet, targeted twin vitest, lint, typecheck, test, and `pnpm ci:repro:current` gates.
+The implementation thread then added the first source-backed F6A cash-posture monitor while preserving the shipped F5 reporting and approval lifecycles.
+Implementation validation is tracked in the Progress section and final handoff for this branch.
 
-FP-0050 now defines the first implementation-ready F6 contract but does not claim that monitoring has shipped.
-What remains is exactly one next implementation slice: implement F6A monitoring foundation and first cash-posture alert from this plan, then validate and update this record.
+FP-0050 now records the first F6A implementation slice once the validation ladder is green.
+F6B must still start from a separate explicit Finance Plan; do not create an investigation mission path, additional monitor family, delivery path, runtime-codex drafting path, or threshold-policy monitor by extending this F6A slice.

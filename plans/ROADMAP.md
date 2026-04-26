@@ -415,9 +415,9 @@ Exit criteria:
 Goal:
 Turn Pocket CFO into a recurring finance operating system without weakening the source-truth boundary.
 
-The active first-F6 contract is `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md`.
-F6A is not a broad monitoring platform and is not shipped yet.
-The first implementation slice must be exactly `F6A-monitoring-foundation-and-first-cash-posture-alert`.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` records the first F6A implementation slice.
+F6A is not a broad monitoring platform.
+The first shipped implementation slice is exactly `F6A-monitoring-foundation-and-first-cash-posture-alert`.
 
 Focus:
 

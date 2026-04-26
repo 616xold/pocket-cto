@@ -42,6 +42,7 @@ Today the merged backbone is:
 - F4B additive deterministic finance-discovery missions for four more typed families already grounded in shipped Finance Twin plus CFO Wiki state: `collections_pressure`, `payables_pressure`, `spend_posture`, and `obligation_calendar_review`
 - F4C1 additive deterministic finance-discovery missions for one explicit-source `policy_lookup` family, requiring `policySourceId` and answering only from scoped `policy_document` wiki state plus bound-source extract posture
 - F4C2 additive discovery-quality hardening for the shipped six-family baseline: deterministic policy-document selection from the existing bound-source route, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, packaged `pnpm smoke:finance-discovery-quality:local`, and finance-native `pnpm eval:finance-discovery-quality` report capture
+- F6A additive deterministic monitoring foundation for one first `cash_posture` monitor over stored Finance Twin cash-posture state, with persisted monitor results, source freshness or missing-source posture, lineage, limitations, proof posture, and an operator alert-card read model when source-backed conditions warrant it
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
@@ -65,7 +66,7 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the shipped F5C4G implementation record: the repo already supports one append-only board-packet correction-and-chronology slice on that same `report_circulation` seam, keeps the original `circulationRecord` immutable, derives a current effective circulation view plus explicit chronology summary, and stays deterministic, runtime-free, and delivery-free.
 `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is now the shipped F5C4H record: the repo can append optional corrected `circulatedBy` on that same seam, preserve the immutable original circulation record, derive truthful effective-actor chronology, and stay deterministic, runtime-free, delivery-free, and board-packet-only.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the shipped F5C4I record: the repo can append explicit clear-to-absent `circulationNote` correction on that same seam, preserve the immutable original circulation record, derive truthful effective-note chronology, and stay deterministic, runtime-free, delivery-free, and board-packet-only.
-`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is now the active implementation-ready first-F6 contract: the next implementation slice is one deterministic, source-backed `cash_posture` monitor result plus one operator-visible alert-card posture, with source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step. F6 implementation has not shipped yet; continue FP-0050 before writing code and do not create FP-0051 from this summary alone.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` now records the first F6A implementation slice: one deterministic, source-backed `cash_posture` monitor result plus one operator-visible alert-card posture, with source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step. Do not start F6B or FP-0051 from this summary alone; create a separate Finance Plan before adding investigation missions, additional monitor families, delivery behavior, or runtime-codex drafting.
 
 ## Product boundary for v1
 
@@ -182,8 +183,10 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md
 │   ├── FP-0050-monitoring-foundation-and-first-cash-posture-alert.md
 │   └── templates
+├── plugins
+│   └── pocket-cfo-codex-operator
 └── .agents
-    └── skills
+    └── plugins
 ```
 
 ## Immediate build order
@@ -241,6 +244,7 @@ pnpm smoke:finance-discovery-supported-families:local
 pnpm smoke:finance-policy-lookup:local
 pnpm smoke:finance-discovery-quality:local
 pnpm eval:finance-discovery-quality
+pnpm smoke:cash-posture-monitor:local
 pnpm smoke:finance-memo:local
 pnpm smoke:finance-report-filed-artifact:local
 ```
@@ -268,6 +272,11 @@ The current backend-first finance-twin read surface is:
 - receivables-aging
 - collections posture
 - general-ledger account activity lineage
+
+The current backend-first monitoring surface is:
+
+- `POST /monitoring/companies/:companyKey/cash-posture/run`
+- `GET /monitoring/companies/:companyKey/cash-posture/latest`
 
 The current backend-first CFO Wiki read surface is:
 

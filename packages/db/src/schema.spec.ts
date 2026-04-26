@@ -28,6 +28,7 @@ import {
   financeTwinLineage,
   financeTwinSyncRuns,
   financeVendors,
+  monitorResults,
   missionTasks,
   missions,
   provenanceRecords,
@@ -56,6 +57,7 @@ describe("db schema exports", () => {
     expect(financeReportingPeriods).toBeDefined();
     expect(financeLedgerAccounts).toBeDefined();
     expect(financeVendors).toBeDefined();
+    expect(monitorResults).toBeDefined();
     expect(financePayablesAgingRows).toBeDefined();
     expect(financeReceivablesAgingRows).toBeDefined();
     expect(financeSpendRows).toBeDefined();

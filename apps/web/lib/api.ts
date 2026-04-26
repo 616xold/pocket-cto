@@ -16,6 +16,8 @@ import {
   MissionRecordSchema,
   MissionSourceKindSchema,
   MissionStatusSchema,
+  MonitorLatestResultSchema,
+  MonitorRunResultSchema,
   MissionTaskRecordSchema,
   OperatorControlAvailabilitySchema,
   ProofBundleManifestSchema,
@@ -42,6 +44,8 @@ import type {
   ApprovalDecision,
   MissionSourceKind,
   MissionStatus,
+  MonitorLatestResult,
+  MonitorRunResult,
 } from "@pocket-cto/domain";
 import type {
   CfoWikiCompanySourceListView,
@@ -94,6 +98,9 @@ const githubIssueMissionCreateResultSchema =
 type GitHubIssueMissionCreateResult = z.output<
   typeof githubIssueMissionCreateResultSchema
 >;
+
+const cashPostureMonitorLatestSchema = MonitorLatestResultSchema;
+const cashPostureMonitorRunSchema = MonitorRunResultSchema;
 
 const liveControlSchema = OperatorControlAvailabilitySchema;
 
@@ -279,6 +286,36 @@ export async function getCfoWikiCompanySourceList(
   return fetchJson(
     `/cfo-wiki/companies/${encodeURIComponent(normalizedCompanyKey)}/sources`,
     cfoWikiCompanySourceListSchema,
+  );
+}
+
+export async function getLatestCashPostureMonitorResult(
+  companyKey: string,
+): Promise<MonitorLatestResult | null> {
+  const normalizedCompanyKey = companyKey.trim();
+
+  if (!normalizedCompanyKey) {
+    return null;
+  }
+
+  return fetchJson(
+    `/monitoring/companies/${encodeURIComponent(normalizedCompanyKey)}/cash-posture/latest`,
+    cashPostureMonitorLatestSchema,
+  );
+}
+
+export async function runCashPostureMonitor(input: {
+  companyKey: string;
+  runKey?: string | null;
+  triggeredBy: string;
+}): Promise<ControlPlaneMutationResult<MonitorRunResult>> {
+  return postJson(
+    `/monitoring/companies/${encodeURIComponent(input.companyKey)}/cash-posture/run`,
+    {
+      runKey: input.runKey ?? undefined,
+      triggeredBy: input.triggeredBy,
+    },
+    cashPostureMonitorRunSchema,
   );
 }
 

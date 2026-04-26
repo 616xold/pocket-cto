@@ -1,0 +1,235 @@
+import { z } from "zod";
+import {
+  FinanceCompanyKeySchema,
+  FinanceFreshnessStateSchema,
+  FinanceLineageTargetCountsSchema,
+  FinanceTwinLineageTargetKindSchema,
+  FinanceTwinSourceRefSchema,
+} from "./finance-twin";
+
+export const MonitorKindSchema = z.literal("cash_posture");
+
+export const MonitorResultStatusSchema = z.enum(["no_alert", "alert"]);
+
+export const MonitorAlertSeveritySchema = z.enum([
+  "none",
+  "info",
+  "warning",
+  "critical",
+]);
+
+export const MonitorAlertConditionKindSchema = z.enum([
+  "missing_source",
+  "failed_source",
+  "stale_source",
+  "coverage_gap",
+  "data_quality_gap",
+]);
+
+export const MonitorProofBundlePostureStateSchema = z.enum([
+  "source_backed",
+  "limited_by_missing_source",
+  "limited_by_failed_source",
+  "limited_by_stale_source",
+  "limited_by_coverage_gap",
+  "limited_by_data_quality_gap",
+]);
+
+export const MonitorReplayPostureStateSchema = z.enum([
+  "not_appended",
+]);
+
+export const MonitorRuntimeBoundarySchema = z
+  .object({
+    runtimeCodexUsed: z.literal(false),
+    deliveryActionUsed: z.literal(false),
+    investigationMissionCreated: z.literal(false),
+    autonomousFinanceActionUsed: z.literal(false),
+    summary: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorSourceFreshnessPostureSchema = z
+  .object({
+    state: FinanceFreshnessStateSchema,
+    latestAttemptedSyncRunId: z.string().uuid().nullable(),
+    latestSuccessfulSyncRunId: z.string().uuid().nullable(),
+    latestSuccessfulSource: FinanceTwinSourceRefSchema.nullable(),
+    missingSource: z.boolean(),
+    failedSource: z.boolean(),
+    summary: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorSourceLineageRefSchema = z
+  .object({
+    sourceId: z.string().uuid(),
+    sourceSnapshotId: z.string().uuid(),
+    sourceFileId: z.string().uuid(),
+    syncRunId: z.string().uuid(),
+    targetKind: FinanceTwinLineageTargetKindSchema.nullable(),
+    targetId: z.string().uuid().nullable(),
+    lineageCount: z.number().int().nonnegative(),
+    lineageTargetCounts: FinanceLineageTargetCountsSchema,
+    summary: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorAlertConditionSchema = z
+  .object({
+    kind: MonitorAlertConditionKindSchema,
+    severity: MonitorAlertSeveritySchema.exclude(["none"]),
+    summary: z.string().min(1),
+    evidencePath: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorProofBundlePostureSchema = z
+  .object({
+    state: MonitorProofBundlePostureStateSchema,
+    summary: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorReplayPostureSchema = z
+  .object({
+    state: MonitorReplayPostureStateSchema,
+    reason: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorAlertCardSchema = z
+  .object({
+    companyKey: FinanceCompanyKeySchema,
+    monitorKind: MonitorKindSchema,
+    status: z.literal("alert"),
+    severity: MonitorAlertSeveritySchema.exclude(["none"]),
+    deterministicSeverityRationale: z.string().min(1),
+    conditionSummaries: z.array(z.string().min(1)).min(1),
+    sourceFreshnessPosture: MonitorSourceFreshnessPostureSchema,
+    sourceLineageSummary: z.string().min(1),
+    limitations: z.array(z.string().min(1)),
+    proofBundlePosture: MonitorProofBundlePostureSchema,
+    humanReviewNextStep: z.string().min(1),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
+export const MonitorResultSchema = z
+  .object({
+    id: z.string().uuid(),
+    companyId: z.string().uuid(),
+    companyKey: FinanceCompanyKeySchema,
+    monitorKind: MonitorKindSchema,
+    runKey: z.string().min(1),
+    triggeredBy: z.string().min(1),
+    status: MonitorResultStatusSchema,
+    severity: MonitorAlertSeveritySchema,
+    conditions: z.array(MonitorAlertConditionSchema),
+    sourceFreshnessPosture: MonitorSourceFreshnessPostureSchema,
+    sourceLineageRefs: z.array(MonitorSourceLineageRefSchema),
+    deterministicSeverityRationale: z.string().min(1),
+    limitations: z.array(z.string().min(1)),
+    proofBundlePosture: MonitorProofBundlePostureSchema,
+    replayPosture: MonitorReplayPostureSchema,
+    runtimeBoundary: MonitorRuntimeBoundarySchema,
+    humanReviewNextStep: z.string().min(1),
+    alertCard: MonitorAlertCardSchema.nullable(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .strict()
+  .superRefine((result, context) => {
+    if (result.status === "no_alert") {
+      if (result.severity !== "none") {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "no_alert monitor results must use severity none",
+          path: ["severity"],
+        });
+      }
+
+      if (result.conditions.length > 0) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "no_alert monitor results must not include alert conditions",
+          path: ["conditions"],
+        });
+      }
+
+      if (result.alertCard !== null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "no_alert monitor results must not include an alert card",
+          path: ["alertCard"],
+        });
+      }
+    }
+
+    if (result.status === "alert") {
+      if (result.severity === "none") {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "alert monitor results must use a non-none severity",
+          path: ["severity"],
+        });
+      }
+
+      if (result.conditions.length === 0) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "alert monitor results must include at least one condition",
+          path: ["conditions"],
+        });
+      }
+
+      if (result.alertCard === null) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "alert monitor results must include an alert card",
+          path: ["alertCard"],
+        });
+      }
+    }
+  });
+
+export const MonitorRunResultSchema = z
+  .object({
+    monitorResult: MonitorResultSchema,
+    alertCard: MonitorAlertCardSchema.nullable(),
+  })
+  .strict();
+
+export const MonitorLatestResultSchema = z
+  .object({
+    companyKey: FinanceCompanyKeySchema,
+    monitorKind: MonitorKindSchema,
+    monitorResult: MonitorResultSchema.nullable(),
+    alertCard: MonitorAlertCardSchema.nullable(),
+  })
+  .strict();
+
+export type MonitorKind = z.infer<typeof MonitorKindSchema>;
+export type MonitorResultStatus = z.infer<typeof MonitorResultStatusSchema>;
+export type MonitorAlertSeverity = z.infer<typeof MonitorAlertSeveritySchema>;
+export type MonitorAlertConditionKind = z.infer<
+  typeof MonitorAlertConditionKindSchema
+>;
+export type MonitorProofBundlePostureState = z.infer<
+  typeof MonitorProofBundlePostureStateSchema
+>;
+export type MonitorRuntimeBoundary = z.infer<typeof MonitorRuntimeBoundarySchema>;
+export type MonitorSourceFreshnessPosture = z.infer<
+  typeof MonitorSourceFreshnessPostureSchema
+>;
+export type MonitorSourceLineageRef = z.infer<
+  typeof MonitorSourceLineageRefSchema
+>;
+export type MonitorAlertCondition = z.infer<typeof MonitorAlertConditionSchema>;
+export type MonitorProofBundlePosture = z.infer<
+  typeof MonitorProofBundlePostureSchema
+>;
+export type MonitorReplayPosture = z.infer<typeof MonitorReplayPostureSchema>;
+export type MonitorAlertCard = z.infer<typeof MonitorAlertCardSchema>;
+export type MonitorResult = z.infer<typeof MonitorResultSchema>;
+export type MonitorRunResult = z.infer<typeof MonitorRunResultSchema>;
+export type MonitorLatestResult = z.infer<typeof MonitorLatestResultSchema>;

@@ -52,6 +52,7 @@
     "smoke:finance-twin-balance-proof-lineage:local": "tsx tools/finance-twin-balance-proof-lineage-smoke.mjs",
     "smoke:finance-twin-account-catalog:local": "tsx tools/finance-twin-account-catalog-smoke.mjs",
     "smoke:finance-twin-bank-account-summary:local": "tsx tools/finance-twin-bank-account-summary-smoke.mjs",
+    "smoke:cash-posture-monitor:local": "tsx tools/cash-posture-monitor-smoke.mjs",
     "smoke:finance-twin-card-expense:local": "tsx tools/finance-twin-card-expense-smoke.mjs",
     "smoke:finance-twin-contract-metadata:local": "tsx tools/finance-twin-contract-metadata-smoke.mjs",
     "smoke:finance-twin-payables-aging:local": "tsx tools/finance-twin-payables-aging-smoke.mjs",

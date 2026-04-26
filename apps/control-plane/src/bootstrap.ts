@@ -57,6 +57,9 @@ import { DrizzleMissionRepository } from "./modules/missions/drizzle-repository"
 import { InMemoryMissionRepository } from "./modules/missions/repository";
 import { MissionReportingActionsService } from "./modules/missions/reporting-actions";
 import { MissionService } from "./modules/missions/service";
+import { DrizzleMonitoringRepository } from "./modules/monitoring/drizzle-repository";
+import { InMemoryMonitoringRepository } from "./modules/monitoring/repository";
+import { MonitoringService } from "./modules/monitoring/service";
 import { OrchestratorService } from "./modules/orchestrator/service";
 import { OrchestratorWorker } from "./modules/orchestrator/worker";
 import { ReportingService } from "./modules/reporting/service";
@@ -121,6 +124,7 @@ type SharedKernel = {
   missionService: MissionService;
   missionReportingActionsService: MissionReportingActionsService;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
+  monitoringService: MonitoringService;
   proofBundleAssembly: ProofBundleAssemblyService;
   reportingService: ReportingService;
   replayService: ReplayService;
@@ -220,6 +224,7 @@ export function createInMemoryContainer(): AppContainer {
     githubIssueIntakeRepository: new InMemoryGitHubIssueIntakeRepository(),
     githubWebhookRepository: new InMemoryGitHubWebhookRepository(),
     missionRepository: new InMemoryMissionRepository(),
+    monitoringRepository: new InMemoryMonitoringRepository(),
     replayRepository: new InMemoryReplayRepository(),
     sourceRepository: new InMemorySourceRepository(),
     sourceFileStorage: new InMemorySourceFileStorage(),
@@ -264,6 +269,7 @@ async function buildDrizzleKernel(input: {
     ),
     githubWebhookRepository: new DrizzleGitHubWebhookRepository(input.db),
     missionRepository: new DrizzleMissionRepository(input.db),
+    monitoringRepository: new DrizzleMonitoringRepository(input.db),
     replayRepository: new DrizzleReplayRepository(input.db),
     sourceRepository: new DrizzleSourceRepository(input.db),
     sourceFileStorage: new S3SourceFileStorage(input.env),
@@ -303,6 +309,7 @@ function buildSharedKernel(input: {
   githubIssueIntakeRepository: GitHubIssueIntakeRepository;
   githubWebhookRepository: GitHubWebhookRepository;
   missionRepository: ConstructorParameters<typeof MissionService>[1];
+  monitoringRepository: ConstructorParameters<typeof MonitoringService>[0]["monitoringRepository"];
   replayRepository: ConstructorParameters<typeof ReplayService>[0];
   sourceRepository: SourceRepository;
   sourceFileStorage: SourceFileStorage;
@@ -396,6 +403,10 @@ function buildSharedKernel(input: {
     cfoWikiService,
     financeTwinService,
   });
+  const monitoringService = new MonitoringService({
+    financeTwinService,
+    monitoringRepository: input.monitoringRepository,
+  });
   const githubIssueIntakeService = new GitHubIssueIntakeService({
     bindingRepository: input.githubIssueIntakeRepository,
     missionRepository: input.missionRepository,
@@ -424,6 +435,7 @@ function buildSharedKernel(input: {
     missionService,
     missionReportingActionsService,
     missionRepository: input.missionRepository,
+    monitoringService,
     proofBundleAssembly,
     reportingService,
     replayService,
@@ -504,6 +516,7 @@ function toAppContainer(
     githubWebhookService: kernel.githubWebhookService,
     missionService: kernel.missionService,
     missionReportingActionsService: kernel.missionReportingActionsService,
+    monitoringService: kernel.monitoringService,
     operatorControl: {
       approvalService: kernel.approvalService,
       liveControl,

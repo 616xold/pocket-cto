@@ -6,6 +6,7 @@ import type { GitHubAppService } from "../modules/github-app/service";
 import type { GitHubIssueIntakeService } from "../modules/github-app/issue-intake-service";
 import type { GitHubWebhookService } from "../modules/github-app/webhook-service";
 import type { MissionService } from "../modules/missions/service";
+import type { MonitoringService } from "../modules/monitoring/service";
 import type { MissionReportingActionsService } from "../modules/missions/reporting-actions";
 import type { OrchestratorWorker } from "../modules/orchestrator/worker";
 import type { ReplayService } from "../modules/replay/service";
@@ -59,6 +60,11 @@ export type MissionReportingActionServicePort = Pick<
   | "recordReleaseLog"
   | "requestCirculationApproval"
   | "requestReleaseApproval"
+>;
+
+export type MonitoringServicePort = Pick<
+  MonitoringService,
+  "getLatestCashPostureMonitorResult" | "runCashPostureMonitor"
 >;
 
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;
@@ -161,6 +167,7 @@ export type AppContainer = {
   financeTwinService: FinanceTwinServicePort;
   missionService: MissionServicePort;
   missionReportingActionsService: MissionReportingActionServicePort;
+  monitoringService?: MonitoringServicePort;
   operatorControl: {
     approvalService: Pick<
       ApprovalService,
