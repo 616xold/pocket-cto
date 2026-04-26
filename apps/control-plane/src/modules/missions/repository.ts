@@ -144,6 +144,11 @@ export interface MissionRepository extends TransactionalRepository {
     session?: PersistenceSession,
   ): Promise<MissionRecord | null>;
 
+  getMissionBySource(
+    input: { sourceKind: MissionSourceKind; sourceRef: string },
+    session?: PersistenceSession,
+  ): Promise<MissionRecord | null>;
+
   listMissions(
     input: ListMissionsInput,
     session?: PersistenceSession,
@@ -440,6 +445,25 @@ export class InMemoryMissionRepository implements MissionRepository {
 
   async getMissionById(missionId: string): Promise<MissionRecord | null> {
     return this.missions.get(missionId) ?? null;
+  }
+
+  async getMissionBySource(input: {
+    sourceKind: MissionSourceKind;
+    sourceRef: string;
+  }): Promise<MissionRecord | null> {
+    return (
+      [...this.missions.values()]
+        .filter(
+          (mission) =>
+            mission.sourceKind === input.sourceKind &&
+            mission.sourceRef === input.sourceRef,
+        )
+        .sort(
+          (left, right) =>
+            right.createdAt.localeCompare(left.createdAt) ||
+            right.id.localeCompare(left.id),
+        )[0] ?? null
+    );
   }
 
   async listMissions(input: ListMissionsInput): Promise<MissionRecord[]> {

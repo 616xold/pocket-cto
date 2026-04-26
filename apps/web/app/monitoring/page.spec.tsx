@@ -9,9 +9,14 @@ vi.mock("../../lib/api", () => ({
 }));
 
 vi.mock("../../components/monitoring-alert-card", () => ({
-  MonitoringAlertCard(props: { alertCard: { companyKey: string } | null }) {
+  MonitoringAlertCard(props: {
+    alertCard: { companyKey: string } | null;
+    monitorResultId?: string | null;
+  }) {
     return props.alertCard ? (
-      <article>monitoring-alert-card:{props.alertCard.companyKey}</article>
+      <article>
+        monitoring-alert-card:{props.alertCard.companyKey}:{props.monitorResultId}
+      </article>
     ) : null;
   },
 }));
@@ -25,7 +30,10 @@ describe("MonitoringPage", () => {
     getLatestCashPostureMonitorResult.mockResolvedValue({
       companyKey: "acme",
       monitorKind: "cash_posture",
-      monitorResult: null,
+      monitorResult: {
+        id: "66666666-6666-4666-8666-666666666666",
+        status: "alert",
+      },
       alertCard: {
         companyKey: "acme",
       },
@@ -38,7 +46,9 @@ describe("MonitoringPage", () => {
 
     expect(getLatestCashPostureMonitorResult).toHaveBeenCalledWith("acme");
     expect(html).toContain("Cash posture alert posture for acme.");
-    expect(html).toContain("monitoring-alert-card:acme");
+    expect(html).toContain(
+      "monitoring-alert-card:acme:66666666-6666-4666-8666-666666666666",
+    );
   });
 
   it("renders a non-alerting latest result without an alert card", async () => {
@@ -63,6 +73,22 @@ describe("MonitoringPage", () => {
     expect(getLatestCashPostureMonitorResult).toHaveBeenCalledWith("acme");
     expect(html).toContain("no_alert");
     expect(html).toContain("source_backed");
+    expect(html).not.toContain("monitoring-alert-card");
+  });
+
+  it("does not render the alert action shell without an alerting result", async () => {
+    getLatestCashPostureMonitorResult.mockResolvedValue({
+      companyKey: "acme",
+      monitorKind: "cash_posture",
+      monitorResult: null,
+      alertCard: {
+        companyKey: "acme",
+      },
+    });
+
+    const mod = await import("./page");
+    const html = renderToStaticMarkup(await mod.default({}));
+
     expect(html).not.toContain("monitoring-alert-card");
   });
 });

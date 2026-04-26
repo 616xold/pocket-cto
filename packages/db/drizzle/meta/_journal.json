@@ -281,6 +281,13 @@
       "when": 1777229117261,
       "tag": "0039_wise_post",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1777243966761,
+      "tag": "0040_smart_screwball",
+      "breakpoints": true
     }
   ]
 }

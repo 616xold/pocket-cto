@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   FINANCE_DISCOVERY_QUESTION_KINDS,
+  MonitorInvestigationSeedSchema,
   MonitorResultSchema,
   MonitorRunResultSchema,
 } from "./index";
@@ -187,6 +188,81 @@ describe("monitoring domain contract", () => {
     expect(parsed.monitorResult.status).toBe("no_alert");
     expect(parsed.monitorResult.severity).toBe("none");
     expect(parsed.alertCard).toBeNull();
+  });
+
+  it("parses a deterministic alert investigation seed from stored monitor evidence", () => {
+    const parsed = MonitorInvestigationSeedSchema.parse({
+      monitorResultId: "66666666-6666-4666-8666-666666666666",
+      companyKey: "acme",
+      monitorKind: "cash_posture",
+      monitorResultStatus: "alert",
+      alertSeverity: "critical",
+      deterministicSeverityRationale:
+        "Critical because missing_source was detected from stored cash-posture freshness.",
+      conditions: [
+        {
+          kind: "missing_source",
+          severity: "critical",
+          summary: "No successful bank-account-summary slice exists.",
+          evidencePath: "freshness.state",
+        },
+      ],
+      conditionSummaries: [
+        "No successful bank-account-summary slice exists.",
+      ],
+      sourceFreshnessPosture: {
+        state: "missing",
+        latestAttemptedSyncRunId: null,
+        latestSuccessfulSyncRunId: null,
+        latestSuccessfulSource: null,
+        missingSource: true,
+        failedSource: false,
+        summary: "No successful cash-posture source is stored.",
+      },
+      sourceLineageRefs: [],
+      sourceLineageSummary:
+        "No bank-account-summary source lineage is available.",
+      limitations: [
+        "The monitor reports source posture only and does not infer runway.",
+      ],
+      proofBundlePosture: {
+        state: "limited_by_missing_source",
+        summary:
+          "The monitor proof is limited because no bank-account-summary source backs the cash posture.",
+      },
+      humanReviewNextStep:
+        "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+      runtimeBoundary: {
+        monitorResultRuntimeBoundary: {
+          runtimeCodexUsed: false,
+          deliveryActionUsed: false,
+          investigationMissionCreated: false,
+          autonomousFinanceActionUsed: false,
+          summary:
+            "The result was produced by deterministic stored-state evaluation only.",
+        },
+        monitorRerunUsed: false,
+        runtimeCodexUsed: false,
+        deliveryActionUsed: false,
+        scheduledAutomationUsed: false,
+        reportArtifactCreated: false,
+        approvalCreated: false,
+        autonomousFinanceActionUsed: false,
+        summary:
+          "The handoff opened a deterministic investigation mission without runtime or delivery action.",
+      },
+      sourceRef:
+        "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+      monitorResultCreatedAt: now,
+      alertCardCreatedAt: now,
+    });
+
+    expect(parsed.monitorResultStatus).toBe("alert");
+    expect(parsed.runtimeBoundary.monitorRerunUsed).toBe(false);
+    expect(parsed.runtimeBoundary.runtimeCodexUsed).toBe(false);
+    expect(parsed.runtimeBoundary.deliveryActionUsed).toBe(false);
+    expect(parsed.runtimeBoundary.reportArtifactCreated).toBe(false);
+    expect(parsed.runtimeBoundary.approvalCreated).toBe(false);
   });
 
   it("rejects alert results without an alert card", () => {

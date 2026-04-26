@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DiscoveryMissionQuestionSchema } from "./discovery-mission";
+import { MonitorInvestigationSeedSchema } from "./monitoring";
 import { ReportingMissionInputSchema } from "./reporting-mission";
 
 export const MissionTypeSchema = z.enum([
@@ -43,6 +44,7 @@ export const MissionSourceKindSchema = z.enum([
 export const MissionSpecInputSchema = z
   .object({
     discoveryQuestion: DiscoveryMissionQuestionSchema.optional(),
+    monitorInvestigation: MonitorInvestigationSeedSchema.optional(),
     reportingRequest: ReportingMissionInputSchema.optional(),
   })
   .strict();

@@ -2,6 +2,72 @@ import { describe, expect, it } from "vitest";
 import { ProofBundleManifestSchema } from "./proof-bundle";
 
 describe("Proof bundle domain schema", () => {
+  it("parses a monitor-alert investigation proof posture without report artifacts", () => {
+    const parsed = ProofBundleManifestSchema.parse({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      missionTitle: "Investigate cash-posture alert for acme",
+      objective:
+        "Manual F6B investigation handoff from stored cash_posture alert evidence.",
+      companyKey: "acme",
+      questionKind: null,
+      answerSummary: "",
+      reportKind: null,
+      reportDraftStatus: null,
+      reportSummary: "",
+      monitorInvestigation: buildMonitorInvestigationSeed(),
+      appendixPresent: false,
+      freshnessState: "missing",
+      freshnessSummary: "No successful cash-posture source is stored.",
+      limitationsSummary:
+        "The monitor reports source posture only and does not infer runway.",
+      relatedRoutePaths: ["/monitoring?companyKey=acme"],
+      relatedWikiPageKeys: [],
+      targetRepoFullName: null,
+      branchName: null,
+      pullRequestNumber: null,
+      pullRequestUrl: null,
+      changeSummary:
+        "Opened deterministic F6B investigation handoff from stored cash_posture alert result.",
+      validationSummary:
+        "The handoff was assembled without rerunning the monitor or invoking runtime-Codex.",
+      verificationSummary:
+        "Review stored monitor alert source posture before follow-up.",
+      riskSummary:
+        "No delivery, report artifact, approval, or autonomous finance action was created.",
+      rollbackSummary:
+        "Cancel or supersede only this mission handoff if needed.",
+      latestApproval: null,
+      evidenceCompleteness: {
+        status: "complete",
+        expectedArtifactKinds: [],
+        presentArtifactKinds: [],
+        missingArtifactKinds: [],
+        notes: [],
+      },
+      decisionTrace: [
+        "Stored monitor result 66666666-6666-4666-8666-666666666666 is the investigation source of truth.",
+      ],
+      artifactIds: [],
+      artifacts: [],
+      replayEventCount: 3,
+      timestamps: {
+        missionCreatedAt: "2026-04-26T12:00:00.000Z",
+        latestPlannerEvidenceAt: null,
+        latestExecutorEvidenceAt: null,
+        latestPullRequestAt: null,
+        latestApprovalAt: null,
+        latestArtifactAt: null,
+      },
+      status: "ready",
+    });
+
+    expect(parsed.monitorInvestigation?.monitorResultId).toBe(
+      "66666666-6666-4666-8666-666666666666",
+    );
+    expect(parsed.reportKind).toBeNull();
+    expect(parsed.evidenceCompleteness.expectedArtifactKinds).toEqual([]);
+  });
+
   it("parses a finance-ready discovery proof bundle without repo or PR fields", () => {
     const parsed = ProofBundleManifestSchema.parse({
       missionId: "11111111-1111-4111-8111-111111111111",
@@ -987,3 +1053,69 @@ describe("Proof bundle domain schema", () => {
     expect(parsed.releaseRecord?.releaseChannel).toBe("email");
   });
 });
+
+function buildMonitorInvestigationSeed() {
+  return {
+    monitorResultId: "66666666-6666-4666-8666-666666666666",
+    companyKey: "acme",
+    monitorKind: "cash_posture" as const,
+    monitorResultStatus: "alert" as const,
+    alertSeverity: "critical" as const,
+    deterministicSeverityRationale:
+      "Critical because missing_source was detected from stored cash-posture freshness.",
+    conditions: [
+      {
+        kind: "missing_source" as const,
+        severity: "critical" as const,
+        summary: "No successful bank-account-summary slice exists.",
+        evidencePath: "freshness.state",
+      },
+    ],
+    conditionSummaries: ["No successful bank-account-summary slice exists."],
+    sourceFreshnessPosture: {
+      state: "missing" as const,
+      latestAttemptedSyncRunId: null,
+      latestSuccessfulSyncRunId: null,
+      latestSuccessfulSource: null,
+      missingSource: true,
+      failedSource: false,
+      summary: "No successful cash-posture source is stored.",
+    },
+    sourceLineageRefs: [],
+    sourceLineageSummary:
+      "No bank-account-summary source lineage is available.",
+    limitations: [
+      "The monitor reports source posture only and does not infer runway.",
+    ],
+    proofBundlePosture: {
+      state: "limited_by_missing_source" as const,
+      summary:
+        "The monitor proof is limited because no bank-account-summary source backs the cash posture.",
+    },
+    humanReviewNextStep:
+      "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+    runtimeBoundary: {
+      monitorResultRuntimeBoundary: {
+        runtimeCodexUsed: false as const,
+        deliveryActionUsed: false as const,
+        investigationMissionCreated: false as const,
+        autonomousFinanceActionUsed: false as const,
+        summary:
+          "The result was produced by deterministic stored-state evaluation only.",
+      },
+      monitorRerunUsed: false as const,
+      runtimeCodexUsed: false as const,
+      deliveryActionUsed: false as const,
+      scheduledAutomationUsed: false as const,
+      reportArtifactCreated: false as const,
+      approvalCreated: false as const,
+      autonomousFinanceActionUsed: false as const,
+      summary:
+        "The handoff opened a deterministic investigation mission without runtime or delivery action.",
+    },
+    sourceRef:
+      "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+    monitorResultCreatedAt: "2026-04-26T12:00:00.000Z",
+    alertCardCreatedAt: "2026-04-26T12:00:00.000Z",
+  };
+}

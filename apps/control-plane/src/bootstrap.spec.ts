@@ -393,6 +393,11 @@ function createAppContainer(
       async createReporting() {
         throw new Error("createReporting should not be called in this test");
       },
+      async createOrOpenMonitorInvestigation() {
+        throw new Error(
+          "createOrOpenMonitorInvestigation should not be called in this test",
+        );
+      },
       async getMissionDetail() {
         throw new Error("getMissionDetail should not be called in this test");
       },

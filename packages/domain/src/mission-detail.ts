@@ -3,6 +3,7 @@ import { ApprovalKindSchema, ApprovalStatusSchema } from "./approval";
 import { DiscoveryAnswerArtifactMetadataSchema } from "./discovery-mission";
 import { MissionRecordSchema } from "./mission";
 import { MissionTaskRecordSchema, MissionTaskRoleSchema } from "./mission-task";
+import { MonitorInvestigationSeedSchema } from "./monitoring";
 import { ArtifactKindSchema, ProofBundleManifestSchema } from "./proof-bundle";
 import { ReportingMissionViewSchema } from "./reporting-mission";
 
@@ -73,6 +74,7 @@ export const MissionDetailViewSchema = z.object({
   mission: MissionRecordSchema,
   tasks: z.array(MissionTaskRecordSchema),
   proofBundle: ProofBundleManifestSchema,
+  monitorInvestigation: MonitorInvestigationSeedSchema.nullable().optional(),
   discoveryAnswer: DiscoveryAnswerArtifactMetadataSchema.nullable().default(null),
   reporting: ReportingMissionViewSchema.nullable().default(null),
   approvals: z.array(MissionApprovalSummarySchema),

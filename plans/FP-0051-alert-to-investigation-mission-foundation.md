@@ -2,14 +2,13 @@
 
 ## Purpose / Big Picture
 
-This file is the active implementation-ready Finance Plan for the next Pocket CFO F6 slice.
+This file records the shipped first F6B implementation slice for the Pocket CFO F6 phase.
 The target phase is `F6`, and the implementation slice is exactly `F6B-alert-to-investigation-mission-foundation`.
 
 The user-visible goal is narrow: after shipped F6A records one deterministic source-backed `cash_posture` monitor result and one operator-visible alert-card posture, Pocket CFO should let the operator manually create or open one investigation mission from that existing alert.
 The investigation handoff starts from stored monitor evidence, not from generic chat, report artifacts, or a new monitor family.
 
-This plan is the first F6B contract.
-It does not implement F6B in the plan-refresh slice.
+This plan is the first F6B contract and now records the shipped first F6B implementation slice.
 It leaves `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` as the shipped F6A record and leaves `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` as the shipped F5C4I record.
 GitHub connector work is explicitly out of scope.
 
@@ -21,8 +20,9 @@ It must not create missions automatically when monitors alert, run monitors on a
 - [x] 2026-04-26T21:33:22Z Audit shipped F6A monitor contracts, mission domain shape, proof-bundle boundaries, runtime-codex boundaries, alert-card UI, and active docs for F6B planning.
 - [x] 2026-04-26T21:33:22Z Create FP-0051 as the single active implementation-ready F6B contract while preserving FP-0050 as the shipped F6A record and FP-0049 as the shipped F5C4I record.
 - [x] 2026-04-26T21:33:22Z Refresh the smallest active-doc set needed to point the next thread at FP-0051 instead of stale FP-0050-next wording.
-- [ ] Implement `F6B-alert-to-investigation-mission-foundation` in a later coding thread only after reading this plan.
-- [ ] Run the implementation validation ladder after F6B code exists.
+- [x] 2026-04-26T22:58:42Z Implement `F6B-alert-to-investigation-mission-foundation` as a manual create/open handoff from one persisted alerting `cash_posture` monitor result.
+- [x] 2026-04-26T22:58:42Z Add the additive alert-source uniqueness index, monitor-result-by-id lookup seam, taskless ready mission lifecycle, thin `POST /missions/monitoring-investigations` route, operator UI action, mission list/detail seed posture, and packaged `pnpm smoke:cash-posture-alert-investigation:local` proof.
+- [x] 2026-04-26T23:07:01Z Run and record the full implementation validation ladder for this F6B branch.
 
 ## Surprises & Discoveries
 
@@ -40,6 +40,10 @@ F6B should copy or reference that deterministic posture rather than generating n
 The current proof-bundle manifest is mission-shaped and already supports finance discovery/reporting fields, but it does not yet have monitor-investigation-specific fields.
 The implementation should add only the narrow monitor-investigation fields needed for mission list/detail/proof visibility, or store the seed as a deterministic artifact if that is smaller.
 Do not use report approval or report release fields for investigations.
+
+Implementation discovery: the safest first lifecycle is a taskless ready handoff record.
+The shipped slice creates `mission.type = "discovery"` only as the existing mission umbrella, with `sourceKind = "alert"`, `sourceRef = "pocket-cfo://monitor-results/<monitorResultId>"`, `spec.input.monitorInvestigation`, mission status `succeeded`, and a ready proof-bundle manifest.
+It deliberately creates no scout task, no runtime-codex thread, no report artifact, no approval, no outbox event, and no delivery action.
 
 ## Decision Log
 
@@ -75,6 +79,12 @@ Rationale: those are separate product questions and must not be implemented or c
 
 Decision: preserve current module vocabulary.
 Rationale: monitoring remains under `apps/control-plane/src/modules/monitoring/**`, missions remain under `apps/control-plane/src/modules/missions/**`, and this plan does not rename `modules/twin/**`, `modules/reporting/**`, or the `@pocket-cto/*` package scope.
+
+Decision: the shipped F6B handoff is a taskless ready mission rather than a queued discovery mission.
+Rationale: this avoids accidentally routing alert handoffs into the normal finance-discovery execution path, preserves the stored monitor result as source truth, and proves the operator handoff without invoking runtime-codex or generating investigation prose.
+
+Decision: idempotency is guarded by source lookup and an additive partial unique index on alert mission source refs.
+Rationale: `sourceKind = "alert"` plus `sourceRef = "pocket-cfo://monitor-results/<monitorResultId>"` is the narrow retry key for this slice and does not affect GitHub, manual, or reporting mission semantics.
 
 ## Context and Orientation
 
@@ -182,7 +192,7 @@ If the smallest implementation is to persist a deterministic artifact instead of
    - reject monitor kinds other than `cash_posture`
    - reject alert handoff if the stored alert card is missing required posture
    - create one mission only through an explicit operator request
-   - append normal mission replay through the existing `mission.created`, `task.created`, `mission.status_changed`, and `artifact.created` path
+   - append mission replay through `mission.created`, `mission.status_changed`, and `artifact.created` without creating task replay
    - avoid runtime-codex, delivery, notifications, report artifacts, approvals, and external actions
 
 4. Add one thin route if needed by the operator surface or smoke.
@@ -225,8 +235,8 @@ If the smallest implementation is to persist a deterministic artifact instead of
    - `docs/ops/local-dev.md`
    - optional active docs only if their F6B guidance becomes stale
 
-No package script, smoke command, eval dataset, migration, schema, route, or runtime code is added by this plan-refresh slice.
-Those are future implementation choices only after this plan is active.
+The shipped F6B implementation adds the `pnpm smoke:cash-posture-alert-investigation:local` package script, a narrow additive mission source-ref uniqueness migration, and the thin `POST /missions/monitoring-investigations` route.
+No eval dataset, runtime-codex path, delivery path, scheduled monitor path, notification path, report conversion, approval kind, or new monitor family is added.
 
 ## Validation and Acceptance
 
@@ -272,6 +282,7 @@ This docs-and-plan thread should run the preserved confidence ladder after the p
 - `pnpm smoke:diligence-packet-release-approval:local`
 - `pnpm smoke:diligence-packet-release-log:local`
 - `pnpm smoke:cash-posture-monitor:local`
+- `pnpm smoke:cash-posture-alert-investigation:local`
 - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts`
 - `pnpm lint`
 - `pnpm typecheck`
@@ -313,7 +324,7 @@ Expected F6B implementation artifacts:
 - narrow service, route, and UI specs
 - active docs refreshed only for behavior that actually ships
 
-This plan-refresh slice produces no runtime artifact, route, schema, migration, package script, smoke command, eval dataset, or implementation scaffold.
+The shipped implementation adds those narrow artifacts and still adds no eval dataset, runtime-codex path, delivery path, scheduled monitor path, notification path, approval kind, report conversion, new monitor family, or F6C behavior.
 
 ## Interfaces and Dependencies
 
@@ -355,12 +366,15 @@ No GitHub connector work is in scope.
 
 ## Outcomes & Retrospective
 
-This docs-and-plan slice is expected to end with FP-0051 as the active implementation contract and no F6B runtime behavior implemented.
-The next Codex thread should start F6B implementation from this plan only.
+FP-0051 now records the shipped first F6B implementation slice.
+The repo can manually create or open exactly one deterministic taskless investigation mission from one persisted alerting `cash_posture` monitor result.
+The mission carries the alert seed posture in `spec.input.monitorInvestigation`, mission detail/list read models, and proof-bundle posture, including monitor result id, company key, monitor kind, severity, conditions, source freshness or missing-source posture, lineage summary, limitations, proof posture, human-review next step, and the no-runtime/no-delivery/no-autonomous-action boundary.
+
+The handoff remains source-backed by stored `monitor_results`.
+It does not rerun the monitor, create missions automatically, schedule monitoring, send notifications, invoke runtime-codex, draft investigation prose, convert alerts into reports, add approvals, create outbox events, or reopen F5 reporting/release/circulation/correction behavior.
 
 What remains:
 
-- implement the narrow monitor-alert investigation mission contract
-- add the manual create/open investigation operator path
-- prove idempotent handoff from one persisted `cash_posture` alert
-- keep runtime-codex, delivery, notifications, approvals, reporting, new monitor families, and external actions out of scope
+- finish and record the full validation ladder for this branch
+- decide whether F6C planning should start next or whether one more F6B continuation is needed after validation review
+- keep runtime-codex, delivery, notifications, approvals, reporting, new monitor families, and external actions out of scope until a new named Finance Plan explicitly changes scope

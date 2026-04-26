@@ -252,6 +252,45 @@ describe("web api module", () => {
     );
   });
 
+  it("posts the monitor investigation create/open route", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        return buildMonitorInvestigationCreatePayload();
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const created = await mod.createOrOpenMonitorInvestigation({
+      companyKey: "acme",
+      monitorResultId: "66666666-6666-4666-8666-666666666666",
+      requestedBy: "finance-operator",
+    });
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+
+    expect(created.mission.sourceKind).toBe("alert");
+    expect(created.proofBundle.monitorInvestigation?.monitorResultId).toBe(
+      "66666666-6666-4666-8666-666666666666",
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/missions/monitoring-investigations`,
+      expect.objectContaining({
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      }),
+    );
+    expect(JSON.parse(String(request.body))).toEqual({
+      companyKey: "acme",
+      monitorResultId: "66666666-6666-4666-8666-666666666666",
+      requestedBy: "finance-operator",
+    });
+  });
+
   it("parses the GitHub issue intake route", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -2829,6 +2868,145 @@ function buildMonitorResultPayload() {
       createdAt,
     },
     createdAt,
+  };
+}
+
+function buildMonitorInvestigationCreatePayload() {
+  const seed = buildMonitorInvestigationSeedPayload();
+
+  return {
+    created: true,
+    mission: {
+      id: "77777777-7777-4777-8777-777777777777",
+      type: "discovery",
+      status: "succeeded",
+      title: "Investigate cash-posture alert for acme",
+      objective:
+        "Manual F6B investigation handoff from stored cash_posture monitor result.",
+      sourceKind: "alert",
+      sourceRef: seed.sourceRef,
+      createdBy: "finance-operator",
+      primaryRepo: null,
+      spec: {
+        type: "discovery",
+        title: "Investigate cash-posture alert for acme",
+        objective:
+          "Manual F6B investigation handoff from stored cash_posture monitor result.",
+        repos: [],
+        constraints: {
+          allowedPaths: [],
+          mustNot: ["invoke runtime-Codex"],
+        },
+        acceptance: ["open one deterministic alert investigation handoff"],
+        riskBudget: {
+          sandboxMode: "read-only",
+          maxWallClockMinutes: 5,
+          maxCostUsd: 1,
+          allowNetwork: false,
+          requiresHumanApprovalFor: [],
+        },
+        deliverables: ["monitor alert investigation seed"],
+        input: {
+          monitorInvestigation: seed,
+        },
+      },
+      createdAt: "2026-04-26T12:00:00.000Z",
+      updatedAt: "2026-04-26T12:00:01.000Z",
+    },
+    tasks: [],
+    proofBundle: {
+      missionId: "77777777-7777-4777-8777-777777777777",
+      missionTitle: "Investigate cash-posture alert for acme",
+      objective:
+        "Manual F6B investigation handoff from stored cash_posture monitor result.",
+      companyKey: "acme",
+      questionKind: null,
+      answerSummary: "",
+      reportKind: null,
+      reportDraftStatus: null,
+      reportSummary: "",
+      monitorInvestigation: seed,
+      appendixPresent: false,
+      freshnessState: "missing",
+      freshnessSummary: "No successful bank-account-summary source is stored.",
+      limitationsSummary:
+        "F6A cash-posture monitoring evaluates stored source posture only.",
+      relatedRoutePaths: ["/monitoring?companyKey=acme"],
+      relatedWikiPageKeys: [],
+      targetRepoFullName: null,
+      branchName: null,
+      pullRequestNumber: null,
+      pullRequestUrl: null,
+      changeSummary:
+        "Opened deterministic F6B investigation handoff from stored cash_posture alert result.",
+      validationSummary:
+        "The handoff was assembled without rerunning the monitor or invoking runtime-Codex.",
+      verificationSummary: "Review stored monitor alert posture.",
+      riskSummary:
+        "No delivery, report artifact, approval, or autonomous finance action was created.",
+      rollbackSummary: "Cancel or supersede only this handoff.",
+      latestApproval: null,
+      evidenceCompleteness: {
+        status: "complete",
+        expectedArtifactKinds: [],
+        presentArtifactKinds: [],
+        missingArtifactKinds: [],
+        notes: [],
+      },
+      decisionTrace: [
+        "Stored monitor result 66666666-6666-4666-8666-666666666666 is the investigation source of truth.",
+      ],
+      artifactIds: [],
+      artifacts: [],
+      replayEventCount: 3,
+      timestamps: {
+        missionCreatedAt: "2026-04-26T12:00:00.000Z",
+        latestPlannerEvidenceAt: null,
+        latestExecutorEvidenceAt: null,
+        latestPullRequestAt: null,
+        latestApprovalAt: null,
+        latestArtifactAt: null,
+      },
+      status: "ready",
+    },
+  };
+}
+
+function buildMonitorInvestigationSeedPayload() {
+  const monitorResult = buildMonitorResultPayload();
+
+  return {
+    monitorResultId: "66666666-6666-4666-8666-666666666666",
+    companyKey: "acme",
+    monitorKind: "cash_posture",
+    monitorResultStatus: "alert",
+    alertSeverity: "critical",
+    deterministicSeverityRationale:
+      monitorResult.deterministicSeverityRationale,
+    conditions: monitorResult.conditions,
+    conditionSummaries: monitorResult.alertCard.conditionSummaries,
+    sourceFreshnessPosture: monitorResult.sourceFreshnessPosture,
+    sourceLineageRefs: monitorResult.sourceLineageRefs,
+    sourceLineageSummary: monitorResult.alertCard.sourceLineageSummary,
+    limitations: monitorResult.limitations,
+    proofBundlePosture: monitorResult.proofBundlePosture,
+    humanReviewNextStep: monitorResult.humanReviewNextStep,
+    runtimeBoundary: {
+      monitorResultRuntimeBoundary: monitorResult.runtimeBoundary,
+      monitorRerunUsed: false,
+      runtimeCodexUsed: false,
+      deliveryActionUsed: false,
+      scheduledAutomationUsed: false,
+      reportArtifactCreated: false,
+      approvalCreated: false,
+      autonomousFinanceActionUsed: false,
+      summary:
+        "The handoff opened a deterministic investigation mission without runtime or delivery action.",
+    },
+    sourceRef:
+      "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+    monitorResultCreatedAt: monitorResult.createdAt,
+    alertCardCreatedAt: monitorResult.alertCard.createdAt,
   };
 }
 

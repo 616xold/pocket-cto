@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "missions_alert_source_ref_key" ON "missions" USING btree ("source_kind","source_ref") WHERE "missions"."source_kind" = 'alert' and "missions"."source_ref" is not null;

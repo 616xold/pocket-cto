@@ -242,6 +242,7 @@ export function assembleProofBundleManifest(input: {
     reportKind: facts.reportKind,
     reportDraftStatus: facts.reportDraftStatus,
     reportSummary: facts.reportSummary ?? "",
+    monitorInvestigation: facts.monitorInvestigation,
     reportPublication: facts.reportPublication,
     circulationReadiness: facts.circulationReadiness,
     circulationRecord: facts.circulationRecord,
@@ -341,6 +342,10 @@ function buildProofBundleStatus(input: {
 
   if (hasTaskFailure || hasMissionFailure || hasRejectedApproval) {
     return "failed";
+  }
+
+  if (input.facts.monitorInvestigation) {
+    return "ready";
   }
 
   if (!hasMeaningfulEvidence) {
@@ -1005,6 +1010,10 @@ function isReportingFacts(facts: ProofBundleAssemblyFacts) {
 }
 
 function readExpectedArtifactKinds(facts: ProofBundleAssemblyFacts) {
+  if (facts.monitorInvestigation) {
+    return [] satisfies ArtifactKind[];
+  }
+
   if (facts.missionType === "reporting") {
     if (isBoardPacketFacts(facts)) {
       return BOARD_PACKET_REPORTING_EXPECTED_ARTIFACT_KINDS;

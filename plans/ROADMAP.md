@@ -416,9 +416,10 @@ Goal:
 Turn Pocket CFO into a recurring finance operating system without weakening the source-truth boundary.
 
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` records the shipped first F6A implementation slice.
-`plans/FP-0051-alert-to-investigation-mission-foundation.md` is the active implementation-ready F6B contract.
+`plans/FP-0051-alert-to-investigation-mission-foundation.md` records the shipped first F6B implementation slice.
 F6A is not a broad monitoring platform.
 The first shipped implementation slice is exactly `F6A-monitoring-foundation-and-first-cash-posture-alert`.
+The first shipped F6B slice is exactly `F6B-alert-to-investigation-mission-foundation`.
 
 Focus:
 
@@ -446,7 +447,8 @@ Slice map:
 - `F6B — alert-to-investigation mission foundation`
   - start only from one persisted F6A `monitor_result` with `monitorKind = "cash_posture"` and `status = "alert"`
   - require one operator-visible alert card with source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof posture, and a human-review next step already present
-  - reuse the existing mission engine and mission detail/list patterns; preferred shape is `mission.type = "discovery"`, `sourceKind = "alert"`, and a monitor-result source ref
+  - reuse the existing mission engine and mission detail/list patterns with `mission.type = "discovery"`, `sourceKind = "alert"`, and a `pocket-cfo://monitor-results/<monitorResultId>` source ref
+  - create or open a taskless ready handoff mission instead of queuing finance-discovery runtime work
   - keep the investigation seed deterministic and source-backed with `monitorResultId`, `companyKey`, monitor kind, alert severity, conditions, freshness or missing-source posture, lineage summary, limitations, proof posture, and human-review next step
   - do not create missions automatically from monitor runs, run scheduled monitor automation, send notifications, invoke runtime-codex, write investigation prose with an LLM, invent finance facts, create external actions, turn the alert into a report, add an approval kind, or add a second alert system
 - `F6C — collections or payables pressure monitor foundation`

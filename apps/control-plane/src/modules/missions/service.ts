@@ -5,6 +5,7 @@ import type {
   CreateDiligencePacketMissionInput,
   CreateDiscoveryMissionInput,
   CreateLenderUpdateMissionInput,
+  CreateMonitorInvestigationMissionInput,
   CreateMissionFromTextInput,
   CreateReportingMissionInput,
   MissionDetailView,
@@ -17,7 +18,10 @@ import type {
   MissionTaskRecord,
   ProofBundleManifest,
 } from "@pocket-cto/domain";
-import { CreateMissionFromTextInputSchema } from "@pocket-cto/domain";
+import {
+  CreateMissionFromTextInputSchema,
+  CreateMonitorInvestigationMissionInputSchema,
+} from "@pocket-cto/domain";
 import { MissionNotFoundError } from "../../lib/http-errors";
 import { buildMissionDetailView } from "./detail-view";
 import { buildInitialTaskRolesForMission } from "../orchestrator/task-state-machine";
@@ -28,8 +32,17 @@ import type { MissionCompilationResult, MissionCompiler } from "./compiler";
 import { buildBoardPacketMissionCreationInput } from "./board-packet";
 import { buildDiligencePacketMissionCreationInput } from "./diligence-packet";
 import { buildDiscoveryMissionCreationInput } from "./discovery";
-import { buildQueuedMissionStatusChangedPayload } from "./events";
+import {
+  buildMonitorInvestigationHandoffReadyPayload,
+  buildQueuedMissionStatusChangedPayload,
+} from "./events";
 import { buildLenderUpdateMissionCreationInput } from "./lender-update";
+import {
+  buildMonitorInvestigationMissionSpec,
+  buildMonitorInvestigationProofBundle,
+  buildMonitorInvestigationSeed,
+  buildMonitorResultSourceRef,
+} from "./monitor-investigation";
 import { buildReportingMissionCreationInput } from "./reporting";
 import { buildReportingCirculationReadinessViewFromProofBundle } from "../reporting/circulation-readiness";
 import { buildReportingCirculationChronologyViewFromProofBundle } from "../reporting/circulation-chronology";
@@ -59,6 +72,9 @@ export class MissionService {
         listCompanySources(
           companyKey: string,
         ): Promise<CfoWikiCompanySourceListView>;
+      };
+      monitorResultReader?: {
+        getMonitorResultById(monitorResultId: string): Promise<unknown | null>;
       };
     } = {},
   ) {}
@@ -138,6 +154,141 @@ export class MissionService {
       }),
       undefined,
     );
+  }
+
+  async createOrOpenMonitorInvestigation(
+    rawInput: CreateMonitorInvestigationMissionInput,
+  ) {
+    const input = CreateMonitorInvestigationMissionInputSchema.parse(rawInput);
+    const sourceRef = buildMonitorResultSourceRef(input.monitorResultId);
+    const existing = await this.repository.getMissionBySource({
+      sourceKind: "alert",
+      sourceRef,
+    });
+
+    if (existing) {
+      return this.readMissionCreationResult(existing, false);
+    }
+
+    const createHandoff = async (session: PersistenceSession) => {
+      const existingInTransaction = await this.repository.getMissionBySource(
+        {
+          sourceKind: "alert",
+          sourceRef,
+        },
+        session,
+      );
+
+      if (existingInTransaction) {
+        return this.readMissionCreationResult(existingInTransaction, false, session);
+      }
+
+      const storedMonitorResult =
+        await this.readModelDeps.monitorResultReader?.getMonitorResultById(
+          input.monitorResultId,
+        );
+      const seed = buildMonitorInvestigationSeed({
+        request: input,
+        result: storedMonitorResult,
+      });
+      const spec = buildMonitorInvestigationMissionSpec(seed);
+      const mission = await this.repository.createMission(
+        {
+          type: spec.type,
+          title: spec.title,
+          objective: spec.objective,
+          sourceKind: "alert",
+          sourceRef: seed.sourceRef,
+          createdBy: input.requestedBy,
+          primaryRepo: null,
+          spec,
+        },
+        session,
+      );
+
+      await this.repository.addMissionInput(
+        {
+          missionId: mission.id,
+          rawText: seed.sourceRef,
+          compilerName: "monitor-investigation-seed",
+          compilerVersion: "0.1.0",
+          compilerConfidence: 100,
+          compilerOutput: seed as unknown as Record<string, unknown>,
+        },
+        session,
+      );
+
+      await this.replayService.append(
+        {
+          missionId: mission.id,
+          type: "mission.created",
+          payload: { title: mission.title, type: mission.type },
+        },
+        session,
+      );
+
+      const succeededMission = await this.repository.updateMissionStatus(
+        mission.id,
+        "succeeded",
+        session,
+      );
+
+      await this.replayService.append(
+        {
+          missionId: mission.id,
+          type: "mission.status_changed",
+          payload: buildMonitorInvestigationHandoffReadyPayload(
+            mission.status,
+            succeededMission.status,
+          ),
+        },
+        session,
+      );
+
+      const proofBundle = buildMonitorInvestigationProofBundle({
+        mission: succeededMission,
+        replayEventCount: 3,
+        seed,
+      });
+      const proofBundleArtifact = await this.repository.saveProofBundle(
+        proofBundle,
+        session,
+      );
+
+      await this.replayService.append(
+        {
+          missionId: mission.id,
+          type: "artifact.created",
+          payload: {
+            artifactId: proofBundleArtifact.id,
+            kind: proofBundleArtifact.kind,
+          },
+        },
+        session,
+      );
+
+      return {
+        created: true,
+        mission: succeededMission,
+        tasks: [],
+        proofBundle,
+      };
+    };
+
+    try {
+      return await this.repository.transaction(createHandoff);
+    } catch (error) {
+      const createdByConcurrentAttempt = await this.repository.getMissionBySource({
+        sourceKind: "alert",
+        sourceRef,
+      });
+
+      if (createdByConcurrentAttempt) {
+        return this.readMissionCreationResult(createdByConcurrentAttempt, false);
+      }
+
+      throw error;
+    }
   }
 
   async createFromGitHubIssue(
@@ -376,6 +527,24 @@ export class MissionService {
 
     return this.repository.transaction(createMission);
   }
+
+  private async readMissionCreationResult(
+    mission: MissionRecord,
+    created: boolean,
+    session?: PersistenceSession,
+  ) {
+    const [tasks, proofBundle] = await Promise.all([
+      this.repository.getTasksByMissionId(mission.id, session),
+      this.repository.getProofBundleByMissionId(mission.id, session),
+    ]);
+
+    return {
+      created,
+      mission,
+      tasks,
+      proofBundle: proofBundle ?? this.evidenceService.createPlaceholder(mission),
+    };
+  }
 }
 
 function normalizeListFilters(input?: {
@@ -413,6 +582,7 @@ function summarizeMission(input: {
     companyKey: input.proofBundle.companyKey,
     createdAt: input.mission.createdAt,
     answerSummary: input.proofBundle.answerSummary || null,
+    monitorInvestigation: input.proofBundle.monitorInvestigation,
     reportKind: input.proofBundle.reportKind,
     reportDraftStatus: input.proofBundle.reportDraftStatus,
     reportSummary: input.proofBundle.reportSummary || null,

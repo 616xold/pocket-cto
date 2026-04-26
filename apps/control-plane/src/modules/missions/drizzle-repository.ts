@@ -422,6 +422,26 @@ export class DrizzleMissionRepository implements MissionRepository {
     return mission ? mapMissionRow(mission) : null;
   }
 
+  async getMissionBySource(
+    input: { sourceKind: MissionRecord["sourceKind"]; sourceRef: string },
+    session?: PersistenceSession,
+  ) {
+    const executor = this.getExecutor(session);
+    const [mission] = await executor
+      .select()
+      .from(missions)
+      .where(
+        and(
+          eq(missions.sourceKind, input.sourceKind),
+          eq(missions.sourceRef, input.sourceRef),
+        ),
+      )
+      .orderBy(desc(missions.createdAt), desc(missions.id))
+      .limit(1);
+
+    return mission ? mapMissionRow(mission) : null;
+  }
+
   async listMissions(
     input: ListMissionsInput,
     session?: PersistenceSession,

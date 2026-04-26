@@ -2,6 +2,8 @@ import type { MonitorKind, MonitorResult } from "@pocket-cto/domain";
 import { MonitorResultSchema } from "@pocket-cto/domain";
 
 export interface MonitoringRepository {
+  getMonitorResultById(monitorResultId: string): Promise<MonitorResult | null>;
+
   getLatestMonitorResult(input: {
     companyKey: string;
     monitorKind: MonitorKind;
@@ -12,6 +14,13 @@ export interface MonitoringRepository {
 
 export class InMemoryMonitoringRepository implements MonitoringRepository {
   private readonly results = new Map<string, MonitorResult>();
+
+  async getMonitorResultById(monitorResultId: string) {
+    return (
+      [...this.results.values()].find((result) => result.id === monitorResultId) ??
+      null
+    );
+  }
 
   async getLatestMonitorResult(input: {
     companyKey: string;

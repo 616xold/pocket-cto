@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { MonitoringAlertCard } from "../../components/monitoring-alert-card";
 import { getLatestCashPostureMonitorResult } from "../../lib/api";
+import { getWebOperatorIdentity } from "../../lib/operator-identity";
 
 type MonitoringPageProps = {
   searchParams?: Promise<{ companyKey?: string }>;
@@ -11,6 +12,7 @@ type MonitoringPageProps = {
 export default async function MonitoringPage(props: MonitoringPageProps) {
   const searchParams = props.searchParams ? await props.searchParams : {};
   const companyKey = normalizeCompanyKey(searchParams.companyKey);
+  const operatorIdentity = getWebOperatorIdentity();
   const latest = await getLatestCashPostureMonitorResult(companyKey);
   const monitorResult = latest?.monitorResult ?? null;
 
@@ -30,8 +32,12 @@ export default async function MonitoringPage(props: MonitoringPageProps) {
         </div>
       </section>
 
-      {latest?.alertCard ? (
-        <MonitoringAlertCard alertCard={latest.alertCard} />
+      {latest?.alertCard && monitorResult?.status === "alert" ? (
+        <MonitoringAlertCard
+          alertCard={latest.alertCard}
+          monitorResultId={monitorResult.id}
+          requestedBy={operatorIdentity}
+        />
       ) : (
         <section className="card status-card">
           <div className="section-head">

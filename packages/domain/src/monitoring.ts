@@ -115,6 +115,51 @@ export const MonitorAlertCardSchema = z
   })
   .strict();
 
+export const CreateMonitorInvestigationMissionInputSchema = z
+  .object({
+    monitorResultId: z.string().uuid(),
+    companyKey: FinanceCompanyKeySchema,
+    requestedBy: z.string().trim().min(1).default("operator"),
+  })
+  .strict();
+
+export const MonitorInvestigationRuntimeBoundarySchema = z
+  .object({
+    monitorResultRuntimeBoundary: MonitorRuntimeBoundarySchema,
+    monitorRerunUsed: z.literal(false),
+    runtimeCodexUsed: z.literal(false),
+    deliveryActionUsed: z.literal(false),
+    scheduledAutomationUsed: z.literal(false),
+    reportArtifactCreated: z.literal(false),
+    approvalCreated: z.literal(false),
+    autonomousFinanceActionUsed: z.literal(false),
+    summary: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorInvestigationSeedSchema = z
+  .object({
+    monitorResultId: z.string().uuid(),
+    companyKey: FinanceCompanyKeySchema,
+    monitorKind: MonitorKindSchema,
+    monitorResultStatus: z.literal("alert"),
+    alertSeverity: MonitorAlertSeveritySchema.exclude(["none"]),
+    deterministicSeverityRationale: z.string().min(1),
+    conditions: z.array(MonitorAlertConditionSchema).min(1),
+    conditionSummaries: z.array(z.string().min(1)).min(1),
+    sourceFreshnessPosture: MonitorSourceFreshnessPostureSchema,
+    sourceLineageRefs: z.array(MonitorSourceLineageRefSchema),
+    sourceLineageSummary: z.string().min(1),
+    limitations: z.array(z.string().min(1)).min(1),
+    proofBundlePosture: MonitorProofBundlePostureSchema,
+    humanReviewNextStep: z.string().min(1),
+    runtimeBoundary: MonitorInvestigationRuntimeBoundarySchema,
+    sourceRef: z.string().min(1),
+    monitorResultCreatedAt: z.string().datetime({ offset: true }),
+    alertCardCreatedAt: z.string().datetime({ offset: true }),
+  })
+  .strict();
+
 export const MonitorResultSchema = z
   .object({
     id: z.string().uuid(),
@@ -230,6 +275,15 @@ export type MonitorProofBundlePosture = z.infer<
 >;
 export type MonitorReplayPosture = z.infer<typeof MonitorReplayPostureSchema>;
 export type MonitorAlertCard = z.infer<typeof MonitorAlertCardSchema>;
+export type CreateMonitorInvestigationMissionInput = z.infer<
+  typeof CreateMonitorInvestigationMissionInputSchema
+>;
+export type MonitorInvestigationRuntimeBoundary = z.infer<
+  typeof MonitorInvestigationRuntimeBoundarySchema
+>;
+export type MonitorInvestigationSeed = z.infer<
+  typeof MonitorInvestigationSeedSchema
+>;
 export type MonitorResult = z.infer<typeof MonitorResultSchema>;
 export type MonitorRunResult = z.infer<typeof MonitorRunResultSchema>;
 export type MonitorLatestResult = z.infer<typeof MonitorLatestResultSchema>;

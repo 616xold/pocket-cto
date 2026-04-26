@@ -8,6 +8,7 @@ import {
   FinancePolicySourceScopeSummarySchema,
 } from "./discovery-mission";
 import { FinanceCompanyKeySchema } from "./finance-twin";
+import { MonitorInvestigationSeedSchema } from "./monitoring";
 import {
   ReportingCirculationChronologyViewSchema,
   ReportingCirculationRecordViewSchema,
@@ -39,6 +40,7 @@ export const MissionListItemSchema = z.object({
   policySourceScope:
     FinancePolicySourceScopeSummarySchema.nullable().default(null),
   answerSummary: z.string().nullable().default(null),
+  monitorInvestigation: MonitorInvestigationSeedSchema.nullable().optional(),
   reportKind: ReportingMissionReportKindSchema.nullable().default(null),
   reportDraftStatus: ReportingDraftStatusSchema.nullable().default(null),
   reportSummary: z.string().nullable().default(null),

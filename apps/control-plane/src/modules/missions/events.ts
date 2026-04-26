@@ -7,6 +7,7 @@ export const missionStatusChangeReasons = {
   taskStarted: "task_started",
   taskTerminalized: "task_terminalized",
   tasksMaterialized: "tasks_materialized",
+  monitorInvestigationHandoffReady: "monitor_investigation_handoff_ready",
 } as const;
 
 export type MissionStatusChangedPayload = {
@@ -23,6 +24,17 @@ export function buildQueuedMissionStatusChangedPayload(
     from,
     to,
     reason: missionStatusChangeReasons.tasksMaterialized,
+  };
+}
+
+export function buildMonitorInvestigationHandoffReadyPayload(
+  from: MissionStatus,
+  to: MissionStatus,
+): MissionStatusChangedPayload {
+  return {
+    from,
+    to,
+    reason: missionStatusChangeReasons.monitorInvestigationHandoffReady,
   };
 }
 

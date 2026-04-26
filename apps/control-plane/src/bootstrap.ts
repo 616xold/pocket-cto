@@ -392,6 +392,7 @@ function buildSharedKernel(input: {
     {
       approvalReader: approvalService,
       cfoWikiService,
+      monitorResultReader: input.monitoringRepository,
     },
   );
   const missionReportingActionsService = new MissionReportingActionsService({

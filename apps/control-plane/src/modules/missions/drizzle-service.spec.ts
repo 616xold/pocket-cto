@@ -283,6 +283,7 @@ function createThrowAfterProofBundleRepository(
     updateTaskSummary: repository.updateTaskSummary.bind(repository),
     updateTaskStatus: repository.updateTaskStatus.bind(repository),
     getMissionById: repository.getMissionById.bind(repository),
+    getMissionBySource: repository.getMissionBySource.bind(repository),
     listMissions: repository.listMissions.bind(repository),
     getTasksByMissionId: repository.getTasksByMissionId.bind(repository),
     listArtifactsByMissionId: repository.listArtifactsByMissionId.bind(repository),

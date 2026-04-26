@@ -62,21 +62,33 @@ export const missionTaskStatusEnum = pgEnum("mission_task_status", [
   "cancelled",
 ]);
 
-export const missions = pgTable("missions", {
-  id: id(),
-  type: missionTypeEnum("type").notNull(),
-  status: missionStatusEnum("status").notNull(),
-  title: text("title").notNull(),
-  objective: text("objective").notNull(),
-  sourceKind: missionSourceKindEnum("source_kind").notNull(),
-  sourceRef: text("source_ref"),
-  createdBy: text("created_by").notNull().default("operator"),
-  primaryRepo: text("primary_repo"),
-  replayCursor: integer("replay_cursor").notNull().default(0),
-  spec: jsonb("spec").notNull(),
-  createdAt: createdAt(),
-  updatedAt: updatedAt(),
-});
+export const missions = pgTable(
+  "missions",
+  {
+    id: id(),
+    type: missionTypeEnum("type").notNull(),
+    status: missionStatusEnum("status").notNull(),
+    title: text("title").notNull(),
+    objective: text("objective").notNull(),
+    sourceKind: missionSourceKindEnum("source_kind").notNull(),
+    sourceRef: text("source_ref"),
+    createdBy: text("created_by").notNull().default("operator"),
+    primaryRepo: text("primary_repo"),
+    replayCursor: integer("replay_cursor").notNull().default(0),
+    spec: jsonb("spec").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => ({
+    alertSourceRefUnique: uniqueIndex(
+      "missions_alert_source_ref_key",
+    )
+      .on(table.sourceKind, table.sourceRef)
+      .where(
+        sql`${table.sourceKind} = 'alert' and ${table.sourceRef} is not null`,
+      ),
+  }),
+);
 
 export const missionInputs = pgTable("mission_inputs", {
   id: id(),
