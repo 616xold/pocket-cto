@@ -146,6 +146,14 @@ One company `companyKey` with stored source-backed cash-posture or bank-account-
 Success:
 The system records or returns one deterministic `cash_posture` monitor result and exposes one operator-visible alert card only when freshness threshold, missing-source, failed-source, coverage, or other explicitly source-backed conditions warrant it. The alert card includes source lineage, source freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step, and it does so without creating an investigation mission, invoking runtime-codex, sending notifications, moving money, booking journals, filing taxes, giving legal advice, adding a discovery family, or reopening F5 reporting/approval semantics.
 
+### 17. Planned F6B manual alert-to-investigation handoff
+
+Input:
+One persisted F6A `cash_posture` monitor result with `status = "alert"` and one operator-visible alert card that already includes source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof posture, and a human-review next step.
+
+Success:
+After F6B implementation ships, one explicit operator action creates or opens one deterministic source-backed investigation mission that carries `monitorResultId`, `companyKey`, monitor kind, alert severity, conditions, source freshness or missing-source posture, lineage summary, limitations, proof posture, and human-review next step. The handoff must not create missions automatically from monitor runs, send notifications, invoke runtime-codex, draft investigation prose with an LLM, invent finance facts, create external actions, turn alerts into reports, add approval kinds, add monitor families, or add a second alert system.
+
 ## Blocked for now
 
 These discovery families should stay out of the shipped F4A through F4C2 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
@@ -188,3 +196,4 @@ The shipped F5C4F reporting benchmark contract now lives in `plans/FP-0046-circu
 `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is now the shipped F5C4H benchmark record and already covers shipped optional corrected `circulatedBy` plus derived effective actor chronology on that same seam only.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the latest shipped F5C4I benchmark record and covers explicit `circulationNote` clear-to-absent semantics plus derived effective-note chronology on that same seam, without widening into actual delivery, PDF export, slide or Marp export, or runtime-codex drafting behavior.
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is the shipped F6A benchmark record. `pnpm smoke:cash-posture-monitor:local` is the current deterministic proof for this first monitor before any broader F6 benchmark dataset is added.
+`plans/FP-0051-alert-to-investigation-mission-foundation.md` is the active F6B implementation contract. Do not add a broader F6 benchmark dataset before the manual alert-to-investigation handoff exists.

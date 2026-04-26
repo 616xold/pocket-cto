@@ -99,8 +99,10 @@ Even then, runtime-codex must not invent finance facts, override stored numbers,
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is the shipped first-F6A implementation record.
 F6A stays runtime-free: the first `cash_posture` monitor reads stored source-backed Finance Twin cash-posture state, evaluates deterministic freshness, missing-source, failed-source, coverage, and data-quality posture, records one monitor result, and exposes one operator-visible alert card only when conditions warrant it.
 
-The Codex App Server should not draft monitoring findings, run natural-language autonomous monitoring, create investigation writeups, send notifications, publish messages, or perform remediation in F6A.
-Investigation missions are deferred to F6B unless FP-0050 is explicitly amended in a later thread.
+`plans/FP-0051-alert-to-investigation-mission-foundation.md` is the active F6B implementation contract.
+F6B remains runtime-free: the first handoff should let an operator manually create or open one deterministic investigation mission from one persisted `cash_posture` alert, carrying the existing alert-card source lineage, freshness or missing-source posture, severity rationale, limitations, proof posture, and human-review next step.
+
+The Codex App Server should not draft monitoring findings, run natural-language autonomous monitoring, create investigation writeups, send notifications, publish messages, or perform remediation in F6A or F6B.
 
 ## Prompt ownership
 
@@ -125,7 +127,7 @@ As the product pivots:
 
 For F5A through shipped F5C4F, draft report compilation, body exposure, finance-memo filing/export posture, the first three packet specializations, lender-update and diligence release logging, explicit release-record posture, and board circulation approval plus circulation-log posture should stay deterministic and draft-only or delivery-free as appropriate.
 The most recent later-F5 shipped step is F5C4I: it keeps the original board `circulationRecord` immutable, appends correction history on the existing `report_circulation` seam, allows corrected actor attribution, and now also allows explicit `circulationNote` clear-to-absent correction in the derived effective chronology without broader delivery, export, or runtime-codex widening.
-The shipped F6A record is now `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md`. Do not create FP-0051, investigation missions, or runtime-codex monitoring behavior from this doc alone.
+The shipped F6A record is now `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md`. The active F6B contract is now `plans/FP-0051-alert-to-investigation-mission-foundation.md`. Do not create runtime-codex monitoring behavior, notification delivery, automatic mission creation, or F6C and later monitor work from this doc alone.
 
 ## Transition note
 

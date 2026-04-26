@@ -66,7 +66,8 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is now the shipped F5C4G implementation record: the repo already supports one append-only board-packet correction-and-chronology slice on that same `report_circulation` seam, keeps the original `circulationRecord` immutable, derives a current effective circulation view plus explicit chronology summary, and stays deterministic, runtime-free, and delivery-free.
 `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is now the shipped F5C4H record: the repo can append optional corrected `circulatedBy` on that same seam, preserve the immutable original circulation record, derive truthful effective-actor chronology, and stay deterministic, runtime-free, delivery-free, and board-packet-only.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the shipped F5C4I record: the repo can append explicit clear-to-absent `circulationNote` correction on that same seam, preserve the immutable original circulation record, derive truthful effective-note chronology, and stay deterministic, runtime-free, delivery-free, and board-packet-only.
-`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` now records the first F6A implementation slice: one deterministic, source-backed `cash_posture` monitor result plus one operator-visible alert-card posture, with source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step. Do not start F6B or FP-0051 from this summary alone; create a separate Finance Plan before adding investigation missions, additional monitor families, delivery behavior, or runtime-codex drafting.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` now records the shipped first F6A implementation slice: one deterministic, source-backed `cash_posture` monitor result plus one operator-visible alert-card posture, with source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step.
+`plans/FP-0051-alert-to-investigation-mission-foundation.md` is now the active implementation-ready F6B contract. It narrows the next implementation to a manual operator handoff from one persisted `cash_posture` alert into one deterministic source-backed investigation mission, while keeping F6B runtime-free, delivery-free, non-autonomous, report-free, approval-kind-free, and limited to the existing alert evidence.
 
 ## Product boundary for v1
 
@@ -182,6 +183,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md
 │   ├── FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md
 │   ├── FP-0050-monitoring-foundation-and-first-cash-posture-alert.md
+│   ├── FP-0051-alert-to-investigation-mission-foundation.md
 │   └── templates
 ├── plugins
 │   └── pocket-cfo-codex-operator
