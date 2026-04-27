@@ -73,7 +73,7 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` now records the shipped first F6B implementation slice: one manual operator handoff from one persisted alerting `cash_posture` monitor result into one deterministic source-backed investigation mission, while keeping F6B runtime-free, delivery-free, non-autonomous, report-free, approval-kind-free, and limited to the existing alert evidence.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` now records the F6C implementation slice: one deterministic `collections_pressure` monitor result plus optional operator alert-card posture over stored receivables-aging or collections-posture Finance Twin state, while preserving shipped F6A/F6B behavior and avoiding runtime-codex, delivery, investigations for collections, approvals, report conversion, or multi-monitor widening.
 `plans/FP-0053-payables-pressure-monitor-foundation.md` now records the shipped F6D implementation slice: one deterministic `payables_pressure` monitor result plus optional operator alert-card posture over stored payables-aging or payables-posture Finance Twin state, while preserving F6A/F6B/F6C behavior and avoiding investigations for payables, payment recommendations, payment instructions, delivery, runtime-codex, approvals, report conversion, or autonomous finance action.
-F6E planning should start next only through a new Finance Plan; no F6E implementation has started.
+`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is now the active F6E implementation-ready contract: one deterministic `policy_covenant_threshold` monitor result plus optional operator alert-card posture over stored CFO Wiki policy-document posture, stored deterministic policy extracts, policy pages, policy-corpus posture, and explicit comparable Finance Twin posture only. F6E implementation has not started and must not add investigations, delivery, runtime-codex, approvals, reports, legal or policy advice, payment behavior, new discovery families, or a broad monitoring platform.
 
 ## Product boundary for v1
 
@@ -192,6 +192,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0051-alert-to-investigation-mission-foundation.md
 │   ├── FP-0052-collections-pressure-monitor-foundation.md
 │   ├── FP-0053-payables-pressure-monitor-foundation.md
+│   ├── FP-0054-policy-covenant-threshold-monitor-foundation.md
 │   └── templates
 ├── plugins
 │   └── pocket-cfo-codex-operator

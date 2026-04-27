@@ -47,9 +47,10 @@ When using those commands during the pivot:
 13. shipped F6A deterministic `cash_posture` monitor result and alert-card posture from stored source-backed Finance Twin cash-posture state, recorded in `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md`
 14. shipped F6B manual alert-to-investigation handoff, recorded in `plans/FP-0051-alert-to-investigation-mission-foundation.md`
 15. shipped F6C collections-pressure monitor result and optional alert-card posture, recorded in `plans/FP-0052-collections-pressure-monitor-foundation.md`
-16. shipped F6D payables-pressure monitor result and optional alert-card posture, recorded in `plans/FP-0053-payables-pressure-monitor-foundation.md`, with `pnpm smoke:payables-pressure-monitor:local` as the narrow deterministic proof and no F6E implementation started
-17. wiki compilation quality
-18. provenance, freshness disclosure, and contradiction handling
+16. shipped F6D payables-pressure monitor result and optional alert-card posture, recorded in `plans/FP-0053-payables-pressure-monitor-foundation.md`, with `pnpm smoke:payables-pressure-monitor:local` as the narrow deterministic proof
+17. active F6E policy/covenant threshold monitor contract, recorded in `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md`, with no implementation smoke or eval dataset until the monitor ships
+18. wiki compilation quality
+19. provenance, freshness disclosure, and contradiction handling
 
 ## F4 staging
 
@@ -82,7 +83,7 @@ For later phases:
 - grade the shipped note-reset truth on the existing seam, but do not widen grading into multi-packet circulation, actual delivery, PDF export, slide or Marp export, or runtime-codex drafting behavior
 - keep the shipped F6A eval scope anchored to `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md`: one `companyKey` plus stored source-backed cash-posture state in, one deterministic monitor result plus optional operator alert-card posture out, with source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, human-review next step, and no investigation mission, runtime-codex, delivery, accounting action, bank action, tax filing, legal advice, or new discovery family
 - keep the shipped F6B handoff anchored to `plans/FP-0051-alert-to-investigation-mission-foundation.md`: one persisted `cash_posture` alert monitor result in, one manual operator-created investigation mission out, with the existing alert-card source lineage, freshness or missing-source posture, severity rationale, limitations, proof posture, and human-review next step carried forward
-- use `pnpm smoke:cash-posture-monitor:local`, `pnpm smoke:cash-posture-alert-investigation:local`, `pnpm smoke:collections-pressure-monitor:local`, and `pnpm smoke:payables-pressure-monitor:local` as the current shipped F6 truth sources; `plans/FP-0052-collections-pressure-monitor-foundation.md` records the shipped F6C implementation, `plans/FP-0053-payables-pressure-monitor-foundation.md` records the shipped F6D implementation, and no broader F6E eval dataset or implementation should be added before a later Finance Plan defines one
+- use `pnpm smoke:cash-posture-monitor:local`, `pnpm smoke:cash-posture-alert-investigation:local`, `pnpm smoke:collections-pressure-monitor:local`, and `pnpm smoke:payables-pressure-monitor:local` as the current shipped F6 truth sources; `plans/FP-0052-collections-pressure-monitor-foundation.md` records the shipped F6C implementation, `plans/FP-0053-payables-pressure-monitor-foundation.md` records the shipped F6D implementation, and `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` defines the active F6E implementation contract without adding an eval dataset before the monitor ships
 
 Do not treat these as early F4 supported families:
 

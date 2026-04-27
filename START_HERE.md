@@ -75,6 +75,7 @@ Suggested thread naming:
 - `F6B-alert-to-investigation-mission-foundation`
 - `F6C-collections-pressure-monitor-foundation`
 - `F6D-payables-pressure-monitor-foundation`
+- `F6E-policy-covenant-threshold-monitor-foundation`
 
 Broad F2 Finance Twin work now runs through F2O.
 `F2P-final-f2-exit-audit-and-polish` and `F2Q-final-f2-handoff-and-plan-chain-polish` are the historical closeout and handoff threads for that completed breadth.
@@ -105,7 +106,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` now records the shipped first F6A implementation slice: one deterministic `cash_posture` monitor result plus one operator-visible alert-card posture from stored source-backed state only, with no F6B investigation mission, runtime-codex, delivery, or reporting/approval reopening.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` now records the shipped first F6B implementation slice: an operator can manually create or open one taskless deterministic investigation mission from one persisted alerting `cash_posture` monitor result.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` now records the shipped F6C implementation slice for exactly one `collections_pressure` monitor over stored receivables-aging or collections-posture Finance Twin state. F6C does not create investigations for collections alerts.
-`plans/FP-0053-payables-pressure-monitor-foundation.md` now records the shipped F6D implementation slice for exactly one `payables_pressure` monitor over stored payables-aging or payables-posture Finance Twin state. F6D does not create investigations for payables alerts and does not add payment recommendations, payment instructions, delivery, runtime-codex, approvals, reports, or autonomous finance action. F6E planning should start next only through a new Finance Plan; no F6E implementation has started.
+`plans/FP-0053-payables-pressure-monitor-foundation.md` now records the shipped F6D implementation slice for exactly one `payables_pressure` monitor over stored payables-aging or payables-posture Finance Twin state. F6D does not create investigations for payables alerts and does not add payment recommendations, payment instructions, delivery, runtime-codex, approvals, reports, or autonomous finance action.
+`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is now the active F6E implementation-ready contract for exactly one `policy_covenant_threshold` monitor over stored CFO Wiki policy-document posture, deterministic policy extracts, policy pages, policy-corpus posture, and explicit comparable Finance Twin posture only. F6E implementation has not started.
 
 ## Review ritual
 
