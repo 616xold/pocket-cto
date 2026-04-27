@@ -2,20 +2,20 @@
 
 ## Purpose / Big Picture
 
-This file is the active implementation-ready Finance Plan for Pocket CFO F6D.
-The target phase is `F6`, and the first real F6D implementation slice is exactly `F6D-payables-pressure-monitor-foundation`.
+This file is the shipped Finance Plan record for Pocket CFO F6D.
+The target phase is `F6`, and the shipped F6D implementation slice is exactly `F6D-payables-pressure-monitor-foundation`.
 
-The user-visible goal is narrow: after shipped F6A records one deterministic source-backed `cash_posture` monitor result plus alert card, shipped F6B lets an operator manually create or open one investigation mission from one persisted `cash_posture` alert, and shipped F6C adds one deterministic `collections_pressure` monitor result plus optional alert card, Pocket CFO should add one third monitor family.
+The user-visible shipped behavior is narrow: after shipped F6A records one deterministic source-backed `cash_posture` monitor result plus alert card, shipped F6B lets an operator manually create or open one investigation mission from one persisted `cash_posture` alert, and shipped F6C adds one deterministic `collections_pressure` monitor result plus optional alert card, Pocket CFO now adds one third monitor family.
 The first F6D monitor family is exactly `payables_pressure`.
-It should read stored Finance Twin payables-aging or payables-posture state for one `companyKey`, record one deterministic monitor result with `monitorKind = "payables_pressure"`, and expose one optional operator alert card only when source-backed conditions warrant it.
+It reads stored Finance Twin payables-aging or payables-posture state for one `companyKey`, records one deterministic monitor result with `monitorKind = "payables_pressure"`, and exposes one optional operator alert card only when source-backed conditions warrant it.
 
 Payables comes next because it is already a shipped finance discovery family, it is grounded in stored payables-aging and payables-posture state, it is a common recurring CFO operating monitor, and it naturally complements `cash_posture` and `collections_pressure` without requiring bank, accounting, tax, legal, delivery, or payment writes.
 Repo truth does not show policy or covenant monitoring as strictly safer for F6D.
 Policy/covenant threshold monitoring can follow later only when source-backed or operator-owned thresholds are named explicitly.
 
-This is a docs-and-plan contract.
-Do not treat FP-0053 as shipped implementation.
+This is the shipped implementation record, not the active contract for new work.
 FP-0050 remains the shipped F6A record, FP-0051 remains the shipped F6B record, and FP-0052 remains the shipped F6C record.
+F6E planning should start next only through a new Finance Plan; no F6E implementation has started here.
 GitHub connector work is explicitly out of scope.
 
 F6D must stay deterministic, runtime-free, delivery-free, non-autonomous, and human-reviewable.
@@ -24,13 +24,14 @@ It must not create investigations, run F6B handoffs, use runtime-Codex, send not
 ## Progress
 
 - [x] 2026-04-27T12:58:20Z Audit shipped F6A/F6B/F6C records, active docs, monitoring bounded context, payables-aging/payables-posture source posture, proof-bundle boundary, runtime-Codex boundary, delivery-free posture, and current validation ladder.
-- [x] 2026-04-27T12:58:20Z Create FP-0053 as the single active F6D implementation-ready contract while preserving FP-0050, FP-0051, and FP-0052 as shipped records.
-- [x] 2026-04-27T12:58:20Z Refresh active docs so the next implementation thread can start the narrow `payables_pressure` monitor from FP-0053 rather than re-planning F6D or widening into multi-monitor work.
+- [x] 2026-04-27T12:58:20Z Create FP-0053 as the initial F6D implementation contract while preserving FP-0050, FP-0051, and FP-0052 as shipped records.
+- [x] 2026-04-27T12:58:20Z Refresh active docs so the F6D implementation work could start the narrow `payables_pressure` monitor from FP-0053 rather than re-planning F6D or widening into multi-monitor work.
 - [x] 2026-04-27T13:07:38Z Run the docs-and-plan validation ladder through `pnpm ci:repro:current` and record the green result.
 - [x] 2026-04-27T13:50:22Z Implement `F6D-payables-pressure-monitor-foundation` without adding investigations, delivery, runtime-Codex, approvals, reports, payment behavior, or broad monitoring-platform behavior.
 - [x] 2026-04-27T13:50:22Z Add narrow payables-pressure evaluator, service, route, operator UI/API, migration, smoke, and regression tests while preserving F6A/F6B/F6C behavior.
 - [x] 2026-04-27T13:50:22Z Run narrow domain, control-plane monitoring, and web monitoring/API specs after implementation; all passed.
 - [x] 2026-04-27T13:58:30Z Run and record the full F6D implementation validation ladder after code changes exist; narrow specs, migration, baseline smokes, new payables smoke, twin guardrails, lint, typecheck, test, and `pnpm ci:repro:current` all passed.
+- [x] 2026-04-27T14:18:34Z Post-merge docs-only closeout marks FP-0053 as the shipped F6D record and keeps F6E as planning/docs only with no FP-0054 in this slice.
 
 ## Surprises & Discoveries
 
@@ -38,9 +39,9 @@ The shipped monitoring bounded context already has the right first shape for F6D
 `apps/control-plane/src/modules/monitoring/**` owns deterministic evaluation, persistence, run/latest routes, formatting, and alert-card posture for F6A and F6C.
 F6D should extend that bounded context rather than creating a second alert system.
 
-The current monitoring domain and DB enum support exactly `cash_posture` and `collections_pressure`.
-F6D implementation will need one additive widening to `payables_pressure`, including the existing `monitor_results` persistence path.
-That widening belongs to the implementation thread, not this docs-and-plan slice.
+The monitoring domain and DB enum now support exactly `cash_posture`, `collections_pressure`, and `payables_pressure`.
+F6D shipped one additive widening to `payables_pressure`, including the existing `monitor_results` persistence path.
+That widening belongs to the shipped F6D record, not to any F6E planning slice.
 
 Payables and collections have symmetric stored-state posture in the Finance Twin.
 `FinanceTwinService.getPayablesPosture(companyKey)` reads persisted payables-aging state and exposes freshness, latest attempted sync, latest successful source, coverage, diagnostics, currency buckets, and limitations.
@@ -51,7 +52,7 @@ The shipped F6B handoff is intentionally cash-alert-specific.
 F6D must not modify `POST /missions/monitoring-investigations` or create payables investigations.
 A non-cash alert-to-investigation path can be deferred unless a later named plan proves a concrete operator need and a narrow safe shape.
 
-The implementation thread confirmed that the existing monitoring repository and alert-card shape can carry `payables_pressure` without table-shape changes.
+The shipped implementation confirmed that the existing monitoring repository and alert-card shape can carry `payables_pressure` without table-shape changes.
 The only persistence change needed is the additive `monitor_kind` enum value plus one generated migration.
 The payables evaluator had to be stricter than simple ratio math: when stored diagnostics report partial rollups, total/detail conflicts, mixed past-due bases, missing total basis, or mixed date posture, F6D reports coverage or data-quality posture instead of computing overdue concentration.
 
@@ -127,6 +128,8 @@ The current backend monitoring surface is:
 - `GET /monitoring/companies/:companyKey/cash-posture/latest`
 - `POST /monitoring/companies/:companyKey/collections-pressure/run`
 - `GET /monitoring/companies/:companyKey/collections-pressure/latest`
+- `POST /monitoring/companies/:companyKey/payables-pressure/run`
+- `GET /monitoring/companies/:companyKey/payables-pressure/latest`
 - `POST /missions/monitoring-investigations` for persisted alerting `cash_posture` results only
 
 The relevant existing implementation seams for F6D are:
@@ -145,30 +148,33 @@ No stack-pack changes are expected before F6F.
 
 ## Plan of Work
 
+This section preserves the F6D implementation contract that was executed.
+It is historical shipped-record context, not an active instruction to start new code.
+
 First, widen the monitoring domain contract additively.
-The implementation should allow `monitorKind = "payables_pressure"` alongside the shipped `cash_posture` and `collections_pressure` kinds, while preserving current cash and collections monitor behavior and discovery-family vocabulary.
+The shipped implementation allows `monitorKind = "payables_pressure"` alongside the shipped `cash_posture` and `collections_pressure` kinds, while preserving current cash and collections monitor behavior and discovery-family vocabulary.
 Condition kinds should remain exactly the existing narrow set: `missing_source`, `failed_source`, `stale_source`, `coverage_gap`, `overdue_concentration`, and `data_quality_gap`.
 
 Second, extend the existing monitoring bounded context.
-The preferred implementation shape is to add payables-specific evaluation in `apps/control-plane/src/modules/monitoring/**`, reusing the existing repository, formatter, service, and route patterns.
+The shipped implementation shape adds payables-specific evaluation in `apps/control-plane/src/modules/monitoring/**`, reusing the existing repository, formatter, service, and route patterns.
 The route layer must stay thin: parse input, call service, serialize output.
 SQL stays in the repository, and deterministic condition/severity logic stays in evaluator or formatting helpers.
 
 Third, persist the payables monitor result in the existing `monitor_results` table.
-The implementation should add the new monitor kind additively and keep the existing idempotent `(companyId, monitorKind, runKey)` retry behavior.
+The shipped implementation adds the new monitor kind additively and keeps the existing idempotent `(companyId, monitorKind, runKey)` retry behavior.
 The result JSON must carry source freshness posture, source lineage refs, limitations, proof posture, runtime boundary, replay posture, deterministic severity rationale, human-review next step, and the optional alert card.
 
 Fourth, expose the smallest operator read model.
 The operator surface should show a payables alert card only when the latest persisted `payables_pressure` result has `status = "alert"`.
 It may reuse the existing monitoring page or add a narrow payables section, but it must not introduce notification controls, investigation creation, payment actions, report conversion, approvals, or a broad monitoring dashboard.
 
-Fifth, add one narrow implementation proof in the later implementation thread.
+Fifth, preserve one narrow implementation proof in the shipped implementation record.
 That proof should create source-backed payables-aging or payables-posture state, run the payables monitor, assert alert and no-alert posture, assert source lineage/freshness/limitations/proof/human-review posture, and assert no mission, report artifact, runtime-Codex thread, outbox delivery, approval, payment instruction, notification, or autonomous finance action is created.
 
 ## Concrete Steps
 
 1. Widen the pure monitoring contract.
-   Expected future files in the implementation thread:
+   Implementation contract files:
    - `packages/domain/src/monitoring.ts`
    - `packages/domain/src/monitoring.spec.ts`
    - `packages/domain/src/index.ts` only if exports need adjustment
@@ -183,7 +189,7 @@ That proof should create source-backed payables-aging or payables-posture state,
    - keep runtime boundary fields false for runtime-Codex, delivery, investigation creation, and autonomous finance actions
 
 2. Add additive DB support only for the new monitor kind.
-   Expected future files in the implementation thread:
+   Implementation contract files:
    - `packages/db/src/schema/monitoring.ts`
    - one additive migration generated by `pnpm db:generate`
    - narrow schema or repository specs if needed
@@ -195,7 +201,7 @@ That proof should create source-backed payables-aging or payables-posture state,
    - keep idempotent retry behavior by company, monitor kind, and run key
 
 3. Add payables monitor evaluation in the monitoring bounded context.
-   Expected future files in the implementation thread:
+   Implementation contract files:
    - `apps/control-plane/src/modules/monitoring/payables-evaluator.ts` or an equivalent split helper
    - `apps/control-plane/src/modules/monitoring/formatter.ts`
    - `apps/control-plane/src/modules/monitoring/service.ts`
@@ -224,14 +230,14 @@ That proof should create source-backed payables-aging or payables-posture state,
    In that case F6D should report `coverage_gap` or `data_quality_gap` rather than inventing a ratio.
 
 5. Add one narrow HTTP read/run surface if needed by the operator UI and smoke.
-   Preferred future routes:
+   Shipped routes:
    - `POST /monitoring/companies/:companyKey/payables-pressure/run`
    - `GET /monitoring/companies/:companyKey/payables-pressure/latest`
 
    The routes must not contain SQL, prompt assembly, monitor math, investigation creation, report conversion, approval behavior, delivery logic, payment logic, or vendor-payment recommendations.
 
 6. Add the operator alert-card read model.
-   Expected future files in the implementation thread:
+   Implementation contract files:
    - `apps/web/lib/api.ts`
    - `apps/web/app/monitoring/**`
    - `apps/web/components/monitoring-alert-card.tsx` or a narrow reusable monitor alert card split
@@ -242,20 +248,20 @@ That proof should create source-backed payables-aging or payables-posture state,
    - not show create/open investigation for `payables_pressure` in F6D
    - not show email, Slack, webhook, notification, send, publish, pay, book, file, approval, report-conversion, or vendor-payment controls
 
-7. Add one implementation smoke only in the implementation thread.
-   Expected future files:
+7. Preserve one implementation smoke in the shipped record.
+   Implementation contract files:
    - `tools/payables-pressure-monitor-smoke.mjs`
-   - a package script such as `pnpm smoke:payables-pressure-monitor:local`
+   - packaged script `pnpm smoke:payables-pressure-monitor:local`
 
-   The smoke should prove:
+   The smoke proves:
    - missing or failed payables-aging source state produces an alerting monitor result and alert card
    - stale source, coverage gap, overdue concentration, and data-quality posture produce deterministic conditions where source-backed state warrants them
    - fresh supported payables posture without alert conditions produces `no_alert`
    - repeated run keys reuse the stored monitor result identity
    - no runtime-Codex thread, mission, report artifact, approval, outbox event, notification, delivery action, bank/accounting/tax/legal write, payment instruction, vendor-payment recommendation, or autonomous finance action is created
 
-8. Refresh docs after implementation only where behavior actually changes.
-   Expected docs:
+8. Refresh docs after implementation only where behavior actually changed.
+   Refreshed docs:
    - `README.md`
    - `START_HERE.md`
    - `docs/ACTIVE_DOCS.md`
@@ -268,7 +274,7 @@ That proof should create source-backed payables-aging or payables-posture state,
 
 ## Validation and Acceptance
 
-This docs-and-plan thread must run the requested preserved validation ladder:
+The F6D plan record preserved this validation ladder during planning and implementation:
 
 - `pnpm smoke:source-ingest:local`
 - `pnpm smoke:finance-twin:local`
