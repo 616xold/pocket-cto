@@ -25,13 +25,15 @@ GitHub connector work is explicitly out of scope.
 ## Progress
 
 - [x] 2026-04-27T21:37:35Z Invoke the requested Pocket CFO operator plugin guards, run preflight, confirm the branch and services, and read the required active docs, shipped F6 records, ops docs, package scripts, monitor smokes, and stack-pack boundary.
-- [x] 2026-04-27T21:37:35Z Create FP-0055 as the single active implementation-ready F6F contract while preserving FP-0050 through FP-0054 as shipped F6A through F6E records.
-- [x] 2026-04-27T21:37:35Z Refresh the active-doc spine so the next thread starts the narrow F6F demo replay and stack-pack implementation rather than re-planning F6F or widening into F6G or later work.
+- [x] 2026-04-27T21:37:35Z Created FP-0055 as the implementation-ready F6F contract during the slice; it now remains the shipped F6F record while FP-0050 through FP-0054 remain shipped F6A through F6E records.
+- [x] 2026-04-27T21:37:35Z Refreshed the active-doc spine at the start of F6F so the then-next thread implemented the narrow F6F demo replay and stack-pack slice rather than re-planning F6F or widening into F6G or later work.
 - [x] 2026-04-27T21:44:38Z Run the docs-and-plan validation ladder through `pnpm ci:repro:current`; all required commands passed.
 - [x] 2026-04-27T22:08:31Z Add the checked-in F6F demo fixture set, normalized expected monitor outputs, finance-native demo stack-pack manifest, deterministic replay smoke, and `pnpm smoke:monitor-demo-replay:local`.
 - [x] 2026-04-27T22:08:31Z Prove the replay smoke locally against the Docker-backed app: it bootstraps `demo-monitor-stack`, verifies the four shipped monitor families, creates or opens exactly one cash-alert investigation, and confirms non-cash alerts remain investigation-free.
 - [x] 2026-04-27T22:08:31Z Refresh the active docs and ops/eval guidance to identify FP-0055 as the shipped F6F record, with F6G or later work requiring a new Finance Plan.
 - [x] 2026-04-27T22:14:56Z Run the full requested F6F validation ladder through `pnpm ci:repro:current`; all required commands passed.
+- [x] 2026-04-27T22:37:54Z Polish shipped F6F proof/doc posture after merge: refresh stale local-dev and shipped-record wording, make the demo replay smoke prove checked-in fixture source immutability internally, and keep F6G planning or implementation out of scope.
+- [x] 2026-04-27T22:43:44Z QA-polish FP-0055 shipped-record wording so historical validation and handoff notes do not read like an active instruction to keep implementing F6F.
 
 ## Surprises & Discoveries
 
@@ -90,6 +92,9 @@ Rationale: no F5 reporting approval/release/circulation/correction changes, no F
 Decision: later F6 slices are named but not created here.
 Rationale: likely later slices are `F6G-non-cash-alert-to-investigation-generalization` only if a concrete operator need is proven, `F6H-close-control-checklist-foundation` only if source-backed and explicitly scoped, and `F6I-stack-pack-expansion` only after the first demo pack is green.
 Do not create FP-0056 or any later plan in this slice.
+
+Decision: post-merge F6F proof/doc polish remains correction-and-freshness work inside the shipped FP-0055 record.
+Rationale: fixture immutability and absence-summary proof fields strengthen the already-shipped replay evidence without adding product behavior, monitor evaluator semantics, monitor families, discovery families, schema, routes, package scripts, smoke aliases, runtime-Codex, delivery, reports, approvals, payment behavior, legal or policy advice, autonomous finance action, FP-0056, or F6G planning.
 
 ## Context and Orientation
 
@@ -226,7 +231,7 @@ They now identify FP-0055 as the shipped F6F record and state that F6G or later 
 
 ## Validation and Acceptance
 
-This implementation thread must run the full F6F validation ladder:
+The F6F implementation thread ran the full F6F validation ladder:
 
 - `pnpm --filter @pocket-cto/stack-packs exec vitest run`
 - `pnpm --filter @pocket-cto/testkit exec vitest run src/f6f-monitor-demo-fixture.spec.ts`

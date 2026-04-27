@@ -98,7 +98,7 @@ For Pocket CFO, local development should move toward a source-registry-to-financ
 3. parse deterministically where possible
 4. populate the Finance Twin
 5. refresh the CFO Wiki
-6. run discovery, reporting, and monitoring work only through the current active Finance Plan; FP-0052 records the shipped F6C collections-pressure monitor slice, FP-0053 records the shipped F6D payables-pressure monitor slice, FP-0054 records the shipped F6E policy/covenant threshold monitor slice, and FP-0055 records the shipped F6F monitor demo replay and stack-pack foundation
+6. run discovery, reporting, and monitoring work only through a named active Finance Plan when one exists; FP-0052 records the shipped F6C collections-pressure monitor slice, FP-0053 records the shipped F6D payables-pressure monitor slice, FP-0054 records the shipped F6E policy/covenant threshold monitor slice, and FP-0055 records the shipped F6F monitor demo replay and stack-pack foundation, with no active post-F6F or F6G implementation contract yet
 
 Today, steps 1 through 5 exist in a narrow form:
 

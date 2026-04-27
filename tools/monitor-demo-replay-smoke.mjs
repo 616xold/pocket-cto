@@ -95,7 +95,10 @@ async function main() {
       monitorResult: monitorRuns.cash_posture.monitorResult,
     });
 
-    await assertNoNonCashInvestigations(pool, monitorRuns);
+    const nonCashInvestigationsCreated = await assertNoNonCashInvestigations(
+      pool,
+      monitorRuns,
+    );
     const after = await readBoundaryCounts(pool);
     assertAbsenceBoundaries({
       after,
@@ -103,7 +106,10 @@ async function main() {
       before,
       expected: fixture.expected.absenceAssertions,
     });
-    assertFamiliesUnchanged();
+    const familyAbsence = assertFamiliesUnchanged();
+    const fixtureSourcesUnchanged = await assertFixtureSourcesUnchanged(
+      fixture.files,
+    );
 
     console.log(
       JSON.stringify({
@@ -115,12 +121,15 @@ async function main() {
         },
         companyKey: fixture.expected.demoCompany.companyKey,
         sourceFiles: summarizeRegisteredSources(registered, syncs),
+        fixtureSourcesUnchanged,
         monitorResults: normalizedMonitorResults,
         cashInvestigationHandoff: cashHandoff,
         absenceAssertions: {
           approvalsCreated: after.approvals !== before.approvals,
           deliveryOutboxEventsCreated: after.outboxEvents !== before.outboxEvents,
-          nonCashInvestigationsCreated: false,
+          nonCashInvestigationsCreated,
+          newDiscoveryFamilyAdded: familyAbsence.newDiscoveryFamilyAdded,
+          newMonitorFamilyAdded: familyAbsence.newMonitorFamilyAdded,
           paymentInstructionsCreated:
             after.paymentInstructions !== before.paymentInstructions,
           reportArtifactsCreated:
@@ -542,6 +551,23 @@ async function assertNoNonCashInvestigations(pool, monitorRuns) {
       throw new Error(`${monitorKind} created an investigation mission`);
     }
   }
+
+  return false;
+}
+
+async function assertFixtureSourcesUnchanged(files) {
+  for (const [role, file] of files.entries()) {
+    const currentBody = await readFile(file.absolutePath);
+    const currentChecksumSha256 = createHash("sha256")
+      .update(currentBody)
+      .digest("hex");
+
+    if (currentChecksumSha256 !== file.checksumSha256) {
+      throw new Error(`Fixture source changed during replay: ${role}`);
+    }
+  }
+
+  return true;
 }
 
 function assertMonitorOnlyBoundaries(before, afterMonitorRuns) {
@@ -671,6 +697,11 @@ function assertFamiliesUnchanged() {
       `Monitor family list changed: ${MonitorKindSchema.options.join(", ")}`,
     );
   }
+
+  return {
+    newDiscoveryFamilyAdded: false,
+    newMonitorFamilyAdded: false,
+  };
 }
 
 function summarizeRegisteredSources(registered, syncs) {
