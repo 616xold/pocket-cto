@@ -68,7 +68,7 @@ describe("evaluatePolicyCovenantThresholdMonitor", () => {
   it("treats stale policy page or policy-corpus posture as stale_source", () => {
     const result = evaluate(
       buildInput({
-        collectionsPosture: buildCollectionsPosture(20),
+        collectionsPosture: buildCollectionsPosture(60),
         policyCorpusPage: buildPage({
           pageKey: buildCfoWikiConceptPageKey("policy-corpus"),
           pageKind: "concept",
@@ -78,8 +78,12 @@ describe("evaluatePolicyCovenantThresholdMonitor", () => {
     );
 
     expect(conditionKinds(result)).toContain("stale_source");
+    expect(conditionKinds(result)).not.toContain("threshold_breach");
+    expect(conditionKinds(result)).not.toContain("threshold_approaching");
     expect(result.severity).toBe("warning");
     expect(result.proofBundlePosture.state).toBe("limited_by_stale_source");
+    expect(result.sourceLineageRefs.some(isThresholdFactRef)).toBe(true);
+    expect(result.sourceLineageRefs.some(isComparableActualRef)).toBe(false);
   });
 
   it("reports coverage_gap when policy sources lack exact threshold grammar", () => {

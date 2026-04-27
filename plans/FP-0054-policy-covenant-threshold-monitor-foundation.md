@@ -34,6 +34,8 @@ It must not create investigations, generalize F6B, use runtime-Codex, send notif
 - [x] 2026-04-27T15:59:00Z Add the fourth monitor family, `policy_covenant_threshold`, with exact grammar threshold extraction for `collections_past_due_share` and `payables_past_due_share` only.
 - [x] 2026-04-27T15:59:00Z Add additive monitor-kind persistence, run/latest routes, operator monitoring read model, and the packaged `pnpm smoke:policy-covenant-threshold-monitor:local` proof.
 - [x] 2026-04-27T16:16:07Z Run the full F6E implementation validation ladder through `pnpm ci:repro:current` and record the green result after modularity and diagnostic-polish fixes.
+- [x] 2026-04-27T17:32:23Z Run a strict F6E QA pass and tighten the policy/covenant evaluator so stale or failed policy-source posture blocks threshold-breach or threshold-approaching conclusions.
+- [x] 2026-04-27T17:37:58Z Rerun the required QA validation ladder, including packaged F6 monitor smokes, twin guardrails, lint, typecheck, test, and `pnpm ci:repro:current`, on the corrected tree.
 
 ## Surprises & Discoveries
 
@@ -61,6 +63,9 @@ The implementation therefore supports only those two metric keys and fails close
 
 Implementation validation found two polish issues before commit: the first evaluator draft had grown past the repo modularity preference, and unsupported metric or unit diagnostics could repeat when the same deterministic threshold line appeared through both policy page and extract surfaces.
 The final implementation keeps the public evaluator facade but splits extraction, shared types, comparable actual reading, and result assembly into focused monitoring modules, and it de-duplicates extraction diagnostics without changing fail-closed behavior.
+
+Post-PR QA found one narrow fail-closed defect inside the F6E evaluator: stale policy-corpus or policy-page posture could still coexist with a threshold conclusion when an exact threshold fact and comparable actual were otherwise present.
+The correction keeps the stale or failed source alert, preserves policy source and threshold-fact lineage for review, and skips comparable-actual reads plus `threshold_breach` or `threshold_approaching` conclusions until policy-source freshness is usable.
 
 ## Decision Log
 
@@ -99,6 +104,9 @@ Rationale: policy source refs, threshold fact refs, and comparable actual refs c
 
 Decision: keep the policy/covenant evaluator public surface small and split the implementation by responsibility.
 Rationale: `policy-covenant-evaluator.ts` stays as the compatibility facade, while extraction, comparable actual reading, result assembly, and shared F6E types live in separate monitoring modules so the implementation does not collapse source posture, threshold grammar, Finance Twin math, and alert-card assembly into one file.
+
+Decision: stale or failed CFO Wiki policy-source posture blocks threshold comparisons.
+Rationale: F6E threshold conclusions require usable source freshness on the policy side as well as explicit comparable Finance Twin actual posture. When policy-corpus or policy-page freshness is stale or failed, the monitor reports source posture and lineage only, rather than adding `threshold_breach` or `threshold_approaching`.
 
 ## Context and Orientation
 

@@ -106,6 +106,10 @@ function buildConditions(
     return conditions;
   }
 
+  if (hasUnusablePolicySourceCondition(conditions)) {
+    return conditions;
+  }
+
   for (const fact of validFacts) {
     const actualResult = readComparableActual({
       collectionsPosture: input.collectionsPosture,
@@ -333,6 +337,10 @@ function buildSourceLineageRefs(
 
   refs.push(...validFacts.map((fact) => buildThresholdFactLineageRef(fact)));
 
+  if (hasUnusablePolicySourceCondition(conditions)) {
+    return refs;
+  }
+
   for (const fact of validFacts) {
     const actual = readComparableActual({
       collectionsPosture: input.collectionsPosture,
@@ -346,6 +354,13 @@ function buildSourceLineageRefs(
   }
 
   return refs;
+}
+
+function hasUnusablePolicySourceCondition(conditions: MonitorAlertCondition[]) {
+  return conditions.some(
+    (condition) =>
+      condition.kind === "failed_source" || condition.kind === "stale_source",
+  );
 }
 
 function buildPolicySourceLineageRef(
