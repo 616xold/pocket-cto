@@ -186,6 +186,14 @@ One checked-in demo stack-pack fixture set for one company, with source files fo
 Success:
 The system bootstraps the demo company from immutable checked-in sources via `pnpm smoke:monitor-demo-replay:local`, runs the shipped `cash_posture`, `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold` monitors deterministically, compares normalized outputs to the expected manifest, and demonstrates the shipped cash-only alert-to-investigation handoff where applicable. It does so without adding monitor families, discovery families, non-cash investigations, delivery, runtime-codex, report conversion, approvals, payment behavior, legal or policy advice, or autonomous remediation.
 
+### 22. Planned F6G collections-pressure alert investigation handoff
+
+Input:
+One persisted alerting `collections_pressure` monitor result with one alert card that already carries source freshness or missing-source posture, source lineage refs, deterministic severity rationale, limitations, proof posture, and a human-review next step.
+
+Success:
+The planned F6G implementation should let an operator manually create or open one taskless deterministic investigation mission from that stored collections alert, preserving shipped cash handoff behavior and keeping payables and policy/covenant investigations absent. It must not create missions automatically, schedule monitors, send notifications, invoke runtime-codex, write investigation prose with an LLM, create reports, add approvals, create delivery, create payment instructions, recommend vendor payments, create collection instructions, give legal or policy advice, or take autonomous action.
+
 ## Blocked for now
 
 These discovery families should stay out of the shipped F4A through F4C2 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
@@ -231,4 +239,4 @@ The shipped F5C4F reporting benchmark contract now lives in `plans/FP-0046-circu
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` is the shipped F6B benchmark record.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` is the shipped F6C benchmark record for exactly one `collections_pressure` monitor, with `pnpm smoke:collections-pressure-monitor:local` as the deterministic proof.
 `plans/FP-0053-payables-pressure-monitor-foundation.md` is the shipped F6D benchmark record for exactly one `payables_pressure` monitor, with `pnpm smoke:payables-pressure-monitor:local` as the deterministic proof.
-`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is the shipped F6E implementation record for exactly one `policy_covenant_threshold` monitor. `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is the shipped F6F implementation record for one deterministic monitor demo replay and stack-pack foundation. Do not add a broader F6 benchmark dataset, start F6G or later implementation, or create later F6 implementation scope before a new named Finance Plan defines that next scope.
+`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is the shipped F6E implementation record for exactly one `policy_covenant_threshold` monitor. `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is the shipped F6F implementation record for one deterministic monitor demo replay and stack-pack foundation. `plans/FP-0056-non-cash-alert-investigation-generalization-foundation.md` is the active F6G contract for a manual collections-pressure alert investigation handoff only. Do not add a broader F6 benchmark dataset, start F6H or later implementation, or create later F6 implementation scope before a new named Finance Plan defines that next scope.

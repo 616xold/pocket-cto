@@ -50,8 +50,9 @@ When using those commands during the pivot:
 16. shipped F6D payables-pressure monitor result and optional alert-card posture, recorded in `plans/FP-0053-payables-pressure-monitor-foundation.md`, with `pnpm smoke:payables-pressure-monitor:local` as the narrow deterministic proof
 17. shipped F6E policy/covenant threshold monitor result and optional alert-card posture, recorded in `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md`, with `pnpm smoke:policy-covenant-threshold-monitor:local` as the narrow deterministic proof
 18. shipped F6F monitor demo replay and stack-pack foundation, recorded in `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md`, with `pnpm smoke:monitor-demo-replay:local` as the deterministic replay proof and no model-scored benchmark dataset yet
-19. wiki compilation quality
-20. provenance, freshness disclosure, and contradiction handling
+19. planned F6G collections-first non-cash alert-to-investigation handoff, recorded in `plans/FP-0056-non-cash-alert-investigation-generalization-foundation.md`, with no eval dataset or smoke alias added until implementation
+20. wiki compilation quality
+21. provenance, freshness disclosure, and contradiction handling
 
 ## F4 staging
 
@@ -84,7 +85,7 @@ For later phases:
 - grade the shipped note-reset truth on the existing seam, but do not widen grading into multi-packet circulation, actual delivery, PDF export, slide or Marp export, or runtime-codex drafting behavior
 - keep the shipped F6A eval scope anchored to `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md`: one `companyKey` plus stored source-backed cash-posture state in, one deterministic monitor result plus optional operator alert-card posture out, with source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, human-review next step, and no investigation mission, runtime-codex, delivery, accounting action, bank action, tax filing, legal advice, or new discovery family
 - keep the shipped F6B handoff anchored to `plans/FP-0051-alert-to-investigation-mission-foundation.md`: one persisted `cash_posture` alert monitor result in, one manual operator-created investigation mission out, with the existing alert-card source lineage, freshness or missing-source posture, severity rationale, limitations, proof posture, and human-review next step carried forward
-- use `pnpm smoke:cash-posture-monitor:local`, `pnpm smoke:cash-posture-alert-investigation:local`, `pnpm smoke:collections-pressure-monitor:local`, `pnpm smoke:payables-pressure-monitor:local`, `pnpm smoke:policy-covenant-threshold-monitor:local`, and `pnpm smoke:monitor-demo-replay:local` as the current shipped F6 truth sources; `plans/FP-0052-collections-pressure-monitor-foundation.md` records the shipped F6C implementation, `plans/FP-0053-payables-pressure-monitor-foundation.md` records the shipped F6D implementation, `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` records the shipped F6E implementation, and `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` records the shipped F6F deterministic demo replay before any broader eval dataset
+- use `pnpm smoke:cash-posture-monitor:local`, `pnpm smoke:cash-posture-alert-investigation:local`, `pnpm smoke:collections-pressure-monitor:local`, `pnpm smoke:payables-pressure-monitor:local`, `pnpm smoke:policy-covenant-threshold-monitor:local`, and `pnpm smoke:monitor-demo-replay:local` as the current shipped F6 truth sources; `plans/FP-0052-collections-pressure-monitor-foundation.md` records the shipped F6C implementation, `plans/FP-0053-payables-pressure-monitor-foundation.md` records the shipped F6D implementation, `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` records the shipped F6E implementation, `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` records the shipped F6F deterministic demo replay, and `plans/FP-0056-non-cash-alert-investigation-generalization-foundation.md` is the active F6G collections-first handoff contract before any broader eval dataset
 
 Do not treat these as early F4 supported families:
 

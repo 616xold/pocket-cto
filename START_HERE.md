@@ -77,6 +77,7 @@ Suggested thread naming:
 - `F6D-payables-pressure-monitor-foundation`
 - `F6E-policy-covenant-threshold-monitor-foundation`
 - `F6F-monitor-demo-replay-and-stack-pack-foundation`
+- `F6G-non-cash-alert-to-investigation-generalization-foundation`
 
 Broad F2 Finance Twin work now runs through F2O.
 `F2P-final-f2-exit-audit-and-polish` and `F2Q-final-f2-handoff-and-plan-chain-polish` are the historical closeout and handoff threads for that completed breadth.
@@ -109,7 +110,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` now records the shipped F6C implementation slice for exactly one `collections_pressure` monitor over stored receivables-aging or collections-posture Finance Twin state. F6C does not create investigations for collections alerts.
 `plans/FP-0053-payables-pressure-monitor-foundation.md` now records the shipped F6D implementation slice for exactly one `payables_pressure` monitor over stored payables-aging or payables-posture Finance Twin state. F6D does not create investigations for payables alerts and does not add payment recommendations, payment instructions, delivery, runtime-codex, approvals, reports, or autonomous finance action.
 `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` now records the shipped F6E implementation slice for exactly one `policy_covenant_threshold` monitor over stored CFO Wiki policy-document posture, deterministic policy extracts, policy pages, policy-corpus posture, and explicit comparable Finance Twin posture only. F6E does not create investigations for policy/covenant threshold alerts and does not add delivery, runtime-codex, approvals, reports, legal or policy advice, payment behavior, new discovery families, or autonomous finance action.
-`plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is now the shipped F6F implementation record. It adds one deterministic monitor demo replay and one stack-pack foundation only; it did not start F6G, F6H, F6I, new monitor families, non-cash investigations, delivery, runtime-codex, approval, report-conversion, payment, legal, or policy-advice behavior. The next thread should create a new Finance Plan before any F6G implementation.
+`plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is now the shipped F6F implementation record. It adds one deterministic monitor demo replay and one stack-pack foundation only; it did not start F6G, F6H, F6I, new monitor families, non-cash investigations, delivery, runtime-codex, approval, report-conversion, payment, legal, or policy-advice behavior.
+`plans/FP-0056-non-cash-alert-investigation-generalization-foundation.md` is the active implementation-ready F6G contract. The next implementation should widen the manual alert-to-investigation handoff to persisted alerting `collections_pressure` monitor results only, preserve shipped cash handoff behavior, and keep payables, policy/covenant, runtime-codex, delivery, reports, approvals, payment behavior, legal or policy advice, collection instructions, and autonomous finance action out of scope.
 
 ## Review ritual
 

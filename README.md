@@ -50,8 +50,9 @@ Today the merged backbone is:
 - F6F additive checked-in Pocket CFO monitor demo stack-pack fixture set plus deterministic replay smoke, bootstrapping one demo company from immutable bank/cash, receivables-aging, payables-aging, and policy threshold sources, verifying the four shipped monitor families, and proving the shipped cash-only alert-to-investigation handoff while staying runtime-free, delivery-free, report-free, approval-free, payment-free, legal/policy-advice-free, non-autonomous, and non-cash-investigation-free
 
 `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is now the shipped F6F record for one deterministic monitor demo replay and one stack-pack foundation.
+`plans/FP-0056-non-cash-alert-investigation-generalization-foundation.md` is the active implementation-ready F6G contract.
 No F6G implementation has started.
-F6G planning should start only as a new Finance Plan if the next slice is needed; until then, F6F must remain limited to the shipped demo fixture, stack-pack manifest, replay smoke, and cash-only handoff proof.
+F6G is planned as a manual, source-backed `collections_pressure` alert-to-investigation handoff only; it must preserve existing cash behavior and keep payables, policy/covenant, runtime-Codex, delivery, reports, approvals, payment behavior, legal or policy advice, collection instructions, and autonomous action out of scope.
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
@@ -81,6 +82,7 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0053-payables-pressure-monitor-foundation.md` now records the shipped F6D implementation slice: one deterministic `payables_pressure` monitor result plus optional operator alert-card posture over stored payables-aging or payables-posture Finance Twin state, while preserving F6A/F6B/F6C behavior and avoiding investigations for payables, payment recommendations, payment instructions, delivery, runtime-codex, approvals, report conversion, or autonomous finance action.
 `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` now records the shipped F6E implementation slice: one deterministic `policy_covenant_threshold` monitor result plus optional operator alert-card posture over stored CFO Wiki policy-document posture, stored deterministic policy extracts, policy pages, policy-corpus posture, and explicit comparable Finance Twin posture only. F6E does not create investigations, delivery, runtime-codex, approvals, reports, legal or policy advice, payment behavior, new discovery families, or a broad monitoring platform.
 `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` now records the shipped F6F implementation slice: one checked-in demo stack-pack fixture set, one Pocket CFO demo stack-pack manifest, one deterministic replay smoke at `pnpm smoke:monitor-demo-replay:local`, expected outputs for the four shipped monitor families, and the shipped cash-only alert-to-investigation handoff where applicable. F6F does not add monitor families, discovery families, non-cash investigations, delivery, runtime-Codex, approvals, reports, payment behavior, legal or policy advice, or autonomous finance action.
+`plans/FP-0056-non-cash-alert-investigation-generalization-foundation.md` is the active F6G implementation contract: the next implementation should add only a manual `collections_pressure` alert-to-investigation handoff from persisted alert monitor results while keeping payables and policy/covenant investigations absent.
 
 ## Product boundary for v1
 
@@ -201,6 +203,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0053-payables-pressure-monitor-foundation.md
 │   ├── FP-0054-policy-covenant-threshold-monitor-foundation.md
 │   ├── FP-0055-monitor-demo-replay-and-stack-pack-foundation.md
+│   ├── FP-0056-non-cash-alert-investigation-generalization-foundation.md
 │   └── templates
 ├── plugins
 │   └── pocket-cfo-codex-operator
@@ -308,6 +311,8 @@ The current backend-first monitoring surface is:
 - `POST /monitoring/companies/:companyKey/policy-covenant-threshold/run`
 - `GET /monitoring/companies/:companyKey/policy-covenant-threshold/latest`
 - `POST /missions/monitoring-investigations` for persisted alerting `cash_posture` results only; F6C does not create investigations for `collections_pressure`, F6D does not create investigations for `payables_pressure`, and F6E does not create investigations for `policy_covenant_threshold`
+
+FP-0056 is the active plan to widen only the manual investigation handoff to persisted alerting `collections_pressure` results. Current code remains cash-only until F6G implementation lands.
 
 The current backend-first CFO Wiki read surface is:
 
