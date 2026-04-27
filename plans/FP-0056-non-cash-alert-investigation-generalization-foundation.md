@@ -27,6 +27,7 @@ GitHub connector work is explicitly out of scope.
 - [x] 2026-04-27T22:52:07Z Create FP-0056 as the single active implementation-ready F6G contract while preserving FP-0050 through FP-0055 as shipped records.
 - [x] 2026-04-27T22:52:07Z Refresh the active-doc spine so the next implementation thread starts from FP-0056 and does not reopen F6F or start F6H or later.
 - [x] 2026-04-27T23:00:58Z Run the docs-and-plan validation ladder requested for this slice.
+- [x] 2026-04-27T23:13:50Z Polish FP-0056 handoff eligibility wording so disclosed missing-source, failed-source, stale-source, coverage-gap, and data-quality-gap alert posture remains eligible for collections review when the stored alert card and proof posture truthfully carry it.
 - [ ] Later implementation: widen the shipped manual monitor-investigation handoff to `collections_pressure` only, preserving existing cash behavior and keeping payables and policy/covenant investigations absent.
 
 ## Surprises & Discoveries
@@ -82,6 +83,9 @@ Rationale: `cash_posture` create/open idempotency, source refs, proof-bundle pos
 
 Decision: start with exactly one non-cash monitor family, `collections_pressure`.
 Rationale: full generalization across collections, payables, and policy/covenant is too broad for one safe implementation slice. Collections is source-backed and close to cash; payables and policy/covenant remain excluded in the first F6G implementation.
+
+Decision: alert posture limitations are eligibility inputs, not automatic rejection reasons.
+Rationale: F6G should reject missing, non-alert, malformed, unsupported, company-mismatched, alert-card-missing, or posture-incomplete monitor results, but should not reject a `collections_pressure` alert merely because its truthful condition is `missing_source`, `failed_source`, `stale_source`, `coverage_gap`, or `data_quality_gap`.
 
 Decision: define later slices without creating them.
 Rationale: likely later work is `F6H-close-control-checklist-foundation`, `F6I-stack-pack-expansion`, and `F6J-notification-delivery-planning` only if a future plan proves safety. This docs slice creates no FP-0057 and starts none of that implementation.
@@ -261,7 +265,8 @@ F6G implementation must be retry-safe.
 Repeated create/open actions for the same collections monitor result should open the same mission by `sourceKind = "alert"` and `sourceRef = "pocket-cfo://monitor-results/<monitorResultId>"`, matching the shipped F6B behavior.
 
 Raw sources, source snapshots, source files, Finance Twin facts, CFO Wiki pages, monitor results, report artifacts, approvals, and delivery records must not be mutated to make the handoff pass.
-If the stored monitor result is missing, non-alerting, malformed, unsupported by the F6G allowlist, stale in a way that the alert card already discloses, or missing required posture, the handoff should reject with a clear invalid-request response.
+The handoff should reject with a clear invalid-request response when the stored monitor result is missing, is not an alert result, is malformed, uses a monitor kind outside the F6G allowlist, has a `companyKey` mismatch, is missing an `alertCard`, or is missing required source freshness, source lineage, limitations, proof posture, deterministic severity rationale, condition, human-review, runtime-boundary, or timestamp posture.
+The handoff should not reject merely because the alert condition is `missing_source`, `failed_source`, `stale_source`, `coverage_gap`, or `data_quality_gap`, as long as those conditions are truthfully present in the stored alert card and proof posture.
 
 Rollback for future implementation should revert only the additive F6G domain, mission-service, route/spec, UI, smoke, and docs changes while leaving FP-0050 through FP-0055, shipped cash monitoring, shipped cash handoff, shipped collections/payables/policy monitors, F6F demo replay, F5 reporting/approval behavior, raw sources, CFO Wiki state, and Finance Twin state intact.
 
