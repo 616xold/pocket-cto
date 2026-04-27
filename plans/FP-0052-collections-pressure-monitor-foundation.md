@@ -26,6 +26,7 @@ It must not create investigations, run F6B handoffs, use runtime-Codex, send not
 - [x] 2026-04-27T10:58:28Z Create FP-0052 as the single active implementation-ready F6C contract while preserving FP-0050 and FP-0051 as shipped records.
 - [x] 2026-04-27T10:58:28Z Refresh active docs so the next thread can start the narrow `collections_pressure` monitor implementation from FP-0052 rather than re-planning F6C or widening into multi-monitor work.
 - [x] 2026-04-27T11:05:28Z Run the docs-and-plan validation ladder through `pnpm ci:repro:current` and record the green result.
+- [x] 2026-04-27T11:38:56Z Run a tiny post-merge local-dev freshness polish so the source-registry-to-finance-twin loop points discovery, reporting, and monitoring work through the current active FP-0052 F6C contract instead of stale active-F5 wording.
 - [ ] Implement `F6C-collections-pressure-monitor-foundation` from this plan in a later thread.
 - [ ] Run and record the F6C implementation validation ladder after code changes exist.
 
