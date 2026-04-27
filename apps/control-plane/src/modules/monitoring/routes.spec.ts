@@ -22,8 +22,10 @@ describe("monitoring routes", () => {
       getLatestCashPostureMonitorResult: vi.fn(),
       getLatestCollectionsPressureMonitorResult: vi.fn(),
       getLatestPayablesPressureMonitorResult: vi.fn(),
+      getLatestPolicyCovenantThresholdMonitorResult: vi.fn(),
       runCollectionsPressureMonitor: vi.fn(),
       runPayablesPressureMonitor: vi.fn(),
+      runPolicyCovenantThresholdMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -67,8 +69,10 @@ describe("monitoring routes", () => {
       getLatestCashPostureMonitorResult,
       getLatestCollectionsPressureMonitorResult: vi.fn(),
       getLatestPayablesPressureMonitorResult: vi.fn(),
+      getLatestPolicyCovenantThresholdMonitorResult: vi.fn(),
       runCollectionsPressureMonitor: vi.fn(),
       runPayablesPressureMonitor: vi.fn(),
+      runPolicyCovenantThresholdMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -101,8 +105,10 @@ describe("monitoring routes", () => {
       getLatestCashPostureMonitorResult: vi.fn(),
       getLatestCollectionsPressureMonitorResult: vi.fn(),
       getLatestPayablesPressureMonitorResult: vi.fn(),
+      getLatestPolicyCovenantThresholdMonitorResult: vi.fn(),
       runCollectionsPressureMonitor,
       runPayablesPressureMonitor: vi.fn(),
+      runPolicyCovenantThresholdMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -149,8 +155,10 @@ describe("monitoring routes", () => {
       getLatestCashPostureMonitorResult: vi.fn(),
       getLatestCollectionsPressureMonitorResult,
       getLatestPayablesPressureMonitorResult: vi.fn(),
+      getLatestPolicyCovenantThresholdMonitorResult: vi.fn(),
       runCollectionsPressureMonitor: vi.fn(),
       runPayablesPressureMonitor: vi.fn(),
+      runPolicyCovenantThresholdMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -185,8 +193,10 @@ describe("monitoring routes", () => {
       getLatestCashPostureMonitorResult: vi.fn(),
       getLatestCollectionsPressureMonitorResult: vi.fn(),
       getLatestPayablesPressureMonitorResult: vi.fn(),
+      getLatestPolicyCovenantThresholdMonitorResult: vi.fn(),
       runCollectionsPressureMonitor: vi.fn(),
       runPayablesPressureMonitor,
+      runPolicyCovenantThresholdMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -231,8 +241,10 @@ describe("monitoring routes", () => {
       getLatestCashPostureMonitorResult: vi.fn(),
       getLatestCollectionsPressureMonitorResult: vi.fn(),
       getLatestPayablesPressureMonitorResult,
+      getLatestPolicyCovenantThresholdMonitorResult: vi.fn(),
       runCollectionsPressureMonitor: vi.fn(),
       runPayablesPressureMonitor: vi.fn(),
+      runPolicyCovenantThresholdMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -253,6 +265,94 @@ describe("monitoring routes", () => {
       },
     });
   });
+
+  it("parses policy-covenant-threshold monitor run input and returns the service read model", async () => {
+    const monitorResult = buildMonitorResult("policy_covenant_threshold");
+    const runPolicyCovenantThresholdMonitor = vi.fn().mockResolvedValue({
+      monitorResult,
+      alertCard: monitorResult.alertCard,
+    });
+    const app = await buildTestApp(apps, {
+      runCashPostureMonitor: vi.fn(),
+      getLatestCashPostureMonitorResult: vi.fn(),
+      getLatestCollectionsPressureMonitorResult: vi.fn(),
+      getLatestPayablesPressureMonitorResult: vi.fn(),
+      getLatestPolicyCovenantThresholdMonitorResult: vi.fn(),
+      runCollectionsPressureMonitor: vi.fn(),
+      runPayablesPressureMonitor: vi.fn(),
+      runPolicyCovenantThresholdMonitor,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/monitoring/companies/acme/policy-covenant-threshold/run",
+      payload: {
+        idempotencyKey: "operator-run-4",
+        runBy: "finance-operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(runPolicyCovenantThresholdMonitor).toHaveBeenCalledWith({
+      companyKey: "acme",
+      runKey: "operator-run-4",
+      triggeredBy: "finance-operator",
+    });
+    expect(response.json()).toMatchObject({
+      monitorResult: {
+        monitorKind: "policy_covenant_threshold",
+        status: "alert",
+        severity: "critical",
+      },
+      alertCard: {
+        companyKey: "acme",
+        monitorKind: "policy_covenant_threshold",
+        status: "alert",
+      },
+    });
+  });
+
+  it("reads the latest persisted policy-covenant-threshold monitor result", async () => {
+    const monitorResult = buildMonitorResult("policy_covenant_threshold");
+    const getLatestPolicyCovenantThresholdMonitorResult = vi
+      .fn()
+      .mockResolvedValue({
+        companyKey: "acme",
+        monitorKind: "policy_covenant_threshold",
+        monitorResult,
+        alertCard: monitorResult.alertCard,
+      });
+    const app = await buildTestApp(apps, {
+      runCashPostureMonitor: vi.fn(),
+      getLatestCashPostureMonitorResult: vi.fn(),
+      getLatestCollectionsPressureMonitorResult: vi.fn(),
+      getLatestPayablesPressureMonitorResult: vi.fn(),
+      getLatestPolicyCovenantThresholdMonitorResult,
+      runCollectionsPressureMonitor: vi.fn(),
+      runPayablesPressureMonitor: vi.fn(),
+      runPolicyCovenantThresholdMonitor: vi.fn(),
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/monitoring/companies/acme/policy-covenant-threshold/latest",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(getLatestPolicyCovenantThresholdMonitorResult).toHaveBeenCalledWith(
+      "acme",
+    );
+    expect(response.json()).toMatchObject({
+      companyKey: "acme",
+      monitorKind: "policy_covenant_threshold",
+      monitorResult: {
+        status: "alert",
+      },
+      alertCard: {
+        severity: "critical",
+      },
+    });
+  });
 });
 
 async function buildTestApp(
@@ -261,9 +361,11 @@ async function buildTestApp(
     getLatestCashPostureMonitorResult: ReturnType<typeof vi.fn>;
     getLatestCollectionsPressureMonitorResult: ReturnType<typeof vi.fn>;
     getLatestPayablesPressureMonitorResult: ReturnType<typeof vi.fn>;
+    getLatestPolicyCovenantThresholdMonitorResult: ReturnType<typeof vi.fn>;
     runCashPostureMonitor: ReturnType<typeof vi.fn>;
     runCollectionsPressureMonitor: ReturnType<typeof vi.fn>;
     runPayablesPressureMonitor: ReturnType<typeof vi.fn>;
+    runPolicyCovenantThresholdMonitor: ReturnType<typeof vi.fn>;
   },
 ) {
   const app = Fastify({ logger: false });
@@ -281,16 +383,21 @@ function buildMonitorResult(
   const createdAt = "2026-04-26T12:00:00.000Z";
   const isCollections = monitorKind === "collections_pressure";
   const isPayables = monitorKind === "payables_pressure";
+  const isPolicy = monitorKind === "policy_covenant_threshold";
   const sourceNoun = isPayables
     ? "payables-aging"
     : isCollections
       ? "receivables-aging"
-      : "bank-account-summary";
+      : isPolicy
+        ? "policy-document"
+        : "bank-account-summary";
   const monitorLabel = isPayables
     ? "payables-pressure"
     : isCollections
       ? "collections-pressure"
-      : "cash-posture";
+      : isPolicy
+        ? "policy/covenant threshold"
+        : "cash-posture";
   const sourceFreshnessPosture = {
     state: "missing" as const,
     latestAttemptedSyncRunId: null,
@@ -302,7 +409,7 @@ function buildMonitorResult(
   };
   const proofBundlePosture = {
     state: "limited_by_missing_source" as const,
-    summary: `The monitor proof is limited because no ${sourceNoun} source backs the ${isPayables ? "payables" : isCollections ? "collections" : "cash"} posture.`,
+    summary: `The monitor proof is limited because no ${sourceNoun} source backs the ${isPayables ? "payables" : isCollections ? "collections" : isPolicy ? "policy threshold" : "cash"} posture.`,
   };
 
   return {
@@ -330,6 +437,8 @@ function buildMonitorResult(
         ? "F6C collections-pressure monitoring evaluates stored source posture only."
         : isPayables
           ? "F6D payables-pressure monitoring evaluates stored source posture only."
+          : isPolicy
+            ? "F6E policy/covenant threshold monitoring evaluates stored policy posture only."
           : "F6A cash-posture monitoring evaluates stored source posture only.",
     ],
     proofBundlePosture,
@@ -350,6 +459,8 @@ function buildMonitorResult(
       ? "Review receivables-aging source coverage and collections posture before any external collections action."
       : isPayables
         ? "Review payables-aging source coverage and payables posture before any external vendor or payment action."
+        : isPolicy
+          ? "Review policy threshold source coverage and comparable actual posture before deciding any external action."
         : "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
     alertCard: {
       companyKey: "acme",
@@ -366,6 +477,8 @@ function buildMonitorResult(
           ? "F6C collections-pressure monitoring evaluates stored source posture only."
           : isPayables
             ? "F6D payables-pressure monitoring evaluates stored source posture only."
+            : isPolicy
+              ? "F6E policy/covenant threshold monitoring evaluates stored policy posture only."
             : "F6A cash-posture monitoring evaluates stored source posture only.",
       ],
       proofBundlePosture,
@@ -373,6 +486,8 @@ function buildMonitorResult(
         ? "Review receivables-aging source coverage and collections posture before any external collections action."
         : isPayables
           ? "Review payables-aging source coverage and payables posture before any external vendor or payment action."
+          : isPolicy
+            ? "Review policy threshold source coverage and comparable actual posture before deciding any external action."
           : "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
       createdAt,
     },

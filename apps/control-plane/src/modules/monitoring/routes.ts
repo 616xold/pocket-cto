@@ -88,4 +88,31 @@ export async function registerMonitoringRoutes(
       );
     },
   );
+
+  app.post(
+    "/monitoring/companies/:companyKey/policy-covenant-threshold/run",
+    async (request, reply) => {
+      const params = monitoringCompanyKeyParamsSchema.parse(request.params);
+      const body = runMonitorBodySchema.parse(request.body ?? {});
+      const result =
+        await deps.monitoringService.runPolicyCovenantThresholdMonitor({
+          companyKey: params.companyKey,
+          runKey: body.runKey ?? body.idempotencyKey ?? null,
+          triggeredBy: body.triggeredBy ?? body.runBy ?? "operator",
+        });
+
+      reply.code(201);
+      return result;
+    },
+  );
+
+  app.get(
+    "/monitoring/companies/:companyKey/policy-covenant-threshold/latest",
+    async (request) => {
+      const params = monitoringCompanyKeyParamsSchema.parse(request.params);
+      return deps.monitoringService.getLatestPolicyCovenantThresholdMonitorResult(
+        params.companyKey,
+      );
+    },
+  );
 }

@@ -48,7 +48,10 @@ export function evaluateCashPostureMonitor(cashPosture: FinanceCashPostureView) 
     sourceFreshnessPosture,
     sourceLineageRefs,
     sourceLineageSummary: formatSourceLineageSummary(
-      sourceLineageRefs.reduce((sum, ref) => sum + ref.lineageCount, 0),
+      sourceLineageRefs.reduce(
+        (sum, ref) => sum + ("lineageCount" in ref ? ref.lineageCount : 0),
+        0,
+      ),
     ),
     status,
   };

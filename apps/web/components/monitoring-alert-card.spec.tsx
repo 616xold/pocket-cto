@@ -182,6 +182,82 @@ describe("MonitoringAlertCard", () => {
       expect(html.toLowerCase()).not.toContain(forbidden);
     }
   });
+
+  it("renders a policy/covenant threshold alert without investigation or advice actions", () => {
+    const html = renderToStaticMarkup(
+      <MonitoringAlertCard
+        alertCard={{
+          ...buildAlertCard(),
+          monitorKind: "policy_covenant_threshold",
+          deterministicSeverityRationale:
+            "Critical because threshold_breach condition(s) were detected from stored policy/covenant threshold state.",
+          conditionSummaries: [
+            "collections_past_due_share is 60.00 percent, breaching the source-backed <= 50 percent threshold.",
+          ],
+          sourceFreshnessPosture: {
+            ...buildAlertCard().sourceFreshnessPosture,
+            missingSource: false,
+            state: "fresh",
+            summary:
+              "Stored CFO Wiki policy threshold posture is fresh across 1 policy source(s).",
+          },
+          sourceLineageRefs: [
+            {
+              lineageKind: "policy_source",
+              sourceId: "22222222-2222-4222-8222-222222222222",
+              sourceSnapshotId: "33333333-3333-4333-8333-333333333333",
+              sourceFileId: "44444444-4444-4444-8444-444444444444",
+              policyPageKey:
+                "policies/22222222-2222-4222-8222-222222222222",
+              compileRunId: "55555555-5555-4555-8555-555555555555",
+              documentRole: "policy_document",
+              extractStatus: "extracted",
+              freshnessState: "fresh",
+              summary:
+                "Policy source is bound as policy_document for F6E threshold posture.",
+            },
+          ],
+          sourceLineageSummary:
+            "1 policy source ref(s), 1 threshold fact ref(s), and 1 comparable actual ref(s) back this monitor result.",
+          limitations: [
+            "F6E parses only exact Pocket CFO threshold grammar from stored policy posture.",
+            "F6E compares thresholds only to explicit stored Finance Twin collections posture.",
+          ],
+          proofBundlePosture: {
+            state: "source_backed",
+            summary:
+              "The monitor result is backed by stored policy threshold facts and comparable Finance Twin posture.",
+          },
+          humanReviewNextStep:
+            "Review the cited policy threshold line, CFO Wiki source posture, and comparable Finance Twin actual posture before deciding any external action.",
+        }}
+        monitorResultId="99999999-9999-4999-8999-999999999999"
+        requestedBy="finance-operator"
+      />,
+    );
+
+    expect(html).toContain("Policy/covenant threshold monitor");
+    expect(html).toContain("policy_covenant_threshold");
+    expect(html).toContain("threshold_breach");
+    expect(html).toContain("source_backed");
+    expect(html).not.toContain("Create/open investigation");
+
+    for (const forbidden of [
+      "send",
+      "notify",
+      "email",
+      "slack",
+      "publish",
+      "payment instruction",
+      "vendor-payment recommendation",
+      "book journal",
+      "file tax",
+      "legal advice",
+      "policy advice",
+    ]) {
+      expect(html.toLowerCase()).not.toContain(forbidden);
+    }
+  });
 });
 
 function buildAlertCard(): MonitorAlertCard {

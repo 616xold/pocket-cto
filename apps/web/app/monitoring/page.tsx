@@ -7,6 +7,7 @@ import {
   getLatestCashPostureMonitorResult,
   getLatestCollectionsPressureMonitorResult,
   getLatestPayablesPressureMonitorResult,
+  getLatestPolicyCovenantThresholdMonitorResult,
 } from "../../lib/api";
 import { getWebOperatorIdentity } from "../../lib/operator-identity";
 
@@ -18,11 +19,13 @@ export default async function MonitoringPage(props: MonitoringPageProps) {
   const searchParams = props.searchParams ? await props.searchParams : {};
   const companyKey = normalizeCompanyKey(searchParams.companyKey);
   const operatorIdentity = getWebOperatorIdentity();
-  const [cashLatest, collectionsLatest, payablesLatest] = await Promise.all([
-    getLatestCashPostureMonitorResult(companyKey),
-    getLatestCollectionsPressureMonitorResult(companyKey),
-    getLatestPayablesPressureMonitorResult(companyKey),
-  ]);
+  const [cashLatest, collectionsLatest, payablesLatest, policyLatest] =
+    await Promise.all([
+      getLatestCashPostureMonitorResult(companyKey),
+      getLatestCollectionsPressureMonitorResult(companyKey),
+      getLatestPayablesPressureMonitorResult(companyKey),
+      getLatestPolicyCovenantThresholdMonitorResult(companyKey),
+    ]);
 
   return (
     <main className="shell">
@@ -30,7 +33,8 @@ export default async function MonitoringPage(props: MonitoringPageProps) {
         <p className="eyebrow">F6 monitoring</p>
         <h1>Monitor alert posture for {companyKey}.</h1>
         <p className="lede">
-          Latest persisted monitor results from stored Finance Twin state.
+          Latest persisted monitor results from stored Finance Twin and CFO Wiki
+          policy posture.
         </p>
         <div className="button-row">
           <Link href={"/" as Route} className="button outline">
@@ -63,6 +67,15 @@ export default async function MonitoringPage(props: MonitoringPageProps) {
         monitorKind="payables_pressure"
         monitorLabel="Payables pressure monitor"
         notRunCopy="No persisted F6D payables_pressure monitor result is recorded for this company yet."
+        operatorIdentity={operatorIdentity}
+      />
+
+      <MonitorPostureSection
+        companyKey={companyKey}
+        latest={policyLatest}
+        monitorKind="policy_covenant_threshold"
+        monitorLabel="Policy/covenant threshold monitor"
+        notRunCopy="No persisted F6E policy_covenant_threshold monitor result is recorded for this company yet."
         operatorIdentity={operatorIdentity}
       />
     </main>

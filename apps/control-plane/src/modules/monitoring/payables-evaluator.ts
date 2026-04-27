@@ -56,7 +56,10 @@ export function evaluatePayablesPressureMonitor(
     sourceFreshnessPosture,
     sourceLineageRefs,
     sourceLineageSummary: formatSourceLineageSummary(
-      sourceLineageRefs.reduce((sum, ref) => sum + ref.lineageCount, 0),
+      sourceLineageRefs.reduce(
+        (sum, ref) => sum + ("lineageCount" in ref ? ref.lineageCount : 0),
+        0,
+      ),
       PAYABLES_PRESSURE_COPY,
     ),
     status,

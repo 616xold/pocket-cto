@@ -1,5 +1,9 @@
 import { z } from "zod";
 import {
+  CfoWikiFreshnessStateSchema,
+  CfoWikiPageKeySchema,
+} from "./cfo-wiki";
+import {
   FinanceCompanyKeySchema,
   FinanceFreshnessStateSchema,
   FinanceLineageTargetCountsSchema,
@@ -11,6 +15,7 @@ export const MonitorKindSchema = z.enum([
   "cash_posture",
   "collections_pressure",
   "payables_pressure",
+  "policy_covenant_threshold",
 ]);
 
 export const MonitorResultStatusSchema = z.enum(["no_alert", "alert"]);
@@ -29,6 +34,8 @@ export const MonitorAlertConditionKindSchema = z.enum([
   "coverage_gap",
   "overdue_concentration",
   "data_quality_gap",
+  "threshold_breach",
+  "threshold_approaching",
 ]);
 
 export const MonitorProofBundlePostureStateSchema = z.enum([
@@ -64,7 +71,7 @@ export const MonitorSourceFreshnessPostureSchema = z
   })
   .strict();
 
-export const MonitorSourceLineageRefSchema = z
+export const MonitorFinanceTwinSourceLineageRefSchema = z
   .object({
     sourceId: z.string().uuid(),
     sourceSnapshotId: z.string().uuid(),
@@ -77,6 +84,75 @@ export const MonitorSourceLineageRefSchema = z
     summary: z.string().min(1),
   })
   .strict();
+
+export const MonitorPolicySourceLineageRefSchema = z
+  .object({
+    lineageKind: z.literal("policy_source"),
+    sourceId: z.string().uuid(),
+    sourceSnapshotId: z.string().uuid().nullable(),
+    sourceFileId: z.string().uuid().nullable(),
+    policyPageKey: CfoWikiPageKeySchema.nullable(),
+    compileRunId: z.string().uuid().nullable(),
+    documentRole: z.literal("policy_document"),
+    extractStatus: z.enum(["extracted", "unsupported", "failed"]).nullable(),
+    freshnessState: CfoWikiFreshnessStateSchema.nullable(),
+    summary: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorPolicyThresholdFactLineageRefSchema = z
+  .object({
+    lineageKind: z.literal("policy_threshold_fact"),
+    thresholdId: z.string().min(1),
+    sourceId: z.string().uuid(),
+    sourceSnapshotId: z.string().uuid().nullable(),
+    sourceFileId: z.string().uuid().nullable(),
+    policyPageKey: CfoWikiPageKeySchema.nullable(),
+    compileRunId: z.string().uuid().nullable(),
+    excerpt: z.string().min(1),
+    metricKey: z.enum([
+      "collections_past_due_share",
+      "payables_past_due_share",
+    ]),
+    comparator: z.enum(["<=", "<", ">=", ">"]),
+    thresholdValue: z.number().finite(),
+    unit: z.literal("percent"),
+    extractionRuleVersion: z.string().min(1),
+    limitations: z.array(z.string().min(1)),
+    summary: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorComparableActualLineageRefSchema = z
+  .object({
+    lineageKind: z.literal("finance_twin_actual"),
+    metricKey: z.enum([
+      "collections_past_due_share",
+      "payables_past_due_share",
+    ]),
+    actualValue: z.number().finite(),
+    unit: z.literal("percent"),
+    sourceId: z.string().uuid(),
+    sourceSnapshotId: z.string().uuid(),
+    sourceFileId: z.string().uuid(),
+    syncRunId: z.string().uuid(),
+    targetKind: FinanceTwinLineageTargetKindSchema,
+    targetId: z.string().uuid().nullable(),
+    lineageCount: z.number().int().nonnegative(),
+    lineageTargetCounts: FinanceLineageTargetCountsSchema,
+    freshnessState: FinanceFreshnessStateSchema,
+    basisSummary: z.string().min(1),
+    limitations: z.array(z.string().min(1)),
+    summary: z.string().min(1),
+  })
+  .strict();
+
+export const MonitorSourceLineageRefSchema = z.union([
+  MonitorFinanceTwinSourceLineageRefSchema,
+  MonitorPolicySourceLineageRefSchema,
+  MonitorPolicyThresholdFactLineageRefSchema,
+  MonitorComparableActualLineageRefSchema,
+]);
 
 export const MonitorAlertConditionSchema = z
   .object({
@@ -271,6 +347,18 @@ export type MonitorRuntimeBoundary = z.infer<
 >;
 export type MonitorSourceFreshnessPosture = z.infer<
   typeof MonitorSourceFreshnessPostureSchema
+>;
+export type MonitorFinanceTwinSourceLineageRef = z.infer<
+  typeof MonitorFinanceTwinSourceLineageRefSchema
+>;
+export type MonitorPolicySourceLineageRef = z.infer<
+  typeof MonitorPolicySourceLineageRefSchema
+>;
+export type MonitorPolicyThresholdFactLineageRef = z.infer<
+  typeof MonitorPolicyThresholdFactLineageRefSchema
+>;
+export type MonitorComparableActualLineageRef = z.infer<
+  typeof MonitorComparableActualLineageRefSchema
 >;
 export type MonitorSourceLineageRef = z.infer<
   typeof MonitorSourceLineageRefSchema

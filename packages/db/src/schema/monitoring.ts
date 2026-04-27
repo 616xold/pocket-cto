@@ -14,6 +14,7 @@ export const monitorKindEnum = pgEnum("monitor_kind", [
   "cash_posture",
   "collections_pressure",
   "payables_pressure",
+  "policy_covenant_threshold",
 ]);
 
 export const monitorResultStatusEnum = pgEnum("monitor_result_status", [

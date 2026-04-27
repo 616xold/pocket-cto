@@ -2,7 +2,7 @@
 
 ## Purpose / Big Picture
 
-This file is the active Finance Plan for the next Pocket CFO F6 implementation slice.
+This file is the shipped Finance Plan record for the Pocket CFO F6E implementation slice.
 The target phase is `F6`, and the first implementation slice is exactly `F6E-policy-covenant-threshold-monitor-foundation`.
 
 The user-visible goal is narrow: after shipped F6A records one deterministic `cash_posture` monitor result plus optional alert card, shipped F6B supports one manual cash-alert investigation handoff, shipped F6C adds one deterministic `collections_pressure` monitor, and shipped F6D adds one deterministic `payables_pressure` monitor, Pocket CFO should add one fourth monitor family.
@@ -15,7 +15,7 @@ Repo truth does not support broad covenant-risk scoring, legal interpretation, g
 Therefore the first implementation must fail closed: `threshold_breach` and `threshold_approaching` can appear only when an explicit stored threshold fact and an explicit comparable stored actual posture share a deterministic basis.
 If that basis is missing, stale, unsupported, failed, partial, conflicting, unit-mismatched, or interpretive, the monitor should report `missing_source`, `failed_source`, `stale_source`, `coverage_gap`, or `data_quality_gap` instead of inventing a threshold conclusion.
 
-This is a docs-and-plan handoff plus the active implementation contract.
+This is the shipped F6E implementation record.
 FP-0050 remains the shipped F6A record, FP-0051 remains the shipped F6B record, FP-0052 remains the shipped F6C record, and FP-0053 remains the shipped F6D record.
 Do not create FP-0055 during this slice.
 GitHub connector work is explicitly out of scope.
@@ -30,7 +30,10 @@ It must not create investigations, generalize F6B, use runtime-Codex, send notif
 - [x] 2026-04-27T14:43:05Z Create FP-0054 as the single active F6E implementation-ready contract while preserving FP-0050, FP-0051, FP-0052, and FP-0053 as shipped records.
 - [x] 2026-04-27T14:43:05Z Refresh active docs so the next implementation thread can start the narrow `policy_covenant_threshold` monitor from FP-0054 rather than re-planning F6E or widening into multi-monitor work.
 - [x] 2026-04-27T14:50:59Z Run the docs-and-plan validation ladder through `pnpm ci:repro:current` and record the green result.
-- [ ] Implement `F6E-policy-covenant-threshold-monitor-foundation` in a later thread without adding investigations, delivery, runtime-Codex, approvals, reports, legal interpretation, policy advice, payment behavior, or broad monitoring-platform behavior.
+- [x] 2026-04-27T15:59:00Z Implement `F6E-policy-covenant-threshold-monitor-foundation` without adding investigations, delivery, runtime-Codex, approvals, reports, legal interpretation, policy advice, payment behavior, or broad monitoring-platform behavior.
+- [x] 2026-04-27T15:59:00Z Add the fourth monitor family, `policy_covenant_threshold`, with exact grammar threshold extraction for `collections_past_due_share` and `payables_past_due_share` only.
+- [x] 2026-04-27T15:59:00Z Add additive monitor-kind persistence, run/latest routes, operator monitoring read model, and the packaged `pnpm smoke:policy-covenant-threshold-monitor:local` proof.
+- [x] 2026-04-27T16:16:07Z Run the full F6E implementation validation ladder through `pnpm ci:repro:current` and record the green result after modularity and diagnostic-polish fixes.
 
 ## Surprises & Discoveries
 
@@ -52,6 +55,12 @@ F6E adds a monitor kind, not a `covenant_risk` discovery family and not a broade
 The shipped F6B handoff is intentionally cash-alert-specific.
 F6E must not create investigations or widen `POST /missions/monitoring-investigations`.
 Non-cash alert-to-investigation generalization remains later only if a concrete operator need is proven.
+
+Implementation inspection found a safe first comparable actual basis in stored Finance Twin collections/payables posture: `collections_past_due_share` and `payables_past_due_share` can be computed from one fresh, source-backed, single-currency posture bucket when the numerator, denominator, coverage, freshness, and lineage are explicit and non-conflicting.
+The implementation therefore supports only those two metric keys and fails closed for generic covenant names, unsupported units, ambiguous grammar, stale or failed posture, missing actuals, partial coverage, and conflicting bases.
+
+Implementation validation found two polish issues before commit: the first evaluator draft had grown past the repo modularity preference, and unsupported metric or unit diagnostics could repeat when the same deterministic threshold line appeared through both policy page and extract surfaces.
+The final implementation keeps the public evaluator facade but splits extraction, shared types, comparable actual reading, and result assembly into focused monitoring modules, and it de-duplicates extraction diagnostics without changing fail-closed behavior.
 
 ## Decision Log
 
@@ -81,6 +90,15 @@ Rationale: no reporting approval, release, circulation, correction, report conve
 
 Decision: likely later F6 slices are named but not created here.
 Rationale: likely later slices are `F6F-monitor-demo-replay-and-stack-pack-foundation`, `F6G-non-cash-alert-to-investigation-generalization` only if a concrete operator need is proven, and `F6H-additional-monitor-families` only if source-backed and explicitly scoped. Do not create those plans during F6E.
+
+Decision: F6E threshold facts use exact deterministic grammar only.
+Rationale: the shipped evaluator parses only `Pocket CFO threshold: <metric_key> <operator> <value> percent` lines from stored deterministic policy extracts or policy pages, with operators `<=`, `<`, `>=`, and `>`, so vague policy prose cannot become a breach or approaching-threshold conclusion.
+
+Decision: F6E adds policy/source lineage variants instead of faking Finance Twin sync lineage.
+Rationale: policy source refs, threshold fact refs, and comparable actual refs carry different provenance. The monitor contract now has narrow additive lineage variants for CFO Wiki policy source posture and extracted threshold facts while preserving the existing Finance-Twin-shaped lineage for cash, collections, and payables monitors.
+
+Decision: keep the policy/covenant evaluator public surface small and split the implementation by responsibility.
+Rationale: `policy-covenant-evaluator.ts` stays as the compatibility facade, while extraction, comparable actual reading, result assembly, and shared F6E types live in separate monitoring modules so the implementation does not collapse source posture, threshold grammar, Finance Twin math, and alert-card assembly into one file.
 
 ## Context and Orientation
 
@@ -318,21 +336,16 @@ If policy/covenant source state is missing, stale, failed, unsupported, partial,
 
 ## Artifacts and Notes
 
-This docs-and-plan slice produces:
+This implementation slice produces:
 
 - `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md`
-- active-doc updates that identify FP-0054 as the active F6E implementation-ready contract
-- no code, schema, route, package script, smoke, eval dataset, migration, runtime, delivery, investigation, approval, report, payment, or monitor-family implementation changes
-
-The later implementation slice should produce:
-
 - widened monitoring domain contract
 - additive monitor-kind persistence support
 - one deterministic policy/covenant threshold evaluator
 - one run/latest policy/covenant threshold monitor route pair
 - one operator-visible policy/covenant threshold alert-card read model
 - one narrow policy/covenant threshold monitor smoke
-- active docs refreshed for the shipped F6E behavior only after behavior ships
+- active-doc updates that identify FP-0054 as the shipped F6E implementation record
 
 Do not create FP-0055 during this slice.
 
@@ -381,11 +394,11 @@ GitHub connector work is out of scope.
 
 ## Outcomes & Retrospective
 
-This docs-and-plan slice creates FP-0054 as the active F6E implementation-ready contract.
-It does not implement F6E.
+This slice ships FP-0054 as the first real F6E implementation.
 
 FP-0050, FP-0051, FP-0052, and FP-0053 remain shipped records.
-F6E must start next from this plan and add exactly one fourth monitor family, `policy_covenant_threshold`, over stored policy/CFO Wiki source posture and explicit comparable stored threshold facts only.
-F6F, F6G, and F6H remain named later slices only; do not create those plans from this slice.
+F6E adds exactly one fourth monitor family, `policy_covenant_threshold`, over stored policy/CFO Wiki source posture and explicit comparable stored threshold facts only.
+F6E does not create investigations for policy/covenant threshold alerts and does not add delivery, runtime-Codex, report conversion, approvals, legal or policy advice, payment behavior, new discovery families, or autonomous remediation.
+F6F, F6G, and F6H remain named later slices only; F6F planning should start next only as a new Finance Plan if the user wants demo replay and stack-pack work.
 
-Docs-and-plan validation passed on 2026-04-27 with the full requested ladder: source ingest, finance policy lookup, CFO Wiki concept/metric/policy, supported finance-discovery families, cash/collections/payables monitor smokes, cash alert-to-investigation smoke, twin guardrail specs, lint, typecheck, test, and `pnpm ci:repro:current`.
+Implementation validation passed on 2026-04-27 with the full requested ladder: domain monitoring/proof specs, control-plane monitoring/wiki/discovery/finance-twin/evidence/app specs, web monitoring/API specs, additive DB migration, source ingest, finance policy lookup, CFO Wiki concept/metric/policy, supported finance-discovery families, cash/collections/payables monitor smokes, cash alert-to-investigation smoke, the new policy/covenant threshold monitor smoke, twin guardrail specs, lint, typecheck, test, and `pnpm ci:repro:current`.
