@@ -68,6 +68,25 @@ describe("Proof bundle domain schema", () => {
     expect(parsed.evidenceCompleteness.expectedArtifactKinds).toEqual([]);
   });
 
+  it("defaults omitted monitor investigation posture to null for older proof bundles", () => {
+    const parsed = ProofBundleManifestSchema.parse({
+      missionId: "11111111-1111-4111-8111-111111111111",
+      missionTitle: "Review cash posture for acme",
+      objective: "Answer the stored cash posture question for acme.",
+      companyKey: "acme",
+      questionKind: "cash_posture",
+      answerSummary:
+        "Stored cash posture is available with source-backed limitations.",
+      freshnessSummary: "Cash posture is fresh.",
+      limitationsSummary: "No cash forecast is inferred.",
+      targetRepoFullName: null,
+      status: "ready",
+    });
+
+    expect(parsed.monitorInvestigation).toBeNull();
+    expect(parsed.companyKey).toBe("acme");
+  });
+
   it("parses a finance-ready discovery proof bundle without repo or PR fields", () => {
     const parsed = ProofBundleManifestSchema.parse({
       missionId: "11111111-1111-4111-8111-111111111111",
@@ -357,8 +376,7 @@ describe("Proof bundle domain schema", () => {
           correctionKey: "board-circulation-correction-1",
           correctedAt: "2026-04-19T12:15:00.000Z",
           correctedBy: "finance-operator",
-          correctionReason:
-            "The original log captured draft completion time.",
+          correctionReason: "The original log captured draft completion time.",
           circulatedAt: "2026-04-19T12:12:00.000Z",
           circulatedBy: "board-chair@example.com",
           circulationChannel: null,
@@ -481,9 +499,9 @@ describe("Proof bundle domain schema", () => {
     expect(parsed.sourceReportingMissionId).toBe(
       "33333333-3333-4333-8333-333333333333",
     );
-    expect(
-      parsed.circulationReadiness?.circulationApprovalStatus,
-    ).toBe("approved_for_circulation");
+    expect(parsed.circulationReadiness?.circulationApprovalStatus).toBe(
+      "approved_for_circulation",
+    );
     expect(parsed.circulationRecord?.circulated).toBe(true);
     expect(parsed.circulationRecord?.circulationChannel).toBe("email");
     expect(parsed.circulationChronology?.hasCorrections).toBe(true);

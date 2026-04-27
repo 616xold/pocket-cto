@@ -1,8 +1,53 @@
 import { describe, expect, it } from "vitest";
 import type { MissionRecord, ProofBundleManifest } from "@pocket-cto/domain";
+import {
+  buildMonitorInvestigationMissionFixture,
+  buildMonitorInvestigationProofBundleFixture,
+  buildMonitorInvestigationSeedFixture,
+} from "@pocket-cto/testkit";
 import { buildMissionDetailView } from "./detail-view";
 
 describe("buildMissionDetailView", () => {
+  it("summarizes monitor-investigation proof bundles without target repo wording", () => {
+    const seed = buildMonitorInvestigationSeedFixture();
+    const proofBundle = buildMonitorInvestigationProofBundleFixture(seed);
+    const view = buildMissionDetailView({
+      approvals: [],
+      artifacts: [
+        {
+          id: "77777777-7777-4777-8777-777777777777",
+          missionId: proofBundle.missionId,
+          taskId: null,
+          kind: "proof_bundle_manifest",
+          uri: `pocket-cfo://missions/${proofBundle.missionId}/proof-bundle-manifest`,
+          mimeType: "application/json",
+          sha256: null,
+          metadata: {
+            manifest: proofBundle,
+          },
+          createdAt: "2026-04-26T12:01:00.000Z",
+        },
+      ],
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+      mission: buildMonitorInvestigationMissionFixture(seed),
+      proofBundle,
+      tasks: [],
+    });
+
+    expect(view.monitorInvestigation?.monitorResultId).toBe(
+      "66666666-6666-4666-8666-666666666666",
+    );
+    expect(view.proofBundle.monitorInvestigation?.companyKey).toBe("acme");
+    expect(view.artifacts[0]?.summary).toBe(
+      "Monitor-alert investigation proof bundle ready for acme from cash_posture result 66666666-6666-4666-8666-666666666666.",
+    );
+    expect(view.artifacts[0]?.summary).not.toContain("target repo");
+  });
+
   it("normalizes reporting proof-bundle publication summary from stored filed and export posture", () => {
     const view = buildMissionDetailView({
       approvals: [],
