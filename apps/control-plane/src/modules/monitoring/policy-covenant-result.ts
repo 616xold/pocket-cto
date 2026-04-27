@@ -106,6 +106,10 @@ function buildConditions(
     return conditions;
   }
 
+  if (input.extraction.issues.length > 0) {
+    return conditions;
+  }
+
   if (hasUnusablePolicySourceCondition(conditions)) {
     return conditions;
   }
@@ -337,7 +341,10 @@ function buildSourceLineageRefs(
 
   refs.push(...validFacts.map((fact) => buildThresholdFactLineageRef(fact)));
 
-  if (hasUnusablePolicySourceCondition(conditions)) {
+  if (
+    hasUnusablePolicySourceCondition(conditions) ||
+    input.extraction.issues.length > 0
+  ) {
     return refs;
   }
 

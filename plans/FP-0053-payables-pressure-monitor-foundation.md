@@ -15,7 +15,7 @@ Policy/covenant threshold monitoring can follow later only when source-backed or
 
 This is the shipped implementation record, not the active contract for new work.
 FP-0050 remains the shipped F6A record, FP-0051 remains the shipped F6B record, and FP-0052 remains the shipped F6C record.
-Later docs-and-plan work created `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` as the active F6E implementation-ready contract; no F6E implementation started here.
+Later FP-0054 work shipped the `policy_covenant_threshold` F6E monitor; no F6E implementation occurred in FP-0053.
 GitHub connector work is explicitly out of scope.
 
 F6D must stay deterministic, runtime-free, delivery-free, non-autonomous, and human-reviewable.
@@ -386,5 +386,5 @@ The repo now supports one deterministic `payables_pressure` monitor result plus 
 FP-0050, FP-0051, and FP-0052 remain shipped records.
 F6D preserves F6A cash monitoring, F6B cash-alert investigation behavior, and F6C collections monitoring while adding only the narrow payables monitor foundation.
 Validation passed locally with the required F6D ladder, including the new `pnpm smoke:payables-pressure-monitor:local` proof and `pnpm ci:repro:current`.
-F6E, F6F, and F6G remain named later slices only; do not create those plans from this slice.
-Later docs-and-plan work created `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` as the active F6E implementation-ready contract; FP-0053 remains the shipped F6D record and no F6E implementation started here.
+F6F and F6G remain named later slices only; do not create those plans from this slice.
+FP-0054 now records the shipped F6E `policy_covenant_threshold` monitor; FP-0053 remains the shipped F6D record and no F6E implementation occurred here.

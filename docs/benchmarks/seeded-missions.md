@@ -170,7 +170,7 @@ One company `companyKey` with stored source-backed payables-aging or payables-po
 Success:
 The system records one deterministic `payables_pressure` monitor result and exposes one operator-visible alert card only when source-backed missing-source, failed-source, stale-source, coverage-gap, overdue-concentration, or data-quality conditions warrant it. The alert card includes source lineage, source freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step, and it does so without creating investigations, invoking runtime-codex, sending notifications, creating payment instructions, recommending vendor payments, turning alerts into reports, adding approvals, or creating autonomous finance actions.
 
-### 20. Planned F6E policy/covenant threshold monitor result and alert-card foundation
+### 20. Shipped F6E policy/covenant threshold monitor result and alert-card foundation
 
 Input:
 One company `companyKey` with stored CFO Wiki policy-document posture, stored deterministic policy extracts, policy pages, policy-corpus posture, explicit source freshness or missing-source posture, and explicit comparable Finance Twin posture only when a threshold comparison is source-backed.
@@ -223,4 +223,4 @@ The shipped F5C4F reporting benchmark contract now lives in `plans/FP-0046-circu
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` is the shipped F6B benchmark record.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` is the shipped F6C benchmark record for exactly one `collections_pressure` monitor, with `pnpm smoke:collections-pressure-monitor:local` as the deterministic proof.
 `plans/FP-0053-payables-pressure-monitor-foundation.md` is the shipped F6D benchmark record for exactly one `payables_pressure` monitor, with `pnpm smoke:payables-pressure-monitor:local` as the deterministic proof.
-`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is the active F6E implementation-ready contract for exactly one `policy_covenant_threshold` monitor. Do not add a broader F6 benchmark dataset or start F6F and later implementation before a new named Finance Plan defines that next scope.
+`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is the shipped F6E implementation record for exactly one `policy_covenant_threshold` monitor. Do not add a broader F6 benchmark dataset, start F6F implementation, or create later F6 implementation scope before a new named Finance Plan defines that next scope.

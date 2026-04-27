@@ -10,7 +10,7 @@ The first F6E monitor family is exactly `policy_covenant_threshold`.
 It should read stored policy or covenant threshold posture for one `companyKey` from existing CFO Wiki policy-document bindings, stored deterministic policy extracts, compiler-owned policy pages, policy-corpus posture, and any explicit comparable Finance Twin posture already available.
 It should persist one deterministic monitor result with `monitorKind = "policy_covenant_threshold"` plus one optional operator alert card only when source-backed conditions warrant it.
 
-F6E is implementation-ready only because repo truth already supports a narrow source-backed policy substrate: explicit `policy_document` bindings, stored deterministic document extracts, compiler-owned policy pages at `policies/<sourceId>`, `concepts/policy-corpus`, source-digest history, source freshness or missing-source posture, and the shipped `policy_lookup` discovery family.
+F6E was implementation-ready because repo truth already supported a narrow source-backed policy substrate: explicit `policy_document` bindings, stored deterministic document extracts, compiler-owned policy pages at `policies/<sourceId>`, `concepts/policy-corpus`, source-digest history, source freshness or missing-source posture, and the shipped `policy_lookup` discovery family.
 Repo truth does not support broad covenant-risk scoring, legal interpretation, generic policy chat, corpus-wide retrieval, or autonomous control enforcement.
 Therefore the first implementation must fail closed: `threshold_breach` and `threshold_approaching` can appear only when an explicit stored threshold fact and an explicit comparable stored actual posture share a deterministic basis.
 If that basis is missing, stale, unsupported, failed, partial, conflicting, unit-mismatched, or interpretive, the monitor should report `missing_source`, `failed_source`, `stale_source`, `coverage_gap`, or `data_quality_gap` instead of inventing a threshold conclusion.
@@ -27,7 +27,7 @@ It must not create investigations, generalize F6B, use runtime-Codex, send notif
 
 - [x] 2026-04-27T14:43:05Z Audit shipped F6A/F6B/F6C/F6D records, active docs, monitoring bounded context, CFO Wiki policy posture, `policy_lookup` proof posture, source freshness, proof boundaries, runtime-Codex boundary, delivery-free posture, and current validation ladder.
 - [x] 2026-04-27T14:43:05Z Confirm repo truth supports a narrow policy/covenant threshold monitor contract only if the implementation fails closed to explicit stored threshold facts and explicit comparable stored posture.
-- [x] 2026-04-27T14:43:05Z Create FP-0054 as the single active F6E implementation-ready contract while preserving FP-0050, FP-0051, FP-0052, and FP-0053 as shipped records.
+- [x] 2026-04-27T14:43:05Z Create FP-0054 as the F6E implementation contract while preserving FP-0050, FP-0051, FP-0052, and FP-0053 as shipped records.
 - [x] 2026-04-27T14:43:05Z Refresh active docs so the next implementation thread can start the narrow `policy_covenant_threshold` monitor from FP-0054 rather than re-planning F6E or widening into multi-monitor work.
 - [x] 2026-04-27T14:50:59Z Run the docs-and-plan validation ladder through `pnpm ci:repro:current` and record the green result.
 - [x] 2026-04-27T15:59:00Z Implement `F6E-policy-covenant-threshold-monitor-foundation` without adding investigations, delivery, runtime-Codex, approvals, reports, legal interpretation, policy advice, payment behavior, or broad monitoring-platform behavior.
@@ -36,6 +36,9 @@ It must not create investigations, generalize F6B, use runtime-Codex, send notif
 - [x] 2026-04-27T16:16:07Z Run the full F6E implementation validation ladder through `pnpm ci:repro:current` and record the green result after modularity and diagnostic-polish fixes.
 - [x] 2026-04-27T17:32:23Z Run a strict F6E QA pass and tighten the policy/covenant evaluator so stale or failed policy-source posture blocks threshold-breach or threshold-approaching conclusions.
 - [x] 2026-04-27T17:37:58Z Rerun the required QA validation ladder, including packaged F6 monitor smokes, twin guardrails, lint, typecheck, test, and `pnpm ci:repro:current`, on the corrected tree.
+- [x] 2026-04-27T21:14:56Z Run a post-merge truthfulness polish for stale secondary-doc F6E status and mixed valid-plus-unsupported threshold grammar fail-closed behavior.
+- [x] 2026-04-27T21:21:17Z Rerun the requested post-merge polish validation ladder through `pnpm ci:repro:current`; all gates passed on the corrected tree.
+- [x] 2026-04-27T21:26:30Z Run strict QA on the post-merge polish and apply narrow corrections for stale FP-0053 F6E handoff wording plus mixed valid-and-malformed threshold grammar regression coverage.
 
 ## Surprises & Discoveries
 
@@ -107,6 +110,9 @@ Rationale: `policy-covenant-evaluator.ts` stays as the compatibility facade, whi
 
 Decision: stale or failed CFO Wiki policy-source posture blocks threshold comparisons.
 Rationale: F6E threshold conclusions require usable source freshness on the policy side as well as explicit comparable Finance Twin actual posture. When policy-corpus or policy-page freshness is stale or failed, the monitor reports source posture and lineage only, rather than adding `threshold_breach` or `threshold_approaching`.
+
+Decision: any threshold grammar extraction issue blocks threshold comparisons for that run, even when another exact supported threshold fact is present.
+Rationale: the first F6E monitor treats unsupported, malformed, ambiguous, or conflicting threshold-like lines as data-quality posture for the policy source. The result may preserve policy source and threshold-fact lineage for human review, but it must not add comparable actual lineage, `threshold_breach`, or `threshold_approaching` until the threshold posture is clean.
 
 ## Context and Orientation
 
@@ -410,3 +416,6 @@ F6E does not create investigations for policy/covenant threshold alerts and does
 F6F, F6G, and F6H remain named later slices only; F6F planning should start next only as a new Finance Plan if the user wants demo replay and stack-pack work.
 
 Implementation validation passed on 2026-04-27 with the full requested ladder: domain monitoring/proof specs, control-plane monitoring/wiki/discovery/finance-twin/evidence/app specs, web monitoring/API specs, additive DB migration, source ingest, finance policy lookup, CFO Wiki concept/metric/policy, supported finance-discovery families, cash/collections/payables monitor smokes, cash alert-to-investigation smoke, the new policy/covenant threshold monitor smoke, twin guardrail specs, lint, typecheck, test, and `pnpm ci:repro:current`.
+
+Post-merge truthfulness polish on 2026-04-27 refreshed stale secondary docs so FP-0054/F6E is described as shipped, and tightened F6E fail-closed semantics so a valid exact threshold line plus any unsupported or malformed threshold-like line produces `data_quality_gap` without threshold comparison.
+The post-merge polish validation ladder passed on 2026-04-27, including narrow monitoring specs, domain/control-plane/web specs, all shipped F6 and policy/wiki/discovery smokes, twin guardrails, lint, typecheck, test, and `pnpm ci:repro:current`.
