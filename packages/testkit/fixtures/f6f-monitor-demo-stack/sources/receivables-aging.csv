@@ -1,0 +1,2 @@
+customer_name,customer_id,currency,as_of,current,past_due,total
+Overdue Customer,C-100,USD,2026-04-26,20.00,80.00,100.00
