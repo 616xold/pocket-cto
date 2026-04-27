@@ -538,6 +538,14 @@ The shipped F4 baseline still does none of the following:
 - F6E does not create investigations, use F6B investigation missions as input, rerun cash/collections/payables monitors as input, invoke runtime-codex, add delivery behavior, add legal or policy advice, create payment instructions or vendor-payment recommendations, turn alerts into reports, add approval kinds, add discovery families, or add a second alert system
 - the first shipped threshold grammar is exact only: `Pocket CFO threshold: <metric_key> <operator> <value> percent`, with `collections_past_due_share` and `payables_past_due_share` as the only supported metric keys
 
+`FP-0055` is now the active F6F implementation-ready contract:
+
+- the F6F slice is exactly `F6F-monitor-demo-replay-and-stack-pack-foundation`
+- the input is one checked-in demo stack-pack fixture set with immutable source files for bank/cash, receivables aging, payables aging, and policy threshold docs
+- deterministic source-registration instructions must explain how to register sources, upload source files, sync Finance Twin state, bind policy docs, compile the CFO Wiki, and run the shipped monitors
+- expected outputs cover exactly `cash_posture`, `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold`, plus the shipped cash-only alert-to-investigation handoff where applicable
+- F6F does not add monitor families, discovery families, alert condition kinds, non-cash investigations, runtime-codex, delivery, report conversion, approvals, payment behavior, legal or policy advice, or autonomous remediation
+
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
 If the latest bound policy extract is missing, unsupported, or failed, the mission persists a truthful limited answer rather than inventing a digest.
@@ -550,7 +558,7 @@ The shipped F5C2 follow-on now specializes only one draft `lender_update` from t
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the latest shipped later-F5 board-circulation record, while `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` and `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remain the shipped F5C4H and F5C4G predecessors.
-`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is now the shipped first-F6A record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is now the shipped first-F6B record. `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the shipped F6C implementation record. `plans/FP-0053-payables-pressure-monitor-foundation.md` is now the shipped F6D implementation record. `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is now the shipped F6E implementation record. Do not reopen other packet work, actual delivery, runtime-codex drafting, export widening, multi-monitor work, automatic mission creation, investigations, approvals, payment behavior, payment instructions, vendor-payment recommendations, report conversion, legal or policy advice, or later F6 monitor work from this doc alone; later F6 slices need new named Finance Plans.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is now the shipped first-F6A record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is now the shipped first-F6B record. `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the shipped F6C implementation record. `plans/FP-0053-payables-pressure-monitor-foundation.md` is now the shipped F6D implementation record. `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is now the shipped F6E implementation record. `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is now the active F6F implementation-ready contract. Do not reopen other packet work, actual delivery, runtime-codex drafting, export widening, multi-monitor work, automatic mission creation, investigations, approvals, payment behavior, payment instructions, vendor-payment recommendations, report conversion, legal or policy advice, or F6G and later work from this doc alone; later F6 slices need new named Finance Plans.
 
 ## Lint flow
 

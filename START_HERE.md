@@ -76,6 +76,7 @@ Suggested thread naming:
 - `F6C-collections-pressure-monitor-foundation`
 - `F6D-payables-pressure-monitor-foundation`
 - `F6E-policy-covenant-threshold-monitor-foundation`
+- `F6F-monitor-demo-replay-and-stack-pack-foundation`
 
 Broad F2 Finance Twin work now runs through F2O.
 `F2P-final-f2-exit-audit-and-polish` and `F2Q-final-f2-handoff-and-plan-chain-polish` are the historical closeout and handoff threads for that completed breadth.
@@ -107,7 +108,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` now records the shipped first F6B implementation slice: an operator can manually create or open one taskless deterministic investigation mission from one persisted alerting `cash_posture` monitor result.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` now records the shipped F6C implementation slice for exactly one `collections_pressure` monitor over stored receivables-aging or collections-posture Finance Twin state. F6C does not create investigations for collections alerts.
 `plans/FP-0053-payables-pressure-monitor-foundation.md` now records the shipped F6D implementation slice for exactly one `payables_pressure` monitor over stored payables-aging or payables-posture Finance Twin state. F6D does not create investigations for payables alerts and does not add payment recommendations, payment instructions, delivery, runtime-codex, approvals, reports, or autonomous finance action.
-`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` now records the shipped F6E implementation slice for exactly one `policy_covenant_threshold` monitor over stored CFO Wiki policy-document posture, deterministic policy extracts, policy pages, policy-corpus posture, and explicit comparable Finance Twin posture only. F6E does not create investigations for policy/covenant threshold alerts and does not add delivery, runtime-codex, approvals, reports, legal or policy advice, payment behavior, new discovery families, or autonomous finance action. F6F planning should start only as a new Finance Plan.
+`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` now records the shipped F6E implementation slice for exactly one `policy_covenant_threshold` monitor over stored CFO Wiki policy-document posture, deterministic policy extracts, policy pages, policy-corpus posture, and explicit comparable Finance Twin posture only. F6E does not create investigations for policy/covenant threshold alerts and does not add delivery, runtime-codex, approvals, reports, legal or policy advice, payment behavior, new discovery families, or autonomous finance action.
+`plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is now the active implementation-ready F6F contract. The next thread should implement only one deterministic monitor demo replay and one stack-pack foundation from that plan; it should not start F6G, F6H, F6I, new monitor families, non-cash investigations, delivery, runtime-codex, approval, report-conversion, payment, legal, or policy-advice behavior.
 
 ## Review ritual
 

@@ -178,6 +178,14 @@ One company `companyKey` with stored CFO Wiki policy-document posture, stored de
 Success:
 The system records one deterministic `policy_covenant_threshold` monitor result and exposes one operator-visible alert card only when source-backed missing-source, failed-source, stale-source, coverage-gap, data-quality, threshold-approaching, or threshold-breach conditions warrant it. `threshold_approaching` and `threshold_breach` require explicit stored threshold facts plus explicit comparable stored actual posture. The alert card includes source lineage, freshness or missing-source posture, deterministic rationale, limitations, proof posture, and a human-review next step, and it does so without creating investigations, invoking runtime-codex, sending notifications, giving legal or policy advice, creating payment instructions, turning alerts into reports, adding approvals, adding discovery families, or creating autonomous finance actions.
 
+### 21. Planned F6F monitor demo replay and stack-pack foundation
+
+Input:
+One checked-in demo stack-pack fixture set for one company, with source files for bank/cash, receivables aging, payables aging, and policy threshold docs, plus deterministic source-registration instructions and expected outputs for the shipped monitor stack.
+
+Success:
+The system bootstraps the demo company from immutable checked-in sources, runs the shipped `cash_posture`, `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold` monitors deterministically, compares normalized outputs to the expected manifest, and demonstrates the shipped cash-only alert-to-investigation handoff where applicable. It does so without adding monitor families, discovery families, non-cash investigations, delivery, runtime-codex, report conversion, approvals, payment behavior, legal or policy advice, or autonomous remediation.
+
 ## Blocked for now
 
 These discovery families should stay out of the shipped F4A through F4C2 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
@@ -223,4 +231,4 @@ The shipped F5C4F reporting benchmark contract now lives in `plans/FP-0046-circu
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` is the shipped F6B benchmark record.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` is the shipped F6C benchmark record for exactly one `collections_pressure` monitor, with `pnpm smoke:collections-pressure-monitor:local` as the deterministic proof.
 `plans/FP-0053-payables-pressure-monitor-foundation.md` is the shipped F6D benchmark record for exactly one `payables_pressure` monitor, with `pnpm smoke:payables-pressure-monitor:local` as the deterministic proof.
-`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is the shipped F6E implementation record for exactly one `policy_covenant_threshold` monitor. Do not add a broader F6 benchmark dataset, start F6F implementation, or create later F6 implementation scope before a new named Finance Plan defines that next scope.
+`plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is the shipped F6E implementation record for exactly one `policy_covenant_threshold` monitor. `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is the active F6F implementation-ready contract for one deterministic monitor demo replay and stack-pack foundation. Do not add a broader F6 benchmark dataset, start F6G or later implementation, or create later F6 implementation scope before a new named Finance Plan defines that next scope.
