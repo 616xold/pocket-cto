@@ -2,11 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const fixtureRoot = join(
-  process.cwd(),
-  "fixtures",
-  "f6f-monitor-demo-stack",
-);
+const fixtureRoot = join(process.cwd(), "fixtures", "f6f-monitor-demo-stack");
 
 describe("F6F monitor demo fixture", () => {
   it("keeps a static source-backed expected-output contract", () => {
@@ -17,6 +13,10 @@ describe("F6F monitor demo fixture", () => {
       monitorResults: Record<string, { monitorKind: string }>;
       sourceFiles: Array<{ path: string }>;
       cashInvestigationHandoff: { expected: boolean; monitorKind: string };
+      collectionsInvestigationHandoff: {
+        expected: boolean;
+        monitorKind: string;
+      };
       absenceAssertions: Record<string, boolean>;
     };
 
@@ -31,8 +31,12 @@ describe("F6F monitor demo fixture", () => {
       expected: true,
       monitorKind: "cash_posture",
     });
+    expect(expected.collectionsInvestigationHandoff).toMatchObject({
+      expected: true,
+      monitorKind: "collections_pressure",
+    });
     expect(expected.absenceAssertions).toMatchObject({
-      nonCashInvestigationsCreated: false,
+      unsupportedNonCashInvestigationsCreated: false,
       reportArtifactsCreated: false,
       approvalsCreated: false,
       deliveryOutboxEventsCreated: false,

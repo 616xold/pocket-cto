@@ -117,6 +117,114 @@ describe("Mission detail domain schema", () => {
     expect(parsed.proofBundle.status).toBe("ready");
   });
 
+  it("parses collections monitor-alert investigation mission detail", () => {
+    const seed = buildMonitorInvestigationSeed("collections_pressure");
+    const parsed = MissionDetailViewSchema.parse({
+      mission: {
+        id: "22222222-2222-4222-8222-222222222222",
+        type: "discovery",
+        status: "succeeded",
+        title: "Investigate collections-pressure alert for acme",
+        objective:
+          "Manual monitor-alert investigation handoff from stored collections_pressure alert.",
+        sourceKind: "alert",
+        sourceRef: seed.sourceRef,
+        createdBy: "finance-operator",
+        primaryRepo: null,
+        spec: {
+          type: "discovery",
+          title: "Investigate collections-pressure alert for acme",
+          objective:
+            "Manual monitor-alert investigation handoff from stored collections_pressure alert.",
+          repos: [],
+          constraints: {
+            allowedPaths: [],
+            mustNot: ["invoke runtime-Codex"],
+          },
+          acceptance: ["open one deterministic alert investigation handoff"],
+          riskBudget: {
+            sandboxMode: "read-only",
+            maxWallClockMinutes: 5,
+            maxCostUsd: 1,
+            allowNetwork: false,
+            requiresHumanApprovalFor: [],
+          },
+          deliverables: ["monitor alert investigation seed"],
+          input: {
+            monitorInvestigation: seed,
+          },
+        },
+        createdAt: "2026-04-26T12:00:00.000Z",
+        updatedAt: "2026-04-26T12:01:00.000Z",
+      },
+      tasks: [],
+      proofBundle: {
+        missionId: "22222222-2222-4222-8222-222222222222",
+        missionTitle: "Investigate collections-pressure alert for acme",
+        objective:
+          "Manual monitor-alert investigation handoff from stored collections_pressure alert.",
+        companyKey: "acme",
+        questionKind: null,
+        answerSummary: "",
+        reportKind: null,
+        reportDraftStatus: null,
+        reportSummary: "",
+        monitorInvestigation: seed,
+        appendixPresent: false,
+        freshnessState: seed.sourceFreshnessPosture.state,
+        freshnessSummary: seed.sourceFreshnessPosture.summary,
+        limitationsSummary: seed.limitations.join(" "),
+        relatedRoutePaths: ["/monitoring?companyKey=acme"],
+        relatedWikiPageKeys: [],
+        targetRepoFullName: null,
+        branchName: null,
+        pullRequestNumber: null,
+        pullRequestUrl: null,
+        latestApproval: null,
+        evidenceCompleteness: {
+          status: "complete",
+          expectedArtifactKinds: [],
+          presentArtifactKinds: [],
+          missingArtifactKinds: [],
+          notes: [],
+        },
+        decisionTrace: [
+          "Stored collections monitor result is the investigation source of truth.",
+        ],
+        artifactIds: [],
+        artifacts: [],
+        replayEventCount: 3,
+        timestamps: {
+          missionCreatedAt: "2026-04-26T12:00:00.000Z",
+          latestPlannerEvidenceAt: null,
+          latestExecutorEvidenceAt: null,
+          latestPullRequestAt: null,
+          latestApprovalAt: null,
+          latestArtifactAt: null,
+        },
+        status: "ready",
+      },
+      monitorInvestigation: seed,
+      discoveryAnswer: null,
+      reporting: null,
+      approvals: [],
+      approvalCards: [],
+      artifacts: [],
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+    });
+
+    expect(parsed.monitorInvestigation?.monitorKind).toBe(
+      "collections_pressure",
+    );
+    expect(parsed.discoveryAnswer).toBeNull();
+    expect(parsed.reporting).toBeNull();
+    expect(parsed.approvals).toEqual([]);
+  });
+
   it("parses finance discovery mission detail with a stored answer artifact", () => {
     const parsed = MissionDetailViewSchema.parse({
       mission: {
@@ -165,7 +273,8 @@ describe("Mission detail domain schema", () => {
           codexTurnId: null,
           workspaceId: null,
           dependsOnTaskId: null,
-          summary: "Stored obligation calendar review is available with limitations.",
+          summary:
+            "Stored obligation calendar review is available with limitations.",
           createdAt: "2026-04-14T23:48:00.000Z",
           updatedAt: "2026-04-14T23:49:00.000Z",
         },
@@ -178,7 +287,8 @@ describe("Mission detail domain schema", () => {
         questionKind: "obligation_calendar_review",
         policySourceId: null,
         policySourceScope: null,
-        answerSummary: "Stored obligation calendar review is available with limitations.",
+        answerSummary:
+          "Stored obligation calendar review is available with limitations.",
         freshnessSummary: "Contract metadata coverage is stale.",
         limitationsSummary:
           "No legal interpretation is performed and visible obligation gaps remain preserved.",
@@ -191,12 +301,14 @@ describe("Mission detail domain schema", () => {
         branchName: null,
         pullRequestNumber: null,
         pullRequestUrl: null,
-        changeSummary: "Stored obligation calendar review is available with limitations.",
+        changeSummary:
+          "Stored obligation calendar review is available with limitations.",
         validationSummary:
           "Finance discovery answer was assembled deterministically from stored state.",
         verificationSummary:
           "Review freshness and limitation posture before acting on the answer.",
-        riskSummary: "Stale bank-summary coverage could leave cash posture outdated.",
+        riskSummary:
+          "Stale bank-summary coverage could leave cash posture outdated.",
         rollbackSummary: "",
         latestApproval: null,
         evidenceCompleteness: {
@@ -227,11 +339,13 @@ describe("Mission detail domain schema", () => {
       },
       discoveryAnswer: {
         source: "stored_finance_twin_and_cfo_wiki",
-        summary: "Stored obligation calendar review is available with limitations.",
+        summary:
+          "Stored obligation calendar review is available with limitations.",
         companyKey: "acme",
         questionKind: "obligation_calendar_review",
         policySourceScope: null,
-        answerSummary: "Stored obligation calendar review is available with limitations.",
+        answerSummary:
+          "Stored obligation calendar review is available with limitations.",
         freshnessPosture: {
           state: "stale",
           reasonSummary: "Contract metadata coverage is stale.",
@@ -305,9 +419,7 @@ describe("Mission detail domain schema", () => {
           objective:
             "Answer the stored policy lookup question for acme from scoped policy source 22222222-2222-4222-8222-222222222222.",
           repos: [],
-          acceptance: [
-            "persist one durable finance discovery answer artifact",
-          ],
+          acceptance: ["persist one durable finance discovery answer artifact"],
           riskBudget: {
             sandboxMode: "read-only",
             maxWallClockMinutes: 5,
@@ -940,9 +1052,9 @@ describe("Mission detail domain schema", () => {
     expect(
       parsed.reporting?.circulationReadiness?.circulationApprovalStatus,
     ).toBe("not_requested");
-    expect(parsed.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual(
-      ["board_packet"],
-    );
+    expect(
+      parsed.proofBundle.evidenceCompleteness.expectedArtifactKinds,
+    ).toEqual(["board_packet"]);
   });
 
   it("parses board-packet reporting mission detail with a persisted circulation record", () => {
@@ -980,10 +1092,8 @@ describe("Mission detail domain schema", () => {
           evidenceRequirements: ["stored board-packet artifact"],
           input: {
             reportingRequest: {
-              sourceDiscoveryMissionId:
-                "22222222-2222-4222-8222-222222222222",
-              sourceReportingMissionId:
-                "11111111-1111-4111-8111-111111111111",
+              sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
+              sourceReportingMissionId: "11111111-1111-4111-8111-111111111111",
               reportKind: "board_packet",
               companyKey: "acme",
               questionKind: "cash_posture",
@@ -1325,14 +1435,16 @@ describe("Mission detail domain schema", () => {
     });
 
     expect(parsed.reporting?.circulationRecord?.circulated).toBe(true);
-    expect(parsed.reporting?.circulationRecord?.circulationChannel).toBe("email");
+    expect(parsed.reporting?.circulationRecord?.circulationChannel).toBe(
+      "email",
+    );
     expect(parsed.reporting?.circulationChronology?.correctionCount).toBe(1);
-    expect(parsed.reporting?.circulationChronology?.effectiveRecord?.circulatedAt).toBe(
-      "2026-04-19T12:12:00.000Z",
-    );
-    expect(parsed.reporting?.circulationChronology?.effectiveRecord?.circulatedBy).toBe(
-      "board-chair@example.com",
-    );
+    expect(
+      parsed.reporting?.circulationChronology?.effectiveRecord?.circulatedAt,
+    ).toBe("2026-04-19T12:12:00.000Z");
+    expect(
+      parsed.reporting?.circulationChronology?.effectiveRecord?.circulatedBy,
+    ).toBe("board-chair@example.com");
     expect(parsed.proofBundle.circulationRecord?.circulated).toBe(true);
   });
 
@@ -1399,7 +1511,8 @@ describe("Mission detail domain schema", () => {
       ],
       proofBundle: {
         missionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-        missionTitle: "Draft diligence packet for acme from cash posture reporting",
+        missionTitle:
+          "Draft diligence packet for acme from cash posture reporting",
         objective:
           "Compile one draft diligence packet from completed reporting mission 11111111-1111-4111-8111-111111111111 and its stored finance memo plus evidence appendix.",
         sourceDiscoveryMissionId: "22222222-2222-4222-8222-222222222222",
@@ -1538,9 +1651,9 @@ describe("Mission detail domain schema", () => {
     expect(parsed.reporting?.diligencePacket?.sourceFinanceMemo.kind).toBe(
       "finance_memo",
     );
-    expect(parsed.proofBundle.evidenceCompleteness.expectedArtifactKinds).toEqual(
-      ["diligence_packet"],
-    );
+    expect(
+      parsed.proofBundle.evidenceCompleteness.expectedArtifactKinds,
+    ).toEqual(["diligence_packet"]);
   });
 
   it("parses lender-update mission detail with persisted release approval posture", () => {
@@ -1589,7 +1702,8 @@ describe("Mission detail domain schema", () => {
       tasks: [],
       proofBundle: {
         missionId: "11111111-1111-4111-8111-111111111111",
-        missionTitle: "Draft lender update for acme from cash posture reporting",
+        missionTitle:
+          "Draft lender update for acme from cash posture reporting",
         objective:
           "Compile one draft lender update from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
         sourceDiscoveryMissionId: "33333333-3333-4333-8333-333333333333",
@@ -1790,8 +1904,7 @@ describe("Mission detail domain schema", () => {
         id: "11111111-1111-4111-8111-111111111111",
         type: "reporting",
         status: "succeeded",
-        title:
-          "Draft diligence packet for acme from cash posture reporting",
+        title: "Draft diligence packet for acme from cash posture reporting",
         objective:
           "Compile one draft diligence packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
         sourceKind: "manual_reporting",
@@ -1800,8 +1913,7 @@ describe("Mission detail domain schema", () => {
         primaryRepo: null,
         spec: {
           type: "reporting",
-          title:
-            "Draft diligence packet for acme from cash posture reporting",
+          title: "Draft diligence packet for acme from cash posture reporting",
           objective:
             "Compile one draft diligence packet from completed reporting mission 22222222-2222-4222-8222-222222222222 and its stored finance memo plus evidence appendix.",
           repos: [],
@@ -2033,11 +2145,18 @@ describe("Mission detail domain schema", () => {
   });
 });
 
-function buildMonitorInvestigationSeed() {
+function buildMonitorInvestigationSeed(
+  monitorKind: "cash_posture" | "collections_pressure" = "cash_posture",
+) {
+  const isCollections = monitorKind === "collections_pressure";
+  const monitorResultId = isCollections
+    ? "77777777-7777-4777-8777-777777777777"
+    : "66666666-6666-4666-8666-666666666666";
+
   return {
-    monitorResultId: "66666666-6666-4666-8666-666666666666",
+    monitorResultId,
     companyKey: "acme",
-    monitorKind: "cash_posture" as const,
+    monitorKind,
     monitorResultStatus: "alert" as const,
     alertSeverity: "critical" as const,
     deterministicSeverityRationale:
@@ -2092,8 +2211,7 @@ function buildMonitorInvestigationSeed() {
       summary:
         "The handoff opened a deterministic investigation mission without runtime or delivery action.",
     },
-    sourceRef:
-      "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+    sourceRef: `pocket-cfo://monitor-results/${monitorResultId}`,
     monitorResultCreatedAt: "2026-04-26T12:00:00.000Z",
     alertCardCreatedAt: "2026-04-26T12:00:00.000Z",
   };

@@ -188,7 +188,7 @@ describe("monitoring domain contract", () => {
     expect(parsed.alertCard).toBeNull();
   });
 
-  it("accepts a source-backed collections pressure alert without widening investigation seeds", () => {
+  it("accepts a source-backed collections pressure alert and investigation seed", () => {
     const parsed = MonitorResultSchema.parse({
       id: "99999999-9999-4999-8999-999999999999",
       companyId,
@@ -356,7 +356,14 @@ describe("monitoring domain contract", () => {
       alertCardCreatedAt: parsed.alertCard?.createdAt ?? now,
     });
 
-    expect(seed.success).toBe(false);
+    expect(seed.success).toBe(true);
+    expect(seed.data?.monitorKind).toBe("collections_pressure");
+    expect(seed.data?.monitorResultStatus).toBe("alert");
+    expect(seed.data?.runtimeBoundary.monitorRerunUsed).toBe(false);
+    expect(seed.data?.runtimeBoundary.runtimeCodexUsed).toBe(false);
+    expect(seed.data?.runtimeBoundary.deliveryActionUsed).toBe(false);
+    expect(seed.data?.runtimeBoundary.reportArtifactCreated).toBe(false);
+    expect(seed.data?.runtimeBoundary.approvalCreated).toBe(false);
   });
 
   it("accepts a source-backed payables pressure alert without widening investigation seeds", () => {
@@ -546,8 +553,7 @@ describe("monitoring domain contract", () => {
           severity: "critical",
           summary:
             "collections_past_due_share is 60.00 percent, breaching the source-backed <= 50 percent threshold.",
-          evidencePath:
-            "thresholdFacts[collections_past_due_share].comparison",
+          evidencePath: "thresholdFacts[collections_past_due_share].comparison",
         },
       ],
       sourceFreshnessPosture: {
@@ -577,9 +583,7 @@ describe("monitoring domain contract", () => {
           thresholdValue: 50,
           unit: "percent",
           extractionRuleVersion: "f6e-policy-threshold-line-v1",
-          limitations: [
-            "Only exact Pocket CFO threshold grammar was parsed.",
-          ],
+          limitations: ["Only exact Pocket CFO threshold grammar was parsed."],
           summary:
             "Policy threshold fact extracted from stored deterministic policy posture.",
         },
@@ -690,7 +694,8 @@ describe("monitoring domain contract", () => {
     expect(parsed.conditions[0]?.kind).toBe("threshold_breach");
     expect(
       parsed.sourceLineageRefs.some(
-        (ref) => "lineageKind" in ref && ref.lineageKind === "policy_threshold_fact",
+        (ref) =>
+          "lineageKind" in ref && ref.lineageKind === "policy_threshold_fact",
       ),
     ).toBe(true);
 
@@ -799,6 +804,79 @@ describe("monitoring domain contract", () => {
     expect(parsed.runtimeBoundary.deliveryActionUsed).toBe(false);
     expect(parsed.runtimeBoundary.reportArtifactCreated).toBe(false);
     expect(parsed.runtimeBoundary.approvalCreated).toBe(false);
+  });
+
+  it("keeps monitor investigation seeds alert-only", () => {
+    const candidate = MonitorInvestigationSeedSchema.safeParse({
+      monitorResultId: "66666666-6666-4666-8666-666666666666",
+      companyKey: "acme",
+      monitorKind: "collections_pressure",
+      monitorResultStatus: "no_alert",
+      alertSeverity: "warning",
+      deterministicSeverityRationale:
+        "Invalid because no_alert monitor results cannot seed investigations.",
+      conditions: [
+        {
+          kind: "overdue_concentration",
+          severity: "warning",
+          summary:
+            "Invalid no_alert seed still attempted to carry an alert condition.",
+          evidencePath: "currencyBuckets[USD].pastDueShare",
+        },
+      ],
+      conditionSummaries: [
+        "Invalid no_alert seed still attempted to carry an alert condition.",
+      ],
+      sourceFreshnessPosture: {
+        state: "fresh",
+        latestAttemptedSyncRunId: syncRunId,
+        latestSuccessfulSyncRunId: syncRunId,
+        latestSuccessfulSource: {
+          sourceId,
+          sourceSnapshotId,
+          sourceFileId,
+          syncRunId,
+        },
+        missingSource: false,
+        failedSource: false,
+        summary: "Stored collections source is fresh.",
+      },
+      sourceLineageRefs: [],
+      sourceLineageSummary: "Stored collections source lineage is present.",
+      limitations: [
+        "F6G alert investigations require an alerting monitor result.",
+      ],
+      proofBundlePosture: {
+        state: "source_backed",
+        summary: "Stored collections source posture is source-backed.",
+      },
+      humanReviewNextStep: "Review collections alert source posture.",
+      runtimeBoundary: {
+        monitorResultRuntimeBoundary: {
+          runtimeCodexUsed: false,
+          deliveryActionUsed: false,
+          investigationMissionCreated: false,
+          autonomousFinanceActionUsed: false,
+          summary:
+            "The result was produced by deterministic stored-state evaluation only.",
+        },
+        monitorRerunUsed: false,
+        runtimeCodexUsed: false,
+        deliveryActionUsed: false,
+        scheduledAutomationUsed: false,
+        reportArtifactCreated: false,
+        approvalCreated: false,
+        autonomousFinanceActionUsed: false,
+        summary:
+          "The handoff would be invalid because no_alert results are not eligible.",
+      },
+      sourceRef:
+        "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+      monitorResultCreatedAt: now,
+      alertCardCreatedAt: now,
+    });
+
+    expect(candidate.success).toBe(false);
   });
 
   it("rejects alert results without an alert card", () => {

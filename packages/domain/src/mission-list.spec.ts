@@ -32,6 +32,30 @@ describe("Mission list domain schema", () => {
           pullRequestNumber: null,
           pullRequestUrl: null,
         },
+        {
+          id: "22222222-2222-4222-8222-222222222222",
+          title: "Investigate collections-pressure alert for acme",
+          objectiveExcerpt:
+            "Manual monitor-alert investigation handoff from stored collections_pressure alert.",
+          companyKey: "acme",
+          monitorInvestigation: buildMonitorInvestigationSeed(
+            "collections_pressure",
+          ),
+          answerSummary: null,
+          freshnessState: "missing",
+          status: "succeeded",
+          sourceKind: "alert",
+          sourceRef:
+            "pocket-cfo://monitor-results/77777777-7777-4777-8777-777777777777",
+          primaryRepo: null,
+          createdAt: "2026-04-26T12:00:00.000Z",
+          updatedAt: "2026-04-26T12:01:00.000Z",
+          latestTask: null,
+          proofBundleStatus: "ready",
+          pendingApprovalCount: 0,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+        },
       ],
     });
 
@@ -40,6 +64,10 @@ describe("Mission list domain schema", () => {
       "critical",
     );
     expect(parsed.missions[0]?.questionKind).toBeNull();
+    expect(parsed.missions[1]?.monitorInvestigation?.monitorKind).toBe(
+      "collections_pressure",
+    );
+    expect(parsed.missions[1]?.latestTask).toBeNull();
   });
 
   it("parses finance discovery mission summaries", () => {
@@ -732,11 +760,18 @@ describe("Mission list domain schema", () => {
   });
 });
 
-function buildMonitorInvestigationSeed() {
+function buildMonitorInvestigationSeed(
+  monitorKind: "cash_posture" | "collections_pressure" = "cash_posture",
+) {
+  const isCollections = monitorKind === "collections_pressure";
+  const monitorResultId = isCollections
+    ? "77777777-7777-4777-8777-777777777777"
+    : "66666666-6666-4666-8666-666666666666";
+
   return {
-    monitorResultId: "66666666-6666-4666-8666-666666666666",
+    monitorResultId,
     companyKey: "acme",
-    monitorKind: "cash_posture" as const,
+    monitorKind,
     monitorResultStatus: "alert" as const,
     alertSeverity: "critical" as const,
     deterministicSeverityRationale:
@@ -791,8 +826,7 @@ function buildMonitorInvestigationSeed() {
       summary:
         "The handoff opened a deterministic investigation mission without runtime or delivery action.",
     },
-    sourceRef:
-      "pocket-cfo://monitor-results/66666666-6666-4666-8666-666666666666",
+    sourceRef: `pocket-cfo://monitor-results/${monitorResultId}`,
     monitorResultCreatedAt: "2026-04-26T12:00:00.000Z",
     alertCardCreatedAt: "2026-04-26T12:00:00.000Z",
   };

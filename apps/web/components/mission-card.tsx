@@ -879,7 +879,10 @@ function MonitorInvestigationCard(input: {
       <div className="section-head">
         <div>
           <p className="kicker">Monitor alert source</p>
-          <h2>Stored cash-posture alert</h2>
+          <h2>
+            Stored {readMonitorInvestigationMonitorLabel(seed.monitorKind)}{" "}
+            alert
+          </h2>
         </div>
         <StatusPill
           label={seed.alertSeverity}
@@ -940,6 +943,18 @@ function MonitorInvestigationCard(input: {
       </div>
     </section>
   );
+}
+
+function readMonitorInvestigationMonitorLabel(
+  monitorKind: NonNullable<
+    MissionCardProps["proofBundle"]["monitorInvestigation"]
+  >["monitorKind"],
+) {
+  if (monitorKind === "collections_pressure") {
+    return "collections-pressure";
+  }
+
+  return "cash-posture";
 }
 
 function readStatusTone(status: string) {

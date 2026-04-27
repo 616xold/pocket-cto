@@ -2,21 +2,21 @@
 
 ## Purpose / Big Picture
 
-This file is the active Finance Plan contract for Pocket CFO F6G.
+This file is the shipped Finance Plan record for Pocket CFO F6G.
 The target phase is `F6`, and the implementation slice is exactly `F6G-non-cash-alert-to-investigation-generalization-foundation`.
 
-The user-visible goal is narrow: after shipped F6A through F6F, Pocket CFO should generalize the shipped manual alert-to-investigation handoff beyond cash only, but only where the stored monitor result already carries enough deterministic source posture to seed a taskless human-review mission safely.
-Repo truth supports that next move for a first non-cash family because shipped `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold` monitor results already persist source freshness or missing-source posture, lineage refs, limitations, proof posture, deterministic severity rationale, human-review next steps, runtime-free posture, and alert cards when alerting.
+The user-visible goal is narrow: after shipped F6A through F6F, Pocket CFO generalized the shipped manual alert-to-investigation handoff beyond cash only where the stored monitor result already carries enough deterministic source posture to seed a taskless human-review mission safely.
+Repo truth supported that first non-cash move because shipped `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold` monitor results already persist source freshness or missing-source posture, lineage refs, limitations, proof posture, deterministic severity rationale, human-review next steps, runtime-free posture, and alert cards when alerting.
 
-F6G should not implement a broad all-non-cash investigation platform.
-The first implementation should preserve existing `cash_posture` behavior and add exactly one non-cash family: `collections_pressure`.
+F6G does not implement a broad all-non-cash investigation platform.
+The first implementation preserves existing `cash_posture` behavior and adds exactly one non-cash family: `collections_pressure`.
 Collections comes first because it is operationally close to cash, is backed by stored receivables-aging or collections-posture Finance Twin state, carries source-backed lineage and freshness posture, and can remain a human-review follow-up without collection instructions, legal advice, delivery, payment behavior, report conversion, or autonomous remediation.
 
-`payables_pressure` is technically close to the same seed shape, but it has a sharper payment-instruction and vendor-payment recommendation boundary, so it stays out of the first F6G implementation.
-`policy_covenant_threshold` carries enough monitor-source posture for review, but policy/covenant investigations risk legal or policy advice unless a later plan proves safer copy, UX, and acceptance boundaries, so it stays out of F6G implementation.
+`payables_pressure` is technically close to the same seed shape, but it has a sharper payment-instruction and vendor-payment recommendation boundary, so it stayed out of the first F6G implementation.
+`policy_covenant_threshold` carries enough monitor-source posture for review, but policy/covenant investigations risk legal or policy advice unless a later plan proves safer copy, UX, and acceptance boundaries, so it stayed out of F6G implementation.
 
-This is a docs-and-plan contract.
-This slice creates no code, routes, schema, migrations, package scripts, smoke commands, eval datasets, runtime behavior, delivery behavior, report behavior, approval behavior, payment behavior, legal or policy advice, or implementation scaffolding.
+This implementation is additive and narrow.
+It creates no routes beyond the existing `POST /missions/monitoring-investigations` seam, no database schema or migrations, no new monitor family, no new discovery family, no FP-0057, no runtime behavior, no delivery behavior, no report behavior, no approval behavior, no payment behavior, no legal or policy advice, no customer-contact instructions, and no collection instructions.
 FP-0050 through FP-0055 remain shipped F6A through F6F records.
 GitHub connector work is explicitly out of scope.
 
@@ -28,22 +28,22 @@ GitHub connector work is explicitly out of scope.
 - [x] 2026-04-27T22:52:07Z Refresh the active-doc spine so the next implementation thread starts from FP-0056 and does not reopen F6F or start F6H or later.
 - [x] 2026-04-27T23:00:58Z Run the docs-and-plan validation ladder requested for this slice.
 - [x] 2026-04-27T23:13:50Z Polish FP-0056 handoff eligibility wording so disclosed missing-source, failed-source, stale-source, coverage-gap, and data-quality-gap alert posture remains eligible for collections review when the stored alert card and proof posture truthfully carry it.
-- [ ] Later implementation: widen the shipped manual monitor-investigation handoff to `collections_pressure` only, preserving existing cash behavior and keeping payables and policy/covenant investigations absent.
+- [x] 2026-04-27T23:35:29Z Implement the first F6G slice by widening the shipped manual monitor-investigation handoff to `collections_pressure` only, preserving existing cash behavior and keeping payables and policy/covenant investigations absent.
+- [x] 2026-04-27T23:44:46Z Run the full F6G validation ladder through `pnpm ci:repro:current` on `codex/f6g-collections-alert-investigation-handoff-local-v1`.
 
 ## Surprises & Discoveries
 
 The shipped monitor result schema already carries the seed posture needed for a manual investigation handoff across monitor families.
 `packages/domain/src/monitoring.ts` defines `MonitorResult`, `MonitorAlertCard`, source freshness posture, source lineage refs, limitations, proof posture, deterministic severity rationale, runtime boundary, and human-review next step for all shipped monitor kinds.
 
-The shipped F6B seed remains intentionally cash-only today.
-`MonitorInvestigationSeedSchema` uses `monitorKind: z.literal("cash_posture")`, `apps/control-plane/src/modules/missions/monitor-investigation.ts` rejects any stored result whose `monitorKind` is not `cash_posture`, and `apps/web/components/monitoring-alert-card.tsx` shows `Create/open investigation` only for cash alerts.
+The F6G seed widening remains explicitly allowlisted.
+`MonitorInvestigationSeedSchema` accepts only `cash_posture` and `collections_pressure`, `apps/control-plane/src/modules/missions/monitor-investigation.ts` rejects stored results whose `monitorKind` is outside that allowlist, and `apps/web/components/monitoring-alert-card.tsx` shows `Create/open investigation` only for cash and collections alerts with persisted monitor result ids.
 
 The mission read models can carry a generalized seed without adding runtime work.
 Mission detail, mission list, and proof-bundle schemas already expose `monitorInvestigation` as copied seed posture, and F6B already creates a taskless succeeded mission with no discovery answer, no report view, no approvals, no runnable tasks, and only a `proof_bundle_manifest` artifact.
 
-The demo replay proves the non-cash boundary deliberately.
-`pnpm smoke:monitor-demo-replay:local` verifies the four shipped monitors and asserts that collections, payables, and policy/covenant monitor results do not currently create investigations.
-F6G should change that boundary only for the first planned family and should update the replay expectation only if the future implementation plan explicitly includes it.
+The demo replay now proves the supported versus unsupported non-cash boundary deliberately.
+`pnpm smoke:monitor-demo-replay:local` verifies the four shipped monitors, proves the cash and collections investigation handoffs where alerting results are eligible, and asserts that payables and policy/covenant monitor results do not create investigations.
 
 The safest first F6G family is `collections_pressure`.
 The shipped collections smoke asserts source lineage, source freshness, limitations, proof posture, deterministic severity rationale, human-review next step, idempotent run-key behavior, and absence of missions, reports, approvals, delivery, runtime-Codex threads, notifications, investigations, and autonomous finance action.
@@ -78,7 +78,7 @@ Rationale: the product safety boundary keeps external communication release sepa
 Decision: F6G must not create payment instructions, vendor-payment recommendations, collection actions, legal advice, policy advice, or autonomous remediation.
 Rationale: the mission is a source-backed review package, not an instruction engine.
 
-Decision: preserve existing cash-only behavior and widen only where deterministic source posture supports it.
+Decision: preserve existing cash handoff behavior and widen only where deterministic source posture supports it.
 Rationale: `cash_posture` create/open idempotency, source refs, proof-bundle posture, and UI behavior must remain green. F6G adds only the approved non-cash family.
 
 Decision: start with exactly one non-cash monitor family, `collections_pressure`.
@@ -87,8 +87,14 @@ Rationale: full generalization across collections, payables, and policy/covenant
 Decision: alert posture limitations are eligibility inputs, not automatic rejection reasons.
 Rationale: F6G should reject missing, non-alert, malformed, unsupported, company-mismatched, alert-card-missing, or posture-incomplete monitor results, but should not reject a `collections_pressure` alert merely because its truthful condition is `missing_source`, `failed_source`, `stale_source`, `coverage_gap`, or `data_quality_gap`.
 
+Decision: ship the first F6G implementation as a narrow extension of the existing F6B handoff route and proof posture.
+Rationale: widening the pure seed allowlist and mission helper preserves the route boundary, source-ref idempotency, taskless mission lifecycle, replay posture, and proof-bundle semantics without adding a broad investigation platform.
+
+Decision: update the F6F demo replay expectation only for the now-shipped F6G collections boundary.
+Rationale: the checked-in demo fixture produces a `collections_pressure` alert with the required source posture, so the replay now proves cash and collections handoffs while still proving payables and policy/covenant investigations absent.
+
 Decision: define later slices without creating them.
-Rationale: likely later work is `F6H-close-control-checklist-foundation`, `F6I-stack-pack-expansion`, and `F6J-notification-delivery-planning` only if a future plan proves safety. This docs slice creates no FP-0057 and starts none of that implementation.
+Rationale: likely later work is `F6H-close-control-checklist-foundation`, `F6I-stack-pack-expansion`, and `F6J-notification-delivery-planning` only if a future plan proves safety. This F6G slice creates no FP-0057 and starts none of that implementation.
 
 ## Context and Orientation
 
@@ -99,7 +105,8 @@ Pocket CFO has shipped:
 - F6C deterministic `collections_pressure` monitor result and alert card while remaining investigation-free
 - F6D deterministic `payables_pressure` monitor result and alert card while remaining investigation-free, payment-free, and delivery-free
 - F6E deterministic `policy_covenant_threshold` monitor result and alert card while remaining investigation-free, legal-advice-free, policy-advice-free, and delivery-free
-- F6F one deterministic monitor demo replay and one Pocket CFO demo stack-pack foundation that proves the shipped cash-only handoff and non-cash investigation absence
+- F6F one deterministic monitor demo replay and one Pocket CFO demo stack-pack foundation
+- F6G manual taskless investigation handoff from one persisted alerting `collections_pressure` monitor result while preserving cash and rejecting payables and policy/covenant investigations
 
 The current backend monitoring surface is:
 
@@ -111,11 +118,11 @@ The current backend monitoring surface is:
 - `GET /monitoring/companies/:companyKey/payables-pressure/latest`
 - `POST /monitoring/companies/:companyKey/policy-covenant-threshold/run`
 - `GET /monitoring/companies/:companyKey/policy-covenant-threshold/latest`
-- `POST /missions/monitoring-investigations` for persisted alerting `cash_posture` monitor results only
+- `POST /missions/monitoring-investigations` for persisted alerting `cash_posture` and `collections_pressure` monitor results only
 
-The relevant implementation seams for the future F6G implementation are:
+The relevant implementation seams for the F6G implementation are:
 
-- `packages/domain/src/monitoring.ts` for monitor kinds, monitor results, alert cards, runtime boundaries, and the current cash-only monitor investigation seed
+- `packages/domain/src/monitoring.ts` for monitor kinds, monitor results, alert cards, runtime boundaries, and the cash-plus-collections monitor investigation seed
 - `packages/domain/src/mission.ts`, `packages/domain/src/mission-detail.ts`, `packages/domain/src/mission-list.ts`, and `packages/domain/src/proof-bundle.ts` for mission input, mission read models, and proof-bundle seed posture
 - `apps/control-plane/src/modules/monitoring/**` for persisted monitor result reads
 - `apps/control-plane/src/modules/missions/monitor-investigation.ts`, `service.ts`, `routes.ts`, and `schema.ts` for the manual create/open handoff
@@ -130,26 +137,26 @@ No stack-pack expansion is expected in F6G.
 
 ## Plan of Work
 
-First, widen the pure monitor-investigation seed contract from cash-only to an explicit allowlist that includes `cash_posture` and `collections_pressure`.
-The widening should keep a finite union or helper, not a loose `MonitorKindSchema`, so `payables_pressure` and `policy_covenant_threshold` remain rejected in the first F6G implementation.
+First, the pure monitor-investigation seed contract widened from cash-only to an explicit allowlist that includes `cash_posture` and `collections_pressure`.
+The widening keeps a finite union, not a loose `MonitorKindSchema`, so `payables_pressure` and `policy_covenant_threshold` remain rejected in the first F6G implementation.
 
-Second, generalize the mission handoff helper without changing the taskless lifecycle.
-The helper should continue to read one stored monitor result by id, require `status = "alert"`, require an alert card, validate company key and required posture, copy the stored evidence into the mission seed, and create or open one mission by `sourceKind = "alert"` and `sourceRef = "pocket-cfo://monitor-results/<monitorResultId>"`.
+Second, the mission handoff helper generalized without changing the taskless lifecycle.
+The helper continues to read one stored monitor result by id, require `status = "alert"`, require an alert card, validate company key and required posture, copy the stored evidence into the mission seed, and create or open one mission by `sourceKind = "alert"` and `sourceRef = "pocket-cfo://monitor-results/<monitorResultId>"`.
 
-Third, keep the route and service surface unchanged unless implementation proves a tiny name change is required.
+Third, the route and service surface stayed unchanged.
 `POST /missions/monitoring-investigations` can remain the manual action route because the input is already generic by `monitorResultId` and `companyKey`.
 The route must stay thin.
 
-Fourth, update the operator read model so collections alerts expose the same create/open action as cash alerts.
+Fourth, the operator read model now lets collections alerts expose the same create/open action as cash alerts.
 The UI copy must remain review-oriented, not action-oriented: "Create/open investigation" is acceptable, while "send collection notice", "contact customer", "collect payment", or similar action wording is not.
 
-Fifth, add a future implementation proof that collections alerts can create/open a taskless deterministic investigation mission and that payables and policy/covenant alerts still cannot.
-The future proof should also keep `pnpm smoke:monitor-demo-replay:local` aligned with the new boundary if the replay fixture produces a collections alert.
+Fifth, the new implementation proof shows that collections alerts can create/open a taskless deterministic investigation mission and that payables and policy/covenant alerts still cannot.
+`pnpm smoke:monitor-demo-replay:local` is aligned with the new boundary because the replay fixture produces a collections alert.
 
 ## Concrete Steps
 
 1. Widen the domain seed allowlist.
-   Expected future implementation files:
+   Implementation files:
    - `packages/domain/src/monitoring.ts`
    - `packages/domain/src/monitoring.spec.ts`
    - `packages/domain/src/mission-detail.spec.ts`
@@ -164,7 +171,7 @@ The future proof should also keep `pnpm smoke:monitor-demo-replay:local` aligned
    - the seed continues to require alert status, alert severity, condition details, source freshness, source lineage refs, limitations, proof posture, human-review next step, runtime boundary, source ref, and monitor/alert timestamps
 
 2. Generalize the control-plane handoff helper.
-   Expected future implementation files:
+   Implementation files:
    - `apps/control-plane/src/modules/missions/monitor-investigation.ts`
    - `apps/control-plane/src/modules/missions/service.ts` only if copy or method names need narrow updates
    - `apps/control-plane/src/modules/missions/routes.spec.ts`
@@ -182,7 +189,7 @@ The future proof should also keep `pnpm smoke:monitor-demo-replay:local` aligned
    - keep replay limited to mission creation, status change, and proof-bundle artifact creation for the handoff mission
 
 3. Preserve or lightly generalize proof-bundle wording.
-   Expected future implementation files:
+   Implementation files:
    - `apps/control-plane/src/modules/missions/monitor-investigation.ts`
    - `apps/control-plane/src/modules/missions/detail-view.ts`
    - `apps/web/components/mission-card.tsx`
@@ -190,12 +197,12 @@ The future proof should also keep `pnpm smoke:monitor-demo-replay:local` aligned
 
    Required behavior:
    - proof-bundle summaries should say "monitor-alert investigation" rather than "cash-only" where the seed can be collections
-   - collection-specific copy should say review receivables-aging source coverage, freshness, limitations, and collections posture before any external collections action
+   - collection-specific copy should say review collections alert source posture, source freshness, lineage, limitations, and proof posture
    - no generated investigation prose is created
    - limitations remain copied from the stored monitor result
 
 4. Update the operator action.
-   Expected future implementation files:
+   Implementation files:
    - `apps/web/components/monitoring-alert-card.tsx`
    - `apps/web/components/monitoring-alert-card.spec.tsx`
    - `apps/web/app/monitoring/page.spec.tsx` if the page fixture needs an action assertion
@@ -205,11 +212,11 @@ The future proof should also keep `pnpm smoke:monitor-demo-replay:local` aligned
    - do not show the action for `payables_pressure` or `policy_covenant_threshold`
    - do not add notification, send, publish, report, approval, payment, legal, policy-advice, or collection-action controls
 
-5. Add a narrow future implementation proof.
-   Expected future implementation files:
+5. Add a narrow implementation proof.
+   Implementation files:
    - `tools/collections-pressure-alert-investigation-smoke.mjs` or a comparably narrow smoke
-   - `package.json` alias only in the future implementation thread
-   - optional update to `tools/monitor-demo-replay-smoke.mjs` only if the demo expected boundary needs to reflect the shipped F6G behavior
+   - `package.json` alias
+   - update to `tools/monitor-demo-replay-smoke.mjs` because the demo expected boundary reflects the shipped F6G behavior
 
    Required proof:
    - one persisted alerting `collections_pressure` monitor result creates or opens exactly one taskless investigation mission by explicit operator action
@@ -220,8 +227,8 @@ The future proof should also keep `pnpm smoke:monitor-demo-replay:local` aligned
    - the seed copies source freshness, lineage, limitations, proof posture, deterministic rationale, conditions, and human-review next step from the stored monitor result
    - no runtime-Codex thread, report artifact, approval, outbox delivery, notification, payment instruction, vendor-payment recommendation, collection instruction, legal or policy advice, or autonomous finance action is created
 
-6. Refresh docs after future implementation only where behavior changes.
-   Expected future implementation docs:
+6. Refresh docs after implementation only where behavior changes.
+   Implementation docs:
    - `README.md`
    - `START_HERE.md`
    - `docs/ACTIVE_DOCS.md`
@@ -233,11 +240,15 @@ The future proof should also keep `pnpm smoke:monitor-demo-replay:local` aligned
 
 ## Validation and Acceptance
 
-This docs-and-plan slice must run:
+The shipped F6G implementation validation ladder is:
 
+- `pnpm --filter @pocket-cto/domain exec vitest run src/monitoring.spec.ts src/mission.spec.ts src/mission-detail.spec.ts src/mission-list.spec.ts src/proof-bundle.spec.ts`
+- `zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/missions/**/*.spec.ts src/modules/monitoring/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/app.spec.ts"`
+- `zsh -lc "cd apps/web && pnpm exec vitest run app/monitoring/**/*.spec.ts* components/monitoring-alert-card.spec.tsx components/mission-card.spec.tsx components/mission-list-card.spec.tsx lib/api.spec.ts"`
 - `pnpm smoke:monitor-demo-replay:local`
 - `pnpm smoke:cash-posture-alert-investigation:local`
 - `pnpm smoke:collections-pressure-monitor:local`
+- `pnpm smoke:collections-pressure-alert-investigation:local`
 - `pnpm smoke:payables-pressure-monitor:local`
 - `pnpm smoke:policy-covenant-threshold-monitor:local`
 - `pnpm smoke:finance-discovery-supported-families:local`
@@ -247,13 +258,13 @@ This docs-and-plan slice must run:
 - `pnpm test`
 - `pnpm ci:repro:current`
 
-Future F6G implementation acceptance is observable only if all of the following are true:
+F6G implementation acceptance is observable only if all of the following are true:
 
 - an operator can manually create or open one taskless investigation mission from one persisted alerting `collections_pressure` monitor result
 - existing `cash_posture` create/open behavior remains unchanged
 - `payables_pressure` and `policy_covenant_threshold` remain rejected by the investigation handoff in F6G first implementation
 - no monitor run automatically creates a mission
-- no scheduled monitor automation, notification, delivery, runtime-Codex investigation writeup, LLM-authored prose, report conversion, approval kind, payment instruction, vendor-payment recommendation, collection instruction, legal advice, policy advice, or external action is added
+- no scheduled monitor automation, notification, delivery, runtime-Codex investigation writeup, LLM-authored prose, report conversion, approval kind, payment instruction, vendor-payment recommendation, collection instruction, customer-contact instruction, legal advice, policy advice, or external action is added
 - mission detail, mission list, and proof-bundle views expose source freshness, source lineage, limitations, proof posture, deterministic severity rationale, conditions, and human-review next step copied from stored monitor evidence
 - replay implications are covered by the taskless mission replay events or an explicit recorded reason if an implementation chooses a different proof path
 - F5 reporting and approval lifecycles remain unchanged
@@ -268,18 +279,17 @@ Raw sources, source snapshots, source files, Finance Twin facts, CFO Wiki pages,
 The handoff should reject with a clear invalid-request response when the stored monitor result is missing, is not an alert result, is malformed, uses a monitor kind outside the F6G allowlist, has a `companyKey` mismatch, is missing an `alertCard`, or is missing required source freshness, source lineage, limitations, proof posture, deterministic severity rationale, condition, human-review, runtime-boundary, or timestamp posture.
 The handoff should not reject merely because the alert condition is `missing_source`, `failed_source`, `stale_source`, `coverage_gap`, or `data_quality_gap`, as long as those conditions are truthfully present in the stored alert card and proof posture.
 
-Rollback for future implementation should revert only the additive F6G domain, mission-service, route/spec, UI, smoke, and docs changes while leaving FP-0050 through FP-0055, shipped cash monitoring, shipped cash handoff, shipped collections/payables/policy monitors, F6F demo replay, F5 reporting/approval behavior, raw sources, CFO Wiki state, and Finance Twin state intact.
+Rollback for this implementation should revert only the additive F6G domain, mission-service, route/spec, UI, smoke, demo-replay expectation, and docs changes while leaving FP-0050 through FP-0055, shipped cash monitoring, shipped cash handoff, shipped collections/payables/policy monitors, F5 reporting/approval behavior, raw sources, CFO Wiki state, and Finance Twin state intact.
 
 ## Artifacts and Notes
 
-This docs-and-plan slice produces:
+This implementation slice produces:
 
 - `plans/FP-0056-non-cash-alert-investigation-generalization-foundation.md`
-- active-doc updates that identify FP-0056 as the active implementation-ready F6G contract
-- no code, routes, schema, migrations, package scripts, smoke commands, eval datasets, runtime behavior, delivery behavior, reports, approvals, payment behavior, legal or policy advice, or implementation scaffolding
+- domain, control-plane, web, fixture-expectation, smoke, package-script, and docs updates that identify FP-0056 as the shipped F6G record
+- no new routes, database schema, migrations, monitor families, discovery families, eval datasets, runtime behavior, delivery behavior, reports, approvals, payment behavior, legal or policy advice, customer-contact instructions, or collection instructions
 
 Do not create FP-0057 in this slice.
-Do not start F6G implementation in this docs-and-plan slice.
 Do not start F6H, F6I, or F6J implementation.
 
 ## Interfaces and Dependencies
@@ -321,15 +331,14 @@ No new environment variables are expected.
 
 ## Outcomes & Retrospective
 
-FP-0056 is the active implementation-ready F6G contract.
-This docs-and-plan slice concluded that F6G should start next, but only as a manual source-backed `collections_pressure` alert-to-investigation handoff.
-F6H close/control checklist foundation is a valid later slice, but repo truth does not require it to precede the collections-first F6G handoff.
+FP-0056 is the shipped F6G record.
+This implementation shipped the first real F6G slice as a manual source-backed `collections_pressure` alert-to-investigation handoff only.
+F6H close/control checklist foundation is a valid later slice, but it must start as a new Finance Plan and no F6H implementation has started here.
 
-The requested docs-and-plan validation ladder passed on 2026-04-27, including `pnpm ci:repro:current`.
-The validation evidence confirmed that shipped F6A through F6F behavior remains green, non-cash investigations are still intentionally absent in the current code, and the implementation-ready F6G contract can start from this plan without adding runtime, delivery, report, approval, payment, legal-advice, policy-advice, collection-instruction, or autonomous-action behavior.
+The requested implementation validation ladder passed on 2026-04-27, including narrow domain/control-plane/web specs, shipped monitor and handoff smokes, the updated monitor demo replay, the new `pnpm smoke:collections-pressure-alert-investigation:local` proof, twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+The validation evidence confirmed the core F6G behavior: collections alert seeds are accepted, cash seeds remain accepted, payables and policy/covenant seeds remain rejected, no-alert collections results are rejected, repeated create/open is idempotent, wrong-company handoff remains rejected, the UI action is visible for cash and collections only, and the handoff remains taskless, source-backed, runtime-free, delivery-free, report-free, approval-free, payment-free, legal/policy-advice-free, customer-contact-free, collection-instruction-free, and non-autonomous.
 
 What remains:
 
-- implement the first F6G slice in a later thread from this plan
-- keep payables and policy/covenant investigations out of the first F6G implementation
-- keep runtime-Codex, delivery, notifications, approvals, reporting, payment behavior, legal or policy advice, collection instructions, and autonomous action out of scope until a later named Finance Plan explicitly changes that boundary
+- keep payables and policy/covenant investigations, runtime-Codex, delivery, notifications, approvals, reporting, payment behavior, legal or policy advice, customer-contact instructions, collection instructions, and autonomous action out of scope until a later named Finance Plan explicitly changes that boundary
+- start F6H planning only as a new Finance Plan; no F6H implementation started in FP-0056

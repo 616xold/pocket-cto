@@ -116,8 +116,21 @@
     "deliveryActionUsed": false,
     "autonomousFinanceActionUsed": false
   },
+  "collectionsInvestigationHandoff": {
+    "expected": true,
+    "monitorKind": "collections_pressure",
+    "sourceKind": "alert",
+    "sourceRefPrefix": "pocket-cfo://monitor-results/",
+    "taskless": true,
+    "idempotent": true,
+    "reportArtifactCreated": false,
+    "approvalCreated": false,
+    "runtimeCodexUsed": false,
+    "deliveryActionUsed": false,
+    "autonomousFinanceActionUsed": false
+  },
   "absenceAssertions": {
-    "nonCashInvestigationsCreated": false,
+    "unsupportedNonCashInvestigationsCreated": false,
     "reportArtifactsCreated": false,
     "approvalsCreated": false,
     "deliveryOutboxEventsCreated": false,

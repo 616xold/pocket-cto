@@ -18,7 +18,8 @@ export function MonitoringAlertCard({
     return null;
   }
   const canCreateInvestigation =
-    alertCard.monitorKind === "cash_posture" && Boolean(monitorResultId);
+    isInvestigationSupportedMonitorKind(alertCard.monitorKind) &&
+    Boolean(monitorResultId);
 
   return (
     <article className="card status-card">
@@ -146,4 +147,12 @@ function readMonitorLabel(monitorKind: MonitorAlertCard["monitorKind"]) {
   }
 
   return "Cash posture monitor";
+}
+
+function isInvestigationSupportedMonitorKind(
+  monitorKind: MonitorAlertCard["monitorKind"],
+) {
+  return (
+    monitorKind === "cash_posture" || monitorKind === "collections_pressure"
+  );
 }

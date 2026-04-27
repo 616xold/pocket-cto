@@ -89,16 +89,23 @@ async function main() {
     const afterMonitorRuns = await readBoundaryCounts(pool);
     assertMonitorOnlyBoundaries(before, afterMonitorRuns);
 
-    const cashHandoff = await createAndVerifyCashInvestigation(app, pool, {
+    const cashHandoff = await createAndVerifyMonitorInvestigation(app, pool, {
       companyKey: fixture.expected.demoCompany.companyKey,
       expected: fixture.expected.cashInvestigationHandoff,
       monitorResult: monitorRuns.cash_posture.monitorResult,
     });
-
-    const nonCashInvestigationsCreated = await assertNoNonCashInvestigations(
+    const collectionsHandoff = await createAndVerifyMonitorInvestigation(
+      app,
       pool,
-      monitorRuns,
+      {
+        companyKey: fixture.expected.demoCompany.companyKey,
+        expected: fixture.expected.collectionsInvestigationHandoff,
+        monitorResult: monitorRuns.collections_pressure.monitorResult,
+      },
     );
+
+    const unsupportedNonCashInvestigationsCreated =
+      await assertNoUnsupportedNonCashInvestigations(pool, monitorRuns);
     const after = await readBoundaryCounts(pool);
     assertAbsenceBoundaries({
       after,
@@ -124,10 +131,12 @@ async function main() {
         fixtureSourcesUnchanged,
         monitorResults: normalizedMonitorResults,
         cashInvestigationHandoff: cashHandoff,
+        collectionsInvestigationHandoff: collectionsHandoff,
         absenceAssertions: {
           approvalsCreated: after.approvals !== before.approvals,
-          deliveryOutboxEventsCreated: after.outboxEvents !== before.outboxEvents,
-          nonCashInvestigationsCreated,
+          deliveryOutboxEventsCreated:
+            after.outboxEvents !== before.outboxEvents,
+          unsupportedNonCashInvestigationsCreated,
           newDiscoveryFamilyAdded: familyAbsence.newDiscoveryFamilyAdded,
           newMonitorFamilyAdded: familyAbsence.newMonitorFamilyAdded,
           paymentInstructionsCreated:
@@ -428,7 +437,9 @@ function assertExpectedMonitorResults(expectedResults, actualResults) {
     const actual = actualResults[monitorKind];
 
     if (!expected || !actual) {
-      throw new Error(`Missing expected or actual monitor result for ${monitorKind}`);
+      throw new Error(
+        `Missing expected or actual monitor result for ${monitorKind}`,
+      );
     }
 
     if (JSON.stringify(actual) !== JSON.stringify(expected)) {
@@ -449,12 +460,14 @@ async function assertLatestMonitorReads(app, input) {
     });
 
     if (latest.monitorResult?.id !== run.monitorResult.id) {
-      throw new Error(`${monitorKind} latest read did not return the replay run`);
+      throw new Error(
+        `${monitorKind} latest read did not return the replay run`,
+      );
     }
   }
 }
 
-async function createAndVerifyCashInvestigation(app, pool, input) {
+async function createAndVerifyMonitorInvestigation(app, pool, input) {
   if (!input.expected.expected) {
     return { expected: false };
   }
@@ -463,7 +476,9 @@ async function createAndVerifyCashInvestigation(app, pool, input) {
     input.monitorResult.monitorKind !== input.expected.monitorKind ||
     input.monitorResult.status !== "alert"
   ) {
-    throw new Error("Expected cash monitor result was not alerting for handoff");
+    throw new Error(
+      `Expected ${input.expected.monitorKind} monitor result was not alerting for handoff`,
+    );
   }
 
   const created = await createOrOpenInvestigation(app, {
@@ -478,11 +493,15 @@ async function createAndVerifyCashInvestigation(app, pool, input) {
   });
 
   if (created.created !== true || opened.created !== false) {
-    throw new Error("Cash investigation handoff did not preserve create/open posture");
+    throw new Error(
+      `${input.expected.monitorKind} investigation handoff did not preserve create/open posture`,
+    );
   }
 
   if (created.mission.id !== opened.mission.id) {
-    throw new Error("Cash investigation retry opened a different mission");
+    throw new Error(
+      `${input.expected.monitorKind} investigation retry opened a different mission`,
+    );
   }
 
   const detail = await injectJson(app, {
@@ -498,7 +517,15 @@ async function createAndVerifyCashInvestigation(app, pool, input) {
     detail.monitorInvestigation?.monitorResultId !== input.monitorResult.id ||
     detail.tasks.length !== 0
   ) {
-    throw new Error("Cash investigation handoff did not preserve source shape");
+    throw new Error(
+      `${input.expected.monitorKind} investigation handoff did not preserve source shape`,
+    );
+  }
+
+  if (detail.monitorInvestigation?.monitorKind !== input.expected.monitorKind) {
+    throw new Error(
+      `${input.expected.monitorKind} investigation handoff did not preserve monitorKind`,
+    );
   }
 
   const sourceMissionCount = await readScalar(
@@ -508,13 +535,16 @@ async function createAndVerifyCashInvestigation(app, pool, input) {
   );
 
   if (sourceMissionCount !== 1) {
-    throw new Error("Cash investigation handoff was not unique by sourceRef");
+    throw new Error(
+      `${input.expected.monitorKind} investigation handoff was not unique by sourceRef`,
+    );
   }
 
   return {
     created: created.created,
     idempotentOpen: opened.created === false,
-    monitorResultLinked: detail.monitorInvestigation.monitorResultId === input.monitorResult.id,
+    monitorResultLinked:
+      detail.monitorInvestigation.monitorResultId === input.monitorResult.id,
     sourceKind: created.mission.sourceKind,
     sourceRefShape: created.mission.sourceRef.startsWith(SOURCE_REF_PREFIX),
     taskless: detail.tasks.length === 0,
@@ -534,9 +564,8 @@ async function createOrOpenInvestigation(app, input) {
   });
 }
 
-async function assertNoNonCashInvestigations(pool, monitorRuns) {
+async function assertNoUnsupportedNonCashInvestigations(pool, monitorRuns) {
   for (const monitorKind of [
-    "collections_pressure",
     "payables_pressure",
     "policy_covenant_threshold",
   ]) {
@@ -548,7 +577,9 @@ async function assertNoNonCashInvestigations(pool, monitorRuns) {
     );
 
     if (count !== 0) {
-      throw new Error(`${monitorKind} created an investigation mission`);
+      throw new Error(
+        `${monitorKind} created an unsupported investigation mission`,
+      );
     }
   }
 
@@ -603,7 +634,10 @@ function assertAbsenceBoundaries(input) {
       "paymentInstructionsCreated",
       after.paymentInstructions === before.paymentInstructions,
     ],
-    ["reportArtifactsCreated", after.reportArtifacts === before.reportArtifacts],
+    [
+      "reportArtifactsCreated",
+      after.reportArtifacts === before.reportArtifacts,
+    ],
     [
       "runtimeCodexThreadsCreated",
       after.taskRuntimeThreads === before.taskRuntimeThreads,
@@ -616,8 +650,16 @@ function assertAbsenceBoundaries(input) {
     }
   }
 
-  if (after.missions !== afterMonitorRuns.missions + 1) {
-    throw new Error("Cash handoff did not create exactly one investigation mission");
+  if (expected.unsupportedNonCashInvestigationsCreated !== false) {
+    throw new Error(
+      "F6F unsupported non-cash absence boundary was not declared",
+    );
+  }
+
+  if (after.missions !== afterMonitorRuns.missions + 2) {
+    throw new Error(
+      "Cash plus collections handoffs did not create exactly two investigation missions",
+    );
   }
 }
 
@@ -670,7 +712,11 @@ async function readOptionalCount(pool, tableName) {
     return 0;
   }
 
-  return readScalar(pool, `select count(*)::int as count from ${tableName}`, []);
+  return readScalar(
+    pool,
+    `select count(*)::int as count from ${tableName}`,
+    [],
+  );
 }
 
 async function readScalar(pool, query, values) {
@@ -734,7 +780,10 @@ function monitorKindToPath(monitorKind) {
 }
 
 function buildRunTag() {
-  return new Date().toISOString().replace(/[-:.TZ]/gu, "").slice(0, 17);
+  return new Date()
+    .toISOString()
+    .replace(/[-:.TZ]/gu, "")
+    .slice(0, 17);
 }
 
 async function injectJson(app, input) {

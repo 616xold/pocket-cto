@@ -266,6 +266,7 @@ describe("MissionService", () => {
     expect(first.mission).toMatchObject({
       type: "discovery",
       status: "succeeded",
+      title: "Investigate cash-posture alert for acme",
       sourceKind: "alert",
       sourceRef: `pocket-cfo://monitor-results/${alertResult.id}`,
       primaryRepo: null,
@@ -318,8 +319,91 @@ describe("MissionService", () => {
     expect(await repository.claimNextRunnableTask()).toBeNull();
   });
 
-  it("rejects missing, non-alert, non-cash, and alert-card-less monitor results", async () => {
+  it("creates or opens one taskless collections monitor-alert investigation mission from a persisted alert", async () => {
+    const alertResult = buildCollectionsAlertMonitorResult();
+    const { replayService, repository, service } = createService({
+      monitorResultReader: {
+        async getMonitorResultById(monitorResultId) {
+          expect(monitorResultId).toBe(alertResult.id);
+          return alertResult;
+        },
+      },
+    });
+
+    const first = await service.createOrOpenMonitorInvestigation({
+      monitorResultId: alertResult.id,
+      companyKey: "acme",
+      requestedBy: "finance-operator",
+    });
+    const second = await service.createOrOpenMonitorInvestigation({
+      monitorResultId: alertResult.id,
+      companyKey: "acme",
+      requestedBy: "finance-operator",
+    });
+
+    expect(first.created).toBe(true);
+    expect(second.created).toBe(false);
+    expect(second.mission.id).toBe(first.mission.id);
+    expect(first.mission).toMatchObject({
+      type: "discovery",
+      status: "succeeded",
+      title: "Investigate collections-pressure alert for acme",
+      sourceKind: "alert",
+      sourceRef: `pocket-cfo://monitor-results/${alertResult.id}`,
+      primaryRepo: null,
+    });
+    expect(first.mission.objective).toContain(
+      "Manual monitor-alert investigation handoff",
+    );
+    expect(first.tasks).toEqual([]);
+    expect(first.proofBundle).toMatchObject({
+      status: "ready",
+      companyKey: "acme",
+      questionKind: null,
+      reportKind: null,
+      monitorInvestigation: {
+        monitorResultId: alertResult.id,
+        companyKey: "acme",
+        monitorKind: "collections_pressure",
+        monitorResultStatus: "alert",
+        alertSeverity: "warning",
+        conditionSummaries: [
+          "USD receivables are 60.00% past due based on source-backed totals.",
+        ],
+        sourceLineageSummary:
+          "3 receivables-aging lineage record(s) back this monitor result.",
+        proofBundlePosture: {
+          state: "source_backed",
+        },
+        runtimeBoundary: {
+          monitorRerunUsed: false,
+          runtimeCodexUsed: false,
+          deliveryActionUsed: false,
+          scheduledAutomationUsed: false,
+          reportArtifactCreated: false,
+          approvalCreated: false,
+          autonomousFinanceActionUsed: false,
+        },
+      },
+      evidenceCompleteness: {
+        status: "complete",
+        expectedArtifactKinds: [],
+        missingArtifactKinds: [],
+      },
+    });
+
+    const events = await replayService.listByMissionId(first.mission.id);
+    expect(events.map((event) => event.type)).toEqual([
+      "mission.created",
+      "mission.status_changed",
+      "artifact.created",
+    ]);
+    expect(await repository.claimNextRunnableTask()).toBeNull();
+  });
+
+  it("rejects missing, non-alert, unsupported, and alert-card-less monitor results", async () => {
     const alertResult = buildAlertMonitorResult();
+    const collectionsAlertResult = buildCollectionsAlertMonitorResult();
     const cases: Array<{
       expectedPath: string;
       result: unknown | null;
@@ -331,7 +415,7 @@ describe("MissionService", () => {
       {
         expectedPath: "monitorResultId",
         result: {
-          ...alertResult,
+          ...collectionsAlertResult,
           alertCard: null,
           conditions: [],
           severity: "none",
@@ -342,7 +426,14 @@ describe("MissionService", () => {
         expectedPath: "monitorKind",
         result: {
           ...alertResult,
-          monitorKind: "collections_pressure",
+          monitorKind: "payables_pressure",
+        },
+      },
+      {
+        expectedPath: "monitorKind",
+        result: {
+          ...alertResult,
+          monitorKind: "policy_covenant_threshold",
         },
       },
       {
@@ -1416,6 +1507,123 @@ function buildAlertMonitorResult(): MonitorResult {
       proofBundlePosture,
       humanReviewNextStep:
         "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+      createdAt: "2026-04-26T12:00:00.000Z",
+    },
+    createdAt: "2026-04-26T12:00:00.000Z",
+  };
+}
+
+function buildCollectionsAlertMonitorResult(): MonitorResult {
+  const sourceFreshnessPosture = {
+    state: "fresh" as const,
+    latestAttemptedSyncRunId: "55555555-5555-4555-8555-555555555555",
+    latestSuccessfulSyncRunId: "55555555-5555-4555-8555-555555555555",
+    latestSuccessfulSource: {
+      sourceId: "22222222-2222-4222-8222-222222222222",
+      sourceSnapshotId: "33333333-3333-4333-8333-333333333333",
+      sourceFileId: "44444444-4444-4444-8444-444444444444",
+      syncRunId: "55555555-5555-4555-8555-555555555555",
+    },
+    missingSource: false,
+    failedSource: false,
+    summary: "The latest successful receivables-aging source is fresh.",
+  };
+  const sourceLineageRefs = [
+    {
+      sourceId: "22222222-2222-4222-8222-222222222222",
+      sourceSnapshotId: "33333333-3333-4333-8333-333333333333",
+      sourceFileId: "44444444-4444-4444-8444-444444444444",
+      syncRunId: "55555555-5555-4555-8555-555555555555",
+      targetKind: "receivables_aging_row" as const,
+      targetId: null,
+      lineageCount: 3,
+      lineageTargetCounts: {
+        reportingPeriodCount: 0,
+        ledgerAccountCount: 0,
+        bankAccountCount: 0,
+        bankAccountSummaryCount: 0,
+        customerCount: 1,
+        receivablesAgingRowCount: 1,
+        vendorCount: 0,
+        payablesAgingRowCount: 0,
+        contractCount: 0,
+        contractObligationCount: 0,
+        spendRowCount: 0,
+        trialBalanceLineCount: 0,
+        accountCatalogEntryCount: 0,
+        journalEntryCount: 0,
+        journalLineCount: 0,
+        generalLedgerBalanceProofCount: 0,
+      },
+      summary:
+        "Latest successful receivables-aging source lineage for collections pressure.",
+    },
+  ];
+  const proofBundlePosture = {
+    state: "source_backed" as const,
+    summary:
+      "The monitor result is backed by the latest stored receivables-aging source lineage.",
+  };
+
+  return {
+    id: "77777777-7777-4777-8777-777777777777",
+    companyId: "11111111-1111-4111-8111-111111111111",
+    companyKey: "acme",
+    monitorKind: "collections_pressure",
+    runKey: "collections_pressure:acme:source-backed-overdue",
+    triggeredBy: "finance-operator",
+    status: "alert",
+    severity: "warning",
+    conditions: [
+      {
+        kind: "overdue_concentration",
+        severity: "warning",
+        summary:
+          "USD receivables are 60.00% past due based on source-backed totals.",
+        evidencePath: "currencyBuckets[USD].pastDueShare",
+      },
+    ],
+    sourceFreshnessPosture,
+    sourceLineageRefs,
+    deterministicSeverityRationale:
+      "Warning because overdue_concentration condition(s) were detected from stored collections-pressure state.",
+    limitations: [
+      "F6C collections-pressure monitoring evaluates stored receivables-aging posture only.",
+    ],
+    proofBundlePosture,
+    replayPosture: {
+      state: "not_appended",
+      reason:
+        "F6C monitor results are persisted company-scoped records and are not appended to mission replay.",
+    },
+    runtimeBoundary: {
+      runtimeCodexUsed: false,
+      deliveryActionUsed: false,
+      investigationMissionCreated: false,
+      autonomousFinanceActionUsed: false,
+      summary:
+        "The result was produced by deterministic stored-state evaluation only.",
+    },
+    humanReviewNextStep: "Review collections alert source posture.",
+    alertCard: {
+      companyKey: "acme",
+      monitorKind: "collections_pressure",
+      status: "alert",
+      severity: "warning",
+      deterministicSeverityRationale:
+        "Warning because overdue_concentration condition(s) were detected from stored collections-pressure state.",
+      conditionSummaries: [
+        "USD receivables are 60.00% past due based on source-backed totals.",
+      ],
+      sourceFreshnessPosture,
+      sourceLineageRefs,
+      sourceLineageSummary:
+        "3 receivables-aging lineage record(s) back this monitor result.",
+      limitations: [
+        "F6C collections-pressure monitoring evaluates stored receivables-aging posture only.",
+      ],
+      proofBundlePosture,
+      humanReviewNextStep: "Review collections alert source posture.",
       createdAt: "2026-04-26T12:00:00.000Z",
     },
     createdAt: "2026-04-26T12:00:00.000Z",

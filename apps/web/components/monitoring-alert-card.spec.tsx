@@ -57,7 +57,7 @@ describe("MonitoringAlertCard", () => {
     expect(html).toBe("");
   });
 
-  it("renders a collections-pressure alert without an investigation action", () => {
+  it("renders a collections-pressure alert with a manual investigation action", () => {
     const html = renderToStaticMarkup(
       <MonitoringAlertCard
         alertCard={{
@@ -97,8 +97,7 @@ describe("MonitoringAlertCard", () => {
             summary:
               "The monitor result is backed by the latest stored receivables-aging source lineage.",
           },
-          humanReviewNextStep:
-            "Review receivables-aging source coverage and collections posture before any external collections action.",
+          humanReviewNextStep: "Review collections alert source posture.",
         }}
         monitorResultId="77777777-7777-4777-8777-777777777777"
         requestedBy="finance-operator"
@@ -109,9 +108,14 @@ describe("MonitoringAlertCard", () => {
     expect(html).toContain("collections_pressure");
     expect(html).toContain("overdue_concentration");
     expect(html).toContain("3 receivables-aging lineage record");
-    expect(html).not.toContain("Create/open investigation");
+    expect(html).toContain("Create/open investigation");
+    expect(html).toContain("77777777-7777-4777-8777-777777777777");
     expect(html.toLowerCase()).not.toContain("send");
     expect(html.toLowerCase()).not.toContain("notify");
+    expect(html.toLowerCase()).not.toContain("contact customers");
+    expect(html.toLowerCase()).not.toContain("collect payment");
+    expect(html.toLowerCase()).not.toContain("send notice");
+    expect(html.toLowerCase()).not.toContain("recover cash");
   });
 
   it("renders a payables-pressure alert without investigation or payment actions", () => {
@@ -207,8 +211,7 @@ describe("MonitoringAlertCard", () => {
               sourceId: "22222222-2222-4222-8222-222222222222",
               sourceSnapshotId: "33333333-3333-4333-8333-333333333333",
               sourceFileId: "44444444-4444-4444-8444-444444444444",
-              policyPageKey:
-                "policies/22222222-2222-4222-8222-222222222222",
+              policyPageKey: "policies/22222222-2222-4222-8222-222222222222",
               compileRunId: "55555555-5555-4555-8555-555555555555",
               documentRole: "policy_document",
               extractStatus: "extracted",

@@ -146,6 +146,161 @@ describe("MissionCard", () => {
     expect(html).not.toContain("Report kind");
   });
 
+  it("renders collections monitor-alert investigation posture without action wording", () => {
+    const seed = {
+      ...buildMonitorInvestigationSeed(),
+      alertSeverity: "warning" as const,
+      companyKey: "acme",
+      conditionSummaries: [
+        "USD receivables are 60.00% past due based on source-backed totals.",
+      ],
+      deterministicSeverityRationale:
+        "Warning because overdue_concentration condition(s) were detected from stored collections-pressure state.",
+      humanReviewNextStep: "Review collections alert source posture.",
+      monitorKind: "collections_pressure" as const,
+      monitorResultId: "77777777-7777-4777-8777-777777777777",
+      proofBundlePosture: {
+        state: "source_backed" as const,
+        summary:
+          "The monitor result is backed by stored receivables-aging source lineage.",
+      },
+      sourceFreshnessPosture: {
+        ...buildMonitorInvestigationSeed().sourceFreshnessPosture,
+        missingSource: false,
+        state: "fresh" as const,
+        summary: "The latest successful receivables-aging source is fresh.",
+      },
+      sourceLineageSummary:
+        "3 receivables-aging lineage record(s) back this monitor result.",
+      sourceRef:
+        "pocket-cfo://monitor-results/77777777-7777-4777-8777-777777777777",
+    };
+    const html = renderToStaticMarkup(
+      <MissionCard
+        approvalCards={[]}
+        artifacts={[]}
+        discoveryAnswer={null}
+        liveControl={{
+          enabled: false,
+          limitation: "single_process_only",
+          mode: "api_only",
+        }}
+        mission={{
+          createdAt: "2026-04-26T01:00:00.000Z",
+          createdBy: "operator",
+          id: "11111111-1111-4111-8111-111111111111",
+          objective:
+            "Manual monitor-alert investigation handoff from stored collections_pressure monitor result.",
+          primaryRepo: null,
+          sourceKind: "alert",
+          sourceRef: seed.sourceRef,
+          spec: {
+            acceptance: ["Open one deterministic alert handoff."],
+            constraints: {
+              allowedPaths: [],
+              mustNot: ["invoke runtime-Codex", "create report artifacts"],
+            },
+            deliverables: ["monitor alert investigation seed"],
+            evidenceRequirements: ["stored monitor_result"],
+            input: {
+              monitorInvestigation: seed,
+            },
+            objective:
+              "Manual monitor-alert investigation handoff from stored collections_pressure monitor result.",
+            repos: [],
+            riskBudget: {
+              allowNetwork: false,
+              maxCostUsd: 1,
+              maxWallClockMinutes: 5,
+              requiresHumanApprovalFor: [],
+              sandboxMode: "read-only",
+            },
+            title: "Investigate collections-pressure alert for acme",
+            type: "discovery",
+          },
+          status: "succeeded",
+          title: "Investigate collections-pressure alert for acme",
+          type: "discovery",
+          updatedAt: "2026-04-26T01:01:00.000Z",
+        }}
+        proofBundle={{
+          answerSummary: "",
+          appendixPresent: false,
+          artifactIds: [],
+          artifacts: [],
+          branchName: null,
+          changeSummary:
+            "Opened deterministic monitor-alert investigation handoff.",
+          circulationChronology: null,
+          circulationReadiness: null,
+          circulationRecord: null,
+          companyKey: seed.companyKey,
+          decisionTrace: [],
+          evidenceCompleteness: {
+            expectedArtifactKinds: [],
+            missingArtifactKinds: [],
+            notes: [],
+            presentArtifactKinds: [],
+            status: "complete",
+          },
+          freshnessState: seed.sourceFreshnessPosture.state,
+          freshnessSummary: seed.sourceFreshnessPosture.summary,
+          latestApproval: null,
+          limitationsSummary: seed.limitations.join(" "),
+          missionId: "11111111-1111-4111-8111-111111111111",
+          missionTitle: "Investigate collections-pressure alert for acme",
+          monitorInvestigation: seed,
+          objective:
+            "Manual monitor-alert investigation handoff from stored collections_pressure monitor result.",
+          policySourceId: null,
+          policySourceScope: null,
+          pullRequestNumber: null,
+          pullRequestUrl: null,
+          questionKind: null,
+          relatedRoutePaths: ["/monitoring?companyKey=acme"],
+          relatedWikiPageKeys: [],
+          reportDraftStatus: null,
+          reportKind: null,
+          reportPublication: null,
+          reportSummary: "",
+          releaseReadiness: null,
+          releaseRecord: null,
+          riskSummary:
+            "No delivery, report artifact, approval, or autonomous finance action was created.",
+          rollbackSummary:
+            "Cancel only this handoff; raw sources and monitor result remain unchanged.",
+          sourceDiscoveryMissionId: null,
+          sourceReportingMissionId: null,
+          status: "ready",
+          targetRepoFullName: null,
+          timestamps: {
+            latestApprovalAt: null,
+            latestArtifactAt: null,
+            latestExecutorEvidenceAt: null,
+            latestPlannerEvidenceAt: null,
+            latestPullRequestAt: null,
+            missionCreatedAt: "2026-04-26T01:00:00.000Z",
+          },
+          validationSummary:
+            "Handoff assembled from persisted monitor result without rerun.",
+          verificationSummary:
+            "Review source freshness, lineage, limitations, and human-review next step.",
+          replayEventCount: 3,
+        }}
+        reporting={null}
+        tasks={[]}
+      />,
+    );
+
+    expect(html).toContain("Stored collections-pressure alert");
+    expect(html).toContain("collections_pressure");
+    expect(html).toContain("Review collections alert source posture.");
+    expect(html.toLowerCase()).not.toContain("contact customers");
+    expect(html.toLowerCase()).not.toContain("collect payment");
+    expect(html.toLowerCase()).not.toContain("send notice");
+    expect(html.toLowerCase()).not.toContain("recover cash");
+  });
+
   it("renders approval and artifact sections without the stale mission-spine placeholder copy", () => {
     const html = renderToStaticMarkup(
       <MissionCard

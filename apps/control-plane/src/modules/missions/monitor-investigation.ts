@@ -2,6 +2,7 @@ import type {
   CreateMonitorInvestigationMissionInput,
   MissionRecord,
   MissionSpec,
+  MonitorInvestigationMonitorKind,
   MonitorInvestigationSeed,
   ProofBundleManifest,
 } from "@pocket-cto/domain";
@@ -12,6 +13,15 @@ import {
   ProofBundleManifestSchema,
 } from "@pocket-cto/domain";
 import { AppHttpError } from "../../lib/http-errors";
+
+const MONITOR_INVESTIGATION_KIND_LABELS = {
+  cash_posture: "cash-posture",
+  collections_pressure: "collections-pressure",
+} satisfies Record<MonitorInvestigationMonitorKind, string>;
+
+const SUPPORTED_MONITOR_INVESTIGATION_KINDS = new Set<string>(
+  Object.keys(MONITOR_INVESTIGATION_KIND_LABELS),
+);
 
 export function buildMonitorResultSourceRef(monitorResultId: string) {
   return `pocket-cfo://monitor-results/${monitorResultId}`;
@@ -30,10 +40,13 @@ export function buildMonitorInvestigationSeed(input: {
     );
   }
 
-  if (rawResult.monitorKind !== "cash_posture") {
+  if (
+    typeof rawResult.monitorKind !== "string" ||
+    !SUPPORTED_MONITOR_INVESTIGATION_KINDS.has(rawResult.monitorKind)
+  ) {
     throw invalidMonitorInvestigationRequest(
       "monitorKind",
-      "F6B investigation handoff only supports cash_posture monitor results.",
+      "Monitor-alert investigation handoff only supports cash_posture and collections_pressure monitor results.",
     );
   }
 
@@ -76,6 +89,20 @@ export function buildMonitorInvestigationSeed(input: {
     );
   }
 
+  if (result.alertCard.companyKey !== result.companyKey) {
+    throw invalidMonitorInvestigationRequest(
+      "alertCard.companyKey",
+      "Stored alert card companyKey must match the monitor result companyKey.",
+    );
+  }
+
+  if (result.alertCard.monitorKind !== result.monitorKind) {
+    throw invalidMonitorInvestigationRequest(
+      "alertCard.monitorKind",
+      "Stored alert card monitorKind must match the monitor result monitorKind.",
+    );
+  }
+
   if (result.alertCard.severity !== result.severity) {
     throw invalidMonitorInvestigationRequest(
       "alertCard.severity",
@@ -83,7 +110,10 @@ export function buildMonitorInvestigationSeed(input: {
     );
   }
 
-  if (result.limitations.length === 0 || result.alertCard.limitations.length === 0) {
+  if (
+    result.limitations.length === 0 ||
+    result.alertCard.limitations.length === 0
+  ) {
     throw invalidMonitorInvestigationRequest(
       "limitations",
       "Alert investigation handoff requires stored monitor limitations.",
@@ -97,16 +127,17 @@ export function buildMonitorInvestigationSeed(input: {
     companyKey: result.companyKey,
     monitorKind: result.monitorKind,
     monitorResultStatus: "alert",
-    alertSeverity: result.severity,
-    deterministicSeverityRationale: result.deterministicSeverityRationale,
+    alertSeverity: result.alertCard.severity,
+    deterministicSeverityRationale:
+      result.alertCard.deterministicSeverityRationale,
     conditions: result.conditions,
     conditionSummaries: result.alertCard.conditionSummaries,
-    sourceFreshnessPosture: result.sourceFreshnessPosture,
-    sourceLineageRefs: result.sourceLineageRefs,
+    sourceFreshnessPosture: result.alertCard.sourceFreshnessPosture,
+    sourceLineageRefs: result.alertCard.sourceLineageRefs,
     sourceLineageSummary: result.alertCard.sourceLineageSummary,
-    limitations: result.limitations,
-    proofBundlePosture: result.proofBundlePosture,
-    humanReviewNextStep: result.humanReviewNextStep,
+    limitations: result.alertCard.limitations,
+    proofBundlePosture: result.alertCard.proofBundlePosture,
+    humanReviewNextStep: result.alertCard.humanReviewNextStep,
     runtimeBoundary: {
       monitorResultRuntimeBoundary: result.runtimeBoundary,
       monitorRerunUsed: false,
@@ -117,7 +148,7 @@ export function buildMonitorInvestigationSeed(input: {
       approvalCreated: false,
       autonomousFinanceActionUsed: false,
       summary:
-        "F6B created or opened a deterministic alert investigation handoff without rerunning the monitor, invoking runtime-Codex, creating delivery, creating reports, creating approvals, or taking autonomous finance action.",
+        "The manual monitor-alert investigation handoff created or opened a deterministic mission without rerunning the monitor, invoking runtime-Codex, creating delivery, creating reports, creating approvals, or taking autonomous finance action.",
     },
     sourceRef,
     monitorResultCreatedAt: result.createdAt,
@@ -128,18 +159,20 @@ export function buildMonitorInvestigationSeed(input: {
 export function buildMonitorInvestigationMissionSpec(
   seed: MonitorInvestigationSeed,
 ): MissionSpec {
+  const monitorLabel = readMonitorInvestigationMonitorLabel(seed.monitorKind);
+
   return MissionSpecSchema.parse({
     type: "discovery",
-    title: `Investigate cash-posture alert for ${seed.companyKey}`,
+    title: `Investigate ${monitorLabel} alert for ${seed.companyKey}`,
     objective:
-      `Manual F6B investigation handoff from stored ${seed.monitorKind} ` +
+      `Manual monitor-alert investigation handoff from stored ${seed.monitorKind} ` +
       `monitor result ${seed.monitorResultId}. The mission preserves the alert ` +
       "seed posture for human review and does not run finance discovery, reports, delivery, or runtime-Codex.",
     repos: [],
     constraints: {
       allowedPaths: [],
       mustNot: [
-        "rerun the cash_posture monitor",
+        `rerun the ${seed.monitorKind} monitor`,
         "invoke runtime-Codex",
         "create report artifacts",
         "create approvals",
@@ -212,14 +245,12 @@ export function buildMonitorInvestigationProofBundle(input: {
     pullRequestNumber: null,
     pullRequestUrl: null,
     changeSummary:
-      `Opened deterministic F6B investigation handoff from stored ${seed.monitorKind} ` +
+      `Opened deterministic monitor-alert investigation handoff from stored ${seed.monitorKind} ` +
       `alert result ${seed.monitorResultId}.`,
     validationSummary:
       "The handoff was assembled from the persisted monitor result and alert card without rerunning the monitor or invoking runtime-Codex.",
-    verificationSummary:
-      "Review the stored monitor alert source freshness, lineage, limitations, proof posture, and human-review next step before deciding any follow-up.",
-    riskSummary:
-      `${seed.proofBundlePosture.summary} No delivery, report artifact, approval, or autonomous finance action was created.`,
+    verificationSummary: buildMonitorInvestigationVerificationSummary(seed),
+    riskSummary: `${seed.proofBundlePosture.summary} No delivery, report artifact, approval, or autonomous finance action was created.`,
     rollbackSummary:
       "Cancel or supersede only this mission handoff if needed; the raw sources and persisted monitor result remain unchanged.",
     latestApproval: null,
@@ -267,6 +298,22 @@ export function invalidMonitorInvestigationRequest(
       ],
     },
   });
+}
+
+function readMonitorInvestigationMonitorLabel(
+  monitorKind: MonitorInvestigationMonitorKind,
+) {
+  return MONITOR_INVESTIGATION_KIND_LABELS[monitorKind];
+}
+
+function buildMonitorInvestigationVerificationSummary(
+  seed: MonitorInvestigationSeed,
+) {
+  if (seed.monitorKind === "collections_pressure") {
+    return "Review collections alert source posture, freshness, lineage, limitations, proof posture, and human-review next step before deciding any follow-up.";
+  }
+
+  return "Review the stored monitor-alert source freshness, lineage, limitations, proof posture, and human-review next step before deciding any follow-up.";
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

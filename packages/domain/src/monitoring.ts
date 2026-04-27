@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  CfoWikiFreshnessStateSchema,
-  CfoWikiPageKeySchema,
-} from "./cfo-wiki";
+import { CfoWikiFreshnessStateSchema, CfoWikiPageKeySchema } from "./cfo-wiki";
 import {
   FinanceCompanyKeySchema,
   FinanceFreshnessStateSchema,
@@ -16,6 +13,11 @@ export const MonitorKindSchema = z.enum([
   "collections_pressure",
   "payables_pressure",
   "policy_covenant_threshold",
+]);
+
+export const MonitorInvestigationMonitorKindSchema = z.enum([
+  "cash_posture",
+  "collections_pressure",
 ]);
 
 export const MonitorResultStatusSchema = z.enum(["no_alert", "alert"]);
@@ -221,7 +223,7 @@ export const MonitorInvestigationSeedSchema = z
   .object({
     monitorResultId: z.string().uuid(),
     companyKey: FinanceCompanyKeySchema,
-    monitorKind: z.literal("cash_posture"),
+    monitorKind: MonitorInvestigationMonitorKindSchema,
     monitorResultStatus: z.literal("alert"),
     alertSeverity: MonitorAlertSeveritySchema.exclude(["none"]),
     deterministicSeverityRationale: z.string().min(1),
@@ -334,6 +336,9 @@ export const MonitorLatestResultSchema = z
   .strict();
 
 export type MonitorKind = z.infer<typeof MonitorKindSchema>;
+export type MonitorInvestigationMonitorKind = z.infer<
+  typeof MonitorInvestigationMonitorKindSchema
+>;
 export type MonitorResultStatus = z.infer<typeof MonitorResultStatusSchema>;
 export type MonitorAlertSeverity = z.infer<typeof MonitorAlertSeveritySchema>;
 export type MonitorAlertConditionKind = z.infer<

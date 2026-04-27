@@ -48,6 +48,48 @@ describe("buildMissionDetailView", () => {
     expect(view.artifacts[0]?.summary).not.toContain("target repo");
   });
 
+  it("summarizes collections monitor-investigation proof bundles generically", () => {
+    const seed = {
+      ...buildMonitorInvestigationSeedFixture(),
+      monitorKind: "collections_pressure" as const,
+      monitorResultId: "77777777-7777-4777-8777-777777777777",
+      sourceRef:
+        "pocket-cfo://monitor-results/77777777-7777-4777-8777-777777777777",
+    };
+    const proofBundle = buildMonitorInvestigationProofBundleFixture(seed);
+    const view = buildMissionDetailView({
+      approvals: [],
+      artifacts: [
+        {
+          id: "88888888-8888-4888-8888-888888888888",
+          missionId: proofBundle.missionId,
+          taskId: null,
+          kind: "proof_bundle_manifest",
+          uri: `pocket-cfo://missions/${proofBundle.missionId}/proof-bundle-manifest`,
+          mimeType: "application/json",
+          sha256: null,
+          metadata: {
+            manifest: proofBundle,
+          },
+          createdAt: "2026-04-26T12:01:00.000Z",
+        },
+      ],
+      liveControl: {
+        enabled: false,
+        limitation: "single_process_only",
+        mode: "api_only",
+      },
+      mission: buildMonitorInvestigationMissionFixture(seed),
+      proofBundle,
+      tasks: [],
+    });
+
+    expect(view.artifacts[0]?.summary).toBe(
+      "Monitor-alert investigation proof bundle ready for acme from collections_pressure result 77777777-7777-4777-8777-777777777777.",
+    );
+    expect(view.artifacts[0]?.summary).not.toContain("cash-only");
+  });
+
   it("normalizes reporting proof-bundle publication summary from stored filed and export posture", () => {
     const view = buildMissionDetailView({
       approvals: [],
