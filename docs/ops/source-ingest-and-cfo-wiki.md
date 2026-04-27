@@ -510,14 +510,14 @@ The shipped F4 baseline still does none of the following:
 - the preferred mission shape reuses the existing mission engine with `mission.type = "discovery"` and `sourceKind = "alert"` rather than adding a broad new mission family
 - F6B must not create missions automatically, run scheduled monitors, send notifications, invoke runtime-codex, draft investigation prose with an LLM, invent finance facts, create delivery behavior, turn alerts into reports, add approval kinds, or add new monitor families
 
-`FP-0052` is now the active F6C implementation-ready contract:
+`FP-0052` is now the shipped F6C implementation record:
 
-- the first F6C slice is exactly `F6C-collections-pressure-monitor-foundation`
+- the shipped F6C slice is exactly `F6C-collections-pressure-monitor-foundation`
 - the first F6C monitor family is exactly `collections_pressure`
-- the input must be one `companyKey` plus stored Finance Twin receivables-aging or collections-posture state, source freshness or missing-source posture, source lineage refs, and limitations
-- the output must be one deterministic `monitor_result` with `monitorKind = "collections_pressure"` plus one optional operator alert card when source-backed conditions warrant it
-- F6C must reuse the F6A monitoring bounded context and `monitor_results`
-- F6C must not create investigations, use F6B investigation missions as input, rerun `cash_posture` as input, invoke runtime-codex, add delivery behavior, turn alerts into reports, add approval kinds, or add a second alert system
+- the input is one `companyKey` plus stored Finance Twin receivables-aging or collections-posture state, source freshness or missing-source posture, source lineage refs, and limitations
+- the output is one deterministic `monitor_result` with `monitorKind = "collections_pressure"` plus one optional operator alert card when source-backed conditions warrant it
+- F6C reuses the F6A monitoring bounded context and `monitor_results`
+- F6C does not create investigations, use F6B investigation missions as input, rerun `cash_posture` as input, invoke runtime-codex, add delivery behavior, turn alerts into reports, add approval kinds, or add a second alert system
 
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
@@ -531,7 +531,7 @@ The shipped F5C2 follow-on now specializes only one draft `lender_update` from t
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the latest shipped later-F5 board-circulation record, while `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` and `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remain the shipped F5C4H and F5C4G predecessors.
-`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is now the shipped first-F6A record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is now the shipped first-F6B record. `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the active F6C implementation-ready contract. Do not reopen other packet work, actual delivery, runtime-codex drafting, export widening, multi-monitor work, automatic mission creation, investigations, approvals, report conversion, or F6D and later monitor work from this doc alone.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is now the shipped first-F6A record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is now the shipped first-F6B record. `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the shipped F6C implementation record. Do not reopen other packet work, actual delivery, runtime-codex drafting, export widening, multi-monitor work, automatic mission creation, investigations, approvals, report conversion, or F6D and later monitor work from this doc alone; F6D planning needs a new Finance Plan.
 
 ## Lint flow
 

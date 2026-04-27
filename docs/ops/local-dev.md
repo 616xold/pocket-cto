@@ -92,7 +92,7 @@ For Pocket CFO, local development should move toward a source-registry-to-financ
 3. parse deterministically where possible
 4. populate the Finance Twin
 5. refresh the CFO Wiki
-6. run discovery, reporting, and monitoring work only through the current active Finance Plan; FP-0052 records the shipped F6C collections-pressure monitor slice, and F6D needs a new Finance Plan before implementation starts
+6. run discovery, reporting, and monitoring work only through the current active Finance Plan; FP-0052 now records the shipped F6C collections-pressure monitor slice, and F6D needs a new Finance Plan before implementation starts
 
 Today, steps 1 through 5 exist in a narrow form:
 

@@ -1,20 +1,21 @@
-# Define F6C collections pressure monitor foundation
+# F6C collections pressure monitor shipped record
 
 ## Purpose / Big Picture
 
-This file is the active implementation-ready Finance Plan for the next Pocket CFO F6 slice.
-The target phase is `F6`, and the first real F6C implementation slice is exactly `F6C-collections-pressure-monitor-foundation`.
+This file is the shipped FP-0052 record for Pocket CFO F6C.
+The target phase is `F6`, and the shipped F6C implementation slice is exactly `F6C-collections-pressure-monitor-foundation`.
 
-The user-visible goal is narrow: after shipped F6A records one deterministic source-backed `cash_posture` monitor result plus alert card, and shipped F6B lets an operator manually create or open one investigation mission from one persisted `cash_posture` alert, Pocket CFO should add one second monitor family.
+The user-visible goal was narrow: after shipped F6A records one deterministic source-backed `cash_posture` monitor result plus alert card, and shipped F6B lets an operator manually create or open one investigation mission from one persisted `cash_posture` alert, Pocket CFO adds one second monitor family.
 The first F6C monitor family is exactly `collections_pressure`.
-It must read stored Finance Twin receivables-aging or collections-posture state for one `companyKey`, record one deterministic monitor result with `monitorKind = "collections_pressure"`, and expose one optional operator alert card only when source-backed conditions warrant it.
+It reads stored Finance Twin receivables-aging or collections-posture state for one `companyKey`, records one deterministic monitor result with `monitorKind = "collections_pressure"`, and exposes one optional operator alert card only when source-backed conditions warrant it.
 
 Collections comes first because it is already a shipped finance discovery family, it is grounded in stored receivables-aging and collections-posture state, it is a common recurring CFO operating monitor, and it naturally complements `cash_posture` without requiring bank, accounting, tax, legal, or delivery writes.
 Repo truth does not show `payables_pressure` as strictly safer: the shipped payables posture is similarly source-backed, but collections has an equally truthful stored-state substrate and is the narrower second-monitor complement requested for F6C.
 
-This plan started as a docs-and-plan contract and now records the F6C implementation slice.
-Do not treat FP-0050 or FP-0051 as active implementation contracts.
-FP-0050 remains the shipped F6A record, and FP-0051 remains the shipped F6B record.
+This plan started as a docs-and-plan contract and now records the shipped F6C implementation slice.
+Do not treat FP-0050, FP-0051, or FP-0052 as current implementation contracts.
+FP-0050 remains the shipped F6A record, FP-0051 remains the shipped F6B record, and FP-0052 remains the shipped F6C record.
+F6D planning should begin only in a new Finance Plan.
 GitHub connector work is explicitly out of scope.
 
 F6C must stay deterministic, runtime-free, delivery-free, non-autonomous, and human-reviewable.
@@ -23,12 +24,13 @@ It must not create investigations, run F6B handoffs, use runtime-Codex, send not
 ## Progress
 
 - [x] 2026-04-27T10:58:28Z Audit shipped F6A/F6B records, active docs, monitoring bounded context, source/freshness posture, proof-bundle boundary, runtime-Codex boundary, collections/payables source posture, and current validation ladder.
-- [x] 2026-04-27T10:58:28Z Create FP-0052 as the single active implementation-ready F6C contract while preserving FP-0050 and FP-0051 as shipped records.
-- [x] 2026-04-27T10:58:28Z Refresh active docs so the next thread can start the narrow `collections_pressure` monitor implementation from FP-0052 rather than re-planning F6C or widening into multi-monitor work.
+- [x] 2026-04-27T10:58:28Z Create FP-0052 as the single F6C implementation-ready contract at the time while preserving FP-0050 and FP-0051 as shipped records.
+- [x] 2026-04-27T10:58:28Z Refresh active docs so the implementation thread could start the narrow `collections_pressure` monitor implementation from FP-0052 rather than re-planning F6C or widening into multi-monitor work.
 - [x] 2026-04-27T11:05:28Z Run the docs-and-plan validation ladder through `pnpm ci:repro:current` and record the green result.
-- [x] 2026-04-27T11:38:56Z Run a tiny post-merge local-dev freshness polish so the source-registry-to-finance-twin loop points discovery, reporting, and monitoring work through the current active FP-0052 F6C contract instead of stale active-F5 wording.
+- [x] 2026-04-27T11:38:56Z Run a tiny post-merge local-dev freshness polish so the source-registry-to-finance-twin loop pointed discovery, reporting, and monitoring work through the then-current FP-0052 F6C contract instead of stale F5 wording.
 - [x] 2026-04-27T12:03:32Z Implement `F6C-collections-pressure-monitor-foundation`: widen monitoring contracts and DB enum, add one deterministic `collections_pressure` evaluator, run/latest routes, operator alert-card posture, and packaged local smoke while keeping collections investigation-free, runtime-free, delivery-free, report-free, approval-free, and non-autonomous.
 - [x] 2026-04-27T12:11:28Z Run and record the full F6C implementation validation ladder after code changes exist, including narrow collections monitor specs, migration, baseline smokes, new collections smoke, twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+- [x] 2026-04-27T12:40:48Z Run a docs-only post-merge closeout that marks FP-0052 and F6C as shipped across secondary docs and leaves F6D as planning-only with no FP-0053.
 
 ## Surprises & Discoveries
 
@@ -55,7 +57,7 @@ Both fixes stayed inside the F6C operator read-model surface and did not change 
 ## Decision Log
 
 Decision: the first real F6C scope is `F6C-collections-pressure-monitor-foundation`.
-Rationale: F6C needs one implementation-ready contract, not a broad monitoring platform or a multi-monitor expansion.
+Rationale: F6C needed one implementation-ready contract, not a broad monitoring platform or a multi-monitor expansion.
 
 Decision: the first F6C monitor family is exactly `collections_pressure`.
 Rationale: `collections_pressure` is a shipped finance discovery family, is backed by shipped receivables-aging and collections-posture Finance Twin reads, and complements the shipped `cash_posture` monitor without requiring external writes.
@@ -308,10 +310,10 @@ If collections source state is missing, stale, failed, partial, inconsistent, or
 
 ## Artifacts and Notes
 
-This docs-and-plan slice produces:
+This FP-0052 record contains:
 
 - `plans/FP-0052-collections-pressure-monitor-foundation.md`
-- active-doc updates that identify FP-0052 as the active F6C implementation contract
+- docs updates that identify FP-0052 as the shipped F6C implementation record
 - widened monitoring domain contract
 - additive monitor-kind persistence support
 - one deterministic collections monitor evaluator
