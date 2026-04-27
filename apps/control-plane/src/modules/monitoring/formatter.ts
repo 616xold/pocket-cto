@@ -66,6 +66,27 @@ export const COLLECTIONS_PRESSURE_COPY: MonitorFormatterCopy = {
   stateLabel: "collections-pressure",
 };
 
+export const PAYABLES_PRESSURE_COPY: MonitorFormatterCopy = {
+  coverageProofSummary:
+    "The monitor proof is source-backed but limited by payables-aging coverage gaps.",
+  dataQualityProofSummary:
+    "The monitor proof is source-backed but limited by payables-posture data-quality diagnostics.",
+  failedProofSummary:
+    "The monitor proof is limited because the latest attempted payables-aging source failed.",
+  lineageNoun: "payables-aging",
+  missingProofSummary:
+    "The monitor proof is limited because no successful payables-aging source backs the payables posture.",
+  noAlertRationale:
+    "No alert because no F6D payables-pressure source, freshness, coverage, data-quality, or overdue-concentration conditions were detected.",
+  noLineageSummary:
+    "No payables-aging source lineage is available for this monitor result.",
+  sourceBackedProofSummary:
+    "The monitor result is backed by the latest stored payables-aging source lineage.",
+  staleProofSummary:
+    "The monitor proof is source-backed but limited by stale payables-aging source freshness.",
+  stateLabel: "payables-pressure",
+};
+
 export function chooseHighestSeverity(
   conditions: MonitorAlertCondition[],
 ): MonitorAlertSeverity {

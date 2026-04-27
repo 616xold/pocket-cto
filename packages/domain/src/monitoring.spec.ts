@@ -156,9 +156,7 @@ describe("monitoring domain contract", () => {
         ],
         deterministicSeverityRationale:
           "No alert because no F6A cash-posture conditions were detected.",
-        limitations: [
-          "Cash posture is grouped by reported currency only.",
-        ],
+        limitations: ["Cash posture is grouped by reported currency only."],
         proofBundlePosture: {
           state: "source_backed",
           summary:
@@ -361,6 +359,177 @@ describe("monitoring domain contract", () => {
     expect(seed.success).toBe(false);
   });
 
+  it("accepts a source-backed payables pressure alert without widening investigation seeds", () => {
+    const parsed = MonitorResultSchema.parse({
+      id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      companyId,
+      companyKey: "acme",
+      monitorKind: "payables_pressure",
+      runKey: "payables_pressure:acme:source-backed-overdue",
+      triggeredBy: "operator",
+      status: "alert",
+      severity: "critical",
+      conditions: [
+        {
+          kind: "overdue_concentration",
+          severity: "critical",
+          summary:
+            "USD payables are 80.00% past due based on source-backed totals.",
+          evidencePath: "currencyBuckets[USD].pastDueShare",
+        },
+      ],
+      sourceFreshnessPosture: {
+        state: "fresh",
+        latestAttemptedSyncRunId: syncRunId,
+        latestSuccessfulSyncRunId: syncRunId,
+        latestSuccessfulSource: {
+          sourceId,
+          sourceSnapshotId,
+          sourceFileId,
+          syncRunId,
+        },
+        missingSource: false,
+        failedSource: false,
+        summary: "The latest successful payables-aging source is fresh.",
+      },
+      sourceLineageRefs: [
+        {
+          sourceId,
+          sourceSnapshotId,
+          sourceFileId,
+          syncRunId,
+          targetKind: "payables_aging_row",
+          targetId: null,
+          lineageCount: 3,
+          lineageTargetCounts: {
+            vendorCount: 1,
+            payablesAgingRowCount: 1,
+          },
+          summary:
+            "Latest successful payables-aging source lineage for payables pressure.",
+        },
+      ],
+      deterministicSeverityRationale:
+        "Critical because overdue_concentration condition(s) were detected from stored payables-pressure state.",
+      limitations: [
+        "F6D payables-pressure monitoring evaluates stored payables-aging posture only.",
+      ],
+      proofBundlePosture: {
+        state: "source_backed",
+        summary:
+          "The monitor result is backed by the latest stored payables-aging source lineage.",
+      },
+      replayPosture: {
+        state: "not_appended",
+        reason:
+          "F6D monitor results are company-scoped records and are not mission replay events.",
+      },
+      runtimeBoundary: {
+        runtimeCodexUsed: false,
+        deliveryActionUsed: false,
+        investigationMissionCreated: false,
+        autonomousFinanceActionUsed: false,
+        summary:
+          "The result was produced by deterministic stored-state evaluation only.",
+      },
+      humanReviewNextStep:
+        "Review payables-aging source coverage and payables posture before any external vendor or payment action.",
+      alertCard: {
+        companyKey: "acme",
+        monitorKind: "payables_pressure",
+        status: "alert",
+        severity: "critical",
+        deterministicSeverityRationale:
+          "Critical because overdue_concentration condition(s) were detected from stored payables-pressure state.",
+        conditionSummaries: [
+          "USD payables are 80.00% past due based on source-backed totals.",
+        ],
+        sourceFreshnessPosture: {
+          state: "fresh",
+          latestAttemptedSyncRunId: syncRunId,
+          latestSuccessfulSyncRunId: syncRunId,
+          latestSuccessfulSource: {
+            sourceId,
+            sourceSnapshotId,
+            sourceFileId,
+            syncRunId,
+          },
+          missingSource: false,
+          failedSource: false,
+          summary: "The latest successful payables-aging source is fresh.",
+        },
+        sourceLineageRefs: [
+          {
+            sourceId,
+            sourceSnapshotId,
+            sourceFileId,
+            syncRunId,
+            targetKind: "payables_aging_row",
+            targetId: null,
+            lineageCount: 3,
+            lineageTargetCounts: {
+              vendorCount: 1,
+              payablesAgingRowCount: 1,
+            },
+            summary:
+              "Latest successful payables-aging source lineage for payables pressure.",
+          },
+        ],
+        sourceLineageSummary:
+          "3 payables-aging lineage record(s) back this monitor result.",
+        limitations: [
+          "F6D payables-pressure monitoring evaluates stored payables-aging posture only.",
+        ],
+        proofBundlePosture: {
+          state: "source_backed",
+          summary:
+            "The monitor result is backed by the latest stored payables-aging source lineage.",
+        },
+        humanReviewNextStep:
+          "Review payables-aging source coverage and payables posture before any external vendor or payment action.",
+        createdAt: now,
+      },
+      createdAt: now,
+    });
+
+    expect(parsed.monitorKind).toBe("payables_pressure");
+    expect(parsed.conditions[0]?.kind).toBe("overdue_concentration");
+    expect(parsed.alertCard?.sourceLineageRefs).toHaveLength(1);
+
+    const seed = MonitorInvestigationSeedSchema.safeParse({
+      monitorResultId: parsed.id,
+      companyKey: "acme",
+      monitorKind: "payables_pressure",
+      monitorResultStatus: "alert",
+      alertSeverity: "critical",
+      deterministicSeverityRationale: parsed.deterministicSeverityRationale,
+      conditions: parsed.conditions,
+      conditionSummaries: parsed.alertCard?.conditionSummaries ?? [],
+      sourceFreshnessPosture: parsed.sourceFreshnessPosture,
+      sourceLineageRefs: parsed.sourceLineageRefs,
+      sourceLineageSummary: parsed.alertCard?.sourceLineageSummary ?? "",
+      limitations: parsed.limitations,
+      proofBundlePosture: parsed.proofBundlePosture,
+      humanReviewNextStep: parsed.humanReviewNextStep,
+      runtimeBoundary: {
+        monitorResultRuntimeBoundary: parsed.runtimeBoundary,
+        monitorRerunUsed: false,
+        runtimeCodexUsed: false,
+        deliveryActionUsed: false,
+        scheduledAutomationUsed: false,
+        reportArtifactCreated: false,
+        approvalCreated: false,
+        autonomousFinanceActionUsed: false,
+        summary: "Invalid payables handoff.",
+      },
+      sourceRef: `pocket-cfo://monitor-results/${parsed.id}`,
+      monitorResultCreatedAt: parsed.createdAt,
+      alertCardCreatedAt: parsed.alertCard?.createdAt ?? now,
+    });
+
+    expect(seed.success).toBe(false);
+  });
+
   it("parses a deterministic alert investigation seed from stored monitor evidence", () => {
     const parsed = MonitorInvestigationSeedSchema.parse({
       monitorResultId: "66666666-6666-4666-8666-666666666666",
@@ -378,9 +547,7 @@ describe("monitoring domain contract", () => {
           evidencePath: "freshness.state",
         },
       ],
-      conditionSummaries: [
-        "No successful bank-account-summary slice exists.",
-      ],
+      conditionSummaries: ["No successful bank-account-summary slice exists."],
       sourceFreshnessPosture: {
         state: "missing",
         latestAttemptedSyncRunId: null,

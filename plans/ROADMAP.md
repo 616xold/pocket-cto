@@ -275,7 +275,7 @@ Turn shipped discovery outputs into reviewable finance reporting artifacts witho
 
 The latest shipped implementation records for this phase are `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` for F5C4E, `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` for F5C4F, `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` for F5C4G, `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` for F5C4H, and `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` for F5C4I.
 F5C4I is now shipped: the repo already supports explicit clear-to-absent `circulationNote` correction on the existing board `report_circulation` seam while keeping the original record immutable and the correction history append-only.
-There is no active later-F5 implementation contract after FP-0049. `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` remains the shipped first-F6A record, `plans/FP-0051-alert-to-investigation-mission-foundation.md` remains the shipped first-F6B record, `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the shipped F6C implementation record, and `plans/FP-0053-payables-pressure-monitor-foundation.md` is the active implementation-ready F6D contract. Do not reopen F5 or start F6E without a later named Finance Plan.
+There is no active later-F5 implementation contract after FP-0049. `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` remains the shipped first-F6A record, `plans/FP-0051-alert-to-investigation-mission-foundation.md` remains the shipped first-F6B record, `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the shipped F6C implementation record, and `plans/FP-0053-payables-pressure-monitor-foundation.md` is now the shipped F6D implementation record. Do not reopen F5 or start F6E without a later named Finance Plan.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
@@ -401,7 +401,7 @@ Slice map:
       - reuse the existing correction route and `approval.circulation_log_corrected` replay seam by default
       - keep the slice deterministic, runtime-free, and delivery-free in the system sense
       - do not add actual send, distribute, publish, PDF export, slide export, or runtime-codex behavior
-    - after the shipped F5C4I closeout, the repo should not reopen broader later-F5 work unless a new plan names a concrete truthfulness gap. FP-0051 is now the shipped first-F6B record, FP-0052 records the shipped F6C collections-pressure monitor slice, and FP-0053 is the active implementation-ready F6D payables-pressure monitor contract; starting F6E or later requires a new named Finance Plan.
+    - after the shipped F5C4I closeout, the repo should not reopen broader later-F5 work unless a new plan names a concrete truthfulness gap. FP-0051 is now the shipped first-F6B record, FP-0052 records the shipped F6C collections-pressure monitor slice, and FP-0053 records the shipped F6D payables-pressure monitor slice; starting F6E or later requires a new named Finance Plan.
 
 Exit criteria:
 
@@ -418,19 +418,20 @@ Turn Pocket CFO into a recurring finance operating system without weakening the 
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` records the shipped first F6A implementation slice.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` records the shipped first F6B implementation slice.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` records the F6C implementation slice.
-`plans/FP-0053-payables-pressure-monitor-foundation.md` is the active implementation-ready F6D contract.
+`plans/FP-0053-payables-pressure-monitor-foundation.md` records the shipped F6D implementation slice.
 F6A is not a broad monitoring platform.
 The first shipped implementation slice is exactly `F6A-monitoring-foundation-and-first-cash-posture-alert`.
 The first shipped F6B slice is exactly `F6B-alert-to-investigation-mission-foundation`.
 The shipped F6C slice is exactly `F6C-collections-pressure-monitor-foundation`.
-F6D implementation should start from FP-0053 only and remain one deterministic `payables_pressure` monitor plus optional alert card over stored payables-aging or payables-posture state.
+The shipped F6D slice is exactly `F6D-payables-pressure-monitor-foundation`.
+F6E planning should start next only through a new Finance Plan; no F6E implementation has started.
 
 Focus:
 
 - deterministic monitors over stored source, Finance Twin, CFO Wiki, and proof state
 - one first `cash_posture` monitor result
 - one second `collections_pressure` monitor result over stored receivables-aging or collections-posture state only
-- one active contract for a third `payables_pressure` monitor result over stored payables-aging or payables-posture state only
+- one third `payables_pressure` monitor result over stored payables-aging or payables-posture state only
 - one operator-visible alert-card posture when source-backed conditions warrant it
 - explicit source lineage, freshness or missing-source posture, limitations, proof-bundle posture, deterministic severity rationale, and human-review next step
 - manual alert-to-investigation handoff first, then later additional monitor families, threshold/control ownership, demo replay, and benchmark support
@@ -440,7 +441,7 @@ Exit criteria:
 - one deterministic `cash_posture` monitor can produce a reviewable monitor result and alert card without runtime-codex, delivery, autonomous remediation, or new discovery families
 - one operator can manually create or open a deterministic investigation mission from one persisted `cash_posture` alert without automatic mission creation, notifications, runtime-codex, delivery, report conversion, or a second alert system
 - one deterministic `collections_pressure` monitor can persist a reviewable monitor result and optional alert card from stored receivables-aging or collections-posture state only, while staying investigation-free in F6C
-- the active F6D contract is implementation-ready for one deterministic `payables_pressure` monitor without investigations, delivery, payment behavior, runtime-Codex, reports, approvals, or multi-monitor widening
+- the shipped F6D slice supports one deterministic `payables_pressure` monitor without investigations, delivery, payment behavior, runtime-Codex, reports, approvals, or multi-monitor widening
 - a new user can bootstrap a demo company from docs and sources
 
 Slice map:
@@ -467,14 +468,14 @@ Slice map:
   - reuse `apps/control-plane/src/modules/monitoring/**`, `monitor_results`, and existing monitoring alert-card patterns
   - does not create investigations, rerun cash monitors as input, use F6B investigation missions as input, add reports or approvals, invoke runtime-codex, add delivery, or widen into a broad monitoring platform
 - `F6D — payables_pressure monitor foundation`
-  - active implementation-ready contract in `plans/FP-0053-payables-pressure-monitor-foundation.md`
+  - shipped implementation record in `plans/FP-0053-payables-pressure-monitor-foundation.md`
   - first F6D monitor family is exactly `payables_pressure`
   - start only from one `companyKey` plus stored Finance Twin payables-aging or payables-posture state
   - produce one deterministic `monitor_result` with `monitorKind = "payables_pressure"` plus one optional alert card when source-backed conditions warrant it
   - reuse `apps/control-plane/src/modules/monitoring/**`, `monitor_results`, and existing monitoring alert-card patterns
   - does not create investigations, rerun cash or collections monitors as input, use F6B investigation missions as input, add payment instructions or vendor-payment recommendations, add reports or approvals, invoke runtime-codex, add delivery, or widen into a broad monitoring platform
 - `F6E — policy/covenant threshold monitor foundation`
-  - later only; require source-backed or operator-owned thresholds and avoid legal conclusions
+  - later only; require a new Finance Plan, source-backed or operator-owned thresholds, and no legal conclusions
 - `F6F — monitor demo replay and stack-pack foundation`
   - later only; prove monitor reproducibility and demo bootstrap after the narrow monitor foundations exist
 - `F6G — non-cash alert-to-investigation generalization`

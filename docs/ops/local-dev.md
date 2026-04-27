@@ -4,7 +4,8 @@ This repo is now past the Pocket CFO pivot-foundation reset, through the F1 sour
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` now records the shipped first F6A implementation slice.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` now records the shipped first F6B implementation slice.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` now records the shipped F6C implementation slice for exactly one deterministic `collections_pressure` monitor over stored receivables-aging or collections-posture Finance Twin state.
-`plans/FP-0053-payables-pressure-monitor-foundation.md` is now the active implementation-ready F6D contract for exactly one deterministic `payables_pressure` monitor over stored payables-aging or payables-posture Finance Twin state. Do not start broader later-F5 work, multi-monitor F6 work, F6E or later implementation, runtime-codex monitoring, delivery behavior, notifications, investigations for non-cash alerts, approvals, report conversion, payment behavior, or automatic mission creation from this doc.
+`plans/FP-0053-payables-pressure-monitor-foundation.md` now records the shipped F6D implementation slice for exactly one deterministic `payables_pressure` monitor over stored payables-aging or payables-posture Finance Twin state. Do not start broader later-F5 work, multi-monitor F6 work, F6E or later implementation, runtime-codex monitoring, delivery behavior, notifications, investigations for non-cash alerts, approvals, report conversion, payment behavior, payment instructions, vendor-payment recommendations, or automatic mission creation from this doc.
+F6E planning should start next only through a new Finance Plan; no F6E implementation has started.
 
 That means two things are true at once:
 
@@ -74,6 +75,7 @@ pnpm smoke:finance-policy-lookup:local
 pnpm smoke:cash-posture-monitor:local
 pnpm smoke:cash-posture-alert-investigation:local
 pnpm smoke:collections-pressure-monitor:local
+pnpm smoke:payables-pressure-monitor:local
 pnpm eval:finance-discovery-quality
 ```
 
@@ -93,7 +95,7 @@ For Pocket CFO, local development should move toward a source-registry-to-financ
 3. parse deterministically where possible
 4. populate the Finance Twin
 5. refresh the CFO Wiki
-6. run discovery, reporting, and monitoring work only through the current active Finance Plan; FP-0052 now records the shipped F6C collections-pressure monitor slice, and FP-0053 is the active implementation-ready F6D payables-pressure monitor contract
+6. run discovery, reporting, and monitoring work only through the current active Finance Plan; FP-0052 now records the shipped F6C collections-pressure monitor slice, FP-0053 records the shipped F6D payables-pressure monitor slice, and any F6E work needs a new Finance Plan before implementation
 
 Today, steps 1 through 5 exist in a narrow form:
 
@@ -155,12 +157,13 @@ Today, steps 1 through 5 exist in a narrow form:
 - the packaged `pnpm smoke:cash-posture-monitor:local` path proves the first F6A `cash_posture` monitor can persist one source-backed alert result plus alert-card posture for missing-source or coverage-gap state, persist one `no_alert` result for clean bank-account-summary state, preserve the shipped discovery family list, and avoid missions, report artifacts, runtime-codex, outbox delivery, investigation missions, and autonomous finance actions
 - the packaged `pnpm smoke:cash-posture-alert-investigation:local` path proves a persisted alerting `cash_posture` monitor result can manually create or open one taskless deterministic investigation mission, repeated create/open returns the same mission, `no_alert` results are rejected, and the handoff stays source-backed, runtime-free, delivery-free, report-free, approval-free, outbox-free, and non-autonomous
 - the packaged `pnpm smoke:collections-pressure-monitor:local` path proves the first F6C `collections_pressure` monitor can persist one deterministic monitor result from stored receivables-aging / collections-posture state only, produce alert cards for missing-source, stale/data-quality, coverage-gap, and source-backed overdue-concentration posture, produce `no_alert` for clean supported posture, preserve idempotent run-key behavior, carry source lineage/freshness/limitations/proof/human-review posture, and avoid missions, report artifacts, approvals, outbox delivery, runtime-codex threads, notifications, investigations, and autonomous finance actions
+- the packaged `pnpm smoke:payables-pressure-monitor:local` path proves the F6D `payables_pressure` monitor can persist one deterministic monitor result from stored payables-aging / payables-posture state only, produce alert cards for missing-source, stale/data-quality, coverage-gap, source-backed overdue-concentration, and conflicting/partial-basis posture, produce `no_alert` for clean supported posture, preserve idempotent run-key behavior, carry source lineage/freshness/limitations/proof/human-review posture, and avoid missions, report artifacts, approvals, outbox delivery, runtime-codex threads, notifications, investigations, payment instructions, vendor-payment recommendations, delivery, and autonomous finance actions
 - `POST /missions/discovery` may still exist as a deprecated finance-shaped alias for compatibility, but it is not a live repo-scoped engineering discovery create contract and legacy repo payloads should be treated as unsupported
 
-Step 6 now starts from the shipped FP-0050 monitoring record, the shipped FP-0051 alert-to-investigation record, and the FP-0052 collections-pressure monitor implementation record.
+Step 6 now starts from the shipped FP-0050 monitoring record, the shipped FP-0051 alert-to-investigation record, the shipped FP-0052 collections-pressure monitor implementation record, and the shipped FP-0053 payables-pressure monitor implementation record.
 If an unfinished `plans/FP-*.md` file exists, continue that plan.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is the latest shipped later-F5 reporting record, `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` is the shipped F5C4H predecessor, `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` is the shipped F5C4G predecessor, and `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` remains the shipped predecessor for the first board circulation-log path.
-`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is the shipped first F6A implementation record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is the shipped first F6B implementation record. `plans/FP-0052-collections-pressure-monitor-foundation.md` is the shipped F6C implementation record. `plans/FP-0053-payables-pressure-monitor-foundation.md` is the active F6D implementation-ready contract; do not reopen F4C2, repeat F5A through F5C4I, start F6E, or widen beyond one deterministic `payables_pressure` monitor without a later named Finance Plan.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is the shipped first F6A implementation record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is the shipped first F6B implementation record. `plans/FP-0052-collections-pressure-monitor-foundation.md` is the shipped F6C implementation record. `plans/FP-0053-payables-pressure-monitor-foundation.md` is the shipped F6D implementation record; do not reopen F4C2, repeat F5A through F5C4I, start F6E, or widen beyond the shipped deterministic `payables_pressure` monitor without a later named Finance Plan.
 
 The active finance-twin read surface is currently backend-first:
 

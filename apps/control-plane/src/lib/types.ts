@@ -67,8 +67,10 @@ export type MonitoringServicePort = Pick<
   MonitoringService,
   | "getLatestCashPostureMonitorResult"
   | "getLatestCollectionsPressureMonitorResult"
+  | "getLatestPayablesPressureMonitorResult"
   | "runCashPostureMonitor"
   | "runCollectionsPressureMonitor"
+  | "runPayablesPressureMonitor"
 >;
 
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;

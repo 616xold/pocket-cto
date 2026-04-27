@@ -13,6 +13,7 @@ import { createdAt, id, updatedAt } from "./shared";
 export const monitorKindEnum = pgEnum("monitor_kind", [
   "cash_posture",
   "collections_pressure",
+  "payables_pressure",
 ]);
 
 export const monitorResultStatusEnum = pgEnum("monitor_result_status", [
@@ -56,9 +57,7 @@ export const monitorResults = pgTable(
       .$type<Record<string, unknown>>()
       .notNull(),
     alertCard: jsonb("alert_card").$type<Record<string, unknown> | null>(),
-    resultJson: jsonb("result_json")
-      .$type<Record<string, unknown>>()
-      .notNull(),
+    resultJson: jsonb("result_json").$type<Record<string, unknown>>().notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -66,11 +65,9 @@ export const monitorResults = pgTable(
     companyKindRunUnique: uniqueIndex(
       "monitor_results_company_kind_run_key",
     ).on(table.companyId, table.monitorKind, table.runKey),
-    companyKindCreatedIndex: index("monitor_results_company_kind_created_idx").on(
-      table.companyId,
-      table.monitorKind,
-      table.createdAt,
-    ),
+    companyKindCreatedIndex: index(
+      "monitor_results_company_kind_created_idx",
+    ).on(table.companyId, table.monitorKind, table.createdAt),
     companyKeyKindCreatedIndex: index(
       "monitor_results_company_key_kind_created_idx",
     ).on(table.companyKey, table.monitorKind, table.createdAt),

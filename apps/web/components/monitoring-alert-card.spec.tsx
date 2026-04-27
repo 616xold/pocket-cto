@@ -21,11 +21,17 @@ describe("MonitoringAlertCard", () => {
     expect(html).toContain(
       "Critical because stored cash-posture conditions include missing_source.",
     );
-    expect(html).toContain("No successful bank-account-summary slice exists yet.");
+    expect(html).toContain(
+      "No successful bank-account-summary slice exists yet.",
+    );
     expect(html).toContain("Freshness state");
     expect(html).toContain("Lineage refs");
-    expect(html).toContain("No successful bank-account-summary source is stored.");
-    expect(html).toContain("No bank-account-summary source lineage is available.");
+    expect(html).toContain(
+      "No successful bank-account-summary source is stored.",
+    );
+    expect(html).toContain(
+      "No bank-account-summary source lineage is available.",
+    );
     expect(html).toContain("limited_by_missing_source");
     expect(html).toContain("Human review next step");
     expect(html).toContain("Create/open investigation");
@@ -106,6 +112,75 @@ describe("MonitoringAlertCard", () => {
     expect(html).not.toContain("Create/open investigation");
     expect(html.toLowerCase()).not.toContain("send");
     expect(html.toLowerCase()).not.toContain("notify");
+  });
+
+  it("renders a payables-pressure alert without investigation or payment actions", () => {
+    const html = renderToStaticMarkup(
+      <MonitoringAlertCard
+        alertCard={{
+          ...buildAlertCard(),
+          monitorKind: "payables_pressure",
+          deterministicSeverityRationale:
+            "Critical because overdue_concentration condition(s) were detected from stored payables-pressure state.",
+          conditionSummaries: [
+            "USD payables are 80.00% past due based on source-backed totals.",
+          ],
+          sourceFreshnessPosture: {
+            ...buildAlertCard().sourceFreshnessPosture,
+            summary: "The latest successful payables-aging source is fresh.",
+          },
+          sourceLineageRefs: [
+            {
+              sourceId: "22222222-2222-4222-8222-222222222222",
+              sourceSnapshotId: "33333333-3333-4333-8333-333333333333",
+              sourceFileId: "44444444-4444-4444-8444-444444444444",
+              syncRunId: "55555555-5555-4555-8555-555555555555",
+              targetKind: "payables_aging_row",
+              targetId: null,
+              lineageCount: 3,
+              lineageTargetCounts: {
+                ...emptyLineageTargetCounts,
+                vendorCount: 1,
+                payablesAgingRowCount: 1,
+              },
+              summary:
+                "Latest successful payables-aging source lineage for payables pressure.",
+            },
+          ],
+          sourceLineageSummary:
+            "3 payables-aging lineage record(s) back this monitor result.",
+          proofBundlePosture: {
+            state: "source_backed",
+            summary:
+              "The monitor result is backed by the latest stored payables-aging source lineage.",
+          },
+          humanReviewNextStep:
+            "Review payables-aging source coverage and payables posture before any external vendor or payment action.",
+        }}
+        monitorResultId="88888888-8888-4888-8888-888888888888"
+        requestedBy="finance-operator"
+      />,
+    );
+
+    expect(html).toContain("Payables pressure monitor");
+    expect(html).toContain("payables_pressure");
+    expect(html).toContain("overdue_concentration");
+    expect(html).toContain("3 payables-aging lineage record");
+    expect(html).not.toContain("Create/open investigation");
+
+    for (const forbidden of [
+      "send",
+      "notify",
+      "email",
+      "slack",
+      "publish",
+      "payment instruction",
+      "vendor-payment recommendation",
+      "book journal",
+      "file tax",
+    ]) {
+      expect(html.toLowerCase()).not.toContain(forbidden);
+    }
   });
 });
 

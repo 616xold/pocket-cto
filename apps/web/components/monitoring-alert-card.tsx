@@ -63,9 +63,16 @@ export function MonitoringAlertCard({
       </dl>
 
       {canCreateInvestigation ? (
-        <form action={submitCreateOrOpenMonitorInvestigation} className="button-row">
+        <form
+          action={submitCreateOrOpenMonitorInvestigation}
+          className="button-row"
+        >
           <input type="hidden" name="companyKey" value={alertCard.companyKey} />
-          <input type="hidden" name="monitorResultId" value={monitorResultId ?? ""} />
+          <input
+            type="hidden"
+            name="monitorResultId"
+            value={monitorResultId ?? ""}
+          />
           <input
             type="hidden"
             name="requestedBy"
@@ -126,7 +133,13 @@ function readSeverityLabel(severity: MonitorAlertCard["severity"]) {
 }
 
 function readMonitorLabel(monitorKind: MonitorAlertCard["monitorKind"]) {
-  return monitorKind === "collections_pressure"
-    ? "Collections pressure monitor"
-    : "Cash posture monitor";
+  if (monitorKind === "collections_pressure") {
+    return "Collections pressure monitor";
+  }
+
+  if (monitorKind === "payables_pressure") {
+    return "Payables pressure monitor";
+  }
+
+  return "Cash posture monitor";
 }

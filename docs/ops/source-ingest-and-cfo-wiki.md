@@ -519,14 +519,15 @@ The shipped F4 baseline still does none of the following:
 - F6C reuses the F6A monitoring bounded context and `monitor_results`
 - F6C does not create investigations, use F6B investigation missions as input, rerun `cash_posture` as input, invoke runtime-codex, add delivery behavior, turn alerts into reports, add approval kinds, or add a second alert system
 
-`FP-0053` is now the active implementation-ready F6D contract:
+`FP-0053` is now the shipped F6D implementation record:
 
-- the planned F6D slice is exactly `F6D-payables-pressure-monitor-foundation`
+- the shipped F6D slice is exactly `F6D-payables-pressure-monitor-foundation`
 - the first F6D monitor family is exactly `payables_pressure`
 - the input is one `companyKey` plus stored Finance Twin payables-aging or payables-posture state, source freshness or missing-source posture, source lineage refs, and limitations
 - the output is one deterministic `monitor_result` with `monitorKind = "payables_pressure"` plus one optional operator alert card when source-backed conditions warrant it
 - F6D reuses the F6A/F6C monitoring bounded context and `monitor_results`
-- F6D must not create investigations, use F6B investigation missions as input, rerun `cash_posture` or `collections_pressure` as input, invoke runtime-codex, add delivery behavior, create payment instructions or vendor-payment recommendations, turn alerts into reports, add approval kinds, or add a second alert system
+- F6D does not create investigations, use F6B investigation missions as input, rerun `cash_posture` or `collections_pressure` as input, invoke runtime-codex, add delivery behavior, create payment instructions or vendor-payment recommendations, turn alerts into reports, add approval kinds, or add a second alert system
+- F6E planning should start next only through a new Finance Plan; no F6E implementation has started
 
 F4C1 now ships one mission-based, source-scoped, deterministic policy lookup path.
 `policy_lookup` requires explicit `policySourceId`, answers only from `policies/<sourceId>`, same-source source-digest pages when useful, `concepts/policy-corpus` when useful, and explicit bound-source extract status.
@@ -540,7 +541,7 @@ The shipped F5C2 follow-on now specializes only one draft `lender_update` from t
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the latest shipped later-F5 board-circulation record, while `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` and `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remain the shipped F5C4H and F5C4G predecessors.
-`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is now the shipped first-F6A record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is now the shipped first-F6B record. `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the shipped F6C implementation record. `plans/FP-0053-payables-pressure-monitor-foundation.md` is now the active implementation-ready F6D contract. Do not reopen other packet work, actual delivery, runtime-codex drafting, export widening, multi-monitor work, automatic mission creation, investigations, approvals, payment behavior, report conversion, or F6E and later monitor work from this doc alone; later F6 slices need new named Finance Plans.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is now the shipped first-F6A record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is now the shipped first-F6B record. `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the shipped F6C implementation record. `plans/FP-0053-payables-pressure-monitor-foundation.md` is now the shipped F6D implementation record. Do not reopen other packet work, actual delivery, runtime-codex drafting, export widening, multi-monitor work, automatic mission creation, investigations, approvals, payment behavior, payment instructions, vendor-payment recommendations, report conversion, or F6E and later monitor work from this doc alone; later F6 slices need new named Finance Plans.
 
 ## Lint flow
 

@@ -10,6 +10,7 @@ import {
 export const MonitorKindSchema = z.enum([
   "cash_posture",
   "collections_pressure",
+  "payables_pressure",
 ]);
 
 export const MonitorResultStatusSchema = z.enum(["no_alert", "alert"]);
@@ -39,9 +40,7 @@ export const MonitorProofBundlePostureStateSchema = z.enum([
   "limited_by_data_quality_gap",
 ]);
 
-export const MonitorReplayPostureStateSchema = z.enum([
-  "not_appended",
-]);
+export const MonitorReplayPostureStateSchema = z.enum(["not_appended"]);
 
 export const MonitorRuntimeBoundarySchema = z
   .object({
@@ -267,7 +266,9 @@ export type MonitorAlertConditionKind = z.infer<
 export type MonitorProofBundlePostureState = z.infer<
   typeof MonitorProofBundlePostureStateSchema
 >;
-export type MonitorRuntimeBoundary = z.infer<typeof MonitorRuntimeBoundarySchema>;
+export type MonitorRuntimeBoundary = z.infer<
+  typeof MonitorRuntimeBoundarySchema
+>;
 export type MonitorSourceFreshnessPosture = z.infer<
   typeof MonitorSourceFreshnessPostureSchema
 >;

@@ -321,6 +321,21 @@ export async function getLatestCollectionsPressureMonitorResult(
   );
 }
 
+export async function getLatestPayablesPressureMonitorResult(
+  companyKey: string,
+): Promise<MonitorLatestResult | null> {
+  const normalizedCompanyKey = companyKey.trim();
+
+  if (!normalizedCompanyKey) {
+    return null;
+  }
+
+  return fetchJson(
+    `/monitoring/companies/${encodeURIComponent(normalizedCompanyKey)}/payables-pressure/latest`,
+    monitorLatestSchema,
+  );
+}
+
 export async function runCashPostureMonitor(input: {
   companyKey: string;
   runKey?: string | null;
@@ -343,6 +358,21 @@ export async function runCollectionsPressureMonitor(input: {
 }): Promise<ControlPlaneMutationResult<MonitorRunResult>> {
   return postJson(
     `/monitoring/companies/${encodeURIComponent(input.companyKey)}/collections-pressure/run`,
+    {
+      runKey: input.runKey ?? undefined,
+      triggeredBy: input.triggeredBy,
+    },
+    monitorRunSchema,
+  );
+}
+
+export async function runPayablesPressureMonitor(input: {
+  companyKey: string;
+  runKey?: string | null;
+  triggeredBy: string;
+}): Promise<ControlPlaneMutationResult<MonitorRunResult>> {
+  return postJson(
+    `/monitoring/companies/${encodeURIComponent(input.companyKey)}/payables-pressure/run`,
     {
       runKey: input.runKey ?? undefined,
       triggeredBy: input.triggeredBy,

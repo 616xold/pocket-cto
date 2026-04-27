@@ -162,13 +162,13 @@ One company `companyKey` with stored source-backed receivables-aging or collecti
 Success:
 The system records one deterministic `collections_pressure` monitor result and exposes one operator-visible alert card only when source-backed missing-source, failed-source, stale-source, coverage-gap, overdue-concentration, or data-quality conditions warrant it. The alert card includes source lineage, source freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step, and it does so without creating investigations, invoking runtime-codex, sending notifications, turning alerts into reports, adding approvals, or creating autonomous finance actions.
 
-### 19. Active F6D payables-pressure monitor contract
+### 19. Shipped F6D payables-pressure monitor result and alert-card foundation
 
 Input:
 One company `companyKey` with stored source-backed payables-aging or payables-posture Finance Twin state, including explicit source freshness or missing-source posture.
 
 Success:
-The planned implementation should record one deterministic `payables_pressure` monitor result and expose one operator-visible alert card only when source-backed missing-source, failed-source, stale-source, coverage-gap, overdue-concentration, or data-quality conditions warrant it. The alert card must include source lineage, source freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step, and it must do so without creating investigations, invoking runtime-codex, sending notifications, creating payment instructions, recommending vendor payments, turning alerts into reports, adding approvals, or creating autonomous finance actions.
+The system records one deterministic `payables_pressure` monitor result and exposes one operator-visible alert card only when source-backed missing-source, failed-source, stale-source, coverage-gap, overdue-concentration, or data-quality conditions warrant it. The alert card includes source lineage, source freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step, and it does so without creating investigations, invoking runtime-codex, sending notifications, creating payment instructions, recommending vendor payments, turning alerts into reports, adding approvals, or creating autonomous finance actions.
 
 ## Blocked for now
 
@@ -214,4 +214,4 @@ The shipped F5C4F reporting benchmark contract now lives in `plans/FP-0046-circu
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is the shipped F6A benchmark record. `pnpm smoke:cash-posture-monitor:local` is the current deterministic proof for this first monitor before any broader F6 benchmark dataset is added.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` is the shipped F6B benchmark record.
 `plans/FP-0052-collections-pressure-monitor-foundation.md` is the shipped F6C benchmark record for exactly one `collections_pressure` monitor, with `pnpm smoke:collections-pressure-monitor:local` as the deterministic proof.
-`plans/FP-0053-payables-pressure-monitor-foundation.md` is the active F6D implementation-ready contract for exactly one `payables_pressure` monitor. Do not add a broader F6 benchmark dataset or start F6E and later implementation before a new named Finance Plan defines that next monitor scope.
+`plans/FP-0053-payables-pressure-monitor-foundation.md` is the shipped F6D benchmark record for exactly one `payables_pressure` monitor, with `pnpm smoke:payables-pressure-monitor:local` as the deterministic proof. Do not add a broader F6 benchmark dataset or start F6E and later implementation before a new named Finance Plan defines that next monitor scope.

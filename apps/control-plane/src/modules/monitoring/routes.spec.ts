@@ -21,7 +21,9 @@ describe("monitoring routes", () => {
       runCashPostureMonitor,
       getLatestCashPostureMonitorResult: vi.fn(),
       getLatestCollectionsPressureMonitorResult: vi.fn(),
+      getLatestPayablesPressureMonitorResult: vi.fn(),
       runCollectionsPressureMonitor: vi.fn(),
+      runPayablesPressureMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -64,7 +66,9 @@ describe("monitoring routes", () => {
       runCashPostureMonitor: vi.fn(),
       getLatestCashPostureMonitorResult,
       getLatestCollectionsPressureMonitorResult: vi.fn(),
+      getLatestPayablesPressureMonitorResult: vi.fn(),
       runCollectionsPressureMonitor: vi.fn(),
+      runPayablesPressureMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -96,7 +100,9 @@ describe("monitoring routes", () => {
       runCashPostureMonitor: vi.fn(),
       getLatestCashPostureMonitorResult: vi.fn(),
       getLatestCollectionsPressureMonitorResult: vi.fn(),
+      getLatestPayablesPressureMonitorResult: vi.fn(),
       runCollectionsPressureMonitor,
+      runPayablesPressureMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -130,17 +136,21 @@ describe("monitoring routes", () => {
 
   it("reads the latest persisted collections-pressure monitor result for operator UI", async () => {
     const monitorResult = buildMonitorResult("collections_pressure");
-    const getLatestCollectionsPressureMonitorResult = vi.fn().mockResolvedValue({
-      companyKey: "acme",
-      monitorKind: "collections_pressure",
-      monitorResult,
-      alertCard: monitorResult.alertCard,
-    });
+    const getLatestCollectionsPressureMonitorResult = vi
+      .fn()
+      .mockResolvedValue({
+        companyKey: "acme",
+        monitorKind: "collections_pressure",
+        monitorResult,
+        alertCard: monitorResult.alertCard,
+      });
     const app = await buildTestApp(apps, {
       runCashPostureMonitor: vi.fn(),
       getLatestCashPostureMonitorResult: vi.fn(),
       getLatestCollectionsPressureMonitorResult,
+      getLatestPayablesPressureMonitorResult: vi.fn(),
       runCollectionsPressureMonitor: vi.fn(),
+      runPayablesPressureMonitor: vi.fn(),
     });
 
     const response = await app.inject({
@@ -163,6 +173,86 @@ describe("monitoring routes", () => {
       },
     });
   });
+
+  it("parses payables-pressure monitor run input and returns the service read model", async () => {
+    const monitorResult = buildMonitorResult("payables_pressure");
+    const runPayablesPressureMonitor = vi.fn().mockResolvedValue({
+      monitorResult,
+      alertCard: monitorResult.alertCard,
+    });
+    const app = await buildTestApp(apps, {
+      runCashPostureMonitor: vi.fn(),
+      getLatestCashPostureMonitorResult: vi.fn(),
+      getLatestCollectionsPressureMonitorResult: vi.fn(),
+      getLatestPayablesPressureMonitorResult: vi.fn(),
+      runCollectionsPressureMonitor: vi.fn(),
+      runPayablesPressureMonitor,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/monitoring/companies/acme/payables-pressure/run",
+      payload: {
+        idempotencyKey: "operator-run-3",
+        runBy: "finance-operator",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(runPayablesPressureMonitor).toHaveBeenCalledWith({
+      companyKey: "acme",
+      runKey: "operator-run-3",
+      triggeredBy: "finance-operator",
+    });
+    expect(response.json()).toMatchObject({
+      monitorResult: {
+        monitorKind: "payables_pressure",
+        status: "alert",
+        severity: "critical",
+      },
+      alertCard: {
+        companyKey: "acme",
+        monitorKind: "payables_pressure",
+        status: "alert",
+      },
+    });
+  });
+
+  it("reads the latest persisted payables-pressure monitor result for operator UI", async () => {
+    const monitorResult = buildMonitorResult("payables_pressure");
+    const getLatestPayablesPressureMonitorResult = vi.fn().mockResolvedValue({
+      companyKey: "acme",
+      monitorKind: "payables_pressure",
+      monitorResult,
+      alertCard: monitorResult.alertCard,
+    });
+    const app = await buildTestApp(apps, {
+      runCashPostureMonitor: vi.fn(),
+      getLatestCashPostureMonitorResult: vi.fn(),
+      getLatestCollectionsPressureMonitorResult: vi.fn(),
+      getLatestPayablesPressureMonitorResult,
+      runCollectionsPressureMonitor: vi.fn(),
+      runPayablesPressureMonitor: vi.fn(),
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/monitoring/companies/acme/payables-pressure/latest",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(getLatestPayablesPressureMonitorResult).toHaveBeenCalledWith("acme");
+    expect(response.json()).toMatchObject({
+      companyKey: "acme",
+      monitorKind: "payables_pressure",
+      monitorResult: {
+        status: "alert",
+      },
+      alertCard: {
+        severity: "critical",
+      },
+    });
+  });
 });
 
 async function buildTestApp(
@@ -170,8 +260,10 @@ async function buildTestApp(
   service: {
     getLatestCashPostureMonitorResult: ReturnType<typeof vi.fn>;
     getLatestCollectionsPressureMonitorResult: ReturnType<typeof vi.fn>;
+    getLatestPayablesPressureMonitorResult: ReturnType<typeof vi.fn>;
     runCashPostureMonitor: ReturnType<typeof vi.fn>;
     runCollectionsPressureMonitor: ReturnType<typeof vi.fn>;
+    runPayablesPressureMonitor: ReturnType<typeof vi.fn>;
   },
 ) {
   const app = Fastify({ logger: false });
@@ -188,6 +280,17 @@ function buildMonitorResult(
 ): MonitorResult {
   const createdAt = "2026-04-26T12:00:00.000Z";
   const isCollections = monitorKind === "collections_pressure";
+  const isPayables = monitorKind === "payables_pressure";
+  const sourceNoun = isPayables
+    ? "payables-aging"
+    : isCollections
+      ? "receivables-aging"
+      : "bank-account-summary";
+  const monitorLabel = isPayables
+    ? "payables-pressure"
+    : isCollections
+      ? "collections-pressure"
+      : "cash-posture";
   const sourceFreshnessPosture = {
     state: "missing" as const,
     latestAttemptedSyncRunId: null,
@@ -195,15 +298,11 @@ function buildMonitorResult(
     latestSuccessfulSource: null,
     missingSource: true,
     failedSource: false,
-    summary: isCollections
-      ? "No successful receivables-aging source is stored."
-      : "No successful bank-account-summary source is stored.",
+    summary: `No successful ${sourceNoun} source is stored.`,
   };
   const proofBundlePosture = {
     state: "limited_by_missing_source" as const,
-    summary: isCollections
-      ? "The monitor proof is limited because no receivables-aging source backs the collections posture."
-      : "The monitor proof is limited because no bank-account-summary source backs the cash posture.",
+    summary: `The monitor proof is limited because no ${sourceNoun} source backs the ${isPayables ? "payables" : isCollections ? "collections" : "cash"} posture.`,
   };
 
   return {
@@ -219,20 +318,19 @@ function buildMonitorResult(
       {
         kind: "missing_source",
         severity: "critical",
-        summary: isCollections
-          ? "No successful receivables-aging slice exists yet."
-          : "No successful bank-account-summary slice exists yet.",
+        summary: `No successful ${sourceNoun} slice exists yet.`,
         evidencePath: "freshness.state",
       },
     ],
     sourceFreshnessPosture,
     sourceLineageRefs: [],
-    deterministicSeverityRationale:
-      `Critical because stored ${isCollections ? "collections-pressure" : "cash-posture"} conditions include missing_source.`,
+    deterministicSeverityRationale: `Critical because stored ${monitorLabel} conditions include missing_source.`,
     limitations: [
       isCollections
         ? "F6C collections-pressure monitoring evaluates stored source posture only."
-        : "F6A cash-posture monitoring evaluates stored source posture only.",
+        : isPayables
+          ? "F6D payables-pressure monitoring evaluates stored source posture only."
+          : "F6A cash-posture monitoring evaluates stored source posture only.",
     ],
     proofBundlePosture,
     replayPosture: {
@@ -248,36 +346,34 @@ function buildMonitorResult(
       summary:
         "The result was produced by deterministic stored-state evaluation only.",
     },
-    humanReviewNextStep:
-      isCollections
-        ? "Review receivables-aging source coverage and collections posture before any external collections action."
+    humanReviewNextStep: isCollections
+      ? "Review receivables-aging source coverage and collections posture before any external collections action."
+      : isPayables
+        ? "Review payables-aging source coverage and payables posture before any external vendor or payment action."
         : "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
     alertCard: {
       companyKey: "acme",
       monitorKind,
       status: "alert",
       severity: "critical",
-      deterministicSeverityRationale:
-        `Critical because stored ${isCollections ? "collections-pressure" : "cash-posture"} conditions include missing_source.`,
-      conditionSummaries: [
-        isCollections
-          ? "No successful receivables-aging slice exists yet."
-          : "No successful bank-account-summary slice exists yet.",
-      ],
+      deterministicSeverityRationale: `Critical because stored ${monitorLabel} conditions include missing_source.`,
+      conditionSummaries: [`No successful ${sourceNoun} slice exists yet.`],
       sourceFreshnessPosture,
       sourceLineageRefs: [],
-      sourceLineageSummary: isCollections
-        ? "No receivables-aging source lineage is available."
-        : "No bank-account-summary source lineage is available.",
+      sourceLineageSummary: `No ${sourceNoun} source lineage is available.`,
       limitations: [
         isCollections
           ? "F6C collections-pressure monitoring evaluates stored source posture only."
-          : "F6A cash-posture monitoring evaluates stored source posture only.",
+          : isPayables
+            ? "F6D payables-pressure monitoring evaluates stored source posture only."
+            : "F6A cash-posture monitoring evaluates stored source posture only.",
       ],
       proofBundlePosture,
       humanReviewNextStep: isCollections
         ? "Review receivables-aging source coverage and collections posture before any external collections action."
-        : "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+        : isPayables
+          ? "Review payables-aging source coverage and payables posture before any external vendor or payment action."
+          : "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
       createdAt,
     },
     createdAt,

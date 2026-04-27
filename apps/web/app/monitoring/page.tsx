@@ -6,6 +6,7 @@ import { MonitoringAlertCard } from "../../components/monitoring-alert-card";
 import {
   getLatestCashPostureMonitorResult,
   getLatestCollectionsPressureMonitorResult,
+  getLatestPayablesPressureMonitorResult,
 } from "../../lib/api";
 import { getWebOperatorIdentity } from "../../lib/operator-identity";
 
@@ -17,9 +18,10 @@ export default async function MonitoringPage(props: MonitoringPageProps) {
   const searchParams = props.searchParams ? await props.searchParams : {};
   const companyKey = normalizeCompanyKey(searchParams.companyKey);
   const operatorIdentity = getWebOperatorIdentity();
-  const [cashLatest, collectionsLatest] = await Promise.all([
+  const [cashLatest, collectionsLatest, payablesLatest] = await Promise.all([
     getLatestCashPostureMonitorResult(companyKey),
     getLatestCollectionsPressureMonitorResult(companyKey),
+    getLatestPayablesPressureMonitorResult(companyKey),
   ]);
 
   return (
@@ -52,6 +54,15 @@ export default async function MonitoringPage(props: MonitoringPageProps) {
         monitorKind="collections_pressure"
         monitorLabel="Collections pressure monitor"
         notRunCopy="No persisted F6C collections_pressure monitor result is recorded for this company yet."
+        operatorIdentity={operatorIdentity}
+      />
+
+      <MonitorPostureSection
+        companyKey={companyKey}
+        latest={payablesLatest}
+        monitorKind="payables_pressure"
+        monitorLabel="Payables pressure monitor"
+        notRunCopy="No persisted F6D payables_pressure monitor result is recorded for this company yet."
         operatorIdentity={operatorIdentity}
       />
     </main>

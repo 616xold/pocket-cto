@@ -27,8 +27,10 @@ It must not create investigations, run F6B handoffs, use runtime-Codex, send not
 - [x] 2026-04-27T12:58:20Z Create FP-0053 as the single active F6D implementation-ready contract while preserving FP-0050, FP-0051, and FP-0052 as shipped records.
 - [x] 2026-04-27T12:58:20Z Refresh active docs so the next implementation thread can start the narrow `payables_pressure` monitor from FP-0053 rather than re-planning F6D or widening into multi-monitor work.
 - [x] 2026-04-27T13:07:38Z Run the docs-and-plan validation ladder through `pnpm ci:repro:current` and record the green result.
-- [ ] Implement `F6D-payables-pressure-monitor-foundation` in a later thread without adding investigations, delivery, runtime-Codex, approvals, reports, or broad monitoring-platform behavior.
-- [ ] Run and record the full F6D implementation validation ladder after code changes exist.
+- [x] 2026-04-27T13:50:22Z Implement `F6D-payables-pressure-monitor-foundation` without adding investigations, delivery, runtime-Codex, approvals, reports, payment behavior, or broad monitoring-platform behavior.
+- [x] 2026-04-27T13:50:22Z Add narrow payables-pressure evaluator, service, route, operator UI/API, migration, smoke, and regression tests while preserving F6A/F6B/F6C behavior.
+- [x] 2026-04-27T13:50:22Z Run narrow domain, control-plane monitoring, and web monitoring/API specs after implementation; all passed.
+- [x] 2026-04-27T13:58:30Z Run and record the full F6D implementation validation ladder after code changes exist; narrow specs, migration, baseline smokes, new payables smoke, twin guardrails, lint, typecheck, test, and `pnpm ci:repro:current` all passed.
 
 ## Surprises & Discoveries
 
@@ -48,6 +50,10 @@ No repo fact made policy/covenant monitoring strictly safer for F6D.
 The shipped F6B handoff is intentionally cash-alert-specific.
 F6D must not modify `POST /missions/monitoring-investigations` or create payables investigations.
 A non-cash alert-to-investigation path can be deferred unless a later named plan proves a concrete operator need and a narrow safe shape.
+
+The implementation thread confirmed that the existing monitoring repository and alert-card shape can carry `payables_pressure` without table-shape changes.
+The only persistence change needed is the additive `monitor_kind` enum value plus one generated migration.
+The payables evaluator had to be stricter than simple ratio math: when stored diagnostics report partial rollups, total/detail conflicts, mixed past-due bases, missing total basis, or mixed date posture, F6D reports coverage or data-quality posture instead of computing overdue concentration.
 
 ## Decision Log
 
@@ -86,6 +92,12 @@ Rationale: no reporting approval, release, circulation, correction, report conve
 Decision: likely later F6 slices are named but not created here.
 Rationale: likely later slices are `F6E-policy-covenant-threshold-monitor-foundation`, `F6F-monitor-demo-replay-and-stack-pack-foundation`, and `F6G-non-cash-alert-to-investigation-generalization` only if a concrete operator need is proven.
 Do not create those plans during F6D.
+
+Decision: F6D uses one additive `monitor_kind` enum migration and keeps `monitor_results` table shape unchanged.
+Rationale: the existing result JSON, source freshness, lineage, proof posture, alert card, and idempotent company/kind/run-key persistence already carry the payables monitor evidence without a new persistence model.
+
+Decision: payables overdue concentration is blocked by unsafe diagnostics.
+Rationale: FP-0053 requires source-backed computable totals only; partial rollups, total/detail conflicts, mixed bases, missing total basis, and mixed date posture are better reported as `coverage_gap` or `data_quality_gap` than turned into a ratio.
 
 ## Context and Orientation
 
@@ -265,6 +277,7 @@ This docs-and-plan thread must run the requested preserved validation ladder:
 - `pnpm smoke:cash-posture-monitor:local`
 - `pnpm smoke:cash-posture-alert-investigation:local`
 - `pnpm smoke:collections-pressure-monitor:local`
+- `pnpm smoke:payables-pressure-monitor:local`
 - `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts`
 - `pnpm lint`
 - `pnpm typecheck`
@@ -300,21 +313,17 @@ If payables source state is missing, stale, failed, partial, inconsistent, or in
 
 ## Artifacts and Notes
 
-This FP-0053 docs-and-plan slice produces:
-
-- `plans/FP-0053-payables-pressure-monitor-foundation.md`
-- active-doc updates that identify FP-0053 as the active implementation-ready F6D contract
-- no code, schema, route, migration, package-script, smoke, eval, runtime, delivery, investigation, approval, report, or stack-pack changes
-
-Expected later F6D implementation artifacts:
+This FP-0053 F6D implementation slice produces:
 
 - widened monitoring domain contract
 - additive monitor-kind persistence support
 - one deterministic payables monitor evaluator
-- one run/latest payables monitor route pair if needed
+- one run/latest payables monitor route pair
 - one operator-visible payables alert-card read model
 - one narrow payables monitor smoke
-- active docs refreshed only for behavior that actually ships
+- active docs refreshed for the shipped F6D behavior
+
+The implementation does not produce runtime-Codex, delivery, investigation, approval, report, payment-instruction, vendor-payment recommendation, bank/accounting/tax/legal write, or stack-pack changes.
 
 Do not create FP-0054 in this slice.
 
@@ -361,10 +370,11 @@ GitHub connector work is out of scope.
 
 ## Outcomes & Retrospective
 
-This docs-and-plan slice creates FP-0053 as the active implementation-ready F6D contract.
-The repo has not implemented `payables_pressure` monitoring yet.
-The next thread should start F6D implementation from this plan and stay limited to one deterministic payables monitor result plus optional alert card over stored payables-aging or payables-posture state.
+This implementation slice ships FP-0053 as the F6D payables-pressure monitor foundation.
+The repo now supports one deterministic `payables_pressure` monitor result plus optional alert card over stored payables-aging or payables-posture state.
 
 FP-0050, FP-0051, and FP-0052 remain shipped records.
-F6D must preserve F6A cash monitoring, F6B cash-alert investigation behavior, and F6C collections monitoring while adding only the narrow payables monitor foundation.
+F6D preserves F6A cash monitoring, F6B cash-alert investigation behavior, and F6C collections monitoring while adding only the narrow payables monitor foundation.
+Validation passed locally with the required F6D ladder, including the new `pnpm smoke:payables-pressure-monitor:local` proof and `pnpm ci:repro:current`.
 F6E, F6F, and F6G remain named later slices only; do not create those plans from this slice.
+F6E planning should start next only through a new Finance Plan, and no F6E implementation has started here.

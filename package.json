@@ -55,6 +55,7 @@
     "smoke:cash-posture-monitor:local": "tsx tools/cash-posture-monitor-smoke.mjs",
     "smoke:cash-posture-alert-investigation:local": "tsx tools/cash-posture-alert-investigation-smoke.mjs",
     "smoke:collections-pressure-monitor:local": "tsx tools/collections-pressure-monitor-smoke.mjs",
+    "smoke:payables-pressure-monitor:local": "tsx tools/payables-pressure-monitor-smoke.mjs",
     "smoke:finance-twin-card-expense:local": "tsx tools/finance-twin-card-expense-smoke.mjs",
     "smoke:finance-twin-contract-metadata:local": "tsx tools/finance-twin-contract-metadata-smoke.mjs",
     "smoke:finance-twin-payables-aging:local": "tsx tools/finance-twin-payables-aging-smoke.mjs",
