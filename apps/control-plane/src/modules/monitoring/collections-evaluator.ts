@@ -263,7 +263,7 @@ function canComputePastDueShare(
     return false;
   }
 
-  return hasComputableTotalBasis(bucket);
+  return hasComputablePastDueBasis(bucket) && hasComputableTotalBasis(bucket);
 }
 
 const UNSAFE_PAST_DUE_SHARE_DIAGNOSTIC_PATTERNS = [
@@ -284,6 +284,30 @@ function hasUnsafePastDueShareDiagnostics(diagnostics: string[]) {
       lower.includes(pattern),
     );
   });
+}
+
+function hasComputablePastDueBasis(
+  bucket: FinanceCollectionsPostureCurrencyBucket,
+) {
+  const pastDueBucketTotal = parseAmountCents(bucket.pastDueBucketTotal);
+
+  if (pastDueBucketTotal <= 0n) {
+    return false;
+  }
+
+  const explicitPastDueTotal = bucket.exactBucketTotals
+    .filter((entry) => entry.bucketClass === "past_due_total")
+    .reduce((sum, entry) => sum + parseAmountCents(entry.totalAmount), 0n);
+
+  if (explicitPastDueTotal === pastDueBucketTotal) {
+    return true;
+  }
+
+  const detailedPastDueTotal = bucket.exactBucketTotals
+    .filter((entry) => entry.bucketClass === "past_due_detail")
+    .reduce((sum, entry) => sum + parseAmountCents(entry.totalAmount), 0n);
+
+  return detailedPastDueTotal === pastDueBucketTotal;
 }
 
 function hasComputableTotalBasis(bucket: FinanceCollectionsPostureCurrencyBucket) {

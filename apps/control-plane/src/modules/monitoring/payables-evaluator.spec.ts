@@ -135,6 +135,28 @@ describe("payables pressure evaluator", () => {
         currencyBuckets: [
           buildBucket({
             current: "20.00",
+            exactBucketTotals: [
+              {
+                bucketKey: "current",
+                bucketClass: "current",
+                totalAmount: "20.00",
+              },
+              {
+                bucketKey: "31_60",
+                bucketClass: "past_due_detail",
+                totalAmount: "40.00",
+              },
+              {
+                bucketKey: "past_due",
+                bucketClass: "past_due_total",
+                totalAmount: "80.00",
+              },
+              {
+                bucketKey: "total",
+                bucketClass: "total",
+                totalAmount: "100.00",
+              },
+            ],
             pastDue: "80.00",
             total: "100.00",
           }),
@@ -161,6 +183,112 @@ describe("payables pressure evaluator", () => {
     expect(evaluated.proofBundlePosture.state).toBe(
       "limited_by_data_quality_gap",
     );
+  });
+
+  it("allows overdue concentration when explicit and detailed past-due buckets agree", () => {
+    const evaluated = evaluatePayablesPressureMonitor(
+      buildPayablesPosture({
+        currencyBuckets: [
+          buildBucket({
+            current: "20.00",
+            exactBucketTotals: [
+              {
+                bucketKey: "current",
+                bucketClass: "current",
+                totalAmount: "20.00",
+              },
+              {
+                bucketKey: "31_60",
+                bucketClass: "past_due_detail",
+                totalAmount: "30.00",
+              },
+              {
+                bucketKey: "61_90",
+                bucketClass: "past_due_detail",
+                totalAmount: "50.00",
+              },
+              {
+                bucketKey: "past_due",
+                bucketClass: "past_due_total",
+                totalAmount: "80.00",
+              },
+              {
+                bucketKey: "total",
+                bucketClass: "total",
+                totalAmount: "100.00",
+              },
+            ],
+            pastDue: "80.00",
+            total: "100.00",
+          }),
+        ],
+        freshnessState: "fresh",
+      }),
+    );
+
+    expect(evaluated.status).toBe("alert");
+    expect(evaluated.severity).toBe("critical");
+    expect(evaluated.conditions).toEqual([
+      expect.objectContaining({
+        kind: "overdue_concentration",
+        severity: "critical",
+        summary:
+          "USD payables are 80.00% past due based on source-backed totals.",
+      }),
+    ]);
+  });
+
+  it("blocks overdue concentration when total denominator basis is missing", () => {
+    const missingTotalDiagnostic =
+      "One or more persisted payables-aging rows do not expose a full total payables basis, so the convenience totalPayables field remains partial to rows with explicit totals or explicit current-plus-past-due coverage.";
+    const evaluated = evaluatePayablesPressureMonitor(
+      buildPayablesPosture({
+        coverageSummary: {
+          vendorCount: 1,
+          rowCount: 1,
+          currencyBucketCount: 1,
+          datedRowCount: 1,
+          undatedRowCount: 0,
+          rowsWithExplicitTotalCount: 0,
+          rowsWithCurrentBucketCount: 1,
+          rowsWithComputablePastDueCount: 1,
+          rowsWithPartialPastDueOnlyCount: 0,
+        },
+        currencyBuckets: [
+          buildBucket({
+            current: "20.00",
+            exactBucketTotals: [
+              {
+                bucketKey: "current",
+                bucketClass: "current",
+                totalAmount: "20.00",
+              },
+              {
+                bucketKey: "past_due",
+                bucketClass: "past_due_total",
+                totalAmount: "80.00",
+              },
+            ],
+            pastDue: "80.00",
+            total: "0.00",
+          }),
+        ],
+        diagnostics: [missingTotalDiagnostic],
+        freshnessState: "fresh",
+      }),
+    );
+
+    expect(evaluated.status).toBe("alert");
+    expect(evaluated.conditions.map((condition) => condition.kind)).toEqual([
+      "coverage_gap",
+      "coverage_gap",
+      "data_quality_gap",
+    ]);
+    expect(
+      evaluated.conditions.some(
+        (condition) => condition.kind === "overdue_concentration",
+      ),
+    ).toBe(false);
   });
 
   it("computes overdue concentration only from source-backed totals", () => {

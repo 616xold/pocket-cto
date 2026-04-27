@@ -32,6 +32,7 @@ It must not create investigations, run F6B handoffs, use runtime-Codex, send not
 - [x] 2026-04-27T13:50:22Z Run narrow domain, control-plane monitoring, and web monitoring/API specs after implementation; all passed.
 - [x] 2026-04-27T13:58:30Z Run and record the full F6D implementation validation ladder after code changes exist; narrow specs, migration, baseline smokes, new payables smoke, twin guardrails, lint, typecheck, test, and `pnpm ci:repro:current` all passed.
 - [x] 2026-04-27T14:18:34Z Post-merge docs-only closeout marks FP-0053 as the shipped F6D record and keeps F6E as planning/docs only with no FP-0054 in this slice.
+- [x] 2026-04-27T14:29:38Z Apply a narrow shipped-F6D truthfulness polish so `payables_pressure` treats agreeing explicit `past_due` totals and detailed overdue buckets as one computable source-backed basis while preserving blocks for unsafe diagnostics, partial basis, missing total denominator, and delivery-free/no-payment boundaries.
 
 ## Surprises & Discoveries
 
@@ -99,6 +100,9 @@ Rationale: the existing result JSON, source freshness, lineage, proof posture, a
 
 Decision: payables overdue concentration is blocked by unsafe diagnostics.
 Rationale: FP-0053 requires source-backed computable totals only; partial rollups, total/detail conflicts, mixed bases, missing total basis, and mixed date posture are better reported as `coverage_gap` or `data_quality_gap` than turned into a ratio.
+
+Decision: shipped-F6D overdue-basis polish treats explicit `past_due` totals and detailed overdue bucket totals as alternative source-backed bases rather than additive values.
+Rationale: exact bucket totals preserve source-labeled fields, so agreeing explicit and detailed overdue values must not be double-counted into a false non-computable basis; unsafe diagnostics, partial basis, missing total denominator, and F6D payment/delivery/action boundaries remain unchanged.
 
 ## Context and Orientation
 

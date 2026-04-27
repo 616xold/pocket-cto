@@ -288,18 +288,25 @@ function hasUnsafePastDueShareDiagnostics(diagnostics: string[]) {
 function hasComputablePastDueBasis(
   bucket: FinancePayablesPostureCurrencyBucket,
 ) {
-  const sourceBackedPastDueTotal = bucket.exactBucketTotals
-    .filter(
-      (entry) =>
-        entry.bucketClass === "past_due_total" ||
-        entry.bucketClass === "past_due_detail",
-    )
+  const pastDueBucketTotal = parseAmountCents(bucket.pastDueBucketTotal);
+
+  if (pastDueBucketTotal <= 0n) {
+    return false;
+  }
+
+  const explicitPastDueTotal = bucket.exactBucketTotals
+    .filter((entry) => entry.bucketClass === "past_due_total")
     .reduce((sum, entry) => sum + parseAmountCents(entry.totalAmount), 0n);
 
-  return (
-    sourceBackedPastDueTotal > 0n &&
-    sourceBackedPastDueTotal === parseAmountCents(bucket.pastDueBucketTotal)
-  );
+  if (explicitPastDueTotal === pastDueBucketTotal) {
+    return true;
+  }
+
+  const detailedPastDueTotal = bucket.exactBucketTotals
+    .filter((entry) => entry.bucketClass === "past_due_detail")
+    .reduce((sum, entry) => sum + parseAmountCents(entry.totalAmount), 0n);
+
+  return detailedPastDueTotal === pastDueBucketTotal;
 }
 
 function hasComputableTotalBasis(bucket: FinancePayablesPostureCurrencyBucket) {

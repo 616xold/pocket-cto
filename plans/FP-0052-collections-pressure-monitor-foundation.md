@@ -32,6 +32,7 @@ It must not create investigations, run F6B handoffs, use runtime-Codex, send not
 - [x] 2026-04-27T12:11:28Z Run and record the full F6C implementation validation ladder after code changes exist, including narrow collections monitor specs, migration, baseline smokes, new collections smoke, twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 - [x] 2026-04-27T12:40:48Z Run a docs-only post-merge closeout that marks FP-0052 and F6C as shipped across secondary docs and leaves F6D as planning-only with no FP-0053.
 - [x] 2026-04-27T13:27:49Z Apply a narrow post-merge F6C truthfulness polish so `collections_pressure` skips `overdue_concentration` when stored collections-posture diagnostics show a conflicting or unsafe ratio basis.
+- [x] 2026-04-27T14:29:38Z Apply a narrow post-F6D handoff truthfulness polish so `collections_pressure` treats agreeing explicit `past_due` totals and detailed overdue buckets as one computable source-backed basis while preserving blocks for unsafe diagnostics, partial basis, and missing total denominator.
 
 ## Surprises & Discoveries
 
@@ -86,6 +87,9 @@ Rationale: likely later slices are `F6D-payables_pressure-monitor-foundation`, `
 
 Decision: post-merge F6C overdue-concentration gating treats known conflicting or unsafe collections-posture diagnostics as ratio blockers.
 Rationale: source-backed totals may still look numerically computable after diagnostics such as mixed explicit/detail past-due basis, mixed source dates, partial past-due rollups, or missing full total basis; F6C should surface data-quality or coverage posture rather than computing a stale or unsafe ratio.
+
+Decision: post-F6D handoff overdue-basis polish treats explicit `past_due` totals and detailed overdue bucket totals as alternative source-backed bases rather than additive values.
+Rationale: exact bucket totals preserve source-labeled fields, so agreeing explicit and detailed overdue values must not be double-counted into a false non-computable basis; unsafe diagnostics, partial basis, and missing total denominator still block `overdue_concentration`.
 
 ## Context and Orientation
 
