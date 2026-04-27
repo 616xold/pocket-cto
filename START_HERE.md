@@ -74,6 +74,7 @@ Suggested thread naming:
 - `F6A-monitoring-foundation-and-first-cash-posture-alert`
 - `F6B-alert-to-investigation-mission-foundation`
 - `F6C-collections-pressure-monitor-foundation`
+- `F6D-payables-pressure-monitor-foundation`
 
 Broad F2 Finance Twin work now runs through F2O.
 `F2P-final-f2-exit-audit-and-polish` and `F2Q-final-f2-handoff-and-plan-chain-polish` are the historical closeout and handoff threads for that completed breadth.
@@ -103,7 +104,8 @@ The first F3 thread is the master-plan and active-doc refresh slice.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the shipped F5C4I record and closes the previously remaining explicit `circulationNote` clear-to-absent gap on the existing seam.
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` now records the shipped first F6A implementation slice: one deterministic `cash_posture` monitor result plus one operator-visible alert-card posture from stored source-backed state only, with no F6B investigation mission, runtime-codex, delivery, or reporting/approval reopening.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` now records the shipped first F6B implementation slice: an operator can manually create or open one taskless deterministic investigation mission from one persisted alerting `cash_posture` monitor result.
-`plans/FP-0052-collections-pressure-monitor-foundation.md` now records the F6C implementation slice for exactly one `collections_pressure` monitor over stored receivables-aging or collections-posture Finance Twin state. F6C does not create investigations for collections alerts. Do not start F6D or later, create FP-0053, or widen beyond this shipped F6C surface into runtime-codex, delivery, investigations, approvals, report conversion, or multi-monitor work without a new Finance Plan.
+`plans/FP-0052-collections-pressure-monitor-foundation.md` now records the shipped F6C implementation slice for exactly one `collections_pressure` monitor over stored receivables-aging or collections-posture Finance Twin state. F6C does not create investigations for collections alerts.
+`plans/FP-0053-payables-pressure-monitor-foundation.md` is now the active implementation-ready F6D contract for exactly one `payables_pressure` monitor over stored payables-aging or payables-posture Finance Twin state. Start F6D implementation there, and do not start F6E or later, create FP-0054, widen into runtime-codex, delivery, investigations, approvals, report conversion, payment behavior, or multi-monitor work without a later named Finance Plan.
 
 ## Review ritual
 

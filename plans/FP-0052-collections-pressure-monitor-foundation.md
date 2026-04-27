@@ -368,9 +368,10 @@ GitHub connector work is out of scope.
 ## Outcomes & Retrospective
 
 This plan now records the F6C collections-pressure monitor implementation.
-FP-0050 and FP-0051 remain shipped records, F6C adds exactly one second monitor family, and F6D has not started.
-F6D planning should begin only in a new Finance Plan.
+FP-0050 and FP-0051 remain shipped records, F6C adds exactly one second monitor family, and at F6C closeout F6D had not started.
+F6D planning was required to begin only in a new Finance Plan.
+Later docs-and-plan work created `plans/FP-0053-payables-pressure-monitor-foundation.md` as the active F6D implementation-ready contract; FP-0052 remains the shipped F6C historical record and should not be reopened for payables implementation.
 
 The implementation preserves F6A cash monitoring and F6B cash-alert investigation behavior while adding `collections_pressure` run/latest routes, persistence, deterministic evaluator semantics, operator read model support, and a packaged local smoke.
 Collections alerts remain investigation-free in F6C and do not use runtime-Codex, delivery, reports, approvals, bank/accounting/tax/legal writes, notifications, or autonomous remediation.
-The full F6C validation ladder passed through `pnpm ci:repro:current`, so the next decision should be whether to start F6D planning in a new Finance Plan rather than continuing implementation under FP-0052.
+The full F6C validation ladder passed through `pnpm ci:repro:current`, and later F6D implementation should use FP-0053 rather than continuing implementation under FP-0052.

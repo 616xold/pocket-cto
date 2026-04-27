@@ -70,7 +70,8 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the shipped F5C4I record: the repo can append explicit clear-to-absent `circulationNote` correction on that same seam, preserve the immutable original circulation record, derive truthful effective-note chronology, and stay deterministic, runtime-free, delivery-free, and board-packet-only.
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` now records the shipped first F6A implementation slice: one deterministic, source-backed `cash_posture` monitor result plus one operator-visible alert-card posture, with source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` now records the shipped first F6B implementation slice: one manual operator handoff from one persisted alerting `cash_posture` monitor result into one deterministic source-backed investigation mission, while keeping F6B runtime-free, delivery-free, non-autonomous, report-free, approval-kind-free, and limited to the existing alert evidence.
-`plans/FP-0052-collections-pressure-monitor-foundation.md` now records the F6C implementation slice: one deterministic `collections_pressure` monitor result plus optional operator alert-card posture over stored receivables-aging or collections-posture Finance Twin state, while preserving shipped F6A/F6B behavior and avoiding runtime-codex, delivery, investigations for collections, approvals, report conversion, or multi-monitor widening. F6D has not started; F6D planning should begin only in a new Finance Plan.
+`plans/FP-0052-collections-pressure-monitor-foundation.md` now records the F6C implementation slice: one deterministic `collections_pressure` monitor result plus optional operator alert-card posture over stored receivables-aging or collections-posture Finance Twin state, while preserving shipped F6A/F6B behavior and avoiding runtime-codex, delivery, investigations for collections, approvals, report conversion, or multi-monitor widening.
+`plans/FP-0053-payables-pressure-monitor-foundation.md` is now the active implementation-ready F6D contract. F6D implementation should start only from that plan and stay narrowed to one deterministic `payables_pressure` monitor result plus optional alert card over stored payables-aging or payables-posture Finance Twin state.
 
 ## Product boundary for v1
 
@@ -188,6 +189,7 @@ Pocket CFO v1 is intentionally narrow:
 │   ├── FP-0050-monitoring-foundation-and-first-cash-posture-alert.md
 │   ├── FP-0051-alert-to-investigation-mission-foundation.md
 │   ├── FP-0052-collections-pressure-monitor-foundation.md
+│   ├── FP-0053-payables-pressure-monitor-foundation.md
 │   └── templates
 ├── plugins
 │   └── pocket-cfo-codex-operator

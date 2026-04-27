@@ -154,6 +154,22 @@ One persisted F6A `cash_posture` monitor result with `status = "alert"` and one 
 Success:
 One explicit operator action creates or opens one deterministic source-backed investigation mission that carries `monitorResultId`, `companyKey`, monitor kind, alert severity, conditions, source freshness or missing-source posture, lineage summary, limitations, proof posture, and human-review next step. The handoff must not create missions automatically from monitor runs, send notifications, invoke runtime-codex, draft investigation prose with an LLM, invent finance facts, create external actions, turn alerts into reports, add approval kinds, add monitor families, or add a second alert system.
 
+### 18. Shipped F6C collections-pressure monitor result and alert-card foundation
+
+Input:
+One company `companyKey` with stored source-backed receivables-aging or collections-posture Finance Twin state, including explicit source freshness or missing-source posture.
+
+Success:
+The system records one deterministic `collections_pressure` monitor result and exposes one operator-visible alert card only when source-backed missing-source, failed-source, stale-source, coverage-gap, overdue-concentration, or data-quality conditions warrant it. The alert card includes source lineage, source freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step, and it does so without creating investigations, invoking runtime-codex, sending notifications, turning alerts into reports, adding approvals, or creating autonomous finance actions.
+
+### 19. Active F6D payables-pressure monitor contract
+
+Input:
+One company `companyKey` with stored source-backed payables-aging or payables-posture Finance Twin state, including explicit source freshness or missing-source posture.
+
+Success:
+The planned implementation should record one deterministic `payables_pressure` monitor result and expose one operator-visible alert card only when source-backed missing-source, failed-source, stale-source, coverage-gap, overdue-concentration, or data-quality conditions warrant it. The alert card must include source lineage, source freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step, and it must do so without creating investigations, invoking runtime-codex, sending notifications, creating payment instructions, recommending vendor payments, turning alerts into reports, adding approvals, or creating autonomous finance actions.
+
 ## Blocked for now
 
 These discovery families should stay out of the shipped F4A through F4C2 baseline and out of early seeded-finance grading until new deterministic Finance Twin support exists:
@@ -197,4 +213,5 @@ The shipped F5C4F reporting benchmark contract now lives in `plans/FP-0046-circu
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the latest shipped F5C4I benchmark record and covers explicit `circulationNote` clear-to-absent semantics plus derived effective-note chronology on that same seam, without widening into actual delivery, PDF export, slide or Marp export, or runtime-codex drafting behavior.
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is the shipped F6A benchmark record. `pnpm smoke:cash-posture-monitor:local` is the current deterministic proof for this first monitor before any broader F6 benchmark dataset is added.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` is the shipped F6B benchmark record.
-`plans/FP-0052-collections-pressure-monitor-foundation.md` is the shipped F6C benchmark record for exactly one `collections_pressure` monitor, with `pnpm smoke:collections-pressure-monitor:local` as the deterministic proof. Do not add a broader F6 benchmark dataset or start F6D and later implementation before a new named Finance Plan defines that next monitor scope.
+`plans/FP-0052-collections-pressure-monitor-foundation.md` is the shipped F6C benchmark record for exactly one `collections_pressure` monitor, with `pnpm smoke:collections-pressure-monitor:local` as the deterministic proof.
+`plans/FP-0053-payables-pressure-monitor-foundation.md` is the active F6D implementation-ready contract for exactly one `payables_pressure` monitor. Do not add a broader F6 benchmark dataset or start F6E and later implementation before a new named Finance Plan defines that next monitor scope.
