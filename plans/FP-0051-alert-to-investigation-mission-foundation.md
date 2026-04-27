@@ -24,6 +24,7 @@ It must not create missions automatically when monitors alert, run monitors on a
 - [x] 2026-04-26T22:58:42Z Add the additive alert-source uniqueness index, monitor-result-by-id lookup seam, taskless ready mission lifecycle, thin `POST /missions/monitoring-investigations` route, operator UI action, mission list/detail seed posture, and packaged `pnpm smoke:cash-posture-alert-investigation:local` proof.
 - [x] 2026-04-26T23:07:01Z Run and record the full implementation validation ladder for this F6B branch.
 - [x] 2026-04-26T23:09:31Z Run strict F6B QA pass and correct stale roadmap wording that still described FP-0051 as the active next execution contract after F6B shipped.
+- [x] 2026-04-27T10:23:36Z Run post-merge F6B proof/docs freshness polish: normalize omitted proof-bundle `monitorInvestigation` to null, correct monitor-investigation proof artifact summaries, and refresh secondary docs so F6B is shipped and F6C starts with planning/docs only.
 
 ## Surprises & Discoveries
 
@@ -86,6 +87,9 @@ Rationale: this avoids accidentally routing alert handoffs into the normal finan
 
 Decision: idempotency is guarded by source lookup and an additive partial unique index on alert mission source refs.
 Rationale: `sourceKind = "alert"` plus `sourceRef = "pocket-cfo://monitor-results/<monitorResultId>"` is the narrow retry key for this slice and does not affect GitHub, manual, or reporting mission semantics.
+
+Decision: post-merge F6B polish stays limited to truthfulness and read-model freshness.
+Rationale: normalizing proof-bundle null/default posture and fixing monitor-investigation summary copy preserves the shipped handoff without adding monitor families, mission behavior, routes, runtime-codex, delivery, reports, approvals, or any F6C implementation.
 
 ## Context and Orientation
 
@@ -376,6 +380,6 @@ It does not rerun the monitor, create missions automatically, schedule monitorin
 
 What remains:
 
-- finish and record the full validation ladder for this branch
-- decide whether F6C planning should start next or whether one more F6B continuation is needed after validation review
+- record the post-merge polish validation in the branch and PR
+- start F6C planning/docs next only through a new named Finance Plan; do not start F6C implementation from FP-0051
 - keep runtime-codex, delivery, notifications, approvals, reporting, new monitor families, and external actions out of scope until a new named Finance Plan explicitly changes scope

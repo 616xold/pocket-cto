@@ -94,15 +94,19 @@ function readArtifactSummary(artifact: ArtifactRecord) {
       ? artifact.metadata.summary.trim()
       : null;
 
-  if (metadataSummary) {
-    return truncate(metadataSummary);
-  }
-
   if (artifact.kind === "proof_bundle_manifest") {
     const manifest = readProofBundleManifest(artifact.metadata);
 
     if (!manifest) {
       return "Proof bundle manifest persisted.";
+    }
+
+    if (manifest.monitorInvestigation) {
+      return readMonitorInvestigationProofBundleSummary(manifest);
+    }
+
+    if (metadataSummary) {
+      return truncate(metadataSummary);
     }
 
     if (isFinanceProofBundle(manifest)) {
@@ -136,6 +140,10 @@ function readArtifactSummary(artifact: ArtifactRecord) {
     return "Proof bundle placeholder manifest persisted.";
   }
 
+  if (metadataSummary) {
+    return truncate(metadataSummary);
+  }
+
   const body =
     typeof artifact.metadata.body === "string" ? artifact.metadata.body : null;
   const firstMeaningfulLine = body
@@ -154,10 +162,38 @@ function truncate(value: string) {
   return `${value.slice(0, ARTIFACT_SUMMARY_MAX_LENGTH - 3).trimEnd()}...`;
 }
 
+function readMonitorInvestigationProofBundleSummary(
+  manifest: ProofBundleManifest,
+) {
+  const seed = manifest.monitorInvestigation;
+
+  if (!seed) {
+    return "Monitor-alert investigation proof bundle manifest persisted.";
+  }
+
+  const sourceSummary =
+    `for ${seed.companyKey} from ${seed.monitorKind} result ` +
+    `${seed.monitorResultId}`;
+
+  if (manifest.status === "ready") {
+    return `Monitor-alert investigation proof bundle ready ${sourceSummary}.`;
+  }
+
+  if (manifest.status === "failed") {
+    return `Monitor-alert investigation proof bundle failed ${sourceSummary}.`;
+  }
+
+  if (manifest.status === "incomplete") {
+    return `Monitor-alert investigation proof bundle incomplete ${sourceSummary}.`;
+  }
+
+  return `Monitor-alert investigation proof bundle placeholder ${sourceSummary}.`;
+}
+
 function isFinanceProofBundle(manifest: ProofBundleManifest) {
   return (
     manifest.reportKind === null &&
-    manifest.monitorInvestigation === null &&
+    (manifest.monitorInvestigation ?? null) === null &&
     (manifest.companyKey !== null ||
       isFinanceDiscoveryQuestionKind(manifest.questionKind))
   );
@@ -175,6 +211,7 @@ function normalizeProofBundle(
 
   return {
     ...proofBundle,
+    monitorInvestigation: proofBundle.monitorInvestigation ?? null,
     reportPublication,
     circulationReadiness:
       buildReportingCirculationReadinessViewFromProofBundle({

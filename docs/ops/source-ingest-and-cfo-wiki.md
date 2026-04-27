@@ -502,7 +502,7 @@ The shipped F4 baseline still does none of the following:
 - monitor results and alert cards must include source lineage, source freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step
 - F6A must not add new discovery families, use report artifacts as primary inputs, create investigation missions, invoke runtime-codex, send notifications, perform delivery, move money, book journals, file taxes, or reopen F5 reporting/approval semantics
 
-`FP-0051` is now the active F6B implementation contract:
+`FP-0051` is now the shipped F6B implementation record:
 
 - the first F6B slice is exactly `F6B-alert-to-investigation-mission-foundation`
 - the input must be one persisted F6A `cash_posture` monitor result with `status = "alert"` and one operator-visible alert card already carrying source lineage, freshness or missing-source posture, severity rationale, limitations, proof posture, and a human-review next step
@@ -522,7 +522,7 @@ The shipped F5C2 follow-on now specializes only one draft `lender_update` from t
 The shipped F5C3 follow-on now specializes only one draft `diligence_packet` from that same completed reporting state without widening into approval-release, runtime-codex, or export work.
 `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` is now the shipped F5C4F implementation record.
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the latest shipped later-F5 board-circulation record, while `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` and `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` remain the shipped F5C4H and F5C4G predecessors.
-`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is now the shipped first-F6A record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is now the active F6B contract. Do not reopen other packet work, actual delivery, runtime-codex drafting, export widening, multi-monitor work, automatic mission creation, or F6C and later monitor work from this doc alone.
+`plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` is now the shipped first-F6A record. `plans/FP-0051-alert-to-investigation-mission-foundation.md` is now the shipped first-F6B record. Do not reopen other packet work, actual delivery, runtime-codex drafting, export widening, multi-monitor work, automatic mission creation, or F6C and later monitor work from this doc alone; the next F6 thread should define F6C planning/docs before implementation.
 
 ## Lint flow
 

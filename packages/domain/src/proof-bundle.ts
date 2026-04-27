@@ -7,7 +7,10 @@ import {
   FinanceDiscoveryFreshnessStateSchema,
 } from "./discovery-mission";
 import { FinanceCompanyKeySchema } from "./finance-twin";
-import { MonitorInvestigationSeedSchema } from "./monitoring";
+import {
+  MonitorInvestigationSeedSchema,
+  type MonitorInvestigationSeed,
+} from "./monitoring";
 import {
   ReportingCirculationChronologyViewSchema,
   ReportingCirculationRecordViewSchema,
@@ -86,6 +89,13 @@ export const ProofBundleTimestampsSchema = z.object({
   latestArtifactAt: z.string().nullable().default(null),
 });
 
+const ProofBundleMonitorInvestigationSchema =
+  MonitorInvestigationSeedSchema.nullable().default(null) as z.ZodType<
+    MonitorInvestigationSeed | null | undefined,
+    z.ZodTypeDef,
+    MonitorInvestigationSeed | null | undefined
+  >;
+
 export const ArtifactRecordSchema = z.object({
   id: z.string().uuid(),
   missionId: z.string().uuid(),
@@ -113,7 +123,7 @@ export const ProofBundleManifestSchema = z.object({
   reportKind: ReportingMissionReportKindSchema.nullable().default(null),
   reportDraftStatus: ReportingDraftStatusSchema.nullable().default(null),
   reportSummary: z.string().default(""),
-  monitorInvestigation: MonitorInvestigationSeedSchema.nullable().optional(),
+  monitorInvestigation: ProofBundleMonitorInvestigationSchema,
   reportPublication: ReportingPublicationViewSchema.nullable().default(null),
   circulationReadiness:
     ReportingCirculationReadinessViewSchema.nullable().default(null),
