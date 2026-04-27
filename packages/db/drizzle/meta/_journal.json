@@ -288,6 +288,13 @@
       "when": 1777243966761,
       "tag": "0040_smart_screwball",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1777291196458,
+      "tag": "0041_worthless_ken_ellis",
+      "breakpoints": true
     }
   ]
 }

@@ -12,7 +12,7 @@ It must read stored Finance Twin receivables-aging or collections-posture state 
 Collections comes first because it is already a shipped finance discovery family, it is grounded in stored receivables-aging and collections-posture state, it is a common recurring CFO operating monitor, and it naturally complements `cash_posture` without requiring bank, accounting, tax, legal, or delivery writes.
 Repo truth does not show `payables_pressure` as strictly safer: the shipped payables posture is similarly source-backed, but collections has an equally truthful stored-state substrate and is the narrower second-monitor complement requested for F6C.
 
-This plan is docs-and-plan only until a later implementation thread starts from it.
+This plan started as a docs-and-plan contract and now records the F6C implementation slice.
 Do not treat FP-0050 or FP-0051 as active implementation contracts.
 FP-0050 remains the shipped F6A record, and FP-0051 remains the shipped F6B record.
 GitHub connector work is explicitly out of scope.
@@ -27,8 +27,8 @@ It must not create investigations, run F6B handoffs, use runtime-Codex, send not
 - [x] 2026-04-27T10:58:28Z Refresh active docs so the next thread can start the narrow `collections_pressure` monitor implementation from FP-0052 rather than re-planning F6C or widening into multi-monitor work.
 - [x] 2026-04-27T11:05:28Z Run the docs-and-plan validation ladder through `pnpm ci:repro:current` and record the green result.
 - [x] 2026-04-27T11:38:56Z Run a tiny post-merge local-dev freshness polish so the source-registry-to-finance-twin loop points discovery, reporting, and monitoring work through the current active FP-0052 F6C contract instead of stale active-F5 wording.
-- [ ] Implement `F6C-collections-pressure-monitor-foundation` from this plan in a later thread.
-- [ ] Run and record the F6C implementation validation ladder after code changes exist.
+- [x] 2026-04-27T12:03:32Z Implement `F6C-collections-pressure-monitor-foundation`: widen monitoring contracts and DB enum, add one deterministic `collections_pressure` evaluator, run/latest routes, operator alert-card posture, and packaged local smoke while keeping collections investigation-free, runtime-free, delivery-free, report-free, approval-free, and non-autonomous.
+- [x] 2026-04-27T12:11:28Z Run and record the full F6C implementation validation ladder after code changes exist, including narrow collections monitor specs, migration, baseline smokes, new collections smoke, twin guardrails, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 
 ## Surprises & Discoveries
 
@@ -36,9 +36,9 @@ The shipped monitoring bounded context already has the right first shape for F6C
 `apps/control-plane/src/modules/monitoring/**` owns deterministic evaluation, persistence, run/latest routes, formatting, and alert-card posture for F6A.
 F6C should extend that bounded context rather than creating a second alert system.
 
-The current monitoring domain and DB enum are cash-only.
-`packages/domain/src/monitoring.ts` currently defines `MonitorKindSchema` as a literal `cash_posture`, and `packages/db/src/schema/monitoring.ts` defines `monitor_kind` with only `cash_posture`.
-F6C implementation will need additive monitor-kind widening and an additive migration; this docs slice does not make those changes.
+The monitoring domain and DB enum were cash-only at the start of implementation.
+F6C widens `MonitorKindSchema` and the `monitor_kind` enum additively to exactly `cash_posture` and `collections_pressure`, with one additive migration.
+F6B investigation seeds remain `cash_posture`-only.
 
 Collections and payables have symmetric stored-state posture in the Finance Twin.
 `FinanceTwinService.getCollectionsPosture(companyKey)` reads persisted receivables-aging state and exposes freshness, latest attempted sync, latest successful source, coverage, diagnostics, currency buckets, and limitations.
@@ -48,6 +48,9 @@ No repo fact made payables strictly safer than collections for the second monito
 The shipped F6B handoff is intentionally cash-alert-specific.
 F6C must not modify `POST /missions/monitoring-investigations` or create collections investigations.
 A collections alert-to-investigation path can be deferred unless a later plan proves a narrow, safe reason to add it.
+
+Validation caught two narrow web type polish issues after the collections UI landed: the collections alert-card fixture needed a complete lineage target-count shape, and the hidden cash investigation input needed to serialize a string value only.
+Both fixes stayed inside the F6C operator read-model surface and did not change the collections investigation-free behavior.
 
 ## Decision Log
 
@@ -267,6 +270,30 @@ F6C implementation acceptance is observable only if all of the following are tru
 - F5 reporting and approval semantics remain unchanged
 - F6A `cash_posture` monitoring and F6B manual `cash_posture` alert handoff remain green
 
+Implementation validation recorded on 2026-04-27:
+
+- `pnpm --filter @pocket-cto/domain exec vitest run src/monitoring.spec.ts`
+- `zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/monitoring/**/*.spec.ts"`
+- `zsh -lc "cd apps/web && pnpm exec vitest run app/monitoring/**/*.spec.tsx components/monitoring-alert-card.spec.tsx lib/api.spec.ts"`
+- `pnpm --filter @pocket-cto/domain exec vitest run src/monitoring.spec.ts src/finance-twin.spec.ts src/proof-bundle.spec.ts`
+- `zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/monitoring/**/*.spec.ts src/modules/finance-twin/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/app.spec.ts"`
+- `zsh -lc "cd apps/web && pnpm exec vitest run app/monitoring/**/*.spec.tsx components/monitoring-alert-card.spec.tsx lib/api.spec.ts"`
+- `pnpm db:migrate`
+- `pnpm smoke:source-ingest:local`
+- `pnpm smoke:finance-twin:local`
+- `pnpm smoke:finance-twin-receivables-aging:local`
+- `pnpm smoke:finance-discovery-supported-families:local`
+- `pnpm smoke:cash-posture-monitor:local`
+- `pnpm smoke:cash-posture-alert-investigation:local`
+- `pnpm smoke:collections-pressure-monitor:local`
+- `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts`
+- `pnpm lint`
+- `pnpm typecheck`
+- `pnpm test`
+- `pnpm ci:repro:current`
+
+All commands passed.
+
 ## Idempotence and Recovery
 
 F6C implementation must be retry-safe.
@@ -285,10 +312,6 @@ This docs-and-plan slice produces:
 
 - `plans/FP-0052-collections-pressure-monitor-foundation.md`
 - active-doc updates that identify FP-0052 as the active F6C implementation contract
-- no code, schema, migration, route, package script, smoke command, eval dataset, implementation scaffold, or runtime surface
-
-Expected later implementation artifacts are:
-
 - widened monitoring domain contract
 - additive monitor-kind persistence support
 - one deterministic collections monitor evaluator
@@ -342,8 +365,10 @@ GitHub connector work is out of scope.
 
 ## Outcomes & Retrospective
 
-This plan records the F6C master-plan-and-doc-refresh slice, not an implementation.
-FP-0052 is the only active checked-in F6C contract, FP-0050 and FP-0051 remain shipped records, and the next Codex thread can start `F6C-collections-pressure-monitor-foundation` implementation without re-opening F6A, F6B, F5 reporting, runtime-Codex, delivery, investigation, approval, or report behavior.
+This plan now records the F6C collections-pressure monitor implementation.
+FP-0050 and FP-0051 remain shipped records, F6C adds exactly one second monitor family, and F6D has not started.
+F6D planning should begin only in a new Finance Plan.
 
-The docs-and-plan validation ladder completed green, including `pnpm ci:repro:current`.
-Implementation remains to be done in a later thread.
+The implementation preserves F6A cash monitoring and F6B cash-alert investigation behavior while adding `collections_pressure` run/latest routes, persistence, deterministic evaluator semantics, operator read model support, and a packaged local smoke.
+Collections alerts remain investigation-free in F6C and do not use runtime-Codex, delivery, reports, approvals, bank/accounting/tax/legal writes, notifications, or autonomous remediation.
+The full F6C validation ladder passed through `pnpm ci:repro:current`, so the next decision should be whether to start F6D planning in a new Finance Plan rather than continuing implementation under FP-0052.

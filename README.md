@@ -44,6 +44,7 @@ Today the merged backbone is:
 - F4C2 additive discovery-quality hardening for the shipped six-family baseline: deterministic policy-document selection from the existing bound-source route, additive policy source-scope rendering across answer, mission, list, and proof-bundle surfaces, packaged `pnpm smoke:finance-discovery-quality:local`, and finance-native `pnpm eval:finance-discovery-quality` report capture
 - F6A additive deterministic monitoring foundation for one first `cash_posture` monitor over stored Finance Twin cash-posture state, with persisted monitor results, source freshness or missing-source posture, lineage, limitations, proof posture, and an operator alert-card read model when source-backed conditions warrant it
 - F6B additive manual alert-to-investigation handoff from one persisted alerting `cash_posture` monitor result into one deterministic taskless mission, with source ref, freshness or missing-source posture, lineage, limitations, proof posture, and human-review next step carried forward without runtime-codex, reports, approvals, notifications, delivery, or autonomous finance actions
+- F6C additive deterministic monitoring for one second monitor family, `collections_pressure`, over stored Finance Twin receivables-aging / collections-posture state only, with one persisted monitor result plus optional operator alert-card posture carrying source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof posture, and a human-review next step while remaining investigation-free for collections
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
@@ -69,7 +70,7 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` is now the shipped F5C4I record: the repo can append explicit clear-to-absent `circulationNote` correction on that same seam, preserve the immutable original circulation record, derive truthful effective-note chronology, and stay deterministic, runtime-free, delivery-free, and board-packet-only.
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` now records the shipped first F6A implementation slice: one deterministic, source-backed `cash_posture` monitor result plus one operator-visible alert-card posture, with source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof-bundle posture, and a human-review next step.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` now records the shipped first F6B implementation slice: one manual operator handoff from one persisted alerting `cash_posture` monitor result into one deterministic source-backed investigation mission, while keeping F6B runtime-free, delivery-free, non-autonomous, report-free, approval-kind-free, and limited to the existing alert evidence.
-`plans/FP-0052-collections-pressure-monitor-foundation.md` is now the active F6C implementation-ready contract: the next slice should add exactly one deterministic `collections_pressure` monitor result plus optional operator alert-card posture over stored receivables-aging or collections-posture Finance Twin state, while preserving shipped F6A/F6B behavior and avoiding runtime-codex, delivery, investigations, approvals, report conversion, or multi-monitor widening.
+`plans/FP-0052-collections-pressure-monitor-foundation.md` now records the F6C implementation slice: one deterministic `collections_pressure` monitor result plus optional operator alert-card posture over stored receivables-aging or collections-posture Finance Twin state, while preserving shipped F6A/F6B behavior and avoiding runtime-codex, delivery, investigations for collections, approvals, report conversion, or multi-monitor widening. F6D has not started; F6D planning should begin only in a new Finance Plan.
 
 ## Product boundary for v1
 
@@ -251,6 +252,7 @@ pnpm smoke:finance-discovery-quality:local
 pnpm eval:finance-discovery-quality
 pnpm smoke:cash-posture-monitor:local
 pnpm smoke:cash-posture-alert-investigation:local
+pnpm smoke:collections-pressure-monitor:local
 pnpm smoke:finance-memo:local
 pnpm smoke:finance-report-filed-artifact:local
 ```
@@ -283,7 +285,9 @@ The current backend-first monitoring surface is:
 
 - `POST /monitoring/companies/:companyKey/cash-posture/run`
 - `GET /monitoring/companies/:companyKey/cash-posture/latest`
-- `POST /missions/monitoring-investigations`
+- `POST /monitoring/companies/:companyKey/collections-pressure/run`
+- `GET /monitoring/companies/:companyKey/collections-pressure/latest`
+- `POST /missions/monitoring-investigations` for persisted alerting `cash_posture` results only; F6C does not create investigations for `collections_pressure`
 
 The current backend-first CFO Wiki read surface is:
 

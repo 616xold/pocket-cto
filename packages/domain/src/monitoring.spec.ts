@@ -190,6 +190,177 @@ describe("monitoring domain contract", () => {
     expect(parsed.alertCard).toBeNull();
   });
 
+  it("accepts a source-backed collections pressure alert without widening investigation seeds", () => {
+    const parsed = MonitorResultSchema.parse({
+      id: "99999999-9999-4999-8999-999999999999",
+      companyId,
+      companyKey: "acme",
+      monitorKind: "collections_pressure",
+      runKey: "collections_pressure:acme:source-backed-overdue",
+      triggeredBy: "operator",
+      status: "alert",
+      severity: "warning",
+      conditions: [
+        {
+          kind: "overdue_concentration",
+          severity: "warning",
+          summary:
+            "USD receivables are 60.00% past due based on source-backed totals.",
+          evidencePath: "currencyBuckets[USD].pastDueShare",
+        },
+      ],
+      sourceFreshnessPosture: {
+        state: "fresh",
+        latestAttemptedSyncRunId: syncRunId,
+        latestSuccessfulSyncRunId: syncRunId,
+        latestSuccessfulSource: {
+          sourceId,
+          sourceSnapshotId,
+          sourceFileId,
+          syncRunId,
+        },
+        missingSource: false,
+        failedSource: false,
+        summary: "The latest successful receivables-aging source is fresh.",
+      },
+      sourceLineageRefs: [
+        {
+          sourceId,
+          sourceSnapshotId,
+          sourceFileId,
+          syncRunId,
+          targetKind: "receivables_aging_row",
+          targetId: null,
+          lineageCount: 3,
+          lineageTargetCounts: {
+            customerCount: 1,
+            receivablesAgingRowCount: 1,
+          },
+          summary:
+            "Latest successful receivables-aging source lineage for collections pressure.",
+        },
+      ],
+      deterministicSeverityRationale:
+        "Warning because overdue_concentration condition(s) were detected from stored collections-pressure state.",
+      limitations: [
+        "F6C collections-pressure monitoring evaluates stored receivables-aging posture only.",
+      ],
+      proofBundlePosture: {
+        state: "source_backed",
+        summary:
+          "The monitor result is backed by the latest stored receivables-aging source lineage.",
+      },
+      replayPosture: {
+        state: "not_appended",
+        reason:
+          "F6C monitor results are company-scoped records and are not mission replay events.",
+      },
+      runtimeBoundary: {
+        runtimeCodexUsed: false,
+        deliveryActionUsed: false,
+        investigationMissionCreated: false,
+        autonomousFinanceActionUsed: false,
+        summary:
+          "The result was produced by deterministic stored-state evaluation only.",
+      },
+      humanReviewNextStep:
+        "Review receivables-aging source coverage and collections posture before acting outside Pocket CFO.",
+      alertCard: {
+        companyKey: "acme",
+        monitorKind: "collections_pressure",
+        status: "alert",
+        severity: "warning",
+        deterministicSeverityRationale:
+          "Warning because overdue_concentration condition(s) were detected from stored collections-pressure state.",
+        conditionSummaries: [
+          "USD receivables are 60.00% past due based on source-backed totals.",
+        ],
+        sourceFreshnessPosture: {
+          state: "fresh",
+          latestAttemptedSyncRunId: syncRunId,
+          latestSuccessfulSyncRunId: syncRunId,
+          latestSuccessfulSource: {
+            sourceId,
+            sourceSnapshotId,
+            sourceFileId,
+            syncRunId,
+          },
+          missingSource: false,
+          failedSource: false,
+          summary: "The latest successful receivables-aging source is fresh.",
+        },
+        sourceLineageRefs: [
+          {
+            sourceId,
+            sourceSnapshotId,
+            sourceFileId,
+            syncRunId,
+            targetKind: "receivables_aging_row",
+            targetId: null,
+            lineageCount: 3,
+            lineageTargetCounts: {
+              customerCount: 1,
+              receivablesAgingRowCount: 1,
+            },
+            summary:
+              "Latest successful receivables-aging source lineage for collections pressure.",
+          },
+        ],
+        sourceLineageSummary:
+          "3 receivables-aging lineage record(s) back this monitor result.",
+        limitations: [
+          "F6C collections-pressure monitoring evaluates stored receivables-aging posture only.",
+        ],
+        proofBundlePosture: {
+          state: "source_backed",
+          summary:
+            "The monitor result is backed by the latest stored receivables-aging source lineage.",
+        },
+        humanReviewNextStep:
+          "Review receivables-aging source coverage and collections posture before acting outside Pocket CFO.",
+        createdAt: now,
+      },
+      createdAt: now,
+    });
+
+    expect(parsed.monitorKind).toBe("collections_pressure");
+    expect(parsed.conditions[0]?.kind).toBe("overdue_concentration");
+    expect(parsed.alertCard?.sourceLineageRefs).toHaveLength(1);
+
+    const seed = MonitorInvestigationSeedSchema.safeParse({
+      monitorResultId: parsed.id,
+      companyKey: "acme",
+      monitorKind: "collections_pressure",
+      monitorResultStatus: "alert",
+      alertSeverity: "warning",
+      deterministicSeverityRationale: parsed.deterministicSeverityRationale,
+      conditions: parsed.conditions,
+      conditionSummaries: parsed.alertCard?.conditionSummaries ?? [],
+      sourceFreshnessPosture: parsed.sourceFreshnessPosture,
+      sourceLineageRefs: parsed.sourceLineageRefs,
+      sourceLineageSummary: parsed.alertCard?.sourceLineageSummary ?? "",
+      limitations: parsed.limitations,
+      proofBundlePosture: parsed.proofBundlePosture,
+      humanReviewNextStep: parsed.humanReviewNextStep,
+      runtimeBoundary: {
+        monitorResultRuntimeBoundary: parsed.runtimeBoundary,
+        monitorRerunUsed: false,
+        runtimeCodexUsed: false,
+        deliveryActionUsed: false,
+        scheduledAutomationUsed: false,
+        reportArtifactCreated: false,
+        approvalCreated: false,
+        autonomousFinanceActionUsed: false,
+        summary: "Invalid collections handoff.",
+      },
+      sourceRef: `pocket-cfo://monitor-results/${parsed.id}`,
+      monitorResultCreatedAt: parsed.createdAt,
+      alertCardCreatedAt: parsed.alertCard?.createdAt ?? now,
+    });
+
+    expect(seed.success).toBe(false);
+  });
+
   it("parses a deterministic alert investigation seed from stored monitor evidence", () => {
     const parsed = MonitorInvestigationSeedSchema.parse({
       monitorResultId: "66666666-6666-4666-8666-666666666666",

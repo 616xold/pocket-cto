@@ -134,6 +134,7 @@ function buildAlertResult(input: {
         "No successful bank-account-summary slice exists yet.",
       ],
       sourceFreshnessPosture,
+      sourceLineageRefs: [],
       sourceLineageSummary:
         "No bank-account-summary source lineage is available.",
       limitations: [

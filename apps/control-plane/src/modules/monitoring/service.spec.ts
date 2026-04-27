@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   FinanceCashPostureViewSchema,
   type FinanceCashPostureView,
+  FinanceCollectionsPostureViewSchema,
+  type FinanceCollectionsPostureView,
 } from "@pocket-cto/domain";
 import { InMemoryMonitoringRepository } from "./repository";
 import { MonitoringService } from "./service";
@@ -148,6 +150,54 @@ describe("MonitoringService", () => {
     })).toBeNull();
   });
 
+  it("persists collections_pressure results separately and keeps retries idempotent", async () => {
+    const repository = new InMemoryMonitoringRepository();
+    const service = buildService(
+      buildCashPosture({ freshnessState: "fresh", cleanSource: true }),
+      repository,
+      buildCollectionsPosture(),
+    );
+
+    const first = await service.runCollectionsPressureMonitor({
+      companyKey: "acme",
+      runKey: "collections_pressure:acme:clean",
+      triggeredBy: "finance-operator",
+    });
+    const second = await service.runCollectionsPressureMonitor({
+      companyKey: "acme",
+      runKey: "collections_pressure:acme:clean",
+      triggeredBy: "finance-controller",
+    });
+    const latest =
+      await service.getLatestCollectionsPressureMonitorResult("acme");
+
+    expect(second.monitorResult.id).toBe(first.monitorResult.id);
+    expect(second.monitorResult).toMatchObject({
+      companyKey: "acme",
+      monitorKind: "collections_pressure",
+      status: "no_alert",
+      severity: "none",
+      conditions: [],
+      proofBundlePosture: {
+        state: "source_backed",
+      },
+      runtimeBoundary: {
+        runtimeCodexUsed: false,
+        deliveryActionUsed: false,
+        investigationMissionCreated: false,
+        autonomousFinanceActionUsed: false,
+      },
+      triggeredBy: "finance-controller",
+      alertCard: null,
+    });
+    expect(second.alertCard).toBeNull();
+    expect(latest.monitorResult?.id).toBe(first.monitorResult.id);
+    expect(await repository.getLatestMonitorResult({
+      companyKey: "acme",
+      monitorKind: "cash_posture",
+    })).toBeNull();
+  });
+
   it("keeps stale source and data-quality rationale deterministic", async () => {
     const service = buildService(
       buildCashPosture({
@@ -225,12 +275,17 @@ describe("MonitoringService", () => {
 function buildService(
   cashPosture: FinanceCashPostureView,
   repository = new InMemoryMonitoringRepository(),
+  collectionsPosture = buildCollectionsPosture(),
 ) {
   return new MonitoringService({
     financeTwinService: {
       async getCashPosture(companyKey: string) {
         expect(companyKey).toBe("acme");
         return cashPosture;
+      },
+      async getCollectionsPosture(companyKey: string) {
+        expect(companyKey).toBe("acme");
+        return collectionsPosture;
       },
     },
     monitoringRepository: repository,
@@ -404,5 +459,120 @@ function buildFreshness(input: {
             ? "latest_successful_sync_stale"
             : "latest_successful_sync_fresh",
     reasonSummary: `Synthetic ${input.state} cash-posture freshness.`,
+  };
+}
+
+function buildCollectionsPosture(): FinanceCollectionsPostureView {
+  return FinanceCollectionsPostureViewSchema.parse({
+    company: {
+      id: companyId,
+      companyKey: "acme",
+      displayName: "Acme Holdings",
+      createdAt: now,
+      updatedAt: now,
+    },
+    latestAttemptedSyncRun: buildReceivablesSyncRun(),
+    latestSuccessfulReceivablesAgingSlice: {
+      latestSource: {
+        sourceId,
+        sourceSnapshotId,
+        sourceFileId,
+        syncRunId,
+      },
+      latestSyncRun: buildReceivablesSyncRun(),
+      coverage: {
+        customerCount: 1,
+        rowCount: 1,
+        lineageCount: 3,
+        lineageTargetCounts: {
+          customerCount: 1,
+          receivablesAgingRowCount: 1,
+        },
+      },
+      summary: {
+        customerCount: 1,
+        rowCount: 1,
+        datedRowCount: 1,
+        undatedRowCount: 0,
+        currencyCount: 1,
+        reportedBucketKeys: ["current", "past_due", "total"],
+      },
+    },
+    freshness: {
+      state: "fresh",
+      latestSyncRunId: syncRunId,
+      latestSyncStatus: "succeeded",
+      latestCompletedAt: "2026-04-26T11:00:00.000Z",
+      latestSuccessfulSyncRunId: syncRunId,
+      latestSuccessfulCompletedAt: "2026-04-26T11:00:00.000Z",
+      ageSeconds: 3600,
+      staleAfterSeconds: 86400,
+      reasonCode: "latest_successful_sync_fresh",
+      reasonSummary: "Synthetic fresh collections-posture freshness.",
+    },
+    currencyBuckets: [
+      {
+        currency: "USD",
+        totalReceivables: "100.00",
+        currentBucketTotal: "80.00",
+        pastDueBucketTotal: "20.00",
+        exactBucketTotals: [
+          {
+            bucketKey: "current",
+            bucketClass: "current",
+            totalAmount: "80.00",
+          },
+          {
+            bucketKey: "past_due",
+            bucketClass: "past_due_total",
+            totalAmount: "20.00",
+          },
+          {
+            bucketKey: "total",
+            bucketClass: "total",
+            totalAmount: "100.00",
+          },
+        ],
+        customerCount: 1,
+        datedCustomerCount: 1,
+        undatedCustomerCount: 0,
+        mixedAsOfDates: false,
+        earliestAsOfDate: "2026-04-26",
+        latestAsOfDate: "2026-04-26",
+      },
+    ],
+    coverageSummary: {
+      customerCount: 1,
+      rowCount: 1,
+      currencyBucketCount: 1,
+      datedRowCount: 1,
+      undatedRowCount: 0,
+      rowsWithExplicitTotalCount: 1,
+      rowsWithCurrentBucketCount: 1,
+      rowsWithComputablePastDueCount: 1,
+      rowsWithPartialPastDueOnlyCount: 0,
+    },
+    diagnostics: [],
+    limitations: [
+      "Collections posture stays grouped by reported currency only; this route does not perform FX conversion.",
+    ],
+  });
+}
+
+function buildReceivablesSyncRun() {
+  return {
+    id: syncRunId,
+    companyId,
+    reportingPeriodId: null,
+    sourceId,
+    sourceSnapshotId,
+    sourceFileId,
+    extractorKey: "receivables_aging_csv" as const,
+    status: "succeeded" as const,
+    startedAt: "2026-04-26T10:50:00.000Z",
+    completedAt: "2026-04-26T11:00:00.000Z",
+    stats: {},
+    errorSummary: null,
+    createdAt: "2026-04-26T11:00:00.000Z",
   };
 }
