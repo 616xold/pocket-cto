@@ -7,7 +7,7 @@ export const monitoringCompanyKeyParamsSchema = z
   })
   .strict();
 
-export const runCashPostureMonitorBodySchema = z
+export const runMonitorBodySchema = z
   .object({
     idempotencyKey: z.string().trim().min(1).optional(),
     runBy: z.string().trim().min(1).optional(),

@@ -3,14 +3,20 @@ import {
   MonitorResultSchema,
   MonitorRunResultSchema,
   type FinanceCashPostureView,
+  type FinanceCollectionsPostureView,
   type MonitorAlertCard,
+  type MonitorKind,
 } from "@pocket-cto/domain";
 import type { FinanceTwinServicePort } from "../../lib/types";
+import { evaluateCollectionsPressureMonitor } from "./collections-evaluator";
 import { evaluateCashPostureMonitor } from "./evaluator";
 import type { MonitoringRepository } from "./repository";
 
 type MonitoringServiceDeps = {
-  financeTwinService: Pick<FinanceTwinServicePort, "getCashPosture">;
+  financeTwinService: Pick<
+    FinanceTwinServicePort,
+    "getCashPosture" | "getCollectionsPosture"
+  >;
   monitoringRepository: MonitoringRepository;
 };
 
@@ -34,6 +40,7 @@ export class MonitoringService {
             companyKey: cashPosture.company.companyKey,
             createdAt,
             evaluated,
+            monitorKind: "cash_posture",
           })
         : null;
 
@@ -82,16 +89,86 @@ export class MonitoringService {
       monitorResult,
     });
   }
+
+  async runCollectionsPressureMonitor(input: {
+    companyKey: string;
+    runKey?: string | null;
+    triggeredBy: string;
+  }) {
+    const collectionsPosture =
+      await this.deps.financeTwinService.getCollectionsPosture(input.companyKey);
+    const evaluated = evaluateCollectionsPressureMonitor(collectionsPosture);
+    const createdAt = new Date().toISOString();
+    const runKey =
+      input.runKey ?? buildDefaultCollectionsRunKey(collectionsPosture, evaluated);
+    const alertCard =
+      evaluated.status === "alert"
+        ? buildAlertCard({
+            companyKey: collectionsPosture.company.companyKey,
+            createdAt,
+            evaluated,
+            monitorKind: "collections_pressure",
+          })
+        : null;
+
+    const monitorResult = MonitorResultSchema.parse({
+      id: crypto.randomUUID(),
+      alertCard,
+      companyId: collectionsPosture.company.id,
+      companyKey: collectionsPosture.company.companyKey,
+      conditions: evaluated.conditions,
+      createdAt,
+      deterministicSeverityRationale:
+        evaluated.deterministicSeverityRationale,
+      humanReviewNextStep: evaluated.humanReviewNextStep,
+      limitations: evaluated.limitations,
+      monitorKind: "collections_pressure",
+      proofBundlePosture: evaluated.proofBundlePosture,
+      replayPosture: evaluated.replayPosture,
+      runKey,
+      runtimeBoundary: evaluated.runtimeBoundary,
+      severity: evaluated.severity,
+      sourceFreshnessPosture: evaluated.sourceFreshnessPosture,
+      sourceLineageRefs: evaluated.sourceLineageRefs,
+      status: evaluated.status,
+      triggeredBy: input.triggeredBy,
+    });
+    const persisted =
+      await this.deps.monitoringRepository.upsertMonitorResult(monitorResult);
+
+    return MonitorRunResultSchema.parse({
+      monitorResult: persisted,
+      alertCard: persisted.alertCard,
+    });
+  }
+
+  async getLatestCollectionsPressureMonitorResult(companyKey: string) {
+    const monitorResult =
+      await this.deps.monitoringRepository.getLatestMonitorResult({
+        companyKey,
+        monitorKind: "collections_pressure",
+      });
+
+    return MonitorLatestResultSchema.parse({
+      alertCard: monitorResult?.alertCard ?? null,
+      companyKey,
+      monitorKind: "collections_pressure",
+      monitorResult,
+    });
+  }
 }
 
 function buildAlertCard(input: {
   companyKey: string;
   createdAt: string;
-  evaluated: ReturnType<typeof evaluateCashPostureMonitor>;
+  evaluated:
+    | ReturnType<typeof evaluateCashPostureMonitor>
+    | ReturnType<typeof evaluateCollectionsPressureMonitor>;
+  monitorKind: MonitorKind;
 }): MonitorAlertCard {
   return {
     companyKey: input.companyKey,
-    monitorKind: "cash_posture",
+    monitorKind: input.monitorKind,
     status: "alert",
     severity: input.evaluated.severity === "none" ? "info" : input.evaluated.severity,
     deterministicSeverityRationale:
@@ -100,6 +177,7 @@ function buildAlertCard(input: {
       (condition) => condition.summary,
     ),
     sourceFreshnessPosture: input.evaluated.sourceFreshnessPosture,
+    sourceLineageRefs: input.evaluated.sourceLineageRefs,
     sourceLineageSummary: input.evaluated.sourceLineageSummary,
     limitations: input.evaluated.limitations,
     proofBundlePosture: input.evaluated.proofBundlePosture,
@@ -126,6 +204,28 @@ function buildDefaultRunKey(
     cashPosture.company.companyKey,
     sourceKey,
     cashPosture.freshness.state,
+    conditionKey,
+  ].join(":");
+}
+
+function buildDefaultCollectionsRunKey(
+  collectionsPosture: FinanceCollectionsPostureView,
+  evaluated: ReturnType<typeof evaluateCollectionsPressureMonitor>,
+) {
+  const sourceKey =
+    collectionsPosture.latestSuccessfulReceivablesAgingSlice.latestSyncRun?.id ??
+    collectionsPosture.latestAttemptedSyncRun?.id ??
+    "no-receivables-aging-sync";
+  const conditionKey =
+    evaluated.conditions.length > 0
+      ? evaluated.conditions.map((condition) => condition.kind).join("+")
+      : "clear";
+
+  return [
+    "collections_pressure",
+    collectionsPosture.company.companyKey,
+    sourceKey,
+    collectionsPosture.freshness.state,
     conditionKey,
   ].join(":");
 }

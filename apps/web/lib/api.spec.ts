@@ -202,6 +202,36 @@ describe("web api module", () => {
     );
   });
 
+  it("reads the latest collections-pressure monitor result", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      async json() {
+        const monitorResult = buildMonitorResultPayload("collections_pressure");
+
+        return {
+          companyKey: "acme",
+          monitorKind: "collections_pressure",
+          monitorResult,
+          alertCard: monitorResult.alertCard,
+        };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const latest = await mod.getLatestCollectionsPressureMonitorResult("acme");
+
+    expect(latest?.monitorKind).toBe("collections_pressure");
+    expect(latest?.monitorResult?.status).toBe("alert");
+    expect(latest?.alertCard?.monitorKind).toBe("collections_pressure");
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/monitoring/companies/acme/collections-pressure/latest`,
+      {
+        cache: "no-store",
+      },
+    );
+  });
+
   it("posts the cash-posture monitor run route", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -241,6 +271,59 @@ describe("web api module", () => {
       {
         body: JSON.stringify({
           runKey: "operator-run-1",
+          triggeredBy: "finance-operator",
+        }),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+  });
+
+  it("posts the collections-pressure monitor run route", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        const monitorResult = buildMonitorResultPayload("collections_pressure");
+
+        return {
+          monitorResult,
+          alertCard: monitorResult.alertCard,
+        };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const result = await mod.runCollectionsPressureMonitor({
+      companyKey: "acme",
+      runKey: "operator-run-2",
+      triggeredBy: "finance-operator",
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      statusCode: 201,
+      data: {
+        monitorResult: {
+          monitorKind: "collections_pressure",
+          status: "alert",
+          severity: "critical",
+        },
+        alertCard: {
+          companyKey: "acme",
+          monitorKind: "collections_pressure",
+        },
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/monitoring/companies/acme/collections-pressure/run`,
+      {
+        body: JSON.stringify({
+          runKey: "operator-run-2",
           triggeredBy: "finance-operator",
         }),
         cache: "no-store",
@@ -2789,8 +2872,9 @@ function buildMonitorLatestPayload() {
   };
 }
 
-function buildMonitorResultPayload() {
+function buildMonitorResultPayload(monitorKind = "cash_posture") {
   const createdAt = "2026-04-26T12:00:00.000Z";
+  const isCollections = monitorKind === "collections_pressure";
   const sourceFreshnessPosture = {
     state: "missing",
     latestAttemptedSyncRunId: null,
@@ -2798,19 +2882,22 @@ function buildMonitorResultPayload() {
     latestSuccessfulSource: null,
     missingSource: true,
     failedSource: false,
-    summary: "No successful bank-account-summary source is stored.",
+    summary: isCollections
+      ? "No successful receivables-aging source is stored."
+      : "No successful bank-account-summary source is stored.",
   };
   const proofBundlePosture = {
     state: "limited_by_missing_source",
-    summary:
-      "The monitor proof is limited because no bank-account-summary source backs the cash posture.",
+    summary: isCollections
+      ? "The monitor proof is limited because no receivables-aging source backs the collections posture."
+      : "The monitor proof is limited because no bank-account-summary source backs the cash posture.",
   };
 
   return {
     id: "11111111-1111-4111-8111-111111111111",
     companyId: "22222222-2222-4222-8222-222222222222",
     companyKey: "acme",
-    monitorKind: "cash_posture",
+    monitorKind,
     runKey: "operator-run-1",
     triggeredBy: "finance-operator",
     status: "alert",
@@ -2819,16 +2906,20 @@ function buildMonitorResultPayload() {
       {
         kind: "missing_source",
         severity: "critical",
-        summary: "No successful bank-account-summary slice exists yet.",
+        summary: isCollections
+          ? "No successful receivables-aging slice exists yet."
+          : "No successful bank-account-summary slice exists yet.",
         evidencePath: "freshness.state",
       },
     ],
     sourceFreshnessPosture,
     sourceLineageRefs: [],
     deterministicSeverityRationale:
-      "Critical because stored cash-posture conditions include missing_source.",
+      `Critical because stored ${isCollections ? "collections-pressure" : "cash-posture"} conditions include missing_source.`,
     limitations: [
-      "F6A cash-posture monitoring evaluates stored source posture only.",
+      isCollections
+        ? "F6C collections-pressure monitoring evaluates stored source posture only."
+        : "F6A cash-posture monitoring evaluates stored source posture only.",
     ],
     proofBundlePosture,
     replayPosture: {
@@ -2845,26 +2936,35 @@ function buildMonitorResultPayload() {
         "The result was produced by deterministic stored-state evaluation only.",
     },
     humanReviewNextStep:
-      "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+      isCollections
+        ? "Review receivables-aging source coverage and collections posture before any external collections action."
+        : "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
     alertCard: {
       companyKey: "acme",
-      monitorKind: "cash_posture",
+      monitorKind,
       status: "alert",
       severity: "critical",
       deterministicSeverityRationale:
-        "Critical because stored cash-posture conditions include missing_source.",
+        `Critical because stored ${isCollections ? "collections-pressure" : "cash-posture"} conditions include missing_source.`,
       conditionSummaries: [
-        "No successful bank-account-summary slice exists yet.",
+        isCollections
+          ? "No successful receivables-aging slice exists yet."
+          : "No successful bank-account-summary slice exists yet.",
       ],
       sourceFreshnessPosture,
-      sourceLineageSummary:
-        "No bank-account-summary source lineage is available.",
+      sourceLineageRefs: [],
+      sourceLineageSummary: isCollections
+        ? "No receivables-aging source lineage is available."
+        : "No bank-account-summary source lineage is available.",
       limitations: [
-        "F6A cash-posture monitoring evaluates stored source posture only.",
+        isCollections
+          ? "F6C collections-pressure monitoring evaluates stored source posture only."
+          : "F6A cash-posture monitoring evaluates stored source posture only.",
       ],
       proofBundlePosture,
-      humanReviewNextStep:
-        "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
+      humanReviewNextStep: isCollections
+        ? "Review receivables-aging source coverage and collections posture before any external collections action."
+        : "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
       createdAt,
     },
     createdAt,

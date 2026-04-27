@@ -100,8 +100,8 @@ type GitHubIssueMissionCreateResult = z.output<
   typeof githubIssueMissionCreateResultSchema
 >;
 
-const cashPostureMonitorLatestSchema = MonitorLatestResultSchema;
-const cashPostureMonitorRunSchema = MonitorRunResultSchema;
+const monitorLatestSchema = MonitorLatestResultSchema;
+const monitorRunSchema = MonitorRunResultSchema;
 
 const liveControlSchema = OperatorControlAvailabilitySchema;
 
@@ -302,7 +302,22 @@ export async function getLatestCashPostureMonitorResult(
 
   return fetchJson(
     `/monitoring/companies/${encodeURIComponent(normalizedCompanyKey)}/cash-posture/latest`,
-    cashPostureMonitorLatestSchema,
+    monitorLatestSchema,
+  );
+}
+
+export async function getLatestCollectionsPressureMonitorResult(
+  companyKey: string,
+): Promise<MonitorLatestResult | null> {
+  const normalizedCompanyKey = companyKey.trim();
+
+  if (!normalizedCompanyKey) {
+    return null;
+  }
+
+  return fetchJson(
+    `/monitoring/companies/${encodeURIComponent(normalizedCompanyKey)}/collections-pressure/latest`,
+    monitorLatestSchema,
   );
 }
 
@@ -317,7 +332,22 @@ export async function runCashPostureMonitor(input: {
       runKey: input.runKey ?? undefined,
       triggeredBy: input.triggeredBy,
     },
-    cashPostureMonitorRunSchema,
+    monitorRunSchema,
+  );
+}
+
+export async function runCollectionsPressureMonitor(input: {
+  companyKey: string;
+  runKey?: string | null;
+  triggeredBy: string;
+}): Promise<ControlPlaneMutationResult<MonitorRunResult>> {
+  return postJson(
+    `/monitoring/companies/${encodeURIComponent(input.companyKey)}/collections-pressure/run`,
+    {
+      runKey: input.runKey ?? undefined,
+      triggeredBy: input.triggeredBy,
+    },
+    monitorRunSchema,
   );
 }
 

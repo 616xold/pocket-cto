@@ -3,9 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const getLatestCashPostureMonitorResult = vi.fn();
+const getLatestCollectionsPressureMonitorResult = vi.fn();
 
 vi.mock("../../lib/api", () => ({
   getLatestCashPostureMonitorResult,
+  getLatestCollectionsPressureMonitorResult,
 }));
 
 vi.mock("../../components/monitoring-alert-card", () => ({
@@ -38,6 +40,20 @@ describe("MonitoringPage", () => {
         companyKey: "acme",
       },
     });
+    getLatestCollectionsPressureMonitorResult.mockResolvedValue({
+      companyKey: "acme",
+      monitorKind: "collections_pressure",
+      monitorResult: {
+        status: "no_alert",
+        severity: "none",
+        proofBundlePosture: {
+          state: "source_backed",
+        },
+        deterministicSeverityRationale:
+          "No alert because no F6C collections-pressure conditions were detected.",
+      },
+      alertCard: null,
+    });
 
     const mod = await import("./page");
     const html = renderToStaticMarkup(
@@ -45,10 +61,12 @@ describe("MonitoringPage", () => {
     );
 
     expect(getLatestCashPostureMonitorResult).toHaveBeenCalledWith("acme");
-    expect(html).toContain("Cash posture alert posture for acme.");
+    expect(getLatestCollectionsPressureMonitorResult).toHaveBeenCalledWith("acme");
+    expect(html).toContain("Monitor alert posture for acme.");
     expect(html).toContain(
       "monitoring-alert-card:acme:66666666-6666-4666-8666-666666666666",
     );
+    expect(html).toContain("Collections pressure monitor");
   });
 
   it("renders a non-alerting latest result without an alert card", async () => {
@@ -66,11 +84,26 @@ describe("MonitoringPage", () => {
       },
       alertCard: null,
     });
+    getLatestCollectionsPressureMonitorResult.mockResolvedValue({
+      companyKey: "acme",
+      monitorKind: "collections_pressure",
+      monitorResult: {
+        status: "no_alert",
+        severity: "none",
+        proofBundlePosture: {
+          state: "source_backed",
+        },
+        deterministicSeverityRationale:
+          "No alert because no F6C collections-pressure conditions were detected.",
+      },
+      alertCard: null,
+    });
 
     const mod = await import("./page");
     const html = renderToStaticMarkup(await mod.default({}));
 
     expect(getLatestCashPostureMonitorResult).toHaveBeenCalledWith("acme");
+    expect(getLatestCollectionsPressureMonitorResult).toHaveBeenCalledWith("acme");
     expect(html).toContain("no_alert");
     expect(html).toContain("source_backed");
     expect(html).not.toContain("monitoring-alert-card");
@@ -85,10 +118,45 @@ describe("MonitoringPage", () => {
         companyKey: "acme",
       },
     });
+    getLatestCollectionsPressureMonitorResult.mockResolvedValue({
+      companyKey: "acme",
+      monitorKind: "collections_pressure",
+      monitorResult: null,
+      alertCard: {
+        companyKey: "acme",
+      },
+    });
 
     const mod = await import("./page");
     const html = renderToStaticMarkup(await mod.default({}));
 
     expect(html).not.toContain("monitoring-alert-card");
+  });
+
+  it("renders a collections alert card without relying on cash handoff behavior", async () => {
+    getLatestCashPostureMonitorResult.mockResolvedValue({
+      companyKey: "acme",
+      monitorKind: "cash_posture",
+      monitorResult: null,
+      alertCard: null,
+    });
+    getLatestCollectionsPressureMonitorResult.mockResolvedValue({
+      companyKey: "acme",
+      monitorKind: "collections_pressure",
+      monitorResult: {
+        id: "77777777-7777-4777-8777-777777777777",
+        status: "alert",
+      },
+      alertCard: {
+        companyKey: "acme",
+      },
+    });
+
+    const mod = await import("./page");
+    const html = renderToStaticMarkup(await mod.default({}));
+
+    expect(html).toContain(
+      "monitoring-alert-card:acme:77777777-7777-4777-8777-777777777777",
+    );
   });
 });

@@ -1407,6 +1407,7 @@ function buildAlertMonitorResult(): MonitorResult {
         "Critical because missing_source was detected from stored cash-posture freshness.",
       conditionSummaries: ["No successful bank-account-summary slice exists."],
       sourceFreshnessPosture,
+      sourceLineageRefs: [],
       sourceLineageSummary:
         "No bank-account-summary source lineage is available.",
       limitations: [

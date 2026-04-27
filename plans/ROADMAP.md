@@ -401,7 +401,7 @@ Slice map:
       - reuse the existing correction route and `approval.circulation_log_corrected` replay seam by default
       - keep the slice deterministic, runtime-free, and delivery-free in the system sense
       - do not add actual send, distribute, publish, PDF export, slide export, or runtime-codex behavior
-    - after the shipped F5C4I closeout, the repo should not reopen broader later-F5 work unless a new plan names a concrete truthfulness gap. FP-0051 is now the shipped first-F6B record, and FP-0052 is now the active F6C collections-pressure monitor contract; starting F6D or later requires a new named Finance Plan.
+    - after the shipped F5C4I closeout, the repo should not reopen broader later-F5 work unless a new plan names a concrete truthfulness gap. FP-0051 is now the shipped first-F6B record, and FP-0052 records the F6C collections-pressure monitor slice; starting F6D or later requires a new named Finance Plan.
 
 Exit criteria:
 
@@ -417,16 +417,18 @@ Turn Pocket CFO into a recurring finance operating system without weakening the 
 
 `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` records the shipped first F6A implementation slice.
 `plans/FP-0051-alert-to-investigation-mission-foundation.md` records the shipped first F6B implementation slice.
-`plans/FP-0052-collections-pressure-monitor-foundation.md` is the active F6C implementation-ready contract.
+`plans/FP-0052-collections-pressure-monitor-foundation.md` records the F6C implementation slice.
 F6A is not a broad monitoring platform.
 The first shipped implementation slice is exactly `F6A-monitoring-foundation-and-first-cash-posture-alert`.
 The first shipped F6B slice is exactly `F6B-alert-to-investigation-mission-foundation`.
-The active F6C slice is exactly `F6C-collections-pressure-monitor-foundation`.
+The shipped F6C slice is exactly `F6C-collections-pressure-monitor-foundation`.
+F6D has not started; F6D planning should start only in a new Finance Plan.
 
 Focus:
 
 - deterministic monitors over stored source, Finance Twin, CFO Wiki, and proof state
 - one first `cash_posture` monitor result
+- one second `collections_pressure` monitor result over stored receivables-aging or collections-posture state only
 - one operator-visible alert-card posture when source-backed conditions warrant it
 - explicit source lineage, freshness or missing-source posture, limitations, proof-bundle posture, deterministic severity rationale, and human-review next step
 - manual alert-to-investigation handoff first, then later additional monitor families, threshold/control ownership, demo replay, and benchmark support
@@ -435,6 +437,7 @@ Exit criteria:
 
 - one deterministic `cash_posture` monitor can produce a reviewable monitor result and alert card without runtime-codex, delivery, autonomous remediation, or new discovery families
 - one operator can manually create or open a deterministic investigation mission from one persisted `cash_posture` alert without automatic mission creation, notifications, runtime-codex, delivery, report conversion, or a second alert system
+- one deterministic `collections_pressure` monitor can persist a reviewable monitor result and optional alert card from stored receivables-aging or collections-posture state only, while staying investigation-free in F6C
 - a new user can bootstrap a demo company from docs and sources
 
 Slice map:
@@ -454,12 +457,12 @@ Slice map:
   - keep the investigation seed deterministic and source-backed with `monitorResultId`, `companyKey`, monitor kind, alert severity, conditions, freshness or missing-source posture, lineage summary, limitations, proof posture, and human-review next step
   - do not create missions automatically from monitor runs, run scheduled monitor automation, send notifications, invoke runtime-codex, write investigation prose with an LLM, invent finance facts, create external actions, turn the alert into a report, add an approval kind, or add a second alert system
 - `F6C — collections_pressure monitor foundation`
-  - active implementation-ready contract in `plans/FP-0052-collections-pressure-monitor-foundation.md`
+  - shipped implementation record in `plans/FP-0052-collections-pressure-monitor-foundation.md`
   - first F6C monitor family is exactly `collections_pressure`
   - start only from one `companyKey` plus stored Finance Twin receivables-aging or collections-posture state
   - produce one deterministic `monitor_result` with `monitorKind = "collections_pressure"` plus one optional alert card when source-backed conditions warrant it
   - reuse `apps/control-plane/src/modules/monitoring/**`, `monitor_results`, and existing monitoring alert-card patterns
-  - do not create investigations, rerun cash monitors as input, use F6B investigation missions as input, add reports or approvals, invoke runtime-codex, add delivery, or widen into a broad monitoring platform
+  - does not create investigations, rerun cash monitors as input, use F6B investigation missions as input, add reports or approvals, invoke runtime-codex, add delivery, or widen into a broad monitoring platform
 - `F6D — payables_pressure monitor foundation`
   - later only; reuse stored payables-aging or payables-posture state without adding new source facts or creating payment instructions
 - `F6E — policy or covenant threshold monitor foundation`

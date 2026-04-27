@@ -10,7 +10,10 @@ import {
 import { financeCompanies } from "./finance-twin";
 import { createdAt, id, updatedAt } from "./shared";
 
-export const monitorKindEnum = pgEnum("monitor_kind", ["cash_posture"]);
+export const monitorKindEnum = pgEnum("monitor_kind", [
+  "cash_posture",
+  "collections_pressure",
+]);
 
 export const monitorResultStatusEnum = pgEnum("monitor_result_status", [
   "no_alert",

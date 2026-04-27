@@ -23,6 +23,7 @@ describe("MonitoringAlertCard", () => {
     );
     expect(html).toContain("No successful bank-account-summary slice exists yet.");
     expect(html).toContain("Freshness state");
+    expect(html).toContain("Lineage refs");
     expect(html).toContain("No successful bank-account-summary source is stored.");
     expect(html).toContain("No bank-account-summary source lineage is available.");
     expect(html).toContain("limited_by_missing_source");
@@ -49,6 +50,63 @@ describe("MonitoringAlertCard", () => {
 
     expect(html).toBe("");
   });
+
+  it("renders a collections-pressure alert without an investigation action", () => {
+    const html = renderToStaticMarkup(
+      <MonitoringAlertCard
+        alertCard={{
+          ...buildAlertCard(),
+          monitorKind: "collections_pressure",
+          deterministicSeverityRationale:
+            "Warning because overdue_concentration condition(s) were detected from stored collections-pressure state.",
+          conditionSummaries: [
+            "USD receivables are 60.00% past due based on source-backed totals.",
+          ],
+          sourceFreshnessPosture: {
+            ...buildAlertCard().sourceFreshnessPosture,
+            summary: "The latest successful receivables-aging source is fresh.",
+          },
+          sourceLineageRefs: [
+            {
+              sourceId: "22222222-2222-4222-8222-222222222222",
+              sourceSnapshotId: "33333333-3333-4333-8333-333333333333",
+              sourceFileId: "44444444-4444-4444-8444-444444444444",
+              syncRunId: "55555555-5555-4555-8555-555555555555",
+              targetKind: "receivables_aging_row",
+              targetId: null,
+              lineageCount: 3,
+              lineageTargetCounts: {
+                ...emptyLineageTargetCounts,
+                customerCount: 1,
+                receivablesAgingRowCount: 1,
+              },
+              summary:
+                "Latest successful receivables-aging source lineage for collections pressure.",
+            },
+          ],
+          sourceLineageSummary:
+            "3 receivables-aging lineage record(s) back this monitor result.",
+          proofBundlePosture: {
+            state: "source_backed",
+            summary:
+              "The monitor result is backed by the latest stored receivables-aging source lineage.",
+          },
+          humanReviewNextStep:
+            "Review receivables-aging source coverage and collections posture before any external collections action.",
+        }}
+        monitorResultId="77777777-7777-4777-8777-777777777777"
+        requestedBy="finance-operator"
+      />,
+    );
+
+    expect(html).toContain("Collections pressure monitor");
+    expect(html).toContain("collections_pressure");
+    expect(html).toContain("overdue_concentration");
+    expect(html).toContain("3 receivables-aging lineage record");
+    expect(html).not.toContain("Create/open investigation");
+    expect(html.toLowerCase()).not.toContain("send");
+    expect(html.toLowerCase()).not.toContain("notify");
+  });
 });
 
 function buildAlertCard(): MonitorAlertCard {
@@ -71,6 +129,7 @@ function buildAlertCard(): MonitorAlertCard {
       failedSource: false,
       summary: "No successful bank-account-summary source is stored.",
     },
+    sourceLineageRefs: [],
     sourceLineageSummary:
       "No bank-account-summary source lineage is available.",
     limitations: [
@@ -86,3 +145,22 @@ function buildAlertCard(): MonitorAlertCard {
     createdAt: "2026-04-26T12:00:00.000Z",
   };
 }
+
+const emptyLineageTargetCounts = {
+  reportingPeriodCount: 0,
+  ledgerAccountCount: 0,
+  bankAccountCount: 0,
+  bankAccountSummaryCount: 0,
+  customerCount: 0,
+  receivablesAgingRowCount: 0,
+  vendorCount: 0,
+  payablesAgingRowCount: 0,
+  contractCount: 0,
+  contractObligationCount: 0,
+  spendRowCount: 0,
+  trialBalanceLineCount: 0,
+  accountCatalogEntryCount: 0,
+  journalEntryCount: 0,
+  journalLineCount: 0,
+  generalLedgerBalanceProofCount: 0,
+};

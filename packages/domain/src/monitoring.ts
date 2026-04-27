@@ -7,7 +7,10 @@ import {
   FinanceTwinSourceRefSchema,
 } from "./finance-twin";
 
-export const MonitorKindSchema = z.literal("cash_posture");
+export const MonitorKindSchema = z.enum([
+  "cash_posture",
+  "collections_pressure",
+]);
 
 export const MonitorResultStatusSchema = z.enum(["no_alert", "alert"]);
 
@@ -23,6 +26,7 @@ export const MonitorAlertConditionKindSchema = z.enum([
   "failed_source",
   "stale_source",
   "coverage_gap",
+  "overdue_concentration",
   "data_quality_gap",
 ]);
 
@@ -107,6 +111,7 @@ export const MonitorAlertCardSchema = z
     deterministicSeverityRationale: z.string().min(1),
     conditionSummaries: z.array(z.string().min(1)).min(1),
     sourceFreshnessPosture: MonitorSourceFreshnessPostureSchema,
+    sourceLineageRefs: z.array(MonitorSourceLineageRefSchema).default([]),
     sourceLineageSummary: z.string().min(1),
     limitations: z.array(z.string().min(1)),
     proofBundlePosture: MonitorProofBundlePostureSchema,
@@ -141,7 +146,7 @@ export const MonitorInvestigationSeedSchema = z
   .object({
     monitorResultId: z.string().uuid(),
     companyKey: FinanceCompanyKeySchema,
-    monitorKind: MonitorKindSchema,
+    monitorKind: z.literal("cash_posture"),
     monitorResultStatus: z.literal("alert"),
     alertSeverity: MonitorAlertSeveritySchema.exclude(["none"]),
     deterministicSeverityRationale: z.string().min(1),

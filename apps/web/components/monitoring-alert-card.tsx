@@ -17,12 +17,14 @@ export function MonitoringAlertCard({
   if (!alertCard) {
     return null;
   }
+  const canCreateInvestigation =
+    alertCard.monitorKind === "cash_posture" && Boolean(monitorResultId);
 
   return (
     <article className="card status-card">
       <div className="section-head">
         <div>
-          <p className="kicker">Cash posture monitor</p>
+          <p className="kicker">{readMonitorLabel(alertCard.monitorKind)}</p>
           <h2>{alertCard.companyKey}</h2>
         </div>
         <StatusPill
@@ -48,6 +50,10 @@ export function MonitoringAlertCard({
           <dt>Proof posture</dt>
           <dd>{alertCard.proofBundlePosture.state}</dd>
         </div>
+        <div>
+          <dt>Lineage refs</dt>
+          <dd>{alertCard.sourceLineageRefs.length}</dd>
+        </div>
         {monitorResultId ? (
           <div>
             <dt>Monitor result</dt>
@@ -56,10 +62,10 @@ export function MonitoringAlertCard({
         ) : null}
       </dl>
 
-      {monitorResultId ? (
+      {canCreateInvestigation ? (
         <form action={submitCreateOrOpenMonitorInvestigation} className="button-row">
           <input type="hidden" name="companyKey" value={alertCard.companyKey} />
-          <input type="hidden" name="monitorResultId" value={monitorResultId} />
+          <input type="hidden" name="monitorResultId" value={monitorResultId ?? ""} />
           <input
             type="hidden"
             name="requestedBy"
@@ -117,4 +123,10 @@ export function MonitoringAlertCard({
 
 function readSeverityLabel(severity: MonitorAlertCard["severity"]) {
   return severity.charAt(0).toUpperCase() + severity.slice(1);
+}
+
+function readMonitorLabel(monitorKind: MonitorAlertCard["monitorKind"]) {
+  return monitorKind === "collections_pressure"
+    ? "Collections pressure monitor"
+    : "Cash posture monitor";
 }
