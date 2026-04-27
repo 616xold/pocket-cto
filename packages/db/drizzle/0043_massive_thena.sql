@@ -1,0 +1,1 @@
+ALTER TYPE "public"."monitor_kind" ADD VALUE 'policy_covenant_threshold';

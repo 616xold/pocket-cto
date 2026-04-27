@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCfoWikiConceptPageKey,
+  buildCfoWikiPolicyPageKey,
+  CfoWikiBoundSourceSummarySchema,
+  CfoWikiPageViewSchema,
   FinanceCashPostureViewSchema,
   type FinanceCashPostureView,
   FinanceCollectionsPostureViewSchema,
   type FinanceCollectionsPostureView,
   FinancePayablesPostureViewSchema,
   type FinancePayablesPostureView,
+  type CfoWikiBoundSourceSummary,
+  type CfoWikiPageKey,
+  type CfoWikiPageView,
 } from "@pocket-cto/domain";
+import type { CfoWikiServicePort } from "../../lib/types";
 import { InMemoryMonitoringRepository } from "./repository";
 import { MonitoringService } from "./service";
 
@@ -259,6 +267,67 @@ describe("MonitoringService", () => {
     ).toBeNull();
   });
 
+  it("persists policy_covenant_threshold results without mission or runtime side effects", async () => {
+    const repository = new InMemoryMonitoringRepository();
+    const service = buildService(
+      buildCashPosture({ freshnessState: "fresh", cleanSource: true }),
+      repository,
+      buildCollectionsPosture(60),
+      buildPayablesPosture(),
+      buildPolicyWikiService(
+        "Pocket CFO threshold: collections_past_due_share <= 50 percent",
+      ),
+    );
+
+    const first = await service.runPolicyCovenantThresholdMonitor({
+      companyKey: "acme",
+      runKey: "policy_covenant_threshold:acme:test",
+      triggeredBy: "finance-operator",
+    });
+    const second = await service.runPolicyCovenantThresholdMonitor({
+      companyKey: "acme",
+      runKey: "policy_covenant_threshold:acme:test",
+      triggeredBy: "finance-controller",
+    });
+    const latest =
+      await service.getLatestPolicyCovenantThresholdMonitorResult("acme");
+
+    expect(second.monitorResult.id).toBe(first.monitorResult.id);
+    expect(second.monitorResult).toMatchObject({
+      alertCard: {
+        monitorKind: "policy_covenant_threshold",
+        status: "alert",
+      },
+      companyKey: "acme",
+      conditions: [
+        {
+          kind: "threshold_breach",
+          severity: "critical",
+        },
+      ],
+      monitorKind: "policy_covenant_threshold",
+      proofBundlePosture: {
+        state: "source_backed",
+      },
+      runtimeBoundary: {
+        autonomousFinanceActionUsed: false,
+        deliveryActionUsed: false,
+        investigationMissionCreated: false,
+        runtimeCodexUsed: false,
+      },
+      status: "alert",
+      triggeredBy: "finance-controller",
+    });
+    expect(second.alertCard?.sourceLineageRefs.length).toBeGreaterThan(0);
+    expect(latest.monitorResult?.id).toBe(first.monitorResult.id);
+    expect(
+      await repository.getLatestMonitorResult({
+        companyKey: "acme",
+        monitorKind: "payables_pressure",
+      }),
+    ).toBeNull();
+  });
+
   it("keeps stale source and data-quality rationale deterministic", async () => {
     const service = buildService(
       buildCashPosture({
@@ -337,8 +406,11 @@ function buildService(
   repository = new InMemoryMonitoringRepository(),
   collectionsPosture = buildCollectionsPosture(),
   payablesPosture = buildPayablesPosture(),
+  cfoWikiService: Pick<CfoWikiServicePort, "getPage" | "listCompanySources"> =
+    buildEmptyPolicyWikiService(),
 ) {
   return new MonitoringService({
+    cfoWikiService,
     financeTwinService: {
       async getCashPosture(companyKey: string) {
         expect(companyKey).toBe("acme");
@@ -529,7 +601,12 @@ function buildFreshness(input: {
   };
 }
 
-function buildCollectionsPosture(): FinanceCollectionsPostureView {
+function buildCollectionsPosture(
+  pastDueSharePercent = 20,
+): FinanceCollectionsPostureView {
+  const pastDue = formatMoney(pastDueSharePercent);
+  const current = formatMoney(100 - pastDueSharePercent);
+
   return FinanceCollectionsPostureViewSchema.parse({
     company: {
       id: companyId,
@@ -581,18 +658,18 @@ function buildCollectionsPosture(): FinanceCollectionsPostureView {
       {
         currency: "USD",
         totalReceivables: "100.00",
-        currentBucketTotal: "80.00",
-        pastDueBucketTotal: "20.00",
+        currentBucketTotal: current,
+        pastDueBucketTotal: pastDue,
         exactBucketTotals: [
           {
             bucketKey: "current",
             bucketClass: "current",
-            totalAmount: "80.00",
+            totalAmount: current,
           },
           {
             bucketKey: "past_due",
             bucketClass: "past_due_total",
-            totalAmount: "20.00",
+            totalAmount: pastDue,
           },
           {
             bucketKey: "total",
@@ -757,4 +834,209 @@ function buildPayablesSyncRun() {
     errorSummary: null,
     createdAt: "2026-04-26T11:00:00.000Z",
   };
+}
+
+function buildEmptyPolicyWikiService(): Pick<
+  CfoWikiServicePort,
+  "getPage" | "listCompanySources"
+> {
+  return {
+    async getPage() {
+      throw new Error("No CFO Wiki page fixture configured.");
+    },
+    async listCompanySources(companyKey: string) {
+      expect(companyKey).toBe("acme");
+      return {
+        companyDisplayName: "Acme Holdings",
+        companyId,
+        companyKey: "acme",
+        limitations: [],
+        sourceCount: 0,
+        sources: [],
+      };
+    },
+  };
+}
+
+function buildPolicyWikiService(
+  thresholdLine: string,
+): Pick<CfoWikiServicePort, "getPage" | "listCompanySources"> {
+  const policySource = buildPolicySource(thresholdLine);
+  const policyPageKey = buildCfoWikiPolicyPageKey(policySource.source.id);
+  const policyCorpusPageKey = buildCfoWikiConceptPageKey("policy-corpus");
+
+  return {
+    async getPage(companyKey: string, pageKey: CfoWikiPageKey) {
+      expect(companyKey).toBe("acme");
+
+      if (pageKey === policyPageKey) {
+        return buildPolicyPage({
+          markdownBody: thresholdLine,
+          pageKey,
+          pageKind: "policy",
+        });
+      }
+
+      if (pageKey === policyCorpusPageKey) {
+        return buildPolicyPage({
+          markdownBody: "Policy corpus page.",
+          pageKey,
+          pageKind: "concept",
+        });
+      }
+
+      throw new Error(`Unexpected CFO Wiki page ${pageKey}`);
+    },
+    async listCompanySources(companyKey: string) {
+      expect(companyKey).toBe("acme");
+      return {
+        companyDisplayName: "Acme Holdings",
+        companyId,
+        companyKey: "acme",
+        limitations: [],
+        sourceCount: 1,
+        sources: [policySource],
+      };
+    },
+  };
+}
+
+function buildPolicySource(thresholdLine: string): CfoWikiBoundSourceSummary {
+  const checksum =
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+  return CfoWikiBoundSourceSummarySchema.parse({
+    binding: {
+      boundBy: "operator",
+      companyId,
+      createdAt: now,
+      documentRole: "policy_document",
+      id: "77777777-7777-4777-8777-777777777777",
+      includeInCompile: true,
+      sourceId,
+      updatedAt: now,
+    },
+    latestExtract: {
+      companyId,
+      createdAt: now,
+      documentKind: "markdown_text",
+      errorSummary: null,
+      excerptBlocks: [{ heading: null, text: thresholdLine }],
+      extractedAt: now,
+      extractedText: thresholdLine,
+      extractStatus: "extracted",
+      headingOutline: [],
+      id: "88888888-8888-4888-8888-888888888888",
+      inputChecksumSha256: checksum,
+      parserVersion: "test-parser-v1",
+      renderedMarkdown: thresholdLine,
+      sourceFileId,
+      sourceId,
+      sourceSnapshotId,
+      title: "Threshold policy",
+      updatedAt: now,
+      warnings: [],
+    },
+    latestSnapshot: {
+      capturedAt: now,
+      checksumSha256: checksum,
+      createdAt: now,
+      id: sourceSnapshotId,
+      ingestErrorSummary: null,
+      ingestStatus: "ready",
+      mediaType: "text/markdown",
+      originalFileName: "threshold-policy.md",
+      sizeBytes: 128,
+      sourceId,
+      storageKind: "local_path",
+      storageRef: "/tmp/threshold-policy.md",
+      updatedAt: now,
+      version: 1,
+    },
+    latestSourceFile: {
+      capturedAt: now,
+      checksumSha256: checksum,
+      createdAt: now,
+      createdBy: "operator",
+      id: sourceFileId,
+      mediaType: "text/markdown",
+      originalFileName: "threshold-policy.md",
+      sizeBytes: 128,
+      sourceId,
+      sourceSnapshotId,
+      storageKind: "local_path",
+      storageRef: "/tmp/threshold-policy.md",
+    },
+    limitations: [],
+    source: {
+      createdAt: now,
+      createdBy: "operator",
+      description: "Policy document",
+      id: sourceId,
+      kind: "document",
+      name: "Threshold policy",
+      originKind: "manual",
+      updatedAt: now,
+    },
+  });
+}
+
+function buildPolicyPage(input: {
+  markdownBody: string;
+  pageKey: CfoWikiPageKey;
+  pageKind: CfoWikiPageView["page"]["pageKind"];
+}): CfoWikiPageView {
+  return CfoWikiPageViewSchema.parse({
+    backlinks: [],
+    companyDisplayName: "Acme Holdings",
+    companyId,
+    companyKey: "acme",
+    freshnessSummary: {
+      state: "fresh",
+      summary: "Synthetic fresh wiki page.",
+    },
+    latestCompileRun: {
+      completedAt: now,
+      compilerVersion: "test-compiler-v1",
+      companyId,
+      createdAt: now,
+      errorSummary: null,
+      id: "99999999-9999-4999-8999-999999999999",
+      startedAt: now,
+      stats: {},
+      status: "succeeded",
+      triggeredBy: "operator",
+      triggerKind: "manual",
+      updatedAt: now,
+    },
+    limitations: [],
+    links: [],
+    page: {
+      companyId,
+      compileRunId: "99999999-9999-4999-8999-999999999999",
+      createdAt: now,
+      filedMetadata: null,
+      freshnessSummary: {
+        state: "fresh",
+        summary: "Synthetic fresh policy page.",
+      },
+      id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      lastCompiledAt: now,
+      limitations: [],
+      markdownBody: input.markdownBody,
+      markdownPath: `${input.pageKey}.md`,
+      ownershipKind: "compiler_owned",
+      pageKey: input.pageKey,
+      pageKind: input.pageKind,
+      summary: "Synthetic policy page.",
+      temporalStatus: "current",
+      title: "Synthetic policy page",
+      updatedAt: now,
+    },
+    refs: [],
+  });
+}
+
+function formatMoney(value: number) {
+  return value.toFixed(2);
 }

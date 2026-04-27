@@ -530,6 +530,204 @@ describe("monitoring domain contract", () => {
     expect(seed.success).toBe(false);
   });
 
+  it("accepts a policy covenant threshold alert with policy and comparable actual lineage without widening investigation seeds", () => {
+    const parsed = MonitorResultSchema.parse({
+      id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      companyId,
+      companyKey: "acme",
+      monitorKind: "policy_covenant_threshold",
+      runKey: "policy_covenant_threshold:acme:threshold-breach",
+      triggeredBy: "operator",
+      status: "alert",
+      severity: "critical",
+      conditions: [
+        {
+          kind: "threshold_breach",
+          severity: "critical",
+          summary:
+            "collections_past_due_share is 60.00 percent, breaching the source-backed <= 50 percent threshold.",
+          evidencePath:
+            "thresholdFacts[collections_past_due_share].comparison",
+        },
+      ],
+      sourceFreshnessPosture: {
+        state: "fresh",
+        latestAttemptedSyncRunId: null,
+        latestSuccessfulSyncRunId: null,
+        latestSuccessfulSource: null,
+        missingSource: false,
+        failedSource: false,
+        summary:
+          "Stored CFO Wiki policy threshold posture is fresh for policy/covenant threshold monitoring.",
+      },
+      sourceLineageRefs: [
+        {
+          lineageKind: "policy_threshold_fact",
+          thresholdId:
+            "22222222-2222-4222-8222-222222222222:collections_past_due_share:1",
+          sourceId,
+          sourceSnapshotId,
+          sourceFileId,
+          policyPageKey: `policies/${sourceId}`,
+          compileRunId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          excerpt:
+            "Pocket CFO threshold: collections_past_due_share <= 50 percent",
+          metricKey: "collections_past_due_share",
+          comparator: "<=",
+          thresholdValue: 50,
+          unit: "percent",
+          extractionRuleVersion: "f6e-policy-threshold-line-v1",
+          limitations: [
+            "Only exact Pocket CFO threshold grammar was parsed.",
+          ],
+          summary:
+            "Policy threshold fact extracted from stored deterministic policy posture.",
+        },
+        {
+          lineageKind: "finance_twin_actual",
+          metricKey: "collections_past_due_share",
+          actualValue: 60,
+          unit: "percent",
+          sourceId,
+          sourceSnapshotId,
+          sourceFileId,
+          syncRunId,
+          targetKind: "receivables_aging_row",
+          targetId: null,
+          lineageCount: 3,
+          lineageTargetCounts: {
+            customerCount: 1,
+            receivablesAgingRowCount: 1,
+          },
+          freshnessState: "fresh",
+          basisSummary:
+            "Actual collections past-due share was computed from one source-backed receivables-aging currency bucket.",
+          limitations: [
+            "No company-wide cross-currency aggregation is performed.",
+          ],
+          summary:
+            "Comparable actual collections_past_due_share from stored Finance Twin collections posture.",
+        },
+      ],
+      deterministicSeverityRationale:
+        "Critical because threshold_breach condition(s) were detected from stored policy/covenant threshold state.",
+      limitations: [
+        "F6E parses only exact Pocket CFO threshold grammar from stored policy posture.",
+      ],
+      proofBundlePosture: {
+        state: "source_backed",
+        summary:
+          "The monitor result is backed by stored policy threshold facts and comparable Finance Twin posture.",
+      },
+      replayPosture: {
+        state: "not_appended",
+        reason:
+          "F6E monitor results are company-scoped records and are not mission replay events.",
+      },
+      runtimeBoundary: {
+        runtimeCodexUsed: false,
+        deliveryActionUsed: false,
+        investigationMissionCreated: false,
+        autonomousFinanceActionUsed: false,
+        summary:
+          "The result was produced by deterministic stored-state evaluation only.",
+      },
+      humanReviewNextStep:
+        "Review the cited policy threshold line and comparable Finance Twin posture before deciding any external action.",
+      alertCard: {
+        companyKey: "acme",
+        monitorKind: "policy_covenant_threshold",
+        status: "alert",
+        severity: "critical",
+        deterministicSeverityRationale:
+          "Critical because threshold_breach condition(s) were detected from stored policy/covenant threshold state.",
+        conditionSummaries: [
+          "collections_past_due_share is 60.00 percent, breaching the source-backed <= 50 percent threshold.",
+        ],
+        sourceFreshnessPosture: {
+          state: "fresh",
+          latestAttemptedSyncRunId: null,
+          latestSuccessfulSyncRunId: null,
+          latestSuccessfulSource: null,
+          missingSource: false,
+          failedSource: false,
+          summary:
+            "Stored CFO Wiki policy threshold posture is fresh for policy/covenant threshold monitoring.",
+        },
+        sourceLineageRefs: [
+          {
+            lineageKind: "policy_source",
+            sourceId,
+            sourceSnapshotId,
+            sourceFileId,
+            policyPageKey: `policies/${sourceId}`,
+            compileRunId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+            documentRole: "policy_document",
+            extractStatus: "extracted",
+            freshnessState: "fresh",
+            summary:
+              "Policy source is bound as policy_document with a deterministic extract.",
+          },
+        ],
+        sourceLineageSummary:
+          "Policy threshold and comparable actual lineage are stored for human review.",
+        limitations: [
+          "F6E parses only exact Pocket CFO threshold grammar from stored policy posture.",
+        ],
+        proofBundlePosture: {
+          state: "source_backed",
+          summary:
+            "The monitor result is backed by stored policy threshold facts and comparable Finance Twin posture.",
+        },
+        humanReviewNextStep:
+          "Review the cited policy threshold line and comparable Finance Twin posture before deciding any external action.",
+        createdAt: now,
+      },
+      createdAt: now,
+    });
+
+    expect(parsed.monitorKind).toBe("policy_covenant_threshold");
+    expect(parsed.conditions[0]?.kind).toBe("threshold_breach");
+    expect(
+      parsed.sourceLineageRefs.some(
+        (ref) => "lineageKind" in ref && ref.lineageKind === "policy_threshold_fact",
+      ),
+    ).toBe(true);
+
+    const seed = MonitorInvestigationSeedSchema.safeParse({
+      monitorResultId: parsed.id,
+      companyKey: "acme",
+      monitorKind: "policy_covenant_threshold",
+      monitorResultStatus: "alert",
+      alertSeverity: "critical",
+      deterministicSeverityRationale: parsed.deterministicSeverityRationale,
+      conditions: parsed.conditions,
+      conditionSummaries: parsed.alertCard?.conditionSummaries ?? [],
+      sourceFreshnessPosture: parsed.sourceFreshnessPosture,
+      sourceLineageRefs: parsed.sourceLineageRefs,
+      sourceLineageSummary: parsed.alertCard?.sourceLineageSummary ?? "",
+      limitations: parsed.limitations,
+      proofBundlePosture: parsed.proofBundlePosture,
+      humanReviewNextStep: parsed.humanReviewNextStep,
+      runtimeBoundary: {
+        monitorResultRuntimeBoundary: parsed.runtimeBoundary,
+        monitorRerunUsed: false,
+        runtimeCodexUsed: false,
+        deliveryActionUsed: false,
+        scheduledAutomationUsed: false,
+        reportArtifactCreated: false,
+        approvalCreated: false,
+        autonomousFinanceActionUsed: false,
+        summary: "Invalid policy/covenant handoff.",
+      },
+      sourceRef: `pocket-cfo://monitor-results/${parsed.id}`,
+      monitorResultCreatedAt: parsed.createdAt,
+      alertCardCreatedAt: parsed.alertCard?.createdAt ?? now,
+    });
+
+    expect(seed.success).toBe(false);
+  });
+
   it("parses a deterministic alert investigation seed from stored monitor evidence", () => {
     const parsed = MonitorInvestigationSeedSchema.parse({
       monitorResultId: "66666666-6666-4666-8666-666666666666",

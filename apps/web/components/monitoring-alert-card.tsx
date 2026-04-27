@@ -141,5 +141,9 @@ function readMonitorLabel(monitorKind: MonitorAlertCard["monitorKind"]) {
     return "Payables pressure monitor";
   }
 
+  if (monitorKind === "policy_covenant_threshold") {
+    return "Policy/covenant threshold monitor";
+  }
+
   return "Cash posture monitor";
 }

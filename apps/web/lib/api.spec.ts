@@ -262,6 +262,40 @@ describe("web api module", () => {
     );
   });
 
+  it("reads the latest policy-covenant-threshold monitor result", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      async json() {
+        const monitorResult = buildMonitorResultPayload(
+          "policy_covenant_threshold",
+        );
+
+        return {
+          companyKey: "acme",
+          monitorKind: "policy_covenant_threshold",
+          monitorResult,
+          alertCard: monitorResult.alertCard,
+        };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const latest = await mod.getLatestPolicyCovenantThresholdMonitorResult(
+      "acme",
+    );
+
+    expect(latest?.monitorKind).toBe("policy_covenant_threshold");
+    expect(latest?.monitorResult?.status).toBe("alert");
+    expect(latest?.alertCard?.monitorKind).toBe("policy_covenant_threshold");
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/monitoring/companies/acme/policy-covenant-threshold/latest`,
+      {
+        cache: "no-store",
+      },
+    );
+  });
+
   it("posts the cash-posture monitor run route", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -407,6 +441,61 @@ describe("web api module", () => {
       {
         body: JSON.stringify({
           runKey: "operator-run-3",
+          triggeredBy: "finance-operator",
+        }),
+        cache: "no-store",
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      },
+    );
+  });
+
+  it("posts the policy-covenant-threshold monitor run route", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      async json() {
+        const monitorResult = buildMonitorResultPayload(
+          "policy_covenant_threshold",
+        );
+
+        return {
+          monitorResult,
+          alertCard: monitorResult.alertCard,
+        };
+      },
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const mod = await loadApiModuleWithEnv({});
+    const result = await mod.runPolicyCovenantThresholdMonitor({
+      companyKey: "acme",
+      runKey: "operator-run-4",
+      triggeredBy: "finance-operator",
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      statusCode: 201,
+      data: {
+        monitorResult: {
+          monitorKind: "policy_covenant_threshold",
+          status: "alert",
+          severity: "critical",
+        },
+        alertCard: {
+          companyKey: "acme",
+          monitorKind: "policy_covenant_threshold",
+        },
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${mod.resolveControlPlaneUrl()}/monitoring/companies/acme/policy-covenant-threshold/run`,
+      {
+        body: JSON.stringify({
+          runKey: "operator-run-4",
           triggeredBy: "finance-operator",
         }),
         cache: "no-store",
@@ -2965,16 +3054,21 @@ function buildMonitorResultPayload(monitorKind = "cash_posture") {
   const createdAt = "2026-04-26T12:00:00.000Z";
   const isCollections = monitorKind === "collections_pressure";
   const isPayables = monitorKind === "payables_pressure";
+  const isPolicy = monitorKind === "policy_covenant_threshold";
   const sourceNoun = isPayables
     ? "payables-aging"
     : isCollections
       ? "receivables-aging"
-      : "bank-account-summary";
+      : isPolicy
+        ? "policy-document"
+        : "bank-account-summary";
   const monitorLabel = isPayables
     ? "payables-pressure"
     : isCollections
       ? "collections-pressure"
-      : "cash-posture";
+      : isPolicy
+        ? "policy/covenant threshold"
+        : "cash-posture";
   const sourceFreshnessPosture = {
     state: "missing",
     latestAttemptedSyncRunId: null,
@@ -2986,7 +3080,7 @@ function buildMonitorResultPayload(monitorKind = "cash_posture") {
   };
   const proofBundlePosture = {
     state: "limited_by_missing_source",
-    summary: `The monitor proof is limited because no ${sourceNoun} source backs the ${isPayables ? "payables" : isCollections ? "collections" : "cash"} posture.`,
+    summary: `The monitor proof is limited because no ${sourceNoun} source backs the ${isPayables ? "payables" : isCollections ? "collections" : isPolicy ? "policy threshold" : "cash"} posture.`,
   };
 
   return {
@@ -3014,6 +3108,8 @@ function buildMonitorResultPayload(monitorKind = "cash_posture") {
         ? "F6C collections-pressure monitoring evaluates stored source posture only."
         : isPayables
           ? "F6D payables-pressure monitoring evaluates stored source posture only."
+          : isPolicy
+            ? "F6E policy/covenant threshold monitoring evaluates stored policy posture only."
           : "F6A cash-posture monitoring evaluates stored source posture only.",
     ],
     proofBundlePosture,
@@ -3034,6 +3130,8 @@ function buildMonitorResultPayload(monitorKind = "cash_posture") {
       ? "Review receivables-aging source coverage and collections posture before any external collections action."
       : isPayables
         ? "Review payables-aging source coverage and payables posture before any external vendor or payment action."
+        : isPolicy
+          ? "Review policy threshold source coverage and comparable actual posture before deciding any external action."
         : "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
     alertCard: {
       companyKey: "acme",
@@ -3050,6 +3148,8 @@ function buildMonitorResultPayload(monitorKind = "cash_posture") {
           ? "F6C collections-pressure monitoring evaluates stored source posture only."
           : isPayables
             ? "F6D payables-pressure monitoring evaluates stored source posture only."
+            : isPolicy
+              ? "F6E policy/covenant threshold monitoring evaluates stored policy posture only."
             : "F6A cash-posture monitoring evaluates stored source posture only.",
       ],
       proofBundlePosture,
@@ -3057,6 +3157,8 @@ function buildMonitorResultPayload(monitorKind = "cash_posture") {
         ? "Review receivables-aging source coverage and collections posture before any external collections action."
         : isPayables
           ? "Review payables-aging source coverage and payables posture before any external vendor or payment action."
+          : isPolicy
+            ? "Review policy threshold source coverage and comparable actual posture before deciding any external action."
           : "Review cash-posture source coverage and refresh bank-account-summary ingest if needed.",
       createdAt,
     },

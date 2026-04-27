@@ -405,6 +405,7 @@ function buildSharedKernel(input: {
     financeTwinService,
   });
   const monitoringService = new MonitoringService({
+    cfoWikiService,
     financeTwinService,
     monitoringRepository: input.monitoringRepository,
   });

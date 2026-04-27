@@ -87,6 +87,27 @@ export const PAYABLES_PRESSURE_COPY: MonitorFormatterCopy = {
   stateLabel: "payables-pressure",
 };
 
+export const POLICY_COVENANT_THRESHOLD_COPY: MonitorFormatterCopy = {
+  coverageProofSummary:
+    "The monitor proof is source-backed but limited by policy threshold or comparable-actual coverage gaps.",
+  dataQualityProofSummary:
+    "The monitor proof is source-backed but limited by policy threshold or comparable-actual data-quality diagnostics.",
+  failedProofSummary:
+    "The monitor proof is limited because a stored CFO Wiki policy source or page has failed posture.",
+  lineageNoun: "policy-threshold",
+  missingProofSummary:
+    "The monitor proof is limited because no included policy_document source backs policy/covenant threshold posture.",
+  noAlertRationale:
+    "No alert because no F6E policy/covenant threshold source, freshness, coverage, data-quality, threshold-breach, or threshold-approaching conditions were detected.",
+  noLineageSummary:
+    "No policy threshold or comparable Finance Twin actual lineage is available for this monitor result.",
+  sourceBackedProofSummary:
+    "The monitor result is backed by stored policy threshold facts and comparable Finance Twin posture.",
+  staleProofSummary:
+    "The monitor proof is source-backed but limited by stale CFO Wiki policy posture.",
+  stateLabel: "policy/covenant threshold",
+};
+
 export function chooseHighestSeverity(
   conditions: MonitorAlertCondition[],
 ): MonitorAlertSeverity {
