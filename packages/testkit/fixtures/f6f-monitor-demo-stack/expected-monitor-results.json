@@ -1,0 +1,129 @@
+{
+  "demoCompany": {
+    "companyKey": "demo-monitor-stack",
+    "companyName": "Pocket CFO Monitor Demo Stack"
+  },
+  "sourceFiles": [
+    {
+      "role": "bank_cash",
+      "path": "sources/bank-cash.csv",
+      "sourceKind": "dataset",
+      "mediaType": "text/csv",
+      "expectedExtractorKey": "bank_account_summary_csv"
+    },
+    {
+      "role": "receivables_aging",
+      "path": "sources/receivables-aging.csv",
+      "sourceKind": "dataset",
+      "mediaType": "text/csv",
+      "expectedExtractorKey": "receivables_aging_csv"
+    },
+    {
+      "role": "payables_aging",
+      "path": "sources/payables-aging.csv",
+      "sourceKind": "dataset",
+      "mediaType": "text/csv",
+      "expectedExtractorKey": "payables_aging_csv"
+    },
+    {
+      "role": "policy_thresholds",
+      "path": "sources/policy-thresholds.md",
+      "sourceKind": "document",
+      "mediaType": "text/markdown",
+      "documentRole": "policy_document"
+    }
+  ],
+  "monitorResults": {
+    "cash_posture": {
+      "monitorKind": "cash_posture",
+      "status": "alert",
+      "severity": "warning",
+      "conditionKinds": ["data_quality_gap"],
+      "proofBundlePostureState": "limited_by_data_quality_gap",
+      "sourceFreshnessState": "fresh",
+      "alertCardExpected": true,
+      "sourceLineageExpected": true,
+      "humanReviewNextStepExpected": true,
+      "runtimeBoundary": {
+        "runtimeCodexUsed": false,
+        "deliveryActionUsed": false,
+        "investigationMissionCreated": false,
+        "autonomousFinanceActionUsed": false
+      }
+    },
+    "collections_pressure": {
+      "monitorKind": "collections_pressure",
+      "status": "alert",
+      "severity": "critical",
+      "conditionKinds": ["overdue_concentration"],
+      "proofBundlePostureState": "source_backed",
+      "sourceFreshnessState": "fresh",
+      "alertCardExpected": true,
+      "sourceLineageExpected": true,
+      "humanReviewNextStepExpected": true,
+      "runtimeBoundary": {
+        "runtimeCodexUsed": false,
+        "deliveryActionUsed": false,
+        "investigationMissionCreated": false,
+        "autonomousFinanceActionUsed": false
+      }
+    },
+    "payables_pressure": {
+      "monitorKind": "payables_pressure",
+      "status": "alert",
+      "severity": "critical",
+      "conditionKinds": ["overdue_concentration"],
+      "proofBundlePostureState": "source_backed",
+      "sourceFreshnessState": "fresh",
+      "alertCardExpected": true,
+      "sourceLineageExpected": true,
+      "humanReviewNextStepExpected": true,
+      "runtimeBoundary": {
+        "runtimeCodexUsed": false,
+        "deliveryActionUsed": false,
+        "investigationMissionCreated": false,
+        "autonomousFinanceActionUsed": false
+      }
+    },
+    "policy_covenant_threshold": {
+      "monitorKind": "policy_covenant_threshold",
+      "status": "alert",
+      "severity": "critical",
+      "conditionKinds": ["threshold_breach"],
+      "proofBundlePostureState": "source_backed",
+      "sourceFreshnessState": "fresh",
+      "alertCardExpected": true,
+      "sourceLineageExpected": true,
+      "humanReviewNextStepExpected": true,
+      "runtimeBoundary": {
+        "runtimeCodexUsed": false,
+        "deliveryActionUsed": false,
+        "investigationMissionCreated": false,
+        "autonomousFinanceActionUsed": false
+      }
+    }
+  },
+  "cashInvestigationHandoff": {
+    "expected": true,
+    "monitorKind": "cash_posture",
+    "sourceKind": "alert",
+    "sourceRefPrefix": "pocket-cfo://monitor-results/",
+    "taskless": true,
+    "idempotent": true,
+    "reportArtifactCreated": false,
+    "approvalCreated": false,
+    "runtimeCodexUsed": false,
+    "deliveryActionUsed": false,
+    "autonomousFinanceActionUsed": false
+  },
+  "absenceAssertions": {
+    "nonCashInvestigationsCreated": false,
+    "reportArtifactsCreated": false,
+    "approvalsCreated": false,
+    "deliveryOutboxEventsCreated": false,
+    "runtimeCodexThreadsCreated": false,
+    "paymentInstructionsCreated": false,
+    "newMonitorFamilyAdded": false,
+    "newDiscoveryFamilyAdded": false
+  }
+}

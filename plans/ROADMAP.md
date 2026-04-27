@@ -275,7 +275,7 @@ Turn shipped discovery outputs into reviewable finance reporting artifacts witho
 
 The latest shipped implementation records for this phase are `plans/FP-0045-board-packet-review-or-circulation-readiness-foundation.md` for F5C4E, `plans/FP-0046-circulation-log-and-first-board-packet-circulation-record-foundation.md` for F5C4F, `plans/FP-0047-board-packet-circulation-record-correction-and-chronology-foundation.md` for F5C4G, `plans/FP-0048-board-packet-circulation-actor-correction-and-chronology-hardening.md` for F5C4H, and `plans/FP-0049-board-packet-circulation-note-reset-and-effective-record-hardening.md` for F5C4I.
 F5C4I is now shipped: the repo already supports explicit clear-to-absent `circulationNote` correction on the existing board `report_circulation` seam while keeping the original record immutable and the correction history append-only.
-There is no active later-F5 implementation contract after FP-0049. `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` remains the shipped first-F6A record, `plans/FP-0051-alert-to-investigation-mission-foundation.md` remains the shipped first-F6B record, `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the shipped F6C implementation record, `plans/FP-0053-payables-pressure-monitor-foundation.md` is now the shipped F6D implementation record, and `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is now the shipped F6E implementation record. `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is the active F6F implementation-ready contract and does not reopen F5.
+There is no active later-F5 implementation contract after FP-0049. `plans/FP-0050-monitoring-foundation-and-first-cash-posture-alert.md` remains the shipped first-F6A record, `plans/FP-0051-alert-to-investigation-mission-foundation.md` remains the shipped first-F6B record, `plans/FP-0052-collections-pressure-monitor-foundation.md` is now the shipped F6C implementation record, `plans/FP-0053-payables-pressure-monitor-foundation.md` is now the shipped F6D implementation record, `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` is now the shipped F6E implementation record, and `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is now the shipped F6F implementation record. F6F does not reopen F5, and F6G or later implementation needs a new Finance Plan.
 The authority model stays fixed:
 
 - raw sources remain authoritative for document claims
@@ -420,14 +420,14 @@ Turn Pocket CFO into a recurring finance operating system without weakening the 
 `plans/FP-0052-collections-pressure-monitor-foundation.md` records the F6C implementation slice.
 `plans/FP-0053-payables-pressure-monitor-foundation.md` records the shipped F6D implementation slice.
 `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` records the shipped F6E implementation slice.
-`plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` records the active F6F implementation-ready contract.
+`plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` records the shipped F6F implementation slice.
 F6A is not a broad monitoring platform.
 The first shipped implementation slice is exactly `F6A-monitoring-foundation-and-first-cash-posture-alert`.
 The first shipped F6B slice is exactly `F6B-alert-to-investigation-mission-foundation`.
 The shipped F6C slice is exactly `F6C-collections-pressure-monitor-foundation`.
 The shipped F6D slice is exactly `F6D-payables-pressure-monitor-foundation`.
 The shipped F6E slice is exactly `F6E-policy-covenant-threshold-monitor-foundation`.
-The active F6F slice is exactly `F6F-monitor-demo-replay-and-stack-pack-foundation`.
+The shipped F6F slice is exactly `F6F-monitor-demo-replay-and-stack-pack-foundation`.
 
 Focus:
 
@@ -447,7 +447,7 @@ Exit criteria:
 - one deterministic `collections_pressure` monitor can persist a reviewable monitor result and optional alert card from stored receivables-aging or collections-posture state only, while staying investigation-free in F6C
 - the shipped F6D slice supports one deterministic `payables_pressure` monitor without investigations, delivery, payment behavior, runtime-Codex, reports, approvals, or multi-monitor widening
 - the shipped F6E slice supports one deterministic `policy_covenant_threshold` monitor without investigations, delivery, runtime-Codex, legal or policy advice, reports, approvals, new discovery families, or broad monitoring-platform behavior
-- the active F6F slice should prove a new user can bootstrap one demo company from checked-in source files and docs, then replay the shipped monitor stack deterministically
+- the shipped F6F slice proves a new user can bootstrap one demo company from checked-in source files and docs, then replay the shipped monitor stack deterministically
 
 Slice map:
 
@@ -489,16 +489,16 @@ Slice map:
   - reuse `apps/control-plane/src/modules/monitoring/**`, `monitor_results`, and existing monitoring alert-card patterns
   - does not create investigations, use F6B investigation missions as input, rerun cash/collections/payables monitors as input, add policy advice or legal interpretation, add reports or approvals, invoke runtime-codex, add delivery, add payment behavior, add a discovery family, or widen into a broad monitoring platform
 - `F6F — monitor demo replay and stack-pack foundation`
-  - active implementation-ready contract in `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md`
+  - shipped implementation record in `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md`
   - first F6F scope is exactly `F6F-monitor-demo-replay-and-stack-pack-foundation`
   - not a new monitor family and not a discovery-family expansion
   - input contract is one checked-in demo stack-pack fixture set with source files for bank/cash, receivables aging, payables aging, and policy threshold docs
-  - include deterministic source registration instructions and expected monitor outputs for `cash_posture`, `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold`
-  - include one expected cash-alert investigation handoff where the demo `cash_posture` result is alerting
-  - output contract is one deterministic replay command or smoke path plus a persisted evidence/demo replay artifact or summary only if the implementation justifies it
+  - includes deterministic source registration through `pnpm smoke:monitor-demo-replay:local` and expected monitor outputs for `cash_posture`, `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold`
+  - includes one expected cash-alert investigation handoff where the demo `cash_posture` result is alerting
+  - output contract is one deterministic replay smoke summary; no durable replay artifact or schema was added
   - no new monitor result semantics, alert condition kinds, approval kinds, investigation behavior beyond shipped F6B cash-only handoff, runtime-Codex, delivery, payments, legal/policy advice, reports, or autonomous remediation
 - `F6G — non-cash alert-to-investigation generalization`
-  - later only and only if a concrete operator need proves a narrow safe path for non-cash alerts
+  - later only and only if a concrete operator need proves a narrow safe path for non-cash alerts; create a new Finance Plan before implementation
 - `F6H — close/control checklist foundation`
   - later only if source-backed and explicitly scoped; do not create from FP-0055
 - `F6I — stack-pack expansion`

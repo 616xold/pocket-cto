@@ -47,10 +47,11 @@ Today the merged backbone is:
 - F6C additive deterministic monitoring for one second monitor family, `collections_pressure`, over stored Finance Twin receivables-aging / collections-posture state only, with one persisted monitor result plus optional operator alert-card posture carrying source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof posture, and a human-review next step while remaining investigation-free for collections
 - F6D additive deterministic monitoring for one third monitor family, `payables_pressure`, over stored Finance Twin payables-aging / payables-posture state only, with one persisted monitor result plus optional operator alert-card posture carrying source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof posture, and a human-review next step while remaining investigation-free, delivery-free, runtime-free, payment-free, and non-autonomous
 - F6E additive deterministic monitoring for one fourth monitor family, `policy_covenant_threshold`, over stored CFO Wiki policy-document posture and explicit comparable Finance Twin collections/payables posture only, with exact grammar threshold facts, fail-closed coverage/data-quality posture, source lineage, proof posture, and no investigations, delivery, runtime-Codex, legal/policy advice, payments, reports, approvals, or autonomous finance actions
+- F6F additive checked-in Pocket CFO monitor demo stack-pack fixture set plus deterministic replay smoke, bootstrapping one demo company from immutable bank/cash, receivables-aging, payables-aging, and policy threshold sources, verifying the four shipped monitor families, and proving the shipped cash-only alert-to-investigation handoff while staying runtime-free, delivery-free, report-free, approval-free, payment-free, legal/policy-advice-free, non-autonomous, and non-cash-investigation-free
 
-The active next contract is `plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md`.
-It is a docs-and-plan F6F handoff for one deterministic monitor demo replay and one stack-pack foundation.
-F6F must not add monitor families, discovery families, runtime-Codex behavior, delivery, report conversion, approvals, payment behavior, policy/legal advice, or non-cash investigations.
+`plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is now the shipped F6F record for one deterministic monitor demo replay and one stack-pack foundation.
+No F6G implementation has started.
+F6G planning should start only as a new Finance Plan if the next slice is needed; until then, F6F must remain limited to the shipped demo fixture, stack-pack manifest, replay smoke, and cash-only handoff proof.
 
 Broad F2 Finance Twin breadth is now shipped through F2O.
 The final F2 closeout and handoff are recorded in `plans/FP-0024-final-f2-exit-audit-and-polish.md` and `plans/FP-0025-final-f2-handoff-and-plan-chain-polish.md`.
@@ -79,7 +80,7 @@ F4C2 hardens that shipped six-family discovery baseline with operator-safe polic
 `plans/FP-0052-collections-pressure-monitor-foundation.md` now records the F6C implementation slice: one deterministic `collections_pressure` monitor result plus optional operator alert-card posture over stored receivables-aging or collections-posture Finance Twin state, while preserving shipped F6A/F6B behavior and avoiding runtime-codex, delivery, investigations for collections, approvals, report conversion, or multi-monitor widening.
 `plans/FP-0053-payables-pressure-monitor-foundation.md` now records the shipped F6D implementation slice: one deterministic `payables_pressure` monitor result plus optional operator alert-card posture over stored payables-aging or payables-posture Finance Twin state, while preserving F6A/F6B/F6C behavior and avoiding investigations for payables, payment recommendations, payment instructions, delivery, runtime-codex, approvals, report conversion, or autonomous finance action.
 `plans/FP-0054-policy-covenant-threshold-monitor-foundation.md` now records the shipped F6E implementation slice: one deterministic `policy_covenant_threshold` monitor result plus optional operator alert-card posture over stored CFO Wiki policy-document posture, stored deterministic policy extracts, policy pages, policy-corpus posture, and explicit comparable Finance Twin posture only. F6E does not create investigations, delivery, runtime-codex, approvals, reports, legal or policy advice, payment behavior, new discovery families, or a broad monitoring platform.
-`plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` is now the active implementation-ready F6F contract: one checked-in demo stack-pack fixture set, deterministic source-registration instructions, expected outputs for the four shipped monitor families, and the shipped cash-only alert-to-investigation handoff where applicable. It is not an implementation record yet.
+`plans/FP-0055-monitor-demo-replay-and-stack-pack-foundation.md` now records the shipped F6F implementation slice: one checked-in demo stack-pack fixture set, one Pocket CFO demo stack-pack manifest, one deterministic replay smoke at `pnpm smoke:monitor-demo-replay:local`, expected outputs for the four shipped monitor families, and the shipped cash-only alert-to-investigation handoff where applicable. F6F does not add monitor families, discovery families, non-cash investigations, delivery, runtime-Codex, approvals, reports, payment behavior, legal or policy advice, or autonomous finance action.
 
 ## Product boundary for v1
 
@@ -267,6 +268,7 @@ pnpm smoke:cash-posture-alert-investigation:local
 pnpm smoke:collections-pressure-monitor:local
 pnpm smoke:payables-pressure-monitor:local
 pnpm smoke:policy-covenant-threshold-monitor:local
+pnpm smoke:monitor-demo-replay:local
 pnpm smoke:finance-memo:local
 pnpm smoke:finance-report-filed-artifact:local
 ```
