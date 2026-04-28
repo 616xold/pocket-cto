@@ -104,8 +104,8 @@ async function main() {
       },
     );
 
-    const unsupportedNonCashInvestigationsCreated =
-      await assertNoUnsupportedNonCashInvestigations(pool, monitorRuns);
+    const payablesOrPolicyInvestigationsCreated =
+      await assertNoPayablesOrPolicyInvestigations(pool, monitorRuns);
     const after = await readBoundaryCounts(pool);
     assertAbsenceBoundaries({
       after,
@@ -136,7 +136,7 @@ async function main() {
           approvalsCreated: after.approvals !== before.approvals,
           deliveryOutboxEventsCreated:
             after.outboxEvents !== before.outboxEvents,
-          unsupportedNonCashInvestigationsCreated,
+          payablesOrPolicyInvestigationsCreated,
           newDiscoveryFamilyAdded: familyAbsence.newDiscoveryFamilyAdded,
           newMonitorFamilyAdded: familyAbsence.newMonitorFamilyAdded,
           paymentInstructionsCreated:
@@ -564,7 +564,7 @@ async function createOrOpenInvestigation(app, input) {
   });
 }
 
-async function assertNoUnsupportedNonCashInvestigations(pool, monitorRuns) {
+async function assertNoPayablesOrPolicyInvestigations(pool, monitorRuns) {
   for (const monitorKind of [
     "payables_pressure",
     "policy_covenant_threshold",
@@ -650,9 +650,9 @@ function assertAbsenceBoundaries(input) {
     }
   }
 
-  if (expected.unsupportedNonCashInvestigationsCreated !== false) {
+  if (expected.payablesOrPolicyInvestigationsCreated !== false) {
     throw new Error(
-      "F6F unsupported non-cash absence boundary was not declared",
+      "F6F payables or policy/covenant absence boundary was not declared",
     );
   }
 

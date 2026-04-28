@@ -36,7 +36,7 @@ describe("F6F monitor demo fixture", () => {
       monitorKind: "collections_pressure",
     });
     expect(expected.absenceAssertions).toMatchObject({
-      unsupportedNonCashInvestigationsCreated: false,
+      payablesOrPolicyInvestigationsCreated: false,
       reportArtifactsCreated: false,
       approvalsCreated: false,
       deliveryOutboxEventsCreated: false,

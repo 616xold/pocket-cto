@@ -130,7 +130,7 @@
     "autonomousFinanceActionUsed": false
   },
   "absenceAssertions": {
-    "unsupportedNonCashInvestigationsCreated": false,
+    "payablesOrPolicyInvestigationsCreated": false,
     "reportArtifactsCreated": false,
     "approvalsCreated": false,
     "deliveryOutboxEventsCreated": false,

@@ -11,7 +11,7 @@ The demo proves the existing operating loop:
 - source files become registered immutable evidence
 - Finance Twin and CFO Wiki state are refreshed deterministically
 - the four shipped monitor families run from stored state
-- the shipped cash-only alert-to-investigation handoff can be demonstrated when the demo cash monitor produces an alert
+- the shipped alert-to-investigation boundary is demonstrated from stored alert results; after shipped F6G polish, the replay expects cash plus collections handoffs when those demo monitors alert
 
 F6F is not a new monitor family.
 It must not add `spend_posture`, `obligation_calendar_review`, a new policy monitor, `covenant_risk`, or any new discovery family.
@@ -29,16 +29,17 @@ GitHub connector work is explicitly out of scope.
 - [x] 2026-04-27T21:37:35Z Refreshed the active-doc spine at the start of F6F so the then-next thread implemented the narrow F6F demo replay and stack-pack slice rather than re-planning F6F or widening into F6G or later work.
 - [x] 2026-04-27T21:44:38Z Run the docs-and-plan validation ladder through `pnpm ci:repro:current`; all required commands passed.
 - [x] 2026-04-27T22:08:31Z Add the checked-in F6F demo fixture set, normalized expected monitor outputs, finance-native demo stack-pack manifest, deterministic replay smoke, and `pnpm smoke:monitor-demo-replay:local`.
-- [x] 2026-04-27T22:08:31Z Prove the replay smoke locally against the Docker-backed app: it bootstraps `demo-monitor-stack`, verifies the four shipped monitor families, creates or opens exactly one cash-alert investigation, and confirms non-cash alerts remain investigation-free.
+- [x] 2026-04-27T22:08:31Z Prove the replay smoke locally against the Docker-backed app: it bootstraps `demo-monitor-stack`, verifies the four shipped monitor families, creates or opens the then-shipped cash-alert investigation, and confirms then-unsupported monitor alerts remain investigation-free.
 - [x] 2026-04-27T22:08:31Z Refresh the active docs and ops/eval guidance to identify FP-0055 as the shipped F6F record, with F6G or later work requiring a new Finance Plan.
 - [x] 2026-04-27T22:14:56Z Run the full requested F6F validation ladder through `pnpm ci:repro:current`; all required commands passed.
 - [x] 2026-04-27T22:37:54Z Polish shipped F6F proof/doc posture after merge: refresh stale local-dev and shipped-record wording, make the demo replay smoke prove checked-in fixture source immutability internally, and keep F6G planning or implementation out of scope.
 - [x] 2026-04-27T22:43:44Z QA-polish FP-0055 shipped-record wording so historical validation and handoff notes do not read like an active instruction to keep implementing F6F.
+- [x] 2026-04-27T23:58:41Z Post-F6G polish: align the shipped F6F demo replay proof wording with shipped F6G so cash plus collections handoffs are expected where alerting, payables and policy/covenant investigations remain absent, and F6H still requires a new Finance Plan.
 
 ## Surprises & Discoveries
 
 The shipped F6 monitor proof surface is already strong enough to compose one demo replay.
-The repo has packaged local proofs for `cash_posture`, `collections_pressure`, `payables_pressure`, `policy_covenant_threshold`, and the cash-only alert-to-investigation handoff.
+The repo has packaged local proofs for `cash_posture`, `collections_pressure`, `payables_pressure`, `policy_covenant_threshold`, and the monitor alert-to-investigation handoff boundary.
 F6F orchestrates and documents that shipped baseline rather than changing monitor evaluators.
 
 The current `packages/stack-packs` package is still engineering-shaped.
@@ -51,7 +52,7 @@ Current monitor results record their own replay posture, and F6B creates mission
 F6F does not invent new mission replay events just to make a demo look active.
 
 The implementation did not need a durable replay table or replay artifact.
-The deterministic command summary is enough for the first F6F proof because monitor results, source files, Finance Twin sync state, CFO Wiki state, and the cash-only investigation mission already persist through shipped seams.
+The deterministic command summary is enough for the first F6F proof because monitor results, source files, Finance Twin sync state, CFO Wiki state, and monitor investigation missions already persist through shipped seams.
 
 Retry determinism revealed one narrow fixture hygiene issue: repeated runs against the fixed `demo-monitor-stack` company can accumulate active CFO Wiki policy-document bindings.
 The replay now uses the existing CFO Wiki binding route to mark previous demo policy-document bindings as excluded before binding the current fixture document, so the policy/covenant monitor sees one intended threshold document without rewriting raw sources or changing evaluator semantics.
@@ -70,14 +71,14 @@ Rationale: a new user needs source files and docs that can be registered determi
 The shipped fixture set includes source files for bank/cash, receivables aging, payables aging, and policy threshold docs, plus deterministic source-registration instructions.
 
 Decision: the F6F expected-output contract covers only shipped monitor behavior.
-Rationale: expected outputs must be recorded for `cash_posture`, `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold`, plus one `cash_posture` alert-to-investigation handoff when the demo cash posture is intentionally alerting.
-Non-cash investigation handoffs remain out of scope.
+Rationale: expected outputs must be recorded for `cash_posture`, `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold`, plus alert-to-investigation handoffs for the supported alerting demo families.
+After shipped F6G, that means cash plus collections handoffs are expected and payables plus policy/covenant investigation handoffs remain out of scope.
 
 Decision: the first demo replay ships as one deterministic smoke path.
-Rationale: `pnpm smoke:monitor-demo-replay:local` registers the demo sources, uploads immutable fixture files, runs the shipped sync/wiki/monitor stack, compares normalized outputs, verifies the cash-only handoff, asserts forbidden side effects remain absent, and prints one compact JSON summary.
+Rationale: `pnpm smoke:monitor-demo-replay:local` registers the demo sources, uploads immutable fixture files, runs the shipped sync/wiki/monitor stack, compares normalized outputs, verifies the supported handoffs, asserts forbidden side effects remain absent, and prints one compact JSON summary.
 
 Decision: no durable demo replay artifact or schema is added in F6F.
-Rationale: the deterministic JSON summary is enough for the first implementation, while the underlying source files, source-file uploads, Finance Twin syncs, CFO Wiki posture, monitor results, and cash-only investigation mission persist through existing shipped seams.
+Rationale: the deterministic JSON summary is enough for the first implementation, while the underlying source files, source-file uploads, Finance Twin syncs, CFO Wiki posture, monitor results, and monitor investigation missions persist through existing shipped seams.
 
 Decision: the replay excludes previous active demo policy-document bindings before binding the current fixture policy document.
 Rationale: the fixed demo company key is retry-safe only if old policy fixtures do not accumulate into duplicate threshold conditions.
@@ -90,8 +91,8 @@ Decision: F6F preserves shipped F5 and F6 behavior.
 Rationale: no F5 reporting approval/release/circulation/correction changes, no F6B mission behavior changes, no monitor evaluator changes, no new approval kind, and no report conversion belong in this foundation unless a narrow replay-fixture truthfulness defect is found and documented before fixing it.
 
 Decision: later F6 slices are named but not created here.
-Rationale: likely later slices are `F6G-non-cash-alert-to-investigation-generalization` only if a concrete operator need is proven, `F6H-close-control-checklist-foundation` only if source-backed and explicitly scoped, and `F6I-stack-pack-expansion` only after the first demo pack is green.
-Do not create FP-0056 or any later plan in this slice.
+Rationale: at F6F closeout, likely later slices were `F6G-non-cash-alert-to-investigation-generalization` only if a concrete operator need was proven, `F6H-close-control-checklist-foundation` only if source-backed and explicitly scoped, and `F6I-stack-pack-expansion` only after the first demo pack was green.
+FP-0056 is now the shipped F6G record; do not create FP-0057 or start F6H from this shipped F6F record.
 
 Decision: post-merge F6F proof/doc polish remains correction-and-freshness work inside the shipped FP-0055 record.
 Rationale: fixture immutability and absence-summary proof fields strengthen the already-shipped replay evidence without adding product behavior, monitor evaluator semantics, monitor families, discovery families, schema, routes, package scripts, smoke aliases, runtime-Codex, delivery, reports, approvals, payment behavior, legal or policy advice, autonomous finance action, FP-0056, or F6G planning.
@@ -148,7 +149,7 @@ Relevant shipped seams for the replay are:
 - `apps/control-plane/src/modules/finance-twin/**` for deterministic source sync and stored Finance Twin reads
 - `apps/control-plane/src/modules/wiki/**` for policy-document binding, deterministic extracts, policy pages, and compile posture
 - `apps/control-plane/src/modules/monitoring/**` for run/latest monitor services
-- `apps/control-plane/src/modules/missions/**` for the shipped cash-only monitoring investigation handoff
+- `apps/control-plane/src/modules/missions/**` for the shipped monitoring investigation handoff boundary
 - the existing monitor smoke scripts in `tools/` for proven source registration, sync, monitor, and boundary-assertion patterns
 
 No GitHub connector work is in scope.
@@ -166,8 +167,8 @@ The replay registers each source, uploads each source file, syncs the finance so
 Third, the slice added `pnpm smoke:monitor-demo-replay:local`.
 The smoke builds the app in-process like existing local smokes, registers the demo sources, runs the deterministic monitor stack, compares normalized monitor output to the expected-output manifest, and prints a compact JSON replay summary.
 
-Fourth, the shipped cash-only handoff is included because the demo cash monitor intentionally alerts on a data-quality gap.
-The replay calls `POST /missions/monitoring-investigations` for that persisted `cash_posture` alert, proves repeated create/open is idempotent, and confirms collections, payables, and policy/covenant alerts do not create investigations.
+Fourth, the supported handoff boundary is included because the demo cash and collections monitors intentionally alert.
+The replay calls `POST /missions/monitoring-investigations` for those persisted `cash_posture` and `collections_pressure` alerts, proves repeated create/open is idempotent, and confirms payables and policy/covenant alerts do not create investigations.
 
 Fifth, the slice intentionally keeps replay output non-durable.
 The replay command summary is enough for F6F, and no schema, migration, replay table, report artifact, approval, or new artifact kind was added.
@@ -209,7 +210,7 @@ They now identify FP-0055 as the shipped F6F record and state that F6G or later 
    - syncs bank/cash, receivables, and payables source files through existing Finance Twin sync routes
    - binds and compiles the policy document through existing CFO Wiki routes
    - runs only the shipped monitor routes for `cash_posture`, `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold`
-   - creates or opens one cash alert investigation only when the cash result is `status = "alert"`
+   - creates or opens cash plus collections alert investigations only when those supported demo results are `status = "alert"`
    - compares normalized outputs against expected monitor results
    - asserts no runtime-Codex thread, notification, outbox delivery, report artifact, approval, payment instruction, legal/policy advice, or autonomous finance action is created
 
@@ -257,8 +258,8 @@ F6F implementation acceptance is observable only if all of the following are tru
 - deterministic source-registration instructions exist and preserve raw-source immutability
 - one replay command or smoke path can bootstrap the demo company from those source files
 - the replay produces or verifies expected monitor outputs for `cash_posture`, `collections_pressure`, `payables_pressure`, and `policy_covenant_threshold`
-- the replay includes exactly one cash-alert investigation handoff when the demo `cash_posture` result is alerting
-- non-cash monitor results do not create investigations
+- the replay includes cash plus collections alert investigation handoffs when those demo results are alerting
+- payables and policy/covenant monitor results do not create investigations
 - monitor results and alert cards preserve source lineage, freshness or missing-source posture, deterministic severity rationale, limitations, proof posture, and human-review next steps
 - no new monitor family, discovery family, alert condition kind, approval kind, report conversion, delivery behavior, runtime-Codex behavior, payment behavior, legal/policy advice, or autonomous remediation is added
 - F5 reporting/circulation/release/correction behavior remains unchanged
@@ -303,7 +304,7 @@ Package boundaries remain unchanged:
 - `apps/control-plane/src/modules/finance-twin` owns source-backed structured finance syncs and reads
 - `apps/control-plane/src/modules/wiki` owns policy binding, deterministic extracts, and wiki compile posture
 - `apps/control-plane/src/modules/monitoring` owns monitor run/latest behavior
-- `apps/control-plane/src/modules/missions` owns the shipped cash-only investigation handoff
+- `apps/control-plane/src/modules/missions` owns the shipped monitoring investigation handoff boundary
 - `apps/web` is not required for the first replay proof
 
 Runtime-Codex stays out of scope:
@@ -329,9 +330,11 @@ No new environment variables are expected.
 
 ## Outcomes & Retrospective
 
-This slice ships the first real F6F implementation: one source-backed monitor demo fixture, one finance-native demo stack-pack manifest, one deterministic replay smoke, normalized expected-output comparison for the four shipped monitor families, and the shipped cash-only handoff proof.
-It did not add schema, routes, monitor families, discovery families, non-cash investigations, runtime-Codex, delivery, reports, approvals, payment behavior, legal advice, policy advice, or autonomous remediation.
+This slice shipped the first real F6F implementation: one source-backed monitor demo fixture, one finance-native demo stack-pack manifest, one deterministic replay smoke, normalized expected-output comparison for the four shipped monitor families, and the then-shipped cash handoff proof.
+After shipped F6G, the replay proof is aligned to expect cash plus collections handoffs while preserving payables and policy/covenant investigation rejection.
+F6F did not add schema, routes, monitor families, discovery families, runtime-Codex, delivery, reports, approvals, payment behavior, legal advice, policy advice, or autonomous remediation.
 The full implementation validation ladder passed on 2026-04-27, including the new fixture and stack-pack specs, shipped F6 monitor smokes, finance-discovery supported families smoke, `pnpm smoke:monitor-demo-replay:local`, twin guardrail specs, lint, typecheck, test, and `pnpm ci:repro:current`.
 
-The exact next recommendation is to start F6G planning only if there is a concrete next operator need, and only by creating a new Finance Plan.
-No F6G, F6H, or F6I implementation started in FP-0055.
+FP-0056 is now the shipped F6G record.
+The exact next recommendation is to start F6H planning only if there is a concrete next operator need, and only by creating a new Finance Plan.
+No F6H or later implementation started in FP-0055.

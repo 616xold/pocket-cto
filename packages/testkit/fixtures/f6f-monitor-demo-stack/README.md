@@ -13,20 +13,21 @@ It may register sources, upload source files, sync Finance Twin state, bind the 
 
 ## Source Files
 
-- `sources/bank-cash.csv` is a bank-account-summary CSV with source-backed cash coverage and an intentional missing as-of date. It should produce a `cash_posture` alert from stored data-quality posture and enable the shipped cash-only F6B alert-to-investigation handoff.
-- `sources/receivables-aging.csv` is a receivables-aging CSV with 80 percent past due. It should produce a `collections_pressure` alert without creating an investigation.
+- `sources/bank-cash.csv` is a bank-account-summary CSV with source-backed cash coverage and an intentional missing as-of date. It should produce a `cash_posture` alert from stored data-quality posture and enable the shipped cash alert-to-investigation handoff.
+- `sources/receivables-aging.csv` is a receivables-aging CSV with 80 percent past due. It should produce a `collections_pressure` alert and enable the shipped F6G collections alert-to-investigation handoff.
 - `sources/payables-aging.csv` is a payables-aging CSV with 80 percent past due. It should produce a `payables_pressure` alert without creating an investigation.
-- `sources/policy-thresholds.md` is a policy document with one exact F6E threshold line. It should produce a `policy_covenant_threshold` alert by comparing the stored policy threshold to the stored collections posture.
+- `sources/policy-thresholds.md` is a policy document with one exact F6E threshold line. It should produce a `policy_covenant_threshold` alert by comparing the stored policy threshold to the stored collections posture without creating an investigation.
 
 ## Expected Output
 
 `expected-monitor-results.json` records the normalized expected monitor posture.
 Generated ids, raw source ids, snapshot ids, sync run ids, mission ids, and timestamps are intentionally excluded from the expected comparison.
 
-The expected handoff is cash-only:
+The expected handoff boundary is cash plus collections after shipped F6G:
 
 - one persisted alerting `cash_posture` monitor result can create or open one taskless investigation mission
+- one persisted alerting `collections_pressure` monitor result can create or open one taskless investigation mission
 - retrying that create/open call returns the same mission
-- collections, payables, and policy/covenant monitor results must not create investigations
+- `payables_pressure` and `policy_covenant_threshold` monitor results must not create investigations
 
-The fixture remains runtime-free, delivery-free, report-free, approval-free, payment-free, legal-advice-free, policy-advice-free, and non-autonomous.
+The fixture remains runtime-Codex-free, delivery-free, report-free, approval-free, payment-free, legal-advice-free, policy-advice-free, collection-instruction-free, customer-contact-instruction-free, and non-autonomous.
