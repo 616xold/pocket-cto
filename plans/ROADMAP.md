@@ -805,7 +805,7 @@ Future-only posture:
 - F6V actual provider integration remains future only, after provider security, compliance posture, human confirmation, observability, retry behavior, safe failure modes, credential boundaries, provider-job boundaries, outbox boundaries, and no autonomous send are proven
 - F6X actual certification remains future only, after operator need, legal boundaries, evidence boundaries, review gates, assurance constraints, non-advice constraints, and non-legal-opinion boundaries are proven
 - deeper document precision, PDF, OCR, or vector search remains future only if a later plan proves a source/evidence gap
-- F9 product UI launch polish is shipped in `plans/FP-0076-product-ui-launch-polish-foundation.md` as read-only app/web navigation, copy, warning, and status-surface truthfulness only, with no backend runtime behavior and no FP-0077
+- F9 product UI launch polish is shipped in `plans/FP-0076-product-ui-launch-polish-foundation.md` as read-only app/web navigation, copy, warning, and status-surface truthfulness only, with no backend runtime behavior and no FP-0077 created during F9
 
 ## F8 - v1 future-scope triage and roadmap hardening
 
@@ -842,7 +842,7 @@ Subsequent shipped and future slices:
 - F6X actual certification, future only after operator need, legal boundaries, evidence boundaries, review gates, assurance constraints, non-advice constraints, and non-legal-opinion boundaries are proven
 - F9 product UI launch polish, now shipped in `plans/FP-0076-product-ui-launch-polish-foundation.md` and bounded away from provider, certification, delivery, approval, report-release, legal/audit, generated-prose, finance-action, and autonomous-action behavior
 - deeper document precision/PDF/OCR/vector search, future only if a source/evidence gap is proven and provenance, freshness, limitations, and no-generated-prose boundaries stay intact
-- v1 public launch handoff, future only if a future roadmap/Finance Plan names concrete scope
+- v1 public launch handoff, now narrowed by active `plans/FP-0077-v1-public-launch-handoff.md` to docs-and-validation-only planning; F10 implementation, deployment, and external comms remain future-only until a later reviewed Finance Plan names concrete scope
 
 ## F9 - product UI launch polish foundation
 
@@ -853,7 +853,7 @@ Purpose:
 - one read-only product UI launch-polish foundation only
 - app/web navigation, copy, warning, and status-surface truthfulness only
 - no backend runtime behavior
-- no FP-0077 created
+- no FP-0077 created during F9
 
 Scope boundaries:
 
@@ -879,5 +879,44 @@ Candidate future slices, not created here:
 - deeper document precision/PDF/OCR/vector search, future only if a source/evidence gap is proven
 - F6V actual provider integration, future only
 - F6X actual certification, future only
-- v1 public launch handoff, future only if a future roadmap/Finance Plan names concrete scope
-- F10 and later work, future only if a future roadmap/Finance Plan names concrete scope
+- v1 public launch handoff is now planned in `plans/FP-0077-v1-public-launch-handoff.md` as F10 docs-and-validation-only planning
+- F10 implementation, deployment/external comms, F6V, F6X, deeper PDF/OCR/vector search, and later work remain future-only unless a later reviewed Finance Plan names exact scope
+
+## F10 - v1 public launch handoff
+
+Active planning contract: `plans/FP-0077-v1-public-launch-handoff.md`.
+
+Purpose:
+
+- one v1 public launch handoff planning slice only
+- docs-and-validation only
+- no product runtime behavior
+- no FP-0078 created in the planning slice
+
+Scope boundaries:
+
+- no route, schema, migration, package script, smoke alias, eval dataset, fixture, UI, monitor family, discovery family, mission behavior, runtime-Codex, provider integration, outbox/send/delivery behavior, report creation/release/circulation, approval workflow, actual certification, legal/audit opinion, generated prose, source mutation, finance write, product runtime behavior, deployment/external comms, or autonomous action
+- no F6A/F6C/F6D/F6E monitor evaluator changes
+- no F6B/F6G mission handoff changes
+- no F6H/F6J/F6K/F6M/F6N/F6P/F6Q/F6S/F6T behavior changes
+- no F6L/F6O/F6R/F6U/F6W/F6Y source-pack implementation changes
+- no FP-0074/FP-0075/FP-0076 broad rewrite beyond tiny shipped-record handoff clarification if needed
+
+F10 decision contract:
+
+- F10 is not a product feature slice
+- F10 is not provider integration
+- F10 is not certification
+- F10 is not deeper document precision, PDF, OCR, or vector search
+- F10 is not product UI implementation
+- F10 preserves shipped F6/F7/F8/F9 behavior
+- F10 defines v1 public launch handoff outputs as a plan contract only, without creating product artifacts
+- F10 verifies shipped source-pack proof posture and shipped safety-boundary posture before any later implementation closeout
+
+Candidate future slices, not created here:
+
+- F10 implementation/v1 public launch handoff closeout only after FP-0077 is reviewed and merged
+- deeper document precision/PDF/OCR/vector search, future only if a source/evidence gap is proven
+- F6V actual provider integration, future only
+- F6X actual certification, future only
+- public launch deployment or external communications, future only if a later roadmap/Finance Plan names exact scope

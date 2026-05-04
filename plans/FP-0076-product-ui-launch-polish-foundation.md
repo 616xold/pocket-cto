@@ -30,7 +30,7 @@ Do not invoke GitHub Connector Guard for F9.
 - [x] 2026-05-04T17:06:28Z Inventoried app/web product copy and found stale F1-era source/home copy plus status-surface labels that could understate shipped source-backed proof/readiness surfaces or over-imply delivery/certification/action posture without additional read-only boundary language.
 - [x] 2026-05-04T17:11:08Z Patched only read-only app/web copy, navigation, warning, and status-surface text on existing home, sources, missions, monitoring, close/control, acknowledgement-readiness, operator-readiness, and delivery-readiness surfaces plus matching web specs. Added no backend code, routes, API client methods, schema, migrations, scripts, smokes, fixtures, provider setup, credential UI, delivery/send UI, approval controls, report-release/circulation controls, certification controls, runtime-Codex controls, source-mutation controls, finance-action controls, or autonomous-action controls.
 - [x] 2026-05-04T17:11:08Z Ran web validation and the full serial DB-backed validation ladder before docs closeout. `pnpm --filter @pocket-cto/web exec vitest run`, `pnpm --filter @pocket-cto/web typecheck`, all six source-pack proofs, all required CFO Wiki, Finance Twin, monitoring, close/control, delivery-readiness, operator-readiness, acknowledgement, discovery-family, domain, control-plane, twin-sync, lint, typecheck, test, and `pnpm ci:repro:current` commands passed. Logs are under `/tmp/pocket-cfo-f9-ui-validation.20260504T171108Z.3808`.
-- [x] 2026-05-04T17:20:00Z Refreshed only directly adjacent stale docs so FP-0076 is the shipped F9 product UI launch-polish record, FP-0050 through FP-0073 remain shipped F6 records, FP-0074 remains shipped F7, FP-0075 remains shipped F8, no FP-0077 exists, and F6V/F6X/deeper PDF-OCR-vector/v1 public launch handoff/F10/later work remain future-plan-only.
+- [x] 2026-05-04T17:20:00Z Refreshed only directly adjacent stale docs so FP-0076 is the shipped F9 product UI launch-polish record, FP-0050 through FP-0073 remain shipped F6 records, FP-0074 remains shipped F7, FP-0075 remains shipped F8, no FP-0077 was created during F9, and F6V/F6X/deeper PDF-OCR-vector/v1 public launch handoff implementation/F10 implementation/later work remained future-plan-only.
 - [x] 2026-05-04T17:22:46Z Ran the required post-closeout minimum validation set. `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` passed with logs under `/tmp/pocket-cfo-f9-ui-postclose-validation.20260504T172246Z.27540`.
 
 ## Surprises & Discoveries
@@ -47,7 +47,7 @@ The F6 safety-boundary surfaces are not product action permission surfaces.
 F6P is provider-boundary/readiness only, F6Q is certification-boundary/readiness only, F6S is human-confirmation/delivery-preflight only, and F6T is certification-safety/readiness only.
 F9 must not make those surfaces look like provider setup, delivery, approval, release, close completion, sign-off, attestation, legal/audit opinion, or actual certification.
 
-No current evidence requires F6V provider integration, F6X actual certification, deeper PDF/OCR/vector search, v1 public launch handoff, F10, or later work to start before this F9 read-only UI launch-polish record is reviewed and merged.
+No current evidence required F6V provider integration, F6X actual certification, deeper PDF/OCR/vector search, v1 public launch handoff implementation, F10 implementation, or later work to start before this F9 read-only UI launch-polish record shipped.
 
 ## Decision Log
 
@@ -77,8 +77,8 @@ Decision: F9 shipped read-only app/web product-surface truthfulness only.
 Rationale: the implementation changed existing navigation, copy, warning, and status surfaces plus matching web specs, while preserving all backend runtime, evidence, source, Finance Twin, CFO Wiki, monitoring, close/control, delivery-readiness, provider-boundary, certification-boundary, human-confirmation, certification-safety, reporting, approval, outbox, source-pack, monitor-family, discovery-family, mission, and safety-boundary behavior.
 
 Decision: likely later candidate slices are named but not created here.
-Rationale: possible later work includes deeper document precision/PDF/OCR/vector search if a source/evidence gap is proven, F6V actual provider integration, F6X actual certification, v1 public launch handoff, F10, and later roadmap slices.
-Do not create FP-0077 in this slice.
+Rationale: possible later work includes deeper document precision/PDF/OCR/vector search if a source/evidence gap is proven, F6V actual provider integration, F6X actual certification, v1 public launch handoff implementation, F10 implementation, and later roadmap slices.
+No FP-0077 was created during F9.
 
 ## Context and Orientation
 
@@ -168,8 +168,8 @@ Validation proves F9 changed only read-only product-surface truthfulness and did
    - F9 is not certification.
    - F9 is not generated prose or runtime-Codex.
    - F9 implementation is read-only product-surface hardening only.
-   - F6V/F6X/deeper PDF-OCR-vector/v1 public launch handoff remain future-only.
-   - No FP-0077 is created.
+   - F6V/F6X/deeper PDF-OCR-vector/v1 public launch handoff implementation remain future-only.
+   - No FP-0077 is created during F9.
 
 6. Record validation and closeout in this Progress section, Surprises & Discoveries, Decision Log, Validation and Acceptance, Artifacts and Notes, and Outcomes & Retrospective.
 
@@ -215,14 +215,14 @@ Run DB-backed smokes serially:
 Acceptance requires:
 
 - exactly one F9 Finance Plan exists: `plans/FP-0076-product-ui-launch-polish-foundation.md`
-- no FP-0077 exists
+- no FP-0077 was created during F9
 - FP-0075 is preserved as the shipped F8 future-scope triage record
 - FP-0074 is preserved as the shipped F7 record
 - FP-0050 through FP-0073 are preserved as shipped F6 records
 - F9 remains read-only product UI launch-polish only in this thread
 - F9 implementation is narrowed to read-only navigation/copy/link/warning/status-surface hardening only
 - no backend code, backend route, web API route, schema, migration, package script, smoke alias, eval dataset, fixture, provider integration, credential scaffold, outbox send behavior, approval workflow, report-release behavior, certification behavior, product runtime behavior, source mutation, finance write, generated prose, monitor family, discovery family, or autonomous action is added
-- F6V provider integration, F6X actual certification, deeper PDF/OCR/vector search, and v1 public launch handoff remain future-plan-only
+- F6V provider integration, F6X actual certification, deeper PDF/OCR/vector search, and v1 public launch handoff implementation remain future-plan-only during F9
 - shipped source-pack proofs and safety-boundary smokes/specs pass on the final tree
 
 Implementation validation passed before docs closeout with logs under `/tmp/pocket-cfo-f9-ui-validation.20260504T171108Z.3808`.
@@ -272,7 +272,7 @@ Implementation validation before docs closeout passed with logs under `/tmp/pock
 Post-closeout minimum validation passed with logs under `/tmp/pocket-cfo-f9-ui-postclose-validation.20260504T172246Z.27540`.
 
 No backend code, backend route, web API route, schema, migration, package script, smoke alias, eval dataset, fixture, implementation scaffold outside read-only UI copy/navigation/status polish, provider integration, credential scaffold, outbox send behavior, delivery behavior, approval workflow, report-release behavior, report-circulation behavior, certification behavior, close-complete behavior, product runtime behavior, source mutation, finance write, generated product prose, monitor family, discovery family, mission behavior, or autonomous action was added.
-No FP-0077 was created.
+No FP-0077 was created during F9.
 
-F9 is ready for commit, push, and PR creation.
-F6V provider integration, F6X actual certification, deeper PDF/OCR/vector search, v1 public launch handoff, F10, and later work remain future-plan-only.
+F9 shipped as read-only app/web product UI launch-polish; PR review/merge is complete in the shipped record.
+FP-0077 now exists as the later F10/v1 public launch handoff planning contract, while F6V provider integration, F6X actual certification, deeper PDF/OCR/vector search, implementation, deployment/external comms, and later work remain future-plan-only until a later reviewed plan names exact scope.
