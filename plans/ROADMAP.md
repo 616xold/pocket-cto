@@ -805,18 +805,18 @@ Future-only posture:
 - F6V actual provider integration remains future only, after provider security, compliance posture, human confirmation, observability, retry behavior, safe failure modes, credential boundaries, provider-job boundaries, outbox boundaries, and no autonomous send are proven
 - F6X actual certification remains future only, after operator need, legal boundaries, evidence boundaries, review gates, assurance constraints, non-advice constraints, and non-legal-opinion boundaries are proven
 - deeper document precision, PDF, OCR, or vector search remains future only if a later plan proves a source/evidence gap
-- product UI launch polish remains future only if a later plan names exact UX scope and avoids provider, certification, delivery, report-release, approval, and autonomous-action behavior
+- product UI launch polish may be planned only if a later plan names exact UX scope and avoids provider, certification, delivery, report-release, approval, generated prose, finance-action, and autonomous-action behavior
 
 ## F8 - v1 future-scope triage and roadmap hardening
 
-Active record: `plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md`.
+Shipped record: `plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md`.
 
 Purpose:
 
 - one future-scope decision and roadmap-hardening slice only
 - docs-and-validation only
 - no product runtime behavior
-- no FP-0076 created
+- no FP-0076 created during F8
 
 Scope boundaries:
 
@@ -840,6 +840,44 @@ Candidate future slices, not created here:
 
 - F6V actual provider integration, future only after provider security, compliance posture, human confirmation, observability, retry behavior, safe failure modes, credential boundaries, provider-job boundaries, outbox boundaries, and no autonomous send are proven
 - F6X actual certification, future only after operator need, legal boundaries, evidence boundaries, review gates, assurance constraints, non-advice constraints, and non-legal-opinion boundaries are proven
-- F9 product UI launch polish, future only if roadmap-approved and bounded away from provider, certification, delivery, approval, report-release, legal/audit, generated-prose, finance-action, and autonomous-action behavior
+- F9 product UI launch polish, active planning only in `plans/FP-0076-product-ui-launch-polish-foundation.md` and bounded away from provider, certification, delivery, approval, report-release, legal/audit, generated-prose, finance-action, and autonomous-action behavior
 - F9 document precision/PDF/OCR/vector search, future only if a source/evidence gap is proven and provenance, freshness, limitations, and no-generated-prose boundaries stay intact
+- v1 public launch handoff, future only if a future roadmap/Finance Plan names concrete scope
+
+## F9 - product UI launch polish foundation
+
+Active record: `plans/FP-0076-product-ui-launch-polish-foundation.md`.
+
+Purpose:
+
+- one product UI launch-polish foundation contract only
+- docs-and-validation only in the master-plan thread
+- no product runtime behavior
+- no FP-0077 created
+
+Scope boundaries:
+
+- no route, schema, migration, package script, smoke alias, eval dataset, fixture, monitor family, discovery family, mission behavior, runtime-Codex, provider integration, outbox/send/delivery behavior, report creation/release/circulation, approval workflow, actual certification, legal/audit opinion, generated prose, source mutation, finance write, or autonomous action
+- no F6A/F6C/F6D/F6E monitor evaluator changes
+- no F6B/F6G mission handoff changes
+- no F6H/F6J/F6K/F6M/F6N/F6P/F6Q/F6S/F6T behavior changes
+- no F6L/F6O/F6R/F6U/F6W/F6Y source-pack implementation changes
+- no FP-0075/F8 rewrite beyond shipped-record freshness wording
+- no product UI implementation in this planning slice
+
+F9 decision contract:
+
+- F9 is not provider integration
+- F9 is not certification
+- F9 is not generated prose or runtime-Codex
+- F9 preserves shipped source/proof posture
+- future F9 implementation may include only read-only product-surface hardening such as navigation labels, active-doc/product truth links, status copy pointing to source-backed proof surfaces, warnings that delivery/provider/certification/legal/audit actions are future-only, and stale-copy clarification
+- future F9 implementation must not add UI action controls
+
+Candidate future slices, not created here:
+
+- F9 implementation/product UI launch polish, only after FP-0076 is reviewed and merged
+- deeper document precision/PDF/OCR/vector search, future only if a source/evidence gap is proven
+- F6V actual provider integration, future only
+- F6X actual certification, future only
 - v1 public launch handoff, future only if a future roadmap/Finance Plan names concrete scope

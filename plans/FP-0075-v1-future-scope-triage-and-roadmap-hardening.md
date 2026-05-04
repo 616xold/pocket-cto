@@ -2,7 +2,7 @@
 
 ## Purpose / Big Picture
 
-This is the active Finance Plan for the Pocket CFO F8/v1 future-scope triage and roadmap-hardening slice.
+This is the shipped Finance Plan record for the Pocket CFO F8/v1 future-scope triage and roadmap-hardening slice.
 The target phase is `F8`, and the slice is exactly `F8-v1-future-scope-triage-and-roadmap-hardening`.
 
 The user-visible goal is narrow: after shipped F6A through F6Z and shipped F7, Pocket CFO needs one implementation-ready future-scope decision contract that says what may be planned next and what must stay blocked.
@@ -23,8 +23,9 @@ Do not invoke GitHub Connector Guard for F8.
 - [x] 2026-05-04T15:20:28Z Ran the pre-plan F8 readiness gate. All six source-pack proofs passed; policy/covenant monitor, close/control checklist, delivery-readiness, operator-readiness, close/control acknowledgement, monitor demo replay, supported discovery families, focused domain safety specs, and focused control-plane safety specs passed with logs under `/tmp/pocket-cfo-f8-readiness.09awIk`.
 - [x] 2026-05-04T15:20:28Z Evaluated candidate directions and decided the safest next direction is F8/v1 future-scope triage and roadmap hardening, not product UI launch polish planning, deeper PDF/OCR/vector-search planning, F6V provider integration planning, F6X actual certification planning, or a no-new-plan hold.
 - [x] 2026-05-04T15:20:28Z Created this FP-0075 future-scope decision contract without adding code, routes, schema, migrations, package scripts, smoke commands, eval datasets, fixtures, implementation scaffolding, provider integrations, credential scaffolding, outbox send behavior, UI, approval workflow, report-release behavior, certification behavior, or product runtime behavior.
-- [x] 2026-05-04T15:34:42Z Refreshed only directly adjacent active docs so README, START_HERE, ACTIVE_DOCS, ROADMAP, local-dev, source-ingest/CFO Wiki, Codex App Server, seeded-missions, evals, and one tiny FP-0074 handoff clarification agree that FP-0075 is active F8 future-scope triage while F8 implementation, F6V, F6X, UI launch polish, PDF/OCR/vector-search work, provider work, certification, delivery, report release, approvals, runtime-Codex, source mutation, finance writes, and autonomous action remain blocked.
+- [x] 2026-05-04T15:34:42Z Refreshed only directly adjacent active docs so README, START_HERE, ACTIVE_DOCS, ROADMAP, local-dev, source-ingest/CFO Wiki, Codex App Server, seeded-missions, evals, and one tiny FP-0074 handoff clarification agreed that FP-0075 was the then-active F8 future-scope triage contract while F8 implementation, F6V, F6X, UI launch polish, PDF/OCR/vector-search work, provider work, certification, delivery, report release, approvals, runtime-Codex, source mutation, finance writes, and autonomous action remained blocked.
 - [x] 2026-05-04T15:34:42Z Ran the full final validation ladder serially. All six source-pack proofs, all required CFO Wiki, Finance Twin, monitoring, close/control, delivery-readiness, operator-readiness, acknowledgement, discovery-family, domain, control-plane, twin-sync, lint, typecheck, test, and `pnpm ci:repro:current` commands passed with logs under `/tmp/pocket-cfo-f8-final-validation.qeNtQA`.
+- [x] 2026-05-04T15:58:56Z Applied a tiny F9-adjacent freshness correction so this record is described as shipped F8; FP-0076 did not exist during F8 and may now exist only as the later F9 product UI launch-polish foundation plan.
 
 ## Surprises & Discoveries
 
@@ -81,7 +82,7 @@ Pocket CFO has shipped F6A through F6Z and shipped F7.
 FP-0050 through FP-0073 are shipped F6 records.
 FP-0073 is the shipped F6Z final F6/v1 exit audit and handoff record.
 FP-0074 is the shipped F7/v1 launch-readiness and active-doc hardening record.
-This FP-0075 file is the active F8 future-scope triage and roadmap-hardening contract.
+This FP-0075 file is the shipped F8 future-scope triage and roadmap-hardening record.
 
 The shipped source-pack proof spine is:
 
@@ -124,7 +125,7 @@ It narrows F8 to docs-and-validation-only roadmap hardening and states which lat
 
 Third, refresh only directly adjacent active docs.
 Allowed docs are README.md, START_HERE.md, docs/ACTIVE_DOCS.md, plans/ROADMAP.md, docs/ops/local-dev.md, docs/ops/source-ingest-and-cfo-wiki.md, docs/ops/codex-app-server.md, docs/benchmarks/seeded-missions.md, evals/README.md, and one tiny FP-0074 handoff clarification if needed.
-Docs should say FP-0075 is the active F8 future-scope triage contract while F8 implementation, F6V provider integration, F6X actual certification, product UI launch polish, PDF/OCR/vector search, public launch handoff, and later high-liability work still must not start here.
+Docs should say FP-0075 is the shipped F8 future-scope triage record while F8 implementation, F6V provider integration, F6X actual certification, product UI launch polish, PDF/OCR/vector search, public launch handoff, and later high-liability work did not start here.
 
 Fourth, run the full validation ladder on the final docs-and-plan tree.
 Because F8 is docs-and-validation-only, validation proves that the plan and active docs did not drift away from shipped runtime truth.
@@ -156,7 +157,7 @@ Because F8 is docs-and-validation-only, validation proves that the plan and acti
    - Product UI launch polish remains future-only.
    - Deeper document precision/PDF/OCR/vector search remains future-only.
    - F9 candidate labels may be named but not created.
-   - No FP-0076 is created.
+   - No FP-0076 is created during F8.
 
 5. Record validation and closeout in this Progress section, Surprises & Discoveries, Decision Log, Validation and Acceptance, Artifacts and Notes, and Outcomes & Retrospective.
 
@@ -201,11 +202,11 @@ Run DB-backed smokes serially:
 
 Acceptance requires:
 
-- exactly one new active F8 Finance Plan exists: `plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md`
-- no FP-0076 exists
+- exactly one shipped F8 Finance Plan record exists: `plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md`
+- no FP-0076 was created during F8
 - F8 remains narrowed to docs-and-validation-only future-scope triage and roadmap hardening
 - no code, route, schema, migration, package script, smoke alias, eval dataset, fixture, UI, monitor family, discovery family, mission behavior, runtime-Codex, delivery, provider, outbox, approval, report, certification, close-complete, source mutation, finance write, generated product prose, or autonomous action is added
-- active docs agree that FP-0050 through FP-0073 are shipped F6 records, FP-0074 is shipped F7, and FP-0075 is active F8 future-scope triage
+- active docs agree that FP-0050 through FP-0073 are shipped F6 records, FP-0074 is shipped F7, and FP-0075 is shipped F8 future-scope triage
 - F6V provider integration and F6X actual certification remain future-plan-only
 - shipped source-pack proofs and safety-boundary smokes/specs pass on the final tree
 
@@ -226,7 +227,7 @@ The validation ladder may create local proof setup state in the development data
 
 Expected artifacts are:
 
-- this active FP-0075 future-scope decision contract
+- this shipped FP-0075 future-scope triage record
 - minimal active-doc freshness edits
 - validation logs
 - a final human handoff that names the branch, commit, PR, changed files, validation results, gaps, and next recommendation
@@ -246,11 +247,11 @@ No GitHub connector work is expected.
 
 ## Outcomes & Retrospective
 
-This slice produced one active F8 future-scope triage contract and minimal adjacent active-doc freshness edits only.
+This slice produced one shipped F8 future-scope triage record and minimal adjacent active-doc freshness edits only.
 Final validation passed with logs under `/tmp/pocket-cfo-f8-final-validation.qeNtQA`.
 
 No code, route, schema, migration, package script, smoke alias, eval dataset, fixture, implementation scaffold, provider integration, credential scaffold, outbox send behavior, UI, approval workflow, report-release behavior, certification behavior, product runtime behavior, source mutation, finance write, generated product prose, or autonomous action was added.
-No FP-0076 was created.
+No FP-0076 was created during F8.
 
 F8 implementation must not start from this slice.
 The next implementation step should be another future Finance Plan only after a human chooses the specific candidate direction and proves its exact boundaries.

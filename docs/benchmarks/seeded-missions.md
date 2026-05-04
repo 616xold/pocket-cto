@@ -322,13 +322,21 @@ Active docs, shipped FP-0074, shipped F6 source-pack proof posture, and shipped 
 Success:
 `plans/FP-0074-v1-launch-readiness-and-active-doc-hardening.md` remains docs-and-validation-only and does not add a benchmark dataset, eval dataset, route, schema, package script, smoke alias, fixture, product runtime behavior, generated prose, provider integration, outbox/send/delivery behavior, report creation/release/circulation, approval workflow, actual certification, legal/audit opinion, runtime-codex, source mutation, finance write, monitor family, discovery family, FP-0075 during F7, or autonomous action.
 
-### 39. Active F8/v1 future-scope triage and roadmap hardening
+### 39. Shipped F8/v1 future-scope triage and roadmap hardening
 
 Input:
 Shipped FP-0074, shipped FP-0073, shipped source-pack proof posture, shipped safety-boundary posture, and active roadmap docs.
 
 Success:
-`plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md` is docs-and-validation-only and does not add a benchmark dataset, eval dataset, route, schema, package script, smoke alias, fixture, product runtime behavior, generated prose, provider integration, outbox/send/delivery behavior, report creation/release/circulation, approval workflow, actual certification, legal/audit opinion, runtime-codex, source mutation, finance write, monitor family, discovery family, FP-0076, or autonomous action.
+`plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md` is docs-and-validation-only and did not add a benchmark dataset, eval dataset, route, schema, package script, smoke alias, fixture, product runtime behavior, generated prose, provider integration, outbox/send/delivery behavior, report creation/release/circulation, approval workflow, actual certification, legal/audit opinion, runtime-codex, source mutation, finance write, monitor family, discovery family, FP-0076 during F8, or autonomous action.
+
+### 40. Active F9 product UI launch-polish foundation
+
+Input:
+Shipped FP-0075, shipped FP-0074, shipped FP-0073, shipped source-pack proof posture, shipped safety-boundary posture, app/web product-surface truth, and active roadmap docs.
+
+Success:
+`plans/FP-0076-product-ui-launch-polish-foundation.md` is docs-and-validation-only and does not add a benchmark dataset, eval dataset, route, schema, package script, smoke alias, fixture, product runtime behavior, UI implementation, UI action controls, generated prose, provider integration, outbox/send/delivery behavior, report creation/release/circulation, approval workflow, actual certification, legal/audit opinion, runtime-codex, source mutation, finance write, monitor family, discovery family, FP-0077, or autonomous action.
 
 ## Blocked for now
 
