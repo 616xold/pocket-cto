@@ -17,13 +17,13 @@ export default async function MissionsPage() {
     <main className="shell">
       <section className="hero">
         <p className="eyebrow">Mission list</p>
-        <h1>Mission operations remain available, but they are no longer the main F1 flow.</h1>
+        <h1>Mission operations for deterministic finance work.</h1>
         <p className="lede">
-          Pocket CFO now starts from source inventory and ingest. This page
-          stays available for mission review, text intake, typed finance
-          analysis intake, and legacy GitHub connector handoff without
-          pretending engineering or GitHub work is still the primary operator
-          posture.
+          Review stored missions and start only the existing typed intake paths.
+          Mission outputs remain derived from stored evidence; this page does
+          not add provider setup, delivery, certification, legal or audit
+          opinions, payment behavior, runtime-Codex finance drafting, generated
+          customer-contact instructions, or autonomous actions.
         </p>
         <div className="button-row">
           <Link href="/" className="button outline">
@@ -41,7 +41,7 @@ export default async function MissionsPage() {
           <p className="muted">
             The existing mission compiler still owns mission shaping. This page
             only creates and redirects, and it now sits beside the source-first
-            F1 operator path rather than ahead of it.
+            evidence path rather than ahead of it.
           </p>
           <MissionIntakeForm buttonLabel="Create and open mission" />
         </article>
@@ -60,11 +60,17 @@ export default async function MissionsPage() {
       <section className="card status-card">
         <h2>List rules</h2>
         <ul className="list-clean">
-          <li>Source inventory is the primary F1 operator surface</li>
+          <li>Source inventory remains the primary evidence surface</li>
           <li>Newest-first mission cards</li>
           <li>Text and typed finance analysis intake stay separate</li>
-          <li>Proof-bundle status and pending approvals stay visible at a glance</li>
+          <li>
+            Proof-bundle status and pending approvals stay visible at a glance
+          </li>
           <li>Mission detail stays the evidence-heavy drill-down</li>
+          <li>
+            Provider, delivery, certification, and legal/audit actions remain
+            out of scope here
+          </li>
         </ul>
       </section>
 
@@ -88,8 +94,8 @@ export default async function MissionsPage() {
           />
         ) : (
           <p className="muted">
-            The control plane is not reachable yet, so GitHub issue intake
-            could not be loaded.
+            The control plane is not reachable yet, so GitHub issue intake could
+            not be loaded.
           </p>
         )}
       </section>

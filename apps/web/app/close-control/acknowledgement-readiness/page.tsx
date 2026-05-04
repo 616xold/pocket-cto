@@ -13,8 +13,7 @@ export default async function CloseControlAcknowledgementPage(
 ) {
   const searchParams = props.searchParams ? await props.searchParams : {};
   const companyKey = normalizeCompanyKey(searchParams.companyKey);
-  const readiness =
-    await getCloseControlAcknowledgementReadiness(companyKey);
+  const readiness = await getCloseControlAcknowledgementReadiness(companyKey);
 
   return (
     <main className="shell">
@@ -22,8 +21,10 @@ export default async function CloseControlAcknowledgementPage(
         <p className="eyebrow">F6K acknowledgement readiness</p>
         <h1>Close/control acknowledgement readiness for {companyKey}.</h1>
         <p className="lede">
-          Internal reviewed-posture readiness from deterministic
-          close/control checklist posture and operator-readiness posture.
+          Internal reviewed-posture readiness from deterministic close/control
+          checklist posture and operator-readiness posture. This page does not
+          create approval, close-complete, sign-off, attestation, certification,
+          delivery, outbox send, or finance-action records.
         </p>
         <div className="button-row">
           <Link href={"/" as Route} className="button outline">

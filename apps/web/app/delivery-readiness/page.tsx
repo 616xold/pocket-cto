@@ -18,11 +18,14 @@ export default async function DeliveryReadinessPage(
   return (
     <main className="shell">
       <section className="hero">
-        <p className="eyebrow">F6M delivery readiness</p>
-        <h1>Delivery readiness for {companyKey}.</h1>
+        <p className="eyebrow">F6M delivery-readiness boundary</p>
+        <h1>Delivery-readiness boundary for {companyKey}.</h1>
         <p className="lede">
           Internal review-before-delivery posture from deterministic
-          operator-readiness and acknowledgement-readiness evidence.
+          operator-readiness and acknowledgement-readiness evidence. No send,
+          outbox send, notification provider, email, Slack, SMS, webhook,
+          scheduled delivery, auto-send, provider job, approval, report release,
+          certification, or generated notification prose occurs here.
         </p>
         <div className="button-row">
           <Link href={"/" as Route} className="button outline">

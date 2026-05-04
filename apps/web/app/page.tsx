@@ -3,7 +3,11 @@ import Link from "next/link";
 import type { Route } from "next";
 import { MissionList } from "../components/mission-list";
 import { SourceList } from "../components/source-list";
-import { getControlPlaneHealth, getMissionList, getSourceList } from "../lib/api";
+import {
+  getControlPlaneHealth,
+  getMissionList,
+  getSourceList,
+} from "../lib/api";
 
 export default async function HomePage() {
   const [health, missionList, sourceList] = await Promise.all([
@@ -16,12 +20,13 @@ export default async function HomePage() {
     <main className="shell">
       <section className="hero">
         <p className="eyebrow">Pocket CFO</p>
-        <h1>Operator home for source-first finance evidence intake.</h1>
+        <h1>Operator home for source-backed finance evidence and readiness.</h1>
         <p className="lede">
-          Register finance source truth, upload immutable raw files, and trigger
-          deterministic ingest receipts from the operator surface. This F1 home
-          stays honest about what exists now: source inventory and ingest
-          review, not Finance Twin, CFO Wiki, reports, or monitoring.
+          Review immutable source inventory, deterministic mission outputs, and
+          shipped F6 readiness surfaces from stored state. This is a proof and
+          status console: no provider call, send, outbox delivery, actual
+          certification, legal opinion, audit opinion, payment, finance write,
+          runtime-Codex drafting, or autonomous action is performed here.
         </p>
         <div className="button-row" style={{ marginTop: 22 }}>
           <Link href={"/sources" as Route} className="button primary">
@@ -30,17 +35,23 @@ export default async function HomePage() {
           <Link href="/missions" className="button outline">
             Open mission list
           </Link>
+          <Link href="/monitoring" className="button outline">
+            View monitor posture
+          </Link>
         </div>
       </section>
 
       <section className="grid two-up">
         <article className="card">
-          <h2>Current operator flow</h2>
+          <h2>Source-backed operator flow</h2>
           <ul className="list-clean">
-            <li>Register the source record with explicit finance metadata</li>
+            <li>Register source records with explicit finance metadata</li>
             <li>Upload raw files immutably on the source detail page</li>
-            <li>Trigger ingest and review deterministic receipts</li>
-            <li>Keep GitHub and mission work secondary to source truth in F1</li>
+            <li>Review deterministic ingest receipts and source limitations</li>
+            <li>
+              Inspect existing mission, proof, and readiness surfaces as derived
+              state
+            </li>
           </ul>
         </article>
 
@@ -63,11 +74,55 @@ export default async function HomePage() {
             </dl>
           ) : (
             <p className="muted">
-              The control plane is not reachable yet. Start it with <code>pnpm
-              dev</code> after bootstrapping dependencies.
+              The control plane is not reachable yet. Start it with{" "}
+              <code>pnpm dev</code> after bootstrapping dependencies.
             </p>
           )}
         </article>
+      </section>
+
+      <section className="card">
+        <div className="section-head">
+          <div>
+            <p className="kicker">Read-only proof surfaces</p>
+            <h2>Existing shipped status views</h2>
+          </div>
+          <p className="muted">
+            Company key defaults to <code>acme</code>.
+          </p>
+        </div>
+        <p className="muted">
+          These links open existing read models only. They expose source,
+          freshness, proof, limitations, and human-review posture without
+          starting provider setup, delivery, certification, approval, report
+          release, monitor reruns, or finance actions.
+        </p>
+        <div className="button-row" style={{ marginTop: 16 }}>
+          <Link href={"/monitoring" as Route} className="button outline">
+            Monitor posture
+          </Link>
+          <Link href={"/close-control" as Route} className="button outline">
+            Close/control checklist
+          </Link>
+          <Link
+            href={"/operator-readiness" as Route}
+            className="button outline"
+          >
+            Operator readiness
+          </Link>
+          <Link
+            href={"/close-control/acknowledgement-readiness" as Route}
+            className="button outline"
+          >
+            Acknowledgement readiness
+          </Link>
+          <Link
+            href={"/delivery-readiness" as Route}
+            className="button outline"
+          >
+            Delivery-readiness boundary
+          </Link>
+        </div>
       </section>
 
       <section className="card">
@@ -107,15 +162,15 @@ export default async function HomePage() {
         </div>
 
         <p className="muted">
-          Missions still exist, but they are no longer the main intake story on
-          the home surface. F1 keeps source truth first and treats GitHub as a
-          legacy connector rather than the product center.
+          Missions remain available for deterministic discovery, reporting,
+          review, and shipped legacy connector paths. Raw finance evidence and
+          source-backed proof posture stay the product center.
         </p>
 
         {missionList ? (
           <MissionList
             emptyHeading="No missions yet"
-            emptyMessage="Mission work is available, but F1 now starts with source inventory and ingest."
+            emptyMessage="Mission work is available after source inventory, stored evidence, or a supported typed finance question exists."
             missions={missionList.missions}
           />
         ) : (

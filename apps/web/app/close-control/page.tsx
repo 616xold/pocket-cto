@@ -20,7 +20,10 @@ export default async function CloseControlPage(props: CloseControlPageProps) {
         <h1>Close/control checklist for {companyKey}.</h1>
         <p className="lede">
           Deterministic review posture from stored Finance Twin sources, CFO
-          Wiki policy sources, and latest persisted monitor context.
+          Wiki policy sources, and latest persisted monitor context. This is a
+          review-only checklist, not close completion, sign-off, attestation,
+          certification, assurance, legal opinion, audit opinion, approval, or
+          finance action.
         </p>
         <div className="button-row">
           <Link href={"/" as Route} className="button outline">

@@ -3,7 +3,11 @@ import type {
   SourceFileSummary,
   SourceIngestRunSummary,
 } from "@pocket-cto/domain";
-import { formatBytes, formatSourceDate, shortenChecksum } from "../lib/source-formatters";
+import {
+  formatBytes,
+  formatSourceDate,
+  shortenChecksum,
+} from "../lib/source-formatters";
 import { SourceStatusPill } from "./source-status-pill";
 import { submitSourceFileIngest } from "../app/sources/actions";
 
@@ -31,7 +35,11 @@ export function SourceFileList({
         const latestRun = runs[0] ?? null;
 
         return (
-          <article key={file.id} className="source-file-card" id={`file-${file.id}`}>
+          <article
+            key={file.id}
+            className="source-file-card"
+            id={`file-${file.id}`}
+          >
             <div className="source-summary-header">
               <div>
                 <h3 className="card-title">{file.originalFileName}</h3>
@@ -82,12 +90,16 @@ export function SourceFileList({
               </p>
             ) : (
               <p className="source-note">
-                No ingest runs yet. Upload is durable, but Finance Twin and Wiki
-                writes remain out of scope for this F1 slice.
+                No ingest runs yet. Upload is durable; parser receipts, Finance
+                Twin sync, CFO Wiki compile, and readiness posture each remain
+                explicit stored-state steps.
               </p>
             )}
 
-            <form action={submitSourceFileIngest} className="inline-action-form">
+            <form
+              action={submitSourceFileIngest}
+              className="inline-action-form"
+            >
               <input type="hidden" name="sourceFileId" value={file.id} />
               <input type="hidden" name="sourceId" value={sourceId} />
               <button className="action-button" type="submit">

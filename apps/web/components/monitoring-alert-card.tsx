@@ -64,25 +64,37 @@ export function MonitoringAlertCard({
       </dl>
 
       {canCreateInvestigation ? (
-        <form
-          action={submitCreateOrOpenMonitorInvestigation}
-          className="button-row"
-        >
-          <input type="hidden" name="companyKey" value={alertCard.companyKey} />
-          <input
-            type="hidden"
-            name="monitorResultId"
-            value={monitorResultId ?? ""}
-          />
-          <input
-            type="hidden"
-            name="requestedBy"
-            value={requestedBy ?? "operator"}
-          />
-          <button type="submit" className="button">
-            Create/open investigation
-          </button>
-        </form>
+        <>
+          <p className="muted">
+            Manual investigation handoff is limited to shipped alerting
+            cash_posture and collections_pressure results. It does not rerun
+            monitors, send messages, contact customers, create payment or
+            collection instructions, or perform autonomous remediation.
+          </p>
+          <form
+            action={submitCreateOrOpenMonitorInvestigation}
+            className="button-row"
+          >
+            <input
+              type="hidden"
+              name="companyKey"
+              value={alertCard.companyKey}
+            />
+            <input
+              type="hidden"
+              name="monitorResultId"
+              value={monitorResultId ?? ""}
+            />
+            <input
+              type="hidden"
+              name="requestedBy"
+              value={requestedBy ?? "operator"}
+            />
+            <button type="submit" className="button">
+              Create/open investigation
+            </button>
+          </form>
+        </>
       ) : null}
 
       <section className="stack">

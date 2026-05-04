@@ -34,7 +34,10 @@ export default async function MonitoringPage(props: MonitoringPageProps) {
         <h1>Monitor alert posture for {companyKey}.</h1>
         <p className="lede">
           Latest persisted monitor results from stored Finance Twin and CFO Wiki
-          policy posture.
+          policy posture. These are deterministic source-backed findings for
+          human review, not advice, provider calls, delivery, payment
+          instructions, customer-contact instructions, monitor reruns, or
+          autonomous remediation.
         </p>
         <div className="button-row">
           <Link href={"/" as Route} className="button outline">

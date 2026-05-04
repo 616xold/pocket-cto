@@ -14,12 +14,13 @@ export default async function SourcesPage() {
     <main className="shell">
       <section className="hero">
         <p className="eyebrow">Source inventory</p>
-        <h1>Register finance source truth, then inspect files and ingest runs.</h1>
+        <h1>Register and inspect immutable finance sources.</h1>
         <p className="lede">
-          F1 operator work starts here. Register the source record, upload raw
-          bytes on the source detail page, and trigger deterministic ingest
-          without claiming Finance Twin, CFO Wiki, reports, or monitoring work
-          that has not shipped yet.
+          Source inventory is the raw-evidence door for Pocket CFO. Register
+          source records, upload raw bytes on the source detail page, and review
+          deterministic ingest receipts while downstream Finance Twin, CFO Wiki,
+          reporting, monitoring, and readiness surfaces stay source-backed and
+          explicit about freshness, provenance, and limitations.
         </p>
         <div className="button-row">
           <Link href="/" className="button outline">
@@ -36,20 +37,30 @@ export default async function SourcesPage() {
           <h2>Register source truth</h2>
           <p className="muted">
             The current backend creates a source from explicit snapshot
-            metadata. That is intentional in F1: register the initial source
-            reference honestly, then upload immutable raw files from the detail
-            page.
+            metadata. Register the initial source reference honestly, then
+            upload immutable raw files from the detail page.
           </p>
           <SourceRegistrationForm />
         </article>
 
         <article className="card status-card">
-          <h2>Current F1 boundary</h2>
+          <h2>Current source boundary</h2>
           <ul className="list-clean">
-            <li>Source inventory, immutable file storage, and ingest receipts</li>
-            <li>No Finance Twin UI or writes yet</li>
-            <li>No CFO Wiki, reports, or monitoring UI yet</li>
-            <li>GitHub remains a legacy connector, not the main operator flow</li>
+            <li>
+              Source inventory, immutable file storage, and ingest receipts
+            </li>
+            <li>Raw files remain immutable after upload</li>
+            <li>
+              Ingest receipts do not send, call providers, certify, or write
+              finance actions
+            </li>
+            <li>
+              Derived twin, wiki, reporting, monitoring, and readiness posture
+              remains source-backed
+            </li>
+            <li>
+              GitHub remains an optional connector, not the main operator flow
+            </li>
           </ul>
 
           <div className="status-list" style={{ marginTop: 20 }}>

@@ -69,7 +69,8 @@ describe("SourcesPage", () => {
     expect(getSourceList).toHaveBeenCalledWith({ limit: 20 });
     expect(html).toContain("source-registration-form");
     expect(html).toContain("Close pack");
-    expect(html).toContain("Current F1 boundary");
+    expect(html).toContain("Current source boundary");
     expect(html).toContain("Register source truth");
+    expect(html).toContain("Raw files remain immutable after upload");
   });
 });

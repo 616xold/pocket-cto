@@ -61,7 +61,7 @@ export function DeliveryReadinessCard({
     <article className="card status-card">
       <div className="section-head">
         <div>
-          <p className="kicker">F6M delivery readiness</p>
+          <p className="kicker">F6M delivery-readiness boundary</p>
           <h2>{readiness.companyKey}</h2>
         </div>
         <StatusPill
@@ -85,7 +85,7 @@ export function DeliveryReadinessCard({
         </div>
         <div>
           <dt>Internal posture</dt>
-          <dd>internal_review_only_no_send_occurred</dd>
+          <dd>internal_review_only_no_send_no_provider_no_outbox</dd>
         </div>
       </dl>
 

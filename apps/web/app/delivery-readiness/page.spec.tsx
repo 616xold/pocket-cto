@@ -42,7 +42,8 @@ describe("DeliveryReadinessPage", () => {
     );
 
     expect(getDeliveryReadiness).toHaveBeenCalledWith("acme");
-    expect(html).toContain("Delivery readiness for acme.");
+    expect(html).toContain("Delivery-readiness boundary for acme.");
+    expect(html).toContain("No send");
     expect(html).toContain(
       "delivery-readiness-card:acme:needs_review_before_delivery",
     );
@@ -57,7 +58,7 @@ describe("DeliveryReadinessPage", () => {
     const html = renderToStaticMarkup(await mod.default({}));
 
     expect(getDeliveryReadiness).toHaveBeenCalledWith("acme");
-    expect(html).toContain("Delivery readiness for acme.");
+    expect(html).toContain("Delivery-readiness boundary for acme.");
     expect(html).toContain("delivery-readiness-card:null");
   });
 });

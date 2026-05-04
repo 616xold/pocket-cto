@@ -22,7 +22,10 @@ export default async function OperatorReadinessPage(
         <h1>Operator readiness for {companyKey}.</h1>
         <p className="lede">
           Internal attention posture from latest persisted monitor results and
-          deterministic close/control checklist evidence.
+          deterministic close/control checklist evidence. This is a read-only
+          readiness surface, not delivery, notification provider setup, outbox
+          send, approval, monitor rerun, mission creation, runtime-Codex
+          drafting, or autonomous finance action.
         </p>
         <div className="button-row">
           <Link href={"/" as Route} className="button outline">

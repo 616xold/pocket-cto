@@ -88,10 +88,14 @@ describe("HomePage", () => {
     expect(getControlPlaneHealth).toHaveBeenCalledOnce();
     expect(getSourceList).toHaveBeenCalledWith({ limit: 4 });
     expect(getMissionList).toHaveBeenCalledWith({ limit: 4 });
-    expect(html).toContain("Operator home for source-first finance evidence intake.");
+    expect(html).toContain(
+      "Operator home for source-backed finance evidence and readiness.",
+    );
     expect(html).toContain("Board package");
     expect(html).toContain("Review board package open items");
     expect(html).toContain("View all sources");
-    expect(html).toContain("GitHub as a legacy connector");
+    expect(html).toContain("Read-only proof surfaces");
+    expect(html).toContain("Delivery-readiness boundary");
+    expect(html).toContain("no provider call");
   });
 });

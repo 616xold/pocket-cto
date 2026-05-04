@@ -1,7 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import type { Route } from "next";
-import type { SourceFileSummary, SourceIngestRunSummary } from "@pocket-cto/domain";
+import type {
+  SourceFileSummary,
+  SourceIngestRunSummary,
+} from "@pocket-cto/domain";
 import { SourceFileList } from "../../../components/source-file-list";
 import {
   SourceIngestRunList,
@@ -38,8 +41,8 @@ export default async function SourceDetailPage({
           <h1>Source detail could not be loaded.</h1>
           <p className="lede">
             The source may be missing, or the control plane may be unavailable.
-            F1D keeps that limitation visible instead of rendering a fake empty
-            state.
+            Pocket CFO keeps that limitation visible instead of rendering a fake
+            empty state.
           </p>
           <div className="button-row">
             <Link href={"/sources" as Route} className="button outline">
@@ -83,8 +86,9 @@ export default async function SourceDetailPage({
         <p className="lede">
           Review the registered source, inspect raw files and ingest receipts,
           and trigger the current deterministic ingest path from the web
-          surface. This page stays honest about the F1 boundary: no Finance
-          Twin, CFO Wiki, reports, or monitoring writes yet.
+          surface. Raw files remain immutable after upload; downstream Finance
+          Twin, CFO Wiki, reporting, monitoring, and readiness posture stays
+          source-backed and must expose freshness, provenance, and limitations.
         </p>
         <div className="button-row">
           <Link href={"/sources" as Route} className="button outline">
@@ -161,7 +165,9 @@ export default async function SourceDetailPage({
                 <div>
                   <dt>Checksum</dt>
                   <dd>
-                    <code>{shortenChecksum(latestSnapshot.checksumSha256)}</code>
+                    <code>
+                      {shortenChecksum(latestSnapshot.checksumSha256)}
+                    </code>
                   </dd>
                 </div>
                 <div>
@@ -186,7 +192,7 @@ export default async function SourceDetailPage({
         <article className="card">
           <h2>Upload next raw file</h2>
           <p className="muted">
-            Uploading here stores immutable bytes through the existing F1B
+            Uploading here stores immutable bytes through the existing
             source-file path. Ingest remains a second explicit step so operators
             can review the raw-file ledger before parser dispatch runs.
           </p>
@@ -212,7 +218,10 @@ export default async function SourceDetailPage({
                     <h3 className="card-title">
                       v{snapshot.version} · {snapshot.originalFileName}
                     </h3>
-                    <p className="muted" style={{ marginBottom: 0, marginTop: 6 }}>
+                    <p
+                      className="muted"
+                      style={{ marginBottom: 0, marginTop: 6 }}
+                    >
                       {snapshot.mediaType}
                     </p>
                   </div>
@@ -254,7 +263,9 @@ export default async function SourceDetailPage({
             <h2>Immutable raw-file ledger</h2>
           </div>
           <p className="muted">
-            {fileList ? `${fileList.fileCount} stored files` : "File ledger unavailable"}
+            {fileList
+              ? `${fileList.fileCount} stored files`
+              : "File ledger unavailable"}
           </p>
         </div>
 
@@ -278,8 +289,10 @@ export default async function SourceDetailPage({
             <h2>Deterministic receipt history</h2>
           </div>
           <p className="muted">
-            Each ingest run is durable and reviewable. It does not write Finance
-            Twin or CFO Wiki state in this slice.
+            Each ingest run is durable and reviewable. It records parser receipt
+            posture for the source file; downstream Finance Twin sync, CFO Wiki
+            compile, reporting, monitoring, and readiness views remain separate
+            stored-state flows.
           </p>
         </div>
 
@@ -301,7 +314,9 @@ function flattenSourceRuns(
   files: SourceFileSummary[],
   runsByFileId: Map<string, SourceIngestRunSummary[]>,
 ): SourceIngestRunWithFile[] {
-  const fileNameById = new Map(files.map((file) => [file.id, file.originalFileName]));
+  const fileNameById = new Map(
+    files.map((file) => [file.id, file.originalFileName]),
+  );
   const runs: SourceIngestRunWithFile[] = [];
 
   for (const [fileId, fileRuns] of runsByFileId.entries()) {

@@ -10,7 +10,7 @@ describe("DeliveryReadinessCard", () => {
       <DeliveryReadinessCard readiness={buildReadiness()} />,
     );
 
-    expect(html).toContain("F6M delivery readiness");
+    expect(html).toContain("F6M delivery-readiness boundary");
     expect(html).toContain("acme");
     expect(html).toContain("needs_review_before_delivery");
     expect(html).toContain("monitor_posture_target");
@@ -18,7 +18,9 @@ describe("DeliveryReadinessCard", () => {
     expect(html).toContain("source_backed");
     expect(html).toContain("limited_by_coverage_gap");
     expect(html).toContain("Human-review next step");
-    expect(html).toContain("internal_review_only_no_send_occurred");
+    expect(html).toContain(
+      "internal_review_only_no_send_no_provider_no_outbox",
+    );
     expect(html).toContain("notificationProviderCalled");
     expect(html).toContain("generatedNotificationProseCreated");
     expect(html).toContain("sourceMutationCreated");
@@ -109,8 +111,7 @@ function buildReadiness(): DeliveryReadinessResult {
         status: "ready_for_delivery_review",
         evidenceBasis: {
           basisKind: "acknowledgement_readiness_posture",
-          summary:
-            "Acknowledgement posture is derived from F6K readiness.",
+          summary: "Acknowledgement posture is derived from F6K readiness.",
           refs: [],
         },
         sourceLineageRefs: [],

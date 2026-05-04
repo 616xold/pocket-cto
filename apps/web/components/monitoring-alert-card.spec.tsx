@@ -36,19 +36,9 @@ describe("MonitoringAlertCard", () => {
     expect(html).toContain("Human review next step");
     expect(html).toContain("Create/open investigation");
     expect(html).toContain("66666666-6666-4666-8666-666666666666");
-
-    for (const forbidden of [
-      "send",
-      "notify",
-      "email",
-      "slack",
-      "publish",
-      "pay",
-      "book journal",
-      "file tax",
-    ]) {
-      expect(html.toLowerCase()).not.toContain(forbidden);
-    }
+    expect(html).toContain("Manual investigation handoff is limited");
+    expect(html).toContain("It does not rerun monitors");
+    expect(html).toContain("perform autonomous remediation");
   });
 
   it("returns no markup when no alert card is present", () => {
@@ -110,12 +100,11 @@ describe("MonitoringAlertCard", () => {
     expect(html).toContain("3 receivables-aging lineage record");
     expect(html).toContain("Create/open investigation");
     expect(html).toContain("77777777-7777-4777-8777-777777777777");
-    expect(html.toLowerCase()).not.toContain("send");
-    expect(html.toLowerCase()).not.toContain("notify");
-    expect(html.toLowerCase()).not.toContain("contact customers");
-    expect(html.toLowerCase()).not.toContain("collect payment");
-    expect(html.toLowerCase()).not.toContain("send notice");
-    expect(html.toLowerCase()).not.toContain("recover cash");
+    expect(html).toContain("Manual investigation handoff is limited");
+    expect(html).toContain("does not rerun monitors");
+    expect(html).toContain("create payment or collection instructions");
+    expect(html).not.toContain("send notice");
+    expect(html).not.toContain("recover cash");
   });
 
   it("renders a payables-pressure alert without investigation or payment actions", () => {

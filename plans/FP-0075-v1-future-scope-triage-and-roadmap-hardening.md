@@ -61,7 +61,7 @@ Decision: F8 does not implement F6X actual certification.
 Rationale: F6X remains future-plan-only until a later plan proves operator need, legal boundaries, evidence boundaries, review gates, assurance constraints, non-advice constraints, and non-legal-opinion boundaries.
 
 Decision: F8 does not implement product UI launch polish.
-Rationale: product UI launch polish may be planned later only if a future plan names exact UX scope and avoids provider, certification, delivery, approval, report-release, legal/audit, generated-prose, finance-action, and autonomous-action behavior.
+Rationale: product UI launch polish was later executed under FP-0076 as read-only app/web copy/navigation/warning/status-surface truthfulness only; F8 itself added no UI implementation and did not start provider, certification, delivery, approval, report-release, legal/audit, generated-prose, finance-action, or autonomous-action behavior.
 
 Decision: F8 does not implement deeper document precision, PDF, OCR, or vector search.
 Rationale: those may be planned later only if a future plan proves a source/evidence gap and keeps provenance, freshness, limitations, and no-generated-prose boundaries intact.
