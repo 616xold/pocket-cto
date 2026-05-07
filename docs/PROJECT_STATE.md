@@ -12,6 +12,8 @@ FP-0079 records the F12 manual UI/demo-readiness audit. It adds `docs/qa/v1-ui-d
 
 FP-0080 is the shipped first V2A EvidenceIndex and document-map foundation record. It adds shared domain contracts, a native deterministic read-only control-plane anchor/trace layer, focused specs, and a direct proof command while preserving raw sources as authoritative for document claims, Finance Twin as authoritative for structured facts, and CFO Wiki as compiled/derived.
 
+FP-0081 is the active V2B document precision adapters foundation plan. It is docs-and-plan only as created and narrows the next implementation candidate to one deterministic policy/covenant text-PDF adapter over EvidenceIndex, with OCR, vector/file search, PageIndex, MCP/ChatGPT App, provider integration, certification, UI, deployment, external communications, source mutation, finance writes, generated prose, and autonomous action still future-only.
+
 ## Shipped Architecture Summary
 
 The shipped system is organized around:
@@ -38,6 +40,7 @@ The shipped system is organized around:
 - **F10 v1 public launch handoff**: docs-and-validation-only shipped handoff record, with no public deployment or external communications.
 - **F11 public repo hygiene and V2 transition**: docs-only README split, active-doc freshness, V2 boundary framing, and stale public wording cleanup.
 - **F12 manual UI/demo-readiness audit**: manual app/web route audit, safety-boundary audit, evidence UX audit, screenshot limitation record, and direct read-only copy fixes only.
+- **V2A EvidenceIndex and document-map foundation**: shipped through FP-0080 as read-only EvidenceIndex contracts, deterministic document maps, source anchors, evidence cards, source coverage posture, focused specs, and a direct proof command.
 
 ## Fixed Shipped Monitor Families
 
@@ -84,9 +87,8 @@ These tracks remain future-only until a later Finance Plan names exact scope and
 
 - F6V provider integration
 - F6X actual certification
-- deeper PDF/OCR/vector search
-- EvidenceIndex expansion outside the shipped FP-0080 first foundation contract
-- V2B document precision adapters
+- deeper PDF/OCR/vector search beyond the narrow FP-0081 text-PDF precision-adapter candidate
+- EvidenceIndex or precision-adapter expansion outside the active FP-0081 first V2B contract
 - ChatGPT App/MCP
 - iOS
 - OpenClaw
@@ -106,7 +108,7 @@ The repo still contains historical/internal scaffolding names:
 - engineering-twin modules
 - Pocket CTO archive and historical plan material
 
-Do not rename packages, imports, root `package.json`, database names, service names, or scripts without a dedicated future plan. Do not delete GitHub or engineering-twin modules in F12 or V2A planning.
+Do not rename packages, imports, root `package.json`, database names, service names, or scripts without a dedicated future plan. Do not delete GitHub or engineering-twin modules in F12, V2A, or V2B planning.
 
 ## Plan Records
 
@@ -117,6 +119,7 @@ Key records:
 - [FP-0078 F11 public repo hygiene and V2 transition](../plans/FP-0078-public-repo-hygiene-and-v2-transition.md)
 - [FP-0079 F12 manual UI/demo-readiness audit](../plans/FP-0079-manual-ui-demo-readiness-audit.md)
 - [FP-0080 V2A EvidenceIndex and document-map foundation](../plans/FP-0080-evidence-index-and-document-map-foundation.md)
+- [FP-0081 V2B document precision adapters foundation](../plans/FP-0081-document-precision-adapters-foundation.md)
 - [FP-0077 F10 v1 public launch handoff](../plans/FP-0077-v1-public-launch-handoff.md)
 - [FP-0076 F9 product UI launch polish](../plans/FP-0076-product-ui-launch-polish-foundation.md)
 - [FP-0075 F8 future-scope triage](../plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md)

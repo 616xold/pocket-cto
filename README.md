@@ -123,15 +123,14 @@ F11 closed public repo hygiene and V2 transition framing. F12 closed the manual 
 
 Candidate V2 sequence after the shipped FP-0080 foundation:
 
-- V2A implementation QA or narrow corrective slice if a defect is found
-- V2B document precision adapters
+- V2B document precision adapters foundation through [FP-0081](plans/FP-0081-document-precision-adapters-foundation.md), now planned as one narrow deterministic precision-adapter candidate over EvidenceIndex with no implementation in the planning slice
 - V2C read-only agent/MCP/ChatGPT Evidence App alpha
 - V2D Evidence Atlas UI
 - V2E bounded LLM orchestration
 - V2F benchmark/community pack
 - V2G optional distribution tracks
 
-V2B and later tracks remain future-plan-only. See [docs/V2_BOUNDARY.md](docs/V2_BOUNDARY.md).
+V2B implementation must follow FP-0081. V2C and later tracks remain future-plan-only. See [docs/V2_BOUNDARY.md](docs/V2_BOUNDARY.md).
 
 ## Screenshots And Demo Audit
 
