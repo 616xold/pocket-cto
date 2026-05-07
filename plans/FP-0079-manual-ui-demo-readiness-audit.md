@@ -16,7 +16,8 @@ The future F12 implementation should audit the existing app/web operator surface
 - [x] 2026-05-07T16:15:26Z - Completed required repository searches and classified findings.
 - [x] 2026-05-07T16:15:26Z - Decided F12 is safe to plan as a docs-and-plan-only manual UI/demo-readiness audit.
 - [x] 2026-05-07T16:21:06Z - Ran the validation ladder named in this plan; all 36 commands passed, including `pnpm ci:repro:current`.
-- [x] 2026-05-07T16:21:06Z - Closed the repo-doc portion of this planning slice; remaining handoff is the single commit, push, PR, and final response from this thread.
+- [x] 2026-05-07T16:21:06Z - Prepared the repo-doc portion of this planning slice for the single commit, push, PR, and final response from the master-plan thread.
+- [x] 2026-05-07T16:27:07Z - QA corrected stale closeout wording after confirming the planning commit, pushed branch, and PR exist; no scope, artifact, or implementation contract changed.
 
 ## Surprises & Discoveries
 
@@ -276,4 +277,4 @@ The planning slice changed only this plan and directly stale active-doc/roadmap 
 
 Validation passed across the full ladder, including `pnpm ci:repro:current`.
 
-Remaining for this local thread: create the single docs-only commit, push the current branch, open the PR, and report the final handoff. Recommended next product step after this PR: start F12 implementation under FP-0079. V2A should wait until F12 closes and a later V2A plan names exact scope.
+Closeout QA confirmed the docs-only planning commit is on the F12 branch and PR #222 is open. Recommended next product step after this PR: start F12 implementation under FP-0079. V2A should wait until F12 closes and a later V2A plan names exact scope.
