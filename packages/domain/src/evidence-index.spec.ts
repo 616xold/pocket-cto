@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   DocumentMapSchema,
   EvidenceCardSchema,
+  PrecisionSourceAnchorSchema,
   SourceCoverageMatrixSchema,
+  TEXT_PDF_ADAPTER_NAME,
+  TEXT_PDF_ADAPTER_VERSION,
 } from "./evidence-index";
 
 const checkedAt = "2026-05-07T18:30:00.000Z";
@@ -193,5 +196,38 @@ describe("evidence index domain schemas", () => {
     ).toEqual(
       expect.arrayContaining(["unsupported_graphics", "ambiguous_layout"]),
     );
+  });
+
+  it("parses V2B precision anchors with adapter provenance and PDF locators", () => {
+    const parsed = PrecisionSourceAnchorSchema.parse({
+      ...sourceAnchor(),
+      adapterName: TEXT_PDF_ADAPTER_NAME,
+      adapterVersion: TEXT_PDF_ADAPTER_VERSION,
+      documentRole: "policy_document",
+      extractionMethod: "text_pdf_deterministic",
+      locator: {
+        endLine: 1,
+        kind: "pdf_text_range",
+        sectionTitle: null,
+        startLine: 1,
+        value: "page:1:line:1",
+      },
+      mediaType: "application/pdf",
+      pageLocator: {
+        pageLabel: "page 1",
+        pageNumber: 1,
+      },
+      textRangeLocator: {
+        endLine: 1,
+        endTextOffset: 42,
+        pageNumber: 1,
+        startLine: 1,
+        startTextOffset: 0,
+      },
+    });
+
+    expect(parsed.adapterName).toBe("TextPdfAdapter");
+    expect(parsed.pageLocator?.pageNumber).toBe(1);
+    expect(parsed.textRangeLocator?.startTextOffset).toBe(0);
   });
 });

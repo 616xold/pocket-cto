@@ -34,7 +34,7 @@ FP-0077 is the shipped F10/v1 public launch handoff record. FP-0076 is shipped F
 
 [plans/FP-0080-evidence-index-and-document-map-foundation.md](../plans/FP-0080-evidence-index-and-document-map-foundation.md) is the shipped first V2A EvidenceIndex/document-map foundation record. It records the original docs-and-plan contract and the narrow native deterministic read-only implementation closeout.
 
-[plans/FP-0081-document-precision-adapters-foundation.md](../plans/FP-0081-document-precision-adapters-foundation.md) is the active V2B document precision adapters foundation plan. It is implementation-ready, docs-and-plan only as created, and narrows V2B to one deterministic precision adapter candidate over EvidenceIndex without approving broad PDF/OCR/vector/PageIndex/MCP/ChatGPT App/provider/certification/UI/runtime work.
+[plans/FP-0081-document-precision-adapters-foundation.md](../plans/FP-0081-document-precision-adapters-foundation.md) is the shipped V2B document precision adapters foundation record. It ships one deterministic policy/covenant TextPdfAdapter over EvidenceIndex with direct proof/spec coverage, while keeping broad PDF/OCR/vector/PageIndex/MCP/ChatGPT App/provider/certification/UI/runtime work future-only.
 
 ## Historical Reference
 
@@ -66,7 +66,7 @@ These remain blocked until a future Finance Plan names exact scope:
 
 - F6V provider integration
 - F6X actual certification
-- deeper PDF/OCR/vector search beyond the narrow FP-0081 text-PDF precision-adapter candidate
+- deeper PDF/OCR/vector search beyond the shipped narrow FP-0081 text-PDF precision-adapter candidate
 - ChatGPT App/MCP
 - iOS
 - OpenClaw
@@ -74,7 +74,7 @@ These remain blocked until a future Finance Plan names exact scope:
 - package-scope renaming
 - product runtime behavior outside the active Finance Plan, source mutation, finance writes, or autonomous action
 
-F12 is shipped through FP-0079, the first V2A EvidenceIndex/document-map foundation is shipped through FP-0080, and V2B is active only through FP-0081. Anything beyond FP-0081 remains blocked until a future Finance Plan names exact scope.
+F12 is shipped through FP-0079, the first V2A EvidenceIndex/document-map foundation is shipped through FP-0080, and the first V2B document precision adapter foundation is shipped through FP-0081. Anything beyond FP-0081 remains blocked until a future Finance Plan names exact scope.
 
 ## Update Rule
 

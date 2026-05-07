@@ -121,16 +121,16 @@ F11 closed public repo hygiene and V2 transition framing. F12 closed the manual 
 
 [FP-0080](plans/FP-0080-evidence-index-and-document-map-foundation.md) is the shipped first V2A EvidenceIndex and document-map foundation record. It adds a native deterministic read-only anchor/trace layer for supported markdown/plain-text source text, evidence cards, source coverage posture, and a direct proof command without adding UI, routes, schema, migrations, package scripts, fixture files, OCR, vector search, PageIndex, MCP, ChatGPT App, provider behavior, certification, delivery, source mutation, finance writes, generated product prose, or autonomous action.
 
-Candidate V2 sequence after the shipped FP-0080 foundation:
+Candidate V2 sequence after the shipped FP-0081 foundation:
 
-- V2B document precision adapters foundation through [FP-0081](plans/FP-0081-document-precision-adapters-foundation.md), now planned as one narrow deterministic precision-adapter candidate over EvidenceIndex with no implementation in the planning slice
+- V2B document precision adapters foundation through [FP-0081](plans/FP-0081-document-precision-adapters-foundation.md), shipped as one narrow deterministic TextPdfAdapter candidate over EvidenceIndex for policy/covenant text-PDF sources under strict fail-closed quality gates
 - V2C read-only agent/MCP/ChatGPT Evidence App alpha
 - V2D Evidence Atlas UI
 - V2E bounded LLM orchestration
 - V2F benchmark/community pack
 - V2G optional distribution tracks
 
-V2B implementation must follow FP-0081. V2C and later tracks remain future-plan-only. See [docs/V2_BOUNDARY.md](docs/V2_BOUNDARY.md).
+Any V2B expansion beyond FP-0081 needs a future named plan. V2C and later tracks remain future-plan-only. See [docs/V2_BOUNDARY.md](docs/V2_BOUNDARY.md).
 
 ## Screenshots And Demo Audit
 

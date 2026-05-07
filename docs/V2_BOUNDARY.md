@@ -60,7 +60,7 @@ No agent may release external communications, move money, file taxes, write acco
 - **F11 public repo hygiene and V2 transition**: docs-only public repo hygiene, README split, active-doc freshness, V2 boundary framing, and stale public wording cleanup.
 - **F12 manual UI/demo-readiness audit**: shipped through FP-0079; inspected existing read-only UI and demo posture, classified gaps, recorded screenshot limitations, and avoided product runtime implementation.
 - **V2A EvidenceIndex and document-map foundation**: shipped through FP-0080 as the first read-only evidence index/document-map foundation, limited to native anchors, traces, cards, coverage, direct proof, and fail-closed unsupported-source posture.
-- **V2B document precision adapters**: active only through FP-0081 as one deterministic precision-adapter foundation plan over EvidenceIndex, with implementation limited to the named plan and no generic document AI.
+- **V2B document precision adapters**: shipped through FP-0081 as one deterministic policy/covenant TextPdfAdapter foundation over EvidenceIndex, with any expansion beyond the named plan blocked and no generic document AI.
 - **V2C read-only agent/MCP/ChatGPT Evidence App alpha**: expose read-only structured evidence tools after EvidenceIndex and document precision foundations.
 - **V2D Evidence Atlas UI**: visualize evidence, sources, freshness, limitations, and derived state after the substrate exists.
 - **V2E bounded LLM orchestration**: use LLMs for navigation and summarization only under deterministic evidence contracts.
@@ -72,7 +72,7 @@ No agent may release external communications, move money, file taxes, write acco
 - ChatGPT App/MCP is worth pursuing later as a read-only evidence app after EvidenceIndex and V2B precision proof.
 - iOS is postponed.
 - OpenClaw is inspiration/benchmark only, not a V2 dependency.
-- PageIndex/OCR/vector are future adapters, not canonical authority. FP-0081 permits only planning a narrow deterministic text-PDF precision candidate, not OCR/vector/PageIndex implementation.
+- PageIndex/OCR/vector are future adapters, not canonical authority. FP-0081 ships only a narrow deterministic text-PDF precision candidate, not OCR/vector/PageIndex implementation.
 
 ## Acceptance Criteria For V2 Transition
 
@@ -82,8 +82,8 @@ The F11/F12-to-V2A transition is acceptable when:
 - Codex/operator guidance lives in root `CODEX_README.md`.
 - current shipped state lives in `docs/PROJECT_STATE.md`.
 - this V2 boundary doc exists and is linked from active docs.
-- active docs and roadmap point to FP-0080 as the shipped first V2A Finance Plan and FP-0081 as the active V2B implementation-ready plan, with any implementation still requiring that named plan.
+- active docs and roadmap point to FP-0080 as the shipped first V2A Finance Plan and FP-0081 as the shipped first V2B document precision adapter foundation, with any expansion still requiring a future named plan.
 - `@pocket-cto/*` and root `pocket-cto` are documented as internal scaffolding.
 - GitHub and engineering-twin modules remain present and isolated as internal/historical scaffolding.
 - no product runtime behavior, schema, route, package script, smoke alias, eval dataset, fixture, source mutation, finance write, generated product prose, provider behavior, certification behavior, delivery behavior, deployment, external communication, or autonomous action was added.
-- validation passes on the final implementation tree for the FP-0080 V2A foundation and on the final docs-and-plan tree for FP-0081 planning.
+- validation passes on the final implementation tree for the FP-0080 V2A foundation and on the final implementation tree for the FP-0081 V2B foundation.

@@ -963,8 +963,8 @@ V2A - EvidenceIndex and document-map foundation:
 
 V2B - document precision adapters:
 
-- active through `plans/FP-0081-document-precision-adapters-foundation.md` as an implementation-ready plan, not a shipped implementation
-- narrows the first candidate to one deterministic policy/covenant text-PDF precision adapter over EvidenceIndex only if quality gates prove safe SourceAnchors
+- shipped through `plans/FP-0081-document-precision-adapters-foundation.md` as the first deterministic document precision adapter foundation
+- ships one deterministic policy/covenant text-PDF precision adapter over EvidenceIndex only when quality gates prove safe SourceAnchors
 - must preserve provenance, freshness posture, limitations, adapter provenance/version, and raw-source authority
 - tables remain fail-closed unless a later plan proves row/cell anchors, merged-cell handling, layout ambiguity handling, and numeric ambiguity handling
 - OCR, vector/file search, PageIndex, broad PDF extraction, generic document AI, LLM orchestration, MCP/ChatGPT App, UI, provider integration, certification, deployment, external communications, source mutation, finance writes, generated prose, and autonomous action remain blocked
@@ -1005,8 +1005,8 @@ Still blocked until future Finance Plans:
 
 - F6V provider integration
 - F6X actual certification
-- deeper PDF/OCR/vector search beyond the narrow FP-0081 text-PDF precision-adapter candidate
-- EvidenceIndex or precision-adapter expansion outside the active FP-0081 first V2B contract
+- deeper PDF/OCR/vector search beyond the shipped narrow FP-0081 text-PDF precision-adapter candidate
+- EvidenceIndex or precision-adapter expansion outside the shipped FP-0081 first V2B contract
 - ChatGPT App implementation
 - MCP server implementation
 - iOS implementation

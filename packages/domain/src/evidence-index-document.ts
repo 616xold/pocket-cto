@@ -45,7 +45,28 @@ export const SourceAnchorSchema = z.object({
   checksumSha256: SourceChecksumSha256Schema.nullable(),
   storageKind: SourceSnapshotStorageKindSchema.nullable(),
   storageRef: z.string().min(1).nullable(),
+  mediaType: z.string().min(1).nullable().optional(),
+  documentRole: CfoWikiDocumentRoleSchema.nullable().optional(),
   extractionMethod: EvidenceIndexExtractionMethodSchema,
+  adapterName: z.string().min(1).optional(),
+  adapterVersion: z.string().min(1).optional(),
+  pageLocator: z
+    .object({
+      pageNumber: z.number().int().positive(),
+      pageLabel: z.string().min(1).nullable().default(null),
+    })
+    .nullable()
+    .optional(),
+  textRangeLocator: z
+    .object({
+      pageNumber: z.number().int().positive(),
+      startLine: z.number().int().positive(),
+      endLine: z.number().int().positive(),
+      startTextOffset: z.number().int().nonnegative(),
+      endTextOffset: z.number().int().nonnegative(),
+    })
+    .nullable()
+    .optional(),
   locator: EvidenceIndexLocatorSchema,
   freshness: EvidenceIndexFreshnessPostureSchema,
   lifecycleStatus: EvidenceIndexLifecycleStatusSchema,
