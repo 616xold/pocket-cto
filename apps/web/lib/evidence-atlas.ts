@@ -43,6 +43,7 @@ export type EvidenceAtlasReadModel = {
   limitations: EvidenceIndexLimitationPosture[];
   safeExcerpts: SafeSourceExcerpt[];
   sourceCount: number | null;
+  sourceListLimit: number | null;
   sourceCoverageMatrix: SourceCoverageMatrix | null;
   sourceInventorySummary: string;
   statusLegend: string[];
@@ -63,6 +64,7 @@ export function buildEvidenceAtlasReadModel({
 }: BuildEvidenceAtlasReadModelInput): EvidenceAtlasReadModel {
   const sourceInventoryAvailable = sourceList !== null;
   const sourceCount = sourceList?.sourceCount ?? null;
+  const sourceListLimit = sourceList?.limit ?? null;
   const limitations = buildAtlasFoundationLimitations();
 
   return {
@@ -77,14 +79,17 @@ export function buildEvidenceAtlasReadModel({
     limitations,
     safeExcerpts: [],
     sourceCount,
+    sourceListLimit,
     sourceCoverageMatrix: null,
     sourceInventorySummary: readSourceInventorySummary(
       sourceInventoryAvailable,
       sourceCount,
+      sourceListLimit,
     ),
     statusLegend: [...EvidenceIndexCoverageStatusSchema.options],
     timeline: buildTimeline({
       sourceCount,
+      sourceListLimit,
       sourceInventoryAvailable,
     }),
   };
@@ -93,33 +98,43 @@ export function buildEvidenceAtlasReadModel({
 function readSourceInventorySummary(
   sourceInventoryAvailable: boolean,
   sourceCount: number | null,
+  sourceListLimit: number | null,
 ) {
   if (!sourceInventoryAvailable) {
     return "The existing source-list read model is unavailable, so atlas coverage stays in a missing state.";
   }
 
   if (sourceCount === 0) {
-    return "The existing source-list read model is reachable, but no source records are registered for this company.";
+    return "The existing source-list read model is reachable, but no source records are displayed in the current limited view.";
   }
 
-  return `The existing source-list read model is reachable with ${sourceCount} source record${
+  const limitSummary =
+    sourceListLimit === null ? "limited source-list view" : `limit ${sourceListLimit}`;
+
+  return `The existing source-list read model is reachable with ${sourceCount} displayed source record${
     sourceCount === 1 ? "" : "s"
-  }; EvidenceIndex and V2C artifacts are not exposed through a web read route in this foundation.`;
+  } from the current ${limitSummary}; this is not a total source inventory count. EvidenceIndex and V2C artifacts are not exposed through a web read route in this foundation.`;
 }
 
 function buildTimeline(input: {
   sourceCount: number | null;
+  sourceListLimit: number | null;
   sourceInventoryAvailable: boolean;
 }): EvidenceAtlasTimelineStep[] {
+  const sourceInventorySuffix =
+    input.sourceCount === null
+      ? "."
+      : ` with ${input.sourceCount} displayed records from the limited source-list view${
+          input.sourceListLimit === null ? "" : ` (limit ${input.sourceListLimit})`
+        }.`;
+
   return [
     {
       id: "raw_source_inventory",
       label: "Raw source registry",
       status: input.sourceInventoryAvailable ? "available" : "missing",
       summary: input.sourceInventoryAvailable
-        ? `Existing source inventory is reachable${
-            input.sourceCount === null ? "." : ` with ${input.sourceCount} records.`
-          }`
+        ? `Existing source inventory is reachable${sourceInventorySuffix}`
         : "Existing source inventory could not be loaded from the current web read model.",
     },
     {

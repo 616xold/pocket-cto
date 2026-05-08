@@ -28,14 +28,18 @@ export default async function EvidenceAtlasPage(props: EvidenceAtlasPageProps) {
     <main className="shell">
       <section className="hero">
         <p className="eyebrow">Evidence Atlas</p>
-        <h1>Read-only evidence inspection for {companyKey}.</h1>
+        <h1>
+          Read-only evidence inspection for local route context {companyKey}.
+        </h1>
         <p className="lede">
           This V2D foundation visualizes source coverage, evidence chronology,
           document-map posture, evidence-card fields, answer anatomy boundaries,
           and forbidden action posture from existing contracts. It is not source
           truth, a second Finance Twin, a second CFO Wiki, generic RAG, LLM
           orchestration, report release, approval, provider work, source
-          mutation, finance write, or autonomous remediation.
+          mutation, finance write, or autonomous remediation. The default
+          <code>acme</code> key is a local route context only, not checked-in
+          sample company data.
         </p>
         <div className="button-row" style={{ marginTop: 22 }}>
           <Link href={"/" as Route} className="button outline">
@@ -55,6 +59,10 @@ export default async function EvidenceAtlasPage(props: EvidenceAtlasPageProps) {
           <div>
             <dt>Control plane</dt>
             <dd>{health.ok ? "reachable" : "unreachable"}</dd>
+          </div>
+          <div>
+            <dt>Company route context</dt>
+            <dd>{companyKey} (local/default context only)</dd>
           </div>
           <div>
             <dt>Observed</dt>

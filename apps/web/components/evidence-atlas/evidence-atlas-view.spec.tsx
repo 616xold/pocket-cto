@@ -21,6 +21,8 @@ describe("EvidenceAtlasView", () => {
     const html = renderToStaticMarkup(<EvidenceAtlasView atlas={atlas} />);
 
     expect(html).toContain("supported");
+    expect(html).toContain("Displayed source records");
+    expect(html).toContain("not a total source inventory count");
     expect(html).toContain("stale");
     expect(html).toContain("unsupported");
     expect(html).toContain("missing");

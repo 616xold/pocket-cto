@@ -31,7 +31,7 @@ export function CapabilityBoundaryPanel({
         remediation controls.
       </p>
 
-      <div className="meta-grid" style={{ marginTop: 18 }}>
+      <dl className="meta-grid" style={{ marginTop: 18 }}>
         <div>
           <dt>Write tools registered</dt>
           <dd>none</dd>
@@ -50,7 +50,7 @@ export function CapabilityBoundaryPanel({
             }
           </dd>
         </div>
-      </div>
+      </dl>
 
       <div className="stack" style={{ marginTop: 18 }}>
         <h3>Forbidden actions</h3>

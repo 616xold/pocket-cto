@@ -37,9 +37,9 @@ export function SourceCoverageMatrixView({
 
       <p className="muted">{sourceInventorySummary}</p>
 
-      <div className="meta-grid" style={{ marginTop: 18 }}>
+      <dl className="meta-grid" style={{ marginTop: 18 }}>
         <div>
-          <dt>Source records</dt>
+          <dt>Displayed source records</dt>
           <dd>{sourceCount ?? "unknown"}</dd>
         </div>
         <div>
@@ -50,7 +50,7 @@ export function SourceCoverageMatrixView({
           <dt>Generated at</dt>
           <dd>{matrix?.generatedAt ?? "not loaded"}</dd>
         </div>
-      </div>
+      </dl>
 
       {matrix ? (
         <div style={{ overflowX: "auto", marginTop: 18 }}>
@@ -114,7 +114,7 @@ function MissingCoverageState(input: {
         The atlas keeps absence visible. It does not coerce missing coverage
         into supported claims.
       </p>
-      <div className="meta-grid">
+      <dl className="meta-grid">
         <div>
           <dt>Coverage states</dt>
           <dd>{input.statusLegend.join(", ")}</dd>
@@ -123,7 +123,7 @@ function MissingCoverageState(input: {
           <dt>Freshness states</dt>
           <dd>{input.freshnessLegend.join(", ")}</dd>
         </div>
-      </div>
+      </dl>
       <ul className="list-clean">
         {input.limitations.map((limitation) => (
           <li key={limitation.code}>

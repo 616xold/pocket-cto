@@ -47,6 +47,8 @@ No external web or browser research was used for FP-0084. Repo source truth came
 - [x] 2026-05-08T18:02:26Z - Ran the requested DB-backed smoke/full validation ladder. The first run passed through command 32, then `pnpm lint` failed on one unused `React` import in the new page spec. This was corrected without widening scope, and `pnpm --filter @pocket-cto/web lint` passed.
 - [x] 2026-05-08T18:02:26Z - Reran the corrected full-ladder tail: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`; all passed. Log roots: `/tmp/pocket-cfo-v2d-full-validation-20260508T175633Z` and `/tmp/pocket-cfo-v2d-validation-tail-20260508T175818Z`.
 - [x] 2026-05-08T18:14:02Z - Updated FP-0084 and directly stale active docs to mark V2D as shipped, then reran the required final minimum validation: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`; all passed. Log root: `/tmp/pocket-cfo-v2d-final-validation-20260508T180618Z`.
+- [x] 2026-05-08T19:12:38Z - Post-merge V2D QA found and corrected two narrow Evidence Atlas UI wording/semantics defects: the `/sources?limit=20` `sourceCount` is now labeled as displayed source records rather than a total source inventory count, and the default `acme` company key is framed as a local/default route context rather than checked-in sample company data. The correction also tightened new atlas metadata grids to semantic `<dl>` wrappers. No backend route, web API route, schema, migration, package script, smoke alias, eval dataset, fixture, sample data, source-pack mutation, provider integration, certification, delivery, deployment, external communications, public ChatGPT App, remote MCP deployment, Apps SDK UI, OAuth, app submission, OpenAI API/file-search/vector integration, OCR, PageIndex, source mutation, finance write, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action was added.
+- [x] 2026-05-08T19:17:54Z - Ran the required post-correction V2D QA validation ladder, including direct V2 proofs, focused web/domain/control-plane specs, DB-backed source-pack proofs, CFO Wiki/Finance Twin/monitoring/readiness smokes, full web/domain/control-plane/twin guards, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`; all passed. Log root: `/tmp/pocket-cfo-v2d-qa-validation-20260508T191352Z`.
 
 ## Surprises & Discoveries
 
@@ -67,6 +69,8 @@ No external web or browser research was used for FP-0084. Repo source truth came
 - The Evidence Atlas page intentionally has one navigation link back to the operator home and no forms or buttons. Forbidden actions such as `upload_source`, `provider_call`, `generate_finance_advice`, and `take_autonomous_action` are displayed only as blocked contract text.
 - Inline component specs use in-memory contract-shaped data to exercise SourceCoverageMatrix, DocumentMap, EvidenceCard, SafeSourceExcerpt, and Answer Anatomy rendering. No checked-in fixture file, sample data file, eval dataset, or source-pack mutation was added.
 - The first full validation pass found a narrow lint issue in the new page spec. The correction removed an unused import only; it did not change product behavior.
+- Post-merge V2D QA confirmed that `SourceListView.sourceCount` is computed from the limited source list summaries returned by the existing `/sources?limit=20` read model, not from a total registry count. The atlas now states this as displayed source records only.
+- Post-merge V2D QA confirmed that default `companyKey = "acme"` needed an explicit local/default route-context frame to avoid implying real company data or checked-in sample data.
 
 ## Decision Log
 
@@ -123,6 +127,12 @@ Rationale: public app/MCP work needs a separate plan for auth, privacy, public t
 
 Decision: V2F benchmark/community pack must wait.
 Rationale: benchmark/community packs require a later sample-data/community-pack plan proving synthetic non-private data and no source-pack behavior leak.
+
+Decision: Treat Evidence Atlas source-list counts as displayed counts only.
+Rationale: the existing `/sources?limit=20` route returns a limited page and `SourceListView.sourceCount` is the returned-summary count. FP-0084 should not add a backend route or extra query to compute a total, so the UI now labels the value as displayed source records and says it is not a total source inventory count.
+
+Decision: Frame the default `acme` key as local route context only.
+Rationale: FP-0084 must not imply real company data, checked-in sample data, fixtures, or sample packs. The UI now says `acme` is a local/default route context only.
 
 ## Context and Orientation
 
@@ -328,6 +338,8 @@ Implementation acceptance results:
 - No package script, smoke alias, eval dataset, fixture, sample data, source-pack change, or public demo artifact was added.
 - Proof relies on DOM/page/component specs plus the existing direct V2A/V2B/V2C proof commands, not screenshots.
 
+Post-merge QA correction validation passed on the corrected tree. The QA correction remains limited to V2D UI/helper/spec semantics and this shipped plan record. It created no backend route, web API route, control-plane route, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack mutation, provider integration, certification, delivery, deployment, external communications, public ChatGPT App, remote MCP deployment, Apps SDK UI, OAuth, app submission, OpenAI API/file-search/vector integration, OCR, PageIndex, source mutation, finance write, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
+
 ## Idempotence and Recovery
 
 This shipped implementation is idempotent:
@@ -454,4 +466,5 @@ Implementation outcome:
 - The implementation adds one read-only app/web route plus modular read-only components and focused specs only.
 - No backend route, web API route, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack changes, public app/MCP, Apps SDK, OAuth, app submission, provider work, certification, deployment, external communications, OCR/vector/PageIndex/OpenAI file-search, LLM orchestration, runtime-Codex finance output, generated prose, source mutation, finance write, or autonomous action is added.
 - Required validation passed, including `pnpm ci:repro:current`. The first full validation pass had one narrow lint correction, the corrected tail passed, and final minimum validation passed after closeout docs.
-- Exact next recommendation after this implementation ships: run V2D implementation QA against the shipped read-only `/evidence-atlas` UI foundation. If QA finds a defect, make one narrow V2D correction inside app/web UI/spec/doc scope. V2E/V2F planning should wait until V2D QA confirms the atlas boundary, missing live-artifact posture, and no-action controls remain solid.
+- Post-merge V2D QA applied one narrow correction and validation passed on the corrected tree.
+- Exact next recommendation after this QA correction: V2E bounded LLM orchestration may start as a master-plan-only next slice if explicitly requested; V2F benchmark/community pack should wait until V2E is planned and the sample-data/community-pack policy is separately proven. No additional V2D correction is needed unless another QA pass finds a new narrow defect.

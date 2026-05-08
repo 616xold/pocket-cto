@@ -48,7 +48,14 @@ describe("EvidenceAtlasPage", () => {
 
     expect(getControlPlaneHealth).toHaveBeenCalledOnce();
     expect(getSourceList).toHaveBeenCalledWith({ limit: 20 });
-    expect(html).toContain("Read-only evidence inspection for acme.");
+    expect(html).toContain(
+      "Read-only evidence inspection for local route context acme.",
+    );
+    expect(html).toContain(
+      "not checked-in sample company data",
+    );
+    expect(html).toContain("Displayed source records");
+    expect(html).toContain("not a total source inventory count");
     expect(html).toContain("Source Coverage Matrix");
     expect(html).toContain("Evidence timeline");
     expect(html).toContain("Document map");

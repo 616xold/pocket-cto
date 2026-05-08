@@ -23,7 +23,7 @@ export function EvidenceCardDetail({ evidenceCard }: EvidenceCardDetailProps) {
       {evidenceCard ? (
         <div className="stack">
           <p className="mission-summary-copy">{evidenceCard.claimText}</p>
-          <div className="meta-grid">
+          <dl className="meta-grid">
             <div>
               <dt>Evidence anchors</dt>
               <dd>{evidenceCard.sourceAnchors.length}</dd>
@@ -40,7 +40,7 @@ export function EvidenceCardDetail({ evidenceCard }: EvidenceCardDetailProps) {
               <dt>Freshness</dt>
               <dd>{evidenceCard.freshness.summary}</dd>
             </div>
-          </div>
+          </dl>
 
           <h3>Limitations</h3>
           <ul className="list-clean">
