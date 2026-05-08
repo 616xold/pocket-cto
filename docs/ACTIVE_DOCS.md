@@ -50,7 +50,7 @@ FP-0077 is the shipped F10/v1 public launch handoff record. FP-0076 is shipped F
 
 [plans/FP-0084-evidence-atlas-ui-foundation.md](../plans/FP-0084-evidence-atlas-ui-foundation.md) is the shipped V2D read-only Evidence Atlas UI foundation record. It adds one local `apps/web` route at `/evidence-atlas`, modular read-only atlas components, a web-only atlas read-model helper, and focused specs over existing EvidenceIndex, V2B TextPdfAdapter, V2C evidence-tool, Finance Twin, CFO Wiki, mission answer, proof bundle, and source coverage contracts. It adds no backend route, web API route, schema, migrations, package scripts, fixtures, sample data, public app, MCP, OpenAI vector/file-search, source mutation, finance write, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
 
-[plans/FP-0085-bounded-llm-orchestration-foundation.md](../plans/FP-0085-bounded-llm-orchestration-foundation.md) is the active implementation-ready V2E bounded LLM orchestration foundation plan. It is docs-and-plan only so far. Future implementation is limited to local/internal proof-only QueryPlanner, read-only V2C tool planning, deterministic evidence selection handoff, schema-constrained summaries after evidence selection, missing-citation refusal, unsupported-evidence refusal, unsafe-action refusal, and evidence-faithfulness proof posture. It must not add routes, UI, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, public app/MCP, OpenAI API/vector/file-search, OCR, PageIndex, provider behavior, certification, delivery, deployment, external communications, source mutation, finance writes, generated advice, runtime-Codex finance output, or autonomous action unless a future plan or amendment names exact scope.
+[plans/FP-0085-bounded-llm-orchestration-foundation.md](../plans/FP-0085-bounded-llm-orchestration-foundation.md) is the shipped V2E local/internal proof-only bounded LLM orchestration foundation record. It adds pure contracts, a proof-only QueryPlanner over the fixed read-only V2C tool allowlist, deterministic evidence selection handoff, schema-constrained bounded summary/refusal contracts, missing-citation refusal, unsupported-evidence refusal, unsafe-action refusal, local proof audit events, and evidence-faithfulness/missing-citation/unsafe-action deterministic grade posture. It adds no routes, UI, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, public app/MCP, OpenAI API/vector/file-search, OCR, PageIndex, provider behavior, certification, delivery, deployment, external communications, source mutation, finance writes, generated advice, runtime-Codex finance output, or autonomous action.
 
 ## Historical Reference
 
@@ -84,14 +84,14 @@ These remain blocked until a future Finance Plan names exact scope:
 - F6X actual certification
 - deeper PDF/OCR/vector search beyond the shipped narrow FP-0081 text-PDF precision-adapter candidate
 - ChatGPT App/MCP implementation beyond the shipped local/internal FP-0082 contract
-- V2E implementation beyond the active FP-0085 local/internal proof-only plan
+- V2E expansion beyond the shipped FP-0085 local/internal proof-only bounded LLM orchestration foundation
 - iOS
 - OpenClaw
 - deployment/external communications
 - package-scope renaming
 - product runtime behavior outside the active Finance Plan, source mutation, finance writes, or autonomous action
 
-F12 is shipped through FP-0079, the first V2A EvidenceIndex/document-map foundation is shipped through FP-0080, the first V2B document precision adapter foundation is shipped through FP-0081, the first V2C local/internal read-only evidence-tool contract is shipped through FP-0082, the OSS demo/self-host/security baseline is shipped through FP-0083, and the first V2D Evidence Atlas UI foundation is shipped through FP-0084. V2E bounded LLM orchestration is active only through FP-0085 and has not been implemented. Public ChatGPT App/MCP deployment, Apps SDK UI, OAuth, app submission, V2D expansion beyond FP-0084, V2E implementation beyond FP-0085, and anything beyond the FP-0082 local contract remain blocked until a future Finance Plan names exact scope.
+F12 is shipped through FP-0079, the first V2A EvidenceIndex/document-map foundation is shipped through FP-0080, the first V2B document precision adapter foundation is shipped through FP-0081, the first V2C local/internal read-only evidence-tool contract is shipped through FP-0082, the OSS demo/self-host/security baseline is shipped through FP-0083, the first V2D Evidence Atlas UI foundation is shipped through FP-0084, and the first V2E local/internal proof-only bounded LLM orchestration foundation is shipped through FP-0085. Public ChatGPT App/MCP deployment, Apps SDK UI, OAuth, app submission, V2D expansion beyond FP-0084, V2E expansion beyond FP-0085, V2F benchmark/community pack, and anything beyond the FP-0082 local contract remain blocked until a future Finance Plan names exact scope.
 
 ## Update Rule
 

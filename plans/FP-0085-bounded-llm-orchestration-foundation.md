@@ -2,13 +2,13 @@
 
 ## Purpose / Big Picture
 
-Status: active implementation-ready V2E bounded LLM orchestration foundation plan, created 2026-05-08T19:28:41Z. Implementation has not started.
+Status: shipped V2E local/internal proof-only bounded LLM orchestration foundation record, created 2026-05-08T19:28:41Z and implemented 2026-05-08T21:08:51Z.
 
 Target phase: `V2E`.
 
 Exact slice: `V2E-bounded-llm-orchestration-foundation`.
 
-This master-plan thread is docs-and-plan only. It creates the first V2E implementation-ready Finance Plan after the shipped FP-0084 read-only Evidence Atlas UI foundation. It does not add code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack fixture edits, OpenAI API calls, vector/file-search integration, OCR, PageIndex, public ChatGPT App, remote MCP deployment, Apps SDK UI, OAuth, app submission, provider integration, certification, delivery, deployment, external communications, generated product prose, runtime-Codex finance output, source mutation, finance writes, or autonomous action.
+This Finance Plan began as the first V2E implementation-ready plan after the shipped FP-0084 read-only Evidence Atlas UI foundation. It now records the shipped local/internal proof-only bounded LLM orchestration foundation. The shipped implementation adds pure contracts, one proof-only control-plane bounded context, a deterministic QueryPlanner over fixed read-only V2C tools, deterministic evidence selection handoff, schema-constrained bounded summary/refusal contracts, local proof audit events, a direct proof command, and deterministic grade posture. It does not add UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack fixture edits, OpenAI API calls, model calls, vector/file-search integration, OCR, PageIndex, public ChatGPT App, remote MCP deployment, Apps SDK UI, OAuth, app submission, provider integration, certification, delivery, deployment, external communications, generated product prose, runtime-Codex finance output, source mutation, finance writes, or autonomous action.
 
 The user-visible purpose of V2E is not to make Pocket CFO sound like a generic AI CFO. The purpose is to plan one bounded orchestration layer that can help a future local/internal proof choose read-only evidence tools, hand deterministic evidence selection to a schema-constrained summary/refusal step, and fail closed when evidence, citations, freshness, limitations, or safety boundaries are insufficient.
 
@@ -45,11 +45,21 @@ No external web or browser research was used for FP-0085. No official OpenAI doc
 - [x] 2026-05-08T19:28:41Z - Ran direct V2 proofs before writing: `pnpm exec tsx tools/read-only-evidence-app-proof.mjs`, `pnpm exec tsx tools/document-precision-foundation-proof.mjs`, and `pnpm exec tsx tools/evidence-index-foundation-proof.mjs`; all passed.
 - [x] 2026-05-08T19:28:41Z - Read the active documentation spine, shipped FP-0084/FP-0083/FP-0082/FP-0081/FP-0080 records, package metadata, V2D Evidence Atlas UI files, V2A EvidenceIndex implementation, V2B TextPdfAdapter implementation, V2C evidence-tool contracts/services, domain exports, and direct proof tooling.
 - [x] 2026-05-08T19:28:41Z - Completed the required search pass for FP-0085, FP-0086, V2E, bounded LLM terms, proposed orchestration surface names, platform terms, high-liability terms, route/schema/migration/script/fixture/sample-data terms, internal package scaffolding, GitHub-first wording, and engineering-first wording.
-- [x] 2026-05-08T19:28:41Z - Decided V2E is safe to plan now as `V2E-bounded-llm-orchestration-foundation` because FP-0084 is merged and shipped, active docs support FP-0084 as shipped, direct V2 proofs pass, EvidenceIndex/TextPdfAdapter/V2C/V2D implementations exist, and this master-plan slice can remain docs-and-plan only.
-- [x] 2026-05-08T19:28:41Z - Created this FP-0085 active implementation-ready plan and refreshed only directly stale active-doc/roadmap wording.
+- [x] 2026-05-08T19:28:41Z - Decided V2E is safe to plan now as `V2E-bounded-llm-orchestration-foundation` because FP-0084 is merged and shipped, active docs support FP-0084 as shipped, direct V2 proofs pass, EvidenceIndex/TextPdfAdapter/V2C/V2D implementations exist, and the initial master-plan setup slice could remain plan-only.
+- [x] 2026-05-08T19:28:41Z - Created the initial FP-0085 implementation-ready plan and refreshed only directly stale active-doc/roadmap wording.
 - [x] 2026-05-08T19:37:30Z - Ran the required docs-and-plan validation ladder; all requested proof, smoke, focused spec, lint, typecheck, root test, and `pnpm ci:repro:current` commands passed.
 - [x] 2026-05-08T19:41:33Z - Ran final post-closeout sanity on the docs-only tree: `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` passed.
 - [x] 2026-05-08T19:41:33Z - Prepared the docs-only tree for the requested commit, push, and PR workflow.
+- [x] 2026-05-08T21:08:51Z - Implementation-thread preflight passed on branch `codex/v2e-bounded-llm-orchestration-foundation-local-v1`; the worktree started clean, `HEAD` matched fetched `origin/main`, GitHub auth/repo access worked, Docker Postgres/MinIO were available, FP-0085 existed, FP-0086 was absent, and the required V2A/V2B/V2C proof commands existed.
+- [x] 2026-05-08T21:08:51Z - Re-invoked the requested Pocket CFO operator skills for implementation and kept GitHub Connector Guard out of scope because no GitHub connector product behavior was touched.
+- [x] 2026-05-08T21:08:51Z - Re-ran the V2C/V2B/V2A direct proofs before coding: `pnpm exec tsx tools/read-only-evidence-app-proof.mjs`, `pnpm exec tsx tools/document-precision-foundation-proof.mjs`, and `pnpm exec tsx tools/evidence-index-foundation-proof.mjs`; all passed.
+- [x] 2026-05-08T21:08:51Z - Implemented pure V2E domain contracts for `EvidenceToolPlan`, `EvidenceSelectionResult`, `BoundedEvidenceSummary`, refusal schemas, local audit events, output schema fail-closed validation, fixed read-only tool allowlist, forbidden actions, and deterministic grade schemas.
+- [x] 2026-05-08T21:08:51Z - Implemented one local/internal proof-only control-plane bounded context under `apps/control-plane/src/modules/bounded-llm-orchestration/**` with deterministic QueryPlanner, evidence selection, bounded summary/refusal constructors, and grade helpers over synthetic in-memory V2C responses.
+- [x] 2026-05-08T21:08:51Z - Added `tools/bounded-llm-orchestration-proof.mjs` as the direct machine-readable V2E proof command without adding a package script or smoke alias.
+- [x] 2026-05-08T21:08:51Z - Ran focused V2E validation. The exact requested control-plane glob hit a zsh no-match wrapper issue for absent `src/modules/llm-orchestration/**/*.spec.ts`; the safe `NULL_GLOB` rerun executed the existing EvidenceIndex and bounded V2E specs successfully. Domain bounded LLM specs and the direct proof passed.
+- [x] 2026-05-08T21:08:51Z - Ran the requested DB-backed smoke/full validation ladder. Commands 1-32 passed under `/tmp/pocket-cfo-v2e-full-validation-20260508T210054Z`; a wrapper cwd issue made the final `pnpm ci:repro:current` look up the script from `apps/control-plane`, so the root tail was rerun from the repo root and `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all passed under `/tmp/pocket-cfo-v2e-root-tail-20260508T210353Z`.
+- [x] 2026-05-08T21:08:51Z - Updated FP-0085 and directly stale active docs to mark V2E as shipped local/internal proof-only bounded LLM orchestration foundation, with V2F and public app/MCP tracks still future-only.
+- [x] 2026-05-08T21:14:57Z - Ran final docs-closeout validation after the active-doc updates: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`; all passed under `/tmp/pocket-cfo-v2e-final-closeout-20260508T211457Z`.
 
 ## Surprises & Discoveries
 
@@ -68,11 +78,16 @@ No external web or browser research was used for FP-0085. No official OpenAI doc
 - Search hits for provider, certification, delivery, report release, payment, legal advice, audit opinion, source mutation, finance write, runtime-Codex, generated advice, and autonomous action were active safety boundaries, shipped absence assertions, existing internal boundary/readiness modules, or archived history. No behavior leak requires a smaller corrective slice before FP-0085.
 - Search hits for route, schema, migration, package script, smoke alias, eval dataset, fixture, sample data, `pocket-cto`, and `@pocket-cto` are valid shipped code, active guardrails, source-pack proof posture, DB migration history, or internal scaffolding. They must not be renamed or mutated in V2E planning.
 - No external web/search research was used. If a later implementation needs official/current OpenAI Structured Outputs, Agents SDK guardrails, MCP/Apps SDK/Developer Mode, evals/graders, or security/privacy docs, that implementation record must name the official source and state exactly what it was used for.
+- The implementation confirmed V2E can ship without any OpenAI client, API key handling, model selection, pricing assumption, vector/file-search adapter, hosted tool call, public app/MCP surface, route, UI, DB schema, migration, package script, smoke alias, eval dataset, fixture, sample data, source-pack mutation, product-generated advice, runtime-Codex finance output, or autonomous action.
+- The fixed V2E read-only tool allowlist is exactly the shipped V2C taxonomy: `search_evidence`, `fetch_evidence_card`, `fetch_source_anchor`, `fetch_document_map`, `fetch_source_coverage`, `fetch_company_posture`, and `fetch_capability_boundaries`.
+- Synthetic in-memory V2C responses are built inside specs and the direct proof command only. No checked-in fixture file, sample source pack, eval dataset, or sample data artifact was added.
+- The focused control-plane validation command as written needed `NULL_GLOB` because no `apps/control-plane/src/modules/llm-orchestration/**` implementation exists. V2E shipped under `bounded-llm-orchestration/**` only.
+- The full validation wrapper reached the final gate but stayed in `apps/control-plane` after a `cd` command. The root tail rerun passed from the repository root; this was a shell wrapper issue, not a product failure.
 
 ## Decision Log
 
 Decision: FP-0085 is safe to create now.
-Rationale: FP-0084 is merged and shipped, active docs identify FP-0084 as shipped, V2A/V2B/V2C direct proof commands exist and pass, EvidenceIndex/TextPdfAdapter/V2C local read-only contracts exist, V2D Evidence Atlas exists, README/CODEX_README/PROJECT_STATE/V2_BOUNDARY exist and are linked, and this master-plan thread remains docs-and-plan only.
+Rationale: FP-0084 is merged and shipped, active docs identify FP-0084 as shipped, V2A/V2B/V2C direct proof commands exist and pass, EvidenceIndex/TextPdfAdapter/V2C local read-only contracts exist, V2D Evidence Atlas exists, README/CODEX_README/PROJECT_STATE/V2_BOUNDARY exist and are linked, and the initial master-plan setup thread could stay plan-only.
 
 Decision: V2E is exactly `V2E-bounded-llm-orchestration-foundation`.
 Rationale: one bounded LLM orchestration foundation is safer than mixing LLM planning with V2F benchmark/community packs, public ChatGPT App/MCP, Apps SDK, OAuth, app submission, OpenAI vector/file-search, OCR, PageIndex, provider integrations, certification, delivery, deployment, package renames, GitHub deletion, engineering-twin deletion, source mutation, finance writes, generated advice, or autonomous action.
@@ -106,6 +121,18 @@ Rationale: this thread changes docs only. It creates no mission state transition
 
 Decision: public ChatGPT App planning must wait.
 Rationale: public app/MCP work needs V2E local proof, V2F benchmark/community-pack decisions, auth/privacy/security threat modeling, public no-write/no-exfiltration posture, deployment posture, Apps SDK/OAuth/app submission scope, and a dedicated future Finance Plan.
+
+Decision: ship V2E as contract and proof-only, not as model integration.
+Rationale: the foundation proves planning, evidence-selection, summary/refusal schema validation, citation posture, prompt-injection-as-data handling, local proof audit events, and deterministic grades without model calls. Real model calls, OpenAI API clients, file/vector search, public MCP/App behavior, and provider-specific choices remain future-plan-only.
+
+Decision: place implementation under `bounded-llm-orchestration/**`.
+Rationale: the name makes the safety boundary explicit and avoids implying a generic LLM orchestration subsystem. It also keeps the module separate from EvidenceIndex/V2C truth while consuming V2C responses as read-only inputs.
+
+Decision: no replay event or DB audit persistence is added for V2E.
+Rationale: the implementation emits local proof/spec audit events only and creates no mission state transition, ingest action, report action, approval, source mutation, Finance Twin write, CFO Wiki write, product runtime finance output, or durable audit record.
+
+Decision: deterministic grades are local contract helpers, not public eval datasets.
+Rationale: `EvidenceFaithfulnessGrade`, `MissingCitationGrade`, and `UnsafeActionRefusalGrade` prove the first schema/refusal posture in specs and proof output without adding eval datasets, fixtures, sample packs, public benchmark claims, or V2F community-pack behavior.
 
 ## Context and Orientation
 
@@ -247,34 +274,35 @@ Public ChatGPT App planning should wait for:
 
 ## Plan of Work
 
-This master-plan thread performs docs-and-plan only:
+FP-0085 now records two completed slices: the original V2E master-plan setup and the shipped local/internal proof-only implementation.
 
-1. Verify shipped FP-0084 and V2A/V2B/V2C/V2D repo truth.
-2. Run direct V2 proofs before writing.
-3. Search and classify V2E, platform, high-liability, route/schema/script/data, and scaffolding terms.
-4. Create exactly one new active Finance Plan: `plans/FP-0085-bounded-llm-orchestration-foundation.md`.
-5. Refresh only directly stale active docs that still say FP-0085 does not exist or that V2E is only future-plan text.
-6. Record no external web research was used.
-7. Run the required docs-and-plan validation ladder.
-8. Commit, push, and open the requested PR if validation passes.
+The master-plan setup:
 
-The future implementation should stay modular:
+1. Verified shipped FP-0084 and V2A/V2B/V2C/V2D repo truth.
+2. Ran direct V2 proofs before writing.
+3. Searched and classified V2E, platform, high-liability, route/schema/script/data, and scaffolding terms.
+4. Created exactly one active Finance Plan: `plans/FP-0085-bounded-llm-orchestration-foundation.md`.
+5. Refreshed directly stale active docs that still said FP-0085 did not exist or that V2E was only future-plan text.
+6. Recorded that no external web research was used.
+7. Ran the required validation ladder.
+8. Committed, pushed, and opened the requested PR after validation passed.
+
+The shipped implementation:
 
 - `packages/domain`: pure V2E schema contracts and grade contracts only.
-- `apps/control-plane/src/modules/llm-orchestration/**` or equivalent bounded context: local/internal proof-only orchestration service over synthetic in-memory V2C tool responses.
-- `tools/bounded-llm-orchestration-proof.mjs`: direct proof command if implementation adds it, with no package script or smoke alias.
+- `apps/control-plane/src/modules/bounded-llm-orchestration/**`: local/internal proof-only orchestration service over synthetic in-memory V2C tool responses.
+- `tools/bounded-llm-orchestration-proof.mjs`: direct proof command, with no package script or smoke alias.
 - focused specs beside touched domain/control-plane modules.
 
-The future implementation must not add HTTP routes, web API routes, app/web UI, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack changes, public app code, MCP server code, Apps SDK code, OAuth, app submission, OpenAI API code, OpenAI vector/file-search code, OCR/vector/PageIndex code, provider code, certification code, delivery code, deployment code, external communications, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
+The implementation did not add HTTP routes, web API routes, app/web UI, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack changes, public app code, MCP server code, Apps SDK code, OAuth, app submission, OpenAI API code, OpenAI vector/file-search code, OCR/vector/PageIndex code, provider code, certification code, delivery code, deployment code, external communications, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Concrete Steps
 
-Master-plan steps for this thread:
+Master-plan setup steps completed:
 
-1. Keep current branch `codex/v2e-bounded-llm-orchestration-master-plan-local-v1`.
-2. Do not switch worktrees and do not create FP-0086.
-3. Create `plans/FP-0085-bounded-llm-orchestration-foundation.md`.
-4. Update directly stale active docs only where needed:
+1. Used branch `codex/v2e-bounded-llm-orchestration-master-plan-local-v1`.
+2. Created `plans/FP-0085-bounded-llm-orchestration-foundation.md` and did not create FP-0086.
+3. Updated directly stale active docs:
    - `README.md`
    - `CODEX_README.md`
    - `START_HERE.md`
@@ -282,52 +310,64 @@ Master-plan steps for this thread:
    - `docs/PROJECT_STATE.md`
    - `docs/V2_BOUNDARY.md`
    - `plans/ROADMAP.md`
-5. Do not edit source-pack fixtures, code, UI, routes, schema, migrations, package scripts, smoke aliases, evals, fixtures, sample data, or source truth.
-6. Run the validation ladder.
-7. Update this plan's Progress, Surprises & Discoveries, Decision Log, Validation and Acceptance, Artifacts and Notes, and Outcomes & Retrospective before closeout.
+4. Avoided source-pack fixtures, code, UI, routes, schema, migrations, package scripts, smoke aliases, evals, fixtures, sample data, and source truth in the master-plan setup slice.
+5. Ran the validation ladder.
+6. Updated this plan's Progress, Surprises & Discoveries, Decision Log, Validation and Acceptance, Artifacts and Notes, and Outcomes & Retrospective before master-plan closeout.
 
-Future implementation steps, not performed in this thread:
+Implementation steps completed:
 
 1. Add pure domain contracts for `QueryPlanner`, `EvidenceToolPlan`, `EvidenceSelectionResult`, `BoundedEvidenceSummary`, refusal schemas, audit schema, prompt-injection boundary, tool allowlist, forbidden actions, output schema, and grade schemas.
 2. Add a local/internal proof-only service that validates a query into a read-only V2C `EvidenceToolPlan` or refusal.
 3. Add deterministic in-memory synthetic V2C responses inside specs/proof code only, not checked-in fixtures or sample packs.
 4. Add schema validation that fails closed when evidence, freshness, limitations, citations, permitted next action, or refusal fields are missing.
-5. Add a direct proof command if needed, without a package script or smoke alias.
+5. Add a direct proof command without a package script or smoke alias.
 6. Run focused specs plus the existing V2 proof and repo validation ladders.
 
 ## Validation and Acceptance
 
-Master-plan acceptance:
+Shipped acceptance:
 
 - FP-0085 exists exactly at `plans/FP-0085-bounded-llm-orchestration-foundation.md`.
 - FP-0086 does not exist.
+- FP-0085 is the shipped V2E local/internal proof-only bounded LLM orchestration record after implementation.
 - FP-0084 remains the shipped V2D read-only Evidence Atlas UI foundation record.
 - FP-0083 remains shipped OSS demo/self-host/security baseline.
 - FP-0082 remains shipped V2C local/internal read-only evidence-tool contract.
 - FP-0081 remains shipped V2B TextPdfAdapter foundation.
 - FP-0080 remains shipped V2A EvidenceIndex/document-map foundation.
-- This thread adds docs/plan changes only.
-- No code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack changes, OpenAI API/vector/file-search, OCR, PageIndex, public app/MCP, Apps SDK, OAuth, app submission, provider work, certification, delivery, deployment, external communications, generated product prose, runtime-Codex finance output, source mutation, finance write, or autonomous action is added.
-- No external web/search research was used, unless this section is later updated with official source names and exact use.
+- `QueryPlanner` accepts a user question and returns either a fixed read-only V2C tool plan or a refusal.
+- The fixed read-only tool allowlist is exactly `search_evidence`, `fetch_evidence_card`, `fetch_source_anchor`, `fetch_document_map`, `fetch_source_coverage`, `fetch_company_posture`, and `fetch_capability_boundaries`.
+- No write/action tools can be planned, registered, emitted, or summarized.
+- `EvidenceToolPlan` requires company key, normalized query, planned read-only tools, rationale, required citations, freshness posture, limitation posture, permitted next actions, forbidden actions, and audit fields.
+- `EvidenceSelectionResult` represents deterministic selected evidence from synthetic in-memory V2C responses.
+- `BoundedEvidenceSummary` is schema-constrained and can only summarize selected evidence.
+- `MissingCitationRefusal`, `UnsupportedEvidenceRefusal`, and `UnsafeActionRefusal` are defined and exercised.
+- Prompt-injection strings embedded in synthetic source text are treated as inert source data only.
+- Source excerpts remain bounded, redacted, and cited; no raw full-file dumps are returned.
+- Local audit events are emitted in proof/spec output only, with no DB records, mission state, report records, approval records, source mutations, finance writes, or product runtime behavior.
+- Output schema validation fails closed if evidence, freshness, limitations, permitted next action, citations, forbidden actions, audit, or refusal posture is missing.
+- `EvidenceFaithfulnessGrade`, `MissingCitationGrade`, and `UnsafeActionRefusalGrade` are defined and exercised without adding public eval datasets.
+- No OpenAI API calls, model calls, hosted tools, vector/file-search integration, OCR, PageIndex, public ChatGPT App/MCP, Apps SDK UI, OAuth, app submission, provider integration, certification, delivery, deployment, external communications, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action was added.
+- No UI, app route, web API route, control-plane route, DB schema, migration, package script, smoke alias, eval dataset, fixture, sample data, or source-pack fixture edit was added.
+- V2F benchmark/community pack remains future-only unless future implementation pressure shifts toward public examples, real model calls, or community distribution.
+- No external web/search research was used in the implementation slice.
 
-Future implementation acceptance:
-
-- `QueryPlanner` accepts only the fixed V2C read-only tool taxonomy.
-- No write/action tools are registered or planned.
-- Prompt-injection source text is treated as data.
-- Unsupported, missing, stale, conflicted, or uncited evidence fails closed.
-- Every positive claim requires SourceAnchor or accepted derived-ref citation posture.
-- No finance advice, provider, certification, delivery, payment, legal/audit/tax, customer/vendor contact, source mutation, finance write, report release, or autonomous action can be planned or summarized.
-- Output schema validation fails closed when evidence, freshness, limitations, permitted next action, citations, or refusal posture is missing.
-- Evidence-faithfulness, missing-citation, and unsafe-action refusal grades are defined and exercised.
-- Query/audit output is local/proof-only and does not create product finance behavior.
-
-Validation commands for this docs-and-plan thread:
+Focused implementation validation:
 
 ```bash
 pnpm exec tsx tools/read-only-evidence-app-proof.mjs
 pnpm exec tsx tools/document-precision-foundation-proof.mjs
 pnpm exec tsx tools/evidence-index-foundation-proof.mjs
+pnpm exec tsx tools/bounded-llm-orchestration-proof.mjs
+pnpm --filter @pocket-cto/domain exec vitest run src/evidence-index.spec.ts src/evidence-tool.spec.ts src/bounded-llm.spec.ts
+zsh -lc "cd apps/control-plane && setopt NULL_GLOB && pnpm exec vitest run src/modules/evidence-index/**/*.spec.ts src/modules/llm-orchestration/**/*.spec.ts src/modules/bounded-llm-orchestration/**/*.spec.ts"
+```
+
+Focused implementation validation result: passed on 2026-05-08T21:08:51Z. The exact requested control-plane glob hit a zsh no-match wrapper issue for absent `src/modules/llm-orchestration/**/*.spec.ts`; the safe `NULL_GLOB` rerun executed the existing EvidenceIndex and bounded V2E specs successfully.
+
+Full implementation validation:
+
+```bash
 pnpm exec tsx tools/board-lender-document-source-pack-proof.mjs
 pnpm exec tsx tools/policy-covenant-document-source-pack-proof.mjs
 pnpm exec tsx tools/ledger-reconciliation-source-pack-proof.mjs
@@ -357,8 +397,8 @@ pnpm smoke:monitor-demo-replay:local
 pnpm smoke:finance-discovery-supported-families:local
 pnpm --filter @pocket-cto/web exec vitest run
 pnpm --filter @pocket-cto/web typecheck
-pnpm --filter @pocket-cto/domain exec vitest run src/cfo-wiki.spec.ts src/source-registry.spec.ts src/finance-twin.spec.ts src/monitoring.spec.ts src/close-control.spec.ts src/close-control-certification-safety.spec.ts src/external-delivery-human-confirmation-boundary.spec.ts src/close-control-certification-boundary.spec.ts src/external-provider-boundary.spec.ts src/close-control-review-summary.spec.ts src/delivery-readiness.spec.ts src/proof-bundle.spec.ts src/evidence-index.spec.ts src/evidence-tool.spec.ts
-zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/evidence-index/**/*.spec.ts src/modules/wiki/**/*.spec.ts src/modules/sources/**/*.spec.ts src/modules/finance-twin/**/*.spec.ts src/modules/finance-discovery/**/*.spec.ts src/modules/monitoring/**/*.spec.ts src/modules/close-control/**/*.spec.ts src/modules/close-control-certification-safety/**/*.spec.ts src/modules/external-delivery-human-confirmation-boundary/**/*.spec.ts src/modules/close-control-certification-boundary/**/*.spec.ts src/modules/external-provider-boundary/**/*.spec.ts src/modules/close-control-review-summary/**/*.spec.ts src/modules/delivery-readiness/**/*.spec.ts src/modules/missions/**/*.spec.ts src/modules/approvals/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/modules/reporting/**/*.spec.ts src/app.spec.ts"
+pnpm --filter @pocket-cto/domain exec vitest run src/cfo-wiki.spec.ts src/source-registry.spec.ts src/finance-twin.spec.ts src/monitoring.spec.ts src/close-control.spec.ts src/close-control-certification-safety.spec.ts src/external-delivery-human-confirmation-boundary.spec.ts src/close-control-certification-boundary.spec.ts src/external-provider-boundary.spec.ts src/close-control-review-summary.spec.ts src/delivery-readiness.spec.ts src/proof-bundle.spec.ts src/evidence-index.spec.ts src/evidence-tool.spec.ts src/bounded-llm.spec.ts
+zsh -lc "cd apps/control-plane && setopt NULL_GLOB && pnpm exec vitest run src/modules/evidence-index/**/*.spec.ts src/modules/wiki/**/*.spec.ts src/modules/sources/**/*.spec.ts src/modules/finance-twin/**/*.spec.ts src/modules/finance-discovery/**/*.spec.ts src/modules/monitoring/**/*.spec.ts src/modules/close-control/**/*.spec.ts src/modules/close-control-certification-safety/**/*.spec.ts src/modules/external-delivery-human-confirmation-boundary/**/*.spec.ts src/modules/close-control-certification-boundary/**/*.spec.ts src/modules/external-provider-boundary/**/*.spec.ts src/modules/close-control-review-summary/**/*.spec.ts src/modules/delivery-readiness/**/*.spec.ts src/modules/missions/**/*.spec.ts src/modules/approvals/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/modules/reporting/**/*.spec.ts src/modules/llm-orchestration/**/*.spec.ts src/modules/bounded-llm-orchestration/**/*.spec.ts src/app.spec.ts"
 pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts
 pnpm lint
 pnpm typecheck
@@ -366,13 +406,15 @@ pnpm test
 pnpm ci:repro:current
 ```
 
-Validation result: passed on 2026-05-08T19:37:30Z. The full requested validation ladder completed successfully, including direct V2 proofs, DB-backed source-pack proofs, CFO Wiki/Finance Twin/monitoring/close-control/delivery/operator/discovery smokes, focused web/domain/control-plane specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`. Validation log root: `/tmp/pocket-cfo-fp0085-validation-20260508T193311Z`.
+Full implementation validation result: passed on 2026-05-08T21:08:51Z. Commands 1-32 passed under `/tmp/pocket-cfo-v2e-full-validation-20260508T210054Z`; a shell-wrapper cwd issue made the final `pnpm ci:repro:current` look up the script from `apps/control-plane`, so the root tail was rerun from the repo root and `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all passed under `/tmp/pocket-cfo-v2e-root-tail-20260508T210353Z`.
 
-Final post-closeout sanity also passed on 2026-05-08T19:41:33Z: `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`. Final sanity log root: `/tmp/pocket-cfo-fp0085-final-sanity-20260508T193803Z`.
+Earlier master-plan validation also passed on 2026-05-08T19:37:30Z, with log root `/tmp/pocket-cfo-fp0085-validation-20260508T193311Z`. The earlier post-closeout sanity passed on 2026-05-08T19:41:33Z: `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`, with log root `/tmp/pocket-cfo-fp0085-final-sanity-20260508T193803Z`.
+
+Final docs-closeout validation after the active-doc updates passed on 2026-05-08T21:14:57Z: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`. Final implementation closeout log root: `/tmp/pocket-cfo-v2e-final-closeout-20260508T211457Z`.
 
 ## Idempotence and Recovery
 
-This master-plan slice is idempotent:
+This FP-0085 record is idempotent:
 
 - rerunning should find FP-0085 and update it instead of creating FP-0086
 - rerunning direct V2 proofs should not mutate raw source fixtures
@@ -388,19 +430,30 @@ Recovery paths:
 - If V2C proof fails, stop V2E and recommend a narrow V2C evidence-tool correction.
 - If V2B or V2A proof fails, stop V2E and recommend the narrowest EvidenceIndex/TextPdfAdapter correction.
 - If implementation cannot remain local/internal proof-only without model calls, routes, persistence, fixtures, sample data, public app/MCP, provider/certification/delivery behavior, source mutation, finance writes, generated advice, or autonomous action, stop and plan V2F benchmark/community pack or a narrower corrective slice first.
-- If validation fails in this docs-only thread, record the exact failing command and recommend the smallest corrective slice instead of widening scope.
+- If validation fails in a rerun, record the exact failing command and recommend the smallest corrective slice instead of widening scope.
 
 ## Artifacts and Notes
 
-Artifacts created or refreshed by this master-plan thread:
+Artifacts created or refreshed:
 
 - `plans/FP-0085-bounded-llm-orchestration-foundation.md`
-- directly stale active-doc/roadmap refreshes that point to FP-0085 as the active implementation-ready V2E plan
+- `packages/domain/src/bounded-llm-common.ts`
+- `packages/domain/src/bounded-llm-plan.ts`
+- `packages/domain/src/bounded-llm-selection.ts`
+- `packages/domain/src/bounded-llm-summary.ts`
+- `packages/domain/src/bounded-llm-refusal.ts`
+- `packages/domain/src/bounded-llm-output.ts`
+- `packages/domain/src/bounded-llm-grades.ts`
+- `packages/domain/src/bounded-llm.ts`
+- `packages/domain/src/bounded-llm.spec.ts`
+- `packages/domain/src/index.ts`
+- `apps/control-plane/src/modules/bounded-llm-orchestration/**`
+- `tools/bounded-llm-orchestration-proof.mjs`
+- directly stale active-doc/roadmap refreshes that point to FP-0085 as the shipped V2E local/internal proof-only bounded LLM orchestration foundation record
 
 Artifacts intentionally not created:
 
 - FP-0086
-- code
 - UI
 - routes
 - schema or migrations
@@ -411,7 +464,7 @@ Artifacts intentionally not created:
 - public ChatGPT App, MCP, Apps SDK UI, OAuth, or app submission artifacts
 - OpenAI API/vector/file-search, OCR, vector search, or PageIndex artifacts
 - provider, certification, delivery, deployment, or external communication artifacts
-- LLM orchestration implementation
+- public or model-backed LLM orchestration implementation
 - runtime-Codex finance output
 - generated product prose
 - source mutation
@@ -429,8 +482,8 @@ Search-hit classification:
 
 Replay and evidence implications:
 
-- This master-plan slice is docs-only and creates no mission state changes, ingest actions, report actions, approvals, replay events, evidence bundles, source mutations, finance writes, or product runtime behavior.
-- Future V2E implementation must keep first audit/query output local and proof-only. Any durable event, replay integration, persistence, mission output, report output, approval, or Finance Twin/CFO Wiki/source mutation requires a later plan or explicit plan amendment.
+- The shipped implementation emits local proof/spec audit events only and creates no mission state changes, ingest actions, report actions, approvals, replay events, evidence bundles, source mutations, finance writes, or product runtime behavior.
+- Any durable event, replay integration, persistence, mission output, report output, approval, or Finance Twin/CFO Wiki/source mutation requires a later plan or explicit plan amendment.
 
 External web/browser research:
 
@@ -478,17 +531,17 @@ FP-0085 does not depend on:
 - finance writes
 - autonomous action
 
-No new environment variables are planned for first V2E. If a later implementation introduces model-provider configuration, that is outside this first local proof-only contract and requires a future named plan or explicit amendment.
+No new environment variables were added for first V2E. If a later implementation introduces model-provider configuration, that is outside this first local proof-only contract and requires a future named plan or explicit amendment.
 
 ## Outcomes & Retrospective
 
-Master-plan outcome:
+Implementation outcome:
 
-- FP-0085 is the active implementation-ready V2E bounded LLM orchestration foundation plan.
-- V2E implementation has not started.
+- FP-0085 is the shipped V2E local/internal proof-only bounded LLM orchestration foundation record after implementation.
+- V2E shipped as pure contracts, one proof-only bounded control-plane context, a deterministic QueryPlanner, fixed read-only V2C tool planning, deterministic evidence selection, schema-constrained bounded summary/refusal posture, local proof audit events, and deterministic grade posture.
 - FP-0084 remains shipped V2D.
 - FP-0083 remains shipped OSS baseline, FP-0082 remains shipped V2C, FP-0081 remains shipped V2B, FP-0080 remains shipped V2A, FP-0079 remains shipped F12, FP-0078 remains shipped F11, FP-0077 remains shipped F10, FP-0076 remains shipped F9, FP-0075 remains shipped F8, FP-0074 remains shipped F7, and FP-0050 through FP-0073 remain shipped F6 records.
 - No FP-0086 is created.
-- No code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack changes, public app/MCP, Apps SDK, OAuth, app submission, OpenAI API/vector/file-search, OCR, PageIndex, provider work, certification, delivery, deployment, external communications, runtime-Codex finance output, generated prose, source mutation, finance write, or autonomous action is added.
-- Validation passed, including `pnpm ci:repro:current`.
-- Exact next recommendation: after this docs-only plan ships, start V2E implementation next as a local/internal proof-only QueryPlanner and schema/refusal contract over synthetic in-memory V2C tool responses, without OpenAI API calls. V2F benchmark/community pack should wait unless V2E implementation pressure shifts toward public examples, real model calls, community distribution, or public claims.
+- No UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack changes, public app/MCP, Apps SDK, OAuth, app submission, OpenAI API calls, model calls, vector/file-search integration, OCR, PageIndex, provider work, certification, delivery, deployment, external communications, runtime-Codex finance output, generated product prose, source mutation, finance write, or autonomous action is added.
+- Validation passed, including the direct V2E proof command and `pnpm ci:repro:current`.
+- Exact next recommendation: run V2E implementation QA next against the shipped local/internal proof-only contract. Do not start V2F benchmark/community pack until V2E QA is clean or until future implementation pressure shifts toward public examples, real model calls, community distribution, or public claims. If QA finds a defect, prefer one narrow V2E contract-only correction.
