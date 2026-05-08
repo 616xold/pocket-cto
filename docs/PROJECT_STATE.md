@@ -16,6 +16,8 @@ FP-0081 is the shipped V2B document precision adapters foundation record. It add
 
 FP-0082 is the shipped V2C local/internal read-only evidence-tool contract record. It adds pure domain contracts for the evidence-tool envelope, local read-only search/fetch/inspect functions under the EvidenceIndex boundary, focused specs, and `tools/read-only-evidence-app-proof.mjs`, while keeping public MCP server deployment, ChatGPT App, Apps SDK UI, OAuth, app submission, UI, routes, schema, migrations, package scripts, fixtures, OpenAI API/vector/file-search integration, OCR, PageIndex, provider integration, certification, delivery, report release, source mutation, finance writes, generated prose, LLM orchestration, runtime-Codex finance output, and autonomous action future-only.
 
+FP-0083 is the shipped OSS demo/self-host/security baseline documentation record. It adds `SECURITY.md`, `PRIVACY.md`, `CONTRIBUTING.md`, finance-data and read-only-agent threat models, demo-data policy, local demo operator journey, and local-only self-host baseline docs without adding code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, provider integration, public app behavior, deployment, source mutation, finance writes, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
+
 ## Shipped Architecture Summary
 
 The shipped system is organized around:
@@ -45,6 +47,7 @@ The shipped system is organized around:
 - **V2A EvidenceIndex and document-map foundation**: shipped through FP-0080 as read-only EvidenceIndex contracts, deterministic document maps, source anchors, evidence cards, source coverage posture, focused specs, and a direct proof command.
 - **V2B document precision adapters foundation**: shipped through FP-0081 as one deterministic policy/covenant TextPdfAdapter over EvidenceIndex with source-anchor metadata, adapter provenance, direct proof/spec coverage, and fail-closed unsupported posture.
 - **V2C read-only evidence-tool contract**: shipped through FP-0082 as one local/internal read-only evidence-tool contract and direct proof over existing EvidenceIndex/TextPdfAdapter outputs, with no public MCP/App deployment or write/action tools.
+- **OSS demo/self-host/security baseline**: shipped through FP-0083 as documentation-only security, privacy, contribution, demo-data, local-demo, self-host, finance-data threat-model, and read-only-agent threat-model baseline.
 
 ## Fixed Shipped Monitor Families
 
@@ -94,6 +97,9 @@ These tracks remain future-only until a later Finance Plan names exact scope and
 - deeper PDF/OCR/vector search beyond the shipped narrow FP-0081 text-PDF precision-adapter candidate
 - EvidenceIndex or precision-adapter expansion outside the shipped FP-0081 first V2B contract
 - public ChatGPT App/MCP deployment beyond the shipped local/internal FP-0082 contract
+- V2D Evidence Atlas UI
+- V2E bounded LLM orchestration
+- V2F benchmark/community packs
 - iOS
 - OpenClaw
 - deployment/external communications
@@ -112,7 +118,7 @@ The repo still contains historical/internal scaffolding names:
 - engineering-twin modules
 - Pocket CTO archive and historical plan material
 
-Do not rename packages, imports, root `package.json`, database names, service names, or scripts without a dedicated future plan. Do not delete GitHub or engineering-twin modules in F12, V2A, V2B, or V2C work.
+Do not rename packages, imports, root `package.json`, database names, service names, or scripts without a dedicated future plan. Do not delete GitHub or engineering-twin modules in F12, V2A, V2B, V2C, or OSS baseline work.
 
 ## Plan Records
 
@@ -125,6 +131,7 @@ Key records:
 - [FP-0080 V2A EvidenceIndex and document-map foundation](../plans/FP-0080-evidence-index-and-document-map-foundation.md)
 - [FP-0081 V2B document precision adapters foundation](../plans/FP-0081-document-precision-adapters-foundation.md)
 - [FP-0082 V2C read-only MCP/ChatGPT Evidence App alpha](../plans/FP-0082-read-only-mcp-chatgpt-evidence-app-alpha.md)
+- [FP-0083 OSS demo/self-host/security baseline](../plans/FP-0083-oss-demo-self-host-security-baseline.md)
 - [FP-0077 F10 v1 public launch handoff](../plans/FP-0077-v1-public-launch-handoff.md)
 - [FP-0076 F9 product UI launch polish](../plans/FP-0076-product-ui-launch-polish-foundation.md)
 - [FP-0075 F8 future-scope triage](../plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md)

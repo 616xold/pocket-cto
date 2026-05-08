@@ -11,16 +11,24 @@ Treat these as active product and implementation guidance, in this order:
 3. [CODEX_README.md](../CODEX_README.md)
 4. [docs/PROJECT_STATE.md](PROJECT_STATE.md)
 5. [docs/V2_BOUNDARY.md](V2_BOUNDARY.md)
-6. [AGENTS.md](../AGENTS.md)
-7. [PLANS.md](../PLANS.md)
-8. [WORKFLOW.md](../WORKFLOW.md)
-9. [plans/ROADMAP.md](../plans/ROADMAP.md)
-10. the unfinished `plans/FP-*.md` file if one exists
-11. [docs/ops/local-dev.md](ops/local-dev.md)
-12. [docs/ops/source-ingest-and-cfo-wiki.md](ops/source-ingest-and-cfo-wiki.md)
-13. [docs/ops/codex-app-server.md](ops/codex-app-server.md)
-14. [docs/benchmarks/seeded-missions.md](benchmarks/seeded-missions.md)
-15. [evals/README.md](../evals/README.md)
+6. [SECURITY.md](../SECURITY.md)
+7. [PRIVACY.md](../PRIVACY.md)
+8. [CONTRIBUTING.md](../CONTRIBUTING.md)
+9. [AGENTS.md](../AGENTS.md)
+10. [PLANS.md](../PLANS.md)
+11. [WORKFLOW.md](../WORKFLOW.md)
+12. [plans/ROADMAP.md](../plans/ROADMAP.md)
+13. the unfinished `plans/FP-*.md` file if one exists
+14. [docs/security/finance-data-threat-model.md](security/finance-data-threat-model.md)
+15. [docs/security/read-only-agent-threat-model.md](security/read-only-agent-threat-model.md)
+16. [docs/demo/demo-data-policy.md](demo/demo-data-policy.md)
+17. [docs/demo/local-demo-operator-journey.md](demo/local-demo-operator-journey.md)
+18. [docs/ops/self-host-baseline.md](ops/self-host-baseline.md)
+19. [docs/ops/local-dev.md](ops/local-dev.md)
+20. [docs/ops/source-ingest-and-cfo-wiki.md](ops/source-ingest-and-cfo-wiki.md)
+21. [docs/ops/codex-app-server.md](ops/codex-app-server.md)
+22. [docs/benchmarks/seeded-missions.md](benchmarks/seeded-missions.md)
+23. [evals/README.md](../evals/README.md)
 
 Read [docs/ops/github-app-setup.md](ops/github-app-setup.md) only when GitHub connector work is explicitly in scope.
 
@@ -38,7 +46,7 @@ FP-0077 is the shipped F10/v1 public launch handoff record. FP-0076 is shipped F
 
 [plans/FP-0082-read-only-mcp-chatgpt-evidence-app-alpha.md](../plans/FP-0082-read-only-mcp-chatgpt-evidence-app-alpha.md) is the shipped V2C local/internal read-only evidence-tool contract record. It adds a pure shared `EvidenceToolResponse` contract, local read-only search/fetch/inspect functions over existing EvidenceIndex/TextPdfAdapter artifacts, focused specs, and a direct proof command without implementing a public MCP server, ChatGPT App, Apps SDK UI, routes, schema, migrations, package scripts, evals, fixtures, provider work, certification, deployment, source mutation, finance writes, generated advice, LLM orchestration, runtime-Codex finance output, or autonomous action.
 
-[plans/FP-0083-oss-demo-self-host-security-baseline.md](../plans/FP-0083-oss-demo-self-host-security-baseline.md) is the active implementation-ready OSS demo/self-host/security baseline plan. It is docs-only and plans SECURITY/PRIVACY/CONTRIBUTING, demo-data policy, local demo journey, self-host guidance, finance-data threat model, and read-only-agent threat model work before public ChatGPT App, remote MCP, Apps SDK UI, OAuth, app submission, V2D UI, V2E LLM orchestration, V2F community packs, provider integration, certification, deployment, external communications, package-scope rename, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
+[plans/FP-0083-oss-demo-self-host-security-baseline.md](../plans/FP-0083-oss-demo-self-host-security-baseline.md) is the shipped OSS demo/self-host/security baseline documentation record. It created `SECURITY.md`, `PRIVACY.md`, `CONTRIBUTING.md`, demo-data policy, local demo journey, self-host guidance, finance-data threat model, and read-only-agent threat model docs before any public ChatGPT App, remote MCP, Apps SDK UI, OAuth, app submission, V2D UI, V2E LLM orchestration, V2F community packs, provider integration, certification, deployment, external communications, package-scope rename, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Historical Reference
 
@@ -78,7 +86,7 @@ These remain blocked until a future Finance Plan names exact scope:
 - package-scope renaming
 - product runtime behavior outside the active Finance Plan, source mutation, finance writes, or autonomous action
 
-F12 is shipped through FP-0079, the first V2A EvidenceIndex/document-map foundation is shipped through FP-0080, the first V2B document precision adapter foundation is shipped through FP-0081, and the first V2C local/internal read-only evidence-tool contract is shipped through FP-0082. Public ChatGPT App/MCP deployment, Apps SDK UI, OAuth, app submission, V2D UI, V2E LLM orchestration, and anything beyond the FP-0082 local contract remain blocked until a future Finance Plan names exact scope.
+F12 is shipped through FP-0079, the first V2A EvidenceIndex/document-map foundation is shipped through FP-0080, the first V2B document precision adapter foundation is shipped through FP-0081, the first V2C local/internal read-only evidence-tool contract is shipped through FP-0082, and the OSS demo/self-host/security baseline is shipped through FP-0083. Public ChatGPT App/MCP deployment, Apps SDK UI, OAuth, app submission, V2D UI, V2E LLM orchestration, and anything beyond the FP-0082 local contract remain blocked until a future Finance Plan names exact scope.
 
 ## Update Rule
 

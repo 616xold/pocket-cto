@@ -979,11 +979,11 @@ V2C - read-only agent/MCP/ChatGPT Evidence App alpha:
 
 OSS demo/self-host/security baseline:
 
-- active implementation-ready plan: `plans/FP-0083-oss-demo-self-host-security-baseline.md`
+- shipped through `plans/FP-0083-oss-demo-self-host-security-baseline.md`
 - docs-only baseline before public app, remote MCP, community pack, or deployment work
-- plans SECURITY.md, PRIVACY.md, CONTRIBUTING.md, local demo operator journey, demo-data policy, self-host baseline, finance-data threat model, and read-only-agent threat model
+- adds SECURITY.md, PRIVACY.md, CONTRIBUTING.md, local demo operator journey, demo-data policy, self-host baseline, finance-data threat model, and read-only-agent threat model
 - first implementation should not add code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample source-pack data, source mutation, finance writes, generated product prose, LLM orchestration, runtime-Codex finance output, deployment, provider integration, certification, external communications, or autonomous action
-- public ChatGPT App alpha, remote MCP deployment, Apps SDK UI, OAuth, app submission, V2D UI, V2E LLM orchestration, V2F community packs, and V2G distribution tracks wait for this baseline to be implemented and validated
+- public ChatGPT App alpha, remote MCP deployment, Apps SDK UI, OAuth, app submission, V2D UI, V2E LLM orchestration, V2F community packs, and V2G distribution tracks remain future-plan-only after this baseline
 
 V2D - Evidence Atlas UI:
 

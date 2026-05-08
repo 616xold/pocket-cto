@@ -63,7 +63,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-Use [docs/ops/local-dev.md](docs/ops/local-dev.md) for the current local operating pattern.
+Use [docs/ops/local-dev.md](docs/ops/local-dev.md) for the current local operating pattern and [docs/ops/self-host-baseline.md](docs/ops/self-host-baseline.md) for the local-only self-host boundary.
 
 ## Core Validation
 
@@ -121,17 +121,17 @@ F11 closed public repo hygiene and V2 transition framing. F12 closed the manual 
 
 [FP-0080](plans/FP-0080-evidence-index-and-document-map-foundation.md) is the shipped first V2A EvidenceIndex and document-map foundation record. It adds a native deterministic read-only anchor/trace layer for supported markdown/plain-text source text, evidence cards, source coverage posture, and a direct proof command without adding UI, routes, schema, migrations, package scripts, fixture files, OCR, vector search, PageIndex, MCP, ChatGPT App, provider behavior, certification, delivery, source mutation, finance writes, generated product prose, or autonomous action.
 
-Current V2 sequence after the shipped FP-0082 foundation:
+Current V2 sequence after the shipped FP-0083 baseline:
 
 - V2B document precision adapters foundation through [FP-0081](plans/FP-0081-document-precision-adapters-foundation.md), shipped as one narrow deterministic TextPdfAdapter candidate over EvidenceIndex for policy/covenant text-PDF sources under strict fail-closed quality gates
 - V2C read-only agent/MCP/ChatGPT Evidence App alpha through [FP-0082](plans/FP-0082-read-only-mcp-chatgpt-evidence-app-alpha.md), shipped as a local/internal read-only evidence-tool contract and direct proof over existing EvidenceIndex/TextPdfAdapter outputs, with no public MCP server, ChatGPT App, Apps SDK UI, routes, schema, migrations, package scripts, fixtures, OpenAI API/file-search/vector integration, OCR, PageIndex, provider behavior, certification, delivery, report release, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action
-- OSS demo/self-host/security baseline through [FP-0083](plans/FP-0083-oss-demo-self-host-security-baseline.md), active as a docs-only plan for SECURITY/PRIVACY/CONTRIBUTING, demo-data policy, local demo journey, self-host guidance, and finance-data/read-only-agent threat models before public app or deployment work
-- V2D Evidence Atlas UI
-- V2E bounded LLM orchestration
-- V2F benchmark/community pack
-- V2G optional distribution tracks
+- OSS demo/self-host/security baseline through [FP-0083](plans/FP-0083-oss-demo-self-host-security-baseline.md), shipped as docs-only `SECURITY.md`, `PRIVACY.md`, `CONTRIBUTING.md`, demo-data policy, local demo journey, self-host guidance, and finance-data/read-only-agent threat models before public app or deployment work
+- V2D Evidence Atlas UI, future-plan-only
+- V2E bounded LLM orchestration, future-plan-only
+- V2F benchmark/community pack, future-plan-only
+- V2G optional distribution tracks, future-plan-only
 
-Any V2B expansion beyond FP-0081 or V2C expansion beyond the shipped local/internal contract needs a future named plan. Public ChatGPT App/MCP deployment, V2D UI, V2E LLM orchestration, V2F community packs, and later tracks remain future-plan-only and should wait for the FP-0083 OSS baseline implementation. See [docs/V2_BOUNDARY.md](docs/V2_BOUNDARY.md).
+Any V2B expansion beyond FP-0081, V2C expansion beyond the shipped local/internal contract, V2D UI, V2E LLM orchestration, V2F community packs, public ChatGPT App/MCP deployment, and later tracks remain future-plan-only. See [docs/V2_BOUNDARY.md](docs/V2_BOUNDARY.md).
 
 ## Screenshots And Demo Audit
 
@@ -143,7 +143,7 @@ Codex/operator workflow guidance lives in [CODEX_README.md](CODEX_README.md). Th
 
 ## Contribution, Security, And Privacy
 
-Contribution and security policies are not yet formalized as separate OSS baseline docs. [FP-0083](plans/FP-0083-oss-demo-self-host-security-baseline.md) is the active docs-only plan for creating `CONTRIBUTING.md`, `SECURITY.md`, `PRIVACY.md`, and related governance files in a later implementation thread.
+Contribution, security, and privacy policies are formalized in [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [PRIVACY.md](PRIVACY.md). Demo and self-host guidance lives in [docs/demo/local-demo-operator-journey.md](docs/demo/local-demo-operator-journey.md), [docs/demo/demo-data-policy.md](docs/demo/demo-data-policy.md), and [docs/ops/self-host-baseline.md](docs/ops/self-host-baseline.md).
 
 Finance-data privacy warning: do not commit real company exports, bank data, payroll data, customer/vendor lists, tax records, legal materials, credentials, or private board/lender materials. Use synthetic, fixture, or explicitly approved data only.
 

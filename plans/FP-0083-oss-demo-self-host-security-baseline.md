@@ -2,7 +2,7 @@
 
 ## Purpose / Big Picture
 
-Status: active implementation-ready Finance Plan, created 2026-05-08T14:17:53Z.
+Status: shipped OSS demo/self-host/security baseline documentation record, created 2026-05-08T14:17:53Z and implemented 2026-05-08T16:16:41Z.
 
 Target phase: `V2-OSS-baseline`.
 
@@ -12,7 +12,7 @@ This Finance Plan defines the next safe slice after shipped FP-0082/V2C. It is n
 
 The user-visible purpose is to make the repository safer and clearer for an OSS reviewer or self-hosting operator. A reviewer should be able to understand what data is forbidden, how to run a safe local demo from existing proof commands, how local Postgres/object storage/secrets are handled, how security issues should be reported without leaking private finance data, and why public app/deployment work remains blocked.
 
-This master-plan thread remains docs-and-plan only. The later implementation slice may create OSS baseline documentation, but this thread creates no code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack data, source mutation, finance writes, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
+This plan and implementation remained docs-only. It created OSS baseline documentation but no code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack data, source mutation, finance writes, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
 
 Authority model remains unchanged:
 
@@ -38,6 +38,13 @@ No external web research was used for this FP-0083 planning slice. Repo source t
 - [x] 2026-05-08T14:17:53Z - Decided FP-0083 is safe to create as one docs-only OSS demo/self-host/security baseline plan because the shipped V2C contract is local/internal, active docs identify OSS baseline gaps, and no public app, remote MCP, OAuth, deployment, provider, certification, package rename, fixture, source mutation, finance write, or autonomous action is required.
 - [x] 2026-05-08T14:17:53Z - Created this FP-0083 active implementation-ready plan and refreshed only directly stale active docs/roadmap text.
 - [x] 2026-05-08T14:29:24Z - Completed the required validation ladder for this docs-and-plan-only master-plan slice, including direct V2 proofs, source-pack proofs, CFO Wiki/Finance Twin/monitoring/delivery/operator smokes, focused web/domain/control-plane specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`; all passed.
+- [x] 2026-05-08T16:16:41Z - Implementation-thread preflight passed on branch `codex/fp-0083-oss-demo-self-host-security-baseline-local-v1`; the worktree started clean, fetched `origin/main` matched `HEAD`, GitHub auth/repo access worked, Docker Postgres/MinIO were available, FP-0083 existed, FP-0084 was absent, and the required V2 proof commands existed.
+- [x] 2026-05-08T16:16:41Z - Re-read the required active docs, FP-0083, shipped FP-0082, ops/eval/benchmark docs, package metadata, proof tools, domain evidence-tool contracts, and local V2C evidence-tool implementation.
+- [x] 2026-05-08T16:16:41Z - Inspected V2C code for the required FP-0083 audit points: blank `search_evidence` fails closed, document-map excerpts are bounded/redacted, unknown requested actions fail closed, redaction coverage remains deliberately narrow with known limitations, and proof absence booleans are repo-scope audit notes. No V2C defect was found.
+- [x] 2026-05-08T16:16:41Z - Ran focused validation before docs edits: `pnpm exec tsx tools/read-only-evidence-app-proof.mjs`, `pnpm exec tsx tools/document-precision-foundation-proof.mjs`, and `pnpm exec tsx tools/evidence-index-foundation-proof.mjs`; all passed.
+- [x] 2026-05-08T16:16:41Z - Created the FP-0083 OSS baseline docs: `SECURITY.md`, `PRIVACY.md`, `CONTRIBUTING.md`, `docs/security/finance-data-threat-model.md`, `docs/security/read-only-agent-threat-model.md`, `docs/demo/local-demo-operator-journey.md`, `docs/demo/demo-data-policy.md`, and `docs/ops/self-host-baseline.md`.
+- [x] 2026-05-08T16:16:41Z - Refreshed only directly stale active docs: README, CODEX_README, START_HERE, ACTIVE_DOCS, PROJECT_STATE, V2_BOUNDARY, and ROADMAP now point to FP-0083 as shipped baseline documentation and keep later tracks future-plan-only.
+- [x] 2026-05-08T16:16:41Z - Ran the full 36-command implementation validation ladder after docs edits; all commands passed, including `pnpm ci:repro:current`; log root: `/tmp/pocket-cfo-fp0083-full-validation-20260508T161302Z`.
 
 ## Surprises & Discoveries
 
@@ -50,7 +57,10 @@ No external web research was used for this FP-0083 planning slice. Repo source t
 - GitHub modules and engineering-twin modules remain valid internal/historical scaffolding and must not be deleted in this slice.
 - Public ChatGPT App, remote MCP, Apps SDK UI, OAuth, app submission, V2D UI, V2E LLM orchestration, V2F community pack, F6V provider integration, F6X certification, OCR, vector search, PageIndex, OpenAI file-search/vector adapters, iOS, OpenClaw, deployment, and external communications remain future-only.
 - Search hits for provider, certification, delivery, report release, payment, legal advice, audit opinion, source mutation, finance writes, generated prose, runtime-Codex, and autonomous action were active safety boundaries, shipped absence assertions, existing internal boundary/readiness modules, or reference-only history. No behavior leak requires a smaller corrective slice before FP-0083.
-- No external web/search research was used. If a later implementation needs official/current OSS/security/Docker/OpenAI docs for wording accuracy, it must cite the official source names and what they were used for in this plan.
+- No external web/search research was used. If a later slice needs official/current OSS/security/Docker/OpenAI docs for wording accuracy, it must cite the official source names and what they were used for in the relevant plan.
+- Implementation used no external web/search research. The repo source truth and shipped V2C code/proofs were sufficient for the docs baseline.
+- The first implementation-thread FP-0084 check had a zsh wrapper hiccup because `path` is a special zsh variable; the safe rerun showed no FP-0084 files. This was a shell wrapper issue, not a product failure.
+- No sample data, source-pack fixtures, eval datasets, package scripts, smoke aliases, source-pack mutations, screenshots, or generated demo artifacts were needed.
 
 ## Decision Log
 
@@ -61,7 +71,7 @@ Decision: FP-0083 is exactly `oss-demo-self-host-security-baseline`.
 Rationale: a narrow OSS baseline is safer than jumping from local/internal read-only evidence tools to public ChatGPT App, remote MCP, Apps SDK UI, OAuth, app submission, community packs, deployment, or provider/security-sensitive work.
 
 Decision: FP-0083 is not product runtime.
-Rationale: the later implementation should create docs, baseline policies, threat models, and validation/handoff guidance only. It must not add code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack changes, source mutation, finance writes, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
+Rationale: the implementation created docs, baseline policies, threat models, and validation/handoff guidance only. It did not add code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack changes, source mutation, finance writes, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
 
 Decision: FP-0083 is not deployment.
 Rationale: cloud hosting, SaaS multi-tenancy, DNS, production hosting, public marketing launch, external communications, and app submission require future named plans after the OSS baseline is implemented and QA'd.
@@ -80,6 +90,15 @@ Rationale: those modules are isolated internal/historical scaffolding. Deletion 
 
 Decision: no web/search was needed for this planning thread.
 Rationale: repo source truth was sufficient. Future implementation may use official/current OpenAI, GitHub/OSS/security-advisory, or Docker docs only for wording accuracy, and must record source names plus use.
+
+Decision: ship FP-0083 as documentation governance only.
+Rationale: the implementation created the exact OSS/security/privacy/contribution/demo/self-host/threat-model docs named by the plan and did not require code, routes, schema, scripts, fixtures, sample data, provider behavior, deployment, public app work, source mutation, finance writes, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
+
+Decision: no V2C correction slice is needed before closing FP-0083.
+Rationale: the required V2C audit points are already covered by the shipped V2C implementation and proof command; focused V2C/V2B/V2A proofs passed before docs edits.
+
+Decision: FP-0084 must not be created in this slice.
+Rationale: FP-0083 closeout is sufficient; the next track should start only when a future prompt asks for a new named plan.
 
 ## Context and Orientation
 
@@ -100,10 +119,10 @@ The gap from V2A/V2B/V2C that justifies OSS baseline now is not another evidence
 
 Current repo truth supports this sequence:
 
-- Public ChatGPT App and remote MCP work is blocked until the OSS baseline implementation exists and passes validation.
-- V2D Evidence Atlas UI should wait for the OSS baseline plus a focused V2D plan, because a public-facing evidence UI would otherwise lack demo-data, privacy, screenshot, and security posture.
-- V2E bounded LLM orchestration should wait for the OSS baseline plus stable evidence contracts and a separate LLM plan, because source text can contain prompt-injection strings and private finance data.
-- V2F benchmark/community pack should wait for the OSS baseline plus a future fixture/sample-data policy, because community data must not leak real finance records or weaken source-pack semantics.
+- Public ChatGPT App and remote MCP work remains blocked until a future named plan proves public app, auth, privacy, deployment, and non-autonomous boundaries.
+- V2D Evidence Atlas UI is the next roadmap-shaped candidate after FP-0083, but it still requires a focused V2D plan before implementation.
+- V2E bounded LLM orchestration should wait for stable V2D/evidence UX plus a separate LLM plan, because source text can contain prompt-injection strings and private finance data.
+- V2F benchmark/community pack should wait for a future fixture/sample-data/community-pack plan that proves synthetic non-private data and no source-pack behavior leak.
 
 Conceptual model for FP-0083:
 
@@ -129,7 +148,7 @@ Conceptual model for FP-0083:
 
 ## Plan of Work
 
-The later FP-0083 implementation should create the first OSS baseline documentation set. It should prefer these files:
+The FP-0083 implementation created the first OSS baseline documentation set:
 
 - `SECURITY.md`
 - `PRIVACY.md`
@@ -140,15 +159,15 @@ The later FP-0083 implementation should create the first OSS baseline documentat
 - `docs/demo/demo-data-policy.md`
 - `docs/ops/self-host-baseline.md`
 
-The implementation may update README, CODEX_README, START_HERE, docs/ACTIVE_DOCS, docs/PROJECT_STATE, docs/V2_BOUNDARY, plans/ROADMAP, and relevant ops/eval/benchmark docs only where they are directly stale after those baseline docs are created.
+The implementation updated README, CODEX_README, START_HERE, docs/ACTIVE_DOCS, docs/PROJECT_STATE, docs/V2_BOUNDARY, and plans/ROADMAP only where they were directly stale after those baseline docs were created.
 
 Required planning answers:
 
 - What gap from V2A/V2B/V2C justifies OSS baseline now? The missing public safety layer: contribution/security/privacy/self-host/demo/data/threat-model docs are absent while V2C has made evidence locally navigable.
-- Is public ChatGPT App or remote MCP work blocked until OSS baseline implementation? Yes. It must wait for FP-0083 implementation and QA, plus a later named public app/remote MCP plan.
+- Is public ChatGPT App or remote MCP work blocked after OSS baseline implementation? Yes. It still requires a later named public app/remote MCP plan with security, privacy, auth, deployment, and non-autonomous boundaries.
 - Which docs must be created in the first implementation? The preferred list above: SECURITY, PRIVACY, CONTRIBUTING, finance-data threat model, read-only-agent threat model, local demo operator journey, demo data policy, and self-host baseline.
 - Should implementation create sample fixtures, or only demo docs and data policy? Only demo docs and data policy in the first implementation. No new sample fixtures or source-pack data unless a later plan proves safety.
-- How should a user run a safe local demo without Codex context? The future local-demo doc should use README setup, local Docker services, existing direct V2/source-pack proofs, and existing smoke commands, with explicit synthetic-data and no-real-finance-data warnings.
+- How should a user run a safe local demo without Codex context? The local-demo doc uses README setup, local Docker services, existing direct V2/source-pack proofs, and existing smoke commands, with explicit synthetic-data and no-real-finance-data warnings.
 - How should a contributor know what data is forbidden to commit? CONTRIBUTING, PRIVACY, SECURITY, demo-data policy, and README should all state the NoRealFinanceDataRule and credential/screenshot prohibitions.
 - How should security issues be reported without creating public sensitive-data exposure? SECURITY.md should provide a private reporting path and tell reporters not to paste secrets, real finance records, customer/vendor data, screenshots with private data, or exploit details into public issues.
 - What privacy warnings must be in README and demo docs? No real exports, bank data, payroll data, customer/vendor lists, tax records, legal materials, board/lender materials, credentials, tokens, object-store secrets, or production database dumps.
@@ -156,31 +175,31 @@ Required planning answers:
 - How will the read-only evidence-tool contract fit the threat model? V2C tools are local/internal read-only only; their query logs, audit fields, excerpts, redactions, full-file-dump absence, prompt-injection boundary, and future public wrapper risks must be documented.
 - How will prompt-injection source text be handled in public docs? Public docs must say source text is untrusted data. Operators and future agents must never follow instructions embedded in finance sources, excerpts, PDFs, wiki pages, or proof output.
 - What validation commands prove the baseline without adding scripts? Use the existing commands in this plan's Validation and Acceptance section. Do not add package scripts or smoke aliases.
-- Should any active docs be refreshed after planning? Yes, only active-doc/roadmap lines that would otherwise hide FP-0083 as the active next plan.
-- What should public ChatGPT App planning wait for? FP-0083 implementation, validation, security/privacy/self-host/demo docs, a read-only-agent threat model, and a later named public app plan.
-- What should V2D Evidence Atlas UI wait for? FP-0083 implementation and a later V2D plan that consumes V2C without creating a second truth layer.
-- What should V2F benchmark/community pack wait for? FP-0083 implementation and a later sample/fixture/community-pack policy that proves synthetic non-private data and no source-pack behavior leak.
+- Should any active docs be refreshed after implementation? Yes, only active-doc/roadmap lines that would otherwise hide FP-0083 as the shipped OSS baseline.
+- What should public ChatGPT App planning wait for? A later named public app plan; FP-0083 only creates the baseline docs and does not start public app work.
+- What should V2D Evidence Atlas UI wait for? A later V2D plan that consumes V2C without creating a second truth layer.
+- What should V2F benchmark/community pack wait for? A later sample/fixture/community-pack policy that proves synthetic non-private data and no source-pack behavior leak.
 
 ## Concrete Steps
 
-The next implementation thread should:
+The implementation thread completed these steps:
 
-1. Re-run preflight against fetched `origin/main`, confirm branch, clean worktree, Docker services, PR #229 merged, FP-0083 exists, and FP-0084 absent.
+1. Re-ran preflight against fetched `origin/main`, confirmed branch, clean worktree, Docker services, FP-0083 existed, and FP-0084 was absent.
 2. Re-read this plan and the active documentation spine.
-3. Re-run the direct V2 proofs before writing.
-4. Create the OSS baseline docs listed in Plan of Work.
-5. Keep docs factual and boundary-first. Do not claim public deployment, app submission, OAuth, provider integrations, certification, sample data, or public demo polish exists.
-6. Define the finance-data threat model around real company exports, bank/accounting/payroll/customer/vendor data, board/lender/legal/tax materials, credentials/tokens, object storage, local Postgres, source-pack fixtures, prompt-injection strings, V2C query/audit logs, accidental full-file dumps, public repo leakage, and contributor mistakes.
-7. Define contribution/governance boundaries: no real finance data, no provider credentials, no high-liability behavior, no package-scope rename, no GitHub/engineering-twin deletion, no broad rewrite, validation expectations, Finance Plan workflow, screenshot/demo-data handling, and security reporting.
-8. Define demo/self-host docs around existing setup and proof commands only. Do not add scripts, smoke aliases, fixtures, sample source-pack data, eval datasets, routes, schema, migrations, or UI.
-9. Inspect V2C proof-integrity follow-up checks before final handoff:
+3. Re-ran the direct V2 proofs before writing.
+4. Created the OSS baseline docs listed in Plan of Work.
+5. Kept docs factual and boundary-first. The docs do not claim public deployment, app submission, OAuth, provider integrations, certification, sample data, or public demo polish exists.
+6. Defined the finance-data threat model around real company exports, bank/accounting/payroll/customer/vendor data, board/lender/legal/tax materials, credentials/tokens, object storage, local Postgres, source-pack fixtures, prompt-injection strings, V2C query/audit logs, accidental full-file dumps, public repo leakage, and contributor mistakes.
+7. Defined contribution/governance boundaries: no real finance data, no provider credentials, no high-liability behavior, no package-scope rename, no GitHub/engineering-twin deletion, no broad rewrite, validation expectations, Finance Plan workflow, screenshot/demo-data handling, and security reporting.
+8. Defined demo/self-host docs around existing setup and proof commands only. No scripts, smoke aliases, fixtures, sample source-pack data, eval datasets, routes, schema, migrations, or UI were added.
+9. Inspected V2C proof-integrity follow-up checks before final handoff:
    - empty or whitespace-only `search_evidence` query behavior
    - bounded/redacted document-map excerpts
    - unknown requested action fail-closed behavior
    - redaction policy limitations
    - direct proof hardcoded absence booleans versus repo-scope audit checks
-10. If a V2C defect appears, stop the OSS baseline implementation and recommend a narrow V2C correction instead of widening FP-0083.
-11. Update this plan's Progress, Surprises & Discoveries, Decision Log, Validation and Acceptance, Artifacts and Notes, and Outcomes & Retrospective at closeout.
+10. No V2C defect appeared, so no V2C correction slice is needed before FP-0083 closeout.
+11. Updated this plan's Progress, Surprises & Discoveries, Decision Log, Validation and Acceptance, Artifacts and Notes, and Outcomes & Retrospective at closeout.
 
 ## Validation and Acceptance
 
@@ -193,7 +212,7 @@ FP-0083 implementation is accepted only if:
 - Security/privacy/demo docs preserve raw-source, Finance Twin, CFO Wiki, EvidenceIndex, and V2C authority boundaries.
 - Validation passes on the final tree.
 
-Required validation commands for this master-plan slice and the later implementation:
+Required validation commands for this master-plan slice and the implementation:
 
 ```bash
 pnpm exec tsx tools/read-only-evidence-app-proof.mjs
@@ -239,6 +258,8 @@ pnpm ci:repro:current
 
 Master-plan validation result on 2026-05-08: all required commands above passed. `pnpm ci:repro:current` succeeded from a clean temporary worktree snapshot and completed its clean-tree checks. No external web/browser research was used.
 
+Implementation validation result on 2026-05-08: focused V2C/V2B/V2A proof gates passed before docs edits. The full 36-command implementation ladder passed after docs edits, including source-pack proofs, CFO Wiki/Finance Twin/monitoring/delivery/operator smokes, focused web/domain/control-plane specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`; log root: `/tmp/pocket-cfo-fp0083-full-validation-20260508T161302Z`.
+
 ## Idempotence and Recovery
 
 This plan is idempotent:
@@ -259,13 +280,9 @@ Recovery paths:
 
 ## Artifacts and Notes
 
-Artifacts created in this master-plan thread:
+Artifacts created:
 
 - `plans/FP-0083-oss-demo-self-host-security-baseline.md`
-- directly stale active-doc/roadmap refreshes that point to FP-0083 as the active next OSS baseline plan
-
-Future artifacts planned but not created in this master-plan thread:
-
 - `SECURITY.md`
 - `PRIVACY.md`
 - `CONTRIBUTING.md`
@@ -274,6 +291,7 @@ Future artifacts planned but not created in this master-plan thread:
 - `docs/demo/local-demo-operator-journey.md`
 - `docs/demo/demo-data-policy.md`
 - `docs/ops/self-host-baseline.md`
+- directly stale active-doc/roadmap refreshes that point to FP-0083 as the shipped OSS baseline documentation record
 
 Forbidden artifacts still absent:
 
@@ -283,11 +301,12 @@ External web/browser research:
 
 - No external web or browser research was used in this FP-0083 planning thread.
 - No web/search result was used to override repo source truth.
+- No external web or browser research was used in the implementation thread.
 
 Replay and evidence implications:
 
-- This master-plan thread is docs-and-plan only and creates no mission state changes, source ingest actions, report actions, approval actions, replay events, or evidence bundles.
-- The later implementation should also remain docs-only. It should explicitly record that no replay event is created unless it unexpectedly touches product state, which should be treated as a blocker.
+- FP-0083 is docs-only and creates no mission state changes, source ingest actions, report actions, approval actions, replay events, or evidence bundles.
+- The shipped docs describe evidence/privacy/security/demo/self-host posture. They do not create product runtime behavior or change source truth.
 
 ## Interfaces and Dependencies
 
@@ -319,11 +338,12 @@ FP-0083 does not depend on:
 
 ## Outcomes & Retrospective
 
-Planning outcome:
+Implementation outcome:
 
-- FP-0083 is the active implementation-ready OSS demo/self-host/security baseline plan.
-- The planned first implementation should create OSS/security/privacy/contribution/demo/self-host threat-model docs only.
-- Public ChatGPT App alpha, remote MCP deployment, Apps SDK implementation, OAuth, app submission, V2D Evidence Atlas UI, V2E bounded LLM orchestration, V2F benchmark/community pack, F6V provider integration, F6X certification, OCR/vector/PageIndex/OpenAI file-search adapters, iOS, OpenClaw, deployment, external communications, package-scope rename, and later high-liability work remain future-plan-only.
+- FP-0083 is shipped as the OSS demo/self-host/security baseline documentation record.
+- `SECURITY.md`, `PRIVACY.md`, `CONTRIBUTING.md`, finance-data threat model, read-only-agent threat model, demo-data policy, local demo operator journey, and self-host baseline docs now exist.
+- The implementation added no code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source-pack changes, public MCP server code, ChatGPT App code, Apps SDK code, OAuth, app submission, OpenAI API/file-search/vector integration, OCR/vector/PageIndex code, provider integration, certification, delivery, deployment, external communications, source mutation, finance writes, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
+- FP-0082 remains the shipped local/internal V2C read-only evidence-tool contract. FP-0081 remains shipped V2B, FP-0080 remains shipped V2A, FP-0079 remains shipped F12, FP-0078 remains shipped F11, FP-0077 remains shipped F10, FP-0076 remains shipped F9, FP-0075 remains shipped F8, FP-0074 remains shipped F7, and FP-0050 through FP-0073 remain shipped F6 records.
 - No FP-0084 was created.
-- No implementation began in this master-plan thread.
-- Required validation passed for the master-plan handoff.
+- Required focused and full validation passed for the implementation closeout.
+- Exact next recommendation: start V2D Evidence Atlas UI planning next if continuing the roadmap. Do not start public ChatGPT App planning, remote MCP deployment, V2F benchmark/community pack work, or an OSS baseline correction unless a new narrow defect is found.

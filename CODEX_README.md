@@ -12,16 +12,24 @@ Read active docs in this order before meaningful work:
 4. [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md)
 5. [docs/V2_BOUNDARY.md](docs/V2_BOUNDARY.md)
 6. [docs/ACTIVE_DOCS.md](docs/ACTIVE_DOCS.md)
-7. [AGENTS.md](AGENTS.md)
-8. [PLANS.md](PLANS.md)
-9. [WORKFLOW.md](WORKFLOW.md)
-10. [plans/ROADMAP.md](plans/ROADMAP.md)
-11. the unfinished `plans/FP-*.md` file if one exists
-12. [docs/ops/local-dev.md](docs/ops/local-dev.md)
-13. [docs/ops/source-ingest-and-cfo-wiki.md](docs/ops/source-ingest-and-cfo-wiki.md)
-14. [docs/ops/codex-app-server.md](docs/ops/codex-app-server.md)
-15. [docs/benchmarks/seeded-missions.md](docs/benchmarks/seeded-missions.md)
-16. [evals/README.md](evals/README.md)
+7. [SECURITY.md](SECURITY.md)
+8. [PRIVACY.md](PRIVACY.md)
+9. [CONTRIBUTING.md](CONTRIBUTING.md)
+10. [AGENTS.md](AGENTS.md)
+11. [PLANS.md](PLANS.md)
+12. [WORKFLOW.md](WORKFLOW.md)
+13. [plans/ROADMAP.md](plans/ROADMAP.md)
+14. the unfinished `plans/FP-*.md` file if one exists
+15. [docs/security/finance-data-threat-model.md](docs/security/finance-data-threat-model.md)
+16. [docs/security/read-only-agent-threat-model.md](docs/security/read-only-agent-threat-model.md)
+17. [docs/demo/demo-data-policy.md](docs/demo/demo-data-policy.md)
+18. [docs/demo/local-demo-operator-journey.md](docs/demo/local-demo-operator-journey.md)
+19. [docs/ops/self-host-baseline.md](docs/ops/self-host-baseline.md)
+20. [docs/ops/local-dev.md](docs/ops/local-dev.md)
+21. [docs/ops/source-ingest-and-cfo-wiki.md](docs/ops/source-ingest-and-cfo-wiki.md)
+22. [docs/ops/codex-app-server.md](docs/ops/codex-app-server.md)
+23. [docs/benchmarks/seeded-missions.md](docs/benchmarks/seeded-missions.md)
+24. [evals/README.md](evals/README.md)
 
 Read [docs/ops/github-app-setup.md](docs/ops/github-app-setup.md) only when GitHub connector work is explicitly in scope.
 
@@ -135,7 +143,7 @@ Patch the smallest set of active docs that are directly stale. Move ledger detai
 
 ## README vs PROJECT_STATE vs V2_BOUNDARY
 
-- [README.md](README.md): human-facing landing page, setup, product definition, architecture, boundaries, roadmap summary, privacy warning.
+- [README.md](README.md): human-facing landing page, setup, product definition, architecture, boundaries, roadmap summary, and links to contribution/security/privacy/demo/self-host policy.
 - [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md): current shipped-state ledger, fixed family lists, source-pack proof commands, future-only tracks, internal scaffolding note.
 - [docs/V2_BOUNDARY.md](docs/V2_BOUNDARY.md): V2 north star, allowed boundaries, forbidden boundaries, LLM/agent rules, phase sequence, acceptance criteria.
 
