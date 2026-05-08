@@ -2,11 +2,13 @@
 
 ## Purpose / Big Picture
 
-Status: active V2C master-plan-and-doc-refresh slice, created 2026-05-07T22:28:15Z.
+Status: shipped V2C local/internal read-only evidence-tool contract implementation record, created 2026-05-07T22:28:15Z and implemented 2026-05-08T12:27:41Z.
 
 Exact slice: `V2C-read-only-mcp-chatgpt-evidence-app-alpha`.
 
-This Finance Plan decides and records the next safe V2C scope after the shipped V2A EvidenceIndex/document-map foundation and the shipped V2B document precision adapter foundation. This thread is docs-and-plan only. It must not add code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, implementation scaffolding, MCP server code, ChatGPT App code, Apps SDK code, OpenAI API integration, OpenAI vector/file-search integration, OCR, vector search, PageIndex integration, provider integration, certification, deployment, external communications, source mutation, finance writes, generated advice, runtime-Codex finance output, or autonomous action.
+This Finance Plan began as the docs-and-plan record for the next safe V2C scope after the shipped V2A EvidenceIndex/document-map foundation and shipped V2B document precision adapter foundation. It now closes as the shipped local/internal read-only evidence-tool contract implementation record. The shipped implementation adds pure domain contracts, a plain control-plane read-only bounded context over existing EvidenceIndex/TextPdfAdapter artifacts, focused specs, and `tools/read-only-evidence-app-proof.mjs`.
+
+The implementation remains local/internal proof only. It does not add UI, app routes, web API routes, control-plane routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, MCP server code, ChatGPT App code, Apps SDK code, OpenAI API integration, OpenAI vector/file-search integration, OCR, vector search, PageIndex integration, provider integration, certification, deployment, external communications, source mutation, finance writes, generated advice, runtime-Codex finance output, or autonomous action.
 
 V2C is justified by a narrow gap left after V2A/V2B: Pocket CFO now has a deterministic read-only EvidenceIndex layer, SourceAnchors, DocumentMaps, EvidenceCards, SourceCoverageMatrix, CapabilityBoundaries, and one TextPdfAdapter candidate, but agents and humans do not yet share a stable read-only evidence contract for searching and fetching those artifacts. The next implementation should create that contract before any UI, LLM orchestration, public app submission, or remote deployment work.
 
@@ -18,16 +20,16 @@ The V2C authority model is unchanged:
 - EvidenceIndex remains the read-only anchor, trace, card, coverage, and limitation layer
 - model output, ChatGPT App output, MCP output, and runtime-Codex output must not become source truth
 
-Decision: repo truth supports creating this plan. FP-0081/V2B is shipped and merged into `origin/main`; active docs support FP-0081 as shipped; V2A and V2B proof tools exist and pass; EvidenceIndex and TextPdfAdapter implementations exist; README/CODEX_README/PROJECT_STATE/V2_BOUNDARY exist and are linked; no FP-0082 or FP-0083 existed before this slice; and the V2C plan can remain read-only, local/internal-first, and docs-and-plan-only in this thread.
+Decision: repo truth supports the shipped local/internal implementation. FP-0081/V2B is shipped and merged into `origin/main`; active docs support FP-0081 as shipped; V2A and V2B proof tools exist and pass; EvidenceIndex and TextPdfAdapter implementations exist; README/CODEX_README/PROJECT_STATE/V2_BOUNDARY exist and are linked; no FP-0083 exists; and V2C can ship as read-only, local/internal-first, proof-command-first contract work without starting public MCP/App behavior.
 
-Official OpenAI docs were reviewed only as future platform/security context. They do not override repo source truth.
+Official OpenAI docs were reviewed only in the original docs-and-plan pass as future platform/security context. They do not override repo source truth. No external web/search research was used in the 2026-05-08 implementation thread.
 
 ## Progress
 
 - [x] Invoked the requested `pocket-cfo-codex-operator` skills before work: Finance Plan Orchestrator, Modular Architecture Guard, Source Provenance Guard, CFO Wiki Maintainer, Evidence Bundle Auditor, F6 Monitoring Semantics Guard, Validation Ladder Composer, and Pocket CFO Handoff Auditor.
 - [x] Confirmed GitHub Connector Guard is not in scope because this slice does not touch GitHub connector product behavior.
 - [x] Ran preflight against fetched `origin/main`.
-- [x] Confirmed current branch is `codex/v2c-read-only-mcp-chatgpt-evidence-app-master-plan-local-v1`.
+- [x] Confirmed the original docs-and-plan branch was `codex/v2c-read-only-mcp-chatgpt-evidence-app-master-plan-local-v1`.
 - [x] Confirmed initial working tree was clean.
 - [x] Confirmed local Postgres and object storage services were available through `docker compose ps`.
 - [x] Confirmed FP-0081 exists and FP-0082/FP-0083 did not exist before this slice.
@@ -42,27 +44,40 @@ Official OpenAI docs were reviewed only as future platform/security context. The
 - [x] Ran the full validation ladder named in this plan. All commands passed; log root: `/tmp/pocket-cfo-v2c-validation-20260507T223125Z`.
 - [x] Ran final commit-candidate hygiene after the validation closeout edit. `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` passed; log root: `/tmp/pocket-cfo-v2c-final-validation-20260507T223652Z`.
 - [x] Committed, pushed, and opened PR #228 for the docs-and-plan-only V2C slice.
+- [x] 2026-05-08T12:27:41Z - Implementation-thread preflight passed against fetched `origin/main`; current branch is `codex/v2c-read-only-evidence-tool-contract-local-v1`, worktree started clean, GitHub auth/repo access worked, Docker Postgres/MinIO were available, FP-0082 existed on `origin/main`, FP-0083 was absent, and the V2A/V2B proof commands existed.
+- [x] 2026-05-08T12:27:41Z - Re-invoked the requested Pocket CFO operator skills for implementation. GitHub Connector Guard was not invoked because GitHub connector product behavior is out of scope.
+- [x] 2026-05-08T12:27:41Z - Re-ran `pnpm exec tsx tools/document-precision-foundation-proof.mjs` and `pnpm exec tsx tools/evidence-index-foundation-proof.mjs` before adding V2C implementation code; both passed.
+- [x] 2026-05-08T12:27:41Z - Implemented V2C domain contracts for `EvidenceSearchResult`, `EvidenceFetchResult`, `EvidenceToolResponse`, source/document/coverage/posture/boundary fetches, `ToolSafetyBoundary`, `ReadOnlyToolManifest`, `AgentQueryAuditEvent`, prompt-injection/excerpt/citation/redaction policies, app modes, permissions, and forbidden actions.
+- [x] 2026-05-08T12:27:41Z - Implemented a local/internal read-only control-plane evidence-tool service under `apps/control-plane/src/modules/evidence-index/tools/**` over existing EvidenceIndex and TextPdfAdapter artifacts, with no route registration, no DB schema, no migration, no UI, no package script, no fixture, no MCP server, and no Apps SDK/ChatGPT App implementation.
+- [x] 2026-05-08T12:27:41Z - Added `tools/read-only-evidence-app-proof.mjs` as the direct machine-readable V2C proof command. It proves manifest/read-only/no-write-tool posture, every candidate tool, response envelope posture, citation/excerpt/redaction/audit behavior, prompt-injection-as-data handling, TextPdfAdapter provenance preservation, read-only Finance Twin/CFO Wiki/proof refs, fail-closed missing/stale evidence, and absence boundaries.
+- [x] 2026-05-08T12:27:41Z - Added focused domain and control-plane specs for the read-only evidence-tool contract and local service behavior.
+- [x] 2026-05-08T12:27:41Z - Ran the full 41-command V2C validation ladder before closeout docs; all commands passed, including `pnpm ci:repro:current`; log root: `/tmp/pocket-cfo-v2c-validation-20260508T122741Z`.
+- [x] 2026-05-08T13:38:41Z - Ran final minimum validation after closeout docs: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all passed.
 
 ## Surprises & Discoveries
 
 - `FP-0082` appeared only as future/absent language in prior shipped V2B records and docs. There was no existing FP-0082 file.
 - No FP-0083 was present. This plan must not create one.
-- `Apps SDK`, `search_evidence`, `fetch_evidence_card`, `fetch_source_anchor`, and `fetch_document_map` were not existing repo concepts. They are introduced here only as future planning names and must not imply implementation in this thread.
+- `Apps SDK`, `search_evidence`, `fetch_evidence_card`, `fetch_source_anchor`, and `fetch_document_map` were not existing repo concepts in the original docs-and-plan pass. Only the read-only tool names shipped in the local/internal V2C implementation; Apps SDK remains future-only.
 - Many `Evidence App` hits were unrelated `evidence appendix` wording or archived Pocket CTO material. They are not active product behavior.
 - Provider, certification, delivery, report release, payment, legal advice, audit opinion, source mutation, finance write, autonomous, runtime-Codex, and generated-prose hits were active safety boundaries, shipped proof assertions, historical references, or existing approval/reporting seams. They were not behavior leaks requiring a V2B corrective slice.
 - `pocket-cto` and `@pocket-cto/*` hits remain valid internal scaffolding. This plan preserves them.
 - GitHub-first and engineering-first language is archived or actively demoted by current Pocket CFO docs. This plan does not touch GitHub product connector behavior.
 - Official OpenAI developer-mode guidance reinforces that read-only MCP tools should carry explicit read-only annotations where platform surfaces support them, and that developer mode is powerful enough to expose write tools. V2C must avoid registering write tools at all.
 - Official OpenAI MCP safety guidance reinforces prompt-injection, exfiltration, URL/domain, approval, and logging concerns. V2C must treat source excerpts and tool outputs as untrusted data, keep tools local/internal first, and define audit and excerpt policies before implementation.
+- The implementation-thread keyword sweep classified current hits as shipped V2A/V2B concept language, planned V2C read-only tool language, valid internal scaffolding that must not be renamed, archived history that must stay reference-only, future-only planning language, or existing safety-boundary seams. No behavior leak required stopping before V2C implementation.
+- No external web/search was used in the implementation thread. Repo source truth came from current code, current active docs, shipped Finance Plans, and FP-0082.
+- The root-form command `pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/evidence-index/**/*.spec.ts` hit zsh `no matches found` before repo commands executed. The equivalent plan pattern run from `apps/control-plane` passed, so this was a shell wrapper issue, not a product failure.
+- TextPdfAdapter provenance needed to remain visible through `DocumentMapFetch`. The V2C fetch contract therefore accepts the precision document-map shape as well as the base document-map shape.
 
 ## Decision Log
 
 - 2026-05-07T22:28:15Z - Safe-to-plan verdict: create FP-0082 because shipped V2B/FP-0081 and shipped V2A/FP-0080 provide enough read-only EvidenceIndex substrate for a contract-only V2C plan.
 - 2026-05-07T22:28:15Z - V2C is not write-tool MCP. It may plan only read-only search/fetch/inspect tools.
-- 2026-05-07T22:28:15Z - V2C is not ChatGPT App implementation yet. The ChatGPT Evidence App alpha remains a future implementation candidate behind this contract.
+- 2026-05-07T22:28:15Z - V2C is not public ChatGPT App implementation. The ChatGPT Evidence App alpha remains a future public app candidate beyond the shipped local/internal contract.
 - 2026-05-07T22:28:15Z - V2C is not LLM orchestration. Bounded LLM navigation/summarization remains V2E or later.
 - 2026-05-07T22:28:15Z - The same evidence contract must serve humans and agents. There must not be an agent-only truth layer.
-- 2026-05-07T22:28:15Z - First implementation should start as a read-only evidence-tool contract and local/internal proof over existing EvidenceIndex outputs. A local MCP wrapper can follow inside the same future implementation plan only if the contract is stable and remains read-only.
+- 2026-05-07T22:28:15Z - First implementation should start as a read-only evidence-tool contract and local/internal proof over existing EvidenceIndex outputs. A local MCP wrapper remains future-only and needs a later named plan.
 - 2026-05-07T22:28:15Z - Public ChatGPT App submission, remote deployment, OAuth, and external app publishing should wait for an OSS/self-host/security/privacy/contribution/threat-model baseline.
 - 2026-05-07T22:28:15Z - Internal/local V2C implementation can start before the OSS baseline only if it remains local proof or internal developer mode, uses synthetic/approved local data, exposes no write tools, and does not become public app submission or deployment.
 - 2026-05-07T22:28:15Z - No DB schema or migration should be planned for the first V2C implementation. Query audit can start as structured local logs or proof output unless a later plan proves additive persistence is necessary.
@@ -70,6 +85,12 @@ Official OpenAI docs were reviewed only as future platform/security context. The
 - 2026-05-07T22:36:29Z - Full validation ladder passed on the docs-and-plan diff before commit. Validation log root: `/tmp/pocket-cfo-v2c-validation-20260507T223125Z`.
 - 2026-05-07T22:36:52Z - Final commit-candidate hygiene passed after validation closeout text was added. Final validation log root: `/tmp/pocket-cfo-v2c-final-validation-20260507T223652Z`.
 - 2026-05-07T22:49:54Z - QA correction updated this plan's closeout state to reflect that the V2C docs-and-plan-only slice was committed, pushed, and opened as PR #228. This correction remains docs-only and does not change V2C scope.
+- 2026-05-08T12:27:41Z - V2C implementation ships as a local/internal read-only evidence-tool contract, not as a public MCP server, ChatGPT App, Apps SDK UI, remote endpoint, OAuth surface, app submission, or deployment.
+- 2026-05-08T12:27:41Z - The implementation surface is domain contracts plus `apps/control-plane/src/modules/evidence-index/tools/**` plus a direct proof command. No routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, UI, app routes, or web API routes are added.
+- 2026-05-08T12:27:41Z - Query audit is proof-output/local structured response data only. No DB audit persistence, mission state transition, replay event, source mutation, Finance Twin write, CFO Wiki compile/write, report release, provider call, delivery, certification, payment, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action is added.
+- 2026-05-08T12:27:41Z - The read-only tool manifest registers only `search_evidence`, `fetch_evidence_card`, `fetch_source_anchor`, `fetch_document_map`, `fetch_source_coverage`, `fetch_company_posture`, and `fetch_capability_boundaries`. Generic platform aliases such as `search`/`fetch` remain future-only until a public platform plan proves the need.
+- 2026-05-08T12:27:41Z - Source excerpts are bounded, cited, redacted, and treated as untrusted data. Prompt-injection text inside synthetic source excerpts is returned only as data and never followed.
+- 2026-05-08T12:27:41Z - Full pre-closeout validation passed on the implementation tree. Validation log root: `/tmp/pocket-cfo-v2c-validation-20260508T122741Z`.
 
 ## Context and Orientation
 
@@ -88,36 +109,36 @@ Shipped V2A through FP-0080 created the EvidenceIndex/document-map foundation. T
 
 Shipped V2B through FP-0081 added one deterministic `TextPdfAdapter` candidate over EvidenceIndex for narrow policy/covenant text-PDF sources. V2B also added `tools/document-precision-foundation-proof.mjs` and kept `pdfjs-dist` scoped to the control-plane TextPdfAdapter/proof/spec path. V2B did not add UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, source-pack fixtures, provider integration, certification, delivery, deployment, external communications, ChatGPT App, MCP, Apps SDK implementation, OpenAI vector/file-search integration, OCR, vector search, PageIndex, iOS, OpenClaw, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 
-V2C should start from the shipped EvidenceIndex and TextPdfAdapter outputs. It should not reinterpret raw documents directly, call providers, certify anything, release reports, mutate source truth, or generate finance advice.
+V2C shipped from the existing EvidenceIndex and TextPdfAdapter outputs. It does not reinterpret raw documents directly, call providers, certify anything, release reports, mutate source truth, or generate finance advice.
 
 The active product boundary remains one company, one trust boundary, file-first/manual export default, raw-source authority for document claims, Finance Twin authority for structured facts, CFO Wiki as compiled/derived knowledge, and evidence/freshness/limitations/permitted-next-action fields on mission-facing outputs.
 
 ## Plan of Work
 
-This master-plan thread is complete when:
+This implementation closeout is complete when:
 
-- exactly one new active Finance Plan exists: `plans/FP-0082-read-only-mcp-chatgpt-evidence-app-alpha.md`
+- the active Finance Plan remains `plans/FP-0082-read-only-mcp-chatgpt-evidence-app-alpha.md`
 - no FP-0083 exists
-- active-facing docs no longer describe V2C planning as wholly future-only after this plan exists
+- active-facing docs no longer describe V2C as docs-only or wholly future-only
 - V2C scope is narrowed to a read-only agent-and-human evidence contract
-- candidate read-only tools and response shapes are defined but not implemented
+- the candidate read-only tools and response shapes are implemented locally and proven directly
 - forbidden tool actions are explicit
-- prompt-injection, exfiltration, excerpt, citation, redaction, permission, and audit policies are planned
+- prompt-injection, exfiltration, excerpt, citation, redaction, permission, and audit policies are represented in the contract and proof
 - OSS/self-host baseline gating is answered
 - official OpenAI docs used for platform/security context are recorded
 - full validation ladder passes
 
-The future implementation plan should remain narrow. It should build the smallest local/internal proof that a human or agent can search and fetch existing EvidenceIndex artifacts with provenance, freshness, limitations, and permitted-next-action fields intact.
+The shipped implementation stayed narrow. It builds the smallest local/internal proof that a human or future agent can search and fetch existing EvidenceIndex artifacts with provenance, freshness, limitations, and permitted-next-action fields intact.
 
 ## Concrete Steps
 
-1. Keep this thread docs-and-plan only.
-2. Create this FP-0082 active plan and update only directly stale active docs.
+1. Preserve the original docs-and-plan scope as historical context.
+2. Update this FP-0082 record and directly stale active docs after implementation.
 3. Preserve shipped FP-0081 and FP-0080 records.
 4. Preserve internal `@pocket-cto/*` package scope and root `pocket-cto` package name.
 5. Preserve GitHub and engineering-twin modules as internal/historical scaffolding.
-6. Do not create code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, implementation scaffolding, MCP server implementation, ChatGPT App implementation, Apps SDK implementation, OpenAI API/vector/file-search integration, OCR, vector search, PageIndex integration, or runtime-Codex finance behavior.
-7. Define the V2C future tool surface:
+6. Create only the local/internal read-only evidence-tool contract, local service, direct proof, and focused specs named by this plan.
+7. Ship the V2C read-only tool surface:
    - `search_evidence`
    - `fetch_evidence_card`
    - `fetch_source_anchor`
@@ -128,10 +149,10 @@ The future implementation plan should remain narrow. It should build the smalles
 8. Treat possible future platform aliases as implementation-time compatibility details:
    - `search` may map to `search_evidence` if a ChatGPT/App surface requires or benefits from a generic search entry point.
    - `fetch` may map to `fetch_evidence_card` or a typed fetch dispatcher if a ChatGPT/App surface requires or benefits from a generic fetch entry point.
-9. Require every future tool to return the shared `EvidenceToolResponse` contract.
-10. Require every future tool descriptor to be read-only in behavior and, where platform surfaces support it, annotated as read-only.
+9. Require every local V2C tool function to return the shared `EvidenceToolResponse` contract.
+10. Require every tool descriptor to be read-only in behavior.
 11. Require no write tools to be registered, not merely hidden.
-12. Require the future direct proof to show:
+12. Require the direct proof to show:
     - no registered write tools
     - all candidate tools are read-only
     - responses carry citations, freshness, limitations, capability boundaries, permitted-next-actions, and forbidden actions
@@ -142,12 +163,14 @@ The future implementation plan should remain narrow. It should build the smalles
 
 ## Validation and Acceptance
 
-Docs-and-plan validation requires:
+Implementation validation requires:
 
 - the V2A and V2B proofs pass before writing and after edits
+- the V2C proof command passes
+- focused domain/control-plane specs for the evidence-tool contract pass
 - DB-backed source-pack smokes pass serially
 - CFO Wiki, Finance Twin, monitoring, close-control, delivery-readiness, operator-readiness, supported-family, web, domain, control-plane, lint, typecheck, test, and reproducibility gates pass
-- final diff contains no implementation files outside the allowed docs-and-plan scope
+- final diff contains no implementation files outside the allowed V2C contract/proof/spec/docs scope
 - `FP-0082` exists and `FP-0083` does not
 
 Required commands:
@@ -155,6 +178,9 @@ Required commands:
 ```bash
 pnpm exec tsx tools/document-precision-foundation-proof.mjs
 pnpm exec tsx tools/evidence-index-foundation-proof.mjs
+pnpm exec tsx tools/read-only-evidence-app-proof.mjs
+pnpm --filter @pocket-cto/domain exec vitest run src/evidence-index.spec.ts src/evidence-tool.spec.ts
+zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/evidence-index/**/*.spec.ts"
 pnpm exec tsx tools/board-lender-document-source-pack-proof.mjs
 pnpm exec tsx tools/policy-covenant-document-source-pack-proof.mjs
 pnpm exec tsx tools/ledger-reconciliation-source-pack-proof.mjs
@@ -184,7 +210,7 @@ pnpm smoke:monitor-demo-replay:local
 pnpm smoke:finance-discovery-supported-families:local
 pnpm --filter @pocket-cto/web exec vitest run
 pnpm --filter @pocket-cto/web typecheck
-pnpm --filter @pocket-cto/domain exec vitest run src/cfo-wiki.spec.ts src/source-registry.spec.ts src/finance-twin.spec.ts src/monitoring.spec.ts src/close-control.spec.ts src/close-control-certification-safety.spec.ts src/external-delivery-human-confirmation-boundary.spec.ts src/close-control-certification-boundary.spec.ts src/external-provider-boundary.spec.ts src/close-control-review-summary.spec.ts src/delivery-readiness.spec.ts src/proof-bundle.spec.ts src/evidence-index.spec.ts
+pnpm --filter @pocket-cto/domain exec vitest run src/cfo-wiki.spec.ts src/source-registry.spec.ts src/finance-twin.spec.ts src/monitoring.spec.ts src/close-control.spec.ts src/close-control-certification-safety.spec.ts src/external-delivery-human-confirmation-boundary.spec.ts src/close-control-certification-boundary.spec.ts src/external-provider-boundary.spec.ts src/close-control-review-summary.spec.ts src/delivery-readiness.spec.ts src/proof-bundle.spec.ts src/evidence-index.spec.ts src/evidence-tool.spec.ts
 zsh -lc "cd apps/control-plane && pnpm exec vitest run src/modules/evidence-index/**/*.spec.ts src/modules/wiki/**/*.spec.ts src/modules/sources/**/*.spec.ts src/modules/finance-twin/**/*.spec.ts src/modules/finance-discovery/**/*.spec.ts src/modules/monitoring/**/*.spec.ts src/modules/close-control/**/*.spec.ts src/modules/close-control-certification-safety/**/*.spec.ts src/modules/external-delivery-human-confirmation-boundary/**/*.spec.ts src/modules/close-control-certification-boundary/**/*.spec.ts src/modules/external-provider-boundary/**/*.spec.ts src/modules/close-control-review-summary/**/*.spec.ts src/modules/delivery-readiness/**/*.spec.ts src/modules/missions/**/*.spec.ts src/modules/approvals/**/*.spec.ts src/modules/evidence/**/*.spec.ts src/modules/reporting/**/*.spec.ts src/app.spec.ts"
 pnpm --filter @pocket-cto/control-plane exec vitest run src/modules/twin/workflow-sync.spec.ts src/modules/twin/test-suite-sync.spec.ts src/modules/twin/codeowners-discovery.spec.ts
 pnpm lint
@@ -193,7 +219,7 @@ pnpm test
 pnpm ci:repro:current
 ```
 
-Acceptance for the future V2C implementation plan:
+Acceptance for the shipped V2C implementation:
 
 - the first implementation exposes only read-only evidence search/fetch/inspect behavior
 - all tool responses cite SourceAnchors or explain why no source-backed result exists
@@ -206,9 +232,9 @@ Acceptance for the future V2C implementation plan:
 
 ## Idempotence and Recovery
 
-This docs-and-plan slice is idempotent:
+This implementation slice is idempotent:
 
-- rerunning the preflight should keep the branch on `codex/v2c-read-only-mcp-chatgpt-evidence-app-master-plan-local-v1`
+- rerunning the preflight should keep the branch on `codex/v2c-read-only-evidence-tool-contract-local-v1`
 - rerunning V2A/V2B proofs should not mutate raw source fixtures
 - rerunning DB-backed smokes should use existing local reset/proof patterns and not create new source-pack behavior
 - rerunning this plan should not create FP-0083
@@ -224,27 +250,29 @@ Recovery paths:
 
 ## Artifacts and Notes
 
-Allowed artifacts in this thread:
+Shipped artifacts in the implementation thread:
 
 - `plans/FP-0082-read-only-mcp-chatgpt-evidence-app-alpha.md`
-- active-facing docs updated only where directly stale because FP-0082 now exists
+- `packages/domain/src/evidence-tool*.ts`
+- `packages/domain/src/index.ts`
+- `apps/control-plane/src/modules/evidence-index/tools/**`
+- `apps/control-plane/src/modules/evidence-index/index.ts`
+- `tools/read-only-evidence-app-proof.mjs`
+- focused specs for the read-only evidence contract and no-write boundaries
+- active-facing docs updated only where directly stale because V2C is now shipped as local/internal read-only evidence-tool contract and direct proof
 
-Possible future implementation artifacts, not implemented here:
+Future-only artifacts not implemented here:
 
 - `apps/control-plane/src/modules/evidence-app/**`
 - `apps/control-plane/src/modules/mcp/**`
-- or narrower `apps/control-plane/src/modules/evidence-index/tools/**`
-- `packages/domain/src/evidence-tool*.ts`
 - `packages/domain/src/evidence-app*.ts`
-- `tools/read-only-evidence-app-proof.mjs`
-- or `tools/mcp-evidence-tools-proof.mjs`
-- focused specs for the read-only evidence contract and no-write boundaries
+- `tools/mcp-evidence-tools-proof.mjs`
 - `docs/security/read-only-agent-threat-model.md`
 - `docs/qa/read-only-evidence-app-contract.md`
 
-Forbidden artifacts in this thread:
+Forbidden artifacts still absent:
 
-- code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, implementation scaffolding, monitor families, discovery families, MCP server code, ChatGPT App code, Apps SDK code, OpenAI API code, OpenAI vector/file-search code, OCR/vector/PageIndex code, iOS, OpenClaw, deployment, external communications, provider jobs, provider credentials, delivery, notification, approval, report-release, report-circulation behavior, certification, close-complete behavior, accounting writes, bank writes, tax filings, legal advice, payment behavior, source mutation, finance writes, generated product prose, runtime-Codex finance output, and autonomous action
+- product runtime code outside the allowed V2C contract/proof/spec scope, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, monitor families, discovery families, MCP server code, ChatGPT App code, Apps SDK code, OpenAI API code, OpenAI vector/file-search code, OCR/vector/PageIndex code, iOS, OpenClaw, deployment, external communications, provider jobs, provider credentials, delivery, notification, approval, report-release, report-circulation behavior, certification, close-complete behavior, accounting writes, bank writes, tax filings, legal advice, payment behavior, source mutation, finance writes, generated product prose, runtime-Codex finance output, and autonomous action
 
 Official OpenAI docs used as future platform/security context only:
 
@@ -261,9 +289,11 @@ Official OpenAI docs used as future platform/security context only:
 
 No web or browser research was used to override repo source truth.
 
+No external web/search research was used in the 2026-05-08 implementation thread. The official OpenAI sources listed above remain historical future-boundary context from the original docs-and-plan pass.
+
 ## Interfaces and Dependencies
 
-### Planned Conceptual Model
+### Shipped Local Conceptual Model
 
 `EvidenceSearchResult`:
 
@@ -278,8 +308,8 @@ No web or browser research was used to override repo source truth.
 
 `EvidenceToolResponse<T>`:
 
-- The required response envelope for every future V2C tool.
-- Planned fields: `schemaVersion`, `toolName`, `appMode`, `companyKey`, `ok`, `result`, `evidence`, `freshness`, `limitations`, `capabilityBoundaries`, `permittedNextActions`, `forbiddenActions`, `citations`, `redactions`, `audit`, and `unsupportedReason`.
+- The required response envelope for every shipped local V2C tool function.
+- Shipped fields: `schemaVersion`, `toolName`, `appMode`, `companyKey`, `ok`, `result`, `evidence`, `freshness`, `limitations`, `capabilityBoundaries`, `permittedNextActions`, `forbiddenActions`, `citations`, `redactions`, `audit`, and `unsupportedReason`.
 - Must be readable by humans and agents without creating a separate agent-only truth layer.
 
 `SourceAnchorFetch`:
@@ -309,27 +339,27 @@ No web or browser research was used to override repo source truth.
 
 `ToolSafetyBoundary`:
 
-- A planned safety object that names read-only status, allowed source families, forbidden action families, excerpt limits, citation requirements, redaction posture, prompt-injection handling, approval posture, and logging/audit expectations.
+- A shipped safety object that names read-only status, allowed source families, forbidden action families, excerpt limits, citation requirements, redaction posture, prompt-injection handling, approval posture, and logging/audit expectations.
 
 `ReadOnlyToolManifest`:
 
-- A planned manifest for the first implementation that lists only read-only tools, their input/output schemas, descriptions, read-only annotations where supported, allowed artifacts, forbidden actions, and direct proof expectations.
+- A shipped manifest for the first implementation that lists only read-only tools, their descriptions, read-only posture, allowed artifacts, forbidden actions, and direct proof expectations.
 
 `AgentQueryAuditEvent`:
 
-- A planned audit record for local/internal tool calls.
+- A shipped audit record for local/internal tool calls.
 - Fields should include timestamp, app mode, tool name, normalized query, company key, artifact ids touched, SourceAnchor ids returned, excerpt byte/character counts, redaction summary, unsupported/missing/stale posture, and whether any forbidden request was blocked.
-- First implementation should use structured local logs or proof output, not a DB migration, unless a later plan proves additive persistence is necessary.
+- First implementation uses structured local proof-output response data, not a DB migration. Additive persistence remains future-only unless a later plan proves it necessary.
 
 `PromptInjectionBoundary`:
 
-- A planned policy that labels raw source text and source excerpts as untrusted data.
+- A shipped policy that labels raw source text and source excerpts as untrusted data.
 - Tools must not follow instructions found inside source documents, evidence excerpts, wiki pages, or fetched artifacts.
-- Future proof should include a prompt-injection string inside a synthetic/approved source and prove the tool returns it only as cited data.
+- The direct proof includes a prompt-injection string inside synthetic source text and proves the tool returns it only as cited data.
 
 `ExcerptPolicy`:
 
-- A planned policy for bounded source excerpts.
+- A shipped policy for bounded source excerpts.
 - Default: return small, cited snippets from existing SourceAnchors/TextPdfAdapter ranges only, with source id, snapshot id, checksum, locator, extraction method, and freshness.
 - Do not return full raw files, unbounded document text, credentials, secrets, external URLs without allowed-domain checks, OCR-derived text, vector-derived text, or inferred content.
 
@@ -341,8 +371,8 @@ No web or browser research was used to override repo source truth.
 
 `RedactionPolicy`:
 
-- Planned handling for secrets, credentials, tokens, bank account identifiers, private customer/vendor/payroll/tax/legal data, and sensitive board/lender details.
-- First implementation should default to conservative truncation/redaction and approved synthetic/local proof data.
+- Shipped handling for secrets, credentials, tokens, bank account identifiers, private customer/vendor/payroll/tax/legal data, and sensitive board/lender details.
+- First implementation defaults to conservative truncation/redaction and approved synthetic/local proof data.
 
 `AppMode`:
 
@@ -361,7 +391,7 @@ No web or browser research was used to override repo source truth.
 
 - `create`, `update`, `delete`, `send`, `release_report`, `circulate_report`, `certify`, `attest`, `sign_off`, `mark_close_complete`, `approve`, `pay`, `move_money`, `write_accounting_record`, `write_bank_record`, `file_tax`, `give_legal_advice`, `give_audit_opinion`, `call_provider`, `create_provider_job`, `contact_customer`, `contact_vendor`, `mutate_source`, `write_finance_twin_fact`, `run_ocr`, `run_vector_search`, `use_openai_file_search`, `use_page_index`, `generate_finance_advice`, `generate_external_communication`, `use_runtime_codex_as_finance_output`, and `take_autonomous_action`.
 
-### Candidate Tools
+### Shipped Tools
 
 `search_evidence`:
 
@@ -403,11 +433,11 @@ No web or browser research was used to override repo source truth.
 
 What exact gap from V2A/V2B justifies V2C now?
 
-- V2A/V2B shipped deterministic evidence artifacts, but no shared read-only agent/human tool contract exists for discovering and fetching those artifacts. V2C should make the evidence substrate navigable without widening authority or action boundaries.
+- V2A/V2B shipped deterministic evidence artifacts, but no shared read-only agent/human tool contract existed for discovering and fetching those artifacts. V2C now makes the evidence substrate navigable locally without widening authority or action boundaries.
 
 Is V2C planning safe before OSS demo/self-host baseline is complete?
 
-- Yes for this docs-and-plan thread and for a future local/internal read-only proof. No for public ChatGPT App submission, remote deployment, OAuth-backed app publication, or public demo distribution. An OSS demo/self-host/security/privacy/contribution/threat-model baseline should precede any public app alpha or deployment.
+- Yes for this docs-and-plan record and the shipped local/internal read-only proof. No for public ChatGPT App submission, remote deployment, OAuth-backed app publication, or public demo distribution. An OSS demo/self-host/security/privacy/contribution/threat-model baseline should precede any public app alpha or deployment.
 
 Which artifacts should a read-only MCP/App expose first?
 
@@ -415,11 +445,11 @@ Which artifacts should a read-only MCP/App expose first?
 
 Should the first implementation be a local read-only MCP server, a plain control-plane read-only service, or a docs-only contract?
 
-- This thread is a docs-only contract. The next implementation should start with a plain read-only evidence-tool contract/service and direct proof. A local MCP wrapper may be added in the same future implementation slice only if it remains a thin read-only adapter over that contract.
+- The shipped implementation is a plain read-only evidence-tool contract/service and direct proof under the EvidenceIndex boundary. It is not a local MCP server. A future MCP wrapper must remain a thin read-only adapter over this contract and needs a later named plan.
 
 Which tools are allowed in the first V2C implementation?
 
-- Only `search_evidence`, `fetch_evidence_card`, `fetch_source_anchor`, `fetch_document_map`, `fetch_source_coverage`, `fetch_company_posture`, and `fetch_capability_boundaries`, or platform-compatible read-only aliases that map to those exact behaviors.
+- Only `search_evidence`, `fetch_evidence_card`, `fetch_source_anchor`, `fetch_document_map`, `fetch_source_coverage`, `fetch_company_posture`, and `fetch_capability_boundaries` shipped. Platform-compatible aliases remain future-only and must map to these exact behaviors if a later plan adds them.
 
 Which tools are explicitly forbidden?
 
@@ -427,7 +457,7 @@ Which tools are explicitly forbidden?
 
 What response schema should every tool return?
 
-- Every tool should return `EvidenceToolResponse<T>` with the fields listed in the conceptual model.
+- Every tool returns `EvidenceToolResponse<T>` with the fields listed in the conceptual model.
 
 How will tools expose evidence/freshness/limitations/permitted-next-action fields?
 
@@ -451,15 +481,15 @@ How will CapabilityBoundaries block writes/actions?
 
 How will prompt injection and exfiltration risks be handled?
 
-- Source text is untrusted data; tool outputs are bounded and cited; hidden instructions in sources are never followed; allowed domains and source families are explicit; secrets are redacted; URL embedding is restricted; and query/output audit records capture what was shared.
+- Source text is untrusted data; tool outputs are bounded and cited; hidden instructions in sources are never followed; secrets are redacted; external URL fetching is absent; and query/output audit records capture what was shared.
 
 How will query audit logging work without creating product finance behavior?
 
-- First implementation should emit structured local logs or proof-output audit events and should not create mission state changes, finance facts, replay events, or DB writes unless a later plan explicitly adds additive audit persistence.
+- First implementation emits structured local proof-output audit events inside every `EvidenceToolResponse`. It creates no mission state changes, finance facts, replay events, or DB writes. Additive audit persistence remains future-only.
 
 Should any DB schema/migration be planned?
 
-- No. First V2C should stay derived/in-memory/log-to-existing-pattern only. Additive audit persistence can be planned later if the direct proof proves a real need.
+- No. V2C stayed derived/in-memory/proof-output only. Additive audit persistence can be planned later only if a later plan proves a real need.
 
 How will future ChatGPT App / Apps SDK consume the read-only MCP tools?
 
@@ -475,20 +505,26 @@ What should V2D Evidence Atlas consume later from V2C?
 
 What should V2E bounded LLM orchestration wait for?
 
-- V2E should wait for a stable V2C read-only contract, excerpt/citation/redaction policies, prompt-injection proof, audit-event shape, no-write manifest proof, and consistent handling of missing/stale/unsupported evidence.
+- V2E should wait for this stable V2C read-only contract to receive QA, plus any later security/privacy baseline needed for broader exposure. Excerpt/citation/redaction policies, prompt-injection proof, audit-event shape, no-write manifest proof, and missing/stale/unsupported handling now exist locally.
 
 ## Outcomes & Retrospective
 
-Initial outcome:
+Implementation outcome:
 
-- FP-0082 was created as the active V2C docs-and-plan-only record.
-- V2C is narrowed to a future read-only evidence search/fetch/inspect contract.
-- V2C implementation, V2D Evidence Atlas UI, V2E bounded LLM orchestration, F6V provider integration, F6X certification, OCR/vector/PageIndex/OpenAI file-search adapters, iOS, OpenClaw, deployment/external communications, package-scope rename, and later work remain future-plan-only.
-- No V2B corrective slice is required before planning V2C.
-- OSS demo/self-host/security/privacy/contribution/threat-model baseline is not required before an internal/local V2C proof, but should be planned before any public ChatGPT App alpha, app submission, external deployment, OAuth-backed publication, or public demo distribution.
+- V2C shipped a local/internal read-only evidence-tool contract and direct proof only.
+- FP-0082 is the shipped V2C local read-only evidence-tool contract record after implementation.
+- The shipped tool contract includes `EvidenceSearchResult`, `EvidenceFetchResult`, `EvidenceToolResponse`, `SourceAnchorFetch`, `DocumentMapFetch`, `SourceCoverageFetch`, `CompanyPostureFetch`, `CapabilityBoundaryFetch`, `ToolSafetyBoundary`, `ReadOnlyToolManifest`, `AgentQueryAuditEvent`, `PromptInjectionBoundary`, `ExcerptPolicy`, `CitationPolicy`, `RedactionPolicy`, `AppMode`, `ToolPermission`, and `ForbiddenToolAction`.
+- The shipped local functions are `search_evidence`, `fetch_evidence_card`, `fetch_source_anchor`, `fetch_document_map`, `fetch_source_coverage`, `fetch_company_posture`, and `fetch_capability_boundaries`.
+- Raw sources remain authoritative for document claims, Finance Twin remains authoritative for structured facts, CFO Wiki remains compiled/derived, and EvidenceIndex remains the read-only anchor/trace/card/coverage/limitation layer.
+- Public ChatGPT App alpha, Apps SDK implementation, remote MCP deployment, OAuth, app submission, external deployment, and external communications remain future-only.
+- V2D Evidence Atlas UI and V2E bounded LLM orchestration remain future-only.
+- F6V/F6X/OCR/vector/PageIndex/OpenAI file-search/iOS/OpenClaw remain future-only.
+- No FP-0083 was created.
+- No UI, routes, schema, migration, package script, smoke alias, eval dataset, fixture, provider integration, certification, delivery, report release, payment, source mutation, finance write, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action was added.
 
 Closeout:
 
-- Validation status: passed. The full required validation ladder completed successfully, including `pnpm ci:repro:current`; log root: `/tmp/pocket-cfo-v2c-validation-20260507T223125Z`. Final commit-candidate hygiene also passed after closeout text was added; log root: `/tmp/pocket-cfo-v2c-final-validation-20260507T223652Z`.
-- Commit/push/PR status: completed for the original V2C docs-and-plan-only slice; PR #228 is the active PR for this branch. Any QA correction must remain docs-only and update the same PR.
-- Remaining work: no implementation work remains inside FP-0082. Future V2C implementation should start with a local/internal read-only evidence-tool contract and direct proof; OSS demo/self-host/security/privacy/contribution/threat-model baseline should be planned before public ChatGPT App alpha, remote deployment, OAuth-backed publication, app submission, or public demo distribution.
+- Pre-closeout validation status: passed. The full 41-command V2C implementation validation ladder completed successfully, including `pnpm ci:repro:current`; log root: `/tmp/pocket-cfo-v2c-validation-20260508T122741Z`.
+- Final validation after closeout docs: passed. `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all passed on the final closeout tree.
+- Commit/push/PR status: ready for final commit, push, and PR creation after the green validation tree.
+- Remaining work: V2C implementation QA should run next against this local/internal contract. If QA finds a defect, use one narrow V2C contract-only hardening correction. If QA is clean, the next new planning track should be OSS demo/self-host/security/privacy baseline before any public ChatGPT App alpha, remote MCP deployment, OAuth-backed publication, app submission, or public demo distribution.

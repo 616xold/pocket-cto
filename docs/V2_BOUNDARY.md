@@ -61,7 +61,7 @@ No agent may release external communications, move money, file taxes, write acco
 - **F12 manual UI/demo-readiness audit**: shipped through FP-0079; inspected existing read-only UI and demo posture, classified gaps, recorded screenshot limitations, and avoided product runtime implementation.
 - **V2A EvidenceIndex and document-map foundation**: shipped through FP-0080 as the first read-only evidence index/document-map foundation, limited to native anchors, traces, cards, coverage, direct proof, and fail-closed unsupported-source posture.
 - **V2B document precision adapters**: shipped through FP-0081 as one deterministic policy/covenant TextPdfAdapter foundation over EvidenceIndex, with any expansion beyond the named plan blocked and no generic document AI.
-- **V2C read-only agent/MCP/ChatGPT Evidence App alpha**: active planning through FP-0082 as a docs-and-plan-only read-only evidence contract; future implementation may expose read-only structured evidence tools after EvidenceIndex and document precision foundations.
+- **V2C read-only agent/MCP/ChatGPT Evidence App alpha**: shipped through FP-0082 as a local/internal read-only evidence-tool contract and direct proof over existing EvidenceIndex/TextPdfAdapter outputs. Public MCP server deployment, ChatGPT App implementation, Apps SDK UI, OAuth, app submission, and external deployment remain future-only.
 - **V2D Evidence Atlas UI**: visualize evidence, sources, freshness, limitations, and derived state after the substrate exists.
 - **V2E bounded LLM orchestration**: use LLMs for navigation and summarization only under deterministic evidence contracts.
 - **V2F benchmark/community pack**: package benchmark/community source packs after evidence contracts stabilize.
@@ -69,7 +69,7 @@ No agent may release external communications, move money, file taxes, write acco
 
 ## Distribution And Precision Decisions
 
-- ChatGPT App/MCP is worth pursuing later as a read-only evidence app after EvidenceIndex and V2B precision proof. FP-0082 plans the read-only evidence contract only; MCP server, ChatGPT App, Apps SDK, remote deployment, OAuth, and app publication remain future implementation work.
+- ChatGPT App/MCP is worth pursuing later as a read-only evidence app after EvidenceIndex, V2B precision proof, and the shipped FP-0082 local/internal tool contract. MCP server, ChatGPT App, Apps SDK UI, remote deployment, OAuth, and app publication remain future implementation work.
 - iOS is postponed.
 - OpenClaw is inspiration/benchmark only, not a V2 dependency.
 - PageIndex/OCR/vector are future adapters, not canonical authority. FP-0081 ships only a narrow deterministic text-PDF precision candidate, not OCR/vector/PageIndex implementation.
@@ -82,8 +82,8 @@ The F11/F12-to-V2A transition is acceptable when:
 - Codex/operator guidance lives in root `CODEX_README.md`.
 - current shipped state lives in `docs/PROJECT_STATE.md`.
 - this V2 boundary doc exists and is linked from active docs.
-- active docs and roadmap point to FP-0080 as the shipped first V2A Finance Plan, FP-0081 as the shipped first V2B document precision adapter foundation, and FP-0082 as the active docs-and-plan-only V2C read-only MCP/ChatGPT Evidence App alpha record, with any implementation or expansion still requiring a future named plan.
+- active docs and roadmap point to FP-0080 as the shipped first V2A Finance Plan, FP-0081 as the shipped first V2B document precision adapter foundation, and FP-0082 as the shipped local/internal V2C read-only evidence-tool contract record, with public MCP/App implementation or expansion still requiring a future named plan.
 - `@pocket-cto/*` and root `pocket-cto` are documented as internal scaffolding.
 - GitHub and engineering-twin modules remain present and isolated as internal/historical scaffolding.
 - no product runtime behavior, schema, route, package script, smoke alias, eval dataset, fixture, source mutation, finance write, generated product prose, provider behavior, certification behavior, delivery behavior, deployment, external communication, or autonomous action was added.
-- validation passes on the final implementation tree for the FP-0080 V2A foundation and on the final implementation tree for the FP-0081 V2B foundation.
+- validation passes on the final implementation tree for the FP-0080 V2A foundation, FP-0081 V2B foundation, and FP-0082 local/internal V2C read-only evidence-tool contract.
