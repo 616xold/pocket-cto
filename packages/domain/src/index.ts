@@ -10,6 +10,7 @@ export * from "./discovery-mission";
 export * from "./external-delivery-human-confirmation-boundary";
 export * from "./external-provider-boundary";
 export * from "./evidence-index";
+export * from "./evidence-tool";
 export * from "./finance-twin";
 export * from "./github-issue-intake";
 export * from "./mission-detail";
