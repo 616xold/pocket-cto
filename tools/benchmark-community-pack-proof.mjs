@@ -101,9 +101,12 @@ const taskSpecs = [
 const checkedAt = "2026-05-09T00:30:00.000Z";
 const FP0088_PLAN =
   "plans/FP-0088-read-only-chatgpt-app-mcp-premium-ui-security-master-plan.md";
+const FP0089_PLAN =
+  "plans/FP-0089-read-only-chatgpt-app-mcp-premium-ui-design-system-master-plan.md";
 const fp0088Boundary = fp0088DocsOnlyBoundary();
-const fp0089Absent = !repoFilePaths().some((path) =>
-  /(^|\/)FP-0089/u.test(path),
+const fp0089Boundary = fp0089DocsOnlyBoundary();
+const fp0090Absent = !repoFilePaths().some((path) =>
+  /(^|\/)FP-0090/u.test(path),
 );
 
 function fp0087AbsentOrDocsOnlyBoundaryVerified() {
@@ -139,13 +142,23 @@ function fp0087AbsentOrDocsOnlyBoundaryVerified() {
       fp0087DocsOnlyBoundaryVerified: planBoundaryVerified,
       fp0088AbsentOrDocsOnlyBoundaryVerified:
         fp0088Boundary.absentOrDocsOnlyBoundaryVerified,
-      fp0089Absent,
+      fp0089AbsentOrDocsOnlyBoundaryVerified:
+        fp0089Boundary.absentOrDocsOnlyBoundaryVerified,
+      fp0090Absent,
       premiumUiSecurityPlanBoundaryVerified:
         fp0088Boundary.premiumUiSecurityPlanBoundaryVerified,
+      premiumUiDesignSystemPlanBoundaryVerified:
+        fp0089Boundary.premiumUiDesignSystemPlanBoundaryVerified,
       noUiImplementationFromFp0088:
         fp0088Boundary.noUiImplementationFromFp0088,
+      noUiImplementationFromFp0089:
+        fp0089Boundary.noUiImplementationFromFp0089,
+      noAppsSdkIframeFromFp0089:
+        fp0089Boundary.noAppsSdkIframeFromFp0089,
       noEndpointOauthSubmissionFromFp0088:
         fp0088Boundary.noEndpointOauthSubmissionFromFp0088,
+      noEndpointOauthSubmissionFromFp0089:
+        fp0089Boundary.noEndpointOauthSubmissionFromFp0089,
     }),
   );
 
@@ -552,13 +565,23 @@ const proof = BenchmarkProofSchema.parse({
     fp0087AbsentOrDocsOnlyBoundaryVerified(),
   fp0088AbsentOrDocsOnlyBoundaryVerified:
     fp0088Boundary.absentOrDocsOnlyBoundaryVerified,
-  fp0089Absent,
+  fp0089AbsentOrDocsOnlyBoundaryVerified:
+    fp0089Boundary.absentOrDocsOnlyBoundaryVerified,
+  fp0090Absent,
   premiumUiSecurityPlanBoundaryVerified:
     fp0088Boundary.premiumUiSecurityPlanBoundaryVerified,
+  premiumUiDesignSystemPlanBoundaryVerified:
+    fp0089Boundary.premiumUiDesignSystemPlanBoundaryVerified,
   noUiImplementationFromFp0088:
     fp0088Boundary.noUiImplementationFromFp0088,
+  noUiImplementationFromFp0089:
+    fp0089Boundary.noUiImplementationFromFp0089,
+  noAppsSdkIframeFromFp0089:
+    fp0089Boundary.noAppsSdkIframeFromFp0089,
   noEndpointOauthSubmissionFromFp0088:
     fp0088Boundary.noEndpointOauthSubmissionFromFp0088,
+  noEndpointOauthSubmissionFromFp0089:
+    fp0089Boundary.noEndpointOauthSubmissionFromFp0089,
   inMemorySyntheticExamplesOnlyVerified:
     manifest.validationPosture.inMemorySyntheticExamplesOnly,
   missingCitationTaskVerified:
@@ -698,6 +721,97 @@ function fp0088DocsOnlyBoundary() {
     noEndpointOauthSubmissionFromFp0088,
     noUiImplementationFromFp0088,
     premiumUiSecurityPlanBoundaryVerified,
+  };
+}
+
+function fp0089DocsOnlyBoundary() {
+  const fp0089PathHits = repoFilePaths().filter((path) =>
+    /(^|\/)FP-0089/u.test(path),
+  );
+
+  if (fp0089PathHits.length === 0) {
+    return {
+      absentOrDocsOnlyBoundaryVerified: true,
+      noAppsSdkIframeFromFp0089: true,
+      noEndpointOauthSubmissionFromFp0089: true,
+      noUiImplementationFromFp0089: true,
+      premiumUiDesignSystemPlanBoundaryVerified: true,
+    };
+  }
+
+  if (fp0089PathHits.length !== 1 || fp0089PathHits[0] !== FP0089_PLAN) {
+    return {
+      absentOrDocsOnlyBoundaryVerified: false,
+      noAppsSdkIframeFromFp0089: false,
+      noEndpointOauthSubmissionFromFp0089: false,
+      noUiImplementationFromFp0089: false,
+      premiumUiDesignSystemPlanBoundaryVerified: false,
+    };
+  }
+
+  const lower = readFileSync(FP0089_PLAN, "utf8").toLowerCase();
+  const docsOnlyBoundaryVerified = [
+    "fp-0089 is not implementation",
+    "docs-and-plan plus proof-gate compatibility",
+    "premium ui design-system readiness plan only",
+    "creates no product code",
+    "no product code",
+    "no ui implementation",
+    "no routes or endpoints",
+    "no remote mcp server",
+    "no apps sdk iframe/ui",
+    "no oauth",
+    "no app submission",
+    "no openai api/model call",
+    "no eval dataset",
+    "no fixture",
+    "no sample data",
+    "no source mutation",
+    "no finance writes",
+    "no autonomous action",
+  ].every((requiredText) => lower.includes(requiredText));
+  const premiumUiDesignSystemPlanBoundaryVerified = [
+    "design tokens",
+    "semantic color tokens",
+    "spacing scale",
+    "typography scale",
+    "evidence-card hierarchy",
+    "citation/source-anchor affordances",
+    "refusal-state visual grammar",
+    "limitation/freshness badges",
+    "keyboard/focus behavior",
+    "appshell",
+    "evidenceanswerpanel",
+    "refusalpanel",
+    "citationrail",
+    "sourceanchordrawer",
+    "premium apple/openai-style visual standard",
+  ].every((requiredText) => lower.includes(requiredText));
+  const noUiImplementationFromFp0089 = [
+    "does not authorize ui code",
+    "requires a later ui implementation finance plan before any component code",
+    "no ui implementation",
+  ].every((requiredText) => lower.includes(requiredText));
+  const noAppsSdkIframeFromFp0089 = [
+    "does not authorize apps sdk iframe/ui code",
+    "no apps sdk iframe/ui",
+    "does not authorize public app implementation",
+  ].every((requiredText) => lower.includes(requiredText));
+  const noEndpointOauthSubmissionFromFp0089 = [
+    "does not authorize remote mcp deployment",
+    "does not authorize oauth implementation",
+    "does not authorize endpoint implementation",
+    "does not authorize public app submission",
+    "threat-model/security implementation plan before endpoint",
+    "app-submission plan before",
+  ].every((requiredText) => lower.includes(requiredText));
+
+  return {
+    absentOrDocsOnlyBoundaryVerified: docsOnlyBoundaryVerified,
+    noAppsSdkIframeFromFp0089,
+    noEndpointOauthSubmissionFromFp0089,
+    noUiImplementationFromFp0089,
+    premiumUiDesignSystemPlanBoundaryVerified,
   };
 }
 

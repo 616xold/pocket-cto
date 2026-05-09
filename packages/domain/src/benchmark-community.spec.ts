@@ -32,6 +32,8 @@ import {
 const checkedAt = "2026-05-09T00:30:00.000Z";
 const FP0088_PLAN_FILE =
   "FP-0088-read-only-chatgpt-app-mcp-premium-ui-security-master-plan.md";
+const FP0089_PLAN_FILE =
+  "FP-0089-read-only-chatgpt-app-mcp-premium-ui-design-system-master-plan.md";
 
 function safeDemoDataPolicy() {
   return {
@@ -325,13 +327,23 @@ function fp0087AbsentOrDocsOnlyBoundaryVerified() {
       fp0087DocsOnlyBoundaryVerified: planBoundaryVerified,
       fp0088AbsentOrDocsOnlyBoundaryVerified:
         fp0088DocsOnlyBoundary().absentOrDocsOnlyBoundaryVerified,
-      fp0089Absent: fp0089Absent(),
+      fp0089AbsentOrDocsOnlyBoundaryVerified:
+        fp0089DocsOnlyBoundary().absentOrDocsOnlyBoundaryVerified,
+      fp0090Absent: fp0090Absent(),
       premiumUiSecurityPlanBoundaryVerified:
         fp0088DocsOnlyBoundary().premiumUiSecurityPlanBoundaryVerified,
+      premiumUiDesignSystemPlanBoundaryVerified:
+        fp0089DocsOnlyBoundary().premiumUiDesignSystemPlanBoundaryVerified,
       noUiImplementationFromFp0088:
         fp0088DocsOnlyBoundary().noUiImplementationFromFp0088,
+      noUiImplementationFromFp0089:
+        fp0089DocsOnlyBoundary().noUiImplementationFromFp0089,
+      noAppsSdkIframeFromFp0089:
+        fp0089DocsOnlyBoundary().noAppsSdkIframeFromFp0089,
       noEndpointOauthSubmissionFromFp0088:
         fp0088DocsOnlyBoundary().noEndpointOauthSubmissionFromFp0088,
+      noEndpointOauthSubmissionFromFp0089:
+        fp0089DocsOnlyBoundary().noEndpointOauthSubmissionFromFp0089,
     }),
   );
 
@@ -402,9 +414,79 @@ function fp0088DocsOnlyBoundary() {
   };
 }
 
-function fp0089Absent() {
+function fp0089DocsOnlyBoundary() {
   const plansPath = existsSync("plans") ? "plans" : "../../plans";
-  return !readdirSync(plansPath).some((name) => /^FP-0089/u.test(name));
+  const fp0089Files = readdirSync(plansPath).filter((name) =>
+    /^FP-0089/u.test(name),
+  );
+
+  if (fp0089Files.length === 0) {
+    return {
+      absentOrDocsOnlyBoundaryVerified: true,
+      noAppsSdkIframeFromFp0089: true,
+      noEndpointOauthSubmissionFromFp0089: true,
+      noUiImplementationFromFp0089: true,
+      premiumUiDesignSystemPlanBoundaryVerified: true,
+    };
+  }
+
+  if (fp0089Files.length !== 1 || fp0089Files[0] !== FP0089_PLAN_FILE) {
+    return {
+      absentOrDocsOnlyBoundaryVerified: false,
+      noAppsSdkIframeFromFp0089: false,
+      noEndpointOauthSubmissionFromFp0089: false,
+      noUiImplementationFromFp0089: false,
+      premiumUiDesignSystemPlanBoundaryVerified: false,
+    };
+  }
+
+  const lowerPlanText = readFileSync(
+    `${plansPath}/${FP0089_PLAN_FILE}`,
+    "utf8",
+  ).toLowerCase();
+
+  return {
+    absentOrDocsOnlyBoundaryVerified: [
+      "fp-0089 is not implementation",
+      "docs-and-plan plus proof-gate compatibility",
+      "premium ui design-system readiness plan only",
+      "no product code",
+      "no ui implementation",
+      "no routes or endpoints",
+      "no oauth",
+      "no app submission",
+    ].every((requiredText) => lowerPlanText.includes(requiredText)),
+    noAppsSdkIframeFromFp0089: [
+      "does not authorize apps sdk iframe/ui code",
+      "does not authorize public app implementation",
+    ].every((requiredText) => lowerPlanText.includes(requiredText)),
+    noEndpointOauthSubmissionFromFp0089: [
+      "does not authorize remote mcp deployment",
+      "does not authorize oauth implementation",
+      "does not authorize endpoint implementation",
+      "does not authorize public app submission",
+    ].every((requiredText) => lowerPlanText.includes(requiredText)),
+    noUiImplementationFromFp0089: [
+      "does not authorize ui code",
+      "later ui implementation finance plan before any component code",
+    ].every((requiredText) => lowerPlanText.includes(requiredText)),
+    premiumUiDesignSystemPlanBoundaryVerified: [
+      "premium ui design-system readiness plan only",
+      "design tokens",
+      "semantic color tokens",
+      "evidence-card hierarchy",
+      "citation/source-anchor affordances",
+      "refusal-state visual grammar",
+      "keyboard/focus behavior",
+      "evidenceanswerpanel",
+      "privacyboundarypanel",
+    ].every((requiredText) => lowerPlanText.includes(requiredText)),
+  };
+}
+
+function fp0090Absent() {
+  const plansPath = existsSync("plans") ? "plans" : "../../plans";
+  return !readdirSync(plansPath).some((name) => /^FP-0090/u.test(name));
 }
 
 describe("benchmark community pack foundation contracts", () => {
@@ -739,13 +821,23 @@ describe("benchmark community pack foundation contracts", () => {
         fp0087AbsentOrDocsOnlyBoundaryVerified(),
       fp0088AbsentOrDocsOnlyBoundaryVerified:
         fp0088DocsOnlyBoundary().absentOrDocsOnlyBoundaryVerified,
-      fp0089Absent: fp0089Absent(),
+      fp0089AbsentOrDocsOnlyBoundaryVerified:
+        fp0089DocsOnlyBoundary().absentOrDocsOnlyBoundaryVerified,
+      fp0090Absent: fp0090Absent(),
       premiumUiSecurityPlanBoundaryVerified:
         fp0088DocsOnlyBoundary().premiumUiSecurityPlanBoundaryVerified,
+      premiumUiDesignSystemPlanBoundaryVerified:
+        fp0089DocsOnlyBoundary().premiumUiDesignSystemPlanBoundaryVerified,
       noUiImplementationFromFp0088:
         fp0088DocsOnlyBoundary().noUiImplementationFromFp0088,
+      noUiImplementationFromFp0089:
+        fp0089DocsOnlyBoundary().noUiImplementationFromFp0089,
+      noAppsSdkIframeFromFp0089:
+        fp0089DocsOnlyBoundary().noAppsSdkIframeFromFp0089,
       noEndpointOauthSubmissionFromFp0088:
         fp0088DocsOnlyBoundary().noEndpointOauthSubmissionFromFp0088,
+      noEndpointOauthSubmissionFromFp0089:
+        fp0089DocsOnlyBoundary().noEndpointOauthSubmissionFromFp0089,
       inMemorySyntheticExamplesOnlyVerified: true,
       missingCitationTaskVerified: true,
       monitorBoundaryTaskVerified: true,
@@ -769,10 +861,15 @@ describe("benchmark community pack foundation contracts", () => {
     expect(proof.noOpenAiApiCalls).toBe(true);
     expect(proof.fp0087AbsentOrDocsOnlyBoundaryVerified).toBe(true);
     expect(proof.fp0088AbsentOrDocsOnlyBoundaryVerified).toBe(true);
-    expect(proof.fp0089Absent).toBe(true);
+    expect(proof.fp0089AbsentOrDocsOnlyBoundaryVerified).toBe(true);
+    expect(proof.fp0090Absent).toBe(true);
     expect(proof.premiumUiSecurityPlanBoundaryVerified).toBe(true);
+    expect(proof.premiumUiDesignSystemPlanBoundaryVerified).toBe(true);
     expect(proof.noUiImplementationFromFp0088).toBe(true);
+    expect(proof.noUiImplementationFromFp0089).toBe(true);
+    expect(proof.noAppsSdkIframeFromFp0089).toBe(true);
     expect(proof.noEndpointOauthSubmissionFromFp0088).toBe(true);
+    expect(proof.noEndpointOauthSubmissionFromFp0089).toBe(true);
     expect(() =>
       BenchmarkProofSchema.parse({
         ...proof,

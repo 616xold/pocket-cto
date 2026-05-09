@@ -323,9 +323,14 @@ describe("V2G read-only ChatGPT App/MCP contracts", () => {
     expect(proof.rawFullFileDumpAndDataExfiltrationRefusalVerified).toBe(true);
     expect(proof.fp0087TypedBoundaryVerified).toBe(true);
     expect(proof.fp0088AbsentOrDocsOnlyBoundaryVerified).toBe(true);
-    expect(proof.fp0089Absent).toBe(true);
+    expect(proof.fp0089AbsentOrDocsOnlyBoundaryVerified).toBe(true);
+    expect(proof.fp0090Absent).toBe(true);
     expect(proof.premiumUiSecurityPlanBoundaryVerified).toBe(true);
+    expect(proof.premiumUiDesignSystemPlanBoundaryVerified).toBe(true);
     expect(proof.noUiImplementationFromFp0088).toBe(true);
+    expect(proof.noUiImplementationFromFp0089).toBe(true);
+    expect(proof.noAppsSdkIframeFromFp0089).toBe(true);
     expect(proof.noEndpointOauthSubmissionFromFp0088).toBe(true);
+    expect(proof.noEndpointOauthSubmissionFromFp0089).toBe(true);
   });
 });

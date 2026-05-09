@@ -53,10 +53,15 @@ export function buildReadOnlyChatGptAppMcpProof(
   input: Partial<{
     fp0087DocsOnlyBoundaryVerified: boolean;
     fp0088AbsentOrDocsOnlyBoundaryVerified: boolean;
-    fp0089Absent: boolean;
+    fp0089AbsentOrDocsOnlyBoundaryVerified: boolean;
+    fp0090Absent: boolean;
     premiumUiSecurityPlanBoundaryVerified: boolean;
+    premiumUiDesignSystemPlanBoundaryVerified: boolean;
     noUiImplementationFromFp0088: boolean;
+    noUiImplementationFromFp0089: boolean;
+    noAppsSdkIframeFromFp0089: boolean;
     noEndpointOauthSubmissionFromFp0088: boolean;
+    noEndpointOauthSubmissionFromFp0089: boolean;
     noPackageScriptsAdded: boolean;
     noSmokeAliasesAdded: boolean;
   }> = {},
@@ -354,12 +359,20 @@ export function buildReadOnlyChatGptAppMcpProof(
       input.fp0087DocsOnlyBoundaryVerified ?? true,
     fp0088AbsentOrDocsOnlyBoundaryVerified:
       input.fp0088AbsentOrDocsOnlyBoundaryVerified ?? true,
-    fp0089Absent: input.fp0089Absent ?? true,
+    fp0089AbsentOrDocsOnlyBoundaryVerified:
+      input.fp0089AbsentOrDocsOnlyBoundaryVerified ?? true,
+    fp0090Absent: input.fp0090Absent ?? true,
     premiumUiSecurityPlanBoundaryVerified:
       input.premiumUiSecurityPlanBoundaryVerified ?? true,
+    premiumUiDesignSystemPlanBoundaryVerified:
+      input.premiumUiDesignSystemPlanBoundaryVerified ?? true,
     noUiImplementationFromFp0088: input.noUiImplementationFromFp0088 ?? true,
+    noUiImplementationFromFp0089: input.noUiImplementationFromFp0089 ?? true,
+    noAppsSdkIframeFromFp0089: input.noAppsSdkIframeFromFp0089 ?? true,
     noEndpointOauthSubmissionFromFp0088:
       input.noEndpointOauthSubmissionFromFp0088 ?? true,
+    noEndpointOauthSubmissionFromFp0089:
+      input.noEndpointOauthSubmissionFromFp0089 ?? true,
     localProofOnly: noRuntimeBoundary.localProofOnly,
     mcpForbiddenToolsVerified:
       forbiddenCandidatesRejected && noForbiddenCandidateInAllowlist,

@@ -6,7 +6,7 @@ Target phase: `V2H`.
 
 Exact slice: `V2H-read-only-chatgpt-app-mcp-premium-ui-security-master-plan`.
 
-Status: active docs-and-plan plus proof-gate compatibility slice, created 2026-05-09.
+Status: shipped docs-and-plan plus proof-gate compatibility slice, created 2026-05-09 and merged through PR #248.
 
 This Finance Plan defines the premium read-only ChatGPT App/MCP UI and app/MCP security readiness bar that must be satisfied before any future public app implementation, Apps SDK iframe/UI implementation, remote MCP deployment, OAuth, app submission, endpoint implementation, OpenAI API/model integration, or deployment work can start.
 
@@ -49,6 +49,7 @@ Replay and evidence-bundle implications: this slice creates no mission state tra
 - [x] 2026-05-09T18:10:00Z - Ran strict same-branch QA over changed paths. Forbidden-scope hits were boundary/proof language only; no FP-0089, app/runtime route, endpoint, UI implementation, DB/migration, package script, dataset, fixture, sample data, source pack, provider/deployment, source mutation, finance write, or autonomous-action file path was added.
 - [x] 2026-05-09T18:16:00Z - Ran final validation through `git diff --check`, all required V2 proof gates, focused domain specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`; all passed before final closeout.
 - [x] 2026-05-09T18:20:00Z - Reran minimum validation after the final closeout edit: `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` all passed. Commit, push, and PR remain next.
+- [x] 2026-05-09T18:21:00Z - PR #248 was confirmed merged into `main`; FP-0088 is now a shipped V2H docs-only readiness record and FP-0089 is the active successor design-system readiness plan.
 
 ## Surprises & Discoveries
 
@@ -337,6 +338,6 @@ No `WORKFLOW.md`, stack packs, skills, package scripts, smoke aliases, or runtim
 
 Final validation and post-closeout minimum validation passed.
 
-The outcome is a single active FP-0088 readiness master plan plus a stricter proof-gate bridge that allows this exact docs-only successor and rejects everything else that would turn the plan into public app/runtime behavior. No UI, endpoint, remote MCP server, OAuth, app submission, data file, package script, source mutation, finance write, runtime-Codex finance output, or autonomous action was added.
+The outcome is a shipped FP-0088 readiness master plan plus a stricter proof-gate bridge that allowed this exact docs-only successor and rejected everything else that would turn the plan into public app/runtime behavior. No UI, endpoint, remote MCP server, OAuth, app submission, data file, package script, source mutation, finance write, runtime-Codex finance output, or autonomous action was added.
 
 Remaining work is intentionally future-plan-only: a narrow UI polish/design-system implementation plan before UI code, a threat-model/security implementation plan before endpoint/remote MCP/OAuth work, and an app-submission plan before public submission.
