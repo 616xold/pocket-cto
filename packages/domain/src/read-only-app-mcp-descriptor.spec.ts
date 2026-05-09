@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   APP_FORBIDDEN_TOOL_PROOF_CANDIDATES,
+  APP_MCP_FORBIDDEN_RESPONSE_FIELD_NAMES,
   APP_MCP_RESPONSE_ENVELOPE_REQUIRED_FIELDS,
   AppMcpDataExfiltrationEnvelopeSchema,
   AppMcpDescriptorEnvelopeProofSchema,
@@ -14,8 +15,12 @@ import {
   AppMcpUnsupportedEvidenceEnvelopeSchema,
   MCP_DESCRIPTOR_FORBIDDEN_INPUT_FIELDS,
   MCP_DESCRIPTOR_OUTPUT_REQUIRED_FIELDS,
+  MCP_FORBIDDEN_TOOL_NAMES,
   MCP_TOOL_ALLOWLIST,
+  McpDescriptorAnnotationsSchema,
+  McpDescriptorCapabilityMetadataSchema,
   McpDescriptorInputSchemaContractSchema,
+  McpDescriptorOutputSchemaContractSchema,
   McpToolDescriptorContractSchema,
   buildAppMcpDescriptorEnvelopeProof,
   buildAppMcpEvidenceEnvelope,
@@ -41,9 +46,9 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
     ]);
 
     for (const descriptor of descriptors) {
-      expect(McpToolDescriptorContractSchema.safeParse(descriptor).success).toBe(
-        true,
-      );
+      expect(
+        McpToolDescriptorContractSchema.safeParse(descriptor).success,
+      ).toBe(true);
       expect(descriptor.localProofOnly).toBe(true);
       expect(descriptor.usableAsLiveServerDescriptor).toBe(false);
       expect(descriptor.serverRuntimeImplemented).toBe(false);
@@ -57,6 +62,23 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
         false,
       );
       expect(descriptor.capabilityMetadata.takesAutonomousAction).toBe(false);
+      expect(descriptor.forbiddenTools).toEqual([...MCP_FORBIDDEN_TOOL_NAMES]);
+      expect(
+        McpToolDescriptorContractSchema.safeParse({
+          ...descriptor,
+          forbiddenTools: descriptor.forbiddenTools.slice(0, -1),
+        }).success,
+      ).toBe(false);
+      expect(
+        McpToolDescriptorContractSchema.safeParse({
+          ...descriptor,
+          forbiddenTools: [
+            descriptor.forbiddenTools[1],
+            descriptor.forbiddenTools[0],
+            ...descriptor.forbiddenTools.slice(2),
+          ],
+        }).success,
+      ).toBe(false);
     }
   });
 
@@ -72,6 +94,25 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
         McpDescriptorInputSchemaContractSchema.safeParse({
           ...descriptor.inputSchema,
           acceptsFinanceWrites: true,
+        }).success,
+      ).toBe(false);
+      expect(descriptor.inputSchema.forbiddenFields).toEqual([
+        ...MCP_DESCRIPTOR_FORBIDDEN_INPUT_FIELDS,
+      ]);
+      expect(
+        McpDescriptorInputSchemaContractSchema.safeParse({
+          ...descriptor.inputSchema,
+          forbiddenFields: descriptor.inputSchema.forbiddenFields.slice(0, -1),
+        }).success,
+      ).toBe(false);
+      expect(
+        McpDescriptorInputSchemaContractSchema.safeParse({
+          ...descriptor.inputSchema,
+          forbiddenFields: [
+            descriptor.inputSchema.forbiddenFields[1],
+            descriptor.inputSchema.forbiddenFields[0],
+            ...descriptor.inputSchema.forbiddenFields.slice(2),
+          ],
         }).success,
       ).toBe(false);
 
@@ -125,9 +166,9 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
       AppMcpUnsupportedEvidenceEnvelopeSchema.safeParse(unsupportedEvidence)
         .success,
     ).toBe(true);
-    expect(AppMcpStaleEvidenceEnvelopeSchema.safeParse(staleEvidence).success).toBe(
-      true,
-    );
+    expect(
+      AppMcpStaleEvidenceEnvelopeSchema.safeParse(staleEvidence).success,
+    ).toBe(true);
     expect(
       AppMcpPromptInjectionEnvelopeSchema.safeParse(promptInjection).success,
     ).toBe(true);
@@ -138,9 +179,9 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
       AppMcpRawFullFileDumpRefusalEnvelopeSchema.safeParse(rawFullFileDump)
         .success,
     ).toBe(true);
-    expect(AppMcpUnsafeActionEnvelopeSchema.safeParse(unsafeAction).success).toBe(
-      true,
-    );
+    expect(
+      AppMcpUnsafeActionEnvelopeSchema.safeParse(unsafeAction).success,
+    ).toBe(true);
 
     expect(missingCitation.refusalPosture.failClosed).toBe(true);
     expect(unsupportedEvidence.freshness.state).toBe("unsupported");
@@ -164,13 +205,130 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
 
     expect(containsForbiddenResponseField(withRawFullText)).toBe(true);
     expect(containsForbiddenResponseField(withNestedToken)).toBe(true);
-    expect(AppMcpResponseEnvelopeSchema.safeParse(withRawFullText).success).toBe(
-      false,
-    );
-    expect(AppMcpResponseEnvelopeSchema.safeParse(withNestedToken).success).toBe(
-      false,
-    );
+    expect(
+      AppMcpResponseEnvelopeSchema.safeParse(withRawFullText).success,
+    ).toBe(false);
+    expect(
+      AppMcpResponseEnvelopeSchema.safeParse(withNestedToken).success,
+    ).toBe(false);
     expect(responseEnvelopeRejectsForbiddenFields()).toBe(true);
+
+    expect(APP_MCP_FORBIDDEN_RESPONSE_FIELD_NAMES).toEqual([
+      "rawFullText",
+      "rawFileText",
+      "fullText",
+      "fullFileText",
+      "fileContents",
+      "unboundedText",
+      "originalFullText",
+      "sourceText",
+      "rawMarkdown",
+      "documentText",
+      "pageTextDump",
+      "privateSourceText",
+      "private_source_text",
+      "credentials",
+      "tokens",
+      "oauthMaterial",
+      "oauth_material",
+      "apiKeys",
+      "api_keys",
+      "objectStoreDumps",
+      "object_store_dumps",
+      "databaseDumps",
+      "database_dumps",
+      "providerCredentials",
+      "provider_credentials",
+    ]);
+    for (const fieldName of APP_MCP_FORBIDDEN_RESPONSE_FIELD_NAMES) {
+      expect(
+        AppMcpResponseEnvelopeSchema.safeParse({
+          ...evidence,
+          [fieldName]: "private",
+        }).success,
+      ).toBe(false);
+      expect(
+        AppMcpResponseEnvelopeSchema.safeParse({
+          ...evidence,
+          evidence: [{ ...evidence.evidence[0], [fieldName]: "private" }],
+        }).success,
+      ).toBe(false);
+    }
+  });
+
+  it("requires exact forbidden actions on response envelopes", () => {
+    const evidence = buildAppMcpEvidenceEnvelope();
+
+    expect(evidence.forbiddenActions).toEqual([...MCP_FORBIDDEN_TOOL_NAMES]);
+    expect(
+      AppMcpResponseEnvelopeSchema.safeParse({
+        ...evidence,
+        forbiddenActions: evidence.forbiddenActions.slice(0, -1),
+      }).success,
+    ).toBe(false);
+    expect(
+      AppMcpResponseEnvelopeSchema.safeParse({
+        ...evidence,
+        forbiddenActions: [
+          evidence.forbiddenActions[1],
+          evidence.forbiddenActions[0],
+          ...evidence.forbiddenActions.slice(2),
+        ],
+      }).success,
+    ).toBe(false);
+    for (const actionName of MCP_FORBIDDEN_TOOL_NAMES) {
+      expect(
+        AppMcpResponseEnvelopeSchema.safeParse({
+          ...evidence,
+          [actionName]: "unsafe action key",
+        }).success,
+      ).toBe(false);
+      expect(
+        AppMcpResponseEnvelopeSchema.safeParse({
+          ...evidence,
+          evidence: [
+            { ...evidence.evidence[0], [actionName]: "unsafe action key" },
+          ],
+        }).success,
+      ).toBe(false);
+    }
+  });
+
+  it("rejects forbidden action names and raw aliases on descriptor surfaces", () => {
+    for (const descriptor of buildMcpToolDescriptorContracts()) {
+      for (const fieldName of [
+        ...MCP_FORBIDDEN_TOOL_NAMES,
+        ...APP_MCP_FORBIDDEN_RESPONSE_FIELD_NAMES,
+      ]) {
+        expect(
+          McpDescriptorAnnotationsSchema.safeParse({
+            ...descriptor.annotations,
+            [fieldName]: true,
+          }).success,
+        ).toBe(false);
+        expect(
+          McpDescriptorCapabilityMetadataSchema.safeParse({
+            ...descriptor.capabilityMetadata,
+            [fieldName]: true,
+          }).success,
+        ).toBe(false);
+        expect(
+          McpDescriptorInputSchemaContractSchema.safeParse({
+            ...descriptor.inputSchema,
+            fields: [...descriptor.inputSchema.fields, fieldName],
+          }).success,
+        ).toBe(false);
+        expect(
+          McpDescriptorOutputSchemaContractSchema.safeParse({
+            ...descriptor.outputSchema,
+            requiredFields: [
+              ...descriptor.outputSchema.requiredFields,
+              fieldName,
+            ],
+          }).success,
+        ).toBe(false);
+      }
+    }
   });
 
   it("proves descriptor/envelope posture with machine-readable booleans", () => {
@@ -181,6 +339,11 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
     expect(proof.localProofOnly).toBe(true);
     expect(proof.descriptorContractsVerified).toBe(true);
     expect(proof.descriptorAllowlistExactVerified).toBe(true);
+    expect(proof.descriptorForbiddenFieldsExactVerified).toBe(true);
+    expect(proof.descriptorForbiddenToolsExactVerified).toBe(true);
+    expect(proof.responseForbiddenActionsExactVerified).toBe(true);
+    expect(proof.rawPrivateDataAliasFamilyRejected).toBe(true);
+    expect(proof.descriptorRejectsForbiddenActionNames).toBe(true);
     expect(proof.descriptorsVerified).toEqual([...MCP_TOOL_ALLOWLIST]);
     expect(proof.responseEnvelopeRequiredFields).toEqual([
       ...APP_MCP_RESPONSE_ENVELOPE_REQUIRED_FIELDS,

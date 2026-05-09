@@ -6,13 +6,12 @@ import {
   SafeDemoDataPolicySchema,
 } from "./benchmark-community";
 import {
+  MCP_FORBIDDEN_TOOL_NAMES,
   MCP_TOOL_ALLOWLIST,
   READ_ONLY_APP_MCP_SCHEMA_VERSION,
   classifyMcpToolCandidate,
 } from "./read-only-app-mcp-boundaries";
-import {
-  APP_FORBIDDEN_TOOL_PROOF_CANDIDATES,
-} from "./read-only-app-mcp-proof-schema";
+import { APP_FORBIDDEN_TOOL_PROOF_CANDIDATES } from "./read-only-app-mcp-proof-schema";
 import {
   AppMcpDataExfiltrationEnvelopeSchema,
   AppMcpEvidenceEnvelopeSchema,
@@ -24,18 +23,33 @@ import {
   AppMcpUnsafeActionEnvelopeSchema,
   AppMcpUnsupportedEvidenceEnvelopeSchema,
   APP_MCP_RESPONSE_ENVELOPE_REQUIRED_FIELDS,
+  APP_MCP_FORBIDDEN_RESPONSE_FIELD_NAMES,
   buildAppMcpEvidenceEnvelope,
   buildAppMcpRefusalEnvelope,
   responseEnvelopeRejectsForbiddenFields,
 } from "./read-only-app-mcp-envelope";
 import {
+  McpDescriptorAnnotationsSchema,
+  McpDescriptorCapabilityMetadataSchema,
+  McpDescriptorInputSchemaContractSchema,
+  McpDescriptorOutputSchemaContractSchema,
   buildMcpToolDescriptorContracts,
+  descriptorForbiddenFieldsExactVerified,
+  descriptorForbiddenToolsExactVerified,
   descriptorInputRejectsForbiddenFields,
   descriptorOutputRequiresEnvelopeFields,
 } from "./read-only-app-mcp-descriptor";
 import { buildAppNoRuntimeBoundary } from "./read-only-app-mcp-runtime";
 
 const trueLiteral = z.literal(true);
+
+type SafeParseSchema = {
+  safeParse(value: unknown): { success: boolean };
+};
+
+type McpToolDescriptorContract = ReturnType<
+  typeof buildMcpToolDescriptorContracts
+>[number];
 
 export const AppMcpDescriptorEnvelopeProofSchema = z
   .object({
@@ -46,10 +60,14 @@ export const AppMcpDescriptorEnvelopeProofSchema = z
     descriptorInputSchemasStrictVerified: trueLiteral,
     descriptorOutputSchemasStrictVerified: trueLiteral,
     descriptorReadOnlyAnnotationsVerified: trueLiteral,
+    descriptorForbiddenFieldsExactVerified: trueLiteral,
+    descriptorForbiddenToolsExactVerified: trueLiteral,
+    descriptorRejectsForbiddenActionNames: trueLiteral,
     descriptorNoRuntimeServerVerified: trueLiteral,
     descriptorNoEndpointsVerified: trueLiteral,
     responseEnvelopeVerified: trueLiteral,
     responseEnvelopeRequiredFieldsVerified: trueLiteral,
+    responseForbiddenActionsExactVerified: trueLiteral,
     evidenceEnvelopeVerified: trueLiteral,
     refusalEnvelopeVerified: trueLiteral,
     missingCitationEnvelopeVerified: trueLiteral,
@@ -61,6 +79,7 @@ export const AppMcpDescriptorEnvelopeProofSchema = z
     unsafeActionEnvelopeVerified: trueLiteral,
     rawFullFileDumpFieldsRejected: trueLiteral,
     privateDataFieldsRejected: trueLiteral,
+    rawPrivateDataAliasFamilyRejected: trueLiteral,
     forbiddenToolsRejected: trueLiteral,
     noOpenAiApiCalls: trueLiteral,
     noModelCalls: trueLiteral,
@@ -134,7 +153,9 @@ export function buildAppMcpDescriptorEnvelopeProof(
   });
   const evidenceEnvelope = buildAppMcpEvidenceEnvelope();
   const missingCitation = buildAppMcpRefusalEnvelope("missing_citation");
-  const unsupportedEvidence = buildAppMcpRefusalEnvelope("unsupported_evidence");
+  const unsupportedEvidence = buildAppMcpRefusalEnvelope(
+    "unsupported_evidence",
+  );
   const staleEvidence = buildAppMcpRefusalEnvelope("stale_evidence");
   const promptInjection = buildAppMcpRefusalEnvelope("prompt_injection");
   const dataExfiltration = buildAppMcpRefusalEnvelope("data_exfiltration");
@@ -143,15 +164,35 @@ export function buildAppMcpDescriptorEnvelopeProof(
   );
   const unsafeAction = buildAppMcpRefusalEnvelope("unsafe_action");
   const descriptorNames = descriptors.map((descriptor) => descriptor.toolName);
+  const descriptorRejectsRawPrivateAliases = descriptorSurfacesRejectFieldNames(
+    descriptors,
+    APP_MCP_FORBIDDEN_RESPONSE_FIELD_NAMES,
+  );
+  const descriptorRejectsForbiddenActionNames =
+    descriptorSurfacesRejectFieldNames(descriptors, MCP_FORBIDDEN_TOOL_NAMES);
+  const responseRejectsRawPrivateAliases = responseEnvelopeRejectsFieldNames(
+    APP_MCP_FORBIDDEN_RESPONSE_FIELD_NAMES,
+  );
+  const responseForbiddenActionsExactVerified =
+    responseEnvelopeForbiddenActionsExactVerified(evidenceEnvelope);
 
   return AppMcpDescriptorEnvelopeProofSchema.parse({
     dataExfiltrationEnvelopeVerified:
       AppMcpDataExfiltrationEnvelopeSchema.safeParse(dataExfiltration).success,
     descriptorAllowlistExactVerified:
       JSON.stringify(descriptorNames) === JSON.stringify(MCP_TOOL_ALLOWLIST),
-    descriptorContractsVerified: descriptors.length === MCP_TOOL_ALLOWLIST.length,
-    descriptorInputSchemasStrictVerified: descriptors.every((descriptor) =>
-      descriptorInputRejectsForbiddenFields(descriptor.toolName),
+    descriptorContractsVerified:
+      descriptors.length === MCP_TOOL_ALLOWLIST.length,
+    descriptorForbiddenFieldsExactVerified: descriptors.every((descriptor) =>
+      descriptorForbiddenFieldsExactVerified(descriptor.toolName),
+    ),
+    descriptorForbiddenToolsExactVerified: descriptors.every((descriptor) =>
+      descriptorForbiddenToolsExactVerified(descriptor.toolName),
+    ),
+    descriptorInputSchemasStrictVerified: descriptors.every(
+      (descriptor) =>
+        descriptorInputRejectsForbiddenFields(descriptor.toolName) &&
+        descriptorForbiddenFieldsExactVerified(descriptor.toolName),
     ),
     descriptorNoEndpointsVerified: descriptors.every(
       (descriptor) => !descriptor.endpointImplemented,
@@ -172,6 +213,7 @@ export function buildAppMcpDescriptorEnvelopeProof(
         !descriptor.capabilityMetadata.writesSources &&
         !descriptor.capabilityMetadata.writesFinanceTwin,
     ),
+    descriptorRejectsForbiddenActionNames,
     descriptorsVerified: descriptorNames,
     evidenceEnvelopeVerified:
       AppMcpEvidenceEnvelopeSchema.safeParse(evidenceEnvelope).success,
@@ -223,6 +265,10 @@ export function buildAppMcpDescriptorEnvelopeProof(
       AppMcpPromptInjectionEnvelopeSchema.safeParse(promptInjection).success &&
       promptInjection.refusalPosture.sourceInstructionsTreatedAsData,
     rawFullFileDumpFieldsRejected: responseEnvelopeRejectsForbiddenFields(),
+    rawPrivateDataAliasFamilyRejected:
+      descriptorRejectsRawPrivateAliases &&
+      responseRejectsRawPrivateAliases &&
+      responseEnvelopeRejectsForbiddenFields(),
     rawFullFileDumpRefusalEnvelopeVerified:
       AppMcpRawFullFileDumpRefusalEnvelopeSchema.safeParse(rawFullFileDump)
         .success,
@@ -236,6 +282,7 @@ export function buildAppMcpDescriptorEnvelopeProof(
       APP_MCP_RESPONSE_ENVELOPE_REQUIRED_FIELDS.every((field) =>
         Object.prototype.hasOwnProperty.call(evidenceEnvelope, field),
       ),
+    responseForbiddenActionsExactVerified,
     responseEnvelopeVerified:
       AppMcpResponseEnvelopeSchema.safeParse(evidenceEnvelope).success &&
       AppMcpResponseEnvelopeSchema.safeParse(missingCitation).success,
@@ -257,3 +304,82 @@ export function buildAppMcpDescriptorEnvelopeProof(
 export type AppMcpDescriptorEnvelopeProof = z.infer<
   typeof AppMcpDescriptorEnvelopeProofSchema
 >;
+
+function descriptorSurfacesRejectFieldNames(
+  descriptors: readonly McpToolDescriptorContract[],
+  fieldNames: readonly string[],
+): boolean {
+  return descriptors.every((descriptor) =>
+    fieldNames.every((fieldName) => {
+      const schemaChecks: ReadonlyArray<readonly [SafeParseSchema, unknown]> = [
+        [
+          McpDescriptorAnnotationsSchema,
+          { ...descriptor.annotations, [fieldName]: true },
+        ],
+        [
+          McpDescriptorCapabilityMetadataSchema,
+          { ...descriptor.capabilityMetadata, [fieldName]: true },
+        ],
+        [
+          McpDescriptorInputSchemaContractSchema,
+          {
+            ...descriptor.inputSchema,
+            fields: [...descriptor.inputSchema.fields, fieldName],
+          },
+        ],
+        [
+          McpDescriptorOutputSchemaContractSchema,
+          {
+            ...descriptor.outputSchema,
+            requiredFields: [
+              ...descriptor.outputSchema.requiredFields,
+              fieldName,
+            ],
+          },
+        ],
+      ];
+      return schemaChecks.every(
+        ([schema, value]) => !schema.safeParse(value).success,
+      );
+    }),
+  );
+}
+
+function responseEnvelopeRejectsFieldNames(fieldNames: readonly string[]) {
+  const evidenceEnvelope = buildAppMcpEvidenceEnvelope();
+  return fieldNames.every((fieldName) => {
+    const topLevel = { ...evidenceEnvelope, [fieldName]: "forbidden" };
+    const nested = {
+      ...evidenceEnvelope,
+      evidence: [{ ...evidenceEnvelope.evidence[0], [fieldName]: "forbidden" }],
+    };
+    return (
+      !AppMcpResponseEnvelopeSchema.safeParse(topLevel).success &&
+      !AppMcpResponseEnvelopeSchema.safeParse(nested).success
+    );
+  });
+}
+
+function responseEnvelopeForbiddenActionsExactVerified(
+  evidenceEnvelope: ReturnType<typeof buildAppMcpEvidenceEnvelope>,
+) {
+  return (
+    sameList(evidenceEnvelope.forbiddenActions, MCP_FORBIDDEN_TOOL_NAMES) &&
+    !AppMcpResponseEnvelopeSchema.safeParse({
+      ...evidenceEnvelope,
+      forbiddenActions: evidenceEnvelope.forbiddenActions.slice(0, -1),
+    }).success &&
+    !AppMcpResponseEnvelopeSchema.safeParse({
+      ...evidenceEnvelope,
+      forbiddenActions: [
+        evidenceEnvelope.forbiddenActions[1],
+        evidenceEnvelope.forbiddenActions[0],
+        ...evidenceEnvelope.forbiddenActions.slice(2),
+      ],
+    }).success
+  );
+}
+
+function sameList(left: readonly unknown[], right: readonly unknown[]) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
