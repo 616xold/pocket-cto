@@ -4,6 +4,7 @@ export * from "./evidence-answer-panel";
 export * from "./evidence-card-stack";
 export * from "./forbidden-actions-panel";
 export * from "./freshness-badge";
+export * from "./freshness-summary-panel";
 export * from "./limitation-callout";
 export * from "./no-runtime-boundary-panel";
 export * from "./permitted-next-actions-panel";

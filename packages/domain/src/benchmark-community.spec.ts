@@ -646,6 +646,7 @@ function fp0091LocalUiComponentBoundary() {
       "citationrail",
       "sourceanchorpanel",
       "freshnessbadge",
+      "freshnesssummarypanel",
       "limitationcallout",
       "permittednextactionspanel",
       "forbiddenactionspanel",

@@ -1,5 +1,4 @@
 import React from "react";
-import { FreshnessBadge } from "./freshness-badge";
 import {
   bodyStyle,
   colors,
@@ -31,7 +30,6 @@ export function EvidenceAnswerPanel({ answer }: EvidenceAnswerPanelProps) {
           summary={answer.summary}
           title={answer.title}
         />
-        <FreshnessBadge freshness={answer.freshness} />
       </div>
       <dl style={twoColumnGridStyle}>
         <div>

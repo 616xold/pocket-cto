@@ -13,6 +13,7 @@ import {
   EvidenceAnswerPanel,
   EvidenceCardStack,
   ForbiddenActionsPanel,
+  FreshnessSummaryPanel,
   LimitationCallout,
   LoadingEvidenceState,
   MissingCitationRefusalState,
@@ -60,6 +61,7 @@ describe("read-only app/MCP premium UI component foundation", () => {
         <EvidenceCardStack cards={evidenceCards} />
         <CitationRail citations={citations} />
         <SourceAnchorPanel sourceAnchors={readSourceAnchors()} />
+        <FreshnessSummaryPanel freshness={freshness} />
         <LimitationCallout limitations={limitations} />
         <PermittedNextActionsPanel actions={readPermittedActions()} />
         <ForbiddenActionsPanel actions={readForbiddenActions()} />
@@ -74,6 +76,7 @@ describe("read-only app/MCP premium UI component foundation", () => {
     expect(html).toContain("Citation rail");
     expect(html).toContain("Source anchor panel");
     expect(html).toContain("Freshness: Fresh");
+    expect(html).toContain("Freshness posture");
     expect(html).toContain("Limitation callout");
     expect(html).toContain("Permitted next review steps");
     expect(html).toContain("Forbidden action posture");
@@ -81,14 +84,34 @@ describe("read-only app/MCP premium UI component foundation", () => {
     expect(html).toContain("No-runtime boundary");
     expect(html).toContain("Bounded excerpt only: yes");
     expect(html).toContain("Blocked capability");
+    expectInOrder(html, [
+      "Answer status is evidence-backed",
+      "Evidence card stack",
+      "Citation rail",
+      "Source anchor panel",
+      "Freshness posture",
+      "Limitation callout",
+      "Permitted next review steps",
+      "Forbidden action posture",
+      "Privacy boundary",
+      "No-runtime boundary",
+    ]);
+    expect(html).toContain(
+      "grid-template-columns:repeat(auto-fit, minmax(240px, 1fr))",
+    );
     expect(html).not.toContain("<form");
     expect(html).not.toContain("<button");
+    expect(html).not.toContain("<input");
+    expect(html).not.toContain("<select");
+    expect(html).not.toContain("<textarea");
+    expect(html).not.toContain("role=\"button\"");
     expect(html).not.toContain("type=\"submit\"");
     expect(html).not.toContain("fetch(");
     expect(html).not.toContain("POST");
     expect(html).not.toContain("OPENAI_API_KEY");
-    expect(html).not.toContain("rawFullText");
-    expect(html).not.toContain("pageTextDump");
+    for (const fieldName of forbiddenRenderedFieldNames) {
+      expect(html).not.toContain(fieldName);
+    }
   });
 
   it("renders fail-closed refusal states for prompt injection and raw full-file requests", () => {
@@ -176,6 +199,29 @@ describe("read-only app/MCP premium UI component foundation", () => {
     expect(html).not.toContain("<form");
   });
 });
+
+function expectInOrder(html: string, labels: string[]) {
+  let previousIndex = -1;
+  for (const label of labels) {
+    const nextIndex = html.indexOf(label);
+    expect(nextIndex).toBeGreaterThan(previousIndex);
+    previousIndex = nextIndex;
+  }
+}
+
+const forbiddenRenderedFieldNames = [
+  "rawFullText",
+  "rawFileText",
+  "fullText",
+  "fullFileText",
+  "fileContents",
+  "unboundedText",
+  "originalFullText",
+  "sourceText",
+  "rawMarkdown",
+  "documentText",
+  "pageTextDump",
+];
 
 function readFreshness(input: {
   checkedAt: string;

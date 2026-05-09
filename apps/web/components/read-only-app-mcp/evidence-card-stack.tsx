@@ -1,5 +1,4 @@
 import React from "react";
-import { FreshnessBadge } from "./freshness-badge";
 import {
   bodyStyle,
   colors,
@@ -49,7 +48,6 @@ function EvidenceCardRow({ card }: { card: ReadOnlyAppMcpEvidenceCard }) {
           </h3>
           <p style={bodyStyle}>{card.summary}</p>
         </div>
-        <FreshnessBadge freshness={card.freshness} />
       </div>
       {card.sourceAnchorIds.length > 0 ? (
         <p style={bodyStyle}>

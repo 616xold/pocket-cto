@@ -50,6 +50,8 @@ Replay and evidence-bundle implications: this slice creates no mission state tra
 - [x] 2026-05-09T21:05:16+01:00 - Reran same-branch QA correction validation successfully, including `git diff --check`, all required V2 proof tools, web tests/typecheck, focused domain proof specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 - [x] 2026-05-09T21:09:59+01:00 - Added `plugins.md` at the user's request as a documentation-only inventory of installed/used Codex plugins; this does not change product runtime, UI behavior, app/MCP scope, source data, or finance state.
 - [x] 2026-05-09T21:14:28+01:00 - Updated `plugins.md` to include the newly installed OpenAI Developers plugin as documentation-only inventory; no API key creation, OpenAI API/model call, app runtime, public app, or product scope was used.
+- [x] 2026-05-09T20:52:16Z - Post-merge QA found one local UI hierarchy hardening defect: positive evidence composition could render freshness before citations/source anchors. Patched the same FP-0091 branch by adding a dedicated `FreshnessSummaryPanel`, moving positive freshness display after source anchors in the component proof composition, and strengthening component/proof checks without adding routes, endpoints, runtime behavior, source mutation, finance writes, OpenAI API/model calls, public app work, or FP-0092.
+- [x] 2026-05-09T20:58:44Z - Reran post-correction validation successfully: `git diff --check`, all seven required direct proof tools, focused web component spec, web package tests/typecheck, focused domain specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`. The first focused web spec wrapper used a repo-root path and failed before discovery; it was immediately rerun with the package-relative path and passed.
 
 ## Surprises & Discoveries
 
@@ -78,6 +80,9 @@ Rationale: the generic refusal panel can render every refusal reason, but same-b
 
 Decision: proof gates must accept exactly one FP-0091 file and reject FP-0092.
 Rationale: the successor bridge should be stronger than simple absence. It must prove FP-0091 authorizes only local read-only UI components and still rejects routes, endpoints, remote MCP, Apps SDK iframe/UI resources, OAuth, app submission, public app implementation, OpenAI API/model calls, source mutation, finance writes, generated product prose, runtime-Codex finance output, and autonomous action.
+
+Decision: positive evidence freshness belongs in a dedicated panel after citations and source anchors.
+Rationale: the shipped hierarchy requires answer status, evidence cards, citations/source anchors, then freshness. Keeping positive freshness inside the answer or evidence-card headers could make DOM order drift from the plan. Refusal panels may still carry fail-closed freshness posture as part of refusal status.
 
 Decision: no replay event is added.
 Rationale: this slice changes local components, tests, docs, and proof-gate validation only. It does not change product runtime state, mission state, source state, reports, approvals, or evidence artifacts.
@@ -155,6 +160,7 @@ Components to implement:
 - `CitationRail`
 - `SourceAnchorPanel`
 - `FreshnessBadge`
+- `FreshnessSummaryPanel`
 - `LimitationCallout`
 - `PermittedNextActionsPanel`
 - `ForbiddenActionsPanel`
