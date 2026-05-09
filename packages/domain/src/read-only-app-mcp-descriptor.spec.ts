@@ -357,14 +357,20 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
     expect(proof.noFixturesAdded).toBe(true);
     expect(proof.fp0088AbsentOrDocsOnlyBoundaryVerified).toBe(true);
     expect(proof.fp0089AbsentOrDocsOnlyBoundaryVerified).toBe(true);
-    expect(proof.fp0090Absent).toBe(true);
+    expect(proof.fp0090AbsentOrDocsOnlyBoundaryVerified).toBe(true);
+    expect(proof.fp0091Absent).toBe(true);
     expect(proof.premiumUiSecurityPlanBoundaryVerified).toBe(true);
     expect(proof.premiumUiDesignSystemPlanBoundaryVerified).toBe(true);
+    expect(proof.premiumUiImplementationPlanBoundaryVerified).toBe(true);
     expect(proof.noUiImplementationFromFp0088).toBe(true);
     expect(proof.noUiImplementationFromFp0089).toBe(true);
     expect(proof.noAppsSdkIframeFromFp0089).toBe(true);
+    expect(proof.noUiCodeFromFp0090).toBe(true);
+    expect(proof.noAppsSdkIframeFromFp0090).toBe(true);
     expect(proof.noEndpointOauthSubmissionFromFp0088).toBe(true);
     expect(proof.noEndpointOauthSubmissionFromFp0089).toBe(true);
+    expect(proof.noEndpointOauthSubmissionFromFp0090).toBe(true);
+    expect(proof.noPublicAppImplementationFromFp0090).toBe(true);
 
     for (const candidate of APP_FORBIDDEN_TOOL_PROOF_CANDIDATES) {
       expect(classifyMcpToolCandidate(candidate).forbidden).toBe(true);

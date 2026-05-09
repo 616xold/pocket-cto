@@ -6,7 +6,7 @@ Target phase: `V2I`.
 
 Exact slice: `V2I-read-only-chatgpt-app-mcp-premium-ui-design-system-master-plan`.
 
-Status: active docs-and-plan plus proof-gate compatibility slice, created 2026-05-09.
+Status: shipped docs-and-plan plus proof-gate compatibility slice, created 2026-05-09 and merged through PR #249.
 
 This Finance Plan defines the premium read-only ChatGPT App/MCP UI design-system readiness bar that must be satisfied before any future UI implementation, Apps SDK iframe/UI implementation, public app implementation, remote MCP deployment, OAuth implementation, endpoint implementation, app submission, OpenAI API/model integration, deployment, provider/certification work, source mutation, finance write, generated product prose, runtime-Codex finance output, or autonomous action can start.
 
@@ -45,12 +45,13 @@ Replay and evidence-bundle implications: this slice creates no mission state tra
 - [x] 2026-05-09T18:55:56Z - Updated the minimal V2F/V2G proof schemas, tools, and focused specs so exactly this docs-only plan is accepted and FP-0090 remains rejected.
 - [x] 2026-05-09T18:55:56Z - Refreshed only directly stale active docs and FP-0088 shipped-state wording.
 - [x] 2026-05-09T18:55:56Z - Ran focused proof validation and focused domain specs; all passed.
-- [x] 2026-05-09T19:01:28Z - Ran strict same-branch QA over tracked edits and the untracked FP-0089 plan; expected keyword hits are planning/proof-boundary language only, exactly one FP-0089 file exists, and no FP-0090 exists.
+- [x] 2026-05-09T19:01:28Z - Ran strict same-branch QA over tracked edits and the untracked FP-0089 plan; expected keyword hits are planning/proof-boundary language only, exactly one FP-0089 file existed, and no FP-0090 existed at FP-0089 closeout.
 - [x] 2026-05-09T19:03:05+01:00 - Ran final validation; `git diff --check`, seven direct proof gates, focused domain specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` passed. Closeout doc edit now requires the minimum post-closeout rerun before commit.
+- [x] 2026-05-09T18:11:35Z - PR #249 merged into `main`; FP-0089 is now a shipped V2I docs-only premium UI design-system readiness record.
 
 ## Surprises & Discoveries
 
-The expected proof-gate compatibility issue is present: V2F/V2G proof gates still prove FP-0089 absence after FP-0088 shipped. The correct fix is not to remove the boundary. The correct fix is to replace `fp0089Absent` with exact docs-only FP-0089 acceptance fields and a new `fp0090Absent` guard.
+The expected proof-gate compatibility issue is present: V2F/V2G proof gates still prove FP-0089 absence after FP-0088 shipped. The correct fix is not to remove the boundary. The correct fix is to replace `fp0089Absent` with exact docs-only FP-0089 acceptance fields and a then-current FP-0090 absence guard.
 
 PR #248 is merged into `main`, so FP-0088 is shipped. Active docs still contain wording that treats FP-0088 as active, which this slice may refresh narrowly while keeping FP-0088 as the shipped premium UI/security readiness record.
 
@@ -84,7 +85,7 @@ Decision: future UI must be evidence-first, not advice-first.
 Rationale: Pocket CFO's proof point is source-backed decisions with limitations. Future copy may be polished, but it must not generate financial advice, dark-pattern action prompts, or action-looking controls for forbidden actions.
 
 Decision: proof gates must accept exactly one docs-only FP-0089 file.
-Rationale: replacing `fp0089Absent` with `fp0089AbsentOrDocsOnlyBoundaryVerified`, `fp0090Absent`, `premiumUiDesignSystemPlanBoundaryVerified`, `noUiImplementationFromFp0089`, `noAppsSdkIframeFromFp0089`, and `noEndpointOauthSubmissionFromFp0089` keeps the gate stronger than simple absence.
+Rationale: replacing `fp0089Absent` with `fp0089AbsentOrDocsOnlyBoundaryVerified`, a then-current FP-0090 absence guard, `premiumUiDesignSystemPlanBoundaryVerified`, `noUiImplementationFromFp0089`, `noAppsSdkIframeFromFp0089`, and `noEndpointOauthSubmissionFromFp0089` keeps the gate stronger than simple absence.
 
 Decision: no replay event is added.
 Rationale: this slice changes planning records, active docs, and validation gates only. It does not change product runtime state, mission state, source state, reports, approvals, or evidence artifacts.
@@ -241,7 +242,7 @@ Mandatory future plans:
 4. Create this plan as the only FP-0089 file.
 5. Replace V2F/V2G `fp0089Absent` proof fields with exact docs-only boundary proof fields:
    - `fp0089AbsentOrDocsOnlyBoundaryVerified`
-   - `fp0090Absent`
+   - a then-current FP-0090 absence guard
    - `premiumUiDesignSystemPlanBoundaryVerified`
    - `noUiImplementationFromFp0089`
    - `noAppsSdkIframeFromFp0089`
@@ -288,7 +289,7 @@ Strict same-branch QA:
 
 - Search changed files for code/UI/routes/endpoints/schema/migrations/package scripts/eval datasets/fixtures/sample data/source packs/OpenAI API/model calls/OAuth/app submission/provider/deployment/source mutation/finance writes/autonomous action.
 - Classify expected hits as planning or proof-boundary language only.
-- Confirm no FP-0090 exists.
+- Confirm FP-0090 absence during FP-0089 closeout.
 - Confirm the proof gates reject multiple FP-0089 files and any FP-0089 filename other than the exact plan filename.
 - Confirm FP-0088 docs-only typed boundary remains intact.
 - Confirm FP-0087 typed boundary remains intact.
@@ -315,7 +316,7 @@ pnpm ci:repro:current
 Acceptance evidence:
 
 - `plans/FP-0089-read-only-chatgpt-app-mcp-premium-ui-design-system-master-plan.md` exists and is the only FP-0089 file.
-- No FP-0090 exists.
+- No FP-0090 existed at FP-0089 closeout.
 - V2F/V2G proofs report the exact docs-only FP-0089 successor boundary instead of `fp0089Absent`.
 - Existing FP-0088 docs-only typed boundary remains intact.
 - Existing FP-0087 typed boundary remains intact.
@@ -371,7 +372,7 @@ No `WORKFLOW.md`, stack packs, skills, package scripts, smoke aliases, routes, e
 
 ## Outcomes & Retrospective
 
-Outcome: FP-0089 is a single active premium UI design-system readiness master plan and proof-gate compatibility bridge. It accepts exactly `plans/FP-0089-read-only-chatgpt-app-mcp-premium-ui-design-system-master-plan.md` as docs-and-plan only, keeps FP-0090 absent, and rejects any attempt to treat FP-0089 as UI/runtime/public app behavior.
+Outcome: FP-0089 is a shipped premium UI design-system readiness master plan and proof-gate compatibility bridge. It accepts exactly `plans/FP-0089-read-only-chatgpt-app-mcp-premium-ui-design-system-master-plan.md` as docs-and-plan only, kept FP-0090 absent at FP-0089 closeout, and rejects any attempt to treat FP-0089 as UI/runtime/public app behavior.
 
 Validation outcome before this closeout edit: `git diff --check`, seven direct proof gates, focused V2F/V2G domain specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` passed.
 

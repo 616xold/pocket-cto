@@ -79,14 +79,20 @@ export const BenchmarkProofSchema = z
     fp0087AbsentOrDocsOnlyBoundaryVerified: trueLiteral,
     fp0088AbsentOrDocsOnlyBoundaryVerified: trueLiteral,
     fp0089AbsentOrDocsOnlyBoundaryVerified: trueLiteral,
-    fp0090Absent: trueLiteral,
+    fp0090AbsentOrDocsOnlyBoundaryVerified: trueLiteral,
+    fp0091Absent: trueLiteral,
     premiumUiSecurityPlanBoundaryVerified: trueLiteral,
     premiumUiDesignSystemPlanBoundaryVerified: trueLiteral,
+    premiumUiImplementationPlanBoundaryVerified: trueLiteral,
     noUiImplementationFromFp0088: trueLiteral,
     noUiImplementationFromFp0089: trueLiteral,
     noAppsSdkIframeFromFp0089: trueLiteral,
+    noUiCodeFromFp0090: trueLiteral,
+    noAppsSdkIframeFromFp0090: trueLiteral,
     noEndpointOauthSubmissionFromFp0088: trueLiteral,
     noEndpointOauthSubmissionFromFp0089: trueLiteral,
+    noEndpointOauthSubmissionFromFp0090: trueLiteral,
+    noPublicAppImplementationFromFp0090: trueLiteral,
   })
   .strict();
 
