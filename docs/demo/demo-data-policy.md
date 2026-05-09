@@ -1,10 +1,10 @@
 # Demo Data Policy
 
-Pocket CFO demo data must be synthetic-only unless a future Finance Plan names and proves a stricter reviewed exception. FP-0083 does not add sample data, source-pack fixtures, eval datasets, package scripts, smoke aliases, or source-pack mutations.
+Pocket CFO demo data must be synthetic-only unless a future Finance Plan names and proves a stricter reviewed exception. FP-0086 ships SafeDemoDataPolicy as the first V2F benchmark/community gate and does not add sample data, source-pack fixtures, eval datasets, package scripts, smoke aliases, or source-pack mutations.
 
 ## Synthetic-Only Rule
 
-Demo data must be invented, non-private, clearly labeled, and safe to publish. It must not be derived from a real company by merely renaming fields or changing dates.
+Demo data and any future benchmark/community examples must be invented, non-private, clearly labeled, and safe to publish. They must not be derived from a real company by merely renaming fields or changing dates, and lightly anonymized real finance data is forbidden.
 
 Do not use or commit:
 

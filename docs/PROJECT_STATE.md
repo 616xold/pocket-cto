@@ -22,7 +22,7 @@ FP-0084 is the shipped V2D read-only Evidence Atlas UI foundation record. It add
 
 FP-0085 is the shipped V2E local/internal proof-only bounded LLM orchestration foundation record. It adds pure domain contracts, one proof-only control-plane bounded context, a deterministic QueryPlanner over the fixed read-only V2C tool allowlist, deterministic evidence selection handoff from synthetic in-memory V2C responses, schema-constrained bounded evidence summaries, missing-citation refusal, unsupported-evidence refusal, unsafe-action refusal, local proof audit events, `tools/bounded-llm-orchestration-proof.mjs`, and deterministic EvidenceFaithfulnessGrade, MissingCitationGrade, and UnsafeActionRefusalGrade posture. It adds no OpenAI API calls, model calls, vector/file-search, OCR, PageIndex, public ChatGPT App/MCP, Apps SDK UI, OAuth, app submission, routes, UI, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, provider behavior, certification, delivery, deployment, external communications, source mutation, finance writes, generated advice, runtime-Codex finance output, or autonomous action.
 
-FP-0086 is the active V2F benchmark/community pack foundation plan. It is docs-and-plan only until a later implementation thread continues it. It narrows V2F to a SafeDemoDataPolicy-first benchmark/community contract, docs/proof-only manifest planning, read-only benchmark task taxonomy, no-runtime boundaries, and no-real-finance-data posture. No V2F implementation, code, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source packs, source-pack mutations, OpenAI API/model calls, public ChatGPT App/MCP, Apps SDK UI, OAuth, app submission, provider behavior, certification, delivery, deployment, external communications, finance writes, generated advice, runtime-Codex finance output, or autonomous action has shipped.
+FP-0086 is the shipped V2F docs/proof-only benchmark/community manifest foundation record. It ships SafeDemoDataPolicy first, SyntheticFinanceSourcePolicy, BenchmarkPrivacyBoundary, BenchmarkNoRuntimeBoundary, exact read-only BenchmarkTask taxonomy, BenchmarkCase placeholder rules, CommunityPackManifest, ContributorChallenge, ArchitectureMap, BenchmarkProof, focused specs, and `tools/benchmark-community-pack-proof.mjs`. It adds no UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source packs, source-pack mutations, OpenAI API/model calls, public ChatGPT App/MCP, Apps SDK UI, OAuth, app submission, provider behavior, certification, delivery, deployment, external communications, finance writes, generated advice, runtime-Codex finance output, or autonomous action.
 
 ## Shipped Architecture Summary
 
@@ -56,15 +56,15 @@ The shipped system is organized around:
 - **OSS demo/self-host/security baseline**: shipped through FP-0083 as documentation-only security, privacy, contribution, demo-data, local-demo, self-host, finance-data threat-model, and read-only-agent threat-model baseline.
 - **V2D Evidence Atlas UI foundation**: shipped through FP-0084 as one read-only local operator UI route and modular atlas component foundation.
 - **V2E bounded LLM orchestration foundation**: shipped through FP-0085 as a local/internal proof-only planning/refusal/validation contract over fixed read-only V2C tools.
-- **V2F benchmark/community pack foundation**: active through FP-0086 as docs-and-plan-only benchmark/community contract planning; implementation has not started.
+- **V2F benchmark/community pack foundation**: shipped through FP-0086 as a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation with no datasets or runtime behavior.
 
 ## Latest Shipped V2 Plan
 
-- **V2E bounded LLM orchestration foundation**: shipped through FP-0085.
+- **V2F benchmark/community pack foundation**: shipped through FP-0086.
 
 ## Active V2 Plan
 
-- FP-0086 is the active V2F benchmark/community pack foundation plan. Implementation has not started; continue it only as the first narrow docs/proof-only benchmark/community manifest contract slice unless the plan is explicitly amended.
+- No later active V2 implementation plan exists in this repository. Continue only with V2F implementation QA or a later named Finance Plan; do not create FP-0087 from shipped docs alone.
 
 ## Fixed Shipped Monitor Families
 
@@ -116,7 +116,7 @@ These tracks remain future-only until a later Finance Plan names exact scope and
 - V2E expansion beyond the shipped FP-0085 local/internal proof-only bounded LLM orchestration foundation
 - public ChatGPT App/MCP deployment beyond the shipped local/internal FP-0082 contract
 - V2D expansion outside the shipped FP-0084 read-only Evidence Atlas UI foundation boundary
-- V2F benchmark/community packs
+- V2F expansion beyond the shipped FP-0086 docs/proof-only benchmark/community manifest foundation
 - iOS
 - OpenClaw
 - deployment/external communications

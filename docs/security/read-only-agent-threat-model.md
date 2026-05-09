@@ -1,6 +1,6 @@
 # Read-Only Agent Threat Model
 
-FP-0083 documents the shipped V2C local/internal evidence-tool contract. It does not start a public MCP server, public ChatGPT App, Apps SDK UI, OAuth, app submission, OpenAI file-search/vector integration, deployment, LLM orchestration, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
+FP-0083 documents the shipped V2C local/internal evidence-tool contract. FP-0085 ships local/internal proof-only bounded orchestration, and FP-0086 ships a docs/proof-only benchmark/community manifest foundation. These records do not start a public MCP server, public ChatGPT App, Apps SDK UI, OAuth, app submission, OpenAI API/model calls, OpenAI file-search/vector integration, deployment, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Current Contract
 
@@ -65,3 +65,7 @@ Before any remote MCP server, public ChatGPT App, Apps SDK UI, OAuth flow, app s
 - validation that raw source truth, Finance Twin, CFO Wiki, and EvidenceIndex remain the authority layers
 
 Until those are proven, V2C remains local/internal only.
+
+## Benchmark Boundary
+
+FP-0086 benchmark/community artifacts are read-only contracts and proof posture only. They do not create tools, routes, UI, datasets, fixtures, sample data, public source packs, model calls, generated advice, runtime-Codex finance output, or autonomous action. Missing-citation, evidence-faithfulness, unsafe-action-refusal, freshness, limitation, privacy, and no-runtime checks remain local proof posture until a later Finance Plan names and proves public behavior.

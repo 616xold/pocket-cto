@@ -1003,9 +1003,9 @@ V2E - bounded LLM orchestration:
 
 V2F - benchmark/community pack:
 
-- active through `plans/FP-0086-benchmark-community-pack-foundation.md` as a docs-and-plan-only foundation contract
-- first implementation should be SafeDemoDataPolicy-first and docs/proof-only benchmark/community manifest contracts, not datasets
-- no eval dataset, fixture, sample data, source-pack behavior, package script, smoke alias, OpenAI API/model call, public app/MCP work, community distribution, source mutation, finance write, or autonomous action starts from roadmap text alone
+- shipped through `plans/FP-0086-benchmark-community-pack-foundation.md` as a SafeDemoDataPolicy-first docs/proof-only benchmark/community manifest foundation
+- shipped implementation adds pure contracts for SafeDemoDataPolicy, SyntheticFinanceSourcePolicy, CommunityPackManifest, BenchmarkTask taxonomy, BenchmarkCase placeholder rules, BenchmarkProof, BenchmarkNoRuntimeBoundary, privacy boundaries, contributor-challenge boundaries, focused specs, and one direct proof command without datasets
+- no eval dataset, fixture, sample data, public demo source pack, source-pack behavior, package script, smoke alias, OpenAI API/model call, public app/MCP work, community distribution, source mutation, finance write, generated advice, runtime-Codex finance output, or autonomous action starts from roadmap text alone
 
 V2G - optional distribution tracks:
 

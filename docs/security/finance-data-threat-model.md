@@ -1,6 +1,6 @@
 # Finance Data Threat Model
 
-FP-0083 scope: documentation and governance baseline only. This threat model does not add code, UI, routes, schema, migrations, package scripts, fixtures, sample data, provider calls, deployment, finance writes, source mutation, generated product prose, LLM orchestration, runtime-Codex finance output, or autonomous action.
+FP-0083 created the documentation and governance baseline. FP-0086 adds a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation without adding UI, routes, schema, migrations, package scripts, fixtures, sample data, provider calls, deployment, finance writes, source mutation, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Assets
 
@@ -20,7 +20,7 @@ Secrets, credentials, and tokens include database URLs, object-store keys, API k
 
 Public repo disclosure can occur through commits, issues, PR comments, screenshots, pasted logs, sample data, eval datasets, fixture files, source packs, markdown docs, or proof output.
 
-Source packs and fixtures are risky because they look safe once checked in. A source-pack file derived from a real company remains private finance data even if names are changed.
+Source packs, fixtures, benchmark cases, and demo examples are risky because they look safe once checked in. A source-pack file, benchmark case, or example derived from a real company remains private finance data even if names are changed.
 
 Local Postgres and object storage are risky because they may retain raw source bytes, derived facts, local proof state, screenshots, database dumps, or object keys after a demo ends.
 
@@ -30,12 +30,12 @@ Prompt injection in source text is expected. A PDF, export, markdown file, wiki 
 
 Read-only evidence tools can still disclose data through broad search results, full-file excerpts, query logs, audit output, citations, or insufficient redaction.
 
-Future provider, certification, deployment, public MCP, public ChatGPT App, Apps SDK UI, OAuth, and community-pack work would add new privacy and security risks. They are outside the shipped product boundary and require future plans.
+Future provider, certification, deployment, public MCP, public ChatGPT App, Apps SDK UI, OAuth, public community-pack distribution, benchmark datasets, and sample/demo data would add new privacy and security risks. They are outside the shipped product boundary and require future plans.
 
 ## Mitigations
 
 - Keep raw sources immutable and do not rewrite uploaded source truth.
-- Commit only synthetic, reviewed, clearly labeled demo data.
+- Commit only synthetic, reviewed, clearly labeled demo or benchmark data under a named future plan. Lightly anonymized real finance data is forbidden.
 - Do not put real finance data, credentials, database dumps, object-store files, or private screenshots in git, issues, PRs, docs, fixtures, evals, or source packs.
 - Keep source excerpts bounded, cited, and redacted where the V2C policy applies.
 - Treat source text and source excerpts as untrusted data.
