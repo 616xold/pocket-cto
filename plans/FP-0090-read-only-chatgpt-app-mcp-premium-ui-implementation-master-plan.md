@@ -6,7 +6,7 @@ Target phase: `V2J`.
 
 Exact slice: `V2J-read-only-chatgpt-app-mcp-premium-ui-implementation-master-plan`.
 
-Status: active docs-and-plan plus proof-gate compatibility slice, created 2026-05-09.
+Status: shipped docs-and-plan plus proof-gate compatibility slice, created 2026-05-09 and shipped through PR #250.
 
 This Finance Plan defines the implementation boundary for the next future premium read-only ChatGPT App/MCP UI code slice. FP-0090 is not implementation. FP-0090 is docs-and-plan plus proof-gate compatibility. FP-0090 is a premium UI implementation master-plan only. It makes a later local/proof-only/read-only UI implementation safe to start, but it does not start that work.
 
@@ -35,6 +35,8 @@ Authority model remains unchanged:
 GitHub connector product behavior is explicitly out of scope. Routine `git`, `gh`, push, and PR operations for this repository do not invoke GitHub Connector Guard.
 
 Replay and evidence-bundle implications: this slice creates no mission state transition, ingest action, report action, approval, durable product runtime output, source mutation, Finance Twin write, CFO Wiki write, evidence bundle, provider job, certification record, delivery record, endpoint, UI, or app runtime behavior. The proof-gate bridge is repo validation posture only. No UI code was added.
+
+Successor note: FP-0091 is the later local/proof-only/read-only component-only implementation slice. It does not change this FP-0090 record's historical no-UI scope.
 
 ## Progress
 

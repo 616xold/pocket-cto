@@ -30,7 +30,9 @@ FP-0088 is the shipped V2H premium read-only ChatGPT App/MCP UI and security rea
 
 FP-0089 is the shipped V2I premium read-only ChatGPT App/MCP UI design-system readiness master plan. It is docs-and-plan plus proof-gate compatibility only: it defines future design tokens, component taxonomy, evidence hierarchy, accessibility requirements, refusal-state grammar, interaction rules, copy style, and future design QA gates while keeping UI implementation, Apps SDK iframe/UI, endpoints, OAuth, remote MCP, app submission, source mutation, finance writes, generated product prose, runtime-Codex finance output, and autonomous action out of scope.
 
-FP-0090 is the active V2J premium read-only ChatGPT App/MCP UI implementation readiness master plan. It is docs-and-plan plus proof-gate compatibility only: it defines the future local/proof-only/read-only UI implementation boundary, primary states, screenshot review, accessibility acceptance, evidence hierarchy acceptance, and no-action-control rules while keeping UI code, Apps SDK iframe/UI, public app implementation, endpoints, OAuth, remote MCP, app submission, source mutation, finance writes, generated product prose, runtime-Codex finance output, and autonomous action out of scope.
+FP-0090 is the shipped V2J premium read-only ChatGPT App/MCP UI implementation readiness master plan. It is docs-and-plan plus proof-gate compatibility only: it defines the future local/proof-only/read-only UI implementation boundary, primary states, screenshot review, accessibility acceptance, evidence hierarchy acceptance, and no-action-control rules while keeping UI code, Apps SDK iframe/UI, public app implementation, endpoints, OAuth, remote MCP, app submission, source mutation, finance writes, generated product prose, runtime-Codex finance output, and autonomous action out of scope.
+
+FP-0091 is the shipped V2K local/proof-only/read-only premium UI component foundation. It opens real local React component code under `apps/web/components/read-only-app-mcp/**` only, plus focused tests and the minimum proof-gate bridge, while keeping routes, endpoints, Apps SDK iframe/UI resources, public app implementation, OAuth, remote MCP, app submission, OpenAI API/model calls, source mutation, finance writes, generated product prose, runtime-Codex finance output, and autonomous action out of scope.
 
 ## Shipped Architecture Summary
 
@@ -68,14 +70,16 @@ The shipped system is organized around:
 - **V2G read-only ChatGPT App/MCP contract and descriptor/envelope foundation**: shipped through FP-0087 as a local proof-only typed contract and direct-proof record with no public app implementation.
 - **V2H premium read-only ChatGPT App/MCP UI and security readiness**: shipped through FP-0088 as a docs-and-plan plus proof-gate compatibility record with no UI, endpoints, remote MCP, OAuth, app submission, OpenAI API/model calls, data files, package scripts, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 - **V2I premium read-only ChatGPT App/MCP UI design-system readiness**: shipped through FP-0089 as a docs-and-plan plus proof-gate compatibility record with no UI, endpoints, remote MCP, OAuth, app submission, OpenAI API/model calls, data files, package scripts, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
+- **V2J premium read-only ChatGPT App/MCP UI implementation readiness**: shipped through FP-0090 as a docs-and-plan plus proof-gate compatibility record with no UI code, routes, endpoints, remote MCP, Apps SDK iframe/UI resources, OAuth, app submission, OpenAI API/model calls, data files, package scripts, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
+- **V2K premium read-only ChatGPT App/MCP UI component foundation**: shipped through FP-0091 as a local/proof-only/read-only component foundation under `apps/web/components/read-only-app-mcp/**`, with no routes, endpoints, remote MCP, Apps SDK iframe/UI resources, OAuth, app submission, OpenAI API/model calls, data files, package scripts, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Latest Shipped V2 Plan
 
-- **V2I premium read-only ChatGPT App/MCP UI design-system readiness**: shipped through FP-0089.
+- **V2K premium read-only ChatGPT App/MCP UI component foundation**: shipped through FP-0091.
 
 ## Active V2 Plan
 
-- FP-0090 is active as a docs-only premium UI implementation readiness and proof-gate compatibility plan. Actual UI code, public app implementation, remote MCP deployment, Apps SDK UI, OAuth, app submission, provider/certification/delivery/deployment, and V2G expansion beyond the shipped local proof-only contracts and descriptor/envelope foundation still require a later named Finance Plan.
+- No FP-0092 is active. Public app implementation, routes, endpoints, remote MCP deployment, Apps SDK UI resources, OAuth, app submission, provider/certification/delivery/deployment, and V2G expansion beyond the shipped local proof-only contracts and descriptor/envelope foundation still require a later named Finance Plan.
 
 ## Fixed Shipped Monitor Families
 
@@ -125,7 +129,8 @@ These tracks remain future-only until a later Finance Plan names exact scope and
 - deeper PDF/OCR/vector search beyond the shipped narrow FP-0081 text-PDF precision-adapter candidate
 - EvidenceIndex or precision-adapter expansion outside the shipped FP-0081 first V2B contract
 - V2E expansion beyond the shipped FP-0085 local/internal proof-only bounded LLM orchestration foundation
-- public ChatGPT App/MCP deployment beyond the shipped local/internal FP-0082 contract
+- public ChatGPT App/MCP deployment beyond the shipped local/internal FP-0082 contract and shipped FP-0091 local component-only boundary
+- FP-0091 implementation beyond local/proof-only/read-only component foundation
 - FP-0090 implementation beyond docs-only premium UI implementation readiness and proof-gate compatibility
 - FP-0089 implementation beyond shipped docs-only premium UI design-system readiness and proof-gate compatibility
 - FP-0088 implementation beyond shipped docs-only premium UI/security readiness and proof-gate compatibility
@@ -171,6 +176,7 @@ Key records:
 - [FP-0088 V2H premium read-only ChatGPT App/MCP UI and security readiness master plan](../plans/FP-0088-read-only-chatgpt-app-mcp-premium-ui-security-master-plan.md)
 - [FP-0089 V2I premium read-only ChatGPT App/MCP UI design-system readiness master plan](../plans/FP-0089-read-only-chatgpt-app-mcp-premium-ui-design-system-master-plan.md)
 - [FP-0090 V2J premium read-only ChatGPT App/MCP UI implementation readiness master plan](../plans/FP-0090-read-only-chatgpt-app-mcp-premium-ui-implementation-master-plan.md)
+- [FP-0091 V2K read-only ChatGPT App/MCP premium UI component foundation](../plans/FP-0091-read-only-chatgpt-app-mcp-premium-ui-component-foundation.md)
 - [FP-0077 F10 v1 public launch handoff](../plans/FP-0077-v1-public-launch-handoff.md)
 - [FP-0076 F9 product UI launch polish](../plans/FP-0076-product-ui-launch-polish-foundation.md)
 - [FP-0075 F8 future-scope triage](../plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md)

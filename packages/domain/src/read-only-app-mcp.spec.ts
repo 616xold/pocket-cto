@@ -325,10 +325,12 @@ describe("V2G read-only ChatGPT App/MCP contracts", () => {
     expect(proof.fp0088AbsentOrDocsOnlyBoundaryVerified).toBe(true);
     expect(proof.fp0089AbsentOrDocsOnlyBoundaryVerified).toBe(true);
     expect(proof.fp0090AbsentOrDocsOnlyBoundaryVerified).toBe(true);
-    expect(proof.fp0091Absent).toBe(true);
+    expect(proof.fp0091AbsentOrLocalUiComponentBoundaryVerified).toBe(true);
+    expect(proof.fp0092Absent).toBe(true);
     expect(proof.premiumUiSecurityPlanBoundaryVerified).toBe(true);
     expect(proof.premiumUiDesignSystemPlanBoundaryVerified).toBe(true);
     expect(proof.premiumUiImplementationPlanBoundaryVerified).toBe(true);
+    expect(proof.premiumUiComponentFoundationVerified).toBe(true);
     expect(proof.noUiImplementationFromFp0088).toBe(true);
     expect(proof.noUiImplementationFromFp0089).toBe(true);
     expect(proof.noAppsSdkIframeFromFp0089).toBe(true);
@@ -338,5 +340,12 @@ describe("V2G read-only ChatGPT App/MCP contracts", () => {
     expect(proof.noEndpointOauthSubmissionFromFp0089).toBe(true);
     expect(proof.noEndpointOauthSubmissionFromFp0090).toBe(true);
     expect(proof.noPublicAppImplementationFromFp0090).toBe(true);
+    expect(proof.noRoutesFromFp0091).toBe(true);
+    expect(proof.noEndpointsFromFp0091).toBe(true);
+    expect(proof.noAppsSdkIframeFromFp0091).toBe(true);
+    expect(proof.noOauthSubmissionFromFp0091).toBe(true);
+    expect(proof.noPublicAppImplementationFromFp0091).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0091).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0091).toBe(true);
   });
 });

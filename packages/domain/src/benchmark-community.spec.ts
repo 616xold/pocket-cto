@@ -36,6 +36,8 @@ const FP0089_PLAN_FILE =
   "FP-0089-read-only-chatgpt-app-mcp-premium-ui-design-system-master-plan.md";
 const FP0090_PLAN_FILE =
   "FP-0090-read-only-chatgpt-app-mcp-premium-ui-implementation-master-plan.md";
+const FP0091_PLAN_FILE =
+  "FP-0091-read-only-chatgpt-app-mcp-premium-ui-component-foundation.md";
 
 function safeDemoDataPolicy() {
   return {
@@ -333,13 +335,18 @@ function fp0087AbsentOrDocsOnlyBoundaryVerified() {
         fp0089DocsOnlyBoundary().absentOrDocsOnlyBoundaryVerified,
       fp0090AbsentOrDocsOnlyBoundaryVerified:
         fp0090DocsOnlyBoundary().absentOrDocsOnlyBoundaryVerified,
-      fp0091Absent: fp0091Absent(),
+      fp0091AbsentOrLocalUiComponentBoundaryVerified:
+        fp0091LocalUiComponentBoundary()
+          .absentOrLocalUiComponentBoundaryVerified,
+      fp0092Absent: fp0092Absent(),
       premiumUiSecurityPlanBoundaryVerified:
         fp0088DocsOnlyBoundary().premiumUiSecurityPlanBoundaryVerified,
       premiumUiDesignSystemPlanBoundaryVerified:
         fp0089DocsOnlyBoundary().premiumUiDesignSystemPlanBoundaryVerified,
       premiumUiImplementationPlanBoundaryVerified:
         fp0090DocsOnlyBoundary().premiumUiImplementationPlanBoundaryVerified,
+      premiumUiComponentFoundationVerified:
+        fp0091LocalUiComponentBoundary().premiumUiComponentFoundationVerified,
       noUiImplementationFromFp0088:
         fp0088DocsOnlyBoundary().noUiImplementationFromFp0088,
       noUiImplementationFromFp0089:
@@ -357,6 +364,19 @@ function fp0087AbsentOrDocsOnlyBoundaryVerified() {
         fp0090DocsOnlyBoundary().noEndpointOauthSubmissionFromFp0090,
       noPublicAppImplementationFromFp0090:
         fp0090DocsOnlyBoundary().noPublicAppImplementationFromFp0090,
+      noRoutesFromFp0091: fp0091LocalUiComponentBoundary().noRoutesFromFp0091,
+      noEndpointsFromFp0091:
+        fp0091LocalUiComponentBoundary().noEndpointsFromFp0091,
+      noAppsSdkIframeFromFp0091:
+        fp0091LocalUiComponentBoundary().noAppsSdkIframeFromFp0091,
+      noOauthSubmissionFromFp0091:
+        fp0091LocalUiComponentBoundary().noOauthSubmissionFromFp0091,
+      noPublicAppImplementationFromFp0091:
+        fp0091LocalUiComponentBoundary().noPublicAppImplementationFromFp0091,
+      noOpenAiApiCallsFromFp0091:
+        fp0091LocalUiComponentBoundary().noOpenAiApiCallsFromFp0091,
+      noSourceMutationFinanceWriteFromFp0091:
+        fp0091LocalUiComponentBoundary().noSourceMutationFinanceWriteFromFp0091,
     }),
   );
 
@@ -574,9 +594,154 @@ function fp0090DocsOnlyBoundary() {
   };
 }
 
-function fp0091Absent() {
+function fp0091LocalUiComponentBoundary() {
   const plansPath = existsSync("plans") ? "plans" : "../../plans";
-  return !readdirSync(plansPath).some((name) => /^FP-0091/u.test(name));
+  const fp0091Files = readdirSync(plansPath).filter((name) =>
+    /^FP-0091/u.test(name),
+  );
+  const absentBoundary = {
+    absentOrLocalUiComponentBoundaryVerified: true,
+    noAppsSdkIframeFromFp0091: true,
+    noEndpointsFromFp0091: true,
+    noOauthSubmissionFromFp0091: true,
+    noOpenAiApiCallsFromFp0091: true,
+    noPublicAppImplementationFromFp0091: true,
+    noRoutesFromFp0091: true,
+    noSourceMutationFinanceWriteFromFp0091: true,
+    premiumUiComponentFoundationVerified: true,
+  };
+  const failedBoundary = {
+    absentOrLocalUiComponentBoundaryVerified: false,
+    noAppsSdkIframeFromFp0091: false,
+    noEndpointsFromFp0091: false,
+    noOauthSubmissionFromFp0091: false,
+    noOpenAiApiCallsFromFp0091: false,
+    noPublicAppImplementationFromFp0091: false,
+    noRoutesFromFp0091: false,
+    noSourceMutationFinanceWriteFromFp0091: false,
+    premiumUiComponentFoundationVerified: false,
+  };
+
+  if (fp0091Files.length === 0) return absentBoundary;
+  if (fp0091Files.length !== 1 || fp0091Files[0] !== FP0091_PLAN_FILE) {
+    return failedBoundary;
+  }
+
+  const repoRoot = existsSync("plans") ? "." : "../..";
+  const lowerPlanText = readFileSync(
+    `${plansPath}/${FP0091_PLAN_FILE}`,
+    "utf8",
+  ).toLowerCase();
+  const componentSource = readComponentSource(
+    `${repoRoot}/apps/web/components/read-only-app-mcp`,
+  ).toLowerCase();
+  const normalizedComponentSource = componentSource.replace(/[^a-z0-9]+/gu, "");
+  const componentFilesVerified =
+    componentSource.length > 0 &&
+    [
+      "appshell",
+      "evidenceanswerpanel",
+      "refusalpanel",
+      "evidencecardstack",
+      "citationrail",
+      "sourceanchorpanel",
+      "freshnessbadge",
+      "limitationcallout",
+      "permittednextactionspanel",
+      "forbiddenactionspanel",
+      "privacyboundarypanel",
+      "noruntimeboundarypanel",
+      "promptinjectionwarningstate",
+      "rawfullfiledumprefusalstate",
+      "emptyevidencestate",
+      "loadingevidencestate",
+      "errorandunsupportedstate",
+    ].every((name) => normalizedComponentSource.includes(name));
+  const premiumUiComponentFoundationVerified =
+    componentFilesVerified &&
+    [
+      "this slice writes actual ui component code",
+      "strictly local, proof-only, read-only, and component-only",
+      "local react components",
+      "apps/web/components/read-only-app-mcp",
+      "appshell",
+      "evidenceanswerpanel",
+      "refusalpanel",
+      "citationrail",
+      "sourceanchorpanel",
+      "errorandunsupportedstate",
+    ].every((requiredText) => lowerPlanText.includes(requiredText));
+  const noRoutesFromFp0091 =
+    ["does not add routes", "no app routes"].every((requiredText) =>
+      lowerPlanText.includes(requiredText),
+    ) && !existsSync(`${repoRoot}/apps/web/app/read-only-app-mcp`);
+  const noEndpointsFromFp0091 =
+    ["does not add endpoints", "no endpoints"].every((requiredText) =>
+      lowerPlanText.includes(requiredText),
+    ) && !existsSync(`${repoRoot}/apps/web/app/api/read-only-app-mcp`);
+  const noAppsSdkIframeFromFp0091 =
+    [
+      "does not implement apps sdk iframe/ui resources",
+      "no apps sdk iframe/ui resource registration",
+    ].every((requiredText) => lowerPlanText.includes(requiredText)) &&
+    !/(apps-sdk|iframe|postmessage)/u.test(componentSource);
+  const noOauthSubmissionFromFp0091 =
+    ["does not add oauth", "does not add app submission"].every(
+      (requiredText) => lowerPlanText.includes(requiredText),
+    ) && !/(oauth|submitapp|appsubmission)/u.test(normalizedComponentSource);
+  const noPublicAppImplementationFromFp0091 =
+    [
+      "does not implement a public chatgpt app",
+      "no public app implementation",
+    ].every((requiredText) => lowerPlanText.includes(requiredText));
+  const noOpenAiApiCallsFromFp0091 =
+    ["does not add openai api/model calls", "no openai api/model calls"].every(
+      (requiredText) => lowerPlanText.includes(requiredText),
+    ) &&
+    !/(openaiapikey|fromopenai|openai\.)/u.test(normalizedComponentSource);
+  const noSourceMutationFinanceWriteFromFp0091 =
+    ["no source mutation", "no finance writes"].every((requiredText) =>
+      lowerPlanText.includes(requiredText),
+    );
+
+  return {
+    absentOrLocalUiComponentBoundaryVerified:
+      premiumUiComponentFoundationVerified &&
+      noRoutesFromFp0091 &&
+      noEndpointsFromFp0091 &&
+      noAppsSdkIframeFromFp0091 &&
+      noOauthSubmissionFromFp0091 &&
+      noPublicAppImplementationFromFp0091 &&
+      noOpenAiApiCallsFromFp0091 &&
+      noSourceMutationFinanceWriteFromFp0091,
+    noAppsSdkIframeFromFp0091,
+    noEndpointsFromFp0091,
+    noOauthSubmissionFromFp0091,
+    noOpenAiApiCallsFromFp0091,
+    noPublicAppImplementationFromFp0091,
+    noRoutesFromFp0091,
+    noSourceMutationFinanceWriteFromFp0091,
+    premiumUiComponentFoundationVerified,
+  };
+}
+
+function fp0092Absent() {
+  const plansPath = existsSync("plans") ? "plans" : "../../plans";
+  return !readdirSync(plansPath).some((name) => /^FP-0092/u.test(name));
+}
+
+function readComponentSource(directory: string): string {
+  if (!existsSync(directory)) return "";
+
+  return readdirSync(directory, { withFileTypes: true })
+    .flatMap((entry) => {
+      const entryPath = `${directory}/${entry.name}`;
+      if (entry.isDirectory()) return [readComponentSource(entryPath)];
+      if (!/\.(ts|tsx)$/u.test(entry.name)) return [];
+      if (/\.(spec|test)\.tsx?$/u.test(entry.name)) return [];
+      return [readFileSync(entryPath, "utf8")];
+    })
+    .join("\n");
 }
 
 describe("benchmark community pack foundation contracts", () => {
@@ -915,13 +1080,18 @@ describe("benchmark community pack foundation contracts", () => {
         fp0089DocsOnlyBoundary().absentOrDocsOnlyBoundaryVerified,
       fp0090AbsentOrDocsOnlyBoundaryVerified:
         fp0090DocsOnlyBoundary().absentOrDocsOnlyBoundaryVerified,
-      fp0091Absent: fp0091Absent(),
+      fp0091AbsentOrLocalUiComponentBoundaryVerified:
+        fp0091LocalUiComponentBoundary()
+          .absentOrLocalUiComponentBoundaryVerified,
+      fp0092Absent: fp0092Absent(),
       premiumUiSecurityPlanBoundaryVerified:
         fp0088DocsOnlyBoundary().premiumUiSecurityPlanBoundaryVerified,
       premiumUiDesignSystemPlanBoundaryVerified:
         fp0089DocsOnlyBoundary().premiumUiDesignSystemPlanBoundaryVerified,
       premiumUiImplementationPlanBoundaryVerified:
         fp0090DocsOnlyBoundary().premiumUiImplementationPlanBoundaryVerified,
+      premiumUiComponentFoundationVerified:
+        fp0091LocalUiComponentBoundary().premiumUiComponentFoundationVerified,
       noUiImplementationFromFp0088:
         fp0088DocsOnlyBoundary().noUiImplementationFromFp0088,
       noUiImplementationFromFp0089:
@@ -939,6 +1109,19 @@ describe("benchmark community pack foundation contracts", () => {
         fp0090DocsOnlyBoundary().noEndpointOauthSubmissionFromFp0090,
       noPublicAppImplementationFromFp0090:
         fp0090DocsOnlyBoundary().noPublicAppImplementationFromFp0090,
+      noRoutesFromFp0091: fp0091LocalUiComponentBoundary().noRoutesFromFp0091,
+      noEndpointsFromFp0091:
+        fp0091LocalUiComponentBoundary().noEndpointsFromFp0091,
+      noAppsSdkIframeFromFp0091:
+        fp0091LocalUiComponentBoundary().noAppsSdkIframeFromFp0091,
+      noOauthSubmissionFromFp0091:
+        fp0091LocalUiComponentBoundary().noOauthSubmissionFromFp0091,
+      noPublicAppImplementationFromFp0091:
+        fp0091LocalUiComponentBoundary().noPublicAppImplementationFromFp0091,
+      noOpenAiApiCallsFromFp0091:
+        fp0091LocalUiComponentBoundary().noOpenAiApiCallsFromFp0091,
+      noSourceMutationFinanceWriteFromFp0091:
+        fp0091LocalUiComponentBoundary().noSourceMutationFinanceWriteFromFp0091,
       inMemorySyntheticExamplesOnlyVerified: true,
       missingCitationTaskVerified: true,
       monitorBoundaryTaskVerified: true,
@@ -964,10 +1147,12 @@ describe("benchmark community pack foundation contracts", () => {
     expect(proof.fp0088AbsentOrDocsOnlyBoundaryVerified).toBe(true);
     expect(proof.fp0089AbsentOrDocsOnlyBoundaryVerified).toBe(true);
     expect(proof.fp0090AbsentOrDocsOnlyBoundaryVerified).toBe(true);
-    expect(proof.fp0091Absent).toBe(true);
+    expect(proof.fp0091AbsentOrLocalUiComponentBoundaryVerified).toBe(true);
+    expect(proof.fp0092Absent).toBe(true);
     expect(proof.premiumUiSecurityPlanBoundaryVerified).toBe(true);
     expect(proof.premiumUiDesignSystemPlanBoundaryVerified).toBe(true);
     expect(proof.premiumUiImplementationPlanBoundaryVerified).toBe(true);
+    expect(proof.premiumUiComponentFoundationVerified).toBe(true);
     expect(proof.noUiImplementationFromFp0088).toBe(true);
     expect(proof.noUiImplementationFromFp0089).toBe(true);
     expect(proof.noAppsSdkIframeFromFp0089).toBe(true);
@@ -977,6 +1162,13 @@ describe("benchmark community pack foundation contracts", () => {
     expect(proof.noEndpointOauthSubmissionFromFp0089).toBe(true);
     expect(proof.noEndpointOauthSubmissionFromFp0090).toBe(true);
     expect(proof.noPublicAppImplementationFromFp0090).toBe(true);
+    expect(proof.noRoutesFromFp0091).toBe(true);
+    expect(proof.noEndpointsFromFp0091).toBe(true);
+    expect(proof.noAppsSdkIframeFromFp0091).toBe(true);
+    expect(proof.noOauthSubmissionFromFp0091).toBe(true);
+    expect(proof.noPublicAppImplementationFromFp0091).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0091).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0091).toBe(true);
     expect(() =>
       BenchmarkProofSchema.parse({
         ...proof,
