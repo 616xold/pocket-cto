@@ -71,8 +71,11 @@ export function appMcpRefusalEnvelopeSchema(
     .strict();
 }
 
-export const AppMcpMissingCitationEnvelopeSchema =
-  appMcpRefusalEnvelopeSchema("missing_citation_refusal", "missing_citation", "missing");
+export const AppMcpMissingCitationEnvelopeSchema = appMcpRefusalEnvelopeSchema(
+  "missing_citation_refusal",
+  "missing_citation",
+  "missing",
+);
 export const AppMcpUnsupportedEvidenceEnvelopeSchema =
   appMcpRefusalEnvelopeSchema(
     "unsupported_evidence_refusal",
@@ -84,10 +87,16 @@ export const AppMcpStaleEvidenceEnvelopeSchema = appMcpRefusalEnvelopeSchema(
   "stale_evidence",
   "stale",
 );
-export const AppMcpPromptInjectionEnvelopeSchema =
-  appMcpRefusalEnvelopeSchema("prompt_injection_refusal", "prompt_injection", "fresh");
-export const AppMcpDataExfiltrationEnvelopeSchema =
-  appMcpRefusalEnvelopeSchema("data_exfiltration_refusal", "data_exfiltration", "fresh");
+export const AppMcpPromptInjectionEnvelopeSchema = appMcpRefusalEnvelopeSchema(
+  "prompt_injection_refusal",
+  "prompt_injection",
+  "fresh",
+);
+export const AppMcpDataExfiltrationEnvelopeSchema = appMcpRefusalEnvelopeSchema(
+  "data_exfiltration_refusal",
+  "data_exfiltration",
+  "fresh",
+);
 export const AppMcpRawFullFileDumpRefusalEnvelopeSchema =
   appMcpRefusalEnvelopeSchema(
     "raw_full_file_dump_refusal",
@@ -217,7 +226,7 @@ export function buildAppMcpRefusalEnvelope(
     evidence: [],
     refusalPosture: responsePosture(reason),
     responseKind: responseKindByReason[reason],
-  }) as AppMcpRefusalEnvelope;
+  }) as unknown as AppMcpRefusalEnvelope;
 }
 
 export function responseEnvelopeRejectsForbiddenFields() {

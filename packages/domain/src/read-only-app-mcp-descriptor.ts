@@ -4,6 +4,7 @@ import {
   baseForbiddenTools,
 } from "./read-only-app-mcp-contracts";
 import {
+  MCP_FORBIDDEN_TOOL_NAMES,
   MCP_TOOL_ALLOWLIST,
   McpForbiddenToolSchema,
   McpToolNameSchema,
@@ -100,6 +101,15 @@ export const McpDescriptorInputSchemaContractSchema = z
         path: ["fields"],
       });
     }
+    if (
+      !sameList(value.forbiddenFields, MCP_DESCRIPTOR_FORBIDDEN_INPUT_FIELDS)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Descriptor forbidden fields must match the exact contract.",
+        path: ["forbiddenFields"],
+      });
+    }
   });
 
 export const McpDescriptorOutputSchemaContractSchema = z
@@ -129,7 +139,9 @@ export const McpDescriptorOutputSchemaContractSchema = z
   })
   .strict()
   .superRefine((value, ctx) => {
-    if (!sameList(value.requiredFields, MCP_DESCRIPTOR_OUTPUT_REQUIRED_FIELDS)) {
+    if (
+      !sameList(value.requiredFields, MCP_DESCRIPTOR_OUTPUT_REQUIRED_FIELDS)
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Descriptor output fields must match the response envelope.",
@@ -195,6 +207,13 @@ export const McpToolDescriptorContractSchema = z
         code: z.ZodIssueCode.custom,
         message: "Descriptor nested schemas must describe the same tool.",
         path: ["toolName"],
+      });
+    }
+    if (!sameList(value.forbiddenTools, MCP_FORBIDDEN_TOOL_NAMES)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Descriptor forbidden tools must match the exact contract.",
+        path: ["forbiddenTools"],
       });
     }
   });
@@ -287,6 +306,47 @@ export function descriptorInputRejectsForbiddenFields(toolName: McpToolName) {
         ...inputSchema,
         fields: [...inputSchema.fields, field],
       }).success,
+  );
+}
+
+export function descriptorForbiddenFieldsExactVerified(toolName: McpToolName) {
+  const inputSchema = buildMcpDescriptorInputSchemaContract(toolName);
+  return (
+    sameList(
+      inputSchema.forbiddenFields,
+      MCP_DESCRIPTOR_FORBIDDEN_INPUT_FIELDS,
+    ) &&
+    !McpDescriptorInputSchemaContractSchema.safeParse({
+      ...inputSchema,
+      forbiddenFields: inputSchema.forbiddenFields.slice(0, -1),
+    }).success &&
+    !McpDescriptorInputSchemaContractSchema.safeParse({
+      ...inputSchema,
+      forbiddenFields: [
+        inputSchema.forbiddenFields[1],
+        inputSchema.forbiddenFields[0],
+        ...inputSchema.forbiddenFields.slice(2),
+      ],
+    }).success
+  );
+}
+
+export function descriptorForbiddenToolsExactVerified(toolName: McpToolName) {
+  const descriptor = buildMcpToolDescriptorContract(toolName);
+  return (
+    sameList(descriptor.forbiddenTools, MCP_FORBIDDEN_TOOL_NAMES) &&
+    !McpToolDescriptorContractSchema.safeParse({
+      ...descriptor,
+      forbiddenTools: descriptor.forbiddenTools.slice(0, -1),
+    }).success &&
+    !McpToolDescriptorContractSchema.safeParse({
+      ...descriptor,
+      forbiddenTools: [
+        descriptor.forbiddenTools[1],
+        descriptor.forbiddenTools[0],
+        ...descriptor.forbiddenTools.slice(2),
+      ],
+    }).success
   );
 }
 

@@ -6,9 +6,10 @@ import {
 } from "./read-only-app-mcp-runtime";
 import {
   AppRefusalReasonSchema,
-  McpForbiddenToolSchema,
+  MCP_FORBIDDEN_TOOL_NAMES,
   READ_ONLY_APP_MCP_SCHEMA_VERSION,
   type AppRefusalReason,
+  type McpForbiddenTool,
 } from "./read-only-app-mcp-boundaries";
 
 const trueLiteral = z.literal(true);
@@ -37,7 +38,11 @@ export const APP_MCP_FORBIDDEN_RESPONSE_FIELD_NAMES = [
   "fullText",
   "fullFileText",
   "fileContents",
+  "unboundedText",
+  "originalFullText",
+  "sourceText",
   "rawMarkdown",
+  "documentText",
   "pageTextDump",
   "privateSourceText",
   "private_source_text",
@@ -54,6 +59,13 @@ export const APP_MCP_FORBIDDEN_RESPONSE_FIELD_NAMES = [
   "providerCredentials",
   "provider_credentials",
 ] as const;
+
+const AppMcpForbiddenActionsSchema = z.tuple(
+  MCP_FORBIDDEN_TOOL_NAMES.map((toolName) => z.literal(toolName)) as [
+    z.ZodLiteral<(typeof MCP_FORBIDDEN_TOOL_NAMES)[number]>,
+    ...z.ZodLiteral<(typeof MCP_FORBIDDEN_TOOL_NAMES)[number]>[],
+  ],
+);
 
 export const AppMcpEvidenceRefSchema = z
   .object({
@@ -137,7 +149,7 @@ export const appMcpBaseEnvelopeSchema = z
     permittedNextActions: z.array(AppMcpPermittedNextActionSchema).min(1),
     citations: z.array(AppMcpCitationSchema),
     refusalPosture: AppMcpRefusalPostureSchema,
-    forbiddenActions: z.array(McpForbiddenToolSchema).min(1),
+    forbiddenActions: AppMcpForbiddenActionsSchema,
     privacyBoundary: AppPrivacyBoundarySchema,
     noRuntimeBoundary: AppNoRuntimeBoundarySchema,
     authorityBoundary: AppAuthorityBoundarySchema,
@@ -153,7 +165,7 @@ export type AppMcpEnvelopeBase = {
   permittedNextActions: Array<z.infer<typeof AppMcpPermittedNextActionSchema>>;
   citations: Array<z.infer<typeof AppMcpCitationSchema>>;
   refusalPosture: z.infer<typeof AppMcpRefusalPostureSchema>;
-  forbiddenActions: Array<z.infer<typeof McpForbiddenToolSchema>>;
+  forbiddenActions: McpForbiddenTool[];
   privacyBoundary: z.infer<typeof AppPrivacyBoundarySchema>;
   noRuntimeBoundary: z.infer<typeof AppNoRuntimeBoundarySchema>;
   authorityBoundary: z.infer<typeof AppAuthorityBoundarySchema>;
