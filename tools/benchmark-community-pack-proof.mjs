@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import {
   ArchitectureMapSchema,
+  AppProofSchema,
   BENCHMARK_AUTHORITY_LAYERS,
   BENCHMARK_COMMUNITY_SCHEMA_VERSION,
   BENCHMARK_TASK_KINDS,
@@ -20,6 +21,7 @@ import {
   SourceCoverageTaskSchema,
   SyntheticFinanceSourcePolicySchema,
   UnsafeActionRefusalTaskSchema,
+  buildReadOnlyChatGptAppMcpProof,
 } from "../packages/domain/src/index.ts";
 
 const financeData = [
@@ -43,7 +45,11 @@ const noSmokeAliasesAdded = !scriptNames.some((name) =>
 );
 
 const taskSpecs = [
-  [EvidenceRecallTaskSchema, "evidence_recall", { recallsExistingEvidenceOnly: true }],
+  [
+    EvidenceRecallTaskSchema,
+    "evidence_recall",
+    { recallsExistingEvidenceOnly: true },
+  ],
   [
     SourceCoverageTaskSchema,
     "source_coverage",
@@ -92,6 +98,9 @@ const taskSpecs = [
 ];
 
 const checkedAt = "2026-05-09T00:30:00.000Z";
+const fp0088Absent = !readdirSync("plans").some((name) =>
+  /^FP-0088/u.test(name),
+);
 
 function fp0087AbsentOrDocsOnlyBoundaryVerified() {
   const fp0087Files = readdirSync("plans").filter((name) =>
@@ -110,22 +119,32 @@ function fp0087AbsentOrDocsOnlyBoundaryVerified() {
   }
 
   const planText = readFileSync(`plans/${fp0087Files[0]}`, "utf8");
-  return [
-    "docs-and-plan-only",
-    "V2G is not implementation",
-    "No FP-0088 exists",
-    "no remote endpoint",
+  const lowerPlanText = planText.toLowerCase();
+  const planBoundaryVerified = [
+    "v2g",
+    "read-only",
+    "chatgpt app/mcp",
     "no app submission",
-    "no OpenAI API/model calls",
+    "no openai api/model calls",
     "source mutation",
     "finance writes",
     "autonomous action",
-  ].every((requiredText) => planText.includes(requiredText));
-}
+  ].every((requiredText) => lowerPlanText.includes(requiredText));
+  const typedProof = AppProofSchema.safeParse(
+    buildReadOnlyChatGptAppMcpProof({
+      fp0087DocsOnlyBoundaryVerified: planBoundaryVerified,
+      fp0088Absent,
+    }),
+  );
 
-const fp0088Absent = !readdirSync("plans").some((name) =>
-  /^FP-0088/u.test(name),
-);
+  return (
+    typedProof.success &&
+    typedProof.data.fp0087DocsOnlyBoundaryVerified &&
+    typedProof.data.noPublicChatGptApp &&
+    typedProof.data.noRemoteMcpDeployment &&
+    typedProof.data.noOpenAiApiCalls
+  );
+}
 
 function safeDemoDataPolicy() {
   return {
@@ -226,9 +245,7 @@ function noRuntimeBoundary() {
 
 function architectureMap() {
   return {
-    authorityLayers: [
-      ...BENCHMARK_AUTHORITY_LAYERS,
-    ],
+    authorityLayers: [...BENCHMARK_AUTHORITY_LAYERS],
     benchmarkArtifactsNotProductRuntime: true,
     cfoWikiCompiledDerived: true,
     evidenceIndexReadOnlyAnchorTraceCardCoverageLimitationLayer: true,
@@ -271,7 +288,10 @@ function benchmarkCase() {
   };
 }
 
-function baseTask(taskKind, expectedRefusalKind = "unsupported_evidence_refusal") {
+function baseTask(
+  taskKind,
+  expectedRefusalKind = "unsupported_evidence_refusal",
+) {
   return {
     citationRequirements: {
       acceptedDerivedRefKinds: ["evidence_card", "document_map"],
@@ -399,7 +419,10 @@ const unknownKeysRejected = [
     SyntheticFinanceSourcePolicySchema,
     { ...syntheticFinanceSourcePolicy(), unknownKey: true },
   ],
-  [BenchmarkNoRuntimeBoundarySchema, { ...noRuntimeBoundary(), unknownKey: true }],
+  [
+    BenchmarkNoRuntimeBoundarySchema,
+    { ...noRuntimeBoundary(), unknownKey: true },
+  ],
   [ContributorChallengeSchema, { ...contributorChallenge(), unknownKey: true }],
   [ArchitectureMapSchema, { ...architectureMap(), unknownKey: true }],
   [BenchmarkCaseSchema, { ...benchmarkCase(), unknownKey: true }],
@@ -473,7 +496,8 @@ const benchmarkTaskNestedUnknownKeysRejected =
 
 const proof = BenchmarkProofSchema.parse({
   ...noRuntime,
-  architectureMapBoundaryVerified: architecture.v2fContractsNotTruthRuntimeOrData,
+  architectureMapBoundaryVerified:
+    architecture.v2fContractsNotTruthRuntimeOrData,
   authorityLayerDuplicatesRejected,
   authorityLayerExtraRejected,
   authorityLayerMissingRejected,
@@ -505,7 +529,8 @@ const proof = BenchmarkProofSchema.parse({
       task.permittedNextActions.length > 0,
   ),
   evidenceRecallTaskVerified:
-    taskFor("evidence_recall")?.evidenceRequirements.evidenceIndexAllowed === true,
+    taskFor("evidence_recall")?.evidenceRequirements.evidenceIndexAllowed ===
+    true,
   forbiddenActionsVerified: tasks.every((task) =>
     ["openai_api_call", "finance_write", "autonomous_action"].every((action) =>
       task.forbiddenActions.includes(action),
@@ -522,8 +547,12 @@ const proof = BenchmarkProofSchema.parse({
     taskFor("missing_citation")?.readOnlyProofOnly === true,
   monitorBoundaryTaskVerified:
     taskFor("monitor_boundary")?.noRuntimeBoundary.noProductRuntime === true,
-  noCredentialTokenSecretPolicyVerified: ["credentials", "tokens", "secrets"].every(
-    (artifact) => safePolicy.forbiddenPrivateArtifacts.includes(artifact),
+  noCredentialTokenSecretPolicyVerified: [
+    "credentials",
+    "tokens",
+    "secrets",
+  ].every((artifact) =>
+    safePolicy.forbiddenPrivateArtifacts.includes(artifact),
   ),
   noPrivateCustomerVendorPayrollTaxBankLegalBoardLenderDataVerified:
     financeData.every((category) =>
@@ -540,8 +569,8 @@ const proof = BenchmarkProofSchema.parse({
   safeDemoDataPolicyVerified:
     safePolicy.firstGate && safePolicy.requiresSyntheticOnlyBeforeFutureCase,
   sourceCoverageTaskVerified:
-    taskFor("source_coverage")?.expectedRefusalPosture.whenEvidenceUnsupported ===
-    "unsupported_evidence_refusal",
+    taskFor("source_coverage")?.expectedRefusalPosture
+      .whenEvidenceUnsupported === "unsupported_evidence_refusal",
   syntheticExamplesClearlyLabeledVerified: tasks.every(
     (task) =>
       task.companyContext.syntheticOnly &&
@@ -554,8 +583,8 @@ const proof = BenchmarkProofSchema.parse({
     syntheticPolicy.requiresClearSyntheticLabeling,
   unknownKeysRejected,
   unsafeActionRefusalTaskVerified:
-    taskFor("unsafe_action_refusal")?.expectedRefusalPosture.expectedRefusalKind ===
-      "unsafe_action_refusal" &&
+    taskFor("unsafe_action_refusal")?.expectedRefusalPosture
+      .expectedRefusalKind === "unsafe_action_refusal" &&
     taskFor("unsafe_action_refusal")?.readOnlyProofOnly === true,
 });
 
@@ -564,7 +593,9 @@ const benchmarkProofUnknownKeysRejected = rejects(BenchmarkProofSchema, {
   rawFullText: "synthetic but forbidden proof field",
 });
 if (!benchmarkProofUnknownKeysRejected) {
-  throw new Error("V2F benchmark proof failed: benchmarkProofUnknownKeysRejected");
+  throw new Error(
+    "V2F benchmark proof failed: benchmarkProofUnknownKeysRejected",
+  );
 }
 
 for (const [key, value] of Object.entries(proof)) {

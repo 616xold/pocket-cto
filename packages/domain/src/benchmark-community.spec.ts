@@ -24,6 +24,10 @@ import {
   UnsafeActionRefusalTaskSchema,
   MonitorBoundaryTaskSchema,
 } from "./benchmark-community";
+import {
+  AppProofSchema,
+  buildReadOnlyChatGptAppMcpProof,
+} from "./read-only-app-mcp";
 
 const checkedAt = "2026-05-09T00:30:00.000Z";
 
@@ -164,9 +168,7 @@ function contributorChallenge() {
 
 function architectureMap() {
   return {
-    authorityLayers: [
-      ...BENCHMARK_AUTHORITY_LAYERS,
-    ],
+    authorityLayers: [...BENCHMARK_AUTHORITY_LAYERS],
     benchmarkArtifactsNotProductRuntime: true,
     cfoWikiCompiledDerived: true,
     evidenceIndexReadOnlyAnchorTraceCardCoverageLimitationLayer: true,
@@ -305,17 +307,31 @@ function fp0087AbsentOrDocsOnlyBoundaryVerified() {
   }
 
   const planText = readFileSync(`${plansPath}/${fp0087Files[0]}`, "utf8");
-  return [
-    "docs-and-plan-only",
-    "V2G is not implementation",
-    "No FP-0088 exists",
-    "no remote endpoint",
+  const lowerPlanText = planText.toLowerCase();
+  const planBoundaryVerified = [
+    "v2g",
+    "read-only",
+    "chatgpt app/mcp",
     "no app submission",
-    "no OpenAI API/model calls",
+    "no openai api/model calls",
     "source mutation",
     "finance writes",
     "autonomous action",
-  ].every((requiredText) => planText.includes(requiredText));
+  ].every((requiredText) => lowerPlanText.includes(requiredText));
+  const typedProof = AppProofSchema.safeParse(
+    buildReadOnlyChatGptAppMcpProof({
+      fp0087DocsOnlyBoundaryVerified: planBoundaryVerified,
+      fp0088Absent: fp0088Absent(),
+    }),
+  );
+
+  return (
+    typedProof.success &&
+    typedProof.data.fp0087DocsOnlyBoundaryVerified &&
+    typedProof.data.noPublicChatGptApp &&
+    typedProof.data.noRemoteMcpDeployment &&
+    typedProof.data.noOpenAiApiCalls
+  );
 }
 
 function fp0088Absent() {
@@ -416,9 +432,9 @@ describe("benchmark community pack foundation contracts", () => {
     expect(
       BENCHMARK_TASK_KINDS.map((kind) => BenchmarkTaskKindSchema.parse(kind)),
     ).toHaveLength(8);
-    expect(BenchmarkTaskTaxonomySchema.parse([...BENCHMARK_TASK_KINDS])).toEqual(
-      BENCHMARK_TASK_KINDS,
-    );
+    expect(
+      BenchmarkTaskTaxonomySchema.parse([...BENCHMARK_TASK_KINDS]),
+    ).toEqual(BENCHMARK_TASK_KINDS);
     expect(() =>
       BenchmarkTaskTaxonomySchema.parse([
         "evidence_recall",
@@ -472,9 +488,9 @@ describe("benchmark community pack foundation contracts", () => {
   });
 
   it("requires the exact V2F architecture authority layer order", () => {
-    expect(ArchitectureMapSchema.parse(architectureMap()).authorityLayers).toEqual(
-      BENCHMARK_AUTHORITY_LAYERS,
-    );
+    expect(
+      ArchitectureMapSchema.parse(architectureMap()).authorityLayers,
+    ).toEqual(BENCHMARK_AUTHORITY_LAYERS);
     expect(() =>
       ArchitectureMapSchema.parse({
         ...architectureMap(),
@@ -620,7 +636,8 @@ describe("benchmark community pack foundation contracts", () => {
   });
 
   it("proves no-runtime, contributor, architecture, and final proof posture", () => {
-    const boundary = BenchmarkNoRuntimeBoundarySchema.parse(noRuntimeBoundary());
+    const boundary =
+      BenchmarkNoRuntimeBoundarySchema.parse(noRuntimeBoundary());
     const challenge = ContributorChallengeSchema.parse(contributorChallenge());
     const architecture = ArchitectureMapSchema.parse(architectureMap());
     const proof = BenchmarkProofSchema.parse({
