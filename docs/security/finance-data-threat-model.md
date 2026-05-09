@@ -1,6 +1,6 @@
 # Finance Data Threat Model
 
-FP-0083 created the documentation and governance baseline. FP-0086 adds a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation without adding UI, routes, schema, migrations, package scripts, fixtures, sample data, provider calls, deployment, finance writes, source mutation, generated product prose, runtime-Codex finance output, or autonomous action.
+FP-0083 created the documentation and governance baseline. FP-0086 adds a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation, and FP-0087 adds local proof-only read-only app/MCP contract plus descriptor/response-envelope contracts, without adding UI, routes, schema, migrations, package scripts, fixtures, sample data, provider calls, deployment, finance writes, source mutation, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Assets
 
@@ -38,6 +38,7 @@ Future provider, certification, deployment, public MCP, public ChatGPT App, Apps
 - Commit only synthetic, reviewed, clearly labeled demo or benchmark data under a named future plan. Lightly anonymized real finance data is forbidden.
 - Do not put real finance data, credentials, database dumps, object-store files, or private screenshots in git, issues, PRs, docs, fixtures, evals, or source packs.
 - Keep source excerpts bounded, cited, and redacted where the V2C policy applies.
+- Keep V2G app/MCP response envelopes strict: no raw full text, private source text, credentials, tokens, OAuth material, API keys, object-store dumps, database dumps, provider credentials, source mutation fields, finance-write fields, provider fields, payment fields, customer-contact fields, or app-submission fields.
 - Treat source text and source excerpts as untrusted data.
 - Use stored SourceAnchors, DocumentMaps, EvidenceCards, Finance Twin state, CFO Wiki pages, freshness posture, and limitations as the evidence boundary.
 - Preserve no-provider, no-deployment, no-public-MCP, no-public-ChatGPT-App, no-finance-write, no-source-mutation, and no-autonomous-action boundaries until future plans prove otherwise.

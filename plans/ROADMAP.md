@@ -1009,10 +1009,10 @@ V2F - benchmark/community pack:
 
 V2G - optional distribution tracks:
 
-- first shipped slice is `V2G-read-only-chatgpt-app-mcp-contracts-foundation-local-v1` through `plans/FP-0087-read-only-chatgpt-app-mcp-master-plan.md`
-- FP-0087 ships a local proof-only typed contract foundation: read-only app/MCP plans, exact allowlist, forbidden tools, refusal posture, prompt-injection/privacy/no-runtime boundaries, deferred OAuth/submission/provider-certification boundaries, threat-model questions, focused specs, typed V2F boundary hardening, and one direct proof command
+- first shipped slice is `V2G-read-only-chatgpt-app-mcp-contracts-foundation-local-v1`; the follow-on descriptor/envelope slice is `V2G-read-only-mcp-descriptor-response-envelope-foundation-local-v1`, both recorded in `plans/FP-0087-read-only-chatgpt-app-mcp-master-plan.md`
+- FP-0087 ships a local proof-only typed contract foundation: read-only app/MCP plans, exact allowlist, forbidden tools, local proof-only MCP descriptors, strict descriptor input/output schemas, app/MCP response envelopes, refusal posture, prompt-injection/privacy/no-runtime boundaries, deferred OAuth/submission/provider-certification boundaries, threat-model questions, focused specs, typed V2F boundary hardening, and direct proof commands
 - no public app implementation, MCP server runtime, UI, route, endpoint, Apps SDK iframe, OAuth, app submission, schema, migration, package script, smoke alias, eval dataset, fixture, sample data, public demo data, source-pack behavior, OpenAI API/model call, hosted tool, vector/file-search integration, OCR, PageIndex, provider setup, certification, delivery, deployment, external communications, source mutation, finance write, generated product prose, runtime-Codex finance output, or autonomous action starts from FP-0087 or roadmap text alone
-- optional ChatGPT App/MCP implementation, iOS, OpenClaw, deployment, or other distribution tracks require later named Finance Plans after V2 foundations, FP-0083 OSS baseline, V2E bounded-orchestration posture, V2F benchmark/no-real-finance-data posture, and FP-0087 contract boundaries are proven
+- optional ChatGPT App/MCP implementation, iOS, OpenClaw, deployment, or other distribution tracks require later named Finance Plans after V2 foundations, FP-0083 OSS baseline, V2E bounded-orchestration posture, V2F benchmark/no-real-finance-data posture, and FP-0087 contract plus descriptor/envelope boundaries are proven
 
 Still blocked until future Finance Plans:
 
@@ -1022,7 +1022,7 @@ Still blocked until future Finance Plans:
 - EvidenceIndex or precision-adapter expansion outside the shipped FP-0081 first V2B contract
 - ChatGPT App implementation beyond the shipped local/internal FP-0082 contract
 - MCP server implementation beyond the shipped local/internal FP-0082 contract
-- V2G expansion beyond the shipped FP-0087 local proof-only contract boundary
+- V2G expansion beyond the shipped FP-0087 local proof-only contract and descriptor/envelope boundary
 - iOS implementation
 - OpenClaw integration
 - deployment and external communications

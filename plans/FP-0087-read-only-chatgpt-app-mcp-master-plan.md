@@ -6,9 +6,11 @@ Target phase: V2G.
 
 Exact shipped slice: `V2G-read-only-chatgpt-app-mcp-contracts-foundation-local-v1`.
 
-This Finance Plan records the first V2G local proof-only read-only ChatGPT App/MCP contract foundation. It implements pure domain contracts and direct proof tooling only, over the already-shipped V2A/V2B/V2C/V2D/V2E/V2F evidence spine.
+This Finance Plan records the V2G local proof-only read-only ChatGPT App/MCP contract foundation. It implements pure domain contracts and direct proof tooling only, over the already-shipped V2A/V2B/V2C/V2D/V2E/V2F evidence spine.
 
 The shipped slice proves how a future ChatGPT App/MCP wrapper must stay read-only: exact allowlisted evidence tools, explicit forbidden write/action/provider/deployment/legal/audit/payment/customer-contact tools, fail-closed refusal posture, prompt-injection and privacy boundaries, no-runtime posture, deferred OAuth/submission/provider-certification boundaries, threat-model questions, and a machine-readable proof.
+
+The shipped follow-on descriptor/envelope slice adds local proof-only MCP tool descriptor contracts and app/MCP response-envelope contracts for the exact same read-only allowlist. Descriptors are future wrapper contracts only and cannot be used as live MCP server descriptors. Response envelopes require evidence, freshness, limitations, permitted next actions, citations, refusal posture, forbidden actions, privacy boundary, no-runtime boundary, and authority boundary, and they fail closed for missing citations, unsupported evidence, stale evidence, prompt injection, data exfiltration, raw full-file dumps, and unsafe actions.
 
 This is not public ChatGPT App implementation, a remote MCP server, Apps SDK iframe/UI, OAuth, app submission, deployment, provider integration, certification, OpenAI API/model integration, hosted tools, vector/file-search, OCR, PageIndex, source-pack behavior, source mutation, finance writes, generated product prose, runtime-Codex finance output, external communications, or autonomous action. There is no app submission and no OpenAI API/model calls.
 
@@ -40,6 +42,12 @@ The north star remains unchanged: raw finance evidence becomes a persisted, fres
 - [x] 2026-05-09T14:49:40Z - First full post-merge QA ladder found a TypeScript-only proof-helper typing issue at `pnpm typecheck` after all DB-backed proof/smoke/spec/lint gates had passed; the helper typing was narrowed without changing runtime scope.
 - [x] 2026-05-09T14:49:40Z - Reran the full required DB-backed post-merge QA ladder on the final tree; all 37 commands passed, including `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`. Log root: `/tmp/pocket-cfo-v2g-postmerge-full-final-3t08DT`.
 - [x] 2026-05-09T14:57:11Z - Split bulky V2G spec input builders into `packages/domain/src/read-only-app-mcp.spec-support.ts` inside the same QA slice, then reran the final proof/spec/repo tail; all 8 commands passed. Log root: `/tmp/pocket-cfo-v2g-postmerge-final-tail-dDwpBD`.
+- [x] 2026-05-09T15:20:29Z - Implemented the next V2G local proof-only read-only MCP descriptor/response-envelope foundation from this FP-0087 record on branch `codex/v2g-read-only-mcp-descriptor-response-envelope-foundation-local-v1`.
+- [x] 2026-05-09T15:20:29Z - Added pure descriptor/envelope domain contracts and focused specs for `McpToolDescriptorContract`, descriptor input/output schema contracts, `AppMcpResponseEnvelope`, evidence/refusal/missing-citation/unsupported/stale/prompt-injection/data-exfiltration/raw-full-file-dump/unsafe-action envelopes, and `AppMcpDescriptorEnvelopeProof`.
+- [x] 2026-05-09T15:20:29Z - Added `tools/read-only-mcp-descriptor-response-envelope-proof.mjs` as a direct machine-readable proof command standing beside the existing V2G proof without adding a package script or smoke alias.
+- [x] 2026-05-09T15:20:29Z - Strict same-branch QA found only one lint-only import defect after product proof/spec/smoke gates had passed; patched it without changing runtime scope and reran the full validation ladder.
+- [x] 2026-05-09T15:20:29Z - Full descriptor/envelope validation passed on the final tree, including direct V2A-through-V2G proofs, DB-backed source-pack proofs, CFO Wiki/Finance Twin/monitor/readiness smokes, web/domain/control-plane/twin specs, `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`. Log root: `/tmp/pocket-cfo-v2g-descriptor-full-validation-rerun-7pDUDx`.
+- [x] 2026-05-09T15:20:29Z - Updated FP-0087 and directly stale active/security/demo docs to mark the descriptor/envelope foundation shipped as local proof-only, then reran proof sanity and final-tail validation. Final-tail log root: `/tmp/pocket-cfo-v2g-descriptor-final-tail-UZmdb4`.
 
 ## Surprises & Discoveries
 
@@ -50,6 +58,8 @@ Same-branch QA also found that the response-field tuple proved evidence, freshne
 Post-merge QA found the same response-posture issue one layer deeper: source-coverage and capability-boundary fetch contracts are response-bearing and needed the same full response-required field tuple as evidence query/fetch contracts. The alias classifier also needed explicit natural-language coverage for deletion, approval, provider connect, close certification, customer send, invoice payment, and OAuth-connect phrasings.
 
 The first full post-merge QA ladder exposed one local TypeScript helper inference issue after the product proof/smoke/spec/lint gates had already passed. This was a proof-helper typing issue, not a product behavior regression; the final full ladder was rerun from the beginning and passed.
+
+The descriptor/envelope slice exposed one lint-only import issue after the first full ladder had passed through all proof/spec/smoke gates and reached `pnpm lint`. The correction was type-import cleanup inside the envelope module only; the full ladder was rerun from the beginning and passed on the final tree.
 
 The earlier FP-0087 planning thread had already replaced the stale V2F hard absence check with a docs-only boundary check. After the typed V2G proof existed, this implementation tightened that gate again: V2F now accepts FP-0087 only when the typed V2G proof validates the FP-0087 boundary, public-app absence, remote-MCP absence, and OpenAI API/model-call absence.
 
@@ -62,6 +72,9 @@ No web browsing was used in this implementation thread. The official OpenAI docs
 - The MCP tool allowlist is exact and read-only: `search_evidence`, `fetch_evidence_card`, `fetch_source_anchor`, `fetch_document_map`, `fetch_source_coverage`, `fetch_company_posture`, and `fetch_capability_boundaries`.
 - Renamed write/action/provider/deployment/legal/audit/payment/customer-contact tool names are rejected by contract classification, not by prompt wording.
 - Response-bearing V2G fetch contracts must carry the full response posture explicitly: evidence, freshness, limitations, permitted next actions, citations, refusal posture, and forbidden actions.
+- V2G MCP descriptors are local proof-only contracts. They are not live server descriptors, do not register endpoints, and cannot authorize runtime MCP server behavior.
+- V2G app/MCP response envelopes must carry evidence, freshness, limitations, permitted next actions, citations, refusal posture, forbidden actions, privacy boundary, no-runtime boundary, and authority boundary on every response shape.
+- Missing-citation, unsupported-evidence, stale-evidence, prompt-injection, data-exfiltration, raw full-file dump, and unsafe-action envelopes fail closed and carry no raw source text or private data fields.
 - V2G inherits the V2F SafeDemoDataPolicy posture. Proof/spec examples use in-memory synthetic examples only; no fixtures, eval datasets, sample data, public demo data, or source packs are added.
 - No replay event is produced by this local contract/proof slice because no product runtime state, mission state, source state, evidence bundle, Finance Twin state, CFO Wiki page, route, schema, or external action changes.
 - FP-0088 was not created.
@@ -86,8 +99,10 @@ Implemented files:
 
 - `packages/domain/src/read-only-app-mcp*.ts`
 - `packages/domain/src/read-only-app-mcp.spec.ts`
+- `packages/domain/src/read-only-app-mcp-descriptor.spec.ts`
 - `packages/domain/src/index.ts`
 - `tools/read-only-chatgpt-app-mcp-proof.mjs`
+- `tools/read-only-mcp-descriptor-response-envelope-proof.mjs`
 - `packages/domain/src/benchmark-community.spec.ts`
 - `tools/benchmark-community-pack-proof.mjs`
 - directly stale active docs
@@ -100,11 +115,12 @@ No control-plane runtime module, app route, web API route, backend/control-plane
 2. Read FP-0087, FP-0086 through FP-0080, active docs, security/privacy/demo/self-host docs, V2A/V2B/V2C/V2E/V2F domain contracts, relevant control-plane modules, V2D Evidence Atlas files, and direct proof tools.
 3. Rerun baseline direct V2 proofs.
 4. Add V2G contract schemas for app/MCP plans, allowlist, forbidden tools, evidence query/fetch, source coverage fetch, capability-boundary fetch, refusal posture, prompt-injection boundary, privacy boundary, no-runtime boundary, deferred OAuth/submission/provider-certification boundaries, proof plan, threat-model questions, and proof.
-5. Add focused domain specs and the direct proof command.
-6. Harden V2F proof/spec to use typed V2G proof posture when FP-0087 exists.
-7. Run focused validation, strict QA, and the full validation ladder.
-8. Close out FP-0087 and active docs as shipped local proof-only contracts.
-9. Rerun minimum final validation, then commit once, push, and open a PR.
+5. Add descriptor and response-envelope contracts for the exact read-only MCP allowlist, strict input/output descriptor schemas, fail-closed app/MCP response envelopes, and direct descriptor/envelope proof.
+6. Add focused domain specs and the direct proof commands.
+7. Harden V2F proof/spec to use typed V2G proof posture when FP-0087 exists.
+8. Run focused validation, strict QA, and the full validation ladder.
+9. Close out FP-0087 and active docs as shipped local proof-only contracts.
+10. Rerun minimum final validation, then commit once, push, and open a PR.
 
 ## Validation and Acceptance
 
@@ -190,9 +206,46 @@ pnpm ci:repro:current
 
 Final tail log root: `/tmp/pocket-cfo-v2g-postmerge-final-tail-dDwpBD`.
 
+Descriptor/envelope focused validation passed:
+
+```bash
+pnpm exec tsx tools/read-only-mcp-descriptor-response-envelope-proof.mjs
+pnpm exec tsx tools/read-only-chatgpt-app-mcp-proof.mjs
+pnpm exec tsx tools/benchmark-community-pack-proof.mjs
+pnpm exec tsx tools/bounded-llm-orchestration-proof.mjs
+pnpm exec tsx tools/read-only-evidence-app-proof.mjs
+pnpm exec tsx tools/document-precision-foundation-proof.mjs
+pnpm exec tsx tools/evidence-index-foundation-proof.mjs
+pnpm --filter @pocket-cto/domain exec vitest run src/evidence-index.spec.ts src/evidence-tool.spec.ts src/bounded-llm.spec.ts src/benchmark-community.spec.ts src/read-only-app-mcp.spec.ts src/read-only-app-mcp-descriptor.spec.ts
+zsh -lc "cd apps/control-plane && setopt NULL_GLOB && pnpm exec vitest run src/modules/evidence-index/**/*.spec.ts src/modules/bounded-llm-orchestration/**/*.spec.ts"
+```
+
+Strict descriptor/envelope QA passed for changed-file scope, FP-0088 absence, no runtime/code leak outside allowed contract/proof files, exact allowlist/write-tool rejection, raw full-file dump/data-exfiltration/prompt-injection/unsafe-action fail-closed posture, and private response-field rejection. The first full ladder reached `pnpm lint` and found one import-style lint defect in `read-only-app-mcp-envelope.ts`; the defect was patched without runtime scope changes.
+
+The full descriptor/envelope validation ladder passed on the final tree, including all requested direct V2A-through-V2G proofs, DB-backed source-pack proofs, CFO Wiki/Finance Twin/monitor/readiness smokes, web/domain/control-plane/twin specs, `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+
+Full descriptor/envelope log root: `/tmp/pocket-cfo-v2g-descriptor-full-validation-rerun-7pDUDx`.
+
+Post-doc closeout sanity passed:
+
+```bash
+pnpm exec tsx tools/read-only-mcp-descriptor-response-envelope-proof.mjs
+pnpm exec tsx tools/read-only-chatgpt-app-mcp-proof.mjs
+pnpm exec tsx tools/benchmark-community-pack-proof.mjs
+pnpm --filter @pocket-cto/domain exec vitest run src/read-only-app-mcp.spec.ts src/read-only-app-mcp-descriptor.spec.ts src/benchmark-community.spec.ts
+git diff --check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm ci:repro:current
+```
+
+Final-tail log root: `/tmp/pocket-cfo-v2g-descriptor-final-tail-UZmdb4`.
+
 Acceptance evidence:
 
 - `tools/read-only-chatgpt-app-mcp-proof.mjs` prints machine-readable JSON with the required V2G no-runtime, no-public-app, no-OpenAI/API/model, allowlist, forbidden-tool, refusal, privacy, prompt-injection, deferred-boundary, SafeDemoDataPolicy, FP-0087, and FP-0088 fields.
+- `tools/read-only-mcp-descriptor-response-envelope-proof.mjs` prints machine-readable JSON with descriptor contract, exact allowlist, strict input/output schema, read-only annotation, no-runtime/no-endpoint, required response envelope, fail-closed refusal envelope, raw/private field rejection, no-OpenAI/API/model/hosted-tool/vector/OCR/PageIndex, no public app/server/OAuth/submission/runtime, no data-file, no provider/delivery/deployment/action, SafeDemoDataPolicy, and FP-0088 absence fields.
 - V2F proof/spec now validates FP-0087 through typed V2G proof posture when FP-0087 exists.
 - FP-0088 is absent.
 - No package scripts or smoke aliases were added.
@@ -200,7 +253,7 @@ Acceptance evidence:
 
 ## Idempotence and Recovery
 
-The V2G code is pure domain contract/proof code. Re-running the direct proof command should be deterministic as long as FP-0087 remains the only FP-0087 file, FP-0088 remains absent, and no V2G package scripts or smoke aliases are introduced.
+The V2G code is pure domain contract/proof code. Re-running the direct proof commands should be deterministic as long as FP-0087 remains the only FP-0087 file, FP-0088 remains absent, and no V2G package scripts or smoke aliases are introduced.
 
 If validation fails in the V2G proof/spec, fix only the V2G contract/proof surface unless evidence shows a shipped V2A/V2B/V2C/V2E/V2F contract regression. Do not widen into runtime behavior.
 
@@ -210,6 +263,12 @@ If a future thread needs public app implementation, remote MCP deployment, OAuth
 
 Created artifacts:
 
+- `packages/domain/src/read-only-app-mcp-descriptor.ts`
+- `packages/domain/src/read-only-app-mcp-descriptor-proof.ts`
+- `packages/domain/src/read-only-app-mcp-envelope-common.ts`
+- `packages/domain/src/read-only-app-mcp-envelope.ts`
+- `packages/domain/src/read-only-app-mcp-descriptor.spec.ts`
+- `tools/read-only-mcp-descriptor-response-envelope-proof.mjs`
 - `packages/domain/src/read-only-app-mcp-boundaries.ts`
 - `packages/domain/src/read-only-app-mcp-contracts.ts`
 - `packages/domain/src/read-only-app-mcp-proof-schema.ts`
@@ -232,6 +291,7 @@ Replay and evidence-bundle implications:
 - No replay event is created.
 - No evidence bundle is created or mutated.
 - No raw source, source snapshot, checksum, Finance Twin state, CFO Wiki page, EvidenceIndex record, V2C evidence-tool runtime output, V2D Atlas UI behavior, V2E orchestration runtime, or V2F dataset/source-pack artifact is changed.
+- Descriptor/envelope proofs use in-memory synthetic examples only and do not create evidence bundles, source packs, fixtures, eval datasets, sample data, or public demo data.
 
 Impact on `WORKFLOW.md`, stack packs, skills, and environment:
 
@@ -245,6 +305,20 @@ Impact on `WORKFLOW.md`, stack packs, skills, and environment:
 
 V2G contract exports now include:
 
+- `McpToolDescriptorContract`
+- `McpDescriptorInputSchemaContract`
+- `McpDescriptorOutputSchemaContract`
+- `AppMcpResponseEnvelope`
+- `AppMcpEvidenceEnvelope`
+- `AppMcpRefusalEnvelope`
+- `AppMcpUnsupportedEvidenceEnvelope`
+- `AppMcpMissingCitationEnvelope`
+- `AppMcpStaleEvidenceEnvelope`
+- `AppMcpPromptInjectionEnvelope`
+- `AppMcpDataExfiltrationEnvelope`
+- `AppMcpRawFullFileDumpRefusalEnvelope`
+- `AppMcpUnsafeActionEnvelope`
+- `AppMcpDescriptorEnvelopeProof`
 - `ReadOnlyChatGptAppPlan`
 - `ReadOnlyMcpServerPlan`
 - `McpToolAllowlist`
@@ -264,15 +338,15 @@ V2G contract exports now include:
 - `AppThreatModelQuestions`
 - `AppProof`
 
-Future read-only app/MCP responses must represent evidence, freshness, limitations, permitted next actions, citations, refusal reason or unsupported posture where applicable, capability boundaries, forbidden actions, and bounded excerpts only.
+Future read-only app/MCP responses must represent evidence, freshness, limitations, permitted next actions, citations, refusal posture, forbidden actions, privacy boundary, no-runtime boundary, authority boundary, and bounded excerpts only.
 
 Future app/MCP threat modeling must still answer how allowlists are enforced outside prompts, how untrusted source/user/tool/model-visible/app metadata is handled, how citations and bounded excerpts are guaranteed, how prompt injection/data exfiltration/raw dumps are refused, how no-real-finance-data posture is preserved, and what must happen before remote endpoints, OAuth, Apps SDK UI, or app submission are allowed.
 
 ## Outcomes & Retrospective
 
-FP-0087 shipped as a local proof-only read-only ChatGPT App/MCP contract foundation.
+FP-0087 shipped as a local proof-only read-only ChatGPT App/MCP contract foundation and now also records the local proof-only read-only MCP descriptor/response-envelope foundation.
 
-The shipped slice adds typed read-only app/MCP concepts, exact allowlist, forbidden tools, refusal/privacy/no-runtime boundaries, deferred OAuth/submission/provider-certification boundaries, threat-model questions, and direct proof tooling.
+The shipped slice adds typed read-only app/MCP concepts, exact allowlist, forbidden tools, descriptor input/output schema contracts, response envelope contracts, refusal/privacy/no-runtime boundaries, deferred OAuth/submission/provider-certification boundaries, threat-model questions, and direct proof tooling.
 
 No public app implementation, MCP server runtime, endpoint, Apps SDK iframe/UI, OAuth, app submission, OpenAI API/model call, hosted tools, vector/file-search, OCR, PageIndex, provider/certification/delivery/deployment/external communications, source mutation, finance write, generated product prose, runtime-Codex finance output, autonomous action, UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, public demo data, public source packs, or source-pack mutation was added.
 

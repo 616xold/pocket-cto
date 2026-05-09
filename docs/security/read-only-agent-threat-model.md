@@ -1,10 +1,12 @@
 # Read-Only Agent Threat Model
 
-FP-0083 documents the shipped V2C local/internal evidence-tool contract. FP-0085 ships local/internal proof-only bounded orchestration, and FP-0086 ships a docs/proof-only benchmark/community manifest foundation. These records do not start a public MCP server, public ChatGPT App, Apps SDK UI, OAuth, app submission, OpenAI API/model calls, OpenAI file-search/vector integration, deployment, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
+FP-0083 documents the shipped V2C local/internal evidence-tool contract. FP-0085 ships local/internal proof-only bounded orchestration, FP-0086 ships a docs/proof-only benchmark/community manifest foundation, and FP-0087 ships local proof-only read-only ChatGPT App/MCP contract plus MCP descriptor/response-envelope contracts. These records do not start a public MCP server, public ChatGPT App, Apps SDK UI, OAuth, app submission, OpenAI API/model calls, OpenAI file-search/vector integration, deployment, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Current Contract
 
 V2C is a local/internal read-only evidence-tool contract over existing EvidenceIndex and TextPdfAdapter artifacts.
+
+V2G descriptor and response-envelope artifacts are local proof-only future wrapper contracts. They are not live MCP server descriptors, not endpoints, not runtime routes, and not product finance output.
 
 Shipped tool names:
 
@@ -69,3 +71,7 @@ Until those are proven, V2C remains local/internal only.
 ## Benchmark Boundary
 
 FP-0086 benchmark/community artifacts are read-only contracts and proof posture only. They do not create tools, routes, UI, datasets, fixtures, sample data, public source packs, model calls, generated advice, runtime-Codex finance output, or autonomous action. Missing-citation, evidence-faithfulness, unsafe-action-refusal, freshness, limitation, privacy, and no-runtime checks remain local proof posture until a later Finance Plan names and proves public behavior.
+
+## Descriptor And Envelope Boundary
+
+FP-0087 descriptor/envelope contracts require the exact read-only allowlist and strict output envelopes with evidence, freshness, limitations, permitted next actions, citations, refusal posture, forbidden actions, privacy boundary, no-runtime boundary, and authority boundary. Missing-citation, unsupported-evidence, stale-evidence, prompt-injection, data-exfiltration, raw-full-file-dump, and unsafe-action requests fail closed in proof-only envelopes. Raw full text, private source text, credentials, tokens, OAuth material, API keys, object-store dumps, database dumps, and provider credentials are forbidden response fields.

@@ -24,7 +24,7 @@ FP-0085 is the shipped V2E local/internal proof-only bounded LLM orchestration f
 
 FP-0086 is the shipped V2F docs/proof-only benchmark/community manifest foundation record. It ships SafeDemoDataPolicy first, SyntheticFinanceSourcePolicy, BenchmarkPrivacyBoundary, BenchmarkNoRuntimeBoundary, exact read-only BenchmarkTask taxonomy, BenchmarkCase placeholder rules, CommunityPackManifest, ContributorChallenge, ArchitectureMap, BenchmarkProof, focused specs, and `tools/benchmark-community-pack-proof.mjs`. It adds no UI, routes, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, source packs, source-pack mutations, OpenAI API/model calls, public ChatGPT App/MCP, Apps SDK UI, OAuth, app submission, provider behavior, certification, delivery, deployment, external communications, finance writes, generated advice, runtime-Codex finance output, or autonomous action.
 
-FP-0087 is the shipped V2G local proof-only read-only ChatGPT App/MCP contract foundation record. It adds pure domain contracts, focused specs, typed V2F boundary hardening, and `tools/read-only-chatgpt-app-mcp-proof.mjs` for read-only app/MCP plans, exact allowlists, forbidden tools, refusal/privacy/no-runtime/deferred boundaries, proof posture, and threat-model questions without adding public app implementation, MCP server runtime, endpoints, Apps SDK iframe/UI, OAuth, app submission, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, public demo data, source-pack behavior, OpenAI API/model calls, hosted tools, vector/file-search integration, OCR, PageIndex, provider behavior, certification, delivery, deployment, external communications, source mutation, finance writes, generated advice, runtime-Codex finance output, or autonomous action.
+FP-0087 is the shipped V2G local proof-only read-only ChatGPT App/MCP contract and MCP descriptor/response-envelope foundation record. It adds pure domain contracts, focused specs, typed V2F boundary hardening, `tools/read-only-chatgpt-app-mcp-proof.mjs`, and `tools/read-only-mcp-descriptor-response-envelope-proof.mjs` for read-only app/MCP plans, exact allowlists, local proof-only MCP descriptors, strict descriptor input/output schemas, app/MCP response envelopes, forbidden tools, refusal/privacy/no-runtime/deferred boundaries, proof posture, and threat-model questions without adding public app implementation, MCP server runtime, endpoints, Apps SDK iframe/UI, OAuth, app submission, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, public demo data, source-pack behavior, OpenAI API/model calls, hosted tools, vector/file-search integration, OCR, PageIndex, provider behavior, certification, delivery, deployment, external communications, source mutation, finance writes, generated advice, runtime-Codex finance output, or autonomous action.
 
 ## Shipped Architecture Summary
 
@@ -59,15 +59,15 @@ The shipped system is organized around:
 - **V2D Evidence Atlas UI foundation**: shipped through FP-0084 as one read-only local operator UI route and modular atlas component foundation.
 - **V2E bounded LLM orchestration foundation**: shipped through FP-0085 as a local/internal proof-only planning/refusal/validation contract over fixed read-only V2C tools.
 - **V2F benchmark/community pack foundation**: shipped through FP-0086 as a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation with no datasets or runtime behavior.
-- **V2G read-only ChatGPT App/MCP contract foundation**: shipped through FP-0087 as a local proof-only typed contract and direct-proof record with no public app implementation.
+- **V2G read-only ChatGPT App/MCP contract and descriptor/envelope foundation**: shipped through FP-0087 as a local proof-only typed contract and direct-proof record with no public app implementation.
 
 ## Latest Shipped V2 Plan
 
-- **V2G read-only ChatGPT App/MCP contract foundation**: shipped through FP-0087.
+- **V2G read-only ChatGPT App/MCP contract and descriptor/envelope foundation**: shipped through FP-0087.
 
 ## Active V2 Plan
 
-- No active next V2 plan is open in this state file after FP-0087. Public app implementation, remote MCP deployment, Apps SDK UI, OAuth, app submission, provider/certification/delivery/deployment, and V2G expansion beyond the shipped local proof-only contracts still require a later named Finance Plan.
+- No active next V2 plan is open in this state file after FP-0087. Public app implementation, remote MCP deployment, Apps SDK UI, OAuth, app submission, provider/certification/delivery/deployment, and V2G expansion beyond the shipped local proof-only contracts and descriptor/envelope foundation still require a later named Finance Plan.
 
 ## Fixed Shipped Monitor Families
 
@@ -118,7 +118,7 @@ These tracks remain future-only until a later Finance Plan names exact scope and
 - EvidenceIndex or precision-adapter expansion outside the shipped FP-0081 first V2B contract
 - V2E expansion beyond the shipped FP-0085 local/internal proof-only bounded LLM orchestration foundation
 - public ChatGPT App/MCP deployment beyond the shipped local/internal FP-0082 contract
-- V2G expansion beyond the shipped FP-0087 local proof-only contract boundary
+- V2G expansion beyond the shipped FP-0087 local proof-only contract and descriptor/envelope boundary
 - V2D expansion outside the shipped FP-0084 read-only Evidence Atlas UI foundation boundary
 - V2F expansion beyond the shipped FP-0086 docs/proof-only benchmark/community manifest foundation
 - iOS

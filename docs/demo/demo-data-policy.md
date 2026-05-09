@@ -1,6 +1,6 @@
 # Demo Data Policy
 
-Pocket CFO demo data must be synthetic-only unless a future Finance Plan names and proves a stricter reviewed exception. FP-0086 ships SafeDemoDataPolicy as the first V2F benchmark/community gate and does not add sample data, source-pack fixtures, eval datasets, package scripts, smoke aliases, or source-pack mutations.
+Pocket CFO demo data must be synthetic-only unless a future Finance Plan names and proves a stricter reviewed exception. FP-0086 ships SafeDemoDataPolicy as the first V2F benchmark/community gate, and FP-0087 descriptor/envelope proofs inherit that posture with in-memory synthetic examples only. Neither slice adds sample data, source-pack fixtures, eval datasets, package scripts, smoke aliases, or source-pack mutations.
 
 ## Synthetic-Only Rule
 

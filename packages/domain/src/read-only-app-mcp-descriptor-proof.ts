@@ -1,0 +1,259 @@
+import { z } from "zod";
+import {
+  BENCHMARK_COMMUNITY_SCHEMA_VERSION,
+  SAFE_DEMO_DATA_POLICY_FORBIDDEN_FINANCE_DATA,
+  SAFE_DEMO_DATA_POLICY_FORBIDDEN_PRIVATE_ARTIFACTS,
+  SafeDemoDataPolicySchema,
+} from "./benchmark-community";
+import {
+  MCP_TOOL_ALLOWLIST,
+  READ_ONLY_APP_MCP_SCHEMA_VERSION,
+  classifyMcpToolCandidate,
+} from "./read-only-app-mcp-boundaries";
+import {
+  APP_FORBIDDEN_TOOL_PROOF_CANDIDATES,
+} from "./read-only-app-mcp-proof-schema";
+import {
+  AppMcpDataExfiltrationEnvelopeSchema,
+  AppMcpEvidenceEnvelopeSchema,
+  AppMcpMissingCitationEnvelopeSchema,
+  AppMcpPromptInjectionEnvelopeSchema,
+  AppMcpRawFullFileDumpRefusalEnvelopeSchema,
+  AppMcpResponseEnvelopeSchema,
+  AppMcpStaleEvidenceEnvelopeSchema,
+  AppMcpUnsafeActionEnvelopeSchema,
+  AppMcpUnsupportedEvidenceEnvelopeSchema,
+  APP_MCP_RESPONSE_ENVELOPE_REQUIRED_FIELDS,
+  buildAppMcpEvidenceEnvelope,
+  buildAppMcpRefusalEnvelope,
+  responseEnvelopeRejectsForbiddenFields,
+} from "./read-only-app-mcp-envelope";
+import {
+  buildMcpToolDescriptorContracts,
+  descriptorInputRejectsForbiddenFields,
+  descriptorOutputRequiresEnvelopeFields,
+} from "./read-only-app-mcp-descriptor";
+import { buildAppNoRuntimeBoundary } from "./read-only-app-mcp-runtime";
+
+const trueLiteral = z.literal(true);
+
+export const AppMcpDescriptorEnvelopeProofSchema = z
+  .object({
+    schemaVersion: z.literal(READ_ONLY_APP_MCP_SCHEMA_VERSION),
+    localProofOnly: trueLiteral,
+    descriptorContractsVerified: trueLiteral,
+    descriptorAllowlistExactVerified: trueLiteral,
+    descriptorInputSchemasStrictVerified: trueLiteral,
+    descriptorOutputSchemasStrictVerified: trueLiteral,
+    descriptorReadOnlyAnnotationsVerified: trueLiteral,
+    descriptorNoRuntimeServerVerified: trueLiteral,
+    descriptorNoEndpointsVerified: trueLiteral,
+    responseEnvelopeVerified: trueLiteral,
+    responseEnvelopeRequiredFieldsVerified: trueLiteral,
+    evidenceEnvelopeVerified: trueLiteral,
+    refusalEnvelopeVerified: trueLiteral,
+    missingCitationEnvelopeVerified: trueLiteral,
+    unsupportedEvidenceEnvelopeVerified: trueLiteral,
+    staleEvidenceEnvelopeVerified: trueLiteral,
+    promptInjectionEnvelopeVerified: trueLiteral,
+    dataExfiltrationEnvelopeVerified: trueLiteral,
+    rawFullFileDumpRefusalEnvelopeVerified: trueLiteral,
+    unsafeActionEnvelopeVerified: trueLiteral,
+    rawFullFileDumpFieldsRejected: trueLiteral,
+    privateDataFieldsRejected: trueLiteral,
+    forbiddenToolsRejected: trueLiteral,
+    noOpenAiApiCalls: trueLiteral,
+    noModelCalls: trueLiteral,
+    noHostedTools: trueLiteral,
+    noVectorFileSearch: trueLiteral,
+    noOcr: trueLiteral,
+    noPageIndex: trueLiteral,
+    noPublicChatGptApp: trueLiteral,
+    noRemoteMcpDeployment: trueLiteral,
+    noMcpServerRuntime: trueLiteral,
+    noAppsSdkUi: trueLiteral,
+    noOauth: trueLiteral,
+    noAppSubmission: trueLiteral,
+    noEndpointsAdded: trueLiteral,
+    noRoutesAdded: trueLiteral,
+    noUiAdded: trueLiteral,
+    noSchemaMigrationsAdded: trueLiteral,
+    noPackageScriptsAdded: trueLiteral,
+    noSmokeAliasesAdded: trueLiteral,
+    noEvalDatasetsAdded: trueLiteral,
+    noFixturesAdded: trueLiteral,
+    noSampleDataAdded: trueLiteral,
+    noPublicDemoDataAdded: trueLiteral,
+    noPublicSourcePacksAdded: trueLiteral,
+    noSourcePackMutation: trueLiteral,
+    noProviderCalls: trueLiteral,
+    noCertification: trueLiteral,
+    noDelivery: trueLiteral,
+    noDeployment: trueLiteral,
+    noExternalCommunications: trueLiteral,
+    noSourceMutation: trueLiteral,
+    noFinanceWrite: trueLiteral,
+    noGeneratedAdvice: trueLiteral,
+    noGeneratedProductProse: trueLiteral,
+    noRuntimeCodex: trueLiteral,
+    noAutonomousAction: trueLiteral,
+    safeDemoDataPolicyInheritedVerified: trueLiteral,
+    fp0088Absent: trueLiteral,
+    descriptorsVerified: z.array(z.string()).length(MCP_TOOL_ALLOWLIST.length),
+    responseEnvelopeRequiredFields: z.array(z.string()).min(1),
+  })
+  .strict();
+
+export function buildAppMcpDescriptorEnvelopeProof(
+  input: Partial<{
+    fp0088Absent: boolean;
+    noPackageScriptsAdded: boolean;
+    noSmokeAliasesAdded: boolean;
+  }> = {},
+): AppMcpDescriptorEnvelopeProof {
+  const descriptors = buildMcpToolDescriptorContracts();
+  const noRuntimeBoundary = buildAppNoRuntimeBoundary({
+    noPackageScriptsAdded: input.noPackageScriptsAdded ?? true,
+    noSmokeAliasesAdded: input.noSmokeAliasesAdded ?? true,
+  });
+  const safeDemoDataPolicy = SafeDemoDataPolicySchema.parse({
+    firstGate: true,
+    forbiddenFinanceData: [...SAFE_DEMO_DATA_POLICY_FORBIDDEN_FINANCE_DATA],
+    forbiddenPrivateArtifacts: [
+      ...SAFE_DEMO_DATA_POLICY_FORBIDDEN_PRIVATE_ARTIFACTS,
+    ],
+    forbidsCheckedInSensitiveFinanceData: true,
+    forbidsLightlyAnonymizedRealFinanceData: true,
+    forbidsRealCompanyData: true,
+    noDataFilesCreatedByPolicy: true,
+    policyName: "SafeDemoDataPolicy",
+    requiresClearSyntheticLabel: true,
+    requiresReviewBeforeAnyFutureDataFile: true,
+    requiresSyntheticOnlyBeforeFutureCase: true,
+    schemaVersion: BENCHMARK_COMMUNITY_SCHEMA_VERSION,
+  });
+  const evidenceEnvelope = buildAppMcpEvidenceEnvelope();
+  const missingCitation = buildAppMcpRefusalEnvelope("missing_citation");
+  const unsupportedEvidence = buildAppMcpRefusalEnvelope("unsupported_evidence");
+  const staleEvidence = buildAppMcpRefusalEnvelope("stale_evidence");
+  const promptInjection = buildAppMcpRefusalEnvelope("prompt_injection");
+  const dataExfiltration = buildAppMcpRefusalEnvelope("data_exfiltration");
+  const rawFullFileDump = buildAppMcpRefusalEnvelope(
+    "raw_full_file_dump_request",
+  );
+  const unsafeAction = buildAppMcpRefusalEnvelope("unsafe_action");
+  const descriptorNames = descriptors.map((descriptor) => descriptor.toolName);
+
+  return AppMcpDescriptorEnvelopeProofSchema.parse({
+    dataExfiltrationEnvelopeVerified:
+      AppMcpDataExfiltrationEnvelopeSchema.safeParse(dataExfiltration).success,
+    descriptorAllowlistExactVerified:
+      JSON.stringify(descriptorNames) === JSON.stringify(MCP_TOOL_ALLOWLIST),
+    descriptorContractsVerified: descriptors.length === MCP_TOOL_ALLOWLIST.length,
+    descriptorInputSchemasStrictVerified: descriptors.every((descriptor) =>
+      descriptorInputRejectsForbiddenFields(descriptor.toolName),
+    ),
+    descriptorNoEndpointsVerified: descriptors.every(
+      (descriptor) => !descriptor.endpointImplemented,
+    ),
+    descriptorNoRuntimeServerVerified: descriptors.every(
+      (descriptor) =>
+        !descriptor.serverRuntimeImplemented &&
+        !descriptor.usableAsLiveServerDescriptor,
+    ),
+    descriptorOutputSchemasStrictVerified: descriptors.every((descriptor) =>
+      descriptorOutputRequiresEnvelopeFields(descriptor.toolName),
+    ),
+    descriptorReadOnlyAnnotationsVerified: descriptors.every(
+      (descriptor) =>
+        descriptor.annotations.readOnlyHint &&
+        !descriptor.annotations.destructiveHint &&
+        descriptor.capabilityMetadata.readOnly &&
+        !descriptor.capabilityMetadata.writesSources &&
+        !descriptor.capabilityMetadata.writesFinanceTwin,
+    ),
+    descriptorsVerified: descriptorNames,
+    evidenceEnvelopeVerified:
+      AppMcpEvidenceEnvelopeSchema.safeParse(evidenceEnvelope).success,
+    forbiddenToolsRejected: APP_FORBIDDEN_TOOL_PROOF_CANDIDATES.every(
+      (candidate) => classifyMcpToolCandidate(candidate).forbidden,
+    ),
+    fp0088Absent: input.fp0088Absent ?? true,
+    localProofOnly: noRuntimeBoundary.localProofOnly,
+    missingCitationEnvelopeVerified:
+      AppMcpMissingCitationEnvelopeSchema.safeParse(missingCitation).success &&
+      missingCitation.refusalPosture.failClosed,
+    noAppSubmission: noRuntimeBoundary.noAppSubmission,
+    noAppsSdkUi: noRuntimeBoundary.noAppsSdkUi,
+    noAutonomousAction: noRuntimeBoundary.noAutonomousAction,
+    noCertification: noRuntimeBoundary.noCertification,
+    noDelivery: noRuntimeBoundary.noDelivery,
+    noDeployment: noRuntimeBoundary.noDeployment,
+    noEndpointsAdded: noRuntimeBoundary.noEndpointsAdded,
+    noEvalDatasetsAdded: noRuntimeBoundary.noEvalDatasetsAdded,
+    noExternalCommunications: noRuntimeBoundary.noExternalCommunications,
+    noFinanceWrite: noRuntimeBoundary.noFinanceWrite,
+    noFixturesAdded: noRuntimeBoundary.noFixturesAdded,
+    noGeneratedAdvice: noRuntimeBoundary.noGeneratedAdvice,
+    noGeneratedProductProse: noRuntimeBoundary.noGeneratedProductProse,
+    noHostedTools: noRuntimeBoundary.noHostedTools,
+    noMcpServerRuntime: noRuntimeBoundary.noMcpServerRuntime,
+    noModelCalls: noRuntimeBoundary.noModelCalls,
+    noOauth: noRuntimeBoundary.noOauth,
+    noOcr: noRuntimeBoundary.noOcr,
+    noOpenAiApiCalls: noRuntimeBoundary.noOpenAiApiCalls,
+    noPackageScriptsAdded: noRuntimeBoundary.noPackageScriptsAdded,
+    noPageIndex: noRuntimeBoundary.noPageIndex,
+    noProviderCalls: noRuntimeBoundary.noProviderCalls,
+    noPublicChatGptApp: noRuntimeBoundary.noPublicChatGptApp,
+    noPublicDemoDataAdded: noRuntimeBoundary.noPublicDemoDataAdded,
+    noPublicSourcePacksAdded: noRuntimeBoundary.noPublicSourcePacksAdded,
+    noRemoteMcpDeployment: noRuntimeBoundary.noRemoteMcpDeployment,
+    noRoutesAdded: noRuntimeBoundary.noRoutesAdded,
+    noRuntimeCodex: noRuntimeBoundary.noRuntimeCodex,
+    noSampleDataAdded: noRuntimeBoundary.noSampleDataAdded,
+    noSchemaMigrationsAdded: noRuntimeBoundary.noSchemaMigrationsAdded,
+    noSmokeAliasesAdded: noRuntimeBoundary.noSmokeAliasesAdded,
+    noSourceMutation: noRuntimeBoundary.noSourceMutation,
+    noSourcePackMutation: noRuntimeBoundary.noSourcePackMutation,
+    noUiAdded: noRuntimeBoundary.noUiAdded,
+    noVectorFileSearch: noRuntimeBoundary.noVectorFileSearch,
+    privateDataFieldsRejected: responseEnvelopeRejectsForbiddenFields(),
+    promptInjectionEnvelopeVerified:
+      AppMcpPromptInjectionEnvelopeSchema.safeParse(promptInjection).success &&
+      promptInjection.refusalPosture.sourceInstructionsTreatedAsData,
+    rawFullFileDumpFieldsRejected: responseEnvelopeRejectsForbiddenFields(),
+    rawFullFileDumpRefusalEnvelopeVerified:
+      AppMcpRawFullFileDumpRefusalEnvelopeSchema.safeParse(rawFullFileDump)
+        .success,
+    refusalEnvelopeVerified:
+      missingCitation.refusalPosture.refused &&
+      missingCitation.refusalPosture.failClosed,
+    responseEnvelopeRequiredFields: [
+      ...APP_MCP_RESPONSE_ENVELOPE_REQUIRED_FIELDS,
+    ],
+    responseEnvelopeRequiredFieldsVerified:
+      APP_MCP_RESPONSE_ENVELOPE_REQUIRED_FIELDS.every((field) =>
+        Object.prototype.hasOwnProperty.call(evidenceEnvelope, field),
+      ),
+    responseEnvelopeVerified:
+      AppMcpResponseEnvelopeSchema.safeParse(evidenceEnvelope).success &&
+      AppMcpResponseEnvelopeSchema.safeParse(missingCitation).success,
+    safeDemoDataPolicyInheritedVerified:
+      safeDemoDataPolicy.firstGate &&
+      safeDemoDataPolicy.forbidsLightlyAnonymizedRealFinanceData,
+    schemaVersion: READ_ONLY_APP_MCP_SCHEMA_VERSION,
+    staleEvidenceEnvelopeVerified:
+      AppMcpStaleEvidenceEnvelopeSchema.safeParse(staleEvidence).success &&
+      staleEvidence.freshness.state === "stale",
+    unsafeActionEnvelopeVerified:
+      AppMcpUnsafeActionEnvelopeSchema.safeParse(unsafeAction).success,
+    unsupportedEvidenceEnvelopeVerified:
+      AppMcpUnsupportedEvidenceEnvelopeSchema.safeParse(unsupportedEvidence)
+        .success,
+  });
+}
+
+export type AppMcpDescriptorEnvelopeProof = z.infer<
+  typeof AppMcpDescriptorEnvelopeProofSchema
+>;
