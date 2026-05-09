@@ -26,7 +26,9 @@ FP-0086 is the shipped V2F docs/proof-only benchmark/community manifest foundati
 
 FP-0087 is the shipped V2G local proof-only read-only ChatGPT App/MCP contract and MCP descriptor/response-envelope foundation record. It adds pure domain contracts, focused specs, typed V2F boundary hardening, `tools/read-only-chatgpt-app-mcp-proof.mjs`, and `tools/read-only-mcp-descriptor-response-envelope-proof.mjs` for read-only app/MCP plans, exact allowlists, local proof-only MCP descriptors, strict descriptor input/output schemas, app/MCP response envelopes, forbidden tools, refusal/privacy/no-runtime/deferred boundaries, proof posture, and threat-model questions without adding public app implementation, MCP server runtime, endpoints, Apps SDK iframe/UI, OAuth, app submission, schema, migrations, package scripts, smoke aliases, eval datasets, fixtures, sample data, public demo data, source-pack behavior, OpenAI API/model calls, hosted tools, vector/file-search integration, OCR, PageIndex, provider behavior, certification, delivery, deployment, external communications, source mutation, finance writes, generated advice, runtime-Codex finance output, or autonomous action.
 
-FP-0088 is the active V2H premium read-only ChatGPT App/MCP UI and security readiness master plan. It is docs-and-plan plus proof-gate compatibility only: it defines future premium UI and app/MCP security readiness requirements and lets V2F/V2G proof gates accept exactly this docs-only successor while still rejecting FP-0089 and runtime/public-app scope.
+FP-0088 is the shipped V2H premium read-only ChatGPT App/MCP UI and security readiness master plan. It is docs-and-plan plus proof-gate compatibility only: it defines future premium UI and app/MCP security readiness requirements and lets V2F/V2G proof gates accept exactly that docs-only successor while still rejecting runtime/public-app scope.
+
+FP-0089 is the active V2I premium read-only ChatGPT App/MCP UI design-system readiness master plan. It is docs-and-plan plus proof-gate compatibility only: it defines future design tokens, component taxonomy, evidence hierarchy, accessibility requirements, refusal-state grammar, interaction rules, copy style, and future design QA gates while keeping UI implementation, Apps SDK iframe/UI, endpoints, OAuth, remote MCP, app submission, source mutation, finance writes, generated product prose, runtime-Codex finance output, and autonomous action out of scope.
 
 ## Shipped Architecture Summary
 
@@ -62,14 +64,15 @@ The shipped system is organized around:
 - **V2E bounded LLM orchestration foundation**: shipped through FP-0085 as a local/internal proof-only planning/refusal/validation contract over fixed read-only V2C tools.
 - **V2F benchmark/community pack foundation**: shipped through FP-0086 as a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation with no datasets or runtime behavior.
 - **V2G read-only ChatGPT App/MCP contract and descriptor/envelope foundation**: shipped through FP-0087 as a local proof-only typed contract and direct-proof record with no public app implementation.
+- **V2H premium read-only ChatGPT App/MCP UI and security readiness**: shipped through FP-0088 as a docs-and-plan plus proof-gate compatibility record with no UI, endpoints, remote MCP, OAuth, app submission, OpenAI API/model calls, data files, package scripts, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Latest Shipped V2 Plan
 
-- **V2G read-only ChatGPT App/MCP contract and descriptor/envelope foundation**: shipped through FP-0087.
+- **V2H premium read-only ChatGPT App/MCP UI and security readiness**: shipped through FP-0088.
 
 ## Active V2 Plan
 
-- FP-0088 is active as a docs-only premium UI/security readiness and proof-gate compatibility plan. Public app implementation, remote MCP deployment, Apps SDK UI, OAuth, app submission, provider/certification/delivery/deployment, and V2G expansion beyond the shipped local proof-only contracts and descriptor/envelope foundation still require a later named Finance Plan.
+- FP-0089 is active as a docs-only premium UI design-system readiness and proof-gate compatibility plan. UI implementation, public app implementation, remote MCP deployment, Apps SDK UI, OAuth, app submission, provider/certification/delivery/deployment, and V2G expansion beyond the shipped local proof-only contracts and descriptor/envelope foundation still require a later named Finance Plan.
 
 ## Fixed Shipped Monitor Families
 
@@ -120,7 +123,8 @@ These tracks remain future-only until a later Finance Plan names exact scope and
 - EvidenceIndex or precision-adapter expansion outside the shipped FP-0081 first V2B contract
 - V2E expansion beyond the shipped FP-0085 local/internal proof-only bounded LLM orchestration foundation
 - public ChatGPT App/MCP deployment beyond the shipped local/internal FP-0082 contract
-- FP-0088 implementation beyond docs-only premium UI/security readiness and proof-gate compatibility
+- FP-0089 implementation beyond docs-only premium UI design-system readiness and proof-gate compatibility
+- FP-0088 implementation beyond shipped docs-only premium UI/security readiness and proof-gate compatibility
 - V2G expansion beyond the shipped FP-0087 local proof-only contract and descriptor/envelope boundary
 - V2D expansion outside the shipped FP-0084 read-only Evidence Atlas UI foundation boundary
 - V2F expansion beyond the shipped FP-0086 docs/proof-only benchmark/community manifest foundation
@@ -161,6 +165,7 @@ Key records:
 - [FP-0086 V2F benchmark/community pack foundation](../plans/FP-0086-benchmark-community-pack-foundation.md)
 - [FP-0087 V2G read-only ChatGPT App/MCP master plan](../plans/FP-0087-read-only-chatgpt-app-mcp-master-plan.md)
 - [FP-0088 V2H premium read-only ChatGPT App/MCP UI and security readiness master plan](../plans/FP-0088-read-only-chatgpt-app-mcp-premium-ui-security-master-plan.md)
+- [FP-0089 V2I premium read-only ChatGPT App/MCP UI design-system readiness master plan](../plans/FP-0089-read-only-chatgpt-app-mcp-premium-ui-design-system-master-plan.md)
 - [FP-0077 F10 v1 public launch handoff](../plans/FP-0077-v1-public-launch-handoff.md)
 - [FP-0076 F9 product UI launch polish](../plans/FP-0076-product-ui-launch-polish-foundation.md)
 - [FP-0075 F8 future-scope triage](../plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md)
