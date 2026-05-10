@@ -77,6 +77,7 @@ export type ReadOnlyAppMcpAnswer = {
 };
 
 export type ReadOnlyAppMcpRefusalReason =
+  | "conflicting_evidence"
   | "missing_citation"
   | "unsupported_evidence"
   | "stale_evidence"

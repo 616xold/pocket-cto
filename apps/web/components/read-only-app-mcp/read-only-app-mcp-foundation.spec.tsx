@@ -8,6 +8,7 @@ import {
 import {
   AppShell,
   CitationRail,
+  ConflictingEvidenceRefusalState,
   EmptyEvidenceState,
   ErrorAndUnsupportedState,
   EvidenceAnswerPanel,
@@ -114,7 +115,7 @@ describe("read-only app/MCP premium UI component foundation", () => {
     }
   });
 
-  it("renders fail-closed refusal states for prompt injection and raw full-file requests", () => {
+  it("renders fail-closed refusal states for prompt injection and source export requests", () => {
     const promptInjectionEnvelope = buildAppMcpRefusalEnvelope(
       "prompt_injection",
     );
@@ -138,7 +139,7 @@ describe("read-only app/MCP premium UI component foundation", () => {
             reason: "raw_full_file_dump_request",
             summary:
               "The envelope refuses broad source disclosure and keeps review anchored to citations.",
-            title: "Raw full-file request refusal",
+            title: "Source export request refusal",
           }}
         />
         <PromptInjectionWarningState />
@@ -148,8 +149,8 @@ describe("read-only app/MCP premium UI component foundation", () => {
 
     expect(html).toContain("Prompt-injection refusal");
     expect(html).toContain("prompt injection");
-    expect(html).toContain("Raw full-file request refusal");
-    expect(html).toContain("raw full-file dump request");
+    expect(html).toContain("Source export request refusal");
+    expect(html).toContain("source body export request");
     expect(html).toContain("No action was taken");
     expect(html).toContain("source text instructions remain untrusted data");
     expect(html).not.toContain("<button");
@@ -162,6 +163,7 @@ describe("read-only app/MCP premium UI component foundation", () => {
         <MissingCitationRefusalState />
         <UnsupportedEvidenceRefusalState />
         <StaleEvidenceRefusalState />
+        <ConflictingEvidenceRefusalState />
         <UnsafeActionRefusalState />
       </>,
     );
@@ -172,6 +174,8 @@ describe("read-only app/MCP premium UI component foundation", () => {
     expect(html).toContain("unsupported evidence");
     expect(html).toContain("Stale evidence refusal");
     expect(html).toContain("stale evidence");
+    expect(html).toContain("Conflicting evidence refusal");
+    expect(html).toContain("conflicting evidence");
     expect(html).toContain("Unsafe action refusal");
     expect(html).toContain("unsafe action");
     expect(html).toContain("No action was taken");
@@ -327,7 +331,7 @@ function readPrivacyBoundary() {
   return {
     items: [
       "No real finance data in component tests.",
-      "No raw full-file source body.",
+      "No source body export.",
       "No credentials, tokens, OAuth material, or provider keys.",
     ],
     summary:

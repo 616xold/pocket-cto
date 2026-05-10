@@ -126,7 +126,7 @@ const previewPrivacyBoundary = {
     "No private secrets or provider access material.",
   ],
   summary:
-    "The route renders local proof props only; it is not public demo data or source truth.",
+    "The route renders local proof props only; it is not source truth.",
   title: "Privacy boundary",
 };
 
@@ -135,7 +135,7 @@ const previewNoRuntimeBoundary = {
     "No data fetch, API call, or mutation transport.",
     "No form, button, file-input control, or server action.",
     "No web API route, backend route, endpoint, or remote MCP server.",
-    "No Apps SDK resource, OAuth, app submission asset, OpenAI API call, or model call.",
+    "No Apps SDK resource, OAuth flow, listing artifact, OpenAI API call, or model call.",
   ],
   summary:
     "The preview route renders existing local components with in-memory props only.",
@@ -190,6 +190,13 @@ const stateMatrixRefusals: ReadOnlyAppMcpRefusal[] = [
   },
   {
     freshness: previewFreshness,
+    reason: "conflicting_evidence",
+    summary:
+      "Conflicting evidence fails closed until source posture is resolved by a human.",
+    title: "Conflicting evidence refusal",
+  },
+  {
+    freshness: previewFreshness,
     reason: "prompt_injection",
     summary:
       "Instructions found in source text stay inert and cannot widen tool or action scope.",
@@ -199,8 +206,8 @@ const stateMatrixRefusals: ReadOnlyAppMcpRefusal[] = [
     freshness: previewFreshness,
     reason: "raw_full_file_dump_request",
     summary:
-      "Full-file or page-dump requests are refused; the route shows bounded citation posture only.",
-    title: "Raw full-file dump refusal state",
+      "Full source-body export requests are refused; the route shows bounded citation posture only.",
+    title: "Source export refusal state",
   },
   {
     freshness: previewFreshness,
@@ -234,7 +241,7 @@ export default function ReadOnlyAppMcpPreviewPage() {
             freshness: previewFreshness,
             statusLabel: "Evidence-backed preview",
             summary:
-              "Synthetic evidence, citations, freshness, limitations, and boundaries are visible before any public app work.",
+              "Synthetic evidence, citations, freshness, limitations, and boundaries are visible before any later app work.",
             title: "Answer state: read-only evidence hierarchy",
           },
           kind: "answer",
@@ -245,7 +252,10 @@ export default function ReadOnlyAppMcpPreviewPage() {
       <section
         aria-labelledby="local-preview-state-matrix-title"
         data-layout="read-only-app-mcp-state-matrix"
+        data-spacing="10"
+        data-visual-qa="screenshotless"
         data-responsive="narrow-wide"
+        aria-label="Read-only preview state matrix groups"
         style={stackStyle}
       >
         <SectionHeading
@@ -255,7 +265,12 @@ export default function ReadOnlyAppMcpPreviewPage() {
           summary="Synthetic local-only states prove refusal, empty, loading, error, privacy, and no-runtime posture without fetching data or creating actions."
           title="Preview route state matrix"
         />
-        <div style={twoColumnGridStyle}>
+        <div
+          aria-label="Refusal and transient state matrix group"
+          data-panel-hierarchy="state-card-grid"
+          data-spacing="14"
+          style={twoColumnGridStyle}
+        >
           {stateMatrixRefusals.map((refusal) => (
             <RefusalPanel
               headingLevel={3}
@@ -277,7 +292,7 @@ export default function ReadOnlyAppMcpPreviewPage() {
           <ErrorAndUnsupportedState
             headingLevel={3}
             sectionIdScope="local-preview-error-unsupported"
-            summary="Unsupported, malformed, or conflicting evidence fails closed. The current FP-0091/FP-0092 component reason union does not expose a separate conflicting-evidence refusal panel."
+            summary="Unsupported, malformed, or conflicting evidence fails closed with text-labelled reasons."
           />
         </div>
         <section
@@ -293,18 +308,20 @@ export default function ReadOnlyAppMcpPreviewPage() {
             eyebrow="Conflict support boundary"
             headingLevel={3}
             id="local-preview-conflicting-evidence-note-title"
-            summary="V2G proof posture records conflicting evidence as fail-closed, while the current renderable component contract exposes unsupported/stale/missing refusal reasons."
+            summary="V2G proof posture records conflicting evidence as fail-closed, and this local component contract now renders it as a text-labelled refusal state."
             title="Conflicting evidence refusal boundary"
           />
           <p style={bodyStyle}>
-            FP-0096 does not invent a new response-envelope reason in the route.
-            Conflicting evidence remains represented as an unsupported or error
-            boundary until a later component contract explicitly adds it.
+            FP-0097 keeps conflicting evidence read-only and local. It displays
+            a refusal reason label without creating a new tool, endpoint, or
+            runtime action.
           </p>
         </section>
         <div
+          aria-label="Privacy and no-runtime state matrix boundary group"
           data-layout="read-only-app-mcp-state-boundary-grid"
           data-responsive="narrow-wide"
+          data-spacing="14"
           style={twoColumnGridStyle}
         >
           <PrivacyBoundaryPanel

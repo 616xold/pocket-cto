@@ -79,7 +79,7 @@ describe("read-only app/MCP premium UI composition accessibility foundation", ()
 
     expect(sectionLabelIds).toHaveLength(2);
     expect(new Set(sectionLabelIds).size).toBe(2);
-    expect(html).toContain("Refusal reason: raw full-file dump request");
+    expect(html).toContain("Refusal reason: source body export request");
     expect(html).toContain("Freshness: Fresh");
   });
 

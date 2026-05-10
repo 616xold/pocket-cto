@@ -61,7 +61,8 @@ export function buildReadOnlyChatGptAppMcpProof(
     fp0094AbsentOrLocalPreviewRouteBoundaryVerified: boolean;
     fp0095AbsentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified: boolean;
     fp0096AbsentOrLocalPreviewRouteStateMatrixBoundaryVerified: boolean;
-    fp0097Absent: boolean;
+    fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified: boolean;
+    fp0098Absent: boolean;
     premiumUiSecurityPlanBoundaryVerified: boolean;
     premiumUiDesignSystemPlanBoundaryVerified: boolean;
     premiumUiImplementationPlanBoundaryVerified: boolean;
@@ -71,6 +72,7 @@ export function buildReadOnlyChatGptAppMcpProof(
     localPreviewRouteFoundationVerified: boolean;
     localPreviewRouteStateMatrixPlanBoundaryVerified: boolean;
     localPreviewRouteStateMatrixFoundationVerified: boolean;
+    localPreviewRouteVisualQaFoundationVerified: boolean;
     noUiImplementationFromFp0088: boolean;
     noUiImplementationFromFp0089: boolean;
     noAppsSdkIframeFromFp0089: boolean;
@@ -131,7 +133,20 @@ export function buildReadOnlyChatGptAppMcpProof(
     noPublicAssetsFromFp0096: boolean;
     noScreenshotAssetsFromFp0096: boolean;
     noSourceMutationFinanceWriteFromFp0096: boolean;
+    noAdditionalRoutesFromFp0097: boolean;
+    noApiRoutesFromFp0097: boolean;
+    noAppsSdkIframeFromFp0097: boolean;
+    noBackendRoutesFromFp0097: boolean;
+    noEndpointsFromFp0097: boolean;
+    noOauthSubmissionFromFp0097: boolean;
+    noOpenAiApiCallsFromFp0097: boolean;
+    noPublicAppImplementationFromFp0097: boolean;
+    noPublicAssetsFromFp0097: boolean;
+    noScreenshotAssetsFromFp0097: boolean;
+    noSourceMutationFinanceWriteFromFp0097: boolean;
     routeMetadataNoIndexBoundaryVerified: boolean;
+    screenshotlessVisualQaVerified: boolean;
+    accessibilityStateMatrixVerified: boolean;
     noPackageScriptsAdded: boolean;
     noSmokeAliasesAdded: boolean;
   }> = {},
@@ -447,7 +462,9 @@ export function buildReadOnlyChatGptAppMcpProof(
       true,
     fp0096AbsentOrLocalPreviewRouteStateMatrixBoundaryVerified:
       input.fp0096AbsentOrLocalPreviewRouteStateMatrixBoundaryVerified ?? true,
-    fp0097Absent: input.fp0097Absent ?? true,
+    fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified:
+      input.fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified ?? true,
+    fp0098Absent: input.fp0098Absent ?? true,
     premiumUiSecurityPlanBoundaryVerified:
       input.premiumUiSecurityPlanBoundaryVerified ?? true,
     premiumUiDesignSystemPlanBoundaryVerified:
@@ -466,6 +483,8 @@ export function buildReadOnlyChatGptAppMcpProof(
       input.localPreviewRouteStateMatrixPlanBoundaryVerified ?? true,
     localPreviewRouteStateMatrixFoundationVerified:
       input.localPreviewRouteStateMatrixFoundationVerified ?? true,
+    localPreviewRouteVisualQaFoundationVerified:
+      input.localPreviewRouteVisualQaFoundationVerified ?? true,
     noUiImplementationFromFp0088: input.noUiImplementationFromFp0088 ?? true,
     noUiImplementationFromFp0089: input.noUiImplementationFromFp0089 ?? true,
     noAppsSdkIframeFromFp0089: input.noAppsSdkIframeFromFp0089 ?? true,
@@ -560,8 +579,30 @@ export function buildReadOnlyChatGptAppMcpProof(
       input.noScreenshotAssetsFromFp0096 ?? true,
     noSourceMutationFinanceWriteFromFp0096:
       input.noSourceMutationFinanceWriteFromFp0096 ?? true,
+    noAdditionalRoutesFromFp0097:
+      input.noAdditionalRoutesFromFp0097 ?? true,
+    noApiRoutesFromFp0097: input.noApiRoutesFromFp0097 ?? true,
+    noAppsSdkIframeFromFp0097:
+      input.noAppsSdkIframeFromFp0097 ?? true,
+    noBackendRoutesFromFp0097: input.noBackendRoutesFromFp0097 ?? true,
+    noEndpointsFromFp0097: input.noEndpointsFromFp0097 ?? true,
+    noOauthSubmissionFromFp0097:
+      input.noOauthSubmissionFromFp0097 ?? true,
+    noOpenAiApiCallsFromFp0097:
+      input.noOpenAiApiCallsFromFp0097 ?? true,
+    noPublicAppImplementationFromFp0097:
+      input.noPublicAppImplementationFromFp0097 ?? true,
+    noPublicAssetsFromFp0097: input.noPublicAssetsFromFp0097 ?? true,
+    noScreenshotAssetsFromFp0097:
+      input.noScreenshotAssetsFromFp0097 ?? true,
+    noSourceMutationFinanceWriteFromFp0097:
+      input.noSourceMutationFinanceWriteFromFp0097 ?? true,
     routeMetadataNoIndexBoundaryVerified:
       input.routeMetadataNoIndexBoundaryVerified ?? true,
+    screenshotlessVisualQaVerified:
+      input.screenshotlessVisualQaVerified ?? true,
+    accessibilityStateMatrixVerified:
+      input.accessibilityStateMatrixVerified ?? true,
     localProofOnly: noRuntimeBoundary.localProofOnly,
     mcpForbiddenToolsVerified:
       forbiddenCandidatesRejected && noForbiddenCandidateInAllowlist,

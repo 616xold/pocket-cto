@@ -121,6 +121,27 @@ export function StaleEvidenceRefusalState({
   );
 }
 
+export function ConflictingEvidenceRefusalState({
+  headingLevel,
+  sectionIdScope,
+  summary,
+}: SharedStateProps) {
+  const refusal = buildRefusalState(
+    "conflicting_evidence",
+    "Conflicting evidence refusal",
+    summary ??
+      "Conflicting evidence fails closed until a human resolves the source posture.",
+  );
+
+  return (
+    <RefusalPanel
+      headingLevel={headingLevel}
+      refusal={refusal}
+      sectionIdScope={sectionIdScope}
+    />
+  );
+}
+
 export function UnsafeActionRefusalState({
   headingLevel,
   sectionIdScope,
@@ -149,9 +170,9 @@ export function RawFullFileDumpRefusalState({
 }: SharedStateProps) {
   const refusal = buildRefusalState(
     "raw_full_file_dump_request",
-    "Raw full-file dump refused",
+    "Source export request refused",
     summary ??
-      "Requests for raw full-file or page dumps fail closed. The UI only displays bounded citation posture.",
+      "Requests for full source-body exports fail closed. The UI only displays bounded citation posture.",
   );
 
   return (
@@ -185,7 +206,11 @@ export function EmptyEvidenceState({
         }
         title="Empty evidence state"
       />
-      <p style={bodyStyle}>
+      <p
+        data-state-kind="empty"
+        data-status-label="Empty evidence state"
+        style={bodyStyle}
+      >
         The component stays quiet and does not invent evidence, sources, or
         finance conclusions.
       </p>
@@ -207,6 +232,10 @@ export function LoadingEvidenceState({
     <section
       aria-busy="true"
       aria-labelledby={titleId}
+      data-panel-tier="panel"
+      data-spacing="10"
+      data-state-kind="loading"
+      data-status-label="Loading evidence state"
       style={compactPanelStyle}
     >
       <div style={stackStyle}>
@@ -258,6 +287,13 @@ export function ErrorAndUnsupportedState({
         }
         title="Error and unsupported evidence"
       />
+      <p
+        data-state-kind="error"
+        data-status-label="unsupported or conflicting evidence"
+        style={{ ...bodyStyle, color: colors.danger, fontWeight: 700 }}
+      >
+        Error reason: unsupported or conflicting evidence.
+      </p>
       <p
         style={{
           ...bodyStyle,

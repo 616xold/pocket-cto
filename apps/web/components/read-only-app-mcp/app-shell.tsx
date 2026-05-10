@@ -9,8 +9,14 @@ type AppShellProps = {
 
 export function AppShell({ children, subtitle, title }: AppShellProps) {
   return (
-    <main aria-labelledby="read-only-app-mcp-title" style={shellStyle}>
-      <header style={stackStyle}>
+    <main
+      aria-labelledby="read-only-app-mcp-title"
+      data-panel-tier="shell"
+      data-spacing="18"
+      data-typography="h1-28"
+      style={shellStyle}
+    >
+      <header data-typography="page-header" style={stackStyle}>
         <p style={labelStyle}>Local read-only app/MCP component foundation</p>
         <h1
           id="read-only-app-mcp-title"
