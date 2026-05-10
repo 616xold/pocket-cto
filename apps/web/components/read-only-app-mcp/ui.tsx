@@ -45,7 +45,12 @@ type ReadOnlyPanelProps = {
 
 export function ReadOnlyPanel({ children, labelledBy }: ReadOnlyPanelProps) {
   return (
-    <section aria-labelledby={labelledBy} style={panelStyle}>
+    <section
+      aria-labelledby={labelledBy}
+      data-panel-tier="panel"
+      data-spacing="14"
+      style={panelStyle}
+    >
       {children}
     </section>
   );

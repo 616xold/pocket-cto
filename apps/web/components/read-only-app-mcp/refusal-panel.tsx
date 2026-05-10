@@ -46,6 +46,8 @@ export function RefusalPanel({
         <FreshnessBadge freshness={refusal.freshness} />
       </div>
       <div
+        data-state-kind="refusal"
+        data-status-label={readReasonLabel(refusal.reason)}
         style={{
           ...stackStyle,
           background: colors.dangerSoft,
@@ -68,7 +70,7 @@ export function RefusalPanel({
 
 function readReasonLabel(reason: ReadOnlyAppMcpRefusal["reason"]) {
   if (reason === "raw_full_file_dump_request") {
-    return "raw full-file dump request";
+    return "source body export request";
   }
   if (reason === "prompt_injection") {
     return "prompt injection";

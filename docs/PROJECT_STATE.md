@@ -44,6 +44,8 @@ FP-0095 is the shipped V2O docs-and-plan plus proof-gate compatibility master-pl
 
 FP-0096 is the shipped V2P local/proof-only/read-only premium UI preview route state-matrix foundation. It extends the existing `/read-only-app-mcp-preview` route only with synthetic in-memory answer/refusal/loading/empty/error/privacy/no-runtime examples, preserves noindex/nofollow/noarchive metadata, and adds focused proof/test coverage while adding no additional app route, web API route, backend route, endpoint, remote MCP server, Apps SDK iframe/UI resource registration, OAuth, app submission, public app implementation, schema, migration, package script, eval dataset, fixture, sample data, source pack, OpenAI API/model call, source mutation, finance write, generated product prose, runtime-Codex finance output, autonomous action, screenshot, generated image, public asset, or FP-0097.
 
+FP-0097 is the shipped V2Q local/proof-only/read-only premium UI preview route visual QA foundation. It hardens the existing `/read-only-app-mcp-preview` route and local components with screenshotless DOM/style visual QA, accessibility assertions, text-labelled state posture, and the minimum proof-gate bridge while adding no second app route, web API route, backend route, endpoint, remote MCP server, Apps SDK iframe/UI resource registration, OAuth, app submission, public app implementation, schema, migration, package script, eval dataset, fixture, sample data, source pack, OpenAI API/model call, source mutation, finance write, generated product prose, runtime-Codex finance output, autonomous action, screenshot, generated image, public asset, or FP-0098.
+
 ## Shipped Architecture Summary
 
 The shipped system is organized around:
@@ -87,14 +89,15 @@ The shipped system is organized around:
 - **V2N premium read-only ChatGPT App/MCP local UI preview route foundation**: shipped through FP-0094 as exactly one local/proof-only/read-only route at `/read-only-app-mcp-preview`, rendering existing FP-0091/FP-0092 components from in-memory synthetic examples with focused tests and no web API route, backend route, endpoint, remote MCP, Apps SDK iframe/UI resources, OAuth, app submission, OpenAI API/model calls, source mutation, finance writes, public assets, or public app implementation.
 - **V2O premium read-only ChatGPT App/MCP local UI preview route state-matrix master-plan**: shipped through FP-0095 as docs-and-plan plus proof-gate compatibility only, with no route/UI code, endpoint, remote MCP, Apps SDK iframe/UI resource, OAuth, app submission, OpenAI API/model call, screenshot, image, public asset, source mutation, finance write, product runtime behavior, or public app implementation.
 - **V2P premium read-only ChatGPT App/MCP local UI preview route state-matrix foundation**: shipped through FP-0096 as local/proof-only/read-only implementation on the existing `/read-only-app-mcp-preview` route only, with no additional app route, API/backend route, endpoint, remote MCP, Apps SDK iframe/UI resource, OAuth, app submission, OpenAI API/model call, screenshot, generated image, public asset, source mutation, finance write, public app implementation, or FP-0097.
+- **V2Q premium read-only ChatGPT App/MCP local UI preview route visual QA foundation**: shipped through FP-0097 as local/proof-only/read-only visual QA and accessibility hardening on the existing `/read-only-app-mcp-preview` route only, with no additional app route, API/backend route, endpoint, remote MCP, Apps SDK iframe/UI resource, OAuth, app submission, OpenAI API/model call, screenshot, generated image, public asset, source mutation, finance write, public app implementation, or FP-0098.
 
 ## Latest Shipped V2 Plan
 
-- **V2P premium read-only ChatGPT App/MCP local UI preview route state-matrix foundation**: shipped through FP-0096.
+- **V2Q premium read-only ChatGPT App/MCP local UI preview route visual QA foundation**: shipped through FP-0097.
 
 ## Active V2 Plan
 
-- No active V2 plan is open after FP-0096. Public app implementation, route/UI implementation beyond the FP-0094/FP-0096 single local route boundary, endpoints, remote MCP deployment, Apps SDK UI resources, OAuth, app submission, provider/certification/delivery/deployment, and V2G expansion beyond the shipped local proof-only contracts and descriptor/envelope foundation still require a later named Finance Plan.
+- No unfinished V2 Finance Plan is open after [FP-0097](../plans/FP-0097-read-only-chatgpt-app-mcp-premium-ui-preview-route-visual-qa-foundation.md) closeout. Public app implementation, route/UI implementation beyond the FP-0094/FP-0096/FP-0097 single local route boundary, endpoints, remote MCP deployment, Apps SDK UI resources, OAuth, app submission, provider/certification/delivery/deployment, and V2G expansion beyond the shipped local proof-only contracts and descriptor/envelope foundation still require a later named Finance Plan.
 
 ## Fixed Shipped Monitor Families
 
@@ -144,8 +147,8 @@ These tracks remain future-only until a later Finance Plan names exact scope and
 - deeper PDF/OCR/vector search beyond the shipped narrow FP-0081 text-PDF precision-adapter candidate
 - EvidenceIndex or precision-adapter expansion outside the shipped FP-0081 first V2B contract
 - V2E expansion beyond the shipped FP-0085 local/internal proof-only bounded LLM orchestration foundation
-- public ChatGPT App/MCP deployment beyond the shipped local/internal FP-0082 contract, shipped FP-0091 local component-only boundary, shipped FP-0092 local composition/accessibility boundary, shipped FP-0093 route-readiness plan, shipped FP-0094 local preview-route foundation, shipped FP-0095 state-matrix/visual QA plan, and shipped FP-0096 existing-route state-matrix foundation
-- route implementation beyond the shipped FP-0094 single local preview route foundation and shipped FP-0096 existing-route state-matrix boundary
+- public ChatGPT App/MCP deployment beyond the shipped local/internal FP-0082 contract, shipped FP-0091 local component-only boundary, shipped FP-0092 local composition/accessibility boundary, shipped FP-0093 route-readiness plan, shipped FP-0094 local preview-route foundation, shipped FP-0095 state-matrix/visual QA plan, shipped FP-0096 existing-route state-matrix foundation, and shipped FP-0097 existing-route visual QA foundation
+- route implementation beyond the shipped FP-0094 single local preview route foundation, shipped FP-0096 existing-route state-matrix boundary, and shipped FP-0097 existing-route visual QA boundary
 - FP-0092 implementation beyond local/proof-only/read-only composition and accessibility hardening
 - FP-0091 implementation beyond local/proof-only/read-only component foundation
 - FP-0090 implementation beyond docs-only premium UI implementation readiness and proof-gate compatibility
@@ -199,6 +202,7 @@ Key records:
 - [FP-0094 V2N read-only ChatGPT App/MCP premium UI preview route foundation](../plans/FP-0094-read-only-chatgpt-app-mcp-premium-ui-preview-route-foundation.md)
 - [FP-0095 V2O read-only ChatGPT App/MCP premium UI preview route state-matrix master plan](../plans/FP-0095-read-only-chatgpt-app-mcp-premium-ui-preview-route-state-matrix-master-plan.md)
 - [FP-0096 V2P read-only ChatGPT App/MCP premium UI preview route state-matrix foundation](../plans/FP-0096-read-only-chatgpt-app-mcp-premium-ui-preview-route-state-matrix-foundation.md)
+- [FP-0097 V2Q read-only ChatGPT App/MCP premium UI preview route visual QA foundation](../plans/FP-0097-read-only-chatgpt-app-mcp-premium-ui-preview-route-visual-qa-foundation.md)
 - [FP-0077 F10 v1 public launch handoff](../plans/FP-0077-v1-public-launch-handoff.md)
 - [FP-0076 F9 product UI launch polish](../plans/FP-0076-product-ui-launch-polish-foundation.md)
 - [FP-0075 F8 future-scope triage](../plans/FP-0075-v1-future-scope-triage-and-roadmap-hardening.md)
