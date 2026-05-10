@@ -1,13 +1,13 @@
 # Codex Plugins
 
-This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0100 local/proof-only public-app security boundary contracts foundation and targeted post-merge hardening slice.
+This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0101 docs-and-plan-only public ChatGPT App/MCP implementation sequencing and platform-readiness master plan.
 
 ## Repo-local plugin used
 
 - `pocket-cfo-codex-operator`
   - Marketplace entry: `.agents/plugins/marketplace.json`
   - Bundle path: `plugins/pocket-cfo-codex-operator/`
-  - Skills invoked for this FP-0100 targeted post-merge public-app security proof-contract hardening slice:
+  - Skills invoked for this FP-0101 public-app implementation sequencing and proof-gate compatibility slice:
     - Finance Plan Orchestrator
     - Modular Architecture Guard
     - Source Provenance Guard
@@ -39,5 +39,5 @@ This file records the plugins available in this Codex local thread and the repo-
 ## Notes
 
 - Routine `git` and `gh` CLI operations were used for repository and PR metadata.
-- OpenAI Developers was available but was not used to create API keys, call OpenAI APIs, call models, or widen app/runtime scope. No new official OpenAI web/plugin research was used for FP-0100; FP-0099 remains the recorded official platform/security context source for planning.
+- OpenAI Developers was available but was not used to create API keys, call OpenAI APIs, call models, or widen app/runtime scope. Official OpenAI web docs were used as read-only platform context for Apps SDK, MCP Apps in ChatGPT, MCP server structure, ChatGPT UI resources, authentication, deployment, Developer Mode testing, security/privacy, and submission sequencing.
 - No Figma, app-submission, design-generation, OpenAI API/model-call, artifact-upload, dependency-installation, or public-asset generation plugin workflow was used for this slice.

@@ -382,7 +382,22 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
     expect(
       proof.fp0100AbsentOrLocalSecurityBoundaryContractsVerified,
     ).toBe(true);
-    expect(proof.fp0101Absent).toBe(true);
+    expect(
+      proof
+        .fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified,
+    ).toBe(true);
+    expect(proof.fp0102Absent).toBe(true);
+    expect(
+      proof.publicAppImplementationSequencingPlanBoundaryVerified,
+    ).toBe(true);
+    expect(proof.noEndpointImplementationFromFp0101).toBe(true);
+    expect(proof.noOauthImplementationFromFp0101).toBe(true);
+    expect(proof.noRemoteMcpDeploymentFromFp0101).toBe(true);
+    expect(proof.noAppsSdkResourceFromFp0101).toBe(true);
+    expect(proof.noAppSubmissionFromFp0101).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0101).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0101).toBe(true);
+    expect(proof.noPublicAssetsSubmissionArtifactsFromFp0101).toBe(true);
     expect(proof.publicAppSecurityContractsFoundationVerified).toBe(true);
     expect(proof.noEndpointImplementationFromFp0100).toBe(true);
     expect(proof.noOauthImplementationFromFp0100).toBe(true);

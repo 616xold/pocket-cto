@@ -131,7 +131,18 @@ export const AppMcpDescriptorEnvelopeProofSchema = z
     fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified:
       trueLiteral,
     fp0100AbsentOrLocalSecurityBoundaryContractsVerified: trueLiteral,
-    fp0101Absent: trueLiteral,
+    fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
+      trueLiteral,
+    fp0102Absent: trueLiteral,
+    publicAppImplementationSequencingPlanBoundaryVerified: trueLiteral,
+    noEndpointImplementationFromFp0101: trueLiteral,
+    noOauthImplementationFromFp0101: trueLiteral,
+    noRemoteMcpDeploymentFromFp0101: trueLiteral,
+    noAppsSdkResourceFromFp0101: trueLiteral,
+    noAppSubmissionFromFp0101: trueLiteral,
+    noOpenAiApiCallsFromFp0101: trueLiteral,
+    noSourceMutationFinanceWriteFromFp0101: trueLiteral,
+    noPublicAssetsSubmissionArtifactsFromFp0101: trueLiteral,
     publicAppSecurityContractsFoundationVerified: trueLiteral,
     noEndpointImplementationFromFp0100: trueLiteral,
     noOauthImplementationFromFp0100: trueLiteral,
@@ -262,7 +273,17 @@ export function buildAppMcpDescriptorEnvelopeProof(
     fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified: boolean;
     fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified: boolean;
     fp0100AbsentOrLocalSecurityBoundaryContractsVerified: boolean;
-    fp0101Absent: boolean;
+    fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified: boolean;
+    fp0102Absent: boolean;
+    publicAppImplementationSequencingPlanBoundaryVerified: boolean;
+    noEndpointImplementationFromFp0101: boolean;
+    noOauthImplementationFromFp0101: boolean;
+    noRemoteMcpDeploymentFromFp0101: boolean;
+    noAppsSdkResourceFromFp0101: boolean;
+    noAppSubmissionFromFp0101: boolean;
+    noOpenAiApiCallsFromFp0101: boolean;
+    noSourceMutationFinanceWriteFromFp0101: boolean;
+    noPublicAssetsSubmissionArtifactsFromFp0101: boolean;
     publicAppSecurityContractsFoundationVerified: boolean;
     noEndpointImplementationFromFp0100: boolean;
     noOauthImplementationFromFp0100: boolean;
@@ -496,7 +517,28 @@ export function buildAppMcpDescriptorEnvelopeProof(
       true,
     fp0100AbsentOrLocalSecurityBoundaryContractsVerified:
       input.fp0100AbsentOrLocalSecurityBoundaryContractsVerified ?? true,
-    fp0101Absent: input.fp0101Absent ?? true,
+    fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
+      input
+        .fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified ??
+      true,
+    fp0102Absent: input.fp0102Absent ?? true,
+    publicAppImplementationSequencingPlanBoundaryVerified:
+      input.publicAppImplementationSequencingPlanBoundaryVerified ?? true,
+    noEndpointImplementationFromFp0101:
+      input.noEndpointImplementationFromFp0101 ?? true,
+    noOauthImplementationFromFp0101:
+      input.noOauthImplementationFromFp0101 ?? true,
+    noRemoteMcpDeploymentFromFp0101:
+      input.noRemoteMcpDeploymentFromFp0101 ?? true,
+    noAppsSdkResourceFromFp0101:
+      input.noAppsSdkResourceFromFp0101 ?? true,
+    noAppSubmissionFromFp0101: input.noAppSubmissionFromFp0101 ?? true,
+    noOpenAiApiCallsFromFp0101:
+      input.noOpenAiApiCallsFromFp0101 ?? true,
+    noSourceMutationFinanceWriteFromFp0101:
+      input.noSourceMutationFinanceWriteFromFp0101 ?? true,
+    noPublicAssetsSubmissionArtifactsFromFp0101:
+      input.noPublicAssetsSubmissionArtifactsFromFp0101 ?? true,
     publicAppSecurityContractsFoundationVerified:
       input.publicAppSecurityContractsFoundationVerified ?? true,
     noEndpointImplementationFromFp0100:

@@ -56,6 +56,8 @@ const FP0099_PLAN_FILE =
   "FP-0099-read-only-chatgpt-app-mcp-public-app-security-threat-model-master-plan.md";
 const FP0100_PLAN_FILE =
   "FP-0100-read-only-chatgpt-app-mcp-public-app-security-boundary-contracts-foundation.md";
+const FP0101_PLAN_FILE =
+  "FP-0101-read-only-chatgpt-app-mcp-public-app-implementation-sequencing-master-plan.md";
 
 function safeDemoDataPolicy() {
   return {
@@ -2434,11 +2436,34 @@ function fp0099PublicAppSecurityThreatModelBoundary() {
 
 function fp0100ReadOnlyAppMcpProofFields() {
   const fp0100Boundary = fp0100PublicAppSecurityBoundary();
+  const fp0101Boundary =
+    fp0101PublicAppImplementationSequencingBoundary();
 
   return {
     fp0100AbsentOrLocalSecurityBoundaryContractsVerified:
       fp0100Boundary.absentOrLocalSecurityBoundaryContractsVerified,
-    fp0101Absent: fp0101Absent(),
+    fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
+      fp0101Boundary
+        .absentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified,
+    fp0102Absent: fp0102Absent(),
+    publicAppImplementationSequencingPlanBoundaryVerified:
+      fp0101Boundary.publicAppImplementationSequencingPlanBoundaryVerified,
+    noEndpointImplementationFromFp0101:
+      fp0101Boundary.noEndpointImplementationFromFp0101,
+    noOauthImplementationFromFp0101:
+      fp0101Boundary.noOauthImplementationFromFp0101,
+    noRemoteMcpDeploymentFromFp0101:
+      fp0101Boundary.noRemoteMcpDeploymentFromFp0101,
+    noAppsSdkResourceFromFp0101:
+      fp0101Boundary.noAppsSdkResourceFromFp0101,
+    noAppSubmissionFromFp0101:
+      fp0101Boundary.noAppSubmissionFromFp0101,
+    noOpenAiApiCallsFromFp0101:
+      fp0101Boundary.noOpenAiApiCallsFromFp0101,
+    noSourceMutationFinanceWriteFromFp0101:
+      fp0101Boundary.noSourceMutationFinanceWriteFromFp0101,
+    noPublicAssetsSubmissionArtifactsFromFp0101:
+      fp0101Boundary.noPublicAssetsSubmissionArtifactsFromFp0101,
     publicAppSecurityContractsFoundationVerified:
       fp0100Boundary.publicAppSecurityContractsFoundationVerified,
     noEndpointImplementationFromFp0100:
@@ -2601,8 +2626,137 @@ function fp0100PublicAppSecurityBoundary() {
   };
 }
 
-function fp0101Absent() {
-  return !repoFilePaths().some((path) => /(^|\/)FP-0101/u.test(path));
+function fp0101PublicAppImplementationSequencingBoundary() {
+  const plansPath = existsSync("plans") ? "plans" : "../../plans";
+  const fp0101Files = readdirSync(plansPath).filter((name) =>
+    /^FP-0101/u.test(name),
+  );
+  const absentBoundary = {
+    absentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified: true,
+    publicAppImplementationSequencingPlanBoundaryVerified: true,
+    noEndpointImplementationFromFp0101: true,
+    noOauthImplementationFromFp0101: true,
+    noRemoteMcpDeploymentFromFp0101: true,
+    noAppsSdkResourceFromFp0101: true,
+    noAppSubmissionFromFp0101: true,
+    noOpenAiApiCallsFromFp0101: true,
+    noSourceMutationFinanceWriteFromFp0101: true,
+    noPublicAssetsSubmissionArtifactsFromFp0101: true,
+  };
+  const failedBoundary = Object.fromEntries(
+    Object.keys(absentBoundary).map((key) => [key, false]),
+  ) as typeof absentBoundary;
+
+  if (fp0101Files.length === 0) return absentBoundary;
+  if (fp0101Files.length !== 1 || fp0101Files[0] !== FP0101_PLAN_FILE) {
+    return failedBoundary;
+  }
+
+  const planPath = `${plansPath}/${FP0101_PLAN_FILE}`;
+  const normalized = readFileSync(planPath, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+  const implementationRouteOrEndpointPaths = repoFilePaths().filter(
+    (path) =>
+      /^(apps\/web\/app|apps\/control-plane)\//u.test(path) &&
+      /fp-?0101|implementation-sequencing|public-app-implementation|endpoint|oauth|remote-mcp/u.test(
+        path.toLowerCase(),
+      ),
+  );
+  const publicAssetsSubmissionArtifactPaths = repoFilePaths().filter(
+    (path) =>
+      /\.(png|jpe?g|gif|webp|svg|fig|pdf|pptx?)$/iu.test(path) &&
+      /fp-?0101|implementation-sequencing|listing|submission|public-asset|app-submission/u.test(
+        path.toLowerCase(),
+      ),
+  );
+  const publicAppImplementationSequencingPlanBoundaryVerified =
+    [
+      "fp-0101 is not implementation",
+      "fp-0101 is docs-and-plan only",
+      "future public-app implementation sequencing/platform-readiness",
+      "fp-0101 defines future public-app implementation sequencing only",
+      "recommended implementation order",
+      "fp-0102 docs/proof-only endpoint/oauth/remote-mcp architecture master plan",
+      "later endpoint/oauth contract implementation only after security acceptance",
+      "later apps sdk/resource master plan",
+      "later apps sdk/resource local proof implementation",
+      "later app-submission master plan",
+      "later app-submission artifact implementation only after all prior gates",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    implementationRouteOrEndpointPaths.length === 0;
+  const noEndpointImplementationFromFp0101 =
+    [
+      "does not authorize endpoint implementation",
+      "no endpoint implementation is required",
+      "what must be true before endpoint work starts",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    implementationRouteOrEndpointPaths.length === 0;
+  const noOauthImplementationFromFp0101 = [
+    "does not authorize oauth implementation",
+    "no oauth implementation is required",
+    "what must be true before oauth/token/session work starts",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noRemoteMcpDeploymentFromFp0101 = [
+    "does not authorize remote mcp deployment",
+    "no remote mcp implementation is required",
+    "what must be true before remote mcp deployment starts",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noAppsSdkResourceFromFp0101 = [
+    "does not authorize apps sdk iframe/resource implementation",
+    "no apps sdk resource implementation is required",
+    "what must be true before apps sdk iframe/resource work starts",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noAppSubmissionFromFp0101 = [
+    "does not authorize app submission",
+    "does not authorize app submission, screenshots, listing copy, or public assets",
+    "what must be true before app submission/listing/screenshots starts",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noOpenAiApiCallsFromFp0101 = [
+    "does not authorize openai api/model calls",
+    "no openai api/model calls are required",
+    "no openai api/model call was made",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noSourceMutationFinanceWriteFromFp0101 = [
+    "no source mutation",
+    "no finance writes",
+    "no finance write or source mutation is required",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noPublicAssetsSubmissionArtifactsFromFp0101 =
+    [
+      "no screenshots",
+      "no generated images",
+      "no public assets",
+      "no listing copy",
+      "no app-submission artifacts",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    publicAssetsSubmissionArtifactPaths.length === 0;
+
+  return {
+    absentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
+      publicAppImplementationSequencingPlanBoundaryVerified &&
+      noEndpointImplementationFromFp0101 &&
+      noOauthImplementationFromFp0101 &&
+      noRemoteMcpDeploymentFromFp0101 &&
+      noAppsSdkResourceFromFp0101 &&
+      noAppSubmissionFromFp0101 &&
+      noOpenAiApiCallsFromFp0101 &&
+      noSourceMutationFinanceWriteFromFp0101 &&
+      noPublicAssetsSubmissionArtifactsFromFp0101,
+    publicAppImplementationSequencingPlanBoundaryVerified,
+    noEndpointImplementationFromFp0101,
+    noOauthImplementationFromFp0101,
+    noRemoteMcpDeploymentFromFp0101,
+    noAppsSdkResourceFromFp0101,
+    noAppSubmissionFromFp0101,
+    noOpenAiApiCallsFromFp0101,
+    noSourceMutationFinanceWriteFromFp0101,
+    noPublicAssetsSubmissionArtifactsFromFp0101,
+  };
+}
+
+function fp0102Absent() {
+  return !repoFilePaths().some((path) => /(^|\/)FP-0102/u.test(path));
 }
 
 function noFp0100RouteOrEndpointPaths() {
@@ -3375,7 +3529,22 @@ describe("benchmark community pack foundation contracts", () => {
     expect(
       proof.fp0100AbsentOrLocalSecurityBoundaryContractsVerified,
     ).toBe(true);
-    expect(proof.fp0101Absent).toBe(true);
+    expect(
+      proof
+        .fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified,
+    ).toBe(true);
+    expect(proof.fp0102Absent).toBe(true);
+    expect(
+      proof.publicAppImplementationSequencingPlanBoundaryVerified,
+    ).toBe(true);
+    expect(proof.noEndpointImplementationFromFp0101).toBe(true);
+    expect(proof.noOauthImplementationFromFp0101).toBe(true);
+    expect(proof.noRemoteMcpDeploymentFromFp0101).toBe(true);
+    expect(proof.noAppsSdkResourceFromFp0101).toBe(true);
+    expect(proof.noAppSubmissionFromFp0101).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0101).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0101).toBe(true);
+    expect(proof.noPublicAssetsSubmissionArtifactsFromFp0101).toBe(true);
     expect(proof.publicAppSecurityContractsFoundationVerified).toBe(true);
     expect(proof.noEndpointImplementationFromFp0100).toBe(true);
     expect(proof.noOauthImplementationFromFp0100).toBe(true);

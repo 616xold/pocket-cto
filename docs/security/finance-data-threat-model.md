@@ -1,6 +1,6 @@
 # Finance Data Threat Model
 
-FP-0083 created the documentation and governance baseline. FP-0086 adds a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation, FP-0087 adds local proof-only read-only app/MCP contract plus descriptor/response-envelope contracts, FP-0098 adds public-app readiness/security/submission-boundary planning, FP-0099 adds public-app security threat-model/platform-boundary planning, and FP-0100 adds local/proof-only public-app security boundary contracts, without adding UI, routes, endpoints, OAuth, remote MCP deployment, Apps SDK resources, app submission, schema, migrations, package scripts, fixtures, sample data, provider calls, deployment, finance writes, source mutation, generated product prose, runtime-Codex finance output, or autonomous action.
+FP-0083 created the documentation and governance baseline. FP-0086 adds a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation, FP-0087 adds local proof-only read-only app/MCP contract plus descriptor/response-envelope contracts, FP-0098 adds public-app readiness/security/submission-boundary planning, FP-0099 adds public-app security threat-model/platform-boundary planning, FP-0100 adds local/proof-only public-app security boundary contracts, and FP-0101 adds docs-only public-app implementation sequencing/platform-readiness planning, without adding UI, routes, endpoints, OAuth, remote MCP deployment, Apps SDK resources, app submission, schema, migrations, package scripts, fixtures, sample data, provider calls, deployment, finance writes, source mutation, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Assets
 
@@ -30,7 +30,7 @@ Prompt injection in source text is expected. A PDF, export, markdown file, wiki 
 
 Read-only evidence tools can still disclose data through broad search results, full-file excerpts, query logs, audit output, citations, or insufficient redaction.
 
-Future provider, certification, deployment, public MCP, public ChatGPT App, Apps SDK UI/resources, OAuth, endpoints, app submission, public community-pack distribution, benchmark datasets, and sample/demo data would add new privacy and security risks. They are outside the shipped product boundary and require future plans after the FP-0099 security threat-model/platform-boundary prerequisites and FP-0100 local security boundary contracts are accepted.
+Future provider, certification, deployment, public MCP, public ChatGPT App, Apps SDK UI/resources, OAuth, endpoints, app submission, public community-pack distribution, benchmark datasets, and sample/demo data would add new privacy and security risks. They are outside the shipped product boundary and require future plans after the FP-0099 security threat-model/platform-boundary prerequisites, FP-0100 local security boundary contracts, and FP-0101 implementation sequencing/platform-readiness gates are accepted.
 
 ## Mitigations
 

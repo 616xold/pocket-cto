@@ -227,11 +227,27 @@ describe("FP-0100 public app security boundary contracts", () => {
     expect(proof.requiredEvidenceRefusalReasonsVerified).toBe(true);
     expect(proof.publicSecurityNoOpenAiApiSourceScanVerified).toBe(true);
     expect(proof.fp0100BoundaryVerified).toBe(true);
-    expect(proof.fp0101Absent).toBe(true);
+    expect(
+      proof
+        .fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified,
+    ).toBe(true);
+    expect(proof.fp0102Absent).toBe(true);
+    expect(
+      proof.publicAppImplementationSequencingPlanBoundaryVerified,
+    ).toBe(true);
+    expect(proof.noEndpointImplementationFromFp0101).toBe(true);
+    expect(proof.noOauthImplementationFromFp0101).toBe(true);
+    expect(proof.noRemoteMcpDeploymentFromFp0101).toBe(true);
+    expect(proof.noAppsSdkResourceFromFp0101).toBe(true);
+    expect(proof.noAppSubmissionFromFp0101).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0101).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0101).toBe(true);
+    expect(proof.noPublicAssetsSubmissionArtifactsFromFp0101).toBe(true);
     expect(
       PublicAppSecurityProofSchema.safeParse({
         ...proof,
-        fp0101Absent: false,
+        fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
+          false,
       }).success,
     ).toBe(false);
     expect(

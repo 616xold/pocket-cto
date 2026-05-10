@@ -57,7 +57,18 @@ export const PublicAppSecurityProofSchema = z
     publicSecurityNoOpenAiApiSourceScanVerified: trueLiteral,
     v2gDescriptorEnvelopeAllowlistReadOnly: trueLiteral,
     fp0100BoundaryVerified: trueLiteral,
-    fp0101Absent: trueLiteral,
+    fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
+      trueLiteral,
+    fp0102Absent: trueLiteral,
+    publicAppImplementationSequencingPlanBoundaryVerified: trueLiteral,
+    noEndpointImplementationFromFp0101: trueLiteral,
+    noOauthImplementationFromFp0101: trueLiteral,
+    noRemoteMcpDeploymentFromFp0101: trueLiteral,
+    noAppsSdkResourceFromFp0101: trueLiteral,
+    noAppSubmissionFromFp0101: trueLiteral,
+    noOpenAiApiCallsFromFp0101: trueLiteral,
+    noSourceMutationFinanceWriteFromFp0101: trueLiteral,
+    noPublicAssetsSubmissionArtifactsFromFp0101: trueLiteral,
     allowedTools: z.tuple([
       z.literal(MCP_TOOL_ALLOWLIST[0]),
       z.literal(MCP_TOOL_ALLOWLIST[1]),
@@ -90,7 +101,17 @@ export function buildPublicAppSecurityProof(
     localPreviewRouteRemainsLocalNoindexOnly: boolean;
     publicSecurityNoOpenAiApiSourceScanVerified: boolean;
     fp0100BoundaryVerified: boolean;
-    fp0101Absent: boolean;
+    fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified: boolean;
+    fp0102Absent: boolean;
+    publicAppImplementationSequencingPlanBoundaryVerified: boolean;
+    noEndpointImplementationFromFp0101: boolean;
+    noOauthImplementationFromFp0101: boolean;
+    noRemoteMcpDeploymentFromFp0101: boolean;
+    noAppsSdkResourceFromFp0101: boolean;
+    noAppSubmissionFromFp0101: boolean;
+    noOpenAiApiCallsFromFp0101: boolean;
+    noSourceMutationFinanceWriteFromFp0101: boolean;
+    noPublicAssetsSubmissionArtifactsFromFp0101: boolean;
   }> = {},
 ) {
   const contracts = buildPublicAppSecurityContracts();
@@ -133,7 +154,28 @@ export function buildPublicAppSecurityProof(
       contracts.endpointDeferredBoundary.deferred &&
       !contracts.endpointDeferredBoundary.implemented,
     fp0100BoundaryVerified: input.fp0100BoundaryVerified ?? true,
-    fp0101Absent: input.fp0101Absent ?? true,
+    fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
+      input
+        .fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified ??
+      true,
+    fp0102Absent: input.fp0102Absent ?? true,
+    publicAppImplementationSequencingPlanBoundaryVerified:
+      input.publicAppImplementationSequencingPlanBoundaryVerified ?? true,
+    noEndpointImplementationFromFp0101:
+      input.noEndpointImplementationFromFp0101 ?? true,
+    noOauthImplementationFromFp0101:
+      input.noOauthImplementationFromFp0101 ?? true,
+    noRemoteMcpDeploymentFromFp0101:
+      input.noRemoteMcpDeploymentFromFp0101 ?? true,
+    noAppsSdkResourceFromFp0101:
+      input.noAppsSdkResourceFromFp0101 ?? true,
+    noAppSubmissionFromFp0101: input.noAppSubmissionFromFp0101 ?? true,
+    noOpenAiApiCallsFromFp0101:
+      input.noOpenAiApiCallsFromFp0101 ?? true,
+    noSourceMutationFinanceWriteFromFp0101:
+      input.noSourceMutationFinanceWriteFromFp0101 ?? true,
+    noPublicAssetsSubmissionArtifactsFromFp0101:
+      input.noPublicAssetsSubmissionArtifactsFromFp0101 ?? true,
     localPreviewRouteExists,
     routeMetadataNoIndexBoundaryVerified,
     localPreviewRouteRemainsLocalNoindexOnly:
