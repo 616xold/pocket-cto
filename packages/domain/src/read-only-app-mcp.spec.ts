@@ -331,7 +331,10 @@ describe("V2G read-only ChatGPT App/MCP contracts", () => {
     ).toBe(true);
     expect(proof.fp0093AbsentOrDocsOnlyPreviewRouteBoundaryVerified).toBe(true);
     expect(proof.fp0094AbsentOrLocalPreviewRouteBoundaryVerified).toBe(true);
-    expect(proof.fp0095Absent).toBe(true);
+    expect(
+      proof.fp0095AbsentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified,
+    ).toBe(true);
+    expect(proof.fp0096Absent).toBe(true);
     expect(proof.premiumUiSecurityPlanBoundaryVerified).toBe(true);
     expect(proof.premiumUiDesignSystemPlanBoundaryVerified).toBe(true);
     expect(proof.premiumUiImplementationPlanBoundaryVerified).toBe(true);
@@ -339,6 +342,7 @@ describe("V2G read-only ChatGPT App/MCP contracts", () => {
     expect(proof.premiumUiCompositionAccessibilityFoundationVerified).toBe(true);
     expect(proof.localUiPreviewRoutePlanBoundaryVerified).toBe(true);
     expect(proof.localPreviewRouteFoundationVerified).toBe(true);
+    expect(proof.localPreviewRouteStateMatrixPlanBoundaryVerified).toBe(true);
     expect(proof.noUiImplementationFromFp0088).toBe(true);
     expect(proof.noUiImplementationFromFp0089).toBe(true);
     expect(proof.noAppsSdkIframeFromFp0089).toBe(true);
@@ -377,5 +381,16 @@ describe("V2G read-only ChatGPT App/MCP contracts", () => {
     expect(proof.noPublicAppImplementationFromFp0094).toBe(true);
     expect(proof.noOpenAiApiCallsFromFp0094).toBe(true);
     expect(proof.noSourceMutationFinanceWriteFromFp0094).toBe(true);
+    expect(proof.noRouteImplementationFromFp0095).toBe(true);
+    expect(proof.noScreenshotAssetsFromFp0095).toBe(true);
+    expect(proof.noEndpointOauthSubmissionFromFp0095).toBe(true);
+    expect(proof.noPublicAppImplementationFromFp0095).toBe(true);
+    expect(proof.noAppsSdkIframeFromFp0095).toBe(true);
+    expect(proof.noRemoteMcpDeploymentFromFp0095).toBe(true);
+    expect(proof.noOpenAiApiModelCallsFromFp0095).toBe(true);
+    expect(proof.noProviderCertificationDeploymentFromFp0095).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0095).toBe(true);
+    expect(proof.noGeneratedProductProseRuntimeCodexFromFp0095).toBe(true);
+    expect(proof.noPublicAssetsFromFp0095).toBe(true);
   });
 });

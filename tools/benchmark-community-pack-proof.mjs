@@ -113,6 +113,8 @@ const FP0093_PLAN =
   "plans/FP-0093-read-only-chatgpt-app-mcp-premium-ui-preview-route-master-plan.md";
 const FP0094_PLAN =
   "plans/FP-0094-read-only-chatgpt-app-mcp-premium-ui-preview-route-foundation.md";
+const FP0095_PLAN =
+  "plans/FP-0095-read-only-chatgpt-app-mcp-premium-ui-preview-route-state-matrix-master-plan.md";
 const fp0088Boundary = fp0088DocsOnlyBoundary();
 const fp0089Boundary = fp0089DocsOnlyBoundary();
 const fp0090Boundary = fp0090DocsOnlyBoundary();
@@ -120,8 +122,9 @@ const fp0091Boundary = fp0091LocalUiComponentBoundary();
 const fp0092Boundary = fp0092LocalUiCompositionAccessibilityBoundary();
 const fp0093Boundary = fp0093LocalUiPreviewRouteBoundary();
 const fp0094Boundary = fp0094LocalPreviewRouteBoundary();
-const fp0095Absent = !repoFilePaths().some((path) =>
-  /(^|\/)FP-0095/u.test(path),
+const fp0095Boundary = fp0095LocalPreviewRouteStateMatrixBoundary();
+const fp0096Absent = !repoFilePaths().some((path) =>
+  /(^|\/)FP-0096/u.test(path),
 );
 
 function fp0087AbsentOrDocsOnlyBoundaryVerified() {
@@ -169,7 +172,9 @@ function fp0087AbsentOrDocsOnlyBoundaryVerified() {
         fp0093Boundary.absentOrDocsOnlyPreviewRouteBoundaryVerified,
       fp0094AbsentOrLocalPreviewRouteBoundaryVerified:
         fp0094Boundary.absentOrLocalPreviewRouteBoundaryVerified,
-      fp0095Absent,
+      fp0095AbsentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified:
+        fp0095Boundary.absentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified,
+      fp0096Absent,
       premiumUiSecurityPlanBoundaryVerified:
         fp0088Boundary.premiumUiSecurityPlanBoundaryVerified,
       premiumUiDesignSystemPlanBoundaryVerified:
@@ -184,6 +189,8 @@ function fp0087AbsentOrDocsOnlyBoundaryVerified() {
         fp0093Boundary.localUiPreviewRoutePlanBoundaryVerified,
       localPreviewRouteFoundationVerified:
         fp0094Boundary.localPreviewRouteFoundationVerified,
+      localPreviewRouteStateMatrixPlanBoundaryVerified:
+        fp0095Boundary.localPreviewRouteStateMatrixPlanBoundaryVerified,
       noUiImplementationFromFp0088:
         fp0088Boundary.noUiImplementationFromFp0088,
       noUiImplementationFromFp0089:
@@ -247,6 +254,27 @@ function fp0087AbsentOrDocsOnlyBoundaryVerified() {
         fp0094Boundary.noOpenAiApiCallsFromFp0094,
       noSourceMutationFinanceWriteFromFp0094:
         fp0094Boundary.noSourceMutationFinanceWriteFromFp0094,
+      noRouteImplementationFromFp0095:
+        fp0095Boundary.noRouteImplementationFromFp0095,
+      noScreenshotAssetsFromFp0095:
+        fp0095Boundary.noScreenshotAssetsFromFp0095,
+      noEndpointOauthSubmissionFromFp0095:
+        fp0095Boundary.noEndpointOauthSubmissionFromFp0095,
+      noPublicAppImplementationFromFp0095:
+        fp0095Boundary.noPublicAppImplementationFromFp0095,
+      noAppsSdkIframeFromFp0095:
+        fp0095Boundary.noAppsSdkIframeFromFp0095,
+      noRemoteMcpDeploymentFromFp0095:
+        fp0095Boundary.noRemoteMcpDeploymentFromFp0095,
+      noOpenAiApiModelCallsFromFp0095:
+        fp0095Boundary.noOpenAiApiModelCallsFromFp0095,
+      noProviderCertificationDeploymentFromFp0095:
+        fp0095Boundary.noProviderCertificationDeploymentFromFp0095,
+      noSourceMutationFinanceWriteFromFp0095:
+        fp0095Boundary.noSourceMutationFinanceWriteFromFp0095,
+      noGeneratedProductProseRuntimeCodexFromFp0095:
+        fp0095Boundary.noGeneratedProductProseRuntimeCodexFromFp0095,
+      noPublicAssetsFromFp0095: fp0095Boundary.noPublicAssetsFromFp0095,
     }),
   );
 
@@ -665,7 +693,9 @@ const proof = BenchmarkProofSchema.parse({
     fp0093Boundary.absentOrDocsOnlyPreviewRouteBoundaryVerified,
   fp0094AbsentOrLocalPreviewRouteBoundaryVerified:
     fp0094Boundary.absentOrLocalPreviewRouteBoundaryVerified,
-  fp0095Absent,
+  fp0095AbsentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified:
+    fp0095Boundary.absentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified,
+  fp0096Absent,
   premiumUiSecurityPlanBoundaryVerified:
     fp0088Boundary.premiumUiSecurityPlanBoundaryVerified,
   premiumUiDesignSystemPlanBoundaryVerified:
@@ -680,6 +710,8 @@ const proof = BenchmarkProofSchema.parse({
     fp0093Boundary.localUiPreviewRoutePlanBoundaryVerified,
   localPreviewRouteFoundationVerified:
     fp0094Boundary.localPreviewRouteFoundationVerified,
+  localPreviewRouteStateMatrixPlanBoundaryVerified:
+    fp0095Boundary.localPreviewRouteStateMatrixPlanBoundaryVerified,
   noUiImplementationFromFp0088:
     fp0088Boundary.noUiImplementationFromFp0088,
   noUiImplementationFromFp0089:
@@ -742,6 +774,26 @@ const proof = BenchmarkProofSchema.parse({
     fp0094Boundary.noOpenAiApiCallsFromFp0094,
   noSourceMutationFinanceWriteFromFp0094:
     fp0094Boundary.noSourceMutationFinanceWriteFromFp0094,
+  noRouteImplementationFromFp0095:
+    fp0095Boundary.noRouteImplementationFromFp0095,
+  noScreenshotAssetsFromFp0095:
+    fp0095Boundary.noScreenshotAssetsFromFp0095,
+  noEndpointOauthSubmissionFromFp0095:
+    fp0095Boundary.noEndpointOauthSubmissionFromFp0095,
+  noPublicAppImplementationFromFp0095:
+    fp0095Boundary.noPublicAppImplementationFromFp0095,
+  noAppsSdkIframeFromFp0095: fp0095Boundary.noAppsSdkIframeFromFp0095,
+  noRemoteMcpDeploymentFromFp0095:
+    fp0095Boundary.noRemoteMcpDeploymentFromFp0095,
+  noOpenAiApiModelCallsFromFp0095:
+    fp0095Boundary.noOpenAiApiModelCallsFromFp0095,
+  noProviderCertificationDeploymentFromFp0095:
+    fp0095Boundary.noProviderCertificationDeploymentFromFp0095,
+  noSourceMutationFinanceWriteFromFp0095:
+    fp0095Boundary.noSourceMutationFinanceWriteFromFp0095,
+  noGeneratedProductProseRuntimeCodexFromFp0095:
+    fp0095Boundary.noGeneratedProductProseRuntimeCodexFromFp0095,
+  noPublicAssetsFromFp0095: fp0095Boundary.noPublicAssetsFromFp0095,
   inMemorySyntheticExamplesOnlyVerified:
     manifest.validationPosture.inMemorySyntheticExamplesOnly,
   missingCitationTaskVerified:
@@ -1613,6 +1665,244 @@ function fp0094LocalPreviewRouteBoundary() {
     noOpenAiApiCallsFromFp0094,
     noPublicAppImplementationFromFp0094,
     noSourceMutationFinanceWriteFromFp0094,
+  };
+}
+
+function fp0095LocalPreviewRouteStateMatrixBoundary() {
+  const fp0095PathHits = repoFilePaths().filter((path) =>
+    /(^|\/)FP-0095/u.test(path),
+  );
+  const routePaths = repoFilePaths().filter((path) =>
+    path.startsWith("apps/web/app/read-only-app-mcp-preview/"),
+  );
+  const routePagePath = "apps/web/app/read-only-app-mcp-preview/page.tsx";
+  const routeSpecPath =
+    "apps/web/app/read-only-app-mcp-preview/page.spec.tsx";
+  const routeSource = routePaths.includes(routePagePath)
+    ? readFileSync(routePagePath, "utf8")
+    : "";
+  const routeSpecSource = routePaths.includes(routeSpecPath)
+    ? readFileSync(routeSpecPath, "utf8")
+    : "";
+  const routeAndSpecSource = `${routeSource}\n${routeSpecSource}`;
+  const allowedRouteFilesOnly =
+    routePaths.length === 2 &&
+    routePaths.includes(routePagePath) &&
+    routePaths.includes(routeSpecPath);
+  const absentBoundary = {
+    absentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified: true,
+    localPreviewRouteStateMatrixPlanBoundaryVerified: true,
+    noAppsSdkIframeFromFp0095: true,
+    noEndpointOauthSubmissionFromFp0095: true,
+    noGeneratedProductProseRuntimeCodexFromFp0095: true,
+    noOpenAiApiModelCallsFromFp0095: true,
+    noProviderCertificationDeploymentFromFp0095: true,
+    noPublicAppImplementationFromFp0095: true,
+    noPublicAssetsFromFp0095: true,
+    noRemoteMcpDeploymentFromFp0095: true,
+    noRouteImplementationFromFp0095: true,
+    noScreenshotAssetsFromFp0095: true,
+    noSourceMutationFinanceWriteFromFp0095: true,
+  };
+  const failedBoundary = Object.fromEntries(
+    Object.keys(absentBoundary).map((key) => [key, false]),
+  );
+
+  if (fp0095PathHits.length === 0) return absentBoundary;
+  if (fp0095PathHits.length !== 1 || fp0095PathHits[0] !== FP0095_PLAN) {
+    return failedBoundary;
+  }
+
+  const lower = readFileSync(FP0095_PLAN, "utf8").toLowerCase();
+  const normalized = lower.replace(/[`_*]+/gu, "");
+  const routeStateMatrixImplemented =
+    /state[-\s]?matrix|missing citation refusal|unsupported evidence refusal|conflicting evidence refusal|privacy\/no-runtime boundary state/iu.test(
+      routeAndSpecSource,
+    );
+  const apiRouteExists = repoFilePaths().some(
+    (path) =>
+      path.startsWith("apps/web/app/api/read-only-app-mcp") ||
+      path.startsWith("apps/web/app/read-only-app-mcp-preview/route."),
+  );
+  const backendRouteExists = repoFilePaths().some(
+    (path) =>
+      path.startsWith("apps/control-plane/") &&
+      /read-only-app-mcp-preview|state-matrix|fp-0095|fp0095/u.test(path),
+  );
+  const endpointImplementationExists =
+    apiRouteExists ||
+    backendRouteExists ||
+    /export\s+async\s+function\s+(get|post|put|patch|delete)|nextresponse|fastify\./iu.test(
+      routeSource,
+    );
+  const fp0095AssetPaths = repoFilePaths().filter(
+    (path) =>
+      /(fp-0095|fp0095|state-matrix|read-only-app-mcp-preview)/iu.test(path) &&
+      /\.(png|jpe?g|webp|gif|svg|avif)$/iu.test(path),
+  );
+  const appSubmissionAssetPaths = repoFilePaths().filter(
+    (path) =>
+      /(app-submission|submission-assets|public-listing|store-listing)/iu.test(
+        path,
+      ) &&
+      /(fp-0095|fp0095|state-matrix|read-only-app-mcp-preview)/iu.test(path),
+  );
+  const docsOnlyBoundaryVerified = [
+    "fp-0095 is not implementation",
+    "docs-and-plan plus proof-gate compatibility",
+    "local preview route state-matrix and premium visual qa master-plan only",
+    "no route code",
+    "no app route",
+    "no api route",
+    "no backend route",
+    "no endpoint implementation",
+    "no remote mcp server",
+    "no apps sdk iframe/ui resource registration",
+    "no oauth",
+    "no app submission",
+    "no public app implementation",
+    "no openai api/model calls",
+    "no provider/certification/deployment work",
+    "no source mutation",
+    "no finance writes",
+    "no generated product prose",
+    "no runtime-codex finance output",
+    "no autonomous action",
+    "no screenshot binaries",
+    "no generated image assets",
+    "no public assets",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const localPreviewRouteStateMatrixPlanBoundaryVerified =
+    [
+      "future local read-only preview route state matrix",
+      "premium visual qa",
+      "noindex/local-only metadata",
+      "answer state",
+      "missing citation refusal",
+      "unsupported evidence refusal",
+      "stale evidence refusal",
+      "conflicting evidence refusal",
+      "prompt-injection warning state",
+      "raw full-file dump refusal state",
+      "unsafe action refusal state",
+      "empty evidence state",
+      "loading evidence state",
+      "error/unsupported state",
+      "privacy/no-runtime boundary state",
+      "no fetch",
+      "no post",
+      "no form",
+      "no buttons/action-looking forbidden controls",
+      "no server action",
+      "no openai api/model call",
+      "no screenshot/image/public asset files",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    allowedRouteFilesOnly;
+  const noRouteImplementationFromFp0095 =
+    [
+      "fp-0095 does not authorize route code yet",
+      "this is not route implementation",
+      "do not add the state matrix yet",
+      "no route code",
+      "no app route",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    allowedRouteFilesOnly &&
+    !routeStateMatrixImplemented;
+  const noEndpointOauthSubmissionFromFp0095 =
+    [
+      "does not authorize endpoint implementation",
+      "does not authorize remote mcp deployment",
+      "does not authorize oauth implementation",
+      "does not authorize app submission",
+      "no endpoint implementation",
+      "no oauth",
+      "no app submission",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    !endpointImplementationExists &&
+    appSubmissionAssetPaths.length === 0;
+  const noPublicAppImplementationFromFp0095 = [
+    "does not authorize public app implementation",
+    "public chatgpt app implementation must still wait",
+    "public app implementation must still wait",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noAppsSdkIframeFromFp0095 =
+    [
+      "does not authorize apps sdk iframe/ui resources",
+      "no apps sdk iframe/ui resource registration",
+      "apps sdk iframe/ui resource implementation",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    !/(iframe|postmessage|registerresource|apps-sdk)/iu.test(
+      routeAndSpecSource,
+    );
+  const noRemoteMcpDeploymentFromFp0095 = [
+    "does not authorize remote mcp deployment",
+    "no remote mcp server",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noOpenAiApiModelCallsFromFp0095 =
+    ["no openai api/model calls", "no openai api key was created or used"].every(
+      (requiredText) => normalized.includes(requiredText),
+    ) &&
+    !/(openai_api_key|from\s+["']openai["']|openai\.|responses\.create|chat\.completions)/iu.test(
+      routeSource,
+    );
+  const noProviderCertificationDeploymentFromFp0095 =
+    [
+      "no provider/certification/deployment work",
+      "no provider/certification/deployment/external communications",
+    ].every((requiredText) => normalized.includes(requiredText));
+  const noSourceMutationFinanceWriteFromFp0095 =
+    ["no source mutation", "no finance writes"].every((requiredText) =>
+      normalized.includes(requiredText),
+    );
+  const noGeneratedProductProseRuntimeCodexFromFp0095 =
+    [
+      "no generated product prose",
+      "no runtime-codex finance output",
+      "no mission-facing output was generated",
+    ].every((requiredText) => normalized.includes(requiredText));
+  const noScreenshotAssetsFromFp0095 =
+    [
+      "do not add screenshots",
+      "no screenshot binaries",
+      "no generated image assets",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    fp0095AssetPaths.length === 0;
+  const noPublicAssetsFromFp0095 =
+    [
+      "no public listing assets",
+      "no app-submission assets",
+      "no public assets",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    fp0095AssetPaths.length === 0 &&
+    appSubmissionAssetPaths.length === 0;
+
+  return {
+    absentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified:
+      docsOnlyBoundaryVerified &&
+      localPreviewRouteStateMatrixPlanBoundaryVerified &&
+      noRouteImplementationFromFp0095 &&
+      noScreenshotAssetsFromFp0095 &&
+      noEndpointOauthSubmissionFromFp0095 &&
+      noPublicAppImplementationFromFp0095 &&
+      noAppsSdkIframeFromFp0095 &&
+      noRemoteMcpDeploymentFromFp0095 &&
+      noOpenAiApiModelCallsFromFp0095 &&
+      noProviderCertificationDeploymentFromFp0095 &&
+      noSourceMutationFinanceWriteFromFp0095 &&
+      noGeneratedProductProseRuntimeCodexFromFp0095 &&
+      noPublicAssetsFromFp0095,
+    localPreviewRouteStateMatrixPlanBoundaryVerified,
+    noAppsSdkIframeFromFp0095,
+    noEndpointOauthSubmissionFromFp0095,
+    noGeneratedProductProseRuntimeCodexFromFp0095,
+    noOpenAiApiModelCallsFromFp0095,
+    noProviderCertificationDeploymentFromFp0095,
+    noPublicAppImplementationFromFp0095,
+    noPublicAssetsFromFp0095,
+    noRemoteMcpDeploymentFromFp0095,
+    noRouteImplementationFromFp0095,
+    noScreenshotAssetsFromFp0095,
+    noSourceMutationFinanceWriteFromFp0095,
   };
 }
 
