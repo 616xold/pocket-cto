@@ -58,6 +58,8 @@ const FP0100_PLAN_FILE =
   "FP-0100-read-only-chatgpt-app-mcp-public-app-security-boundary-contracts-foundation.md";
 const FP0101_PLAN_FILE =
   "FP-0101-read-only-chatgpt-app-mcp-public-app-implementation-sequencing-master-plan.md";
+const FP0102_PLAN_FILE =
+  "FP-0102-read-only-chatgpt-app-mcp-endpoint-oauth-remote-mcp-architecture-master-plan.md";
 
 function safeDemoDataPolicy() {
   return {
@@ -2438,6 +2440,8 @@ function fp0100ReadOnlyAppMcpProofFields() {
   const fp0100Boundary = fp0100PublicAppSecurityBoundary();
   const fp0101Boundary =
     fp0101PublicAppImplementationSequencingBoundary();
+  const fp0102Boundary =
+    fp0102EndpointOauthRemoteMcpArchitectureBoundary();
 
   return {
     fp0100AbsentOrLocalSecurityBoundaryContractsVerified:
@@ -2445,7 +2449,32 @@ function fp0100ReadOnlyAppMcpProofFields() {
     fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
       fp0101Boundary
         .absentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified,
-    fp0102Absent: fp0102Absent(),
+    fp0102AbsentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified:
+      fp0102Boundary
+        .absentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified,
+    fp0103Absent: fp0103Absent(),
+    endpointOauthRemoteMcpArchitecturePlanBoundaryVerified:
+      fp0102Boundary.endpointOauthRemoteMcpArchitecturePlanBoundaryVerified,
+    noEndpointImplementationFromFp0102:
+      fp0102Boundary.noEndpointImplementationFromFp0102,
+    noOauthTokenSessionImplementationFromFp0102:
+      fp0102Boundary.noOauthTokenSessionImplementationFromFp0102,
+    noRemoteMcpImplementationOrDeploymentFromFp0102:
+      fp0102Boundary.noRemoteMcpImplementationOrDeploymentFromFp0102,
+    noAppsSdkResourceFromFp0102:
+      fp0102Boundary.noAppsSdkResourceFromFp0102,
+    noAppSubmissionFromFp0102:
+      fp0102Boundary.noAppSubmissionFromFp0102,
+    noOpenAiApiCallsFromFp0102:
+      fp0102Boundary.noOpenAiApiCallsFromFp0102,
+    noSourceMutationFinanceWriteFromFp0102:
+      fp0102Boundary.noSourceMutationFinanceWriteFromFp0102,
+    noPublicAssetsSubmissionArtifactsFromFp0102:
+      fp0102Boundary.noPublicAssetsSubmissionArtifactsFromFp0102,
+    fp0101ImplementationSequencingBoundaryStillVerified:
+      fp0102Boundary.fp0101ImplementationSequencingBoundaryStillVerified,
+    fp0100PublicSecurityBoundaryStillVerified:
+      fp0102Boundary.fp0100PublicSecurityBoundaryStillVerified,
     publicAppImplementationSequencingPlanBoundaryVerified:
       fp0101Boundary.publicAppImplementationSequencingPlanBoundaryVerified,
     noEndpointImplementationFromFp0101:
@@ -2516,15 +2545,9 @@ function fp0100PublicAppSecurityBoundary() {
     .toLowerCase()
     .replace(/`/gu, "");
   const securitySourceText = readFp0100SecuritySourceText();
-  const noOpenAiApiCalls =
-    !/(openai_api_key|from\s+["']openai["']|openai\.|responses\.create|chat\.completions|api\.openai\.com)/iu.test(
-      securitySourceText,
-    );
+  const noOpenAiApiCalls = !hasCodeLevelOpenAiIntegration(securitySourceText);
   const noModelCalls =
-    noOpenAiApiCalls &&
-    !/(callmodel|model\.create|models\.create|chatcompletions)/iu.test(
-      securitySourceText.replace(/[^a-z0-9.]+/giu, ""),
-    );
+    noOpenAiApiCalls && !hasCodeLevelModelIntegration(securitySourceText);
   const publicAppSecurityContractsFoundationVerified =
     [
       "local/proof-only/read-only public chatgpt app/mcp security boundary contract foundation",
@@ -2755,8 +2778,165 @@ function fp0101PublicAppImplementationSequencingBoundary() {
   };
 }
 
-function fp0102Absent() {
-  return !repoFilePaths().some((path) => /(^|\/)FP-0102/u.test(path));
+function fp0102EndpointOauthRemoteMcpArchitectureBoundary() {
+  const plansPath = existsSync("plans") ? "plans" : "../../plans";
+  const fp0102Files = readdirSync(plansPath).filter((name) =>
+    /^FP-0102/u.test(name),
+  );
+  const absentBoundary = {
+    absentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified: true,
+    endpointOauthRemoteMcpArchitecturePlanBoundaryVerified: true,
+    noEndpointImplementationFromFp0102: true,
+    noOauthTokenSessionImplementationFromFp0102: true,
+    noRemoteMcpImplementationOrDeploymentFromFp0102: true,
+    noAppsSdkResourceFromFp0102: true,
+    noAppSubmissionFromFp0102: true,
+    noOpenAiApiCallsFromFp0102: true,
+    noSourceMutationFinanceWriteFromFp0102: true,
+    noPublicAssetsSubmissionArtifactsFromFp0102: true,
+    fp0101ImplementationSequencingBoundaryStillVerified: true,
+    fp0100PublicSecurityBoundaryStillVerified: true,
+  };
+  const failedBoundary = Object.fromEntries(
+    Object.keys(absentBoundary).map((key) => [key, false]),
+  ) as typeof absentBoundary;
+
+  if (fp0102Files.length === 0) return absentBoundary;
+  if (fp0102Files.length !== 1 || fp0102Files[0] !== FP0102_PLAN_FILE) {
+    return failedBoundary;
+  }
+
+  const planPath = `${plansPath}/${FP0102_PLAN_FILE}`;
+  const normalized = readFileSync(planPath, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+  const implementationRouteOrEndpointPaths = repoFilePaths().filter(
+    (path) =>
+      /^(apps\/web\/app|apps\/control-plane)\//u.test(path) &&
+      /fp-?0102|endpoint|oauth|remote-mcp|remote-mcp-server|apps-sdk|appssdk/u.test(
+        path.toLowerCase(),
+      ),
+  );
+  const publicAssetsSubmissionArtifactPaths = repoFilePaths().filter(
+    (path) =>
+      /\.(png|jpe?g|gif|webp|svg|fig|pdf|pptx?)$/iu.test(path) &&
+      /fp-?0102|endpoint|oauth|remote-mcp|listing|submission|public-asset|app-submission/u.test(
+        path.toLowerCase(),
+      ),
+  );
+  const sourceText = readFp0100SecuritySourceText();
+  const sourceScanVerified =
+    !hasCodeLevelOpenAiIntegration(sourceText) &&
+    !hasCodeLevelModelIntegration(sourceText);
+  const endpointOauthRemoteMcpArchitecturePlanBoundaryVerified =
+    [
+      "fp-0102 is not implementation",
+      "fp-0102 is docs-and-plan plus proof-gate compatibility only",
+      "fp-0102 plans endpoint/oauth/remote-mcp architecture and security-readiness only",
+      "fp-0102 defines future endpoint/oauth/remote-mcp architecture gates only",
+      "future mcp endpoint path is documentation-only in this slice",
+      "fp-0102 keeps fp-0103 absent",
+      "fp-0102 preserves fp-0101",
+      "fp-0102 preserves fp-0100",
+      "public app implementation and public app submission future-only",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    implementationRouteOrEndpointPaths.length === 0;
+  const noEndpointImplementationFromFp0102 =
+    [
+      "does not authorize endpoint implementation",
+      "no endpoint implementation is required",
+      "no route/api/backend path may be added in fp-0102",
+      "no endpoint implementation may be added in fp-0102",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    implementationRouteOrEndpointPaths.length === 0;
+  const noOauthTokenSessionImplementationFromFp0102 = [
+    "does not authorize oauth/token/session implementation",
+    "no oauth implementation is required",
+    "no token/session implementation is required",
+    "oauth is future-only",
+    "token/session implementation is future-only",
+    "no openai api keys and no openai_api_key usage",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noRemoteMcpImplementationOrDeploymentFromFp0102 = [
+    "does not authorize remote mcp server implementation or deployment",
+    "no remote mcp implementation is required",
+    "no remote mcp deployment is required",
+    "remote mcp deployment is future-only",
+    "stable https host as a future input only",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noAppsSdkResourceFromFp0102 = [
+    "does not authorize apps sdk iframe/resource implementation",
+    "no apps sdk resource implementation is required",
+    "ui/resource work remains a later apps sdk/resource plan",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noAppSubmissionFromFp0102 = [
+    "does not authorize app submission",
+    "no app submission is required",
+    "submission is a later submission master-plan",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noOpenAiApiCallsFromFp0102 =
+    [
+      "does not authorize openai api/model calls",
+      "no openai api/model calls are required",
+      "no openai api/model calls and does not authorize api/model integration",
+      "no openai api/model call",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    sourceScanVerified;
+  const noSourceMutationFinanceWriteFromFp0102 = [
+    "no source mutation",
+    "no finance writes",
+    "no finance write or source mutation is required",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noPublicAssetsSubmissionArtifactsFromFp0102 =
+    [
+      "no screenshots",
+      "no generated images",
+      "no public assets",
+      "no listing copy",
+      "no app-submission artifacts",
+      "no public assets/listing copy/screenshots are required",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    publicAssetsSubmissionArtifactPaths.length === 0;
+  const fp0101Boundary =
+    fp0101PublicAppImplementationSequencingBoundary();
+  const fp0100Boundary = fp0100PublicAppSecurityBoundary();
+  const fp0101ImplementationSequencingBoundaryStillVerified =
+    fp0101Boundary
+      .absentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified &&
+    fp0101Boundary.publicAppImplementationSequencingPlanBoundaryVerified;
+  const fp0100PublicSecurityBoundaryStillVerified =
+    fp0100Boundary.absentOrLocalSecurityBoundaryContractsVerified &&
+    fp0100Boundary.publicAppSecurityContractsFoundationVerified;
+
+  return {
+    absentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified:
+      endpointOauthRemoteMcpArchitecturePlanBoundaryVerified &&
+      noEndpointImplementationFromFp0102 &&
+      noOauthTokenSessionImplementationFromFp0102 &&
+      noRemoteMcpImplementationOrDeploymentFromFp0102 &&
+      noAppsSdkResourceFromFp0102 &&
+      noAppSubmissionFromFp0102 &&
+      noOpenAiApiCallsFromFp0102 &&
+      noSourceMutationFinanceWriteFromFp0102 &&
+      noPublicAssetsSubmissionArtifactsFromFp0102 &&
+      fp0101ImplementationSequencingBoundaryStillVerified &&
+      fp0100PublicSecurityBoundaryStillVerified,
+    endpointOauthRemoteMcpArchitecturePlanBoundaryVerified,
+    noEndpointImplementationFromFp0102,
+    noOauthTokenSessionImplementationFromFp0102,
+    noRemoteMcpImplementationOrDeploymentFromFp0102,
+    noAppsSdkResourceFromFp0102,
+    noAppSubmissionFromFp0102,
+    noOpenAiApiCallsFromFp0102,
+    noSourceMutationFinanceWriteFromFp0102,
+    noPublicAssetsSubmissionArtifactsFromFp0102,
+    fp0101ImplementationSequencingBoundaryStillVerified,
+    fp0100PublicSecurityBoundaryStillVerified,
+  };
+}
+
+function fp0103Absent() {
+  return !repoFilePaths().some((path) => /(^|\/)FP-0103/u.test(path));
 }
 
 function noFp0100RouteOrEndpointPaths() {
@@ -2802,11 +2982,60 @@ function readFp0100SecuritySourceText() {
   const repoRoot = existsSync("plans") ? "." : "../..";
 
   return repoFilePaths()
-    .filter((path) =>
-      /packages\/domain\/src\/read-only-app-mcp-public-security/u.test(path),
-    )
+    .filter(isFp0100SecuritySourceSurface)
     .map((path) => readFileSync(`${repoRoot}/${path}`, "utf8"))
     .join("\n");
+}
+
+function isFp0100SecuritySourceSurface(path: string) {
+  return (
+    /^packages\/domain\/src\/read-only-app-mcp-public-security.*\.ts$/u.test(
+      path,
+    ) ||
+    /^packages\/domain\/src\/read-only-app-mcp.*\.ts$/u.test(path) ||
+    /^packages\/domain\/src\/benchmark-community.*\.ts$/u.test(path) ||
+    [
+      "tools/read-only-public-app-security-boundary-proof.mjs",
+      "tools/read-only-mcp-descriptor-response-envelope-proof.mjs",
+      "tools/read-only-chatgpt-app-mcp-proof.mjs",
+      "tools/benchmark-community-pack-proof.mjs",
+    ].includes(path)
+  );
+}
+
+function hasCodeLevelOpenAiIntegration(sourceText: string) {
+  const packageName = ["open", "ai"].join("");
+  const clientName = ["Open", "AI"].join("");
+  const keyName = ["OPENAI", "API", "KEY"].join("_");
+  const hostName = ["api", packageName, "com"].join(".");
+  const checks = [
+    new RegExp(`\\bfrom\\s+["']${packageName}["']`, "u"),
+    new RegExp(`\\bimport\\s*\\(\\s*["']${packageName}["']\\s*\\)`, "u"),
+    new RegExp(`\\brequire\\s*\\(\\s*["']${packageName}["']\\s*\\)`, "u"),
+    new RegExp(`\\bnew\\s+${clientName}\\s*\\(`, "u"),
+    /\bopenai\s*\./u,
+    /\bresponses\s*\.\s*create\s*\(/u,
+    /\bchat\s*\.\s*completions\s*(?:\.\s*create)?\s*\(/u,
+    new RegExp(`\\bprocess\\s*\\.\\s*env\\s*\\.\\s*${keyName}\\b`, "u"),
+    new RegExp(`\\b${keyName}\\b`, "u"),
+    new RegExp(`\\b${escapeRegExp(hostName)}\\b`, "u"),
+    new RegExp(`\\bfetch\\s*\\(\\s*["'][^"']*${escapeRegExp(hostName)}`, "u"),
+  ];
+
+  return checks.some((check) => check.test(sourceText));
+}
+
+function hasCodeLevelModelIntegration(sourceText: string) {
+  return [
+    /\bcallModel\s*\(/u,
+    /\bmodel\s*\.\s*create\s*\(/u,
+    /\bmodels\s*\.\s*create\s*\(/u,
+    /\bchatCompletions\s*\(/u,
+  ].some((check) => check.test(sourceText));
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
 function repoFilePaths() {
@@ -3533,7 +3762,26 @@ describe("benchmark community pack foundation contracts", () => {
       proof
         .fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified,
     ).toBe(true);
-    expect(proof.fp0102Absent).toBe(true);
+    expect(
+      proof
+        .fp0102AbsentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified,
+    ).toBe(true);
+    expect(proof.fp0103Absent).toBe(true);
+    expect(
+      proof.endpointOauthRemoteMcpArchitecturePlanBoundaryVerified,
+    ).toBe(true);
+    expect(proof.noEndpointImplementationFromFp0102).toBe(true);
+    expect(proof.noOauthTokenSessionImplementationFromFp0102).toBe(true);
+    expect(proof.noRemoteMcpImplementationOrDeploymentFromFp0102).toBe(true);
+    expect(proof.noAppsSdkResourceFromFp0102).toBe(true);
+    expect(proof.noAppSubmissionFromFp0102).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0102).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0102).toBe(true);
+    expect(proof.noPublicAssetsSubmissionArtifactsFromFp0102).toBe(true);
+    expect(proof.fp0101ImplementationSequencingBoundaryStillVerified).toBe(
+      true,
+    );
+    expect(proof.fp0100PublicSecurityBoundaryStillVerified).toBe(true);
     expect(
       proof.publicAppImplementationSequencingPlanBoundaryVerified,
     ).toBe(true);
@@ -3661,5 +3909,42 @@ describe("benchmark community pack foundation contracts", () => {
         rawFullText: "synthetic but forbidden proof field",
       }),
     ).toThrow();
+  });
+
+  it("rejects FP-0101/FP-0102 code-level OpenAI API and model patterns", () => {
+    const packageName = ["open", "ai"].join("");
+    const clientName = ["Open", "AI"].join("");
+    const keyName = ["OPENAI", "API", "KEY"].join("_");
+    const hostName = ["api", packageName, "com"].join(".");
+    const openAiPatterns = [
+      `from "${packageName}"`,
+      `from '${packageName}'`,
+      `require("${packageName}")`,
+      `require('${packageName}')`,
+      `new ${clientName}()`,
+      ["responses", "create({})"].join("."),
+      ["chat", "completions", "create({})"].join("."),
+      keyName,
+      `process.env.${keyName}`,
+      `https://${hostName}/v1/responses`,
+    ];
+    const modelPatterns = [
+      ["call", "Model({})"].join(""),
+      ["model", "create({})"].join("."),
+      ["models", "create({})"].join("."),
+      ["chat", "Completions({})"].join(""),
+    ];
+
+    for (const pattern of openAiPatterns) {
+      expect(hasCodeLevelOpenAiIntegration(pattern)).toBe(true);
+    }
+    for (const pattern of modelPatterns) {
+      expect(hasCodeLevelModelIntegration(pattern)).toBe(true);
+    }
+    expect(
+      hasCodeLevelOpenAiIntegration(
+        "No OpenAI API/model calls are authorized in this plan text.",
+      ),
+    ).toBe(false);
   });
 });

@@ -231,7 +231,26 @@ describe("FP-0100 public app security boundary contracts", () => {
       proof
         .fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified,
     ).toBe(true);
-    expect(proof.fp0102Absent).toBe(true);
+    expect(
+      proof
+        .fp0102AbsentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified,
+    ).toBe(true);
+    expect(proof.fp0103Absent).toBe(true);
+    expect(
+      proof.endpointOauthRemoteMcpArchitecturePlanBoundaryVerified,
+    ).toBe(true);
+    expect(proof.noEndpointImplementationFromFp0102).toBe(true);
+    expect(proof.noOauthTokenSessionImplementationFromFp0102).toBe(true);
+    expect(proof.noRemoteMcpImplementationOrDeploymentFromFp0102).toBe(true);
+    expect(proof.noAppsSdkResourceFromFp0102).toBe(true);
+    expect(proof.noAppSubmissionFromFp0102).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0102).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0102).toBe(true);
+    expect(proof.noPublicAssetsSubmissionArtifactsFromFp0102).toBe(true);
+    expect(proof.fp0101ImplementationSequencingBoundaryStillVerified).toBe(
+      true,
+    );
+    expect(proof.fp0100PublicSecurityBoundaryStillVerified).toBe(true);
     expect(
       proof.publicAppImplementationSequencingPlanBoundaryVerified,
     ).toBe(true);
@@ -248,6 +267,25 @@ describe("FP-0100 public app security boundary contracts", () => {
         ...proof,
         fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
           false,
+      }).success,
+    ).toBe(false);
+    expect(
+      PublicAppSecurityProofSchema.safeParse({
+        ...proof,
+        fp0102AbsentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified:
+          false,
+      }).success,
+    ).toBe(false);
+    expect(
+      PublicAppSecurityProofSchema.safeParse({
+        ...proof,
+        fp0103Absent: false,
+      }).success,
+    ).toBe(false);
+    expect(
+      PublicAppSecurityProofSchema.safeParse({
+        ...proof,
+        noEndpointImplementationFromFp0102: false,
       }).success,
     ).toBe(false);
     expect(

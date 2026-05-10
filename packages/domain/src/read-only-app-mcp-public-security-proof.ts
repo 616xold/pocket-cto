@@ -59,7 +59,20 @@ export const PublicAppSecurityProofSchema = z
     fp0100BoundaryVerified: trueLiteral,
     fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified:
       trueLiteral,
-    fp0102Absent: trueLiteral,
+    fp0102AbsentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified:
+      trueLiteral,
+    fp0103Absent: trueLiteral,
+    endpointOauthRemoteMcpArchitecturePlanBoundaryVerified: trueLiteral,
+    noEndpointImplementationFromFp0102: trueLiteral,
+    noOauthTokenSessionImplementationFromFp0102: trueLiteral,
+    noRemoteMcpImplementationOrDeploymentFromFp0102: trueLiteral,
+    noAppsSdkResourceFromFp0102: trueLiteral,
+    noAppSubmissionFromFp0102: trueLiteral,
+    noOpenAiApiCallsFromFp0102: trueLiteral,
+    noSourceMutationFinanceWriteFromFp0102: trueLiteral,
+    noPublicAssetsSubmissionArtifactsFromFp0102: trueLiteral,
+    fp0101ImplementationSequencingBoundaryStillVerified: trueLiteral,
+    fp0100PublicSecurityBoundaryStillVerified: trueLiteral,
     publicAppImplementationSequencingPlanBoundaryVerified: trueLiteral,
     noEndpointImplementationFromFp0101: trueLiteral,
     noOauthImplementationFromFp0101: trueLiteral,
@@ -102,7 +115,19 @@ export function buildPublicAppSecurityProof(
     publicSecurityNoOpenAiApiSourceScanVerified: boolean;
     fp0100BoundaryVerified: boolean;
     fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified: boolean;
-    fp0102Absent: boolean;
+    fp0102AbsentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified: boolean;
+    fp0103Absent: boolean;
+    endpointOauthRemoteMcpArchitecturePlanBoundaryVerified: boolean;
+    noEndpointImplementationFromFp0102: boolean;
+    noOauthTokenSessionImplementationFromFp0102: boolean;
+    noRemoteMcpImplementationOrDeploymentFromFp0102: boolean;
+    noAppsSdkResourceFromFp0102: boolean;
+    noAppSubmissionFromFp0102: boolean;
+    noOpenAiApiCallsFromFp0102: boolean;
+    noSourceMutationFinanceWriteFromFp0102: boolean;
+    noPublicAssetsSubmissionArtifactsFromFp0102: boolean;
+    fp0101ImplementationSequencingBoundaryStillVerified: boolean;
+    fp0100PublicSecurityBoundaryStillVerified: boolean;
     publicAppImplementationSequencingPlanBoundaryVerified: boolean;
     noEndpointImplementationFromFp0101: boolean;
     noOauthImplementationFromFp0101: boolean;
@@ -158,7 +183,32 @@ export function buildPublicAppSecurityProof(
       input
         .fp0101AbsentOrDocsOnlyPublicAppImplementationSequencingBoundaryVerified ??
       true,
-    fp0102Absent: input.fp0102Absent ?? true,
+    fp0102AbsentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified:
+      input
+        .fp0102AbsentOrDocsOnlyEndpointOauthRemoteMcpArchitectureBoundaryVerified ??
+      true,
+    fp0103Absent: input.fp0103Absent ?? true,
+    endpointOauthRemoteMcpArchitecturePlanBoundaryVerified:
+      input.endpointOauthRemoteMcpArchitecturePlanBoundaryVerified ?? true,
+    noEndpointImplementationFromFp0102:
+      input.noEndpointImplementationFromFp0102 ?? true,
+    noOauthTokenSessionImplementationFromFp0102:
+      input.noOauthTokenSessionImplementationFromFp0102 ?? true,
+    noRemoteMcpImplementationOrDeploymentFromFp0102:
+      input.noRemoteMcpImplementationOrDeploymentFromFp0102 ?? true,
+    noAppsSdkResourceFromFp0102:
+      input.noAppsSdkResourceFromFp0102 ?? true,
+    noAppSubmissionFromFp0102: input.noAppSubmissionFromFp0102 ?? true,
+    noOpenAiApiCallsFromFp0102:
+      input.noOpenAiApiCallsFromFp0102 ?? true,
+    noSourceMutationFinanceWriteFromFp0102:
+      input.noSourceMutationFinanceWriteFromFp0102 ?? true,
+    noPublicAssetsSubmissionArtifactsFromFp0102:
+      input.noPublicAssetsSubmissionArtifactsFromFp0102 ?? true,
+    fp0101ImplementationSequencingBoundaryStillVerified:
+      input.fp0101ImplementationSequencingBoundaryStillVerified ?? true,
+    fp0100PublicSecurityBoundaryStillVerified:
+      input.fp0100PublicSecurityBoundaryStillVerified ?? true,
     publicAppImplementationSequencingPlanBoundaryVerified:
       input.publicAppImplementationSequencingPlanBoundaryVerified ?? true,
     noEndpointImplementationFromFp0101:

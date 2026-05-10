@@ -1,6 +1,6 @@
 # Read-Only Agent Threat Model
 
-FP-0083 documents the shipped V2C local/internal evidence-tool contract. FP-0085 ships local/internal proof-only bounded orchestration, FP-0086 ships a docs/proof-only benchmark/community manifest foundation, FP-0087 ships local proof-only read-only ChatGPT App/MCP contract plus MCP descriptor/response-envelope contracts, FP-0098 ships public-app readiness/security/submission-boundary planning, FP-0099 ships public-app security threat-model/platform-boundary planning, FP-0100 ships local/proof-only public-app security boundary contracts, and FP-0101 ships docs-only public-app implementation sequencing/platform-readiness planning. These records do not start a public MCP server, public ChatGPT App, Apps SDK UI/resource implementation, OAuth, app submission, endpoints, OpenAI API/model calls, OpenAI file-search/vector integration, deployment, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
+FP-0083 documents the shipped V2C local/internal evidence-tool contract. FP-0085 ships local/internal proof-only bounded orchestration, FP-0086 ships a docs/proof-only benchmark/community manifest foundation, FP-0087 ships local proof-only read-only ChatGPT App/MCP contract plus MCP descriptor/response-envelope contracts, FP-0098 ships public-app readiness/security/submission-boundary planning, FP-0099 ships public-app security threat-model/platform-boundary planning, FP-0100 ships local/proof-only public-app security boundary contracts, FP-0101 ships docs-only public-app implementation sequencing/platform-readiness planning, and FP-0102 ships docs-only endpoint/OAuth/remote-MCP architecture and security-readiness planning. These records do not start a public MCP server, public ChatGPT App, Apps SDK UI/resource implementation, OAuth/token/session implementation, app submission, endpoints, OpenAI API/model calls, OpenAI file-search/vector integration, deployment, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Current Contract
 
@@ -52,7 +52,7 @@ Local/internal audit fields are useful for review, but they are not a public pri
 
 ## Future Public App Blockers
 
-Before any remote MCP server, public ChatGPT App, Apps SDK UI/resource implementation, OAuth flow, endpoint, app submission, or hosted deployment, a future plan must satisfy the FP-0099 security threat-model/platform-boundary prerequisites, the FP-0100 local security boundary contracts, and the FP-0101 implementation sequencing/platform-readiness gates, then prove at least:
+Before any remote MCP server, public ChatGPT App, Apps SDK UI/resource implementation, OAuth flow, token/session implementation, endpoint, app submission, or hosted deployment, a future plan must satisfy the FP-0099 security threat-model/platform-boundary prerequisites, the FP-0100 local security boundary contracts, the FP-0101 implementation sequencing/platform-readiness gates, and the FP-0102 endpoint/OAuth/remote-MCP architecture gates, then prove at least:
 
 - public threat model and privacy review
 - authentication and authorization boundaries
