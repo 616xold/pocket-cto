@@ -49,7 +49,9 @@ Replay and evidence-bundle implications: this slice creates no mission state tra
 - [x] 2026-05-10T13:05:00Z - Ran focused validation: all seven proof tools passed, `pnpm --filter @pocket-cto/web exec vitest run` passed, `pnpm --filter @pocket-cto/web typecheck` passed, and focused domain specs passed after narrowing a test helper path to the repo root.
 - [x] 2026-05-10T13:05:00Z - Ran strict same-branch QA over the route directory, changed-file list, FP-0096/FP-0097 plan names, API/backend/public asset paths, and route source; no forbidden route, API/backend route, public asset, FP-0097, control, transport, OpenAI API/model, OAuth, app-submission, or mutation implementation was found.
 - [x] 2026-05-10T13:21:00Z - Ran final validation before closeout: `git diff --check`, all seven proof tools, web vitest/typecheck, focused domain specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` passed.
-- [x] 2026-05-10T13:21:00Z - Closed this plan as shipped and refreshed directly stale active docs to mark FP-0096 shipped. Commit, push, and PR creation remain the final repository publication steps after post-closeout validation.
+- [x] 2026-05-10T13:21:00Z - Closed this plan as shipped and refreshed directly stale active docs to mark FP-0096 shipped.
+- [x] 2026-05-10T13:25:00Z - Published commit `72cd251649f617e5e4aec926572e1916e895e4fc`, pushed branch `codex/v2p-read-only-chatgpt-app-mcp-premium-ui-preview-route-state-matrix-foundation-local-v1`, and opened PR #258.
+- [x] 2026-05-10T13:45:00Z - Ran same-branch QA over PR #258 and found only this stale closeout wording; no runtime, route, app/MCP, source, finance-write, public-asset, or FP-0097 scope leak was found.
 
 ## Surprises & Discoveries
 
@@ -293,8 +295,8 @@ No new environment variables are added.
 
 ## Outcomes & Retrospective
 
-Outcome: pending.
+Outcome: shipped and QA-corrected for documentation freshness only. FP-0096 remains a local/proof-only/read-only state-matrix implementation on the existing preview route only.
 
-Validation outcome: pending.
+Validation outcome: final implementation validation passed before publication; same-branch QA validation is rerun after this documentation freshness correction.
 
 Scope outcome must remain: local/proof-only/read-only preview route state-matrix foundation only; no second app route, API route, backend route, endpoint, remote MCP server, Apps SDK iframe/UI resource registration, OAuth, app submission, schema, migration, package script, smoke alias, eval dataset, fixture, sample data, public demo data, public source pack, OpenAI API/model call, vector/file-search, OCR, PageIndex, provider/certification/delivery/deployment, external communication, source mutation, finance write, generated product prose, runtime-Codex finance output, autonomous action, screenshot binary, generated image asset, public asset, FP-0097, or public app implementation.
