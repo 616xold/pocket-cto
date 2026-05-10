@@ -23,6 +23,7 @@ export * from "./monitoring";
 export * from "./operator-readiness";
 export * from "./proof-bundle";
 export * from "./read-only-app-mcp";
+export * from "./read-only-app-mcp-public-security";
 export * from "./replay-event";
 export * from "./reporting-mission";
 export * from "./source-registry";

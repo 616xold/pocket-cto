@@ -64,7 +64,17 @@ export function buildReadOnlyChatGptAppMcpProof(
     fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified: boolean;
     fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified: boolean;
     fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified: boolean;
-    fp0100Absent: boolean;
+    fp0100AbsentOrLocalSecurityBoundaryContractsVerified: boolean;
+    fp0101Absent: boolean;
+    publicAppSecurityContractsFoundationVerified: boolean;
+    noEndpointImplementationFromFp0100: boolean;
+    noOauthImplementationFromFp0100: boolean;
+    noRemoteMcpDeploymentFromFp0100: boolean;
+    noAppsSdkResourceFromFp0100: boolean;
+    noAppSubmissionFromFp0100: boolean;
+    noOpenAiApiCallsFromFp0100: boolean;
+    noSourceMutationFinanceWriteFromFp0100: boolean;
+    noPublicAssetsSubmissionArtifactsFromFp0100: boolean;
     publicAppReadinessPlanBoundaryVerified: boolean;
     noPublicAppImplementationFromFp0098: boolean;
     noAppsSdkIframeFromFp0098: boolean;
@@ -488,7 +498,26 @@ export function buildReadOnlyChatGptAppMcpProof(
     fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified:
       input.fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified ??
       true,
-    fp0100Absent: input.fp0100Absent ?? true,
+    fp0100AbsentOrLocalSecurityBoundaryContractsVerified:
+      input.fp0100AbsentOrLocalSecurityBoundaryContractsVerified ?? true,
+    fp0101Absent: input.fp0101Absent ?? true,
+    publicAppSecurityContractsFoundationVerified:
+      input.publicAppSecurityContractsFoundationVerified ?? true,
+    noEndpointImplementationFromFp0100:
+      input.noEndpointImplementationFromFp0100 ?? true,
+    noOauthImplementationFromFp0100:
+      input.noOauthImplementationFromFp0100 ?? true,
+    noRemoteMcpDeploymentFromFp0100:
+      input.noRemoteMcpDeploymentFromFp0100 ?? true,
+    noAppsSdkResourceFromFp0100:
+      input.noAppsSdkResourceFromFp0100 ?? true,
+    noAppSubmissionFromFp0100: input.noAppSubmissionFromFp0100 ?? true,
+    noOpenAiApiCallsFromFp0100:
+      input.noOpenAiApiCallsFromFp0100 ?? true,
+    noSourceMutationFinanceWriteFromFp0100:
+      input.noSourceMutationFinanceWriteFromFp0100 ?? true,
+    noPublicAssetsSubmissionArtifactsFromFp0100:
+      input.noPublicAssetsSubmissionArtifactsFromFp0100 ?? true,
     publicAppReadinessPlanBoundaryVerified:
       input.publicAppReadinessPlanBoundaryVerified ?? true,
     noPublicAppImplementationFromFp0098:

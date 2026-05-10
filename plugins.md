@@ -1,13 +1,13 @@
 # Codex Plugins
 
-This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0099 docs-and-plan-only public-app security threat-model/platform-boundary planning and same-branch QA slice.
+This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0100 local/proof-only public-app security boundary contracts foundation and same-branch QA slice.
 
 ## Repo-local plugin used
 
 - `pocket-cfo-codex-operator`
   - Marketplace entry: `.agents/plugins/marketplace.json`
   - Bundle path: `plugins/pocket-cfo-codex-operator/`
-  - Skills invoked for this FP-0099 same-branch public-app security threat-model/platform-boundary planning and QA slice:
+  - Skills invoked for this FP-0100 same-branch public-app security boundary contracts foundation and QA slice:
     - Finance Plan Orchestrator
     - Modular Architecture Guard
     - Source Provenance Guard
@@ -39,5 +39,5 @@ This file records the plugins available in this Codex local thread and the repo-
 ## Notes
 
 - Routine `git` and `gh` CLI operations were used for repository and PR metadata.
-- OpenAI Developers was available but was not used to create API keys, call OpenAI APIs, call models, or widen app/runtime scope. Official OpenAI web docs were used read-only as current platform/security/submission context and were recorded in FP-0099.
+- OpenAI Developers was available but was not used to create API keys, call OpenAI APIs, call models, or widen app/runtime scope. No new official OpenAI web/plugin research was used for FP-0100; FP-0099 remains the recorded official platform/security context source for planning.
 - No Figma, app-submission, design-generation, OpenAI API/model-call, artifact-upload, dependency-installation, or public-asset generation plugin workflow was used for this slice.
