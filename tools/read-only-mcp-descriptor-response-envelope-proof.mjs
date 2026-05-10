@@ -35,6 +35,8 @@ const FP0096_PLAN =
   "plans/FP-0096-read-only-chatgpt-app-mcp-premium-ui-preview-route-state-matrix-foundation.md";
 const FP0097_PLAN =
   "plans/FP-0097-read-only-chatgpt-app-mcp-premium-ui-preview-route-visual-qa-foundation.md";
+const FP0098_PLAN =
+  "plans/FP-0098-read-only-chatgpt-app-mcp-public-app-readiness-master-plan.md";
 const fp0088Boundary = fp0088DocsOnlyBoundary();
 const fp0089Boundary = fp0089DocsOnlyBoundary();
 const fp0090Boundary = fp0090DocsOnlyBoundary();
@@ -45,8 +47,9 @@ const fp0094Boundary = fp0094LocalPreviewRouteBoundary();
 const fp0095Boundary = fp0095LocalPreviewRouteStateMatrixBoundary();
 const fp0096Boundary = fp0096LocalPreviewRouteStateMatrixBoundary();
 const fp0097Boundary = fp0097LocalPreviewRouteVisualQaBoundary();
-const fp0098Absent = !repoFilePaths().some((path) =>
-  /(^|\/)FP-0098/u.test(path),
+const fp0098Boundary = fp0098PublicAppReadinessBoundary();
+const fp0099Absent = !repoFilePaths().some((path) =>
+  /(^|\/)FP-0099/u.test(path),
 );
 
 const proof = AppMcpDescriptorEnvelopeProofSchema.parse(
@@ -71,7 +74,25 @@ const proof = AppMcpDescriptorEnvelopeProofSchema.parse(
       fp0096Boundary.absentOrLocalPreviewRouteStateMatrixBoundaryVerified,
     fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified:
       fp0097Boundary.absentOrLocalPreviewRouteVisualQaBoundaryVerified,
-    fp0098Absent,
+    fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified:
+      fp0098Boundary.absentOrDocsOnlyPublicAppReadinessBoundaryVerified,
+    fp0099Absent,
+    publicAppReadinessPlanBoundaryVerified:
+      fp0098Boundary.publicAppReadinessPlanBoundaryVerified,
+    noPublicAppImplementationFromFp0098:
+      fp0098Boundary.noPublicAppImplementationFromFp0098,
+    noAppsSdkIframeFromFp0098:
+      fp0098Boundary.noAppsSdkIframeFromFp0098,
+    noRemoteMcpDeploymentFromFp0098:
+      fp0098Boundary.noRemoteMcpDeploymentFromFp0098,
+    noEndpointOauthSubmissionFromFp0098:
+      fp0098Boundary.noEndpointOauthSubmissionFromFp0098,
+    noOpenAiApiCallsFromFp0098:
+      fp0098Boundary.noOpenAiApiCallsFromFp0098,
+    noSourceMutationFinanceWriteFromFp0098:
+      fp0098Boundary.noSourceMutationFinanceWriteFromFp0098,
+    noScreenshotListingSubmissionAssetsFromFp0098:
+      fp0098Boundary.noScreenshotListingSubmissionAssetsFromFp0098,
     premiumUiSecurityPlanBoundaryVerified:
       fp0088Boundary.premiumUiSecurityPlanBoundaryVerified,
     premiumUiDesignSystemPlanBoundaryVerified:
@@ -1732,6 +1753,126 @@ function fp0097LocalPreviewRouteVisualQaBoundary() {
     routeMetadataNoIndexBoundaryVerified,
     screenshotlessVisualQaVerified,
     accessibilityStateMatrixVerified,
+  };
+}
+
+function fp0098PublicAppReadinessBoundary() {
+  const absentBoundary = {
+    absentOrDocsOnlyPublicAppReadinessBoundaryVerified: true,
+    publicAppReadinessPlanBoundaryVerified: true,
+    noPublicAppImplementationFromFp0098: true,
+    noAppsSdkIframeFromFp0098: true,
+    noRemoteMcpDeploymentFromFp0098: true,
+    noEndpointOauthSubmissionFromFp0098: true,
+    noOpenAiApiCallsFromFp0098: true,
+    noSourceMutationFinanceWriteFromFp0098: true,
+    noScreenshotListingSubmissionAssetsFromFp0098: true,
+  };
+  const failedBoundary = Object.fromEntries(
+    Object.keys(absentBoundary).map((key) => [key, false]),
+  );
+  const fp0098PathHits = repoFilePaths().filter((path) =>
+    /(^|\/)FP-0098/u.test(path),
+  );
+
+  if (fp0098PathHits.length === 0) return absentBoundary;
+  if (fp0098PathHits.length !== 1 || fp0098PathHits[0] !== FP0098_PLAN) {
+    return failedBoundary;
+  }
+
+  const normalized = readFileSync(FP0098_PLAN, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+  const readinessRouteOrEndpointPaths = repoFilePaths().filter(
+    (path) =>
+      /^(apps\/web\/app|apps\/control-plane)\//u.test(path) &&
+      /fp-?0098|public-app-readiness|app-submission|remote-mcp/u.test(
+        path.toLowerCase(),
+      ),
+  );
+  const screenshotListingSubmissionAssetPaths = repoFilePaths().filter(
+    (path) =>
+      /\.(png|jpe?g|gif|webp|svg|fig|pdf|pptx?)$/iu.test(path) &&
+      /fp-?0098|public-app-readiness|listing|submission|public-asset/u.test(
+        path.toLowerCase(),
+      ),
+  );
+  const publicAppReadinessPlanBoundaryVerified =
+    [
+      "fp-0098 is not implementation",
+      "docs-and-plan plus proof-gate compatibility",
+      "public-app readiness/security/submission-boundary",
+      "future public app readiness/security/submission-boundary",
+      "what exactly becomes visible to chatgpt",
+      "which tools remain read-only",
+      "how are write/modify actions impossible",
+      "how are prompt-injection strings displayed as data",
+      "how are bounded excerpts/citations shown",
+      "how is no raw full-file dump preserved",
+      "how are missing/unsupported/stale/conflicting evidence states shown",
+      "how are privacy/no-runtime/no-real-finance-data boundaries visible",
+      "what must be true before any endpoint, oauth, remote mcp, apps sdk resource, app submission, or public directory listing",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    readinessRouteOrEndpointPaths.length === 0;
+  const noPublicAppImplementationFromFp0098 = [
+    "does not authorize public chatgpt app implementation",
+    "public app implementation remains future-only",
+    "not public chatgpt app implementation",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noAppsSdkIframeFromFp0098 = [
+    "does not authorize apps sdk iframe/ui code",
+    "does not authorize apps sdk iframe/resource registration",
+    "apps sdk/iframe/resource implementation plan before any apps sdk resources",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noRemoteMcpDeploymentFromFp0098 = [
+    "does not authorize remote mcp server deployment",
+    "remote mcp deployment remains future-only",
+    "threat-model/security implementation plan before endpoint/oauth/remote mcp",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noEndpointOauthSubmissionFromFp0098 =
+    [
+      "does not authorize endpoint implementation",
+      "does not authorize oauth implementation",
+      "does not authorize app submission",
+      "app-submission plan before screenshots, listing copy, review prompts, directory listing, or submission packet",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    readinessRouteOrEndpointPaths.length === 0;
+  const noOpenAiApiCallsFromFp0098 = [
+    "does not authorize openai api/model calls",
+    "no openai api/model calls",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noSourceMutationFinanceWriteFromFp0098 = [
+    "no source mutation",
+    "no finance writes",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noScreenshotListingSubmissionAssetsFromFp0098 =
+    [
+      "no screenshots",
+      "no generated images",
+      "no public assets",
+      "no listing copy",
+      "no app-submission artifacts",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    screenshotListingSubmissionAssetPaths.length === 0;
+
+  return {
+    absentOrDocsOnlyPublicAppReadinessBoundaryVerified:
+      publicAppReadinessPlanBoundaryVerified &&
+      noPublicAppImplementationFromFp0098 &&
+      noAppsSdkIframeFromFp0098 &&
+      noRemoteMcpDeploymentFromFp0098 &&
+      noEndpointOauthSubmissionFromFp0098 &&
+      noOpenAiApiCallsFromFp0098 &&
+      noSourceMutationFinanceWriteFromFp0098 &&
+      noScreenshotListingSubmissionAssetsFromFp0098,
+    publicAppReadinessPlanBoundaryVerified,
+    noPublicAppImplementationFromFp0098,
+    noAppsSdkIframeFromFp0098,
+    noRemoteMcpDeploymentFromFp0098,
+    noEndpointOauthSubmissionFromFp0098,
+    noOpenAiApiCallsFromFp0098,
+    noSourceMutationFinanceWriteFromFp0098,
+    noScreenshotListingSubmissionAssetsFromFp0098,
   };
 }
 

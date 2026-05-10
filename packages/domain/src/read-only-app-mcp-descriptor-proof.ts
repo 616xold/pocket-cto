@@ -127,7 +127,16 @@ export const AppMcpDescriptorEnvelopeProofSchema = z
     fp0095AbsentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified: trueLiteral,
     fp0096AbsentOrLocalPreviewRouteStateMatrixBoundaryVerified: trueLiteral,
     fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified: trueLiteral,
-    fp0098Absent: trueLiteral,
+    fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified: trueLiteral,
+    fp0099Absent: trueLiteral,
+    publicAppReadinessPlanBoundaryVerified: trueLiteral,
+    noPublicAppImplementationFromFp0098: trueLiteral,
+    noAppsSdkIframeFromFp0098: trueLiteral,
+    noRemoteMcpDeploymentFromFp0098: trueLiteral,
+    noEndpointOauthSubmissionFromFp0098: trueLiteral,
+    noOpenAiApiCallsFromFp0098: trueLiteral,
+    noSourceMutationFinanceWriteFromFp0098: trueLiteral,
+    noScreenshotListingSubmissionAssetsFromFp0098: trueLiteral,
     premiumUiSecurityPlanBoundaryVerified: trueLiteral,
     premiumUiDesignSystemPlanBoundaryVerified: trueLiteral,
     premiumUiImplementationPlanBoundaryVerified: trueLiteral,
@@ -229,7 +238,16 @@ export function buildAppMcpDescriptorEnvelopeProof(
     fp0095AbsentOrDocsOnlyPreviewRouteStateMatrixBoundaryVerified: boolean;
     fp0096AbsentOrLocalPreviewRouteStateMatrixBoundaryVerified: boolean;
     fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified: boolean;
-    fp0098Absent: boolean;
+    fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified: boolean;
+    fp0099Absent: boolean;
+    publicAppReadinessPlanBoundaryVerified: boolean;
+    noPublicAppImplementationFromFp0098: boolean;
+    noAppsSdkIframeFromFp0098: boolean;
+    noRemoteMcpDeploymentFromFp0098: boolean;
+    noEndpointOauthSubmissionFromFp0098: boolean;
+    noOpenAiApiCallsFromFp0098: boolean;
+    noSourceMutationFinanceWriteFromFp0098: boolean;
+    noScreenshotListingSubmissionAssetsFromFp0098: boolean;
     premiumUiSecurityPlanBoundaryVerified: boolean;
     premiumUiDesignSystemPlanBoundaryVerified: boolean;
     premiumUiImplementationPlanBoundaryVerified: boolean;
@@ -430,7 +448,23 @@ export function buildAppMcpDescriptorEnvelopeProof(
       input.fp0096AbsentOrLocalPreviewRouteStateMatrixBoundaryVerified ?? true,
     fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified:
       input.fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified ?? true,
-    fp0098Absent: input.fp0098Absent ?? true,
+    fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified:
+      input.fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified ?? true,
+    fp0099Absent: input.fp0099Absent ?? true,
+    publicAppReadinessPlanBoundaryVerified:
+      input.publicAppReadinessPlanBoundaryVerified ?? true,
+    noPublicAppImplementationFromFp0098:
+      input.noPublicAppImplementationFromFp0098 ?? true,
+    noAppsSdkIframeFromFp0098: input.noAppsSdkIframeFromFp0098 ?? true,
+    noRemoteMcpDeploymentFromFp0098:
+      input.noRemoteMcpDeploymentFromFp0098 ?? true,
+    noEndpointOauthSubmissionFromFp0098:
+      input.noEndpointOauthSubmissionFromFp0098 ?? true,
+    noOpenAiApiCallsFromFp0098: input.noOpenAiApiCallsFromFp0098 ?? true,
+    noSourceMutationFinanceWriteFromFp0098:
+      input.noSourceMutationFinanceWriteFromFp0098 ?? true,
+    noScreenshotListingSubmissionAssetsFromFp0098:
+      input.noScreenshotListingSubmissionAssetsFromFp0098 ?? true,
     premiumUiSecurityPlanBoundaryVerified:
       input.premiumUiSecurityPlanBoundaryVerified ?? true,
     premiumUiDesignSystemPlanBoundaryVerified:
