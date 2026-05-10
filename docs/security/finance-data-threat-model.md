@@ -1,6 +1,6 @@
 # Finance Data Threat Model
 
-FP-0083 created the documentation and governance baseline. FP-0086 adds a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation, and FP-0087 adds local proof-only read-only app/MCP contract plus descriptor/response-envelope contracts, without adding UI, routes, schema, migrations, package scripts, fixtures, sample data, provider calls, deployment, finance writes, source mutation, generated product prose, runtime-Codex finance output, or autonomous action.
+FP-0083 created the documentation and governance baseline. FP-0086 adds a docs/proof-only SafeDemoDataPolicy-first benchmark/community manifest contract foundation, FP-0087 adds local proof-only read-only app/MCP contract plus descriptor/response-envelope contracts, FP-0098 adds public-app readiness/security/submission-boundary planning, and FP-0099 adds public-app security threat-model/platform-boundary planning, without adding UI, routes, endpoints, OAuth, remote MCP deployment, Apps SDK resources, app submission, schema, migrations, package scripts, fixtures, sample data, provider calls, deployment, finance writes, source mutation, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Assets
 
@@ -30,7 +30,7 @@ Prompt injection in source text is expected. A PDF, export, markdown file, wiki 
 
 Read-only evidence tools can still disclose data through broad search results, full-file excerpts, query logs, audit output, citations, or insufficient redaction.
 
-Future provider, certification, deployment, public MCP, public ChatGPT App, Apps SDK UI, OAuth, public community-pack distribution, benchmark datasets, and sample/demo data would add new privacy and security risks. They are outside the shipped product boundary and require future plans.
+Future provider, certification, deployment, public MCP, public ChatGPT App, Apps SDK UI/resources, OAuth, endpoints, app submission, public community-pack distribution, benchmark datasets, and sample/demo data would add new privacy and security risks. They are outside the shipped product boundary and require future plans after the FP-0099 security threat-model/platform-boundary prerequisites are accepted.
 
 ## Mitigations
 

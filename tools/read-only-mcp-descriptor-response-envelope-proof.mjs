@@ -37,6 +37,8 @@ const FP0097_PLAN =
   "plans/FP-0097-read-only-chatgpt-app-mcp-premium-ui-preview-route-visual-qa-foundation.md";
 const FP0098_PLAN =
   "plans/FP-0098-read-only-chatgpt-app-mcp-public-app-readiness-master-plan.md";
+const FP0099_PLAN =
+  "plans/FP-0099-read-only-chatgpt-app-mcp-public-app-security-threat-model-master-plan.md";
 const fp0088Boundary = fp0088DocsOnlyBoundary();
 const fp0089Boundary = fp0089DocsOnlyBoundary();
 const fp0090Boundary = fp0090DocsOnlyBoundary();
@@ -48,8 +50,9 @@ const fp0095Boundary = fp0095LocalPreviewRouteStateMatrixBoundary();
 const fp0096Boundary = fp0096LocalPreviewRouteStateMatrixBoundary();
 const fp0097Boundary = fp0097LocalPreviewRouteVisualQaBoundary();
 const fp0098Boundary = fp0098PublicAppReadinessBoundary();
-const fp0099Absent = !repoFilePaths().some((path) =>
-  /(^|\/)FP-0099/u.test(path),
+const fp0099Boundary = fp0099PublicAppSecurityThreatModelBoundary();
+const fp0100Absent = !repoFilePaths().some((path) =>
+  /(^|\/)FP-0100/u.test(path),
 );
 
 const proof = AppMcpDescriptorEnvelopeProofSchema.parse(
@@ -76,7 +79,9 @@ const proof = AppMcpDescriptorEnvelopeProofSchema.parse(
       fp0097Boundary.absentOrLocalPreviewRouteVisualQaBoundaryVerified,
     fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified:
       fp0098Boundary.absentOrDocsOnlyPublicAppReadinessBoundaryVerified,
-    fp0099Absent,
+    fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified:
+      fp0099Boundary.absentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified,
+    fp0100Absent,
     publicAppReadinessPlanBoundaryVerified:
       fp0098Boundary.publicAppReadinessPlanBoundaryVerified,
     noPublicAppImplementationFromFp0098:
@@ -93,6 +98,23 @@ const proof = AppMcpDescriptorEnvelopeProofSchema.parse(
       fp0098Boundary.noSourceMutationFinanceWriteFromFp0098,
     noScreenshotListingSubmissionAssetsFromFp0098:
       fp0098Boundary.noScreenshotListingSubmissionAssetsFromFp0098,
+    publicAppSecurityThreatModelPlanBoundaryVerified:
+      fp0099Boundary.publicAppSecurityThreatModelPlanBoundaryVerified,
+    noEndpointImplementationFromFp0099:
+      fp0099Boundary.noEndpointImplementationFromFp0099,
+    noOauthImplementationFromFp0099:
+      fp0099Boundary.noOauthImplementationFromFp0099,
+    noRemoteMcpDeploymentFromFp0099:
+      fp0099Boundary.noRemoteMcpDeploymentFromFp0099,
+    noAppsSdkResourceFromFp0099:
+      fp0099Boundary.noAppsSdkResourceFromFp0099,
+    noAppSubmissionFromFp0099: fp0099Boundary.noAppSubmissionFromFp0099,
+    noOpenAiApiCallsFromFp0099:
+      fp0099Boundary.noOpenAiApiCallsFromFp0099,
+    noSourceMutationFinanceWriteFromFp0099:
+      fp0099Boundary.noSourceMutationFinanceWriteFromFp0099,
+    noPublicAssetsSubmissionArtifactsFromFp0099:
+      fp0099Boundary.noPublicAssetsSubmissionArtifactsFromFp0099,
     premiumUiSecurityPlanBoundaryVerified:
       fp0088Boundary.premiumUiSecurityPlanBoundaryVerified,
     premiumUiDesignSystemPlanBoundaryVerified:
@@ -1873,6 +1895,130 @@ function fp0098PublicAppReadinessBoundary() {
     noOpenAiApiCallsFromFp0098,
     noSourceMutationFinanceWriteFromFp0098,
     noScreenshotListingSubmissionAssetsFromFp0098,
+  };
+}
+
+function fp0099PublicAppSecurityThreatModelBoundary() {
+  const absentBoundary = {
+    absentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified: true,
+    publicAppSecurityThreatModelPlanBoundaryVerified: true,
+    noEndpointImplementationFromFp0099: true,
+    noOauthImplementationFromFp0099: true,
+    noRemoteMcpDeploymentFromFp0099: true,
+    noAppsSdkResourceFromFp0099: true,
+    noAppSubmissionFromFp0099: true,
+    noOpenAiApiCallsFromFp0099: true,
+    noSourceMutationFinanceWriteFromFp0099: true,
+    noPublicAssetsSubmissionArtifactsFromFp0099: true,
+  };
+  const failedBoundary = Object.fromEntries(
+    Object.keys(absentBoundary).map((key) => [key, false]),
+  );
+  const fp0099PathHits = repoFilePaths().filter((path) =>
+    /(^|\/)FP-0099/u.test(path),
+  );
+
+  if (fp0099PathHits.length === 0) return absentBoundary;
+  if (fp0099PathHits.length !== 1 || fp0099PathHits[0] !== FP0099_PLAN) {
+    return failedBoundary;
+  }
+
+  const normalized = readFileSync(FP0099_PLAN, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+  const securityRouteOrEndpointPaths = repoFilePaths().filter(
+    (path) =>
+      /^(apps\/web\/app|apps\/control-plane)\//u.test(path) &&
+      /fp-?0099|security-threat-model|platform-boundary|app-submission|remote-mcp|oauth|endpoint/u.test(
+        path.toLowerCase(),
+      ),
+  );
+  const publicAssetsSubmissionArtifactPaths = repoFilePaths().filter(
+    (path) =>
+      /\.(png|jpe?g|gif|webp|svg|fig|pdf|pptx?)$/iu.test(path) &&
+      /fp-?0099|security-threat-model|platform-boundary|listing|submission|public-asset|app-submission/u.test(
+        path.toLowerCase(),
+      ),
+  );
+  const publicAppSecurityThreatModelPlanBoundaryVerified =
+    [
+      "fp-0099 is not implementation",
+      "docs-and-plan plus proof-gate compatibility",
+      "public-app security threat-model and platform-boundary",
+      "future public-app/mcp security threat-model and platform-boundary",
+      "prompt injection from source text, user text, tool output, and model-visible context",
+      "data exfiltration and raw full-file dump requests",
+      "write/modify action impossibility",
+      "tool allowlist drift",
+      "mcp descriptor drift",
+      "remote mcp endpoint trust",
+      "oauth/token/session storage",
+      "user and admin consent",
+      "enterprise rbac/action control",
+      "app visibility/public directory listing",
+      "audit logging and replay/evidence boundaries",
+      "no-real-finance-data and privacy posture",
+      "unsupported/stale/conflicting evidence refusal",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    securityRouteOrEndpointPaths.length === 0;
+  const noEndpointImplementationFromFp0099 =
+    [
+      "does not authorize endpoint implementation",
+      "no endpoint work before threat-model acceptance",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    securityRouteOrEndpointPaths.length === 0;
+  const noOauthImplementationFromFp0099 = [
+    "does not authorize oauth implementation",
+    "no oauth before token/session/privacy review",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noRemoteMcpDeploymentFromFp0099 = [
+    "does not authorize remote mcp server deployment",
+    "no remote mcp before host/network/security review",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noAppsSdkResourceFromFp0099 = [
+    "does not authorize apps sdk iframe/resource implementation",
+    "no apps sdk iframe/resource before ui/resource security plan",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noAppSubmissionFromFp0099 = [
+    "does not authorize app submission",
+    "no app submission before local proof, app security plan, privacy review, and submission plan",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noOpenAiApiCallsFromFp0099 = [
+    "does not authorize openai api/model calls",
+    "no openai api/model calls",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noSourceMutationFinanceWriteFromFp0099 = [
+    "no source mutation",
+    "no finance writes",
+  ].every((requiredText) => normalized.includes(requiredText));
+  const noPublicAssetsSubmissionArtifactsFromFp0099 =
+    [
+      "no public assets",
+      "no listing copy",
+      "no app-submission artifacts",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    publicAssetsSubmissionArtifactPaths.length === 0;
+
+  return {
+    absentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified:
+      publicAppSecurityThreatModelPlanBoundaryVerified &&
+      noEndpointImplementationFromFp0099 &&
+      noOauthImplementationFromFp0099 &&
+      noRemoteMcpDeploymentFromFp0099 &&
+      noAppsSdkResourceFromFp0099 &&
+      noAppSubmissionFromFp0099 &&
+      noOpenAiApiCallsFromFp0099 &&
+      noSourceMutationFinanceWriteFromFp0099 &&
+      noPublicAssetsSubmissionArtifactsFromFp0099,
+    publicAppSecurityThreatModelPlanBoundaryVerified,
+    noEndpointImplementationFromFp0099,
+    noOauthImplementationFromFp0099,
+    noRemoteMcpDeploymentFromFp0099,
+    noAppsSdkResourceFromFp0099,
+    noAppSubmissionFromFp0099,
+    noOpenAiApiCallsFromFp0099,
+    noSourceMutationFinanceWriteFromFp0099,
+    noPublicAssetsSubmissionArtifactsFromFp0099,
   };
 }
 

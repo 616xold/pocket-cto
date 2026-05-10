@@ -1,6 +1,6 @@
 # Read-Only Agent Threat Model
 
-FP-0083 documents the shipped V2C local/internal evidence-tool contract. FP-0085 ships local/internal proof-only bounded orchestration, FP-0086 ships a docs/proof-only benchmark/community manifest foundation, and FP-0087 ships local proof-only read-only ChatGPT App/MCP contract plus MCP descriptor/response-envelope contracts. These records do not start a public MCP server, public ChatGPT App, Apps SDK UI, OAuth, app submission, OpenAI API/model calls, OpenAI file-search/vector integration, deployment, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
+FP-0083 documents the shipped V2C local/internal evidence-tool contract. FP-0085 ships local/internal proof-only bounded orchestration, FP-0086 ships a docs/proof-only benchmark/community manifest foundation, FP-0087 ships local proof-only read-only ChatGPT App/MCP contract plus MCP descriptor/response-envelope contracts, FP-0098 ships public-app readiness/security/submission-boundary planning, and FP-0099 ships public-app security threat-model/platform-boundary planning. These records do not start a public MCP server, public ChatGPT App, Apps SDK UI/resource implementation, OAuth, app submission, endpoints, OpenAI API/model calls, OpenAI file-search/vector integration, deployment, source mutation, finance writes, generated product prose, runtime-Codex finance output, or autonomous action.
 
 ## Current Contract
 
@@ -52,7 +52,7 @@ Local/internal audit fields are useful for review, but they are not a public pri
 
 ## Future Public App Blockers
 
-Before any remote MCP server, public ChatGPT App, Apps SDK UI, OAuth flow, app submission, or hosted deployment, a future plan must prove at least:
+Before any remote MCP server, public ChatGPT App, Apps SDK UI/resource implementation, OAuth flow, endpoint, app submission, or hosted deployment, a future plan must satisfy the FP-0099 security threat-model/platform-boundary prerequisites and prove at least:
 
 - public threat model and privacy review
 - authentication and authorization boundaries

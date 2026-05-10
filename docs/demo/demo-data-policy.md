@@ -1,6 +1,6 @@
 # Demo Data Policy
 
-Pocket CFO demo data must be synthetic-only unless a future Finance Plan names and proves a stricter reviewed exception. FP-0086 ships SafeDemoDataPolicy as the first V2F benchmark/community gate, and FP-0087 descriptor/envelope proofs inherit that posture with in-memory synthetic examples only. Neither slice adds sample data, source-pack fixtures, eval datasets, package scripts, smoke aliases, or source-pack mutations.
+Pocket CFO demo data must be synthetic-only unless a future Finance Plan names and proves a stricter reviewed exception. FP-0086 ships SafeDemoDataPolicy as the first V2F benchmark/community gate, FP-0087 descriptor/envelope proofs inherit that posture with in-memory synthetic examples only, FP-0098 plans public-app readiness without demo/public assets, and FP-0099 plans public-app security threat-model/platform-boundary prerequisites without demo/public assets. These slices add no sample data, source-pack fixtures, eval datasets, package scripts, smoke aliases, screenshots, generated images, public assets, listing copy, app-submission artifacts, or source-pack mutations.
 
 ## Synthetic-Only Rule
 
@@ -32,7 +32,7 @@ Future sample packs must not become the default source of truth for product clai
 
 ## Public Artifacts
 
-Issues, PRs, docs, screenshots, eval outputs, proof logs, examples, and demo guides must not include real finance data. Use redacted, synthetic, or existing approved proof output only.
+Issues, PRs, docs, screenshots, eval outputs, proof logs, examples, demo guides, public app listing copy, app-submission artifacts, and public assets must not include real finance data. Use redacted, synthetic, or existing approved proof output only under a named future plan.
 
 ## Accidental Sensitive Data
 

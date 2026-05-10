@@ -376,7 +376,10 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
     expect(
       proof.fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified,
     ).toBe(true);
-    expect(proof.fp0099Absent).toBe(true);
+    expect(
+      proof.fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified,
+    ).toBe(true);
+    expect(proof.fp0100Absent).toBe(true);
     expect(proof.publicAppReadinessPlanBoundaryVerified).toBe(true);
     expect(proof.noPublicAppImplementationFromFp0098).toBe(true);
     expect(proof.noAppsSdkIframeFromFp0098).toBe(true);
@@ -385,6 +388,15 @@ describe("V2G read-only MCP descriptors and app/MCP envelopes", () => {
     expect(proof.noOpenAiApiCallsFromFp0098).toBe(true);
     expect(proof.noSourceMutationFinanceWriteFromFp0098).toBe(true);
     expect(proof.noScreenshotListingSubmissionAssetsFromFp0098).toBe(true);
+    expect(proof.publicAppSecurityThreatModelPlanBoundaryVerified).toBe(true);
+    expect(proof.noEndpointImplementationFromFp0099).toBe(true);
+    expect(proof.noOauthImplementationFromFp0099).toBe(true);
+    expect(proof.noRemoteMcpDeploymentFromFp0099).toBe(true);
+    expect(proof.noAppsSdkResourceFromFp0099).toBe(true);
+    expect(proof.noAppSubmissionFromFp0099).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0099).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0099).toBe(true);
+    expect(proof.noPublicAssetsSubmissionArtifactsFromFp0099).toBe(true);
     expect(proof.premiumUiSecurityPlanBoundaryVerified).toBe(true);
     expect(proof.premiumUiDesignSystemPlanBoundaryVerified).toBe(true);
     expect(proof.premiumUiImplementationPlanBoundaryVerified).toBe(true);

@@ -128,7 +128,9 @@ export const AppMcpDescriptorEnvelopeProofSchema = z
     fp0096AbsentOrLocalPreviewRouteStateMatrixBoundaryVerified: trueLiteral,
     fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified: trueLiteral,
     fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified: trueLiteral,
-    fp0099Absent: trueLiteral,
+    fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified:
+      trueLiteral,
+    fp0100Absent: trueLiteral,
     publicAppReadinessPlanBoundaryVerified: trueLiteral,
     noPublicAppImplementationFromFp0098: trueLiteral,
     noAppsSdkIframeFromFp0098: trueLiteral,
@@ -137,6 +139,15 @@ export const AppMcpDescriptorEnvelopeProofSchema = z
     noOpenAiApiCallsFromFp0098: trueLiteral,
     noSourceMutationFinanceWriteFromFp0098: trueLiteral,
     noScreenshotListingSubmissionAssetsFromFp0098: trueLiteral,
+    publicAppSecurityThreatModelPlanBoundaryVerified: trueLiteral,
+    noEndpointImplementationFromFp0099: trueLiteral,
+    noOauthImplementationFromFp0099: trueLiteral,
+    noRemoteMcpDeploymentFromFp0099: trueLiteral,
+    noAppsSdkResourceFromFp0099: trueLiteral,
+    noAppSubmissionFromFp0099: trueLiteral,
+    noOpenAiApiCallsFromFp0099: trueLiteral,
+    noSourceMutationFinanceWriteFromFp0099: trueLiteral,
+    noPublicAssetsSubmissionArtifactsFromFp0099: trueLiteral,
     premiumUiSecurityPlanBoundaryVerified: trueLiteral,
     premiumUiDesignSystemPlanBoundaryVerified: trueLiteral,
     premiumUiImplementationPlanBoundaryVerified: trueLiteral,
@@ -239,7 +250,8 @@ export function buildAppMcpDescriptorEnvelopeProof(
     fp0096AbsentOrLocalPreviewRouteStateMatrixBoundaryVerified: boolean;
     fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified: boolean;
     fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified: boolean;
-    fp0099Absent: boolean;
+    fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified: boolean;
+    fp0100Absent: boolean;
     publicAppReadinessPlanBoundaryVerified: boolean;
     noPublicAppImplementationFromFp0098: boolean;
     noAppsSdkIframeFromFp0098: boolean;
@@ -248,6 +260,15 @@ export function buildAppMcpDescriptorEnvelopeProof(
     noOpenAiApiCallsFromFp0098: boolean;
     noSourceMutationFinanceWriteFromFp0098: boolean;
     noScreenshotListingSubmissionAssetsFromFp0098: boolean;
+    publicAppSecurityThreatModelPlanBoundaryVerified: boolean;
+    noEndpointImplementationFromFp0099: boolean;
+    noOauthImplementationFromFp0099: boolean;
+    noRemoteMcpDeploymentFromFp0099: boolean;
+    noAppsSdkResourceFromFp0099: boolean;
+    noAppSubmissionFromFp0099: boolean;
+    noOpenAiApiCallsFromFp0099: boolean;
+    noSourceMutationFinanceWriteFromFp0099: boolean;
+    noPublicAssetsSubmissionArtifactsFromFp0099: boolean;
     premiumUiSecurityPlanBoundaryVerified: boolean;
     premiumUiDesignSystemPlanBoundaryVerified: boolean;
     premiumUiImplementationPlanBoundaryVerified: boolean;
@@ -450,7 +471,10 @@ export function buildAppMcpDescriptorEnvelopeProof(
       input.fp0097AbsentOrLocalPreviewRouteVisualQaBoundaryVerified ?? true,
     fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified:
       input.fp0098AbsentOrDocsOnlyPublicAppReadinessBoundaryVerified ?? true,
-    fp0099Absent: input.fp0099Absent ?? true,
+    fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified:
+      input.fp0099AbsentOrDocsOnlyPublicAppSecurityThreatModelBoundaryVerified ??
+      true,
+    fp0100Absent: input.fp0100Absent ?? true,
     publicAppReadinessPlanBoundaryVerified:
       input.publicAppReadinessPlanBoundaryVerified ?? true,
     noPublicAppImplementationFromFp0098:
@@ -465,6 +489,21 @@ export function buildAppMcpDescriptorEnvelopeProof(
       input.noSourceMutationFinanceWriteFromFp0098 ?? true,
     noScreenshotListingSubmissionAssetsFromFp0098:
       input.noScreenshotListingSubmissionAssetsFromFp0098 ?? true,
+    publicAppSecurityThreatModelPlanBoundaryVerified:
+      input.publicAppSecurityThreatModelPlanBoundaryVerified ?? true,
+    noEndpointImplementationFromFp0099:
+      input.noEndpointImplementationFromFp0099 ?? true,
+    noOauthImplementationFromFp0099:
+      input.noOauthImplementationFromFp0099 ?? true,
+    noRemoteMcpDeploymentFromFp0099:
+      input.noRemoteMcpDeploymentFromFp0099 ?? true,
+    noAppsSdkResourceFromFp0099: input.noAppsSdkResourceFromFp0099 ?? true,
+    noAppSubmissionFromFp0099: input.noAppSubmissionFromFp0099 ?? true,
+    noOpenAiApiCallsFromFp0099: input.noOpenAiApiCallsFromFp0099 ?? true,
+    noSourceMutationFinanceWriteFromFp0099:
+      input.noSourceMutationFinanceWriteFromFp0099 ?? true,
+    noPublicAssetsSubmissionArtifactsFromFp0099:
+      input.noPublicAssetsSubmissionArtifactsFromFp0099 ?? true,
     premiumUiSecurityPlanBoundaryVerified:
       input.premiumUiSecurityPlanBoundaryVerified ?? true,
     premiumUiDesignSystemPlanBoundaryVerified:
