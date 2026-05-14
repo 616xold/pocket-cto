@@ -1,13 +1,13 @@
 # Codex Plugins
 
-This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0109 local-only/read-only evidence tool dispatch adapter implementation and post-merge context/envelope hardening slice.
+This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0110 docs-and-plan plus proof-gate compatibility slice for default local evidence dispatch enablement planning.
 
 ## Repo-local plugin used
 
 - `pocket-cfo-codex-operator`
   - Marketplace entry: `.agents/plugins/marketplace.json`
   - Bundle path: `plugins/pocket-cfo-codex-operator/`
-  - Skills invoked for this FP-0109 evidence tool dispatch adapter context/envelope hardening, proof-gate bridge, doc-refresh, validation, and handoff slice:
+  - Skills invoked for this FP-0110 default local evidence dispatch enablement planning, proof-gate bridge, doc-refresh, validation, and handoff slice:
     - Finance Plan Orchestrator
     - Modular Architecture Guard
     - Source Provenance Guard

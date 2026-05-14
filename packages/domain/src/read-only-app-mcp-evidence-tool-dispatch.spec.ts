@@ -8,6 +8,7 @@ import {
   EVIDENCE_TOOL_DISPATCH_RESPONSE_REQUIRED_FIELDS,
   FP0108_EVIDENCE_TOOL_DISPATCH_PLAN_PATH,
   FP0109_EVIDENCE_DISPATCH_ADAPTER_PLAN_PATH,
+  FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH,
   MCP_TOOL_ALLOWLIST,
   EvidenceToolDispatchAllowlistBoundarySchema,
   EvidenceToolDispatchProofSchema,
@@ -218,11 +219,12 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(serviceSource).not.toContain("ReadOnlyEvidenceToolService");
   });
 
-  it("accepts exactly FP-0108 and the FP-0109 adapter bridge while rejecting FP-0110", () => {
+  it("accepts exactly FP-0108, FP-0109, and one FP-0110 docs-only bridge while rejecting FP-0111", () => {
     const repoPaths = repoFilePaths();
     const fp0108Hits = repoPaths.filter((path) => /(^|\/)FP-0108/u.test(path));
     const fp0109Hits = repoPaths.filter((path) => /(^|\/)FP-0109/u.test(path));
     const fp0110Hits = repoPaths.filter((path) => /(^|\/)FP-0110/u.test(path));
+    const fp0111Hits = repoPaths.filter((path) => /(^|\/)FP-0111/u.test(path));
     const proof = buildEvidenceToolDispatchProof({
       fp0108BoundaryVerified:
         fp0108Hits.length === 1 &&
@@ -232,19 +234,64 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
         fp0109Hits.length === 1 &&
         fp0109Hits[0] === FP0109_EVIDENCE_DISPATCH_ADAPTER_PLAN_PATH &&
         existsSync(join(repoRoot, FP0109_EVIDENCE_DISPATCH_ADAPTER_PLAN_PATH)),
-      fp0110Absent: fp0110Hits.length === 0,
+      fp0108DispatchContractsStillVerified: fp0108Hits.length === 1,
+      fp0109AdapterBoundaryStillVerified: fp0109Hits.length === 1,
+      fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified:
+        fp0110Hits.length === 1 &&
+        fp0110Hits[0] ===
+          FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH &&
+        fp0110PlanBoundaryVerified(),
+      fp0111Absent: fp0111Hits.length === 0,
     });
 
     expect(fp0108Hits).toEqual([FP0108_EVIDENCE_TOOL_DISPATCH_PLAN_PATH]);
     expect(fp0109Hits).toEqual([FP0109_EVIDENCE_DISPATCH_ADAPTER_PLAN_PATH]);
-    expect(fp0110Hits).toEqual([]);
+    expect(fp0110Hits).toEqual([
+      FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH,
+    ]);
+    expect(fp0111Hits).toEqual([]);
     expect(proof.fp0108BoundaryVerified).toBe(true);
     expect(proof.fp0109BoundaryVerified).toBe(true);
-    expect(proof.fp0110Absent).toBe(true);
+    expect(
+      proof.fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified,
+    ).toBe(true);
+    expect(proof.fp0111Absent).toBe(true);
+    expect(proof.fp0108DispatchContractsStillVerified).toBe(true);
+    expect(proof.fp0109AdapterBoundaryStillVerified).toBe(true);
     expect(
       EvidenceToolDispatchProofSchema.safeParse({
         ...proof,
-        fp0110Absent: false,
+        fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified: false,
+      }).success,
+    ).toBe(false);
+    expect(
+      EvidenceToolDispatchProofSchema.safeParse({
+        ...proof,
+        fp0111Absent: false,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("proves FP-0110 is planning only and opens no route, data, auth, public-app, or finance-write scope", () => {
+    const proof = buildEvidenceToolDispatchProof();
+
+    expect(proof.defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified).toBe(
+      true,
+    );
+    expect(proof.noRouteBehaviorChangeFromFp0110).toBe(true);
+    expect(proof.noDefaultDispatchRuntimeFromFp0110).toBe(true);
+    expect(proof.noDbQueriesFromFp0110).toBe(true);
+    expect(proof.noSchemaMigrationsFromFp0110).toBe(true);
+    expect(proof.noOauthTokenSessionFromFp0110).toBe(true);
+    expect(proof.noRemoteMcpDeploymentFromFp0110).toBe(true);
+    expect(proof.noAppsSdkResourceFromFp0110).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0110).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0110).toBe(true);
+    expect(fp0110PlanBoundaryVerified()).toBe(true);
+    expect(
+      EvidenceToolDispatchProofSchema.safeParse({
+        ...proof,
+        noDefaultDispatchRuntimeFromFp0110: false,
       }).success,
     ).toBe(false);
   });
@@ -285,4 +332,37 @@ function firstDispatchContract() {
   }
 
   return contract;
+}
+
+function fp0110PlanBoundaryVerified() {
+  const planPath = join(
+    repoRoot,
+    FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH,
+  );
+  if (!existsSync(planPath)) return false;
+
+  const normalized = readFileSync(planPath, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+
+  return [
+    "docs-and-plan plus proof-gate compatibility",
+    "not default dispatch runtime enablement",
+    "not route expansion",
+    "not a new endpoint",
+    "not db query implementation",
+    "not schema or migration work",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not remote mcp deployment",
+    "not apps sdk iframe/resource implementation",
+    "not public chatgpt app implementation",
+    "not app submission",
+    "not openai api/model integration",
+    "not source mutation",
+    "not a finance write",
+    "explicit dependency injection remains required",
+    "route registration may not construct the dispatcher by default",
+    "fp-0111 remains absent",
+  ].every((text) => normalized.includes(text));
 }

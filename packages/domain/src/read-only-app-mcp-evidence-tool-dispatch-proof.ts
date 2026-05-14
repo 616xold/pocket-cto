@@ -47,7 +47,21 @@ export const EvidenceToolDispatchProofSchema = z
     fetchCapabilityBoundariesDispatchContractVerified: trueLiteral,
     fp0108BoundaryVerified: trueLiteral,
     fp0109BoundaryVerified: trueLiteral,
-    fp0110Absent: trueLiteral,
+    fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified:
+      trueLiteral,
+    fp0111Absent: trueLiteral,
+    defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified: trueLiteral,
+    noRouteBehaviorChangeFromFp0110: trueLiteral,
+    noDefaultDispatchRuntimeFromFp0110: trueLiteral,
+    noDbQueriesFromFp0110: trueLiteral,
+    noSchemaMigrationsFromFp0110: trueLiteral,
+    noOauthTokenSessionFromFp0110: trueLiteral,
+    noRemoteMcpDeploymentFromFp0110: trueLiteral,
+    noAppsSdkResourceFromFp0110: trueLiteral,
+    noOpenAiApiCallsFromFp0110: trueLiteral,
+    noSourceMutationFinanceWriteFromFp0110: trueLiteral,
+    fp0109AdapterBoundaryStillVerified: trueLiteral,
+    fp0108DispatchContractsStillVerified: trueLiteral,
     fp0107RouteAdapterBoundaryStillVerified: trueLiteral,
     fp0106ProtocolEnvelopeBoundaryStillVerified: trueLiteral,
     fp0100PublicSecurityBoundaryStillVerified: trueLiteral,
@@ -82,7 +96,20 @@ export function buildEvidenceToolDispatchProof(
   input: Partial<{
     fp0108BoundaryVerified: boolean;
     fp0109BoundaryVerified: boolean;
-    fp0110Absent: boolean;
+    fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified: boolean;
+    fp0111Absent: boolean;
+    defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified: boolean;
+    noRouteBehaviorChangeFromFp0110: boolean;
+    noDefaultDispatchRuntimeFromFp0110: boolean;
+    noDbQueriesFromFp0110: boolean;
+    noSchemaMigrationsFromFp0110: boolean;
+    noOauthTokenSessionFromFp0110: boolean;
+    noRemoteMcpDeploymentFromFp0110: boolean;
+    noAppsSdkResourceFromFp0110: boolean;
+    noOpenAiApiCallsFromFp0110: boolean;
+    noSourceMutationFinanceWriteFromFp0110: boolean;
+    fp0109AdapterBoundaryStillVerified: boolean;
+    fp0108DispatchContractsStillVerified: boolean;
     fp0107RouteAdapterBoundaryStillVerified: boolean;
     fp0106ProtocolEnvelopeBoundaryStillVerified: boolean;
     fp0100PublicSecurityBoundaryStillVerified: boolean;
@@ -110,6 +137,8 @@ export function buildEvidenceToolDispatchProof(
       sameList(allowlist.exactV2gToolAllowlist, MCP_TOOL_ALLOWLIST) &&
       !allowlist.dynamicToolsAllowed &&
       !allowlist.writeActionToolsAllowed,
+    defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
+      input.defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified ?? true,
     fetchCapabilityBoundariesDispatchContractVerified: contractVerified(
       byTool.fetch_capability_boundaries,
     ),
@@ -135,8 +164,15 @@ export function buildEvidenceToolDispatchProof(
     fp0107RouteAdapterBoundaryStillVerified:
       input.fp0107RouteAdapterBoundaryStillVerified ?? true,
     fp0108BoundaryVerified: input.fp0108BoundaryVerified ?? true,
+    fp0108DispatchContractsStillVerified:
+      input.fp0108DispatchContractsStillVerified ?? true,
     fp0109BoundaryVerified: input.fp0109BoundaryVerified ?? true,
-    fp0110Absent: input.fp0110Absent ?? true,
+    fp0109AdapterBoundaryStillVerified:
+      input.fp0109AdapterBoundaryStillVerified ?? true,
+    fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified:
+      input.fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified ??
+      true,
+    fp0111Absent: input.fp0111Absent ?? true,
     freshnessBoundaryVerified: contracts.every(
       (contract) =>
         contract.freshnessBoundary.missingEvidenceFailsClosed &&
@@ -178,6 +214,13 @@ export function buildEvidenceToolDispatchProof(
         (contract) =>
           !contract.noOpenAiModelBoundary.openAiClientOrKeyUsageAllowed,
       ),
+    noAppsSdkResourceFromFp0110: input.noAppsSdkResourceFromFp0110 ?? true,
+    noDbQueriesFromFp0110: input.noDbQueriesFromFp0110 ?? true,
+    noDefaultDispatchRuntimeFromFp0110:
+      input.noDefaultDispatchRuntimeFromFp0110 ?? true,
+    noOauthTokenSessionFromFp0110:
+      input.noOauthTokenSessionFromFp0110 ?? true,
+    noOpenAiApiCallsFromFp0110: input.noOpenAiApiCallsFromFp0110 ?? true,
     noProviderCalls: contracts.every(
       (contract) =>
         !contract.noProviderExternalCallBoundary.providerCallsAllowed,
@@ -187,9 +230,17 @@ export function buildEvidenceToolDispatchProof(
         !contract.noRawDumpBoundary.rawFullFileDumpAllowed &&
         contract.noRawDumpBoundary.boundedCitedExcerptsOnly,
     ),
+    noRemoteMcpDeploymentFromFp0110:
+      input.noRemoteMcpDeploymentFromFp0110 ?? true,
+    noRouteBehaviorChangeFromFp0110:
+      input.noRouteBehaviorChangeFromFp0110 ?? true,
+    noSchemaMigrationsFromFp0110:
+      input.noSchemaMigrationsFromFp0110 ?? true,
     noSourceMutation: contracts.every(
       (contract) => !contract.noMutationBoundary.sourceMutationAllowed,
     ),
+    noSourceMutationFinanceWriteFromFp0110:
+      input.noSourceMutationFinanceWriteFromFp0110 ?? true,
     refusalEnvelopeBoundaryVerified: contracts.every(
       (contract) =>
         contract.refusalEnvelopeBoundary.failClosed &&

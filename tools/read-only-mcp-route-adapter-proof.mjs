@@ -19,6 +19,8 @@ const FP0108_PLAN =
   "plans/FP-0108-read-only-chatgpt-app-mcp-read-only-evidence-tool-dispatch-contracts.md";
 const FP0109_PLAN =
   "plans/FP-0109-read-only-chatgpt-app-mcp-read-only-evidence-tool-dispatch-adapter-implementation.md";
+const FP0110_PLAN =
+  "plans/FP-0110-read-only-chatgpt-app-mcp-default-local-evidence-dispatch-enablement-master-plan.md";
 const FP0106_PLAN =
   "plans/FP-0106-read-only-chatgpt-app-mcp-protocol-envelope-tool-dispatch-proof-contracts.md";
 const FP0105_PLAN =
@@ -203,6 +205,7 @@ const changedFileBoundary = changedFilesAreAllowed();
 const publicAssetBoundary = noPublicAssetsBoundary();
 const sourceScan = noApiModelClientKeyUsage();
 const runtimeForbiddenScan = runtimeForbiddenScopeScan();
+const fp0110ScopeScan = fp0110ChangedScopeScan();
 
 const proof = {
   schemaVersion: SCHEMA_VERSION,
@@ -330,7 +333,29 @@ const proof = {
   fp0108EvidenceToolDispatchContractBoundaryVerified:
     fp0108EvidenceToolDispatchContractBoundaryVerified(),
   fp0109BoundaryVerified: fp0109BoundaryVerified(),
-  fp0110Absent: !repoPaths.some((path) => /(^|\/)FP-0110/u.test(path)),
+  fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified:
+    fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified(),
+  fp0111Absent: fp0111Absent(),
+  defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
+    fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified(),
+  noRouteBehaviorChangeFromFp0110:
+    fp0110ScopeScan.noRouteBehaviorChange &&
+    toolCallResponses.every(
+      (response) => response.body.result?.isError === true,
+    ),
+  noDefaultDispatchRuntimeFromFp0110:
+    fp0110ScopeScan.noDefaultDispatchRuntime &&
+    toolCallResponses.every(
+      (response) => response.body.result?.isError === true,
+    ),
+  noDbQueriesFromFp0110: fp0110ScopeScan.noDbQueries,
+  noSchemaMigrationsFromFp0110: fp0110ScopeScan.noSchemaMigrations,
+  noOauthTokenSessionFromFp0110: fp0110ScopeScan.noOauthTokenSession,
+  noRemoteMcpDeploymentFromFp0110: fp0110ScopeScan.noRemoteMcp,
+  noAppsSdkResourceFromFp0110: fp0110ScopeScan.noAppsSdkResource,
+  noOpenAiApiCallsFromFp0110: sourceScan.noOpenAiApiCalls,
+  noSourceMutationFinanceWriteFromFp0110:
+    fp0110ScopeScan.noSourceMutationFinanceWrite,
   fp0106ProtocolEnvelopeBoundaryStillVerified: fp0106BoundaryStillVerified(),
   fp0105RouteOwnershipBoundaryStillVerified: fp0105BoundaryStillVerified(),
   fp0100PublicSecurityBoundaryStillVerified: fp0100BoundaryStillVerified(),
@@ -491,6 +516,45 @@ function fp0109BoundaryVerified() {
   ].every((text) => normalized.includes(text));
 }
 
+function fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified() {
+  const fp0110Hits = repoPaths.filter((path) => /(^|\/)FP-0110/u.test(path));
+  if (fp0110Hits.length === 0) return true;
+  return (
+    fp0110Hits.length === 1 &&
+    fp0110Hits[0] === FP0110_PLAN &&
+    fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified()
+  );
+}
+
+function fp0111Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0111/u.test(path));
+}
+
+function fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified() {
+  if (!existsSync(FP0110_PLAN)) return false;
+  const normalized = normalize(safeRead(FP0110_PLAN));
+  return [
+    "docs-and-plan plus proof-gate compatibility",
+    "not default dispatch runtime enablement",
+    "not route expansion",
+    "not a new endpoint",
+    "not db query implementation",
+    "not schema or migration work",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not remote mcp deployment",
+    "not apps sdk iframe/resource implementation",
+    "not public chatgpt app implementation",
+    "not app submission",
+    "not openai api/model integration",
+    "not source mutation",
+    "not a finance write",
+    "explicit dependency injection remains required",
+    "route registration may not construct the dispatcher by default",
+    "fp-0111 remains absent",
+  ].every((requiredText) => normalized.includes(requiredText));
+}
+
 function fp0106BoundaryStillVerified() {
   if (!existsSync(FP0106_PLAN)) return false;
   const normalized = normalize(safeRead(FP0106_PLAN));
@@ -529,6 +593,7 @@ function changedFilesAreAllowed() {
     FP0107_PLAN,
     FP0108_PLAN,
     FP0109_PLAN,
+    FP0110_PLAN,
     ROUTE_PATH,
     SERVICE_PATH,
     FORMATTER_PATH,
@@ -590,6 +655,57 @@ function noPublicAssetsBoundary() {
   return {
     noAppSubmission: clear,
     noPublicAssets: clear,
+  };
+}
+
+function fp0110ChangedScopeScan() {
+  const changedRuntimeSource = changedPaths
+    .filter(
+      (path) =>
+        /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
+        !path.startsWith("tools/") &&
+        !path.startsWith("packages/domain/src/read-only-app-mcp-evidence-tool-dispatch"),
+    )
+    .map(safeRead)
+    .join("\n");
+  return {
+    noAppsSdkResource:
+      !changedPaths.some((path) => /apps-sdk|resource|iframe/iu.test(path)) &&
+      !/\b(?:registerResource|ui:\/\/|componentResource|iframe)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noDbQueries:
+      !changedPaths.some((path) => /^packages\/db\//u.test(path)) &&
+      !/\b(?:drizzle|select\s*\(|insert\s*\(|update\s*\(|delete\s*\(|sql`)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noDefaultDispatchRuntime: !changedPaths.some((path) =>
+      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+        path,
+      ),
+    ),
+    noOauthTokenSession:
+      !/\b(?:oauth|tokenExchange|sessionHandler|setCookie|authorization)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noRemoteMcp:
+      !/\b(?:remoteMcp|mcpServerRuntime|listen\s*\(|deploy)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noRouteBehaviorChange: !changedPaths.some((path) =>
+      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+        path,
+      ),
+    ),
+    noSchemaMigrations: !changedPaths.some(
+      (path) =>
+        /(?:^|\/)(?:migrations?|schema)\//iu.test(path) ||
+        /(?:drizzle|migration|schema)\.(?:ts|js|mjs|sql)$/iu.test(path),
+    ),
+    noSourceMutationFinanceWrite:
+      !/\b(?:uploadSource|mutateSource|rewriteSource|deleteSource|writeFinanceTwin|updateLedger|financeWrite)\b/u.test(
+        changedRuntimeSource,
+      ),
   };
 }
 
