@@ -12,8 +12,7 @@ const requireFromControlPlane = createRequire(
   new URL("../apps/control-plane/package.json", import.meta.url),
 );
 const Fastify = requireFromControlPlane("fastify");
-const SCHEMA_VERSION =
-  "v2aa.read-only-app-mcp-local-route-adapter.v1";
+const SCHEMA_VERSION = "v2aa.read-only-app-mcp-local-route-adapter.v1";
 const FP0107_PLAN =
   "plans/FP-0107-read-only-chatgpt-app-mcp-local-fastify-mcp-route-adapter-foundation.md";
 const FP0106_PLAN =
@@ -105,9 +104,50 @@ const malformedResponse = await injectJson({
   method: "initialize",
 });
 const getResponse = await app.inject({
+  headers: {
+    accept: "text/event-stream",
+  },
   method: "GET",
   url: "/mcp",
 });
+const invalidOriginResponse = await injectJson(
+  {
+    id: "bad-origin",
+    jsonrpc: "2.0",
+    method: "initialize",
+  },
+  {
+    origin: "https://attacker.example",
+  },
+);
+const invalidOriginGetResponse = await app.inject({
+  headers: {
+    accept: "text/event-stream",
+    origin: "https://attacker.example",
+  },
+  method: "GET",
+  url: "/mcp",
+});
+const localhostOriginResponse = await injectJson(
+  {
+    id: "localhost-origin",
+    jsonrpc: "2.0",
+    method: "initialize",
+  },
+  {
+    origin: "http://localhost:3000",
+  },
+);
+const loopbackOriginResponse = await injectJson(
+  {
+    id: "loopback-origin",
+    jsonrpc: "2.0",
+    method: "initialize",
+  },
+  {
+    origin: "http://127.0.0.1:3000",
+  },
+);
 const toolCallResponses = await Promise.all(
   MCP_TOOL_ALLOWLIST.map((toolName) =>
     injectJson({
@@ -124,7 +164,14 @@ const toolCallResponses = await Promise.all(
 
 await app.close();
 
-const routeRegistrationCount = countMatches(routeSource, /app\.post\("\/mcp"/gu);
+const routeRegistrationCount = countMatches(
+  routeSource,
+  /app\.post\("\/mcp"/gu,
+);
+const getRouteRegistrationCount = countMatches(
+  routeSource,
+  /app\.get\("\/mcp"/gu,
+);
 const toolNames = toolsListResponse.body.result.tools.map((tool) => tool.name);
 const toolAnnotations = toolsListResponse.body.result.tools.map(
   (tool) => tool.annotations,
@@ -141,17 +188,36 @@ const proof = {
   schemaVersion: SCHEMA_VERSION,
   localRouteAdapterOnly: true,
   mcpRouteAdapterImplemented:
-    routeRegistrationCount === 1 && appRouteRegisteredInApp(),
+    routeRegistrationCount === 1 &&
+    getRouteRegistrationCount === 1 &&
+    appRouteRegisteredInApp(),
   exactlyOneMcpRoutePath:
     routeRegistrationCount === 1 &&
-    routeSource.includes("app.post(\"/mcp\"") &&
-    !routeSource.includes("app.get(\"/mcp\""),
+    getRouteRegistrationCount === 1 &&
+    routeSource.includes('app.post("/mcp"') &&
+    routeSource.includes('app.get("/mcp"'),
   postMcpOnly:
     routeRegistrationCount === 1 &&
-    getResponse.statusCode === 404,
+    getResponse.statusCode === 405 &&
+    getResponse.headers.allow === "POST",
   noGetMcp:
-    !routeSource.includes("app.get(\"/mcp\"") &&
-    getResponse.statusCode === 404,
+    getResponse.statusCode === 405 &&
+    getResponse.headers.allow === "POST" &&
+    !String(getResponse.headers["content-type"] ?? "").includes(
+      "text/event-stream",
+    ),
+  getMcpHandledAsSseUnavailable:
+    getRouteRegistrationCount === 1 &&
+    getResponse.statusCode === 405 &&
+    getResponse.headers.allow === "POST" &&
+    getResponse.body === "",
+  noSseStreamImplemented:
+    !String(getResponse.headers["content-type"] ?? "").includes(
+      "text/event-stream",
+    ) &&
+    !/\b(?:text\/event-stream|ReadableStream|SSEServerTransport|reply\.raw\.write)\b/u.test(
+      runtimeSource,
+    ),
   initializeHandled:
     initializeResponse.statusCode === 200 &&
     initializeResponse.body.result?.capabilities?.tools?.listChanged === false,
@@ -159,8 +225,32 @@ const proof = {
     pingResponse.statusCode === 200 &&
     JSON.stringify(pingResponse.body.result) === "{}",
   initializedNotificationHandled:
-    initializedNotificationResponse.statusCode === 204 &&
+    initializedNotificationResponse.statusCode === 202 &&
     initializedNotificationResponse.body === "",
+  notificationAcceptedReturns202NoBody:
+    initializedNotificationResponse.statusCode === 202 &&
+    initializedNotificationResponse.body === "",
+  originValidationBoundaryVerified:
+    initializeResponse.statusCode === 200 &&
+    localhostOriginResponse.statusCode === 200 &&
+    loopbackOriginResponse.statusCode === 200 &&
+    invalidOriginResponse.statusCode === 403 &&
+    invalidOriginGetResponse.statusCode === 403,
+  invalidOriginFailsClosed:
+    invalidOriginResponse.statusCode === 403 &&
+    invalidOriginResponse.body?.failClosed === true &&
+    invalidOriginResponse.body?.localRouteAdapterOnly === true &&
+    invalidOriginGetResponse.statusCode === 403 &&
+    JSON.parse(invalidOriginGetResponse.body).failClosed === true,
+  streamableHttpTransportBoundaryVerified:
+    routeRegistrationCount === 1 &&
+    getRouteRegistrationCount === 1 &&
+    getResponse.statusCode === 405 &&
+    initializedNotificationResponse.statusCode === 202 &&
+    !String(getResponse.headers["content-type"] ?? "").includes(
+      "text/event-stream",
+    ) &&
+    invalidOriginResponse.statusCode === 403,
   toolsListReturnsExactV2gAllowlist:
     sameList(toolNames, MCP_TOOL_ALLOWLIST) &&
     JSON.stringify(toolAnnotations) === JSON.stringify(descriptorAnnotations),
@@ -188,14 +278,13 @@ const proof = {
     malformedResponse.body.error?.code === -32600 &&
     unknownMethodResponse.body.jsonrpc === "2.0" &&
     invalidToolResponse.body.jsonrpc === "2.0",
-  responseEnvelopeBoundaryPreserved:
-    toolCallResponses.every(
-      (response) =>
-        response.body.result?.structuredContent?.evidence &&
-        response.body.result?.structuredContent?.freshness &&
-        response.body.result?.structuredContent?.limitations &&
-        response.body.result?.structuredContent?.capabilityBoundary,
-    ),
+  responseEnvelopeBoundaryPreserved: toolCallResponses.every(
+    (response) =>
+      response.body.result?.structuredContent?.evidence &&
+      response.body.result?.structuredContent?.freshness &&
+      response.body.result?.structuredContent?.limitations &&
+      response.body.result?.structuredContent?.capabilityBoundary,
+  ),
   noRawFullFileDump: !/rawFullText|rawFileText|fullFileText|fileContents/u.test(
     runtimeSource,
   ),
@@ -232,8 +321,9 @@ for (const [key, value] of Object.entries(proof)) {
 
 console.log(JSON.stringify(proof, null, 2));
 
-async function injectJson(payload) {
+async function injectJson(payload, headers = {}) {
   const response = await app.inject({
+    headers,
     method: "POST",
     payload,
     url: "/mcp",
@@ -402,11 +492,12 @@ function changedFilesAreAllowed() {
 }
 
 function noPublicAssetsBoundary() {
-  const forbidden = changedPaths.filter((path) =>
-    /\.(?:png|jpe?g|gif|webp|svg|ico|avif|mp4|mov|pdf)$/iu.test(path) ||
-    /app-submission|submission-assets|public-listing|store-listing|listing-copy|screenshots/iu.test(
-      path,
-    ),
+  const forbidden = changedPaths.filter(
+    (path) =>
+      /\.(?:png|jpe?g|gif|webp|svg|ico|avif|mp4|mov|pdf)$/iu.test(path) ||
+      /app-submission|submission-assets|public-listing|store-listing|listing-copy|screenshots/iu.test(
+        path,
+      ),
   );
   const clear = forbidden.length === 0;
   return {

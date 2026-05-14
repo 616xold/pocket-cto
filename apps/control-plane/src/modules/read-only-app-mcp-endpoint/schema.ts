@@ -13,10 +13,7 @@ export const jsonRpcEnvelopeSchema = z
   })
   .strict();
 
-const optionalEmptyParamsSchema = z
-  .object({})
-  .strict()
-  .optional();
+const optionalEmptyParamsSchema = z.object({}).strict().optional();
 
 export const initializeParamsSchema = z
   .object({
@@ -93,6 +90,71 @@ export const toolsCallParamsSchema = z
     name: McpToolNameSchema,
   })
   .strict();
+
+export type McpOriginValidationResult =
+  | {
+      allowed: true;
+      reason: "absent_origin" | "loopback_origin";
+    }
+  | {
+      allowed: false;
+      reason: "invalid_origin" | "multiple_origin_headers";
+    };
+
+export function validateLocalMcpOriginHeader(
+  originHeader: string | string[] | undefined,
+): McpOriginValidationResult {
+  if (originHeader === undefined) {
+    return {
+      allowed: true,
+      reason: "absent_origin",
+    };
+  }
+
+  if (Array.isArray(originHeader)) {
+    return {
+      allowed: false,
+      reason: "multiple_origin_headers",
+    };
+  }
+
+  const trimmedOrigin = originHeader.trim();
+  if (trimmedOrigin.length === 0) {
+    return {
+      allowed: false,
+      reason: "invalid_origin",
+    };
+  }
+
+  try {
+    const parsed = new URL(trimmedOrigin);
+    const hostname = parsed.hostname.toLowerCase();
+    const protocolAllowed =
+      parsed.protocol === "http:" || parsed.protocol === "https:";
+    const loopbackHost =
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1" ||
+      hostname === "[::1]";
+
+    if (protocolAllowed && loopbackHost) {
+      return {
+        allowed: true,
+        reason: "loopback_origin",
+      };
+    }
+  } catch {
+    return {
+      allowed: false,
+      reason: "invalid_origin",
+    };
+  }
+
+  return {
+    allowed: false,
+    reason: "invalid_origin",
+  };
+}
 
 export type JsonRpcEnvelope = z.infer<typeof jsonRpcEnvelopeSchema>;
 export type JsonRpcId = z.infer<typeof jsonRpcIdSchema>;

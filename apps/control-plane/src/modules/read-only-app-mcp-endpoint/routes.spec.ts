@@ -64,7 +64,7 @@ describe("read-only app MCP endpoint routes", () => {
     });
   });
 
-  it("handles initialized notification without state mutation response", async () => {
+  it("handles initialized notification as accepted without a body", async () => {
     const app = await buildTestApp(apps);
 
     const response = await app.inject({
@@ -76,7 +76,7 @@ describe("read-only app MCP endpoint routes", () => {
       url: "/mcp",
     });
 
-    expect(response.statusCode).toBe(204);
+    expect(response.statusCode).toBe(202);
     expect(response.body).toBe("");
   });
 
@@ -95,9 +95,7 @@ describe("read-only app MCP endpoint routes", () => {
 
     expect(response.statusCode).toBe(200);
     expect(
-      response
-        .json()
-        .result.tools.map((tool: { name: string }) => tool.name),
+      response.json().result.tools.map((tool: { name: string }) => tool.name),
     ).toEqual([...MCP_TOOL_ALLOWLIST]);
   });
 
@@ -154,7 +152,8 @@ describe("read-only app MCP endpoint routes", () => {
       result: {
         isError: true,
         structuredContent: {
-          refusalReason: "tool_dispatch_not_implemented_until_later_finance_plan",
+          refusalReason:
+            "tool_dispatch_not_implemented_until_later_finance_plan",
         },
       },
     });
@@ -209,16 +208,104 @@ describe("read-only app MCP endpoint routes", () => {
     });
   });
 
-  it("does not register GET /mcp", async () => {
+  it("handles GET /mcp as SSE unavailable", async () => {
     const app = await buildTestApp(apps);
 
     const response = await app.inject({
+      headers: {
+        accept: "text/event-stream",
+      },
       method: "GET",
       url: "/mcp",
     });
 
-    expect(app.hasRoute({ method: "GET", url: "/mcp" })).toBe(false);
-    expect(response.statusCode).toBe(404);
+    expect(app.hasRoute({ method: "GET", url: "/mcp" })).toBe(true);
+    expect(response.statusCode).toBe(405);
+    expect(response.headers.allow).toBe("POST");
+    expect(String(response.headers["content-type"] ?? "")).not.toContain(
+      "text/event-stream",
+    );
+    expect(response.body).toBe("");
+  });
+
+  it("fails closed for non-local Origin headers", async () => {
+    const app = await buildTestApp(apps);
+
+    const postResponse = await app.inject({
+      headers: {
+        origin: "https://attacker.example",
+      },
+      method: "POST",
+      payload: {
+        id: "init-origin-blocked",
+        jsonrpc: "2.0",
+        method: "initialize",
+      },
+      url: "/mcp",
+    });
+    const getResponse = await app.inject({
+      headers: {
+        accept: "text/event-stream",
+        origin: "https://attacker.example",
+      },
+      method: "GET",
+      url: "/mcp",
+    });
+
+    expect(postResponse.statusCode).toBe(403);
+    expect(postResponse.json()).toMatchObject({
+      failClosed: true,
+      localRouteAdapterOnly: true,
+      reason: "invalid_origin",
+    });
+    expect(getResponse.statusCode).toBe(403);
+    expect(getResponse.json()).toMatchObject({
+      failClosed: true,
+      localRouteAdapterOnly: true,
+      reason: "invalid_origin",
+    });
+  });
+
+  it("allows absent and loopback Origin headers for local clients", async () => {
+    const app = await buildTestApp(apps);
+
+    const absentOriginResponse = await app.inject({
+      method: "POST",
+      payload: {
+        id: "init-absent-origin",
+        jsonrpc: "2.0",
+        method: "initialize",
+      },
+      url: "/mcp",
+    });
+    const localhostOriginResponse = await app.inject({
+      headers: {
+        origin: "http://localhost:3000",
+      },
+      method: "POST",
+      payload: {
+        id: "init-localhost-origin",
+        jsonrpc: "2.0",
+        method: "initialize",
+      },
+      url: "/mcp",
+    });
+    const loopbackOriginResponse = await app.inject({
+      headers: {
+        origin: "http://127.0.0.1:3000",
+      },
+      method: "POST",
+      payload: {
+        id: "init-loopback-origin",
+        jsonrpc: "2.0",
+        method: "initialize",
+      },
+      url: "/mcp",
+    });
+
+    expect(absentOriginResponse.statusCode).toBe(200);
+    expect(localhostOriginResponse.statusCode).toBe(200);
+    expect(loopbackOriginResponse.statusCode).toBe(200);
   });
 
   it("does not add forbidden local route-adapter implementation scope", () => {
@@ -234,11 +321,17 @@ describe("read-only app MCP endpoint routes", () => {
     const packageName = ["open", "ai"].join("");
 
     expect(source).not.toMatch(new RegExp(`\\b${keyName}\\b`, "u"));
-    expect(source).not.toMatch(new RegExp(`from\\s+["']${packageName}["']`, "u"));
-    expect(source).not.toMatch(/\b(?:oauth|token exchange|session handler)\b/iu);
+    expect(source).not.toMatch(
+      new RegExp(`from\\s+["']${packageName}["']`, "u"),
+    );
+    expect(source).not.toMatch(
+      /\b(?:oauth|token exchange|session handler)\b/iu,
+    );
     expect(source).not.toMatch(/\b(?:registerResource|ui:\/\/|McpServer)\b/u);
     expect(source).not.toMatch(/\b(?:fetch|providerConnect|sendReport)\s*\(/u);
-    expect(source).not.toMatch(/\b(?:createMission|uploadSource|updateLedger)\s*\(/u);
+    expect(source).not.toMatch(
+      /\b(?:createMission|uploadSource|updateLedger)\s*\(/u,
+    );
   });
 });
 
