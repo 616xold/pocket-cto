@@ -4,6 +4,7 @@ import {
   EvidenceToolDispatchProofSchema,
   FP0108_EVIDENCE_TOOL_DISPATCH_PLAN_PATH,
   FP0109_EVIDENCE_DISPATCH_ADAPTER_PLAN_PATH,
+  FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH,
   MCP_TOOL_ALLOWLIST,
   buildEvidenceToolDispatchProof,
 } from "../packages/domain/src/index.ts";
@@ -20,6 +21,7 @@ const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
 const sourceText = readChangedCodeSourceText();
 const sourceScan = noApiModelClientKeyUsage(sourceText);
+const fp0110ScopeScan = fp0110ChangedScopeScan();
 const proof = EvidenceToolDispatchProofSchema.parse(
   buildEvidenceToolDispatchProof({
     fp0100PublicSecurityBoundaryStillVerified: docsBoundary(FP0100_PLAN, [
@@ -35,8 +37,26 @@ const proof = EvidenceToolDispatchProofSchema.parse(
     fp0107RouteAdapterBoundaryStillVerified:
       fp0107RouteAdapterBoundaryStillVerified(),
     fp0108BoundaryVerified: fp0108BoundaryVerified(),
+    fp0108DispatchContractsStillVerified: fp0108BoundaryVerified(),
     fp0109BoundaryVerified: fp0109BoundaryVerified(),
-    fp0110Absent: fp0110Absent(),
+    fp0109AdapterBoundaryStillVerified: fp0109BoundaryVerified(),
+    fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified:
+      fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified(),
+    fp0111Absent: fp0111Absent(),
+    defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
+      fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified(),
+    noAppsSdkResourceFromFp0110: fp0110ScopeScan.noAppsSdkResource,
+    noDbQueriesFromFp0110: fp0110ScopeScan.noDbQueries,
+    noDefaultDispatchRuntimeFromFp0110: noDispatchRuntimeImplemented(),
+    noOauthTokenSessionFromFp0110: fp0110ScopeScan.noOauthTokenSession,
+    noOpenAiApiCallsFromFp0110: sourceScan.noOpenAiApiCalls,
+    noRemoteMcpDeploymentFromFp0110: fp0110ScopeScan.noRemoteMcp,
+    noRouteBehaviorChangeFromFp0110:
+      fp0110ScopeScan.noRouteBehaviorChange &&
+      routeAdapterToolsCallStillFailClosed(),
+    noSchemaMigrationsFromFp0110: fp0110ScopeScan.noSchemaMigrations,
+    noSourceMutationFinanceWriteFromFp0110:
+      fp0110ScopeScan.noSourceMutationFinanceWrite,
     noDispatchRuntimeImplemented: noDispatchRuntimeImplemented(),
     noModelCalls: sourceScan.noModelCalls,
     noOpenAiApiCalls: sourceScan.noOpenAiApiCalls,
@@ -127,8 +147,54 @@ function fp0109BoundaryVerified() {
   ].every((requiredText) => normalized.includes(requiredText));
 }
 
-function fp0110Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0110/u.test(path));
+function fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified() {
+  const fp0110Hits = repoPaths.filter((path) => /(^|\/)FP-0110/u.test(path));
+  if (fp0110Hits.length === 0) return true;
+  return (
+    fp0110Hits.length === 1 &&
+    fp0110Hits[0] ===
+      FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH &&
+    fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified()
+  );
+}
+
+function fp0111Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0111/u.test(path));
+}
+
+function fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified() {
+  if (
+    !existsSync(FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH)
+  ) {
+    return false;
+  }
+
+  const normalized = normalize(
+    readFileSync(
+      FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH,
+      "utf8",
+    ),
+  );
+  return [
+    "docs-and-plan plus proof-gate compatibility",
+    "not default dispatch runtime enablement",
+    "not route expansion",
+    "not a new endpoint",
+    "not db query implementation",
+    "not schema or migration work",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not remote mcp deployment",
+    "not apps sdk iframe/resource implementation",
+    "not public chatgpt app implementation",
+    "not app submission",
+    "not openai api/model integration",
+    "not source mutation",
+    "not a finance write",
+    "explicit dependency injection remains required",
+    "route registration may not construct the dispatcher by default",
+    "fp-0111 remains absent",
+  ].every((requiredText) => normalized.includes(requiredText));
 }
 
 function fp0107RouteAdapterBoundaryStillVerified() {
@@ -227,6 +293,52 @@ function readChangedCodeSourceText() {
     .filter((path) => /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path))
     .map(safeRead)
     .join("\n");
+}
+
+function fp0110ChangedScopeScan() {
+  const changedRuntimeSource = changedPaths
+    .filter(
+      (path) =>
+        /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
+        !path.startsWith("tools/") &&
+        !path.startsWith("packages/domain/src/read-only-app-mcp-evidence-tool-dispatch"),
+    )
+    .map(safeRead)
+    .join("\n");
+  return {
+    noAppsSdkResource:
+      !changedPaths.some((path) => /apps-sdk|resource|iframe/iu.test(path)) &&
+      !/\b(?:registerResource|ui:\/\/|componentResource|iframe)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noDbQueries:
+      !changedPaths.some((path) => /^packages\/db\//u.test(path)) &&
+      !/\b(?:drizzle|select\s*\(|insert\s*\(|update\s*\(|delete\s*\(|sql`)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noOauthTokenSession:
+      !/\b(?:oauth|tokenExchange|sessionHandler|setCookie|authorization)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noRemoteMcp:
+      !/\b(?:remoteMcp|mcpServerRuntime|listen\s*\(|deploy)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noRouteBehaviorChange: !changedPaths.some((path) =>
+      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+        path,
+      ),
+    ),
+    noSchemaMigrations: !changedPaths.some(
+      (path) =>
+        /(?:^|\/)(?:migrations?|schema)\//iu.test(path) ||
+        /(?:drizzle|migration|schema)\.(?:ts|js|mjs|sql)$/iu.test(path),
+    ),
+    noSourceMutationFinanceWrite:
+      !/\b(?:uploadSource|mutateSource|rewriteSource|deleteSource|writeFinanceTwin|updateLedger|financeWrite)\b/u.test(
+        changedRuntimeSource,
+      ),
+  };
 }
 
 function noApiModelClientKeyUsage(text) {

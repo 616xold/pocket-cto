@@ -9,6 +9,9 @@ export const FP0108_EVIDENCE_TOOL_DISPATCH_PLAN_PATH =
 export const FP0109_EVIDENCE_DISPATCH_ADAPTER_PLAN_PATH =
   "plans/FP-0109-read-only-chatgpt-app-mcp-read-only-evidence-tool-dispatch-adapter-implementation.md";
 
+export const FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH =
+  "plans/FP-0110-read-only-chatgpt-app-mcp-default-local-evidence-dispatch-enablement-master-plan.md";
+
 export const EVIDENCE_TOOL_DISPATCH_RESPONSE_REQUIRED_FIELDS = [
   "structuredContent",
   "evidence",
