@@ -24,6 +24,7 @@ The proof point is not that Pocket CFO is remotely accessible. The proof point i
 - [x] 2026-05-15T16:30:22Z: Focused validation passed before final validation: all proof tools, 10 focused domain spec files with 100 tests, and 4 focused control-plane route/service/dispatcher/app-wiring spec files with 85 tests.
 - [x] 2026-05-15T16:30:22Z: Pre-final strict QA found the changed files limited to domain contracts/specs, proof tools, plan/docs/plugin refresh, and no route behavior change, new route path, remote deployment, deployment config, OAuth/token/session/auth middleware implementation, Apps SDK resource, app submission, DB/schema/migration/package script, public asset, source mutation, finance write, provider call, OpenAI API/model/client/key use, or FP-0115.
 - [x] 2026-05-15T16:40:17Z: Final validation passed after the proof-import correction: `git diff --check`, all proof tools including `tools/read-only-mcp-remote-host-readiness-proof.mjs`, focused domain specs, focused control-plane specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+- [x] 2026-05-15T16:48:41Z: Same-branch QA found and corrected stale closeout wording in `docs/ACTIVE_DOCS.md` and this plan so shipped-state guidance points at FP-0114 and records repository publication accurately.
 
 ## Surprises & Discoveries
 
@@ -183,6 +184,6 @@ GitHub connector product behavior is explicitly out of scope. Routine `git`, `gh
 
 FP-0114 implemented the local/proof-only/read-only remote MCP host readiness security contract foundation only. The slice adds no remote MCP runtime, no `/mcp` behavior change, no new route path, no deployment config, no OAuth/token/session/auth middleware implementation, no Apps SDK resource, no public app behavior, no app submission material, no DB query, no schema or migration, no package script, no public asset, no source pack, no OpenAI API/model/client/key use, no provider or external call, no source mutation, no finance write, no generated finance advice, no runtime-Codex finance output, no autonomous action, and no FP-0115.
 
-Strict same-branch QA and final validation found no scope widening. Repository publication remains: one commit, push, and PR if repository authentication stays green.
+Strict same-branch QA and final validation found no scope widening. Repository publication completed on branch `codex/v2ah-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation-local-v1` with commit `e115eacf8b18154aa2dddd1ed7f85175bfc77be4` and PR #281.
 
 Recommendation after this slice: remote MCP host implementation planning may start only as a later named Finance Plan that keeps public ChatGPT App submission waiting. The next plan should be narrow and should not implement app submission until host readiness, OAuth/security implementation, transport/security controls, and human review gates have their own green proof ladder.
