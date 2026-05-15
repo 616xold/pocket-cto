@@ -1,13 +1,13 @@
 # Codex Plugins
 
-This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0110 docs-and-plan plus proof-gate compatibility slice for default local evidence dispatch enablement planning.
+This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0111 local-only explicit app-construction wiring slice for default local evidence dispatch.
 
 ## Repo-local plugin used
 
 - `pocket-cfo-codex-operator`
   - Marketplace entry: `.agents/plugins/marketplace.json`
   - Bundle path: `plugins/pocket-cfo-codex-operator/`
-  - Skills invoked for this FP-0110 default local evidence dispatch enablement planning, proof-gate bridge, doc-refresh, validation, and handoff slice:
+  - Skills invoked for this FP-0111 default local evidence dispatch wiring, proof-gate bridge, doc-refresh, validation, and handoff slice:
     - Finance Plan Orchestrator
     - Modular Architecture Guard
     - Source Provenance Guard
@@ -39,5 +39,5 @@ This file records the plugins available in this Codex local thread and the repo-
 ## Notes
 
 - Routine `git` and `gh` CLI operations were used for repository and PR metadata.
-- OpenAI Developers was available only as an installed plugin family; no callable read-only docs tool was exposed for this slice. It was not used to create API keys, call OpenAI APIs, call models, or widen app/runtime scope. Official OpenAI web docs were used as read-only platform context for Apps SDK tool-result visibility and security/privacy posture. Official Model Context Protocol web docs were used as read-only protocol context for `tools/call`, `inputSchema`, optional `outputSchema`, `structuredContent`, `content`, `isError`, and the backwards-compatible serialized JSON text mirror.
+- OpenAI Developers was available only as an installed plugin family; no callable read-only docs tool was exposed for this slice. It was not used to create API keys, call OpenAI APIs, call models, or widen app/runtime scope. Official OpenAI web docs were used as read-only platform context for Apps SDK tool-result visibility and security/privacy posture. Official Model Context Protocol web docs were used as read-only protocol context for `tools/call`, `inputSchema`, optional `outputSchema`, `structuredContent`, `content`, `isError`, notifications, Streamable HTTP Origin validation, HTTP 202 notification acceptance, GET 405 without SSE, and the backwards-compatible serialized JSON text mirror.
 - No Figma, app-submission, design-generation, OpenAI API/model-call, artifact-upload, dependency-installation, or public-asset generation plugin workflow was used for this slice.

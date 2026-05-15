@@ -109,7 +109,9 @@ export async function buildApp(options?: { container?: AppContainer }) {
   await registerReplayRoutes(app, {
     replayService: container.replayService,
   });
-  await registerReadOnlyAppMcpEndpointRoutes(app);
+  await registerReadOnlyAppMcpEndpointRoutes(app, {
+    readOnlyAppMcpEndpointService: container.readOnlyAppMcpEndpointService,
+  });
   await registerSourceRoutes(app, {
     sourceService: container.sourceService,
   });

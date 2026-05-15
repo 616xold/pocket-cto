@@ -2,12 +2,19 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import {
   FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS,
+  MCP_TOOL_ALLOWLIST,
+  type EvidenceToolResponse,
   type ProofBundleManifest,
   ProofBundleManifestSchema,
 } from "@pocket-cto/domain";
 import { buildApp } from "./app";
 import { createInMemoryContainer } from "./bootstrap";
 import type { AppContainer } from "./lib/types";
+import {
+  LocalReadOnlyEvidenceToolDispatchAdapter,
+  type ReadOnlyEvidenceToolServicePort,
+} from "./modules/read-only-app-mcp-endpoint/evidence-dispatcher";
+import { ReadOnlyAppMcpEndpointService } from "./modules/read-only-app-mcp-endpoint/service";
 import {
   ApprovalNotFoundError,
   ApprovalNotPendingError,
@@ -28,6 +35,136 @@ describe("control-plane app", () => {
 
   afterEach(async () => {
     await Promise.all(apps.splice(0).map((app) => app.close()));
+  });
+
+  it("keeps /mcp tools/call fail-closed when buildApp has no explicit MCP endpoint service", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "POST",
+      payload: {
+        id: "mcp-default-call",
+        jsonrpc: "2.0",
+        method: "tools/call",
+        params: {
+          arguments: validMcpArgumentsFor("search_evidence"),
+          name: "search_evidence",
+        },
+      },
+      url: "/mcp",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      id: "mcp-default-call",
+      jsonrpc: "2.0",
+      result: {
+        isError: true,
+        structuredContent: {
+          capabilityBoundary: {
+            localRouteAdapterOnly: true,
+            toolDispatchImplemented: false,
+          },
+          refusalReason:
+            "tool_dispatch_not_implemented_until_later_finance_plan",
+          toolName: "search_evidence",
+        },
+      },
+    });
+  });
+
+  it("wires an explicit MCP endpoint service into /mcp tools/call through the existing local evidence adapter", async () => {
+    const { evidenceService, endpointService } =
+      buildInjectedMcpEndpointService();
+    const app = await createStubApp(apps, {
+      readOnlyAppMcpEndpointService: endpointService,
+    });
+
+    for (const toolName of MCP_TOOL_ALLOWLIST) {
+      const response = await app.inject({
+        method: "POST",
+        payload: {
+          id: `mcp-injected-${toolName}`,
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: {
+            arguments: validMcpArgumentsFor(toolName),
+            name: toolName,
+          },
+        },
+        url: "/mcp",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        id: `mcp-injected-${toolName}`,
+        jsonrpc: "2.0",
+        result: {
+          isError: false,
+          structuredContent: {
+            capabilityBoundary: {
+              localDispatchAdapterOnly: true,
+              readOnly: true,
+              toolDispatchImplemented: true,
+            },
+            companyKey: "acme",
+            refusalReason: null,
+            toolName,
+          },
+        },
+      });
+    }
+
+    expect(evidenceService.calls).toEqual({
+      fetchCapabilityBoundaries: 1,
+      fetchCompanyPosture: 1,
+      fetchDocumentMap: 1,
+      fetchEvidenceCard: 1,
+      fetchSourceAnchor: 1,
+      fetchSourceCoverage: 1,
+      searchEvidence: 1,
+    });
+    expect(evidenceService.lastInputs.fetchSourceCoverage).toEqual({
+      sourceId: "source-1",
+    });
+  });
+
+  it("keeps injected /mcp dispatch fail-closed before evidence service calls on companyKey mismatch", async () => {
+    const { evidenceService, endpointService } =
+      buildInjectedMcpEndpointService();
+    const app = await createStubApp(apps, {
+      readOnlyAppMcpEndpointService: endpointService,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      payload: {
+        id: "mcp-company-mismatch",
+        jsonrpc: "2.0",
+        method: "tools/call",
+        params: {
+          arguments: {
+            companyKey: "other-company",
+            query: "cash posture",
+          },
+          name: "search_evidence",
+        },
+      },
+      url: "/mcp",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      result: {
+        isError: true,
+        structuredContent: {
+          evidence: [],
+          refusalReason: "company_key_mismatch",
+          sourceAnchors: [],
+        },
+      },
+    });
+    expect(evidenceService.calls.searchEvidence).toBe(0);
   });
 
   it("POST /missions/text returns 201 with mission, tasks, and a proof bundle placeholder", async () => {
@@ -4239,6 +4376,184 @@ async function createPolicyLookupTestApp(apps: FastifyInstance[]) {
   };
 }
 
+function buildInjectedMcpEndpointService() {
+  const evidenceService = buildTrackingMcpEvidenceService();
+  const dispatcher = new LocalReadOnlyEvidenceToolDispatchAdapter({
+    evidenceService,
+    expectedCompanyKey: "acme",
+  });
+  const endpointService = new ReadOnlyAppMcpEndpointService({
+    evidenceToolDispatcher: dispatcher,
+  });
+
+  return {
+    endpointService,
+    evidenceService,
+  };
+}
+
+type TrackingMcpEvidenceService = ReadOnlyEvidenceToolServicePort & {
+  calls: Record<keyof ReadOnlyEvidenceToolServicePort, number>;
+  lastInputs: {
+    fetchCapabilityBoundaries: unknown;
+    fetchDocumentMap: unknown;
+    fetchEvidenceCard: unknown;
+    fetchSourceAnchor: unknown;
+    fetchSourceCoverage: unknown;
+    searchEvidence: unknown;
+  };
+};
+
+function buildTrackingMcpEvidenceService(): TrackingMcpEvidenceService {
+  const calls = {
+    fetchCapabilityBoundaries: 0,
+    fetchCompanyPosture: 0,
+    fetchDocumentMap: 0,
+    fetchEvidenceCard: 0,
+    fetchSourceAnchor: 0,
+    fetchSourceCoverage: 0,
+    searchEvidence: 0,
+  };
+  const lastInputs = {
+    fetchCapabilityBoundaries: null as unknown,
+    fetchDocumentMap: null as unknown,
+    fetchEvidenceCard: null as unknown,
+    fetchSourceAnchor: null as unknown,
+    fetchSourceCoverage: null as unknown,
+    searchEvidence: null as unknown,
+  };
+
+  return {
+    calls,
+    lastInputs,
+    fetchCapabilityBoundaries(input) {
+      calls.fetchCapabilityBoundaries += 1;
+      lastInputs.fetchCapabilityBoundaries = input;
+      return mcpEvidenceResponse("fetch_capability_boundaries");
+    },
+    fetchCompanyPosture() {
+      calls.fetchCompanyPosture += 1;
+      return mcpEvidenceResponse("fetch_company_posture");
+    },
+    fetchDocumentMap(input) {
+      calls.fetchDocumentMap += 1;
+      lastInputs.fetchDocumentMap = input;
+      return mcpEvidenceResponse("fetch_document_map");
+    },
+    fetchEvidenceCard(input) {
+      calls.fetchEvidenceCard += 1;
+      lastInputs.fetchEvidenceCard = input;
+      return mcpEvidenceResponse("fetch_evidence_card");
+    },
+    fetchSourceAnchor(input) {
+      calls.fetchSourceAnchor += 1;
+      lastInputs.fetchSourceAnchor = input;
+      return mcpEvidenceResponse("fetch_source_anchor");
+    },
+    fetchSourceCoverage(input) {
+      calls.fetchSourceCoverage += 1;
+      lastInputs.fetchSourceCoverage = input;
+      return mcpEvidenceResponse("fetch_source_coverage");
+    },
+    searchEvidence(input) {
+      calls.searchEvidence += 1;
+      lastInputs.searchEvidence = input;
+      return mcpEvidenceResponse("search_evidence");
+    },
+  };
+}
+
+function mcpEvidenceResponse(
+  toolName: (typeof MCP_TOOL_ALLOWLIST)[number],
+): EvidenceToolResponse<unknown> {
+  const citation = {
+    checksumSha256: "a".repeat(64),
+    citationType: "source_anchor",
+    id: "source-anchor-1",
+    locator: "line 1",
+    sourceAnchorId: "source-anchor-1",
+    sourceId: "source-1",
+    sourceSnapshotId: "source-snapshot-1",
+    summary: "Synthetic read-only MCP evidence citation.",
+  } as const;
+
+  return {
+    appMode: "local_proof",
+    audit: {
+      appMode: "local_proof",
+      artifactIds: ["artifact-1"],
+      companyKey: "acme",
+      excerptCharacterCount: 24,
+      forbiddenRequestBlocked: false,
+      id: `audit:${toolName}`,
+      normalizedQuery: toolName === "search_evidence" ? "cash posture" : null,
+      redactionCount: 0,
+      sourceAnchorIds: ["source-anchor-1"],
+      timestamp: "2026-05-15T00:00:00.000Z",
+      toolName,
+      unsupportedReason: null,
+    },
+    capabilityBoundaries: [
+      {
+        affectedAnchorIds: [],
+        affectedSourceIds: [],
+        code: "not_source_truth",
+        severity: "warning",
+        summary:
+          "Synthetic MCP evidence remains read-only and is not source truth.",
+      },
+    ],
+    citations: [citation],
+    companyKey: "acme",
+    evidence: [citation],
+    forbiddenActions: ["write_finance_twin_fact", "send_report"],
+    freshness: {
+      checkedAt: "2026-05-15T00:00:00.000Z",
+      compiledAt: null,
+      extractedAt: null,
+      sourceCapturedAt: "2026-05-15T00:00:00.000Z",
+      state: "fresh",
+      summary: "Synthetic read-only MCP evidence is fresh.",
+    },
+    limitations: [],
+    ok: true,
+    permittedNextActions: [
+      {
+        action: "request_human_review",
+        label: "Review the source-backed structured result.",
+        targetId: "artifact-1",
+      },
+    ],
+    redactions: [],
+    result: {
+      artifactId: `${toolName}:artifact`,
+      artifactKind: "mcp_local_evidence_dispatch_proof",
+    },
+    schemaVersion: "v2c.evidence-tool.v1",
+    toolName,
+    unsupportedReason: null,
+  };
+}
+
+function validMcpArgumentsFor(toolName: (typeof MCP_TOOL_ALLOWLIST)[number]) {
+  switch (toolName) {
+    case "search_evidence":
+      return { companyKey: "acme", limit: 3, query: "cash posture" };
+    case "fetch_evidence_card":
+      return { companyKey: "acme", evidenceCardId: "evidence-card-1" };
+    case "fetch_source_anchor":
+      return { companyKey: "acme", sourceAnchorId: "source-anchor-1" };
+    case "fetch_document_map":
+      return { companyKey: "acme", documentMapId: "document-map-1" };
+    case "fetch_source_coverage":
+      return { companyKey: "acme", sourceId: "source-1" };
+    case "fetch_company_posture":
+      return { companyKey: "acme" };
+    case "fetch_capability_boundaries":
+      return { companyKey: "acme" };
+  }
+}
+
 async function createStubApp(
   apps: FastifyInstance[],
   overrides: {
@@ -4258,6 +4573,7 @@ async function createStubApp(
         AppContainer["operatorControl"]["runtimeControlService"]
       >;
     };
+    readOnlyAppMcpEndpointService?: AppContainer["readOnlyAppMcpEndpointService"];
     replayService?: Partial<AppContainer["replayService"]>;
     sourceService?: Partial<AppContainer["sourceService"]>;
     twinService?: Partial<AppContainer["twinService"]>;

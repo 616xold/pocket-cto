@@ -49,7 +49,8 @@ export const EvidenceToolDispatchProofSchema = z
     fp0109BoundaryVerified: trueLiteral,
     fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified:
       trueLiteral,
-    fp0111Absent: trueLiteral,
+    fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified: trueLiteral,
+    fp0112Absent: trueLiteral,
     defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified: trueLiteral,
     noRouteBehaviorChangeFromFp0110: trueLiteral,
     noDefaultDispatchRuntimeFromFp0110: trueLiteral,
@@ -97,7 +98,8 @@ export function buildEvidenceToolDispatchProof(
     fp0108BoundaryVerified: boolean;
     fp0109BoundaryVerified: boolean;
     fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified: boolean;
-    fp0111Absent: boolean;
+    fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified: boolean;
+    fp0112Absent: boolean;
     defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified: boolean;
     noRouteBehaviorChangeFromFp0110: boolean;
     noDefaultDispatchRuntimeFromFp0110: boolean;
@@ -172,7 +174,9 @@ export function buildEvidenceToolDispatchProof(
     fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified:
       input.fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified ??
       true,
-    fp0111Absent: input.fp0111Absent ?? true,
+    fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified:
+      input.fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified ?? true,
+    fp0112Absent: input.fp0112Absent ?? true,
     freshnessBoundaryVerified: contracts.every(
       (contract) =>
         contract.freshnessBoundary.missingEvidenceFailsClosed &&

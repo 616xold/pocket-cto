@@ -18,6 +18,7 @@ import type { MonitoringService } from "../modules/monitoring/service";
 import type { MissionReportingActionsService } from "../modules/missions/reporting-actions";
 import type { OperatorReadinessService } from "../modules/operator-readiness/service";
 import type { OrchestratorWorker } from "../modules/orchestrator/worker";
+import type { ReadOnlyAppMcpEndpointService } from "../modules/read-only-app-mcp-endpoint/service";
 import type { ReplayService } from "../modules/replay/service";
 import type { RuntimeControlService } from "../modules/runtime-codex/control-service";
 import type { SourceRegistryService } from "../modules/sources/service";
@@ -128,6 +129,11 @@ export type ExternalDeliveryHumanConfirmationBoundaryServicePort = Pick<
 
 export type ReplayServicePort = Pick<ReplayService, "getMissionEvents">;
 
+export type ReadOnlyAppMcpEndpointServicePort = Pick<
+  ReadOnlyAppMcpEndpointService,
+  "handle"
+>;
+
 export type SourceServicePort = Pick<
   SourceRegistryService,
   | "createSource"
@@ -236,6 +242,7 @@ export type AppContainer = {
   missionReportingActionsService: MissionReportingActionServicePort;
   monitoringService?: MonitoringServicePort;
   operatorReadinessService: OperatorReadinessServicePort;
+  readOnlyAppMcpEndpointService?: ReadOnlyAppMcpEndpointServicePort;
   operatorControl: {
     approvalService: Pick<
       ApprovalService,

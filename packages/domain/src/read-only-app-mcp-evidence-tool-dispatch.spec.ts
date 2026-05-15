@@ -9,6 +9,7 @@ import {
   FP0108_EVIDENCE_TOOL_DISPATCH_PLAN_PATH,
   FP0109_EVIDENCE_DISPATCH_ADAPTER_PLAN_PATH,
   FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH,
+  FP0111_DEFAULT_LOCAL_EVIDENCE_DISPATCH_WIRING_PLAN_PATH,
   MCP_TOOL_ALLOWLIST,
   EvidenceToolDispatchAllowlistBoundarySchema,
   EvidenceToolDispatchProofSchema,
@@ -219,12 +220,13 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(serviceSource).not.toContain("ReadOnlyEvidenceToolService");
   });
 
-  it("accepts exactly FP-0108, FP-0109, and one FP-0110 docs-only bridge while rejecting FP-0111", () => {
+  it("accepts exactly FP-0108 through FP-0111 while rejecting FP-0112", () => {
     const repoPaths = repoFilePaths();
     const fp0108Hits = repoPaths.filter((path) => /(^|\/)FP-0108/u.test(path));
     const fp0109Hits = repoPaths.filter((path) => /(^|\/)FP-0109/u.test(path));
     const fp0110Hits = repoPaths.filter((path) => /(^|\/)FP-0110/u.test(path));
     const fp0111Hits = repoPaths.filter((path) => /(^|\/)FP-0111/u.test(path));
+    const fp0112Hits = repoPaths.filter((path) => /(^|\/)FP-0112/u.test(path));
     const proof = buildEvidenceToolDispatchProof({
       fp0108BoundaryVerified:
         fp0108Hits.length === 1 &&
@@ -241,7 +243,12 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
         fp0110Hits[0] ===
           FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH &&
         fp0110PlanBoundaryVerified(),
-      fp0111Absent: fp0111Hits.length === 0,
+      fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified:
+        fp0111Hits.length === 1 &&
+        fp0111Hits[0] ===
+          FP0111_DEFAULT_LOCAL_EVIDENCE_DISPATCH_WIRING_PLAN_PATH &&
+        fp0111PlanBoundaryVerified(),
+      fp0112Absent: fp0112Hits.length === 0,
     });
 
     expect(fp0108Hits).toEqual([FP0108_EVIDENCE_TOOL_DISPATCH_PLAN_PATH]);
@@ -249,13 +256,19 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(fp0110Hits).toEqual([
       FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH,
     ]);
-    expect(fp0111Hits).toEqual([]);
+    expect(fp0111Hits).toEqual([
+      FP0111_DEFAULT_LOCAL_EVIDENCE_DISPATCH_WIRING_PLAN_PATH,
+    ]);
+    expect(fp0112Hits).toEqual([]);
     expect(proof.fp0108BoundaryVerified).toBe(true);
     expect(proof.fp0109BoundaryVerified).toBe(true);
     expect(
       proof.fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified,
     ).toBe(true);
-    expect(proof.fp0111Absent).toBe(true);
+    expect(
+      proof.fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified,
+    ).toBe(true);
+    expect(proof.fp0112Absent).toBe(true);
     expect(proof.fp0108DispatchContractsStillVerified).toBe(true);
     expect(proof.fp0109AdapterBoundaryStillVerified).toBe(true);
     expect(
@@ -267,7 +280,13 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(
       EvidenceToolDispatchProofSchema.safeParse({
         ...proof,
-        fp0111Absent: false,
+        fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified: false,
+      }).success,
+    ).toBe(false);
+    expect(
+      EvidenceToolDispatchProofSchema.safeParse({
+        ...proof,
+        fp0112Absent: false,
       }).success,
     ).toBe(false);
   });
@@ -364,5 +383,41 @@ function fp0110PlanBoundaryVerified() {
     "explicit dependency injection remains required",
     "route registration may not construct the dispatcher by default",
     "fp-0111 remains absent",
+  ].every((text) => normalized.includes(text));
+}
+
+function fp0111PlanBoundaryVerified() {
+  const planPath = join(
+    repoRoot,
+    FP0111_DEFAULT_LOCAL_EVIDENCE_DISPATCH_WIRING_PLAN_PATH,
+  );
+  if (!existsSync(planPath)) return false;
+
+  const normalized = readFileSync(planPath, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+
+  return [
+    "local-only",
+    "read-only",
+    "explicit-dependency wiring only",
+    "explicit app construction input",
+    "not route expansion",
+    "not a new endpoint",
+    "not db query implementation",
+    "not schema or migration work",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not remote mcp deployment",
+    "not apps sdk iframe/resource implementation",
+    "not public chatgpt app implementation",
+    "not app submission",
+    "not openai api/model integration",
+    "not source mutation",
+    "not a finance write",
+    "not generated finance advice",
+    "not autonomous action",
+    "default buildapp() remains fail-closed",
+    "no fp-0112",
   ].every((text) => normalized.includes(text));
 }

@@ -21,6 +21,8 @@ const FP0109_PLAN =
   "plans/FP-0109-read-only-chatgpt-app-mcp-read-only-evidence-tool-dispatch-adapter-implementation.md";
 const FP0110_PLAN =
   "plans/FP-0110-read-only-chatgpt-app-mcp-default-local-evidence-dispatch-enablement-master-plan.md";
+const FP0111_PLAN =
+  "plans/FP-0111-read-only-chatgpt-app-mcp-default-local-evidence-dispatch-wiring.md";
 const FP0106_PLAN =
   "plans/FP-0106-read-only-chatgpt-app-mcp-protocol-envelope-tool-dispatch-proof-contracts.md";
 const FP0105_PLAN =
@@ -335,7 +337,9 @@ const proof = {
   fp0109BoundaryVerified: fp0109BoundaryVerified(),
   fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified:
     fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified(),
-  fp0111Absent: fp0111Absent(),
+  fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified:
+    fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified(),
+  fp0112Absent: fp0112Absent(),
   defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
     fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified(),
   noRouteBehaviorChangeFromFp0110:
@@ -526,10 +530,6 @@ function fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified() {
   );
 }
 
-function fp0111Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0111/u.test(path));
-}
-
 function fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified() {
   if (!existsSync(FP0110_PLAN)) return false;
   const normalized = normalize(safeRead(FP0110_PLAN));
@@ -553,6 +553,45 @@ function fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified() {
     "route registration may not construct the dispatcher by default",
     "fp-0111 remains absent",
   ].every((requiredText) => normalized.includes(requiredText));
+}
+
+function fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified() {
+  const fp0111Hits = repoPaths.filter((path) => /(^|\/)FP-0111/u.test(path));
+  if (
+    fp0111Hits.length !== 1 ||
+    fp0111Hits[0] !== FP0111_PLAN ||
+    !existsSync(FP0111_PLAN)
+  ) {
+    return false;
+  }
+  const normalized = normalize(safeRead(FP0111_PLAN));
+  return [
+    "local-only",
+    "read-only",
+    "explicit-dependency wiring only",
+    "explicit app construction input",
+    "not route expansion",
+    "not a new endpoint",
+    "not db query implementation",
+    "not schema or migration work",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not remote mcp deployment",
+    "not apps sdk iframe/resource implementation",
+    "not public chatgpt app implementation",
+    "not app submission",
+    "not openai api/model integration",
+    "not source mutation",
+    "not a finance write",
+    "not generated finance advice",
+    "not autonomous action",
+    "default buildapp() remains fail-closed",
+    "no fp-0112",
+  ].every((requiredText) => normalized.includes(requiredText));
+}
+
+function fp0112Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0112/u.test(path));
 }
 
 function fp0106BoundaryStillVerified() {
@@ -594,6 +633,7 @@ function changedFilesAreAllowed() {
     FP0108_PLAN,
     FP0109_PLAN,
     FP0110_PLAN,
+    FP0111_PLAN,
     ROUTE_PATH,
     SERVICE_PATH,
     FORMATTER_PATH,
@@ -605,6 +645,9 @@ function changedFilesAreAllowed() {
     EVIDENCE_TOOL_SERVICE_PATH,
     EVIDENCE_TOOL_SERVICE_SPEC_PATH,
     "apps/control-plane/src/app.ts",
+    "apps/control-plane/src/app.spec.ts",
+    "apps/control-plane/src/lib/types.ts",
+    "tools/read-only-mcp-default-local-evidence-dispatch-proof.mjs",
     "tools/read-only-mcp-evidence-tool-dispatch-adapter-proof.mjs",
     "tools/read-only-mcp-route-adapter-proof.mjs",
     "tools/read-only-mcp-evidence-tool-dispatch-proof.mjs",
@@ -660,12 +703,7 @@ function noPublicAssetsBoundary() {
 
 function fp0110ChangedScopeScan() {
   const changedRuntimeSource = changedPaths
-    .filter(
-      (path) =>
-        /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
-        !path.startsWith("tools/") &&
-        !path.startsWith("packages/domain/src/read-only-app-mcp-evidence-tool-dispatch"),
-    )
+    .filter(isFp0110RuntimeScopePath)
     .map(safeRead)
     .join("\n");
   return {
@@ -707,6 +745,16 @@ function fp0110ChangedScopeScan() {
         changedRuntimeSource,
       ),
   };
+}
+
+function isFp0110RuntimeScopePath(path) {
+  return (
+    path === "apps/control-plane/src/app.ts" ||
+    path === "apps/control-plane/src/lib/types.ts" ||
+    /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+      path,
+    )
+  );
 }
 
 function runtimeForbiddenScopeScan() {

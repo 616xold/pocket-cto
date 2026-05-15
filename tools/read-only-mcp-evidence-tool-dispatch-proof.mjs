@@ -5,6 +5,7 @@ import {
   FP0108_EVIDENCE_TOOL_DISPATCH_PLAN_PATH,
   FP0109_EVIDENCE_DISPATCH_ADAPTER_PLAN_PATH,
   FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH,
+  FP0111_DEFAULT_LOCAL_EVIDENCE_DISPATCH_WIRING_PLAN_PATH,
   MCP_TOOL_ALLOWLIST,
   buildEvidenceToolDispatchProof,
 } from "../packages/domain/src/index.ts";
@@ -42,7 +43,9 @@ const proof = EvidenceToolDispatchProofSchema.parse(
     fp0109AdapterBoundaryStillVerified: fp0109BoundaryVerified(),
     fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified:
       fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified(),
-    fp0111Absent: fp0111Absent(),
+    fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified:
+      fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified(),
+    fp0112Absent: fp0112Absent(),
     defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
       fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified(),
     noAppsSdkResourceFromFp0110: fp0110ScopeScan.noAppsSdkResource,
@@ -158,10 +161,6 @@ function fp0110AbsentOrDocsOnlyDefaultLocalDispatchEnablementPlanVerified() {
   );
 }
 
-function fp0111Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0111/u.test(path));
-}
-
 function fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified() {
   if (
     !existsSync(FP0110_DEFAULT_LOCAL_EVIDENCE_DISPATCH_ENABLEMENT_PLAN_PATH)
@@ -195,6 +194,52 @@ function fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified() {
     "route registration may not construct the dispatcher by default",
     "fp-0111 remains absent",
   ].every((requiredText) => normalized.includes(requiredText));
+}
+
+function fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified() {
+  const fp0111Hits = repoPaths.filter((path) => /(^|\/)FP-0111/u.test(path));
+  if (
+    fp0111Hits.length !== 1 ||
+    fp0111Hits[0] !==
+      FP0111_DEFAULT_LOCAL_EVIDENCE_DISPATCH_WIRING_PLAN_PATH ||
+    !existsSync(FP0111_DEFAULT_LOCAL_EVIDENCE_DISPATCH_WIRING_PLAN_PATH)
+  ) {
+    return false;
+  }
+
+  const normalized = normalize(
+    readFileSync(
+      FP0111_DEFAULT_LOCAL_EVIDENCE_DISPATCH_WIRING_PLAN_PATH,
+      "utf8",
+    ),
+  );
+  return [
+    "local-only",
+    "read-only",
+    "explicit-dependency wiring only",
+    "explicit app construction input",
+    "not route expansion",
+    "not a new endpoint",
+    "not db query implementation",
+    "not schema or migration work",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not remote mcp deployment",
+    "not apps sdk iframe/resource implementation",
+    "not public chatgpt app implementation",
+    "not app submission",
+    "not openai api/model integration",
+    "not source mutation",
+    "not a finance write",
+    "not generated finance advice",
+    "not autonomous action",
+    "default buildapp() remains fail-closed",
+    "no fp-0112",
+  ].every((requiredText) => normalized.includes(requiredText));
+}
+
+function fp0112Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0112/u.test(path));
 }
 
 function fp0107RouteAdapterBoundaryStillVerified() {
@@ -297,12 +342,7 @@ function readChangedCodeSourceText() {
 
 function fp0110ChangedScopeScan() {
   const changedRuntimeSource = changedPaths
-    .filter(
-      (path) =>
-        /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
-        !path.startsWith("tools/") &&
-        !path.startsWith("packages/domain/src/read-only-app-mcp-evidence-tool-dispatch"),
-    )
+    .filter(isFp0110RuntimeScopePath)
     .map(safeRead)
     .join("\n");
   return {
@@ -339,6 +379,16 @@ function fp0110ChangedScopeScan() {
         changedRuntimeSource,
       ),
   };
+}
+
+function isFp0110RuntimeScopePath(path) {
+  return (
+    path === "apps/control-plane/src/app.ts" ||
+    path === "apps/control-plane/src/lib/types.ts" ||
+    /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+      path,
+    )
+  );
 }
 
 function noApiModelClientKeyUsage(text) {

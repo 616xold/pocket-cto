@@ -539,8 +539,13 @@ function isAllowedFp0107LocalRouteAdapterPath(path) {
   return (
     path ===
       "plans/FP-0107-read-only-chatgpt-app-mcp-local-fastify-mcp-route-adapter-foundation.md" ||
+    path ===
+      "plans/FP-0111-read-only-chatgpt-app-mcp-default-local-evidence-dispatch-wiring.md" ||
     path === "apps/control-plane/src/app.ts" ||
+    path === "apps/control-plane/src/app.spec.ts" ||
+    path === "apps/control-plane/src/lib/types.ts" ||
     path === "tools/read-only-mcp-route-adapter-proof.mjs" ||
+    path === "tools/read-only-mcp-default-local-evidence-dispatch-proof.mjs" ||
     /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|schema|formatter|service|evidence-dispatcher)(?:\.spec)?\.ts$/u.test(
       path,
     )

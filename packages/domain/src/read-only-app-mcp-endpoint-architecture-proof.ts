@@ -416,6 +416,11 @@ function isAllowedFp0107LocalRouteAdapterSurface(
     /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|schema|formatter|service|evidence-dispatcher)(?:\.spec)?\.ts$/u.test(
       file.path,
     );
+  const appConstructionSurface = [
+    "apps/control-plane/src/app.ts",
+    "apps/control-plane/src/app.spec.ts",
+    "apps/control-plane/src/lib/types.ts",
+  ].includes(file.path);
   const planOrProof =
     file.path ===
       "plans/FP-0107-read-only-chatgpt-app-mcp-local-fastify-mcp-route-adapter-foundation.md" ||
@@ -423,6 +428,9 @@ function isAllowedFp0107LocalRouteAdapterSurface(
 
   const source = file.source ?? "";
   if (routeModule && file.path.endsWith(".spec.ts")) {
+    return true;
+  }
+  if (appConstructionSurface && file.path.endsWith(".spec.ts")) {
     return true;
   }
 
@@ -434,7 +442,7 @@ function isAllowedFp0107LocalRouteAdapterSurface(
     );
   }
 
-  if (!routeModule && !planOrProof) return false;
+  if (!routeModule && !appConstructionSurface && !planOrProof) return false;
 
   return !forbiddenFp0107RouteAdapterRuntimeSource(source);
 }
