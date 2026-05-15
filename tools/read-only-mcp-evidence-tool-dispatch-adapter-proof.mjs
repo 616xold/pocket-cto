@@ -10,6 +10,7 @@ import {
   MCP_TOOL_ALLOWLIST,
   buildEvidenceToolDispatchProof,
 } from "../packages/domain/src/index.ts";
+import { FP0114_REMOTE_HOST_READINESS_PLAN_PATH } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 import {
   LocalReadOnlyEvidenceToolDispatchAdapter,
   READ_ONLY_EVIDENCE_DISPATCH_TEXT_MIRROR_MAX_CHARACTERS,
@@ -299,9 +300,13 @@ const proof = {
     fp0112AbsentOrDocsOnlyRemotePublicMcpOauthReadinessPlanVerified(),
   fp0113AbsentOrLocalOauthSecurityContractsVerified:
     fp0113AbsentOrLocalOauthSecurityContractsVerified(),
-  fp0114Absent: fp0114Absent(),
+  fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
+    fp0114AbsentOrLocalRemoteHostReadinessContractsVerified(),
+  fp0115Absent: fp0115Absent(),
   oauthSecurityContractsFoundationVerified:
     oauthSecurityContractsFoundationVerified(),
+  remoteHostReadinessContractsFoundationVerified:
+    remoteHostReadinessContractsFoundationVerified(),
   remotePublicMcpOauthReadinessPlanBoundaryVerified:
     remotePublicMcpOauthReadinessPlanBoundaryVerified(),
   noRouteBehaviorChangeFromFp0112: fp0112ScopeScan.noRouteBehaviorChange,
@@ -332,6 +337,25 @@ const proof = {
     fp0113ScopeScan.noSourceMutationFinanceWrite,
   noTokenSessionImplementationFromFp0113:
     fp0113ScopeScan.noTokenSessionImplementation,
+  noRouteBehaviorChangeFromFp0114: fp0113ScopeScan.noRouteBehaviorChange,
+  noNewRoutePathFromFp0114: fp0113ScopeScan.noRouteBehaviorChange,
+  noRemoteMcpDeploymentFromFp0114: fp0113ScopeScan.noRemoteMcp,
+  noDeploymentConfigFromFp0114: changedScopeScan.noDeploymentConfig,
+  noOauthImplementationFromFp0114: fp0113ScopeScan.noOauthImplementation,
+  noTokenSessionImplementationFromFp0114:
+    fp0113ScopeScan.noTokenSessionImplementation,
+  noAuthMiddlewareImplementationFromFp0114:
+    fp0113ScopeScan.noAuthMiddlewareImplementation,
+  noAppsSdkResourceFromFp0114: fp0113ScopeScan.noAppsSdkResource,
+  noAppSubmissionFromFp0114: changedScopeScan.noAppSubmission,
+  noDbQueriesFromFp0114: changedScopeScan.noDbQueriesAdded,
+  noSchemaMigrationsFromFp0114: changedScopeScan.noSchemaMigrationsAdded,
+  noPackageScriptsFromFp0114: changedScopeScan.noPackageScriptsAdded,
+  noOpenAiApiCallsFromFp0114: proofSourceScan.noOpenAiApiCalls,
+  noProviderExternalCallsFromFp0114: fp0113ScopeScan.noProviderExternalCalls,
+  noSourceMutationFinanceWriteFromFp0114:
+    fp0113ScopeScan.noSourceMutationFinanceWrite,
+  noPublicAssetsSubmissionArtifactsFromFp0114: changedScopeScan.noPublicAssets,
   defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
     fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified(),
   noRouteBehaviorChangeFromFp0110:
@@ -357,8 +381,10 @@ const proof = {
       fp0111DefaultLocalEvidenceDispatchWiringBoundaryVerified: true,
       fp0112AbsentOrDocsOnlyRemotePublicMcpOauthReadinessPlanVerified: true,
       fp0113AbsentOrLocalOauthSecurityContractsVerified: true,
-      fp0114Absent: true,
+      fp0114AbsentOrLocalRemoteHostReadinessContractsVerified: true,
+      fp0115Absent: true,
       oauthSecurityContractsFoundationVerified: true,
+      remoteHostReadinessContractsFoundationVerified: true,
       remotePublicMcpOauthReadinessPlanBoundaryVerified: true,
       noDispatchRuntimeImplemented: true,
     }).evidenceToolDispatchContractsVerified === true,
@@ -716,8 +742,18 @@ function fp0113AbsentOrLocalOauthSecurityContractsVerified() {
   );
 }
 
-function fp0114Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0114/u.test(path));
+function fp0114AbsentOrLocalRemoteHostReadinessContractsVerified() {
+  const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
+  if (fp0114Hits.length === 0) return true;
+  return (
+    fp0114Hits.length === 1 &&
+    fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH &&
+    remoteHostReadinessContractsFoundationVerified()
+  );
+}
+
+function fp0115Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0115/u.test(path));
 }
 
 function oauthSecurityContractsFoundationVerified() {
@@ -733,6 +769,21 @@ function oauthSecurityContractsFoundationVerified() {
     "client-supplied companykey is only a requested selector",
     "token passthrough is forbidden",
     "fp-0114 remains absent",
+  ].every((text) => normalized.includes(text));
+}
+
+function remoteHostReadinessContractsFoundationVerified() {
+  if (!existsSync(FP0114_REMOTE_HOST_READINESS_PLAN_PATH)) return false;
+  const normalized = normalize(safeRead(FP0114_REMOTE_HOST_READINESS_PLAN_PATH));
+  return [
+    "local/proof-only/read-only remote mcp host readiness",
+    "not remote mcp deployment",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not auth middleware",
+    "local /mcp route behavior is unchanged",
+    "current local /mcp route must not be exposed remotely as-is",
+    "fp-0115 remains absent",
   ].every((text) => normalized.includes(text));
 }
 
@@ -792,6 +843,7 @@ function changedFileScopeScan() {
     FP0111_DEFAULT_LOCAL_EVIDENCE_DISPATCH_WIRING_PLAN_PATH,
     FP0112_REMOTE_PUBLIC_MCP_OAUTH_READINESS_PLAN_PATH,
     FP0113_OAUTH_SECURITY_PLAN_PATH,
+    FP0114_REMOTE_HOST_READINESS_PLAN_PATH,
     "apps/control-plane/src/app.ts",
     "apps/control-plane/src/app.spec.ts",
     "apps/control-plane/src/lib/types.ts",
@@ -820,6 +872,7 @@ function changedFileScopeScan() {
     "tools/read-only-mcp-descriptor-response-envelope-proof.mjs",
     "tools/read-only-chatgpt-app-mcp-proof.mjs",
     "tools/read-only-mcp-oauth-security-boundary-proof.mjs",
+    "tools/read-only-mcp-remote-host-readiness-proof.mjs",
     "tools/benchmark-community-pack-proof.mjs",
     "README.md",
     "CODEX_README.md",
@@ -854,6 +907,16 @@ function changedFileScopeScan() {
     noDbQueriesAdded:
       changedFilesAllowed &&
       !changedPaths.some((path) => /^packages\/db\//u.test(path)),
+    noDeploymentConfig:
+      changedFilesAllowed &&
+      !changedPaths.some((path) =>
+        /(?:^|\/)(?:vercel\.json|netlify\.toml|render\.yaml|fly\.toml|Dockerfile|docker-compose\.ya?ml|\.github\/workflows\/.*\.ya?ml)$/iu.test(
+          path,
+        ),
+      ),
+    noPackageScriptsAdded:
+      changedFilesAllowed &&
+      !changedPaths.some((path) => /(?:^|\/)package\.json$/u.test(path)),
     noPublicAssets: noPublicArtifacts && changedFilesAllowed,
     noSchemaMigrationsAdded:
       changedFilesAllowed &&

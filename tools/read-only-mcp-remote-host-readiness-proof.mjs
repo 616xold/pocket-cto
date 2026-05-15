@@ -1,12 +1,13 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import {
-  FP0113_OAUTH_SECURITY_PLAN_PATH,
-  McpOauthSecurityProofSchema,
-  buildMcpOauthSecurityProof,
-} from "../packages/domain/src/index.ts";
-import { FP0114_REMOTE_HOST_READINESS_PLAN_PATH } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
+  FP0114_REMOTE_HOST_READINESS_PLAN_PATH,
+  McpRemoteHostReadinessProofSchema,
+  buildMcpRemoteHostReadinessProof,
+} from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 
+const FP0113_PLAN =
+  "plans/FP-0113-read-only-chatgpt-app-mcp-oauth-token-session-security-contracts-foundation.md";
 const FP0112_PLAN =
   "plans/FP-0112-read-only-chatgpt-app-mcp-remote-public-deployment-oauth-readiness-master-plan.md";
 const FP0111_PLAN =
@@ -15,6 +16,8 @@ const FP0110_PLAN =
   "plans/FP-0110-read-only-chatgpt-app-mcp-default-local-evidence-dispatch-enablement-master-plan.md";
 const FP0109_PLAN =
   "plans/FP-0109-read-only-chatgpt-app-mcp-read-only-evidence-tool-dispatch-adapter-implementation.md";
+const FP0108_PLAN =
+  "plans/FP-0108-read-only-chatgpt-app-mcp-read-only-evidence-tool-dispatch-contracts.md";
 const FP0107_PLAN =
   "plans/FP-0107-read-only-chatgpt-app-mcp-local-fastify-mcp-route-adapter-foundation.md";
 const FP0106_PLAN =
@@ -30,21 +33,26 @@ const proofSourceText = readProofSourceText();
 const sourceScan = noExecutableApiModelKeyUsage(proofSourceText);
 const scopeScan = changedScopeScan();
 
-const proof = McpOauthSecurityProofSchema.parse(
-  buildMcpOauthSecurityProof({
+const proof = McpRemoteHostReadinessProofSchema.parse(
+  buildMcpRemoteHostReadinessProof({
     fp0100PublicSecurityBoundaryStillVerified: docsBoundary(FP0100_PLAN, [
       "public-app security boundary contract",
       "local/proof-only",
       "no endpoints",
     ]),
     fp0106ProtocolEnvelopeBoundaryStillVerified: docsBoundary(FP0106_PLAN, [
-      "mcp protocol envelope and tool-dispatch proof-contract",
+      "mcp protocol envelope",
       "tools/call",
       "no openai api/model calls",
     ]),
     fp0107RouteAdapterBoundaryStillVerified:
-      docsBoundary(FP0107_PLAN, ["local-only fastify", "fail-closed"]) &&
+      docsBoundary(FP0107_PLAN, ["local-only fastify", "post /mcp"]) &&
       localRouteShapeStillVerified(),
+    fp0108DispatchContractsStillVerified: docsBoundary(FP0108_PLAN, [
+      "evidence tool dispatch contracts",
+      "does not change route behavior",
+      "no openai api/model call",
+    ]),
     fp0109AdapterBoundaryStillVerified: docsBoundary(FP0109_PLAN, [
       "local-only",
       "dependency-injected",
@@ -52,25 +60,27 @@ const proof = McpOauthSecurityProofSchema.parse(
     ]),
     fp0110DefaultDispatchPlanBoundaryStillVerified: docsBoundary(FP0110_PLAN, [
       "docs-and-plan plus proof-gate compatibility",
-      "not oauth implementation",
       "not remote mcp deployment",
     ]),
     fp0111DefaultLocalDispatchWiringStillVerified: docsBoundary(FP0111_PLAN, [
       "explicit-dependency wiring only",
       "default buildapp() remains fail-closed",
-      "not oauth implementation",
     ]),
     fp0112RemotePublicOauthReadinessBoundaryStillVerified: docsBoundary(
       FP0112_PLAN,
       [
         "remote/public mcp deployment and oauth readiness",
         "current local /mcp route must not be exposed remotely as-is",
-        "current default local dispatch wiring is not enough for public exposure",
       ],
     ),
-    fp0113BoundaryVerified: fp0113BoundaryVerified(),
+    fp0113OauthSecurityBoundaryStillVerified: docsBoundary(FP0113_PLAN, [
+      "local/proof-only/read-only oauth, token/session",
+      "token passthrough is forbidden",
+      "public exposure remains blocked",
+    ]),
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
-      fp0114AbsentOrLocalRemoteHostReadinessContractsVerified(),
+      fp0114BoundaryVerified(),
+    fp0114BoundaryVerified: fp0114BoundaryVerified(),
     fp0115Absent: fp0115Absent(),
     noAppSubmission: scopeScan.noAppSubmission,
     noAppsSdkResourceImplementation: scopeScan.noAppsSdkResourceImplementation,
@@ -79,9 +89,11 @@ const proof = McpOauthSecurityProofSchema.parse(
     noExternalCommunications: scopeScan.noExternalCommunications,
     noFinanceWrite: scopeScan.noFinanceWrite,
     noModelCalls: sourceScan.noModelCalls,
+    noNewRoutePath: scopeScan.noNewRoutePath && localRouteShapeStillVerified(),
     noOauthImplementation: scopeScan.noOauthImplementation,
     noOpenAiApiCalls: sourceScan.noOpenAiApiCalls,
     noOpenAiClientOrKeyUsage: sourceScan.noOpenAiClientOrKeyUsage,
+    noPackageScriptsAdded: scopeScan.noPackageScriptsAdded,
     noProviderCalls: scopeScan.noProviderCalls,
     noPublicAssets: scopeScan.noPublicAssets,
     noRemoteMcpDeployment: scopeScan.noRemoteMcpDeployment,
@@ -94,46 +106,22 @@ const proof = McpOauthSecurityProofSchema.parse(
 
 for (const [key, value] of Object.entries(proof)) {
   if (typeof value === "boolean" && value !== true) {
-    throw new Error(`FP-0113 OAuth security proof failed: ${key}`);
+    throw new Error(`FP-0114 remote host readiness proof failed: ${key}`);
   }
 }
 
 console.log(JSON.stringify(proof, null, 2));
 
-function fp0113BoundaryVerified() {
-  const fp0113Hits = repoPaths.filter((path) => /(^|\/)FP-0113/u.test(path));
+function fp0114BoundaryVerified() {
+  const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
   if (
-    fp0113Hits.length !== 1 ||
-    fp0113Hits[0] !== FP0113_OAUTH_SECURITY_PLAN_PATH ||
-    !existsSync(FP0113_OAUTH_SECURITY_PLAN_PATH)
+    fp0114Hits.length !== 1 ||
+    fp0114Hits[0] !== FP0114_REMOTE_HOST_READINESS_PLAN_PATH ||
+    !existsSync(FP0114_REMOTE_HOST_READINESS_PLAN_PATH)
   ) {
     return false;
   }
 
-  const normalized = normalize(safeRead(FP0113_OAUTH_SECURITY_PLAN_PATH));
-  return [
-    "local/proof-only/read-only oauth, token/session",
-    "not oauth implementation",
-    "not token/session implementation",
-    "not auth middleware",
-    "does not change /mcp route behavior",
-    "public exposure remains blocked",
-    "client-supplied companykey is only a requested selector",
-    "token passthrough is forbidden",
-    "fp-0114 remains absent",
-  ].every((requiredText) => normalized.includes(requiredText));
-}
-
-function fp0114AbsentOrLocalRemoteHostReadinessContractsVerified() {
-  const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
-  return (
-    fp0114Hits.length === 1 &&
-    fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH &&
-    fp0114BoundaryVerified()
-  );
-}
-
-function fp0114BoundaryVerified() {
   const normalized = normalize(safeRead(FP0114_REMOTE_HOST_READINESS_PLAN_PATH));
   return [
     "local/proof-only/read-only remote mcp host readiness",
@@ -141,10 +129,23 @@ function fp0114BoundaryVerified() {
     "not oauth implementation",
     "not token/session implementation",
     "not auth middleware",
+    "not a new endpoint",
     "local /mcp route behavior is unchanged",
     "current local /mcp route must not be exposed remotely as-is",
+    "stable https host",
+    "canonical mcp resource uri",
+    "/mcp remains the only future public mcp endpoint path",
+    "origin validation remains required",
+    "cors policy must be explicit",
+    "csp and resource-domain policy must be explicit",
+    "rate limits and abuse controls are required",
+    "logging redaction must exclude",
+    "rollback and incident-response planning must exist",
+    "health/readiness checks remain future-only",
+    "no real finance data",
+    "oauth/security contracts from fp-0113 remain prerequisites",
     "fp-0115 remains absent",
-  ].every((requiredText) => normalized.includes(requiredText));
+  ].every((text) => normalized.includes(text));
 }
 
 function fp0115Absent() {
@@ -161,12 +162,12 @@ function localRouteShapeStillVerified() {
 }
 
 function changedScopeScan() {
-  const changedCode = changedPaths
+  const changedExecutableSource = changedPaths
     .filter(
       (path) =>
         /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
-        !path.startsWith("tools/") &&
-        !path.endsWith(".spec.ts"),
+        !path.endsWith(".spec.ts") &&
+        !path.startsWith("tools/"),
     )
     .map(safeRead)
     .join("\n");
@@ -181,38 +182,53 @@ function changedScopeScan() {
     ),
     noAppsSdkResourceImplementation:
       !changedPaths.some((path) =>
-        /apps-sdk|app-submission|iframe/iu.test(path),
+        /apps-sdk|app-submission|submission-assets/iu.test(path),
       ) &&
       !/\b(?:registerResource|ui:\/\/|componentResource|iframe)\s*\(?/u.test(
-        changedCode,
+        changedExecutableSource,
       ),
     noAuthMiddlewareImplementation:
       !/\b(?:authMiddleware|authorizationMiddleware|routeGuard|verifyBearer|setCookie)\s*\(/u.test(
-        changedCode,
+        changedExecutableSource,
       ),
     noDbQueriesAdded:
       !changedPaths.some((path) => /^packages\/db\//u.test(path)) &&
-      !/\b(?:from\s+["']drizzle|drizzle\s*\(|sql`)\b/u.test(changedCode),
+      !/\b(?:from\s+["']drizzle|drizzle\s*\(|select\s*\(|insert\s*\(|update\s*\(|delete\s*\(|sql`)\b/u.test(
+        changedExecutableSource,
+      ),
     noExternalCommunications:
       !/\b(?:sendEmail|sendReport|contactCustomer|externalMessage)\s*\(/u.test(
-        changedCode,
+        changedExecutableSource,
       ),
     noFinanceWrite:
       !/\b(?:writeFinanceTwin|updateLedger|financeWrite|postLedger|createJournalEntry)\s*\(/u.test(
-        changedCode,
+        changedExecutableSource,
       ),
+    noNewRoutePath: !changedPaths.some((path) =>
+      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+        path,
+      ),
+    ),
     noOauthImplementation:
       !/\b(?:oauthCallback|authorizeUrl|tokenExchange|authorizationCode|pkceVerifier)\s*\(/u.test(
-        changedCode,
+        changedExecutableSource,
       ),
+    noPackageScriptsAdded:
+      !changedPaths.includes("package.json") &&
+      !changedPaths.some((path) => /\/package\.json$/u.test(path)),
     noProviderCalls:
       !/\b(?:providerConnect|callProvider|createProviderJob)\s*\(/u.test(
-        changedCode,
+        changedExecutableSource,
       ),
     noPublicAssets: !changedPaths.some((path) => publicAssetPattern.test(path)),
     noRemoteMcpDeployment:
+      !changedPaths.some((path) =>
+        /(?:^|\/)(?:vercel\.json|netlify\.toml|render\.yaml|fly\.toml|Dockerfile|docker-compose\.ya?ml|\.github\/workflows\/.*\.ya?ml)$/iu.test(
+          path,
+        ),
+      ) &&
       !/\b(?:remoteMcpRuntime|mcpServerRuntime|startRemoteMcp|listen\s*\(|deploy\s*\()\b/u.test(
-        changedCode,
+        changedExecutableSource,
       ),
     noRouteBehaviorChange: !changedPaths.some((path) =>
       /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
@@ -227,11 +243,11 @@ function changedScopeScan() {
     ),
     noSourceMutation:
       !/\b(?:uploadSource|mutateSource|rewriteSource|deleteSource)\s*\(/u.test(
-        changedCode,
+        changedExecutableSource,
       ),
     noTokenSessionImplementation:
       !/\b(?:tokenStore|sessionStore|sessionHandler|refreshTokenStore|setCookie)\s*\(/u.test(
-        changedCode,
+        changedExecutableSource,
       ),
   };
 }
@@ -248,10 +264,10 @@ function readProofSourceText() {
         /^apps\/control-plane\/src\/modules\/evidence-index\/tools\//u.test(
           path,
         ) ||
-        /^packages\/domain\/src\/read-only-app-mcp-oauth-security.*\.ts$/u.test(
+        /^packages\/domain\/src\/read-only-app-mcp-remote-host-readiness.*\.ts$/u.test(
           path,
         ) ||
-        /^packages\/domain\/src\/read-only-app-mcp-remote-host-readiness.*\.ts$/u.test(
+        /^packages\/domain\/src\/read-only-app-mcp-oauth-security.*\.ts$/u.test(
           path,
         ) ||
         /^packages\/domain\/src\/read-only-app-mcp-evidence-tool-dispatch.*\.ts$/u.test(

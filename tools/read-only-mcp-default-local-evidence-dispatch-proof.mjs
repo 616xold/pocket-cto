@@ -4,6 +4,7 @@ import {
   FP0113_OAUTH_SECURITY_PLAN_PATH,
   MCP_TOOL_ALLOWLIST,
 } from "../packages/domain/src/index.ts";
+import { FP0114_REMOTE_HOST_READINESS_PLAN_PATH } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 import { buildApp } from "../apps/control-plane/src/app.ts";
 import { createInMemoryContainer } from "../apps/control-plane/src/bootstrap.ts";
 import {
@@ -241,9 +242,13 @@ const proof = {
     fp0112AbsentOrDocsOnlyRemotePublicMcpOauthReadinessPlanVerified(),
   fp0113AbsentOrLocalOauthSecurityContractsVerified:
     fp0113AbsentOrLocalOauthSecurityContractsVerified(),
-  fp0114Absent: fp0114Absent(),
+  fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
+    fp0114AbsentOrLocalRemoteHostReadinessContractsVerified(),
+  fp0115Absent: fp0115Absent(),
   oauthSecurityContractsFoundationVerified:
     oauthSecurityContractsFoundationVerified(),
+  remoteHostReadinessContractsFoundationVerified:
+    remoteHostReadinessContractsFoundationVerified(),
   remotePublicMcpOauthReadinessPlanBoundaryVerified:
     remotePublicMcpOauthReadinessPlanBoundaryVerified(),
   noRouteBehaviorChangeFromFp0112: fp0112ScopeScan.noRouteBehaviorChange,
@@ -274,6 +279,27 @@ const proof = {
     fp0113ScopeScan.noSourceMutationFinanceWrite,
   noTokenSessionImplementationFromFp0113:
     fp0113ScopeScan.noTokenSessionImplementation,
+  noRouteBehaviorChangeFromFp0114: changedScopeScan.noRouteBehaviorChange,
+  noNewRoutePathFromFp0114: changedScopeScan.noRouteBehaviorChange,
+  noRemoteMcpDeploymentFromFp0114: runtimeForbiddenScan.noRemoteMcpDeployment,
+  noDeploymentConfigFromFp0114: changedScopeScan.noDeploymentConfig,
+  noOauthImplementationFromFp0114: fp0113ScopeScan.noOauthImplementation,
+  noTokenSessionImplementationFromFp0114:
+    fp0113ScopeScan.noTokenSessionImplementation,
+  noAuthMiddlewareImplementationFromFp0114:
+    fp0113ScopeScan.noAuthMiddlewareImplementation,
+  noAppsSdkResourceFromFp0114:
+    runtimeForbiddenScan.noAppsSdkResourceImplementation,
+  noAppSubmissionFromFp0114: changedScopeScan.noAppSubmission,
+  noDbQueriesFromFp0114: changedScopeScan.noDbQueriesAdded,
+  noSchemaMigrationsFromFp0114: changedScopeScan.noSchemaMigrationsAdded,
+  noPackageScriptsFromFp0114: changedScopeScan.noPackageScriptsAdded,
+  noOpenAiApiCallsFromFp0114: proofSourceScan.noOpenAiApiCalls,
+  noProviderExternalCallsFromFp0114:
+    fp0113ScopeScan.noProviderExternalCalls,
+  noSourceMutationFinanceWriteFromFp0114:
+    fp0113ScopeScan.noSourceMutationFinanceWrite,
+  noPublicAssetsSubmissionArtifactsFromFp0114: changedScopeScan.noPublicAssets,
   fp0110DefaultDispatchPlanBoundaryStillVerified:
     fp0110DefaultDispatchPlanBoundaryStillVerified(),
   fp0109AdapterBoundaryStillVerified: docsBoundary(FP0109_PLAN, [
@@ -534,8 +560,18 @@ function fp0113AbsentOrLocalOauthSecurityContractsVerified() {
   );
 }
 
-function fp0114Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0114/u.test(path));
+function fp0114AbsentOrLocalRemoteHostReadinessContractsVerified() {
+  const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
+  if (fp0114Hits.length === 0) return true;
+  return (
+    fp0114Hits.length === 1 &&
+    fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH &&
+    remoteHostReadinessContractsFoundationVerified()
+  );
+}
+
+function fp0115Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0115/u.test(path));
 }
 
 function oauthSecurityContractsFoundationVerified() {
@@ -551,6 +587,21 @@ function oauthSecurityContractsFoundationVerified() {
     "client-supplied companykey is only a requested selector",
     "token passthrough is forbidden",
     "fp-0114 remains absent",
+  ].every((text) => normalized.includes(text));
+}
+
+function remoteHostReadinessContractsFoundationVerified() {
+  if (!existsSync(FP0114_REMOTE_HOST_READINESS_PLAN_PATH)) return false;
+  const normalized = normalize(safeRead(FP0114_REMOTE_HOST_READINESS_PLAN_PATH));
+  return [
+    "local/proof-only/read-only remote mcp host readiness",
+    "not remote mcp deployment",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not auth middleware",
+    "local /mcp route behavior is unchanged",
+    "current local /mcp route must not be exposed remotely as-is",
+    "fp-0115 remains absent",
   ].every((text) => normalized.includes(text));
 }
 
@@ -617,10 +668,16 @@ function changedScopeBoundary() {
         path,
       ),
     ),
+    noDeploymentConfig: !changedPaths.some((path) =>
+      /(?:^|\/)(?:vercel\.json|netlify\.toml|render\.yaml|fly\.toml|Dockerfile|docker-compose\.ya?ml|\.github\/workflows\/.*\.ya?ml)$/iu.test(
+        path,
+      ),
+    ),
     noPackageScriptsAdded:
       !changedPaths.includes("package.json") &&
       !changedPaths.some((path) => /\/package\.json$/u.test(path)),
     noPublicAssets: !changedPaths.some((path) => publicAssetPattern.test(path)),
+    noRouteBehaviorChange: !changedPaths.some(isAppRuntimeWiringPath),
     noSchemaMigrationsAdded: !changedPaths.some(
       (path) =>
         /(?:^|\/)(?:migrations?|drizzle)\//iu.test(path) ||

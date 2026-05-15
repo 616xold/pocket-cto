@@ -19,30 +19,39 @@ import {
   buildMcpOauthSecurityContracts,
   buildMcpOauthSecurityProof,
 } from "./read-only-app-mcp-oauth-security";
+import { FP0114_REMOTE_HOST_READINESS_PLAN_PATH } from "./read-only-app-mcp-remote-host-readiness";
 
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
 describe("FP-0113 read-only MCP OAuth security contracts", () => {
-  it("accepts exactly one FP-0113 plan path and keeps FP-0114 absent", () => {
+  it("accepts exactly one FP-0113 plan path, permits exact FP-0114, and keeps FP-0115 absent", () => {
     const repoPaths = repoFilePaths();
     const fp0113Hits = repoPaths.filter((path) => /(^|\/)FP-0113/u.test(path));
     const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
+    const fp0115Hits = repoPaths.filter((path) => /(^|\/)FP-0115/u.test(path));
     const proof = buildMcpOauthSecurityProof({
       fp0113BoundaryVerified:
         fp0113Hits.length === 1 &&
         fp0113Hits[0] === FP0113_OAUTH_SECURITY_PLAN_PATH &&
         fp0113PlanBoundaryVerified(),
-      fp0114Absent: fp0114Hits.length === 0,
+      fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
+        fp0114Hits.length === 1 &&
+        fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH,
+      fp0115Absent: fp0115Hits.length === 0,
     });
 
     expect(fp0113Hits).toEqual([FP0113_OAUTH_SECURITY_PLAN_PATH]);
-    expect(fp0114Hits).toEqual([]);
+    expect(fp0114Hits).toEqual([FP0114_REMOTE_HOST_READINESS_PLAN_PATH]);
+    expect(fp0115Hits).toEqual([]);
     expect(proof.fp0113BoundaryVerified).toBe(true);
-    expect(proof.fp0114Absent).toBe(true);
+    expect(proof.fp0114AbsentOrLocalRemoteHostReadinessContractsVerified).toBe(
+      true,
+    );
+    expect(proof.fp0115Absent).toBe(true);
     expect(
       McpOauthSecurityProofSchema.safeParse({
         ...proof,
-        fp0114Absent: false,
+        fp0115Absent: false,
       }).success,
     ).toBe(false);
   });

@@ -28,6 +28,8 @@ import type { McpToolName } from "./read-only-app-mcp";
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const FP0113_OAUTH_SECURITY_PLAN_PATH =
   "plans/FP-0113-read-only-chatgpt-app-mcp-oauth-token-session-security-contracts-foundation.md";
+const FP0114_REMOTE_HOST_READINESS_PLAN_PATH =
+  "plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md";
 
 describe("FP-0108 evidence tool dispatch contracts", () => {
   it("preserves the exact V2G allowlist and rejects drift", () => {
@@ -223,7 +225,7 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(serviceSource).not.toContain("ReadOnlyEvidenceToolService");
   });
 
-  it("accepts exactly FP-0108 through FP-0113 while rejecting FP-0114", () => {
+  it("accepts exactly FP-0108 through FP-0114 while rejecting FP-0115", () => {
     const repoPaths = repoFilePaths();
     const fp0108Hits = repoPaths.filter((path) => /(^|\/)FP-0108/u.test(path));
     const fp0109Hits = repoPaths.filter((path) => /(^|\/)FP-0109/u.test(path));
@@ -232,6 +234,7 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     const fp0112Hits = repoPaths.filter((path) => /(^|\/)FP-0112/u.test(path));
     const fp0113Hits = repoPaths.filter((path) => /(^|\/)FP-0113/u.test(path));
     const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
+    const fp0115Hits = repoPaths.filter((path) => /(^|\/)FP-0115/u.test(path));
     const proof = buildEvidenceToolDispatchProof({
       fp0108BoundaryVerified:
         fp0108Hits.length === 1 &&
@@ -261,8 +264,14 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
         fp0113Hits.length === 1 &&
         fp0113Hits[0] === FP0113_OAUTH_SECURITY_PLAN_PATH &&
         fp0113PlanBoundaryVerified(),
-      fp0114Absent: fp0114Hits.length === 0,
+      fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
+        fp0114Hits.length === 1 &&
+        fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH &&
+        fp0114PlanBoundaryVerified(),
+      fp0115Absent: fp0115Hits.length === 0,
       oauthSecurityContractsFoundationVerified: fp0113PlanBoundaryVerified(),
+      remoteHostReadinessContractsFoundationVerified:
+        fp0114PlanBoundaryVerified(),
       remotePublicMcpOauthReadinessPlanBoundaryVerified:
         fp0112PlanBoundaryVerified(),
     });
@@ -279,7 +288,8 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
       FP0112_REMOTE_PUBLIC_MCP_OAUTH_READINESS_PLAN_PATH,
     ]);
     expect(fp0113Hits).toEqual([FP0113_OAUTH_SECURITY_PLAN_PATH]);
-    expect(fp0114Hits).toEqual([]);
+    expect(fp0114Hits).toEqual([FP0114_REMOTE_HOST_READINESS_PLAN_PATH]);
+    expect(fp0115Hits).toEqual([]);
     expect(proof.fp0108BoundaryVerified).toBe(true);
     expect(proof.fp0109BoundaryVerified).toBe(true);
     expect(
@@ -292,8 +302,12 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
       proof.fp0112AbsentOrDocsOnlyRemotePublicMcpOauthReadinessPlanVerified,
     ).toBe(true);
     expect(proof.fp0113AbsentOrLocalOauthSecurityContractsVerified).toBe(true);
-    expect(proof.fp0114Absent).toBe(true);
+    expect(
+      proof.fp0114AbsentOrLocalRemoteHostReadinessContractsVerified,
+    ).toBe(true);
+    expect(proof.fp0115Absent).toBe(true);
     expect(proof.oauthSecurityContractsFoundationVerified).toBe(true);
+    expect(proof.remoteHostReadinessContractsFoundationVerified).toBe(true);
     expect(proof.remotePublicMcpOauthReadinessPlanBoundaryVerified).toBe(true);
     expect(proof.fp0108DispatchContractsStillVerified).toBe(true);
     expect(proof.fp0109AdapterBoundaryStillVerified).toBe(true);
@@ -324,7 +338,7 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(
       EvidenceToolDispatchProofSchema.safeParse({
         ...proof,
-        fp0114Absent: false,
+        fp0115Absent: false,
       }).success,
     ).toBe(false);
   });
@@ -368,7 +382,10 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     const proof = buildEvidenceToolDispatchProof();
 
     expect(proof.fp0113AbsentOrLocalOauthSecurityContractsVerified).toBe(true);
-    expect(proof.fp0114Absent).toBe(true);
+    expect(
+      proof.fp0114AbsentOrLocalRemoteHostReadinessContractsVerified,
+    ).toBe(true);
+    expect(proof.fp0115Absent).toBe(true);
     expect(proof.oauthSecurityContractsFoundationVerified).toBe(true);
     expect(proof.noRouteBehaviorChangeFromFp0113).toBe(true);
     expect(proof.noOauthImplementationFromFp0113).toBe(true);
@@ -575,5 +592,26 @@ function fp0113PlanBoundaryVerified() {
     "client-supplied companykey is only a requested selector",
     "token passthrough is forbidden",
     "fp-0114 remains absent",
+  ].every((text) => normalized.includes(text));
+}
+
+function fp0114PlanBoundaryVerified() {
+  const planPath = join(repoRoot, FP0114_REMOTE_HOST_READINESS_PLAN_PATH);
+  if (!existsSync(planPath)) return false;
+
+  const normalized = readFileSync(planPath, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+
+  return [
+    "local/proof-only/read-only remote mcp host readiness",
+    "not remote mcp deployment",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not auth middleware",
+    "not a new endpoint",
+    "local /mcp route behavior is unchanged",
+    "current local /mcp route must not be exposed remotely as-is",
+    "fp-0115 remains absent",
   ].every((text) => normalized.includes(text));
 }

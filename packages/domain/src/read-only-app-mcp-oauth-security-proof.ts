@@ -25,7 +25,8 @@ export function buildMcpOauthSecurityProof(
     noSourceMutation: boolean;
     noFinanceWrite: boolean;
     fp0113BoundaryVerified: boolean;
-    fp0114Absent: boolean;
+    fp0114AbsentOrLocalRemoteHostReadinessContractsVerified: boolean;
+    fp0115Absent: boolean;
     fp0112RemotePublicOauthReadinessBoundaryStillVerified: boolean;
     fp0111DefaultLocalDispatchWiringStillVerified: boolean;
     fp0110DefaultDispatchPlanBoundaryStillVerified: boolean;
@@ -91,7 +92,9 @@ export function buildMcpOauthSecurityProof(
     fp0112RemotePublicOauthReadinessBoundaryStillVerified:
       input.fp0112RemotePublicOauthReadinessBoundaryStillVerified ?? true,
     fp0113BoundaryVerified: input.fp0113BoundaryVerified ?? true,
-    fp0114Absent: input.fp0114Absent ?? true,
+    fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
+      input.fp0114AbsentOrLocalRemoteHostReadinessContractsVerified ?? true,
+    fp0115Absent: input.fp0115Absent ?? true,
     localProofOnly: proof.localProofOnly,
     noAppSubmission: (input.noAppSubmission ?? true) && proof.noAppSubmission,
     noAppsSdkResourceImplementation:

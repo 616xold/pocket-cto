@@ -11,6 +11,7 @@ import {
   MCP_TOOL_ALLOWLIST,
   buildEvidenceToolDispatchProof,
 } from "../packages/domain/src/index.ts";
+import { FP0114_REMOTE_HOST_READINESS_PLAN_PATH } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 import { ReadOnlyAppMcpEndpointService } from "../apps/control-plane/src/modules/read-only-app-mcp-endpoint/service.ts";
 
 const FP0107_PLAN =
@@ -27,6 +28,7 @@ const sourceScan = noApiModelClientKeyUsage(sourceText);
 const fp0110ScopeScan = fp0110ChangedScopeScan();
 const fp0112ScopeScan = fp0112ChangedScopeScan();
 const fp0113ScopeScan = fp0113ChangedScopeScan();
+const fp0114ScopeScan = fp0114ChangedScopeScan();
 const proof = EvidenceToolDispatchProofSchema.parse(
   buildEvidenceToolDispatchProof({
     fp0100PublicSecurityBoundaryStillVerified: docsBoundary(FP0100_PLAN, [
@@ -53,9 +55,13 @@ const proof = EvidenceToolDispatchProofSchema.parse(
       fp0112AbsentOrDocsOnlyRemotePublicMcpOauthReadinessPlanVerified(),
     fp0113AbsentOrLocalOauthSecurityContractsVerified:
       fp0113AbsentOrLocalOauthSecurityContractsVerified(),
-    fp0114Absent: fp0114Absent(),
+    fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
+      fp0114AbsentOrLocalRemoteHostReadinessContractsVerified(),
+    fp0115Absent: fp0115Absent(),
     oauthSecurityContractsFoundationVerified:
       oauthSecurityContractsFoundationVerified(),
+    remoteHostReadinessContractsFoundationVerified:
+      remoteHostReadinessContractsFoundationVerified(),
     remotePublicMcpOauthReadinessPlanBoundaryVerified:
       remotePublicMcpOauthReadinessPlanBoundaryVerified(),
     defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
@@ -97,6 +103,26 @@ const proof = EvidenceToolDispatchProofSchema.parse(
       fp0113ScopeScan.noSourceMutationFinanceWrite,
     noTokenSessionImplementationFromFp0113:
       fp0113ScopeScan.noTokenSessionImplementation,
+    noAppSubmissionFromFp0114: fp0114ScopeScan.noAppSubmission,
+    noAppsSdkResourceFromFp0114: fp0114ScopeScan.noAppsSdkResource,
+    noAuthMiddlewareImplementationFromFp0114:
+      fp0114ScopeScan.noAuthMiddlewareImplementation,
+    noDbQueriesFromFp0114: fp0114ScopeScan.noDbQueries,
+    noDeploymentConfigFromFp0114: fp0114ScopeScan.noDeploymentConfig,
+    noNewRoutePathFromFp0114: fp0114ScopeScan.noNewRoutePath,
+    noOauthImplementationFromFp0114: fp0114ScopeScan.noOauthImplementation,
+    noOpenAiApiCallsFromFp0114: sourceScan.noOpenAiApiCalls,
+    noPackageScriptsFromFp0114: fp0114ScopeScan.noPackageScripts,
+    noProviderExternalCallsFromFp0114: fp0114ScopeScan.noProviderExternalCalls,
+    noPublicAssetsSubmissionArtifactsFromFp0114:
+      fp0114ScopeScan.noPublicAssetsSubmissionArtifacts,
+    noRemoteMcpDeploymentFromFp0114: fp0114ScopeScan.noRemoteMcp,
+    noRouteBehaviorChangeFromFp0114: fp0114ScopeScan.noRouteBehaviorChange,
+    noSchemaMigrationsFromFp0114: fp0114ScopeScan.noSchemaMigrations,
+    noSourceMutationFinanceWriteFromFp0114:
+      fp0114ScopeScan.noSourceMutationFinanceWrite,
+    noTokenSessionImplementationFromFp0114:
+      fp0114ScopeScan.noTokenSessionImplementation,
     noRemoteMcpDeploymentFromFp0112: fp0112ScopeScan.noRemoteMcp,
     noRouteBehaviorChangeFromFp0112: fp0112ScopeScan.noRouteBehaviorChange,
     noSchemaMigrationsFromFp0112: fp0112ScopeScan.noSchemaMigrations,
@@ -299,8 +325,18 @@ function fp0113AbsentOrLocalOauthSecurityContractsVerified() {
   );
 }
 
-function fp0114Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0114/u.test(path));
+function fp0114AbsentOrLocalRemoteHostReadinessContractsVerified() {
+  const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
+  if (fp0114Hits.length === 0) return true;
+  return (
+    fp0114Hits.length === 1 &&
+    fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH &&
+    remoteHostReadinessContractsFoundationVerified()
+  );
+}
+
+function fp0115Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0115/u.test(path));
 }
 
 function oauthSecurityContractsFoundationVerified() {
@@ -316,6 +352,21 @@ function oauthSecurityContractsFoundationVerified() {
     "client-supplied companykey is only a requested selector",
     "token passthrough is forbidden",
     "fp-0114 remains absent",
+  ].every((requiredText) => normalized.includes(requiredText));
+}
+
+function remoteHostReadinessContractsFoundationVerified() {
+  if (!existsSync(FP0114_REMOTE_HOST_READINESS_PLAN_PATH)) return false;
+  const normalized = normalize(safeRead(FP0114_REMOTE_HOST_READINESS_PLAN_PATH));
+  return [
+    "local/proof-only/read-only remote mcp host readiness",
+    "not remote mcp deployment",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not auth middleware",
+    "local /mcp route behavior is unchanged",
+    "current local /mcp route must not be exposed remotely as-is",
+    "fp-0115 remains absent",
   ].every((requiredText) => normalized.includes(requiredText));
 }
 
@@ -586,6 +637,83 @@ function fp0113ChangedScopeScan() {
       !/\b(?:oauthCallback|authorizeUrl|tokenExchange|authorizationCode|pkceVerifier)\s*\(/u.test(
         changedRuntimeSource,
       ),
+    noProviderExternalCalls:
+      !/\b(?:providerConnect|callProvider|createProviderJob|sendEmail|sendReport|contactCustomer|externalMessage)\s*\(/u.test(
+        changedRuntimeSource,
+      ),
+    noPublicAssetsSubmissionArtifacts:
+      !changedPaths.some((path) => publicAssetPattern.test(path)) &&
+      !changedPaths.some((path) =>
+        /app-submission|submission-assets|public-listing|store-listing|listing-copy|screenshots/iu.test(
+          path,
+        ),
+      ),
+    noRemoteMcp: !/\b(?:remoteMcp|mcpServerRuntime|listen\s*\(|deploy)\b/u.test(
+      changedRuntimeSource,
+    ),
+    noRouteBehaviorChange: !changedPaths.some((path) =>
+      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+        path,
+      ),
+    ),
+    noSchemaMigrations: !changedPaths.some(
+      (path) =>
+        /(?:^|\/)(?:migrations?|drizzle)\//iu.test(path) ||
+        /(?:drizzle|migration)\.(?:ts|js|mjs|sql)$/iu.test(path),
+    ),
+    noSourceMutationFinanceWrite:
+      !/\b(?:uploadSource|mutateSource|rewriteSource|deleteSource|writeFinanceTwin|updateLedger|financeWrite|generatedFinanceAdviceAllowed:\s*true)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noTokenSessionImplementation:
+      !/\b(?:tokenStore|sessionStore|sessionHandler|refreshTokenStore|setCookie)\s*\(/u.test(
+        changedRuntimeSource,
+      ),
+  };
+}
+
+function fp0114ChangedScopeScan() {
+  const changedRuntimeSource = changedPaths
+    .filter(isFp0110RuntimeScopePath)
+    .map(safeRead)
+    .join("\n");
+  const publicAssetPattern =
+    /\.(?:png|jpe?g|gif|webp|svg|ico|avif|mp4|mov|pdf)$/iu;
+  return {
+    noAppSubmission: !changedPaths.some((path) =>
+      /app-submission|submission-assets|public-listing|store-listing|listing-copy|screenshots/iu.test(
+        path,
+      ),
+    ),
+    noAppsSdkResource:
+      !changedPaths.some((path) => /apps-sdk|resource|iframe/iu.test(path)) &&
+      !/\b(?:registerResource|ui:\/\/|componentResource|iframe)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noAuthMiddlewareImplementation:
+      !/\b(?:authMiddleware|authorizationMiddleware|routeGuard|verifyBearer|setCookie)\s*\(/u.test(
+        changedRuntimeSource,
+      ),
+    noDbQueries:
+      !changedPaths.some((path) => /^packages\/db\//u.test(path)) &&
+      !/\b(?:drizzle|select\s*\(|insert\s*\(|update\s*\(|delete\s*\(|sql`)\b/u.test(
+        changedRuntimeSource,
+      ),
+    noDeploymentConfig: !changedPaths.some((path) =>
+      /(?:^|\/)(?:vercel\.json|netlify\.toml|render\.yaml|fly\.toml|Dockerfile|docker-compose\.ya?ml|\.github\/workflows\/.*\.ya?ml)$/iu.test(
+        path,
+      ),
+    ),
+    noNewRoutePath: !changedPaths.some((path) =>
+      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+        path,
+      ),
+    ),
+    noOauthImplementation:
+      !/\b(?:oauthCallback|authorizeUrl|tokenExchange|authorizationCode|pkceVerifier)\s*\(/u.test(
+        changedRuntimeSource,
+      ),
+    noPackageScripts: !changedPaths.some((path) => path === "package.json"),
     noProviderExternalCalls:
       !/\b(?:providerConnect|callProvider|createProviderJob|sendEmail|sendReport|contactCustomer|externalMessage)\s*\(/u.test(
         changedRuntimeSource,

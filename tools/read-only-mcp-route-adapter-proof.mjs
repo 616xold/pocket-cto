@@ -7,6 +7,7 @@ import {
   MCP_TOOL_ALLOWLIST,
   buildMcpToolDescriptorContracts,
 } from "../packages/domain/src/index.ts";
+import { FP0114_REMOTE_HOST_READINESS_PLAN_PATH } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 import { registerReadOnlyAppMcpEndpointRoutes } from "../apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts";
 
 const requireFromControlPlane = createRequire(
@@ -348,9 +349,13 @@ const proof = {
     fp0112AbsentOrDocsOnlyRemotePublicMcpOauthReadinessPlanVerified(),
   fp0113AbsentOrLocalOauthSecurityContractsVerified:
     fp0113AbsentOrLocalOauthSecurityContractsVerified(),
-  fp0114Absent: fp0114Absent(),
+  fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
+    fp0114AbsentOrLocalRemoteHostReadinessContractsVerified(),
+  fp0115Absent: fp0115Absent(),
   oauthSecurityContractsFoundationVerified:
     oauthSecurityContractsFoundationVerified(),
+  remoteHostReadinessContractsFoundationVerified:
+    remoteHostReadinessContractsFoundationVerified(),
   remotePublicMcpOauthReadinessPlanBoundaryVerified:
     remotePublicMcpOauthReadinessPlanBoundaryVerified(),
   noRouteBehaviorChangeFromFp0112: fp0112ScopeScan.noRouteBehaviorChange,
@@ -383,6 +388,32 @@ const proof = {
     fp0113ScopeScan.noSourceMutationFinanceWrite,
   noTokenSessionImplementationFromFp0113:
     fp0113ScopeScan.noTokenSessionImplementation,
+  noRouteBehaviorChangeFromFp0114: fp0113ScopeScan.noRouteBehaviorChange,
+  noNewRoutePathFromFp0114: fp0113ScopeScan.noRouteBehaviorChange,
+  noRemoteMcpDeploymentFromFp0114: fp0113ScopeScan.noRemoteMcp,
+  noDeploymentConfigFromFp0114: !changedPaths.some((path) =>
+    /(?:^|\/)(?:vercel\.json|netlify\.toml|render\.yaml|fly\.toml|Dockerfile|docker-compose\.ya?ml|\.github\/workflows\/.*\.ya?ml)$/iu.test(
+      path,
+    ),
+  ),
+  noOauthImplementationFromFp0114: fp0113ScopeScan.noOauthImplementation,
+  noTokenSessionImplementationFromFp0114:
+    fp0113ScopeScan.noTokenSessionImplementation,
+  noAuthMiddlewareImplementationFromFp0114:
+    fp0113ScopeScan.noAuthMiddlewareImplementation,
+  noAppsSdkResourceFromFp0114: fp0113ScopeScan.noAppsSdkResource,
+  noAppSubmissionFromFp0114: publicAssetBoundary.noAppSubmission,
+  noDbQueriesFromFp0114: fp0113ScopeScan.noDbQueries,
+  noSchemaMigrationsFromFp0114: fp0113ScopeScan.noSchemaMigrations,
+  noPackageScriptsFromFp0114: !changedPaths.some((path) =>
+    /(?:^|\/)package\.json$/u.test(path),
+  ),
+  noOpenAiApiCallsFromFp0114: sourceScan.noOpenAiApiCalls,
+  noProviderExternalCallsFromFp0114: fp0113ScopeScan.noProviderExternalCalls,
+  noSourceMutationFinanceWriteFromFp0114:
+    fp0113ScopeScan.noSourceMutationFinanceWrite,
+  noPublicAssetsSubmissionArtifactsFromFp0114:
+    publicAssetBoundary.noPublicAssets,
   defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
     fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified(),
   noRouteBehaviorChangeFromFp0110:
@@ -653,8 +684,18 @@ function fp0113AbsentOrLocalOauthSecurityContractsVerified() {
   );
 }
 
-function fp0114Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0114/u.test(path));
+function fp0114AbsentOrLocalRemoteHostReadinessContractsVerified() {
+  const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
+  if (fp0114Hits.length === 0) return true;
+  return (
+    fp0114Hits.length === 1 &&
+    fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH &&
+    remoteHostReadinessContractsFoundationVerified()
+  );
+}
+
+function fp0115Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0115/u.test(path));
 }
 
 function oauthSecurityContractsFoundationVerified() {
@@ -670,6 +711,21 @@ function oauthSecurityContractsFoundationVerified() {
     "client-supplied companykey is only a requested selector",
     "token passthrough is forbidden",
     "fp-0114 remains absent",
+  ].every((text) => normalized.includes(text));
+}
+
+function remoteHostReadinessContractsFoundationVerified() {
+  if (!existsSync(FP0114_REMOTE_HOST_READINESS_PLAN_PATH)) return false;
+  const normalized = normalize(safeRead(FP0114_REMOTE_HOST_READINESS_PLAN_PATH));
+  return [
+    "local/proof-only/read-only remote mcp host readiness",
+    "not remote mcp deployment",
+    "not oauth implementation",
+    "not token/session implementation",
+    "not auth middleware",
+    "local /mcp route behavior is unchanged",
+    "current local /mcp route must not be exposed remotely as-is",
+    "fp-0115 remains absent",
   ].every((text) => normalized.includes(text));
 }
 
@@ -770,6 +826,7 @@ function changedFilesAreAllowed() {
     "tools/read-only-mcp-descriptor-response-envelope-proof.mjs",
     "tools/read-only-chatgpt-app-mcp-proof.mjs",
     "tools/read-only-mcp-oauth-security-boundary-proof.mjs",
+    "tools/read-only-mcp-remote-host-readiness-proof.mjs",
     "tools/benchmark-community-pack-proof.mjs",
     "packages/domain/src/index.ts",
     "packages/domain/src/benchmark-community.spec.ts",
@@ -790,6 +847,7 @@ function changedFilesAreAllowed() {
     "docs/security/finance-data-threat-model.md",
     "docs/demo/demo-data-policy.md",
     "plans/ROADMAP.md",
+    "plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md",
     "plugins.md",
   ]);
 

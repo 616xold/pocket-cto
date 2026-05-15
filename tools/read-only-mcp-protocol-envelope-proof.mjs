@@ -383,8 +383,11 @@ function isAllowedMcpProtocolProofPath(path) {
     path === FP0106_MCP_PROTOCOL_ENVELOPE_PLAN_PATH ||
     path === FP0112_PLAN ||
     path === FP0113_PLAN ||
+    path ===
+      "plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md" ||
     path === "packages/domain/src/index.ts" ||
     path === "tools/read-only-mcp-oauth-security-boundary-proof.mjs" ||
+    path === "tools/read-only-mcp-remote-host-readiness-proof.mjs" ||
     path === "tools/read-only-mcp-protocol-envelope-proof.mjs" ||
     path === "tools/read-only-endpoint-route-ownership-proof.mjs" ||
     path === "tools/read-only-endpoint-architecture-proof.mjs" ||

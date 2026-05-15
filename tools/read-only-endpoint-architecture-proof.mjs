@@ -696,8 +696,11 @@ function isAllowedEndpointProofPlanPath(path) {
     path === FP0105_PLAN ||
     path === FP0112_PLAN ||
     path === FP0113_PLAN ||
+    path ===
+      "plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md" ||
     path === "packages/domain/src/index.ts" ||
     path === "tools/read-only-mcp-oauth-security-boundary-proof.mjs" ||
+    path === "tools/read-only-mcp-remote-host-readiness-proof.mjs" ||
     path === "tools/read-only-mcp-default-local-evidence-dispatch-proof.mjs" ||
     path === "tools/read-only-mcp-evidence-tool-dispatch-adapter-proof.mjs" ||
     path === "tools/read-only-mcp-evidence-tool-dispatch-proof.mjs" ||
@@ -706,6 +709,9 @@ function isAllowedEndpointProofPlanPath(path) {
     path === "tools/read-only-endpoint-architecture-proof.mjs" ||
     path === "tools/read-only-endpoint-route-ownership-proof.mjs" ||
     /^packages\/domain\/src\/read-only-app-mcp-oauth-security.*\.ts$/u.test(
+      path,
+    ) ||
+    /^packages\/domain\/src\/read-only-app-mcp-remote-host-readiness.*\.ts$/u.test(
       path,
     ) ||
     /^packages\/domain\/src\/read-only-app-mcp-evidence-tool-dispatch.*\.ts$/u.test(
