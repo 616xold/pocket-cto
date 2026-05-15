@@ -17,6 +17,7 @@ The core verdict is conservative: current local `/mcp` route must not be exposed
 - 2026-05-15T13:27:21Z: Created this FP-0112 plan as the single allowed remote/public MCP OAuth readiness planning artifact.
 - 2026-05-15T13:43:45Z: Added the FP-0112 proof-gate bridge and directly stale active-doc/plugin refresh without changing route behavior, remote MCP deployment, OAuth/token/session implementation, Apps SDK resources, app submission, DB/schema/package scripts, public assets, provider/OpenAI calls, source mutation, finance writes, runtime-Codex finance output, autonomous action, or FP-0113.
 - 2026-05-15T13:43:45Z: Completed validation through proof tools, focused domain/control-plane specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`; all passed after a same-branch proof-script helper correction.
+- 2026-05-15T13:51:40Z: Same-branch QA found and corrected one stale `docs/ACTIVE_DOCS.md` shipped-state paragraph that still summarized only through FP-0110/FP-0111; no runtime, route, deployment, OAuth/token/session, Apps SDK, app-submission, DB, schema, package-script, asset, provider, source, finance-write, autonomous-action, or FP-0113 scope was added.
 
 ## Surprises & Discoveries
 
