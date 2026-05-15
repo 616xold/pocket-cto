@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   FP0114_REMOTE_HOST_READINESS_PLAN_PATH,
+  FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
   MCP_REMOTE_HOST_CANONICAL_PATH,
   MCP_REMOTE_HOST_FORBIDDEN_EXPOSURE_CATEGORIES,
   MCP_REMOTE_HOST_LOG_REDACTION_CATEGORIES,
@@ -17,31 +18,47 @@ import {
   McpRemoteMcpPathBoundarySchema,
   buildMcpRemoteHostReadinessContracts,
   buildMcpRemoteHostReadinessProof,
+  verifyMcpRemoteHostReadinessRepositoryInventory,
 } from "./read-only-app-mcp-remote-host-readiness";
 
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
-describe("FP-0114 read-only MCP remote host readiness contracts", () => {
-  it("accepts exactly one FP-0114 plan path and keeps FP-0115 absent", () => {
+describe("FP-0114/FP-0115 read-only MCP remote host readiness contracts", () => {
+  it("accepts exact FP-0114 and docs-only FP-0115 plan paths while keeping FP-0116 absent", () => {
     const repoPaths = repoFilePaths();
     const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
     const fp0115Hits = repoPaths.filter((path) => /(^|\/)FP-0115/u.test(path));
+    const fp0116Hits = repoPaths.filter((path) => /(^|\/)FP-0116/u.test(path));
     const proof = buildMcpRemoteHostReadinessProof({
       fp0114BoundaryVerified:
         fp0114Hits.length === 1 &&
         fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH &&
         fp0114PlanBoundaryVerified(),
-      fp0115Absent: fp0115Hits.length === 0,
+      fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+        fp0115Hits.length === 1 &&
+        fp0115Hits[0] ===
+          FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH &&
+        fp0115PlanBoundaryVerified(),
+      fp0116Absent: fp0116Hits.length === 0,
+      remoteHostImplementationSequencingPlanBoundaryVerified:
+        fp0115PlanBoundaryVerified(),
     });
 
     expect(fp0114Hits).toEqual([FP0114_REMOTE_HOST_READINESS_PLAN_PATH]);
-    expect(fp0115Hits).toEqual([]);
+    expect(fp0115Hits).toEqual([
+      FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+    ]);
+    expect(fp0116Hits).toEqual([]);
     expect(proof.fp0114BoundaryVerified).toBe(true);
-    expect(proof.fp0115Absent).toBe(true);
+    expect(
+      proof.fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified,
+    ).toBe(true);
+    expect(proof.fp0116Absent).toBe(true);
     expect(
       McpRemoteHostReadinessProofSchema.safeParse({
         ...proof,
-        fp0115Absent: false,
+        fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+          false,
       }).success,
     ).toBe(false);
   });
@@ -174,6 +191,11 @@ describe("FP-0114 read-only MCP remote host readiness contracts", () => {
     expect(proof.noPackageScriptsAdded).toBe(true);
     expect(proof.noPublicAssets).toBe(true);
     expect(proof.noRealFinanceDataPublicDemoBoundaryVerified).toBe(true);
+    expect(proof.noOauthImplementationFromFp0115).toBe(true);
+    expect(proof.noTokenSessionImplementationFromFp0115).toBe(true);
+    expect(proof.noAuthMiddlewareImplementationFromFp0115).toBe(true);
+    expect(proof.noAppsSdkResourceFromFp0115).toBe(true);
+    expect(proof.noAppSubmissionFromFp0115).toBe(true);
   });
 
   it("requires no real finance data, public demo data, raw dumps, or source packs", () => {
@@ -239,6 +261,55 @@ describe("FP-0114 read-only MCP remote host readiness contracts", () => {
     ).toBe(true);
   });
 
+  it("keeps the durable repository-inventory scan green for current proof sources", () => {
+    const inventoryProof = verifyMcpRemoteHostReadinessRepositoryInventory({
+      proofSourceText: readRemoteHostReadinessSources(),
+      repoPaths: repoFilePaths(),
+    });
+    const proof = buildMcpRemoteHostReadinessProof({
+      ...inventoryProof,
+    });
+
+    expect(inventoryProof.remoteDeploymentRepositoryInventoryStillVerified).toBe(
+      true,
+    );
+    expect(inventoryProof.noDeploymentConfigRepositoryInventoryVerified).toBe(
+      true,
+    );
+    expect(inventoryProof.remoteMcpRuntimeRepositoryInventoryStillVerified).toBe(
+      true,
+    );
+    expect(
+      inventoryProof.fp0114RemoteHostReadinessPostmergeProofDurabilityVerified,
+    ).toBe(true);
+    expect(
+      proof.fp0114RemoteHostReadinessPostmergeProofDurabilityVerified,
+    ).toBe(true);
+  });
+
+  it("fails the durable repository-inventory scan for simulated remote runtime, deployment config, and public asset surfaces", () => {
+    expect(
+      verifyMcpRemoteHostReadinessRepositoryInventory({
+        repoPaths: ["vercel.json"],
+      }).noDeploymentConfigRepositoryInventoryVerified,
+    ).toBe(false);
+    expect(
+      verifyMcpRemoteHostReadinessRepositoryInventory({
+        repoPaths: ["apps/control-plane/src/remote-mcp/server.ts"],
+      }).remoteMcpRuntimeRepositoryInventoryStillVerified,
+    ).toBe(false);
+    expect(
+      verifyMcpRemoteHostReadinessRepositoryInventory({
+        repoPaths: ["apps/web/public/mcp-submission/screenshot.png"],
+      }).fp0114RemoteHostReadinessPostmergeProofDurabilityVerified,
+    ).toBe(false);
+    expect(
+      verifyMcpRemoteHostReadinessRepositoryInventory({
+        repoPaths: ["apps/web/public/listing-copy/generated-public-prose.md"],
+      }).remoteMcpRuntimeRepositoryInventoryStillVerified,
+    ).toBe(false);
+  });
+
   it("proves prior FP-0113, FP-0112, FP-0111, FP-0109, FP-0107, FP-0106, and FP-0100 boundaries remain intact", () => {
     const proof = buildMcpRemoteHostReadinessProof({
       noOpenAiApiCalls: noExecutableApiModelKeyUsage(
@@ -289,7 +360,37 @@ function fp0114PlanBoundaryVerified() {
     "health/readiness checks remain future-only",
     "no real finance data",
     "oauth/security contracts from fp-0113 remain prerequisites",
-    "fp-0115 remains absent",
+    "fp-0115 successor remains docs-only when present",
+  ].every((text) => normalized.includes(text));
+}
+
+function fp0115PlanBoundaryVerified() {
+  const planPath = join(
+    repoRoot,
+    FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  );
+  if (!existsSync(planPath)) return false;
+  const normalized = readFileSync(planPath, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+
+  return [
+    "docs-and-plan plus proof-gate compatibility",
+    "remote mcp host implementation sequencing",
+    "provider/host readiness",
+    "does not implement a remote mcp host",
+    "does not add deployment config",
+    "does not expose the local /mcp route remotely",
+    "does not implement oauth",
+    "does not implement token/session",
+    "does not implement auth middleware",
+    "does not change route behavior",
+    "does not add any new route path",
+    "does not add apps sdk resources",
+    "public app submission remains future-only",
+    "candidate host/provider analysis",
+    "current local /mcp route can not be exposed remotely as-is",
+    "fp-0116 remains absent",
   ].every((text) => normalized.includes(text));
 }
 

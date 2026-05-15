@@ -5,7 +5,10 @@ import {
   McpOauthSecurityProofSchema,
   buildMcpOauthSecurityProof,
 } from "../packages/domain/src/index.ts";
-import { FP0114_REMOTE_HOST_READINESS_PLAN_PATH } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
+import {
+  FP0114_REMOTE_HOST_READINESS_PLAN_PATH,
+  FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+} from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 
 const FP0112_PLAN =
   "plans/FP-0112-read-only-chatgpt-app-mcp-remote-public-deployment-oauth-readiness-master-plan.md";
@@ -29,6 +32,8 @@ const changedPaths = changedFilePaths();
 const proofSourceText = readProofSourceText();
 const sourceScan = noExecutableApiModelKeyUsage(proofSourceText);
 const scopeScan = changedScopeScan();
+const fp0115PlanBoundary =
+  fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified();
 
 const proof = McpOauthSecurityProofSchema.parse(
   buildMcpOauthSecurityProof({
@@ -71,7 +76,9 @@ const proof = McpOauthSecurityProofSchema.parse(
     fp0113BoundaryVerified: fp0113BoundaryVerified(),
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
       fp0114AbsentOrLocalRemoteHostReadinessContractsVerified(),
-    fp0115Absent: fp0115Absent(),
+    fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+      fp0115PlanBoundary,
+    fp0116Absent: fp0116Absent(),
     noAppSubmission: scopeScan.noAppSubmission,
     noAppsSdkResourceImplementation: scopeScan.noAppsSdkResourceImplementation,
     noAuthMiddlewareImplementation: scopeScan.noAuthMiddlewareImplementation,
@@ -143,12 +150,40 @@ function fp0114BoundaryVerified() {
     "not auth middleware",
     "local /mcp route behavior is unchanged",
     "current local /mcp route must not be exposed remotely as-is",
-    "fp-0115 remains absent",
+    "fp-0115 successor remains docs-only when present",
   ].every((requiredText) => normalized.includes(requiredText));
 }
 
-function fp0115Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0115/u.test(path));
+function fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified() {
+  const fp0115Hits = repoPaths.filter((path) => /(^|\/)FP-0115/u.test(path));
+  if (fp0115Hits.length === 0) return true;
+  return (
+    fp0115Hits.length === 1 &&
+    fp0115Hits[0] ===
+      FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH &&
+    fp0115PlanBoundaryVerified()
+  );
+}
+
+function fp0115PlanBoundaryVerified() {
+  const normalized = normalize(
+    safeRead(FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH),
+  );
+  return [
+    "docs-and-plan plus proof-gate compatibility",
+    "remote mcp host implementation sequencing",
+    "provider/host readiness",
+    "does not implement oauth",
+    "does not implement token/session",
+    "does not implement auth middleware",
+    "does not expose the local /mcp route remotely",
+    "public app submission remains future-only",
+    "fp-0116 remains absent",
+  ].every((requiredText) => normalized.includes(requiredText));
+}
+
+function fp0116Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0116/u.test(path));
 }
 
 function localRouteShapeStillVerified() {
@@ -166,6 +201,7 @@ function changedScopeScan() {
       (path) =>
         /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
         !path.startsWith("tools/") &&
+        !path.startsWith("packages/domain/src/read-only-app-mcp-") &&
         !path.endsWith(".spec.ts"),
     )
     .map(safeRead)

@@ -30,6 +30,8 @@ const FP0113_OAUTH_SECURITY_PLAN_PATH =
   "plans/FP-0113-read-only-chatgpt-app-mcp-oauth-token-session-security-contracts-foundation.md";
 const FP0114_REMOTE_HOST_READINESS_PLAN_PATH =
   "plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md";
+const FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH =
+  "plans/FP-0115-read-only-chatgpt-app-mcp-remote-host-implementation-sequencing-master-plan.md";
 
 describe("FP-0108 evidence tool dispatch contracts", () => {
   it("preserves the exact V2G allowlist and rejects drift", () => {
@@ -225,7 +227,7 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(serviceSource).not.toContain("ReadOnlyEvidenceToolService");
   });
 
-  it("accepts exactly FP-0108 through FP-0114 while rejecting FP-0115", () => {
+  it("accepts exactly FP-0108 through docs-only FP-0115 while rejecting FP-0116", () => {
     const repoPaths = repoFilePaths();
     const fp0108Hits = repoPaths.filter((path) => /(^|\/)FP-0108/u.test(path));
     const fp0109Hits = repoPaths.filter((path) => /(^|\/)FP-0109/u.test(path));
@@ -235,6 +237,7 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     const fp0113Hits = repoPaths.filter((path) => /(^|\/)FP-0113/u.test(path));
     const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
     const fp0115Hits = repoPaths.filter((path) => /(^|\/)FP-0115/u.test(path));
+    const fp0116Hits = repoPaths.filter((path) => /(^|\/)FP-0116/u.test(path));
     const proof = buildEvidenceToolDispatchProof({
       fp0108BoundaryVerified:
         fp0108Hits.length === 1 &&
@@ -268,7 +271,12 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
         fp0114Hits.length === 1 &&
         fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH &&
         fp0114PlanBoundaryVerified(),
-      fp0115Absent: fp0115Hits.length === 0,
+      fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+        fp0115Hits.length === 1 &&
+        fp0115Hits[0] ===
+          FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH &&
+        fp0115PlanBoundaryVerified(),
+      fp0116Absent: fp0116Hits.length === 0,
       oauthSecurityContractsFoundationVerified: fp0113PlanBoundaryVerified(),
       remoteHostReadinessContractsFoundationVerified:
         fp0114PlanBoundaryVerified(),
@@ -289,7 +297,10 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     ]);
     expect(fp0113Hits).toEqual([FP0113_OAUTH_SECURITY_PLAN_PATH]);
     expect(fp0114Hits).toEqual([FP0114_REMOTE_HOST_READINESS_PLAN_PATH]);
-    expect(fp0115Hits).toEqual([]);
+    expect(fp0115Hits).toEqual([
+      FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+    ]);
+    expect(fp0116Hits).toEqual([]);
     expect(proof.fp0108BoundaryVerified).toBe(true);
     expect(proof.fp0109BoundaryVerified).toBe(true);
     expect(
@@ -305,7 +316,10 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(
       proof.fp0114AbsentOrLocalRemoteHostReadinessContractsVerified,
     ).toBe(true);
-    expect(proof.fp0115Absent).toBe(true);
+    expect(
+      proof.fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified,
+    ).toBe(true);
+    expect(proof.fp0116Absent).toBe(true);
     expect(proof.oauthSecurityContractsFoundationVerified).toBe(true);
     expect(proof.remoteHostReadinessContractsFoundationVerified).toBe(true);
     expect(proof.remotePublicMcpOauthReadinessPlanBoundaryVerified).toBe(true);
@@ -338,7 +352,8 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(
       EvidenceToolDispatchProofSchema.safeParse({
         ...proof,
-        fp0115Absent: false,
+        fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+          false,
       }).success,
     ).toBe(false);
   });
@@ -385,7 +400,10 @@ describe("FP-0108 evidence tool dispatch contracts", () => {
     expect(
       proof.fp0114AbsentOrLocalRemoteHostReadinessContractsVerified,
     ).toBe(true);
-    expect(proof.fp0115Absent).toBe(true);
+    expect(
+      proof.fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified,
+    ).toBe(true);
+    expect(proof.fp0116Absent).toBe(true);
     expect(proof.oauthSecurityContractsFoundationVerified).toBe(true);
     expect(proof.noRouteBehaviorChangeFromFp0113).toBe(true);
     expect(proof.noOauthImplementationFromFp0113).toBe(true);
@@ -612,6 +630,29 @@ function fp0114PlanBoundaryVerified() {
     "not a new endpoint",
     "local /mcp route behavior is unchanged",
     "current local /mcp route must not be exposed remotely as-is",
-    "fp-0115 remains absent",
+    "fp-0115 successor remains docs-only when present",
+  ].every((text) => normalized.includes(text));
+}
+
+function fp0115PlanBoundaryVerified() {
+  const planPath = join(
+    repoRoot,
+    FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  );
+  if (!existsSync(planPath)) return false;
+
+  const normalized = readFileSync(planPath, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+
+  return [
+    "docs-and-plan plus proof-gate compatibility",
+    "remote mcp host implementation sequencing",
+    "provider/host readiness",
+    "does not change route behavior",
+    "does not add any new route path",
+    "does not add deployment config",
+    "public app submission remains future-only",
+    "fp-0116 remains absent",
   ].every((text) => normalized.includes(text));
 }

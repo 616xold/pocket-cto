@@ -9,6 +9,9 @@ export const MCP_REMOTE_HOST_READINESS_SCHEMA_VERSION =
 export const FP0114_REMOTE_HOST_READINESS_PLAN_PATH =
   "plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md";
 
+export const FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH =
+  "plans/FP-0115-read-only-chatgpt-app-mcp-remote-host-implementation-sequencing-master-plan.md";
+
 export const MCP_REMOTE_HOST_CANONICAL_PATH = "/mcp";
 
 export const MCP_REMOTE_HOST_LOG_REDACTION_CATEGORIES = [

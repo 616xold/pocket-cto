@@ -50,7 +50,9 @@ export const McpOauthSecurityProofSchema = z
     noFinanceWrite: trueLiteral,
     fp0113BoundaryVerified: trueLiteral,
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified: trueLiteral,
-    fp0115Absent: trueLiteral,
+    fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+      trueLiteral,
+    fp0116Absent: trueLiteral,
     fp0112RemotePublicOauthReadinessBoundaryStillVerified: trueLiteral,
     fp0111DefaultLocalDispatchWiringStillVerified: trueLiteral,
     fp0110DefaultDispatchPlanBoundaryStillVerified: trueLiteral,

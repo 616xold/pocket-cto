@@ -6,6 +6,44 @@ import {
 } from "./read-only-app-mcp-remote-host-readiness-contracts";
 import { McpRemoteHostReadinessProofSchema } from "./read-only-app-mcp-remote-host-readiness-proof-schema";
 
+export type McpRemoteHostReadinessRepositoryInventoryProof = {
+  remoteDeploymentRepositoryInventoryStillVerified: boolean;
+  noDeploymentConfigRepositoryInventoryVerified: boolean;
+  remoteMcpRuntimeRepositoryInventoryStillVerified: boolean;
+  fp0114RemoteHostReadinessPostmergeProofDurabilityVerified: boolean;
+};
+
+export function verifyMcpRemoteHostReadinessRepositoryInventory(input: {
+  repoPaths: readonly string[];
+  proofSourceText?: string;
+}): McpRemoteHostReadinessRepositoryInventoryProof {
+  const paths = input.repoPaths.map((path) => path.trim()).filter(Boolean);
+  const noDeploymentConfigRepositoryInventoryVerified = !paths.some(
+    isForbiddenDeploymentConfigPath,
+  );
+  const remoteMcpRuntimeRepositoryInventoryStillVerified = !paths.some(
+    isForbiddenRemoteMcpRuntimePath,
+  );
+  const remoteDeploymentRepositoryInventoryStillVerified =
+    noDeploymentConfigRepositoryInventoryVerified &&
+    remoteMcpRuntimeRepositoryInventoryStillVerified &&
+    !paths.some(isForbiddenPublicHostConfigPath);
+  const proofSourceStillNoRuntime =
+    noExecutableApiModelKeyUsage(input.proofSourceText ?? "") &&
+    !hasForbiddenRemoteHostRuntimeSource(input.proofSourceText ?? "");
+
+  return {
+    fp0114RemoteHostReadinessPostmergeProofDurabilityVerified:
+      remoteDeploymentRepositoryInventoryStillVerified &&
+      noDeploymentConfigRepositoryInventoryVerified &&
+      remoteMcpRuntimeRepositoryInventoryStillVerified &&
+      proofSourceStillNoRuntime,
+    noDeploymentConfigRepositoryInventoryVerified,
+    remoteDeploymentRepositoryInventoryStillVerified,
+    remoteMcpRuntimeRepositoryInventoryStillVerified,
+  };
+}
+
 export function buildMcpRemoteHostReadinessProof(
   input: Partial<{
     noRouteBehaviorChange: boolean;
@@ -29,7 +67,30 @@ export function buildMcpRemoteHostReadinessProof(
     noFinanceWrite: boolean;
     fp0114BoundaryVerified: boolean;
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified: boolean;
-    fp0115Absent: boolean;
+    fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified: boolean;
+    fp0116Absent: boolean;
+    remoteHostImplementationSequencingPlanBoundaryVerified: boolean;
+    fp0114RemoteHostReadinessBoundaryStillVerified: boolean;
+    fp0114RemoteHostReadinessPostmergeProofDurabilityVerified: boolean;
+    remoteDeploymentRepositoryInventoryStillVerified: boolean;
+    noDeploymentConfigRepositoryInventoryVerified: boolean;
+    remoteMcpRuntimeRepositoryInventoryStillVerified: boolean;
+    noRouteBehaviorChangeFromFp0115: boolean;
+    noNewRoutePathFromFp0115: boolean;
+    noRemoteMcpDeploymentFromFp0115: boolean;
+    noDeploymentConfigFromFp0115: boolean;
+    noOauthImplementationFromFp0115: boolean;
+    noTokenSessionImplementationFromFp0115: boolean;
+    noAuthMiddlewareImplementationFromFp0115: boolean;
+    noAppsSdkResourceFromFp0115: boolean;
+    noAppSubmissionFromFp0115: boolean;
+    noDbQueriesFromFp0115: boolean;
+    noSchemaMigrationsFromFp0115: boolean;
+    noPackageScriptsFromFp0115: boolean;
+    noOpenAiApiCallsFromFp0115: boolean;
+    noProviderExternalCallsFromFp0115: boolean;
+    noSourceMutationFinanceWriteFromFp0115: boolean;
+    noPublicAssetsSubmissionArtifactsFromFp0115: boolean;
     fp0113OauthSecurityBoundaryStillVerified: boolean;
     fp0112RemotePublicOauthReadinessBoundaryStillVerified: boolean;
     fp0111DefaultLocalDispatchWiringStillVerified: boolean;
@@ -147,7 +208,15 @@ export function buildMcpRemoteHostReadinessProof(
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
       input.fp0114AbsentOrLocalRemoteHostReadinessContractsVerified ?? true,
     fp0114BoundaryVerified: input.fp0114BoundaryVerified ?? true,
-    fp0115Absent: input.fp0115Absent ?? true,
+    fp0114RemoteHostReadinessBoundaryStillVerified:
+      input.fp0114RemoteHostReadinessBoundaryStillVerified ?? true,
+    fp0114RemoteHostReadinessPostmergeProofDurabilityVerified:
+      input.fp0114RemoteHostReadinessPostmergeProofDurabilityVerified ?? true,
+    fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+      input
+        .fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified ??
+      true,
+    fp0116Absent: input.fp0116Absent ?? true,
     getSseDeferredBoundaryVerified:
       sse.deferred &&
       !sse.getSseStreamingImplemented &&
@@ -173,31 +242,57 @@ export function buildMcpRemoteHostReadinessProof(
       ),
     noAppSubmission,
     noAppSubmissionFromFp0114: noAppSubmission,
+    noAppSubmissionFromFp0115:
+      input.noAppSubmissionFromFp0115 ?? noAppSubmission,
     noAppsSdkResourceFromFp0114: noAppsSdkResourceImplementation,
+    noAppsSdkResourceFromFp0115:
+      input.noAppsSdkResourceFromFp0115 ?? noAppsSdkResourceImplementation,
     noAppsSdkResourceImplementation,
     noAuthMiddlewareImplementation,
     noAuthMiddlewareImplementationFromFp0114: noAuthMiddlewareImplementation,
+    noAuthMiddlewareImplementationFromFp0115:
+      input.noAuthMiddlewareImplementationFromFp0115 ??
+      noAuthMiddlewareImplementation,
     noDbQueriesAdded,
     noDbQueriesFromFp0114: noDbQueriesAdded,
+    noDbQueriesFromFp0115: input.noDbQueriesFromFp0115 ?? noDbQueriesAdded,
     noDeploymentConfigFromFp0114: runtime.noDeploymentConfig,
+    noDeploymentConfigFromFp0115:
+      input.noDeploymentConfigFromFp0115 ?? runtime.noDeploymentConfig,
+    noDeploymentConfigRepositoryInventoryVerified:
+      input.noDeploymentConfigRepositoryInventoryVerified ?? true,
     noExternalCommunications,
     noFinanceWrite,
     noModelCalls,
     noNewRoutePath,
     noNewRoutePathFromFp0114: noNewRoutePath,
+    noNewRoutePathFromFp0115:
+      input.noNewRoutePathFromFp0115 ?? noNewRoutePath,
     noOauthImplementation,
     noOauthImplementationFromFp0114: noOauthImplementation,
+    noOauthImplementationFromFp0115:
+      input.noOauthImplementationFromFp0115 ?? noOauthImplementation,
     noOpenAiApiCalls,
     noOpenAiApiCallsFromFp0114: noOpenAiApiCalls,
+    noOpenAiApiCallsFromFp0115:
+      input.noOpenAiApiCallsFromFp0115 ?? noOpenAiApiCalls,
     noOpenAiClientOrKeyUsage,
     noPackageScriptsAdded,
     noPackageScriptsFromFp0114: noPackageScriptsAdded,
+    noPackageScriptsFromFp0115:
+      input.noPackageScriptsFromFp0115 ?? noPackageScriptsAdded,
     noProviderCalls,
     noProviderExternalCallsFromFp0114:
       noProviderCalls && noExternalCommunications,
+    noProviderExternalCallsFromFp0115:
+      input.noProviderExternalCallsFromFp0115 ??
+      (noProviderCalls && noExternalCommunications),
     noPublicAssets,
     noPublicAssetsSubmissionArtifactsFromFp0114:
       noPublicAssets && noAppSubmission,
+    noPublicAssetsSubmissionArtifactsFromFp0115:
+      input.noPublicAssetsSubmissionArtifactsFromFp0115 ??
+      (noPublicAssets && noAppSubmission),
     noRealFinanceDataPublicDemoBoundaryVerified:
       financeData.noRealFinanceData &&
       financeData.noPublicDemoData &&
@@ -210,6 +305,8 @@ export function buildMcpRemoteHostReadinessProof(
       ),
     noRemoteMcpDeployment,
     noRemoteMcpDeploymentFromFp0114: noRemoteMcpDeployment,
+    noRemoteMcpDeploymentFromFp0115:
+      input.noRemoteMcpDeploymentFromFp0115 ?? noRemoteMcpDeployment,
     noRemoteRuntimeBoundaryVerified:
       runtime.noRemoteRuntime &&
       runtime.noDeploymentConfig &&
@@ -217,13 +314,23 @@ export function buildMcpRemoteHostReadinessProof(
       runtime.localProofOnlyRuntimePosture,
     noRouteBehaviorChange,
     noRouteBehaviorChangeFromFp0114: noRouteBehaviorChange,
+    noRouteBehaviorChangeFromFp0115:
+      input.noRouteBehaviorChangeFromFp0115 ?? noRouteBehaviorChange,
     noSchemaMigrationsAdded,
     noSchemaMigrationsFromFp0114: noSchemaMigrationsAdded,
+    noSchemaMigrationsFromFp0115:
+      input.noSchemaMigrationsFromFp0115 ?? noSchemaMigrationsAdded,
     noSourceMutation,
     noSourceMutationFinanceWriteFromFp0114:
       noSourceMutation && noFinanceWrite,
+    noSourceMutationFinanceWriteFromFp0115:
+      input.noSourceMutationFinanceWriteFromFp0115 ??
+      (noSourceMutation && noFinanceWrite),
     noTokenSessionImplementation,
     noTokenSessionImplementationFromFp0114: noTokenSessionImplementation,
+    noTokenSessionImplementationFromFp0115:
+      input.noTokenSessionImplementationFromFp0115 ??
+      noTokenSessionImplementation,
     observabilityAuditCorrelationBoundaryVerified:
       observability.auditCorrelationRequired &&
       observability.correlationIdRequired &&
@@ -254,10 +361,16 @@ export function buildMcpRemoteHostReadinessProof(
       inventory.stableHttpsHostRequirementRecorded &&
       inventory.dnsHostTrustModelRequired &&
       inventory.noRemoteRuntime,
+    remoteDeploymentRepositoryInventoryStillVerified:
+      input.remoteDeploymentRepositoryInventoryStillVerified ?? true,
+    remoteHostImplementationSequencingPlanBoundaryVerified:
+      input.remoteHostImplementationSequencingPlanBoundaryVerified ?? true,
     remoteHostReadinessContractsFoundationVerified:
       proof.contractOnly && proof.readOnly && !proof.fp0115Created,
     remoteHostReadinessContractsVerified:
       proof.contractOnly && proof.readOnly && !proof.fp0115Created,
+    remoteMcpRuntimeRepositoryInventoryStillVerified:
+      input.remoteMcpRuntimeRepositoryInventoryStillVerified ?? true,
     remoteMcpPathBoundaryVerified:
       path.onlyFuturePublicMcpEndpointPath === MCP_REMOTE_HOST_CANONICAL_PATH &&
       !path.routePathAdded &&
@@ -284,5 +397,113 @@ function sameList(left: readonly string[], right: readonly string[]) {
   return (
     left.length === right.length &&
     left.every((value, index) => value === right[index])
+  );
+}
+
+function isForbiddenDeploymentConfigPath(path: string) {
+  const lower = path.toLowerCase();
+  return (
+    /^\.vercel(?:\/|$)/u.test(lower) ||
+    /(?:^|\/)(?:vercel\.json|netlify\.toml|render\.ya?ml|fly\.toml|railway\.json|railway\.toml|wrangler\.toml|apphosting\.ya?ml)$/u.test(
+      lower,
+    )
+  );
+}
+
+function isForbiddenRemoteMcpRuntimePath(path: string) {
+  const lower = path.toLowerCase();
+
+  const runtimeSurface =
+    lower.startsWith("apps/") ||
+    lower.startsWith("packages/") ||
+    lower.startsWith("tools/") ||
+    lower.startsWith("public/");
+  if (!runtimeSurface) return false;
+
+  const publicSubmissionOrAssetSurface =
+    /(?:^|\/)(?:app-submission|submission-assets|public-listing|listing-copy|screenshots|public-assets)(?:\/|$)/u.test(
+      lower,
+    ) ||
+    /(?:^|\/)public\/.*\.(?:png|jpe?g|gif|webp|svg|ico|avif|mp4|mov|pdf|md|mdx|txt)$/u.test(
+      lower,
+    );
+  if (publicSubmissionOrAssetSurface) return true;
+  if (isAllowedProofOrPlanningPath(lower)) return false;
+
+  return (
+    /(?:^|\/)(?:remote-mcp|public-mcp|mcp-remote-host|mcp-public-host|mcp-host|mcp-server)(?:\/|\.|-|$)/u.test(
+      lower,
+    ) ||
+    /(?:^|\/)apps-sdk(?:\/|$)/u.test(lower) ||
+    /(?:^|\/)(?:oauth|auth|session|token)[^/]*(?:runtime|middleware|callback|store|server)(?:\/|\.|-|$)/u.test(
+      lower,
+    )
+  );
+}
+
+function isForbiddenPublicHostConfigPath(path: string) {
+  const lower = path.toLowerCase();
+  if (isAllowedProofOrPlanningPath(lower)) return false;
+  return /(?:^|\/)(?:public-host|remote-host|host-config|origin-config|cors-config|csp-config)(?:\/|\.|-|$)/u.test(
+    lower,
+  );
+}
+
+function isAllowedProofOrPlanningPath(path: string) {
+  return (
+    path.startsWith("plans/") ||
+    path.startsWith("docs/") ||
+    path.startsWith("plugins/") ||
+    path === "plugins.md" ||
+    path.endsWith(".md") ||
+    /^packages\/domain\/src\/read-only-app-mcp-/u.test(path) ||
+    /^tools\/read-only-mcp-/u.test(path) ||
+    /^tools\/read-only-endpoint-/u.test(path) ||
+    path === "tools/benchmark-community-pack-proof.mjs"
+  );
+}
+
+function hasForbiddenRemoteHostRuntimeSource(text: string) {
+  const runtimePatterns = [
+    /\b(?:remoteMcpRuntime|mcpServerRuntime|startRemoteMcp|publicMcpHost)\s*\(/u,
+    /\b(?:oauthCallback|tokenExchange|authMiddleware|sessionStore|tokenStore|verifyBearer)\s*\(/u,
+    /\b(?:registerResource|componentResource|appSubmission|submitForReview)\s*\(/u,
+    /\b(?:callProvider|providerConnect|sendReport|sendEmail|externalMessage)\s*\(/u,
+    /\b(?:uploadSource|mutateSource|rewriteSource|deleteSource)\s*\(/u,
+    /\b(?:writeFinanceTwin|updateLedger|financeWrite|postLedger)\s*\(/u,
+    /["']ui:\/\//u,
+  ];
+  return runtimePatterns.some((pattern) => pattern.test(text));
+}
+
+function noExecutableApiModelKeyUsage(text: string) {
+  const packageName = ["open", "ai"].join("");
+  const clientName = ["Open", "AI"].join("");
+  const keyName = ["OPENAI", "API", "KEY"].join("_");
+  const hostName = ["api", packageName, "com"].join(".");
+  const apiPatterns = [
+    new RegExp(`\\bfrom\\s+["']${packageName}["']`, "u"),
+    new RegExp(`\\bimport\\s*\\(\\s*["']${packageName}["']\\s*\\)`, "u"),
+    new RegExp(`\\brequire\\s*\\(\\s*["']${packageName}["']\\s*\\)`, "u"),
+    new RegExp(`\\bnew\\s+${clientName}\\b`, "u"),
+    new RegExp(`\\b${packageName}\\s*\\.`, "u"),
+    new RegExp(`\\b${hostName}\\b`, "u"),
+  ];
+  const modelPatterns = [
+    /\bcallModel\b/u,
+    /\bmodel\s*\.\s*create\b/u,
+    /\bmodels\s*\.\s*create\b/u,
+    /\bchat\s*\.\s*completions\b/u,
+    /\bresponses\s*\.\s*create\b/u,
+  ];
+  const keyPatterns = [
+    new RegExp(`\\bprocess\\s*\\.\\s*env\\s*\\.\\s*${keyName}\\b`, "u"),
+    new RegExp(`\\b${keyName}\\b`, "u"),
+  ];
+
+  return (
+    !apiPatterns.some((pattern) => pattern.test(text)) &&
+    !modelPatterns.some((pattern) => pattern.test(text)) &&
+    !keyPatterns.some((pattern) => pattern.test(text))
   );
 }

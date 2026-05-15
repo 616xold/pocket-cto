@@ -2,8 +2,10 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import {
   FP0114_REMOTE_HOST_READINESS_PLAN_PATH,
+  FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
   McpRemoteHostReadinessProofSchema,
   buildMcpRemoteHostReadinessProof,
+  verifyMcpRemoteHostReadinessRepositoryInventory,
 } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 
 const FP0113_PLAN =
@@ -32,9 +34,16 @@ const changedPaths = changedFilePaths();
 const proofSourceText = readProofSourceText();
 const sourceScan = noExecutableApiModelKeyUsage(proofSourceText);
 const scopeScan = changedScopeScan();
+const repositoryInventoryScan = verifyMcpRemoteHostReadinessRepositoryInventory({
+  proofSourceText,
+  repoPaths,
+});
+const fp0115PlanBoundary =
+  fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified();
 
 const proof = McpRemoteHostReadinessProofSchema.parse(
   buildMcpRemoteHostReadinessProof({
+    ...repositoryInventoryScan,
     fp0100PublicSecurityBoundaryStillVerified: docsBoundary(FP0100_PLAN, [
       "public-app security boundary contract",
       "local/proof-only",
@@ -81,26 +90,52 @@ const proof = McpRemoteHostReadinessProofSchema.parse(
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
       fp0114BoundaryVerified(),
     fp0114BoundaryVerified: fp0114BoundaryVerified(),
-    fp0115Absent: fp0115Absent(),
+    fp0114RemoteHostReadinessBoundaryStillVerified: fp0114BoundaryVerified(),
+    fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+      fp0115PlanBoundary,
+    fp0116Absent: fp0116Absent(),
+    remoteHostImplementationSequencingPlanBoundaryVerified: fp0115PlanBoundary,
     noAppSubmission: scopeScan.noAppSubmission,
+    noAppSubmissionFromFp0115: scopeScan.noAppSubmission,
     noAppsSdkResourceImplementation: scopeScan.noAppsSdkResourceImplementation,
+    noAppsSdkResourceFromFp0115: scopeScan.noAppsSdkResourceImplementation,
     noAuthMiddlewareImplementation: scopeScan.noAuthMiddlewareImplementation,
+    noAuthMiddlewareImplementationFromFp0115:
+      scopeScan.noAuthMiddlewareImplementation,
     noDbQueriesAdded: scopeScan.noDbQueriesAdded,
+    noDbQueriesFromFp0115: scopeScan.noDbQueriesAdded,
+    noDeploymentConfigFromFp0115: scopeScan.noRemoteMcpDeployment,
     noExternalCommunications: scopeScan.noExternalCommunications,
     noFinanceWrite: scopeScan.noFinanceWrite,
     noModelCalls: sourceScan.noModelCalls,
     noNewRoutePath: scopeScan.noNewRoutePath && localRouteShapeStillVerified(),
+    noNewRoutePathFromFp0115:
+      scopeScan.noNewRoutePath && localRouteShapeStillVerified(),
     noOauthImplementation: scopeScan.noOauthImplementation,
+    noOauthImplementationFromFp0115: scopeScan.noOauthImplementation,
     noOpenAiApiCalls: sourceScan.noOpenAiApiCalls,
+    noOpenAiApiCallsFromFp0115: sourceScan.noOpenAiApiCalls,
     noOpenAiClientOrKeyUsage: sourceScan.noOpenAiClientOrKeyUsage,
     noPackageScriptsAdded: scopeScan.noPackageScriptsAdded,
+    noPackageScriptsFromFp0115: scopeScan.noPackageScriptsAdded,
     noProviderCalls: scopeScan.noProviderCalls,
+    noProviderExternalCallsFromFp0115:
+      scopeScan.noProviderCalls && scopeScan.noExternalCommunications,
     noPublicAssets: scopeScan.noPublicAssets,
+    noPublicAssetsSubmissionArtifactsFromFp0115:
+      scopeScan.noPublicAssets && scopeScan.noAppSubmission,
     noRemoteMcpDeployment: scopeScan.noRemoteMcpDeployment,
+    noRemoteMcpDeploymentFromFp0115: scopeScan.noRemoteMcpDeployment,
     noRouteBehaviorChange: scopeScan.noRouteBehaviorChange,
+    noRouteBehaviorChangeFromFp0115: scopeScan.noRouteBehaviorChange,
     noSchemaMigrationsAdded: scopeScan.noSchemaMigrationsAdded,
+    noSchemaMigrationsFromFp0115: scopeScan.noSchemaMigrationsAdded,
     noSourceMutation: scopeScan.noSourceMutation,
+    noSourceMutationFinanceWriteFromFp0115:
+      scopeScan.noSourceMutation && scopeScan.noFinanceWrite,
     noTokenSessionImplementation: scopeScan.noTokenSessionImplementation,
+    noTokenSessionImplementationFromFp0115:
+      scopeScan.noTokenSessionImplementation,
   }),
 );
 
@@ -144,12 +179,51 @@ function fp0114BoundaryVerified() {
     "health/readiness checks remain future-only",
     "no real finance data",
     "oauth/security contracts from fp-0113 remain prerequisites",
-    "fp-0115 remains absent",
+    "fp-0115 successor remains docs-only when present",
   ].every((text) => normalized.includes(text));
 }
 
-function fp0115Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0115/u.test(path));
+function fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified() {
+  const fp0115Hits = repoPaths.filter((path) => /(^|\/)FP-0115/u.test(path));
+  if (fp0115Hits.length === 0) return true;
+  return (
+    fp0115Hits.length === 1 &&
+    fp0115Hits[0] ===
+      FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH &&
+    fp0115PlanBoundaryVerified()
+  );
+}
+
+function fp0115PlanBoundaryVerified() {
+  if (!existsSync(FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH)) {
+    return false;
+  }
+  const normalized = normalize(
+    safeRead(FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH),
+  );
+
+  return [
+    "docs-and-plan plus proof-gate compatibility",
+    "remote mcp host implementation sequencing",
+    "provider/host readiness",
+    "does not implement a remote mcp host",
+    "does not add deployment config",
+    "does not expose the local /mcp route remotely",
+    "does not implement oauth",
+    "does not implement token/session",
+    "does not implement auth middleware",
+    "does not change route behavior",
+    "does not add any new route path",
+    "does not add apps sdk resources",
+    "public app submission remains future-only",
+    "candidate host/provider analysis",
+    "current local /mcp route can not be exposed remotely as-is",
+    "fp-0116 remains absent",
+  ].every((text) => normalized.includes(text));
+}
+
+function fp0116Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0116/u.test(path));
 }
 
 function localRouteShapeStillVerified() {
@@ -167,7 +241,8 @@ function changedScopeScan() {
       (path) =>
         /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
         !path.endsWith(".spec.ts") &&
-        !path.startsWith("tools/"),
+        !path.startsWith("tools/") &&
+        !path.startsWith("packages/domain/src/read-only-app-mcp-"),
     )
     .map(safeRead)
     .join("\n");

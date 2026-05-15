@@ -54,7 +54,9 @@ export const EvidenceToolDispatchProofSchema = z
       trueLiteral,
     fp0113AbsentOrLocalOauthSecurityContractsVerified: trueLiteral,
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified: trueLiteral,
-    fp0115Absent: trueLiteral,
+    fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+      trueLiteral,
+    fp0116Absent: trueLiteral,
     remoteHostReadinessContractsFoundationVerified: trueLiteral,
     noRouteBehaviorChangeFromFp0114: trueLiteral,
     noNewRoutePathFromFp0114: trueLiteral,
@@ -149,7 +151,8 @@ export function buildEvidenceToolDispatchProof(
     fp0112AbsentOrDocsOnlyRemotePublicMcpOauthReadinessPlanVerified: boolean;
     fp0113AbsentOrLocalOauthSecurityContractsVerified: boolean;
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified: boolean;
-    fp0115Absent: boolean;
+    fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified: boolean;
+    fp0116Absent: boolean;
     remoteHostReadinessContractsFoundationVerified: boolean;
     noRouteBehaviorChangeFromFp0114: boolean;
     noNewRoutePathFromFp0114: boolean;
@@ -276,7 +279,11 @@ export function buildEvidenceToolDispatchProof(
       input.fp0113AbsentOrLocalOauthSecurityContractsVerified ?? true,
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
       input.fp0114AbsentOrLocalRemoteHostReadinessContractsVerified ?? true,
-    fp0115Absent: input.fp0115Absent ?? true,
+    fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+      input
+        .fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified ??
+      true,
+    fp0116Absent: input.fp0116Absent ?? true,
     remoteHostReadinessContractsFoundationVerified:
       input.remoteHostReadinessContractsFoundationVerified ?? true,
     oauthSecurityContractsFoundationVerified:

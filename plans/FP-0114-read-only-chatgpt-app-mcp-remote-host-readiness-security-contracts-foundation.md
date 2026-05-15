@@ -6,7 +6,7 @@ FP-0114 is the V2AH local/proof-only/read-only remote MCP host readiness and pub
 
 This slice exists because FP-0112 shipped remote/public MCP deployment and OAuth readiness planning, and FP-0113 shipped local/proof-only OAuth, token/session, user/org/company binding, and public MCP security contracts. Those shipped records still keep OAuth implementation, token/session implementation, auth middleware, remote MCP deployment, Apps SDK resources, public app behavior, app submission, DB work, provider calls, OpenAI API/model calls, source mutation, finance writes, and public assets future-only. Before any remote MCP host can be created, the repo needs local contracts that prove the host-readiness boundary is explicit.
 
-FP-0114 is contract/proof work only. It is not remote MCP deployment. It is not OAuth implementation. It is not token/session implementation. It is not auth middleware. It is not a route behavior change. It is not a new endpoint. It is not a `/mcp` route behavior change. It is not Apps SDK iframe/resource implementation, public ChatGPT App implementation, app submission, DB query implementation, schema or migration work, package script work, OpenAI API/model integration, provider/certification/deployment execution, external communications, source mutation, finance writes, generated finance advice, runtime-Codex finance output, public assets, sample data, source packs, or autonomous action. FP-0115 remains absent.
+FP-0114 is contract/proof work only. It is not remote MCP deployment. It is not OAuth implementation. It is not token/session implementation. It is not auth middleware. It is not a route behavior change. It is not a new endpoint. It is not a `/mcp` route behavior change. It is not Apps SDK iframe/resource implementation, public ChatGPT App implementation, app submission, DB query implementation, schema or migration work, package script work, OpenAI API/model integration, provider/certification/deployment execution, external communications, source mutation, finance writes, generated finance advice, runtime-Codex finance output, public assets, sample data, source packs, or autonomous action. FP-0115 successor remains docs-only when present.
 
 The proof point is not that Pocket CFO is remotely accessible. The proof point is that the repo can prove what a future remote host must satisfy before any public read-only MCP surface is exposed.
 
@@ -19,7 +19,7 @@ The proof point is not that Pocket CFO is remotely accessible. The proof point i
 - [x] 2026-05-15T16:10:40Z: Created this FP-0114 plan as the single allowed remote MCP host readiness contract foundation artifact.
 - [x] 2026-05-15T16:30:22Z: Added pure domain remote-host readiness contracts, builders, proof schema, proof output, exports, and focused specs under `packages/domain/src/read-only-app-mcp-remote-host-readiness*.ts`.
 - [x] 2026-05-15T16:30:22Z: Added `tools/read-only-mcp-remote-host-readiness-proof.mjs` with machine-readable local/proof-only FP-0114 JSON and durable proof-source scans for no OpenAI API/model/client/key usage.
-- [x] 2026-05-15T16:30:22Z: Applied the minimal proof-gate bridge so the exact FP-0114 plan is accepted, FP-0115 remains absent, and FP-0113/0112/0111/0110/0109/0108/0107/0106/0100 boundaries remain intact.
+- [x] 2026-05-15T16:30:22Z: Applied the minimal proof-gate bridge so the exact FP-0114 plan was accepted, FP-0115 remained absent during FP-0114 closeout, and FP-0113/0112/0111/0110/0109/0108/0107/0106/0100 boundaries remained intact.
 - [x] 2026-05-15T16:30:22Z: Refreshed directly stale active docs and `plugins.md` to describe FP-0114 as shipped local/proof-only/read-only contract work, with no route, runtime, deployment, app-submission, source, finance-write, or public-asset change.
 - [x] 2026-05-15T16:30:22Z: Focused validation passed before final validation: all proof tools, 10 focused domain spec files with 100 tests, and 4 focused control-plane route/service/dispatcher/app-wiring spec files with 85 tests.
 - [x] 2026-05-15T16:30:22Z: Pre-final strict QA found the changed files limited to domain contracts/specs, proof tools, plan/docs/plugin refresh, and no route behavior change, new route path, remote deployment, deployment config, OAuth/token/session/auth middleware implementation, Apps SDK resource, app submission, DB/schema/migration/package script, public asset, source mutation, finance write, provider call, OpenAI API/model/client/key use, or FP-0115.
@@ -55,7 +55,7 @@ The proof point is not that Pocket CFO is remotely accessible. The proof point i
 - Decision: No real finance data, public demo data, raw dumps, source packs, or private finance-data exposure are allowed.
 - Decision: OAuth/security contracts from FP-0113 remain prerequisites.
 - Decision: No provider calls, external communications, source mutation, finance writes, generated finance advice, app submission artifacts, public assets, or autonomous action are authorized.
-- Decision: FP-0115 remains absent.
+- Decision: FP-0115 remained absent for FP-0114 closeout; FP-0115 successor remains docs-only when present.
 
 ## Context and Orientation
 
@@ -70,7 +70,7 @@ The shipped local stack remains:
 - FP-0112: docs-and-plan proof-gate compatibility for remote/public MCP deployment and OAuth readiness.
 - FP-0113: local/proof-only OAuth/token/session/user-org/company/security contracts.
 
-FP-0114 adds only pure domain contracts, focused specs, one direct proof command, proof-source scans, and minimal proof-gate bridge compatibility so that FP-0114 is accepted while FP-0115 remains absent.
+FP-0114 adds only pure domain contracts, focused specs, one direct proof command, proof-source scans, and minimal proof-gate bridge compatibility so that FP-0114 is accepted while FP-0115 successor remains docs-only when present.
 
 Official read-only research used:
 
@@ -93,7 +93,7 @@ No OpenAI API, OpenAI model, OpenAI client, OpenAI API key setup, Vercel deploym
 2. Add pure domain remote-host readiness contracts under `packages/domain/src/read-only-app-mcp-remote-host-readiness*.ts`.
 3. Add focused domain specs proving deployment deferral, route/path preservation, HTTPS/TLS prerequisites, canonical resource URI, Streamable HTTP compatibility, GET SSE deferral, Origin/CORS/CSP boundaries, rate limiting, logging redaction, observability/audit correlation, rollback/incident response, health/readiness deferral, no-real-finance-data posture, OAuth/security prerequisite preservation, and no remote runtime.
 4. Add `tools/read-only-mcp-remote-host-readiness-proof.mjs` to print machine-readable JSON with the FP-0114 proof fields.
-5. Update minimal proof-gate bridges so exactly this FP-0114 plan is accepted while FP-0115 remains absent.
+5. Update minimal proof-gate bridges so exactly this FP-0114 plan is accepted while FP-0115 successor remains docs-only when present.
 6. Keep or extend durable no-OpenAI/API/model/key scans across the requested proof-source set.
 7. Refresh only directly stale active docs/plugin notes after validation.
 8. Run focused validation, strict same-branch QA, final validation, commit exactly once, push the requested branch, and create the requested PR if auth and validation allow it.
@@ -109,7 +109,7 @@ No OpenAI API, OpenAI model, OpenAI client, OpenAI API key setup, Vercel deploym
 - Add `packages/domain/src/read-only-app-mcp-remote-host-readiness.spec.ts`.
 - Export the new module from `packages/domain/src/index.ts`.
 - Add `tools/read-only-mcp-remote-host-readiness-proof.mjs`.
-- Patch only the minimal existing proof scripts/domain proof fields needed to accept FP-0114 while proving FP-0115 absent and preserving FP-0113/0112/0111/0110/0109/0108/0107/0106/0100 boundaries.
+- Patch only the minimal existing proof scripts/domain proof fields needed to accept FP-0114 while preserving FP-0113/0112/0111/0110/0109/0108/0107/0106/0100 boundaries and keeping any FP-0115 successor docs-only.
 - Patch directly stale docs and `plugins.md` if the implementation makes shipped-state docs stale.
 
 ## Validation and Acceptance
@@ -117,7 +117,7 @@ No OpenAI API, OpenAI model, OpenAI client, OpenAI API key setup, Vercel deploym
 Acceptance requires:
 
 - Exactly one FP-0114 plan exists at `plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md`.
-- FP-0115 remains absent.
+- FP-0115 successor remains docs-only when present.
 - FP-0114 proves local/proof-only remote MCP host readiness contracts only.
 - Remote MCP deployment remains absent.
 - The local `/mcp` route behavior is unchanged.
@@ -159,7 +159,7 @@ Commands to run:
 
 This slice is idempotent because it adds one plan path, pure domain contracts, focused specs, direct proof tooling, proof-source scans, and proof-gate bridge compatibility only. If validation fails, do not widen scope. Patch only the FP-0114 contracts, proof bridge, focused specs, or directly stale docs on this same branch, then rerun the required validation.
 
-Do not recover by adding routes, route behavior changes, OAuth implementation, token/session implementation, auth middleware, DB queries, schemas, migrations, package scripts, remote MCP deployment, deployment config, Apps SDK resources, public app behavior, app submission assets, public assets, data files, source packs, OpenAI API/model calls, provider calls, external communications, source mutation, finance writes, generated finance advice, autonomous action, or FP-0115.
+Do not recover by adding routes, route behavior changes, OAuth implementation, token/session implementation, auth middleware, DB queries, schemas, migrations, package scripts, remote MCP deployment, deployment config, Apps SDK resources, public app behavior, app submission assets, public assets, data files, source packs, OpenAI API/model calls, provider calls, external communications, source mutation, finance writes, generated finance advice, autonomous action, or FP-0115 implementation scope.
 
 If a blocker is outside this scope, stop and recommend the smallest safer corrective slice: FP-0114 remote host readiness proof-contract correction, FP-0113 OAuth/security proof-contract correction, FP-0112 readiness proof-gate bridge correction, FP-0111 local wiring correction, FP-0109 adapter correction, FP-0107 route adapter correction, or hold remote host readiness work until OAuth/security and local dispatch wiring can be proven.
 
@@ -182,7 +182,7 @@ GitHub connector product behavior is explicitly out of scope. Routine `git`, `gh
 
 ## Outcomes & Retrospective
 
-FP-0114 implemented the local/proof-only/read-only remote MCP host readiness security contract foundation only. The slice adds no remote MCP runtime, no `/mcp` behavior change, no new route path, no deployment config, no OAuth/token/session/auth middleware implementation, no Apps SDK resource, no public app behavior, no app submission material, no DB query, no schema or migration, no package script, no public asset, no source pack, no OpenAI API/model/client/key use, no provider or external call, no source mutation, no finance write, no generated finance advice, no runtime-Codex finance output, no autonomous action, and no FP-0115.
+FP-0114 implemented the local/proof-only/read-only remote MCP host readiness security contract foundation only. The slice adds no remote MCP runtime, no `/mcp` behavior change, no new route path, no deployment config, no OAuth/token/session/auth middleware implementation, no Apps SDK resource, no public app behavior, no app submission material, no DB query, no schema or migration, no package script, no public asset, no source pack, no OpenAI API/model/client/key use, no provider or external call, no source mutation, no finance write, no generated finance advice, no runtime-Codex finance output, no autonomous action, and no FP-0115 implementation scope.
 
 Strict same-branch QA and final validation found no scope widening. Repository publication completed on branch `codex/v2ah-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation-local-v1` with commit `e115eacf8b18154aa2dddd1ed7f85175bfc77be4` and PR #281.
 

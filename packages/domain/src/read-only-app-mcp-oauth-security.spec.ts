@@ -19,16 +19,20 @@ import {
   buildMcpOauthSecurityContracts,
   buildMcpOauthSecurityProof,
 } from "./read-only-app-mcp-oauth-security";
-import { FP0114_REMOTE_HOST_READINESS_PLAN_PATH } from "./read-only-app-mcp-remote-host-readiness";
+import {
+  FP0114_REMOTE_HOST_READINESS_PLAN_PATH,
+  FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+} from "./read-only-app-mcp-remote-host-readiness";
 
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
 describe("FP-0113 read-only MCP OAuth security contracts", () => {
-  it("accepts exactly one FP-0113 plan path, permits exact FP-0114, and keeps FP-0115 absent", () => {
+  it("accepts exact FP-0113, FP-0114, and docs-only FP-0115 paths while keeping FP-0116 absent", () => {
     const repoPaths = repoFilePaths();
     const fp0113Hits = repoPaths.filter((path) => /(^|\/)FP-0113/u.test(path));
     const fp0114Hits = repoPaths.filter((path) => /(^|\/)FP-0114/u.test(path));
     const fp0115Hits = repoPaths.filter((path) => /(^|\/)FP-0115/u.test(path));
+    const fp0116Hits = repoPaths.filter((path) => /(^|\/)FP-0116/u.test(path));
     const proof = buildMcpOauthSecurityProof({
       fp0113BoundaryVerified:
         fp0113Hits.length === 1 &&
@@ -37,21 +41,33 @@ describe("FP-0113 read-only MCP OAuth security contracts", () => {
       fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
         fp0114Hits.length === 1 &&
         fp0114Hits[0] === FP0114_REMOTE_HOST_READINESS_PLAN_PATH,
-      fp0115Absent: fp0115Hits.length === 0,
+      fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+        fp0115Hits.length === 1 &&
+        fp0115Hits[0] ===
+          FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH &&
+        fp0115PlanBoundaryVerified(),
+      fp0116Absent: fp0116Hits.length === 0,
     });
 
     expect(fp0113Hits).toEqual([FP0113_OAUTH_SECURITY_PLAN_PATH]);
     expect(fp0114Hits).toEqual([FP0114_REMOTE_HOST_READINESS_PLAN_PATH]);
-    expect(fp0115Hits).toEqual([]);
+    expect(fp0115Hits).toEqual([
+      FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+    ]);
+    expect(fp0116Hits).toEqual([]);
     expect(proof.fp0113BoundaryVerified).toBe(true);
     expect(proof.fp0114AbsentOrLocalRemoteHostReadinessContractsVerified).toBe(
       true,
     );
-    expect(proof.fp0115Absent).toBe(true);
+    expect(
+      proof.fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified,
+    ).toBe(true);
+    expect(proof.fp0116Absent).toBe(true);
     expect(
       McpOauthSecurityProofSchema.safeParse({
         ...proof,
-        fp0115Absent: false,
+        fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+          false,
       }).success,
     ).toBe(false);
   });
@@ -268,6 +284,29 @@ function fp0113PlanBoundaryVerified() {
     "client-supplied companykey is only a requested selector",
     "token passthrough is forbidden",
     "fp-0114 remains absent",
+  ].every((text) => normalized.includes(text));
+}
+
+function fp0115PlanBoundaryVerified() {
+  const planPath = join(
+    repoRoot,
+    FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  );
+  if (!existsSync(planPath)) return false;
+  const normalized = readFileSync(planPath, "utf8")
+    .toLowerCase()
+    .replace(/`/gu, "");
+
+  return [
+    "docs-and-plan plus proof-gate compatibility",
+    "remote mcp host implementation sequencing",
+    "provider/host readiness",
+    "does not implement oauth",
+    "does not implement token/session",
+    "does not implement auth middleware",
+    "does not expose the local /mcp route remotely",
+    "public app submission remains future-only",
+    "fp-0116 remains absent",
   ].every((text) => normalized.includes(text));
 }
 

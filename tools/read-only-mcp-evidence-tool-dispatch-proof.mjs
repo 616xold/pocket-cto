@@ -11,7 +11,10 @@ import {
   MCP_TOOL_ALLOWLIST,
   buildEvidenceToolDispatchProof,
 } from "../packages/domain/src/index.ts";
-import { FP0114_REMOTE_HOST_READINESS_PLAN_PATH } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
+import {
+  FP0114_REMOTE_HOST_READINESS_PLAN_PATH,
+  FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+} from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 import { ReadOnlyAppMcpEndpointService } from "../apps/control-plane/src/modules/read-only-app-mcp-endpoint/service.ts";
 
 const FP0107_PLAN =
@@ -29,6 +32,8 @@ const fp0110ScopeScan = fp0110ChangedScopeScan();
 const fp0112ScopeScan = fp0112ChangedScopeScan();
 const fp0113ScopeScan = fp0113ChangedScopeScan();
 const fp0114ScopeScan = fp0114ChangedScopeScan();
+const fp0115PlanBoundary =
+  fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified();
 const proof = EvidenceToolDispatchProofSchema.parse(
   buildEvidenceToolDispatchProof({
     fp0100PublicSecurityBoundaryStillVerified: docsBoundary(FP0100_PLAN, [
@@ -57,7 +62,9 @@ const proof = EvidenceToolDispatchProofSchema.parse(
       fp0113AbsentOrLocalOauthSecurityContractsVerified(),
     fp0114AbsentOrLocalRemoteHostReadinessContractsVerified:
       fp0114AbsentOrLocalRemoteHostReadinessContractsVerified(),
-    fp0115Absent: fp0115Absent(),
+    fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified:
+      fp0115PlanBoundary,
+    fp0116Absent: fp0116Absent(),
     oauthSecurityContractsFoundationVerified:
       oauthSecurityContractsFoundationVerified(),
     remoteHostReadinessContractsFoundationVerified:
@@ -335,8 +342,35 @@ function fp0114AbsentOrLocalRemoteHostReadinessContractsVerified() {
   );
 }
 
-function fp0115Absent() {
-  return !repoPaths.some((path) => /(^|\/)FP-0115/u.test(path));
+function fp0115AbsentOrDocsOnlyRemoteHostImplementationSequencingPlanVerified() {
+  const fp0115Hits = repoPaths.filter((path) => /(^|\/)FP-0115/u.test(path));
+  if (fp0115Hits.length === 0) return true;
+  return (
+    fp0115Hits.length === 1 &&
+    fp0115Hits[0] ===
+      FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH &&
+    fp0115PlanBoundaryVerified()
+  );
+}
+
+function fp0115PlanBoundaryVerified() {
+  const normalized = normalize(
+    safeRead(FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH),
+  );
+  return [
+    "docs-and-plan plus proof-gate compatibility",
+    "remote mcp host implementation sequencing",
+    "provider/host readiness",
+    "does not change route behavior",
+    "does not add any new route path",
+    "does not add deployment config",
+    "public app submission remains future-only",
+    "fp-0116 remains absent",
+  ].every((requiredText) => normalized.includes(requiredText));
+}
+
+function fp0116Absent() {
+  return !repoPaths.some((path) => /(^|\/)FP-0116/u.test(path));
 }
 
 function oauthSecurityContractsFoundationVerified() {
@@ -366,7 +400,7 @@ function remoteHostReadinessContractsFoundationVerified() {
     "not auth middleware",
     "local /mcp route behavior is unchanged",
     "current local /mcp route must not be exposed remotely as-is",
-    "fp-0115 remains absent",
+    "fp-0115 successor remains docs-only when present",
   ].every((requiredText) => normalized.includes(requiredText));
 }
 
