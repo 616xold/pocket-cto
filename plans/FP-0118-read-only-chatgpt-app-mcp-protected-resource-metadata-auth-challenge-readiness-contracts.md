@@ -20,7 +20,8 @@ FP-0118 implements pure domain contracts and proof tooling only. It does not add
 - [x] 2026-05-15T22:11:39Z: Refreshed directly stale README/CODEX/START/ACTIVE_DOCS/PROJECT_STATE/V2_BOUNDARY/ROADMAP/security/demo/plugin docs for the FP-0118 contract boundary.
 - [x] 2026-05-15T22:24:58Z: Completed focused validation, strict same-branch QA, and final validation. A narrow typecheck correction in the focused FP-0118 spec kept proof inputs literal-true instead of loosening the contract. All direct proof tools, focused specs, `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current` passed after the correction.
 - [x] 2026-05-15T22:24:58Z: Confirmed no FP-0119 exists; no route behavior, route path, protected-resource metadata route, `WWW-Authenticate` route behavior, OAuth/token/session/auth middleware, remote MCP deployment, deployment config, Apps SDK resource, public app behavior, app submission, DB/schema/package/data/asset/source-pack, OpenAI/model/provider, source mutation, finance write, generated finance advice, runtime-Codex finance output, external communication, or autonomous-action scope was added.
-- [ ] Commit exactly once, push, and open the PR.
+- [x] 2026-05-15T22:24:58Z: Committed once, pushed the branch, and opened PR #286.
+- [x] 2026-05-15T22:37:36Z: Same-branch QA found and corrected one proof-durability issue: the direct FP-0118 proof tool now audits committed branch-diff paths from `origin/main...HEAD` plus dirty worktree paths, so forbidden package/script/route/runtime changes remain visible after the PR branch is committed.
 
 ## Surprises & Discoveries
 
@@ -29,6 +30,7 @@ FP-0118 implements pure domain contracts and proof tooling only. It does not add
 - RFC 9728 defines the exact protected-resource metadata fields FP-0118 needs to model: `resource`, `authorization_servers`, `scopes_supported`, and `bearer_methods_supported`.
 - The existing FP-0117 proof source hardening was reusable; FP-0118 only needed a narrow bridge so exact FP-0118 contracts are accepted while FP-0119 remains absent.
 - The first final `pnpm typecheck` run found that dynamic spec booleans were not assignable to literal `true` proof fields. The correction was kept inside the focused FP-0118 spec by asserting each dynamic check and returning literal `true`, preserving strict contract typing.
+- Same-branch QA found that `tools/read-only-mcp-protected-resource-metadata-proof.mjs` used `git status` alone for changed-file scope checks. That was sufficient before the first commit but not durable for clean committed PR branches, so the tool now unions `origin/main...HEAD` branch-diff paths with dirty worktree paths.
 
 ## Decision Log
 
@@ -46,6 +48,7 @@ FP-0118 implements pure domain contracts and proof tooling only. It does not add
 - Decision: Token passthrough remains forbidden.
 - Decision: No token leakage is allowed in logs, UI props, metadata examples, evidence, structured tool results, docs examples, proof outputs, or public/app submission artifacts.
 - Decision: Local `/mcp` route behavior remains unchanged, no new route path is added, no protected-resource metadata route is added, no `WWW-Authenticate` route behavior is added, and FP-0119 remains absent.
+- Decision: FP-0118 direct proof changed-file scope checks must be durable on both dirty QA worktrees and clean committed PR branches. The direct proof tool therefore treats `origin/main...HEAD` as the committed PR scope and unions it with worktree status paths.
 
 ## Context and Orientation
 
@@ -153,5 +156,7 @@ FP-0118 shipped its local/proof-only/read-only protected-resource metadata and a
 The proof-gate bridge accepts exactly the FP-0118 plan path while FP-0119 remains absent, and preserves FP-0117 OAuth/token/session/auth sequencing, FP-0116 remote host resource contracts, FP-0113 OAuth/token/session/user-org/company binding contracts, FP-0111 explicit local evidence dispatch wiring, FP-0109 local evidence dispatch adapter, FP-0107 route adapter, FP-0106 protocol envelope, and FP-0100 public security boundaries.
 
 Validation passed with the full direct proof ladder, focused domain and control-plane specs, `git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`. `pnpm ci:repro:current` also ran the integration-db path because local Postgres was reachable.
+
+Same-branch QA corrected the direct proof tool so branch-diff scope checks remain durable after commit instead of depending only on a dirty worktree. The correction did not add routes, runtime behavior, protected-resource metadata route behavior, `WWW-Authenticate` behavior, OAuth/token/session/auth middleware, deployment config, Apps SDK resources, package scripts, DB/schema/data/source-pack changes, OpenAI/model/provider calls, source mutation, finance writes, autonomous action, or FP-0119.
 
 Recommended next step: protected-resource metadata route implementation planning may start next only as a new narrow Finance Plan after this contract PR is merged. Public ChatGPT App submission must wait until later route implementation, auth challenge behavior, OAuth/token/session/auth middleware, canonical public resource URI, authenticated company binding runtime, remote host/deployment posture, Apps SDK resource posture, and submission-readiness plans are separately proven.
