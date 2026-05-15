@@ -4,8 +4,11 @@ import {
   FP0117_OAUTH_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
   McpOauthImplementationSequencingProofSchema,
   buildMcpOauthImplementationSequencingProof,
+  isFp0117OauthSequencingNoOpenAiProofSourcePath,
   verifyFp0117AbsentOrDocsOnlyOauthImplementationSequencingPlan,
   verifyFp0117OauthImplementationSequencingPlanBoundary,
+  verifyFp0117OauthImplementationSequencingRepositoryInventory,
+  verifyFp0117OauthSequencingNoOpenAiApiSourceScan,
   verifyFp0117PlanningTextRequiredTopics,
   verifyFp0118Absent,
 } from "../packages/domain/src/index.ts";
@@ -39,7 +42,17 @@ const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
 const planText = safeRead(FP0117_OAUTH_IMPLEMENTATION_SEQUENCING_PLAN_PATH);
 const scopeScan = changedScopeScan();
-const sourceScan = noExecutableApiModelKeyUsage(readChangedExecutableSource());
+const changedSourceScan = noExecutableApiModelKeyUsage(
+  readChangedExecutableSource(),
+);
+const repositoryInventory =
+  verifyFp0117OauthImplementationSequencingRepositoryInventory({
+    repoPaths,
+    routeSourceText: safeRead(ROUTE_PATH),
+  });
+const durableSourceScan = verifyFp0117OauthSequencingNoOpenAiApiSourceScan({
+  sourceText: readOauthSequencingProofSourceText(),
+});
 const planningTopics = verifyFp0117PlanningTextRequiredTopics(planText);
 
 const proof = McpOauthImplementationSequencingProofSchema.parse(
@@ -110,19 +123,25 @@ const proof = McpOauthImplementationSequencingProofSchema.parse(
     noAppSubmissionFromFp0117: scopeScan.noAppSubmission,
     noAppsSdkResourceFromFp0117: scopeScan.noAppsSdkResource,
     noAuthMiddlewareImplementationFromFp0117:
-      scopeScan.noAuthMiddlewareImplementation,
+      scopeScan.noAuthMiddlewareImplementation &&
+      repositoryInventory.authMiddlewareRepositoryInventoryVerified,
     noDbQueriesFromFp0117: scopeScan.noDbQueries,
     noDeploymentConfigFromFp0117: scopeScan.noDeploymentConfig,
     noListingCopyGeneratedPublicProseFromFp0117:
       scopeScan.noListingCopyGeneratedPublicProse,
     noNewRoutePathFromFp0117:
       scopeScan.noNewRoutePath && localRouteShapeStillVerified(),
-    noOauthImplementationFromFp0117: scopeScan.noOauthImplementation,
+    noOauthImplementationFromFp0117:
+      scopeScan.noOauthImplementation &&
+      repositoryInventory.oauthImplementationRepositoryInventoryVerified,
     noOpenAiApiCallsFromFp0117:
-      sourceScan.noOpenAiApiCalls && sourceScan.noModelCalls,
+      changedSourceScan.noOpenAiApiCalls &&
+      changedSourceScan.noModelCalls &&
+      durableSourceScan.oauthSequencingNoOpenAiApiSourceScanVerified,
     noPackageScriptsFromFp0117: scopeScan.noPackageScripts,
     noProtectedResourceMetadataRouteFromFp0117:
-      scopeScan.noProtectedResourceMetadataRoute,
+      scopeScan.noProtectedResourceMetadataRoute &&
+      repositoryInventory.protectedResourceMetadataRouteRepositoryInventoryVerified,
     noProviderExternalCallsFromFp0117:
       scopeScan.noProviderCalls && scopeScan.noExternalCommunications,
     noPublicAssetsSubmissionArtifactsFromFp0117:
@@ -134,9 +153,20 @@ const proof = McpOauthImplementationSequencingProofSchema.parse(
     noSourceMutationFinanceWriteFromFp0117:
       scopeScan.noSourceMutation && scopeScan.noFinanceWrite,
     noTokenSessionImplementationFromFp0117:
-      scopeScan.noTokenSessionImplementation,
+      scopeScan.noTokenSessionImplementation &&
+      repositoryInventory.tokenSessionRepositoryInventoryVerified,
     noWwwAuthenticateRouteBehaviorFromFp0117:
-      scopeScan.noWwwAuthenticateRouteBehavior,
+      scopeScan.noWwwAuthenticateRouteBehavior &&
+      repositoryInventory.wwwAuthenticateRouteBehaviorRepositoryInventoryVerified,
+    authMiddlewareRepositoryInventoryVerified:
+      repositoryInventory.authMiddlewareRepositoryInventoryVerified,
+    fp0117PostmergeProofDurabilityVerified:
+      repositoryInventory.fp0117PostmergeProofDurabilityVerified &&
+      durableSourceScan.oauthSequencingNoOpenAiApiSourceScanVerified,
+    oauthImplementationRepositoryInventoryVerified:
+      repositoryInventory.oauthImplementationRepositoryInventoryVerified,
+    oauthSequencingNoOpenAiApiSourceScanVerified:
+      durableSourceScan.oauthSequencingNoOpenAiApiSourceScanVerified,
     oauthImplementationSequencingPlanBoundaryVerified:
       verifyFp0117OauthImplementationSequencingPlanBoundary({
         planText,
@@ -150,16 +180,31 @@ const proof = McpOauthImplementationSequencingProofSchema.parse(
       FP0117_OAUTH_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
       ["public app submission remains future-only"],
     ),
+    protectedResourceMetadataRouteRepositoryInventoryVerified:
+      repositoryInventory.protectedResourceMetadataRouteRepositoryInventoryVerified,
+    tokenSessionRepositoryInventoryVerified:
+      repositoryInventory.tokenSessionRepositoryInventoryVerified,
+    wwwAuthenticateRouteBehaviorRepositoryInventoryVerified:
+      repositoryInventory.wwwAuthenticateRouteBehaviorRepositoryInventoryVerified,
   }),
 );
 
 for (const [key, value] of Object.entries(proof)) {
   if (typeof value === "boolean" && value !== true) {
-    throw new Error(`FP-0117 OAuth implementation sequencing proof failed: ${key}`);
+    throw new Error(
+      `FP-0117 OAuth implementation sequencing proof failed: ${key}`,
+    );
   }
 }
 
 console.log(JSON.stringify(proof, null, 2));
+
+function readOauthSequencingProofSourceText() {
+  return repoPaths
+    .filter(isFp0117OauthSequencingNoOpenAiProofSourcePath)
+    .map((path) => `// ${path}\n${safeRead(path)}`)
+    .join("\n");
+}
 
 function changedScopeScan() {
   const changedExecutableSource = readChangedExecutableSource();
@@ -310,9 +355,13 @@ function noExecutableApiModelKeyUsage(sourceText) {
 }
 
 function changedFilePaths() {
-  const status = execFileSync("git", ["status", "--short", "--untracked-files=all"], {
-    encoding: "utf8",
-  });
+  const status = execFileSync(
+    "git",
+    ["status", "--short", "--untracked-files=all"],
+    {
+      encoding: "utf8",
+    },
+  );
   return status
     .split("\n")
     .map((line) => line.trim())

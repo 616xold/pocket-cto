@@ -15,14 +15,17 @@ import {
   McpRemoteHostOwnerDecisionBoundarySchema,
   McpRemoteHostProviderNeutralBoundarySchema,
   McpRemoteHostResourceProofSchema,
+  buildMcpOauthImplementationSequencingProof,
   buildMcpRemoteHostResourceContracts,
   buildMcpRemoteHostResourceProof,
-  buildMcpOauthImplementationSequencingProof,
+  isFp0117OauthSequencingNoOpenAiProofSourcePath,
   validateMcpCanonicalResourceUriCandidate,
   verifyFp0116RemoteHostResourcePlanBoundary,
   verifyFp0117AbsentOrDocsOnlyOauthImplementationSequencingPlan,
   verifyFp0117Absent,
   verifyFp0117OauthImplementationSequencingPlanBoundary,
+  verifyFp0117OauthImplementationSequencingRepositoryInventory,
+  verifyFp0117OauthSequencingNoOpenAiApiSourceScan,
   verifyFp0117PlanningTextRequiredTopics,
   verifyFp0118Absent,
 } from "./read-only-app-mcp-remote-host-resource";
@@ -82,12 +85,10 @@ describe("FP-0116 remote host owner and resource metadata contracts", () => {
         }),
     });
 
-    expect(
-      repoPaths.filter((path) => /(^|\/)FP-0117/u.test(path)),
-    ).toEqual([FP0117_OAUTH_IMPLEMENTATION_SEQUENCING_PLAN_PATH]);
-    expect(repoPaths.filter((path) => /(^|\/)FP-0118/u.test(path))).toEqual(
-      [],
-    );
+    expect(repoPaths.filter((path) => /(^|\/)FP-0117/u.test(path))).toEqual([
+      FP0117_OAUTH_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+    ]);
+    expect(repoPaths.filter((path) => /(^|\/)FP-0118/u.test(path))).toEqual([]);
     expect(
       proof.fp0117AbsentOrDocsOnlyOauthImplementationSequencingPlanVerified,
     ).toBe(true);
@@ -96,6 +97,17 @@ describe("FP-0116 remote host owner and resource metadata contracts", () => {
     expect(proof.noNewRoutePathFromFp0117).toBe(true);
     expect(proof.noProtectedResourceMetadataRouteFromFp0117).toBe(true);
     expect(proof.noWwwAuthenticateRouteBehaviorFromFp0117).toBe(true);
+    expect(proof.oauthImplementationRepositoryInventoryVerified).toBe(true);
+    expect(proof.tokenSessionRepositoryInventoryVerified).toBe(true);
+    expect(proof.authMiddlewareRepositoryInventoryVerified).toBe(true);
+    expect(
+      proof.protectedResourceMetadataRouteRepositoryInventoryVerified,
+    ).toBe(true);
+    expect(proof.wwwAuthenticateRouteBehaviorRepositoryInventoryVerified).toBe(
+      true,
+    );
+    expect(proof.oauthSequencingNoOpenAiApiSourceScanVerified).toBe(true);
+    expect(proof.fp0117PostmergeProofDurabilityVerified).toBe(true);
     expect(proof.noOauthImplementationFromFp0117).toBe(true);
     expect(proof.noTokenSessionImplementationFromFp0117).toBe(true);
     expect(proof.noAuthMiddlewareImplementationFromFp0117).toBe(true);
@@ -121,12 +133,134 @@ describe("FP-0116 remote host owner and resource metadata contracts", () => {
     expect(proof.planningTextIncludesTokenFailureModes).toBe(true);
     expect(proof.planningTextIncludesNoTokenPassthrough).toBe(true);
     expect(proof.planningTextIncludesAuthenticatedCompanyBinding).toBe(true);
+    expect(proof.fp0116RemoteHostResourceBoundaryStillVerified).toBe(true);
+    expect(
+      proof.fp0115RemoteHostImplementationSequencingBoundaryStillVerified,
+    ).toBe(true);
+    expect(proof.fp0114RemoteHostReadinessBoundaryStillVerified).toBe(true);
+    expect(proof.fp0113OauthSecurityBoundaryStillVerified).toBe(true);
+    expect(proof.fp0112RemotePublicOauthReadinessBoundaryStillVerified).toBe(
+      true,
+    );
+    expect(proof.fp0111DefaultLocalDispatchWiringStillVerified).toBe(true);
+    expect(proof.fp0109AdapterBoundaryStillVerified).toBe(true);
+    expect(proof.fp0108DispatchContractsStillVerified).toBe(true);
+    expect(proof.fp0107RouteAdapterBoundaryStillVerified).toBe(true);
+    expect(proof.fp0106ProtocolEnvelopeBoundaryStillVerified).toBe(true);
+    expect(proof.fp0100PublicSecurityBoundaryStillVerified).toBe(true);
     expect(
       McpOauthImplementationSequencingProofSchema.safeParse({
         ...proof,
         noOauthImplementationFromFp0117: false,
       }).success,
     ).toBe(false);
+  });
+
+  it("adds durable FP-0117 repository-inventory proof for current repo truth", () => {
+    const inventory =
+      verifyFp0117OauthImplementationSequencingRepositoryInventory({
+        repoPaths: repoFilePaths(),
+        routeSourceText: safeRead(
+          "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts",
+        ),
+      });
+    const sourceScan = verifyFp0117OauthSequencingNoOpenAiApiSourceScan({
+      sourceText: readFp0117NoOpenAiProofSources(),
+    });
+
+    expect(inventory.oauthImplementationRepositoryInventoryVerified).toBe(true);
+    expect(inventory.tokenSessionRepositoryInventoryVerified).toBe(true);
+    expect(inventory.authMiddlewareRepositoryInventoryVerified).toBe(true);
+    expect(
+      inventory.protectedResourceMetadataRouteRepositoryInventoryVerified,
+    ).toBe(true);
+    expect(
+      inventory.wwwAuthenticateRouteBehaviorRepositoryInventoryVerified,
+    ).toBe(true);
+    expect(sourceScan.oauthSequencingNoOpenAiApiSourceScanVerified).toBe(true);
+    expect(sourceScan.forbiddenExecutableMatches).toEqual([]);
+  });
+
+  it("rejects simulated protected-resource metadata and WWW-Authenticate route surfaces", () => {
+    const protectedResourceMetadataPath =
+      "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata/route.ts";
+    const wwwAuthenticatePath =
+      "apps/control-plane/src/modules/read-only-app-mcp-endpoint/www-authenticate.ts";
+
+    expect(
+      verifyFp0117OauthImplementationSequencingRepositoryInventory({
+        repoPaths: [protectedResourceMetadataPath],
+      }).protectedResourceMetadataRouteRepositoryInventoryVerified,
+    ).toBe(false);
+    expect(
+      verifyFp0117OauthImplementationSequencingRepositoryInventory({
+        repoPaths: [wwwAuthenticatePath],
+      }).wwwAuthenticateRouteBehaviorRepositoryInventoryVerified,
+    ).toBe(false);
+    expect(
+      verifyFp0117OauthImplementationSequencingRepositoryInventory({
+        repoPaths: [],
+        routeSourceText:
+          'reply.header("WWW-Authenticate", "Bearer resource_metadata=...")',
+      }).wwwAuthenticateRouteBehaviorRepositoryInventoryVerified,
+    ).toBe(false);
+  });
+
+  it("rejects simulated OAuth, token/session, and auth middleware runtime paths", () => {
+    const inventory =
+      verifyFp0117OauthImplementationSequencingRepositoryInventory({
+        repoPaths: [
+          "apps/control-plane/src/modules/read-only-app-mcp-endpoint/oauth.ts",
+          "apps/control-plane/src/modules/read-only-app-mcp-endpoint/token-session-store.ts",
+          "apps/control-plane/src/modules/read-only-app-mcp-endpoint/auth-middleware.ts",
+        ],
+      });
+
+    expect(inventory.oauthImplementationRepositoryInventoryVerified).toBe(
+      false,
+    );
+    expect(inventory.tokenSessionRepositoryInventoryVerified).toBe(false);
+    expect(inventory.authMiddlewareRepositoryInventoryVerified).toBe(false);
+    expect(inventory.fp0117PostmergeProofDurabilityVerified).toBe(false);
+  });
+
+  it("rejects executable OpenAI import, API, model, key, and endpoint patterns while allowing safe proof text", () => {
+    const openAiClientName = ["Open", "AI"].join("");
+    const openAiVariable = ["open", "ai"].join("");
+    const responsesCreate = ["responses", "create"].join(".");
+    const chatCompletions = ["chat", "completions"].join(".");
+    const modelCreate = ["model", "create"].join(".");
+    const modelsCreate = ["models", "create"].join(".");
+    const modelCaller = ["call", "Model"].join("");
+    const forbiddenSamples = [
+      `import OpenAI from ${quoted("openai")};`,
+      `const sdk = require(${quoted("openai")});`,
+      `const sdk = await import(${quoted("openai")});`,
+      `const client = new ${openAiClientName}();`,
+      `${openAiVariable}.${responsesCreate}({});`,
+      `client.${responsesCreate}({});`,
+      `client.${chatCompletions}.create({});`,
+      `const key = process.env.${["OPENAI", "API", "KEY"].join("_")};`,
+      `const url = "https://${["api", "openai", "com"].join(".")}/v1";`,
+      `${modelCreate}({});`,
+      `${modelsCreate}({});`,
+      `${modelCaller}(input);`,
+    ];
+
+    for (const sourceText of forbiddenSamples) {
+      expect(
+        verifyFp0117OauthSequencingNoOpenAiApiSourceScan({
+          sourceText,
+        }).oauthSequencingNoOpenAiApiSourceScanVerified,
+      ).toBe(false);
+    }
+
+    expect(
+      verifyFp0117OauthSequencingNoOpenAiApiSourceScan({
+        sourceText:
+          "No OpenAI API/model/key usage is authorized in this proof text.",
+      }).oauthSequencingNoOpenAiApiSourceScanVerified,
+    ).toBe(true);
   });
 
   it("keeps host owner unresolved, blocks implementation, and prefers separate package or gateway candidates", () => {
@@ -422,6 +556,17 @@ function readRemoteHostReadinessSources() {
     )
     .map(safeRead)
     .join("\n");
+}
+
+function readFp0117NoOpenAiProofSources() {
+  return repoFilePaths()
+    .filter(isFp0117OauthSequencingNoOpenAiProofSourcePath)
+    .map(safeRead)
+    .join("\n");
+}
+
+function quoted(value: string) {
+  return `"${value}"`;
 }
 
 function repoFilePaths() {

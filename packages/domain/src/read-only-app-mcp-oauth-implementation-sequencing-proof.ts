@@ -3,12 +3,19 @@ import {
   FP0117_OAUTH_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
   MCP_OAUTH_IMPLEMENTATION_SEQUENCING_SCHEMA_VERSION,
 } from "./read-only-app-mcp-remote-host-resource-contracts";
+import {
+  buildMcpOauthImplementationSequencingInventoryProof,
+  McpOauthImplementationSequencingInventoryProofSchema,
+  type McpOauthImplementationSequencingInventoryProofInput,
+} from "./read-only-app-mcp-oauth-implementation-sequencing-inventory";
 
 const trueLiteral = z.literal(true);
 
 export const McpOauthImplementationSequencingProofSchema = z
   .object({
-    schemaVersion: z.literal(MCP_OAUTH_IMPLEMENTATION_SEQUENCING_SCHEMA_VERSION),
+    schemaVersion: z.literal(
+      MCP_OAUTH_IMPLEMENTATION_SEQUENCING_SCHEMA_VERSION,
+    ),
     localProofOnly: trueLiteral,
     docsAndPlanProofGateOnly: trueLiteral,
     oauthImplementationSequencingPlanBoundaryVerified: trueLiteral,
@@ -56,6 +63,7 @@ export const McpOauthImplementationSequencingProofSchema = z
     publicAppImplementationFutureOnly: trueLiteral,
     publicAppSubmissionFutureOnly: trueLiteral,
   })
+  .merge(McpOauthImplementationSequencingInventoryProofSchema)
   .strict();
 
 export type McpOauthImplementationSequencingProof = z.infer<
@@ -107,10 +115,12 @@ export function buildMcpOauthImplementationSequencingProof(
     fp0100PublicSecurityBoundaryStillVerified: boolean;
     publicAppImplementationFutureOnly: boolean;
     publicAppSubmissionFutureOnly: boolean;
-  }> = {},
+  }> &
+    McpOauthImplementationSequencingInventoryProofInput = {},
 ): McpOauthImplementationSequencingProof {
   return McpOauthImplementationSequencingProofSchema.parse({
     docsAndPlanProofGateOnly: true,
+    ...buildMcpOauthImplementationSequencingInventoryProof(input),
     fp0100PublicSecurityBoundaryStillVerified:
       input.fp0100PublicSecurityBoundaryStillVerified ?? true,
     fp0106ProtocolEnvelopeBoundaryStillVerified:
@@ -140,13 +150,11 @@ export function buildMcpOauthImplementationSequencingProof(
     fp0118Absent: input.fp0118Absent ?? true,
     localProofOnly: true,
     noAppSubmissionFromFp0117: input.noAppSubmissionFromFp0117 ?? true,
-    noAppsSdkResourceFromFp0117:
-      input.noAppsSdkResourceFromFp0117 ?? true,
+    noAppsSdkResourceFromFp0117: input.noAppsSdkResourceFromFp0117 ?? true,
     noAuthMiddlewareImplementationFromFp0117:
       input.noAuthMiddlewareImplementationFromFp0117 ?? true,
     noDbQueriesFromFp0117: input.noDbQueriesFromFp0117 ?? true,
-    noDeploymentConfigFromFp0117:
-      input.noDeploymentConfigFromFp0117 ?? true,
+    noDeploymentConfigFromFp0117: input.noDeploymentConfigFromFp0117 ?? true,
     noListingCopyGeneratedPublicProseFromFp0117:
       input.noListingCopyGeneratedPublicProseFromFp0117 ?? true,
     noNewRoutePathFromFp0117: input.noNewRoutePathFromFp0117 ?? true,
@@ -164,8 +172,7 @@ export function buildMcpOauthImplementationSequencingProof(
       input.noRemoteMcpDeploymentFromFp0117 ?? true,
     noRouteBehaviorChangeFromFp0117:
       input.noRouteBehaviorChangeFromFp0117 ?? true,
-    noSchemaMigrationsFromFp0117:
-      input.noSchemaMigrationsFromFp0117 ?? true,
+    noSchemaMigrationsFromFp0117: input.noSchemaMigrationsFromFp0117 ?? true,
     noSourceMutationFinanceWriteFromFp0117:
       input.noSourceMutationFinanceWriteFromFp0117 ?? true,
     noTokenSessionImplementationFromFp0117:
@@ -211,12 +218,10 @@ export function verifyFp0117OauthImplementationSequencingPlanBoundary(input: {
   );
 }
 
-export function verifyFp0117AbsentOrDocsOnlyOauthImplementationSequencingPlan(
-  input: {
-    repoPaths: readonly string[];
-    planText?: string;
-  },
-) {
+export function verifyFp0117AbsentOrDocsOnlyOauthImplementationSequencingPlan(input: {
+  repoPaths: readonly string[];
+  planText?: string;
+}) {
   const fp0117Hits = input.repoPaths.filter((path) =>
     /(^|\/)FP-0117/u.test(path),
   );
@@ -252,8 +257,9 @@ export function verifyFp0117PlanningTextRequiredTopics(planText: string) {
     ),
     planningTextIncludesScopeChallenge: normalized.includes("scope challenge"),
     planningTextIncludesTokenFailureModes:
-      normalized.includes("missing/expired/malformed/wrong-audience/wrong-scope/wrong-org") ||
-      normalized.includes("token failure modes"),
+      normalized.includes(
+        "missing/expired/malformed/wrong-audience/wrong-scope/wrong-org",
+      ) || normalized.includes("token failure modes"),
     planningTextIncludesWwwAuthenticateResourceMetadata: normalized.includes(
       "www-authenticate resource_metadata",
     ),

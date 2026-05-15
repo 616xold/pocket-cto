@@ -19,12 +19,18 @@ Public app behavior remains future-only. Public app submission remains future-on
 - [x] 2026-05-15T21:46:30Z: Added the FP-0117 plan, proof-gate bridge helpers, direct proof tool, focused specs, and directly stale docs/plugin refresh without changing route behavior, route paths, protected-resource metadata routes, WWW-Authenticate behavior, OAuth/token/session/auth middleware, deployment, Apps SDK resources, DB/schema/package surfaces, public assets, provider calls, source mutation, finance writes, generated finance advice, runtime-Codex finance output, autonomous action, or FP-0118.
 - [x] 2026-05-15T21:46:30Z: Ran all direct proof tools, focused domain specs, focused control-plane `/mcp` route/default-dispatch specs, and strict same-branch QA scope checks; the bridge accepted exactly one FP-0117 docs-only plan while preserving FP-0116/0115/0114/0113/0112/0111/0109/0107/0106/0100 boundaries.
 - [x] 2026-05-15T21:56:45Z: Final validation passed: `git diff --check`, all direct proof tools including `tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs`, focused domain specs, focused control-plane `/mcp` route/default-dispatch specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+- [x] 2026-05-15T21:35:23Z: Post-merge hardening correction started on `codex/v2ak-read-only-chatgpt-app-mcp-oauth-token-session-auth-sequencing-proof-hardening-local-v1` after PR #284 was confirmed merged to `main`, FP-0118 was confirmed absent, required local services were available, and the baseline direct proof ladder passed.
+- [x] 2026-05-15T21:35:23Z: Refreshed the official research ledger from older MCP 2025-06-18 references to current official MCP 2025-11-25/latest Authorization, Transports, Security Best Practices, and Tools pages plus current OpenAI Apps SDK docs. No OpenAI API/model/key, provider, connector, deployment, app-submission, source mutation, finance write, or public asset workflow was used.
+- [x] 2026-05-15T21:35:23Z: Hardened the FP-0117 direct proof to keep changed-file PR validation while also adding durable repository-inventory proof for OAuth/token/session/auth runtime absence, protected-resource metadata route absence, WWW-Authenticate route behavior absence, and no executable OpenAI/API/model/key usage across FP-0117-adjacent proof/runtime surfaces.
+- [x] 2026-05-15T21:44:50Z: Final hardening validation passed before this closeout update: `git diff --check`, all direct proof tools, focused domain specs, focused control-plane `/mcp` route/default-dispatch specs, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
+- [x] 2026-05-15T21:44:50Z: Post-closeout minimum rerun passed after this plan edit: `git diff --check`, `tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
 
 ## Surprises & Discoveries
 
 - The local branch was missing the requested trailing `1`; it was renamed before any file edits.
 - OpenAI Developers was available as an installed plugin family, but no callable read-only docs tool was exposed in this thread. Official OpenAI web docs were used instead.
 - Current repo truth supports a sequencing plan but not OAuth/token/session/auth implementation. FP-0116 supplies local/proof-only resource contracts; it does not supply a canonical public resource URI implementation, protected-resource metadata route behavior, auth server, token validation runtime, token/session store, or auth middleware.
+- Post-merge proof durability needed a correction because the original direct proof used changed-file state for several absence checks. That is useful before commit/PR, but a clean merged tree needs repository-inventory scans so FP-0118 can depend on a durable proof source.
 
 ## Decision Log
 
@@ -43,6 +49,8 @@ Public app behavior remains future-only. Public app submission remains future-on
 - Decision: The safest sequence is future FP-0118 protected-resource metadata and auth challenge contract/readiness planning if opened later, then protected-resource metadata route implementation only if explicitly opened, then token validation contracts, token/session storage/redaction/revocation/rotation/replay contracts, auth middleware fail-closed implementation, and only later remote host runtime/deployment after host and auth gates.
 - Decision: Route expansion, remote MCP deployment, deployment config, Apps SDK resources, public app behavior, app submission, public assets, listing copy, generated public prose, provider calls, finance writes, source mutation, payment instructions, certification/delivery, external communications, generated finance advice, uncited model output, runtime-Codex finance output, autonomous action, and app-submission artifacts remain future-only or permanently forbidden until a named plan opens them.
 - Decision: FP-0118 remains absent in this slice.
+- Decision: FP-0117 proof gates now use both changed-file scans and durable repository-inventory scans. Changed-file scans remain useful for PR validation; repository inventory is the source for post-merge absence proof.
+- Decision: Executable OpenAI client/import/API/model/key patterns remain forbidden in FP-0117-adjacent proof/runtime sources. Documentation or proof text may describe absence or prohibition, but executable imports, clients, env-key reads, endpoint calls, model calls, and API calls are rejected.
 
 ## Context and Orientation
 
@@ -52,10 +60,10 @@ FP-0116 still keeps OAuth implementation, token/session implementation, auth mid
 
 Official research ledger:
 
-- MCP Authorization specification, version 2025-06-18 (`https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization`): used for protected-resource metadata, `authorization_servers`, `WWW-Authenticate` `resource_metadata`, OAuth authorization-server discovery, `resource` indicators, canonical server URI, access token requirements, token handling, token failure status codes, audience/resource validation, token storage, refresh-token rotation, and token passthrough prohibition.
-- MCP Transports specification, version 2025-06-18 (`https://modelcontextprotocol.io/specification/2025-06-18/basic/transports`): used for Streamable HTTP, single MCP endpoint, POST/GET behavior, Origin validation, localhost binding, and the auth recommendation for HTTP transports.
-- MCP Security Best Practices (`https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices`): used for confused deputy, token passthrough, scope minimization, session/auth security, prompt-injection, and fail-closed public exposure planning.
-- MCP Tools specification, version 2025-06-18 (`https://modelcontextprotocol.io/specification/2025-06-18/server/tools`): used only as read-only tool context for preserving the existing V2G read-only tool surface and human-review posture.
+- MCP Authorization specification, version 2025-11-25 latest (`https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization`): used for protected-resource metadata, `authorization_servers`, `WWW-Authenticate` `resource_metadata`, OAuth authorization-server discovery, `resource` indicators, canonical server URI, access token requirements, token handling, token failure status codes, audience/resource validation, scope challenge handling, token storage, refresh-token rotation, and token passthrough prohibition.
+- MCP Transports specification, version 2025-11-25 latest (`https://modelcontextprotocol.io/specification/2025-11-25/basic/transports`): used for Streamable HTTP, single MCP endpoint, POST/GET behavior, Origin validation, localhost binding, session header posture, protocol-version header posture, and the auth recommendation for HTTP transports.
+- MCP Security Best Practices current docs page (`https://modelcontextprotocol.io/docs/tutorials/security/security_best_practices`): used for confused deputy, token passthrough, SSRF, scope minimization, session/auth security, prompt-injection, and fail-closed public exposure planning.
+- MCP Tools specification, version 2025-11-25 latest (`https://modelcontextprotocol.io/specification/2025-11-25/server/tools`): used only as read-only tool context for preserving the existing V2G read-only tool surface, structured tool result posture, validation, security considerations, and human-review posture.
 - OpenAI Apps SDK Authentication docs (`https://developers.openai.com/apps-sdk/build/auth`): used for Apps SDK OAuth expectations, protected-resource metadata, resource parameter echoing, auth-server metadata, ChatGPT client registration choices, and challenge behavior.
 - OpenAI Apps SDK Security & Privacy docs (`https://developers.openai.com/apps-sdk/guides/security-privacy`): used for least privilege, consent, server-side validation, data handling, token/secret avoidance in component props, logging redaction, and audit posture.
 - OpenAI Apps SDK Deploy your app docs (`https://developers.openai.com/apps-sdk/deploy`): used only as future remote host/deployment context; local tunnels stay development-only and stable HTTPS remains a future prerequisite.
@@ -67,7 +75,7 @@ Official research ledger:
 
 Create exactly one FP-0117 plan and a minimum proof-gate bridge that allows that plan while FP-0118 remains absent. The bridge must prove the plan is docs-and-plan/proof-gate only and does not authorize implementation.
 
-Add focused domain proof helpers and specs for the FP-0117 plan boundary. Add `tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs` to check the exact FP-0117 path, the absence of FP-0118, required planning text, and changed-file scope.
+Add focused domain proof helpers and specs for the FP-0117 plan boundary. Add `tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs` to check the exact FP-0117 path, the absence of FP-0118, required planning text, changed-file scope, and durable post-merge repository-inventory proof.
 
 Refresh only directly stale active docs and plugin ledger text. The stale boundary is that active docs currently stop at FP-0116 and say FP-0117 is absent. They must now say FP-0117 exists only as a docs/proof sequencing plan and does not implement runtime auth or public app behavior.
 
@@ -122,7 +130,7 @@ If validation fails, patch only the FP-0117 plan/proof/doc compatibility surface
 
 ## Artifacts and Notes
 
-Expected artifacts are this FP-0117 plan, proof-gate helper/spec updates, `tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs`, directly stale active-doc/plugin refresh, and validation evidence.
+Expected artifacts are this FP-0117 plan, proof-gate helper/spec updates, `tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs`, durable repository-inventory/source-scan hardening, directly stale active-doc/plugin refresh, and validation evidence.
 
 Replay implication: this slice changes planning and proof gates only. It does not ingest sources, mutate raw source files, create mission outputs, change mission state, release communications, or write finance state. No replay event is required beyond plan progress, decision log, proof output, and final validation evidence.
 
@@ -138,4 +146,4 @@ GitHub connector product behavior is out of scope. Routine `git`, push, and PR p
 
 ## Outcomes & Retrospective
 
-FP-0117 is ready for one commit, push, and PR publication. The outcome is a single docs-and-plan plus proof-gate compatibility record that says protected-resource metadata implementation planning should start next, but only as a narrow future plan. No FP-0117 correction is currently known. Public ChatGPT App submission must wait.
+FP-0117 shipped through PR #284 and received a targeted post-merge proof/source hardening correction. The outcome remains a single docs-and-plan plus proof-gate compatibility record that says protected-resource metadata/auth challenge planning should start next, but only as a narrow future plan. No OAuth/token/session/auth runtime, protected-resource metadata route, WWW-Authenticate behavior, route expansion, OpenAI API/model/key usage, provider call, source mutation, finance write, public app behavior, app submission, or FP-0118 was added. No further FP-0117 correction is currently known. Public ChatGPT App submission must wait.
