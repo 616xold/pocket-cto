@@ -4,6 +4,7 @@ import {
   FP0117_OAUTH_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
   FP0118_PROTECTED_RESOURCE_METADATA_PLAN_PATH,
   FP0119_PROTECTED_RESOURCE_METADATA_ROUTE_SEQUENCING_PLAN_PATH,
+  FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH,
   McpOauthImplementationSequencingProofSchema,
   buildMcpOauthImplementationSequencingProof,
   isFp0117OauthSequencingNoOpenAiProofSourcePath,
@@ -15,7 +16,8 @@ import {
   verifyFp0118AbsentOrLocalProtectedResourceMetadataContracts,
   verifyFp0118ProtectedResourceMetadataPlanBoundary,
   verifyFp0119AbsentOrDocsOnlyProtectedResourceMetadataRouteSequencingPlan,
-  verifyFp0120Absent,
+  verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts,
+  verifyFp0121Absent,
 } from "../packages/domain/src/index.ts";
 
 const FP0116_PLAN =
@@ -50,6 +52,7 @@ const fp0118PlanText = safeRead(FP0118_PROTECTED_RESOURCE_METADATA_PLAN_PATH);
 const fp0119PlanText = safeRead(
   FP0119_PROTECTED_RESOURCE_METADATA_ROUTE_SEQUENCING_PLAN_PATH,
 );
+const fp0120PlanText = safeRead(FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH);
 const scopeScan = changedScopeScan();
 const changedSourceScan = noExecutableApiModelKeyUsage(
   readChangedExecutableSource(),
@@ -138,7 +141,17 @@ const proof = McpOauthImplementationSequencingProofSchema.parse(
         planText: fp0119PlanText,
         repoPaths,
       }),
-    fp0120Absent: verifyFp0120Absent(repoPaths),
+    canonicalResourceAuthServerContractsFoundationVerified:
+      verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts({
+        planText: fp0120PlanText,
+        repoPaths,
+      }),
+    fp0120AbsentOrLocalCanonicalResourceAuthServerContractsVerified:
+      verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts({
+        planText: fp0120PlanText,
+        repoPaths,
+      }),
+    fp0121Absent: verifyFp0121Absent(repoPaths),
     noAppSubmissionFromFp0117: scopeScan.noAppSubmission,
     noAppsSdkResourceFromFp0117: scopeScan.noAppsSdkResource,
     noAuthMiddlewareImplementationFromFp0117:
@@ -184,6 +197,42 @@ const proof = McpOauthImplementationSequencingProofSchema.parse(
       scopeScan.noTokenSessionImplementation &&
       repositoryInventory.tokenSessionRepositoryInventoryVerified,
     noWwwAuthenticateRouteBehaviorFromFp0118:
+      scopeScan.noWwwAuthenticateRouteBehavior &&
+      repositoryInventory.wwwAuthenticateRouteBehaviorRepositoryInventoryVerified,
+    noAppSubmissionFromFp0120: scopeScan.noAppSubmission,
+    noAppsSdkResourceFromFp0120: scopeScan.noAppsSdkResource,
+    noAuthMiddlewareImplementationFromFp0120:
+      scopeScan.noAuthMiddlewareImplementation &&
+      repositoryInventory.authMiddlewareRepositoryInventoryVerified,
+    noDbQueriesFromFp0120: scopeScan.noDbQueries,
+    noDeploymentConfigFromFp0120: scopeScan.noDeploymentConfig,
+    noNewRoutePathFromFp0120:
+      scopeScan.noNewRoutePath && localRouteShapeStillVerified(),
+    noOauthImplementationFromFp0120:
+      scopeScan.noOauthImplementation &&
+      repositoryInventory.oauthImplementationRepositoryInventoryVerified,
+    noOpenAiApiCallsFromFp0120:
+      changedSourceScan.noOpenAiApiCalls &&
+      changedSourceScan.noModelCalls &&
+      durableSourceScan.oauthSequencingNoOpenAiApiSourceScanVerified,
+    noPackageScriptsFromFp0120: scopeScan.noPackageScripts,
+    noProtectedResourceMetadataRouteFromFp0120:
+      scopeScan.noProtectedResourceMetadataRoute &&
+      repositoryInventory.protectedResourceMetadataRouteRepositoryInventoryVerified,
+    noProviderExternalCallsFromFp0120:
+      scopeScan.noProviderCalls && scopeScan.noExternalCommunications,
+    noPublicAssetsSubmissionArtifactsFromFp0120:
+      scopeScan.noPublicAssets && scopeScan.noAppSubmission,
+    noRemoteMcpDeploymentFromFp0120: scopeScan.noRemoteMcpDeployment,
+    noRouteBehaviorChangeFromFp0120:
+      scopeScan.noRouteBehaviorChange && localRouteShapeStillVerified(),
+    noSchemaMigrationsFromFp0120: scopeScan.noSchemaMigrations,
+    noSourceMutationFinanceWriteFromFp0120:
+      scopeScan.noSourceMutation && scopeScan.noFinanceWrite,
+    noTokenSessionImplementationFromFp0120:
+      scopeScan.noTokenSessionImplementation &&
+      repositoryInventory.tokenSessionRepositoryInventoryVerified,
+    noWwwAuthenticateRouteBehaviorFromFp0120:
       scopeScan.noWwwAuthenticateRouteBehavior &&
       repositoryInventory.wwwAuthenticateRouteBehaviorRepositoryInventoryVerified,
     noNewRoutePathFromFp0117:

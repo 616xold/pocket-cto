@@ -23,6 +23,7 @@ export * from "./monitoring";
 export * from "./operator-readiness";
 export * from "./proof-bundle";
 export * from "./read-only-app-mcp";
+export * from "./read-only-app-mcp-canonical-resource";
 export * from "./read-only-app-mcp-endpoint-architecture";
 export * from "./read-only-app-mcp-endpoint-route-ownership";
 export * from "./read-only-app-mcp-oauth-security";

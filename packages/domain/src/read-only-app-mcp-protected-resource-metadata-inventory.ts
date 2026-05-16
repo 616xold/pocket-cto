@@ -253,6 +253,9 @@ export function isFp0118ProtectedResourceMetadataNoOpenAiProofSourcePath(
     /^packages\/domain\/src\/read-only-app-mcp-protected-resource-metadata.*\.ts$/u.test(
       normalized,
     ) ||
+    /^packages\/domain\/src\/read-only-app-mcp-canonical-resource.*\.ts$/u.test(
+      normalized,
+    ) ||
     /^packages\/domain\/src\/read-only-app-mcp-oauth-implementation-sequencing.*\.ts$/u.test(
       normalized,
     ) ||

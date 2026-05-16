@@ -129,6 +129,9 @@ export function isFp0117OauthSequencingNoOpenAiProofSourcePath(path: string) {
     /^packages\/domain\/src\/read-only-app-mcp-oauth-implementation-sequencing.*\.ts$/u.test(
       normalized,
     ) ||
+    /^packages\/domain\/src\/read-only-app-mcp-canonical-resource.*\.ts$/u.test(
+      normalized,
+    ) ||
     /^packages\/domain\/src\/read-only-app-mcp-remote-host-resource.*\.ts$/u.test(
       normalized,
     ) ||

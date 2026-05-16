@@ -32,6 +32,11 @@ import {
   type McpProtectedResourceMetadataInventoryProofInput,
 } from "./read-only-app-mcp-protected-resource-metadata-inventory";
 import {
+  buildMcpCanonicalResourceAuthServerContracts,
+  verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts,
+  verifyFp0121Absent,
+} from "./read-only-app-mcp-canonical-resource";
+import {
   MCP_PUBLIC_MCP_ENDPOINT_PATH,
   MCP_PROTECTED_RESOURCE_METADATA_REQUIREMENTS,
 } from "./read-only-app-mcp-remote-host-resource-contracts";
@@ -84,7 +89,28 @@ export const McpProtectedResourceMetadataProofSchema = z
     fp0118AbsentOrLocalProtectedResourceMetadataContractsVerified: trueLiteral,
     fp0119AbsentOrDocsOnlyProtectedResourceMetadataRouteSequencingPlanVerified:
       trueLiteral,
-    fp0120Absent: trueLiteral,
+    fp0120AbsentOrLocalCanonicalResourceAuthServerContractsVerified:
+      trueLiteral,
+    fp0121Absent: trueLiteral,
+    canonicalResourceAuthServerContractsFoundationVerified: trueLiteral,
+    noRouteBehaviorChangeFromFp0120: trueLiteral,
+    noNewRoutePathFromFp0120: trueLiteral,
+    noProtectedResourceMetadataRouteFromFp0120: trueLiteral,
+    noWwwAuthenticateRouteBehaviorFromFp0120: trueLiteral,
+    noOauthImplementationFromFp0120: trueLiteral,
+    noTokenSessionImplementationFromFp0120: trueLiteral,
+    noAuthMiddlewareImplementationFromFp0120: trueLiteral,
+    noRemoteMcpDeploymentFromFp0120: trueLiteral,
+    noDeploymentConfigFromFp0120: trueLiteral,
+    noAppsSdkResourceFromFp0120: trueLiteral,
+    noAppSubmissionFromFp0120: trueLiteral,
+    noDbQueriesFromFp0120: trueLiteral,
+    noSchemaMigrationsFromFp0120: trueLiteral,
+    noPackageScriptsFromFp0120: trueLiteral,
+    noOpenAiApiCallsFromFp0120: trueLiteral,
+    noProviderExternalCallsFromFp0120: trueLiteral,
+    noSourceMutationFinanceWriteFromFp0120: trueLiteral,
+    noPublicAssetsSubmissionArtifactsFromFp0120: trueLiteral,
     protectedResourceMetadataRouteSequencingPlanBoundaryVerified: trueLiteral,
     noRouteBehaviorChangeFromFp0119: trueLiteral,
     noNewRoutePathFromFp0119: trueLiteral,
@@ -326,7 +352,13 @@ export function buildMcpProtectedResourceMetadataProof(
     fp0119AbsentOrDocsOnlyProtectedResourceMetadataRouteSequencingPlanVerified:
       input.fp0119AbsentOrDocsOnlyProtectedResourceMetadataRouteSequencingPlanVerified ??
       true,
-    fp0120Absent: input.fp0120Absent ?? true,
+    canonicalResourceAuthServerContractsFoundationVerified:
+      input.canonicalResourceAuthServerContractsFoundationVerified ??
+      buildMcpCanonicalResourceAuthServerContracts().proofContract.contractOnly,
+    fp0120AbsentOrLocalCanonicalResourceAuthServerContractsVerified:
+      input.fp0120AbsentOrLocalCanonicalResourceAuthServerContractsVerified ??
+      true,
+    fp0121Absent: input.fp0121Absent ?? true,
     localProofOnly: true,
     noAppSubmission: input.noAppSubmission ?? true,
     noAppsSdkResourceImplementation:
@@ -345,52 +377,85 @@ export function buildMcpProtectedResourceMetadataProof(
     noOpenAiApiCalls: input.noOpenAiApiCalls ?? true,
     noOpenAiClientOrKeyUsage: input.noOpenAiClientOrKeyUsage ?? true,
     noAppSubmissionFromFp0119: input.noAppSubmissionFromFp0119 ?? true,
+    noAppSubmissionFromFp0120: input.noAppSubmissionFromFp0120 ?? true,
     noAppsSdkResourceFromFp0119:
       input.noAppsSdkResourceFromFp0119 ?? true,
+    noAppsSdkResourceFromFp0120:
+      input.noAppsSdkResourceFromFp0120 ?? true,
     noAuthMiddlewareImplementationFromFp0119:
       input.noAuthMiddlewareImplementationFromFp0119 ?? true,
+    noAuthMiddlewareImplementationFromFp0120:
+      input.noAuthMiddlewareImplementationFromFp0120 ?? true,
     noDbQueriesFromFp0119: input.noDbQueriesFromFp0119 ?? true,
+    noDbQueriesFromFp0120: input.noDbQueriesFromFp0120 ?? true,
     noDeploymentConfigFromFp0119:
       input.noDeploymentConfigFromFp0119 ?? true,
+    noDeploymentConfigFromFp0120:
+      input.noDeploymentConfigFromFp0120 ?? true,
     noListingCopyGeneratedPublicProseFromFp0119:
       input.noListingCopyGeneratedPublicProseFromFp0119 ?? true,
     noNewRoutePathFromFp0119: input.noNewRoutePathFromFp0119 ?? true,
+    noNewRoutePathFromFp0120: input.noNewRoutePathFromFp0120 ?? true,
     noOauthImplementationFromFp0119:
       input.noOauthImplementationFromFp0119 ?? true,
+    noOauthImplementationFromFp0120:
+      input.noOauthImplementationFromFp0120 ?? true,
     noOpenAiApiCallsFromFp0119: input.noOpenAiApiCallsFromFp0119 ?? true,
+    noOpenAiApiCallsFromFp0120:
+      input.noOpenAiApiCallsFromFp0120 ?? true,
     noPackageScriptsAdded: input.noPackageScriptsAdded ?? true,
     noPackageScriptsFromFp0119:
       input.noPackageScriptsFromFp0119 ?? true,
+    noPackageScriptsFromFp0120:
+      input.noPackageScriptsFromFp0120 ?? true,
     noProtectedResourceMetadataRouteImplementation:
       input.noProtectedResourceMetadataRouteImplementation ?? true,
     noProtectedResourceMetadataRouteFromFp0119:
       input.noProtectedResourceMetadataRouteFromFp0119 ?? true,
+    noProtectedResourceMetadataRouteFromFp0120:
+      input.noProtectedResourceMetadataRouteFromFp0120 ?? true,
     noProviderCalls: input.noProviderCalls ?? true,
     noProviderExternalCallsFromFp0119:
       input.noProviderExternalCallsFromFp0119 ?? true,
+    noProviderExternalCallsFromFp0120:
+      input.noProviderExternalCallsFromFp0120 ?? true,
     noPublicAssets: input.noPublicAssets ?? true,
     noPublicAssetsSubmissionArtifactsFromFp0119:
       input.noPublicAssetsSubmissionArtifactsFromFp0119 ?? true,
+    noPublicAssetsSubmissionArtifactsFromFp0120:
+      input.noPublicAssetsSubmissionArtifactsFromFp0120 ?? true,
     noRemoteMcpDeployment: input.noRemoteMcpDeployment ?? true,
     noRemoteMcpDeploymentFromFp0119:
       input.noRemoteMcpDeploymentFromFp0119 ?? true,
+    noRemoteMcpDeploymentFromFp0120:
+      input.noRemoteMcpDeploymentFromFp0120 ?? true,
     noRouteBehaviorChange: input.noRouteBehaviorChange ?? true,
     noRouteBehaviorChangeFromFp0119:
       input.noRouteBehaviorChangeFromFp0119 ?? true,
+    noRouteBehaviorChangeFromFp0120:
+      input.noRouteBehaviorChangeFromFp0120 ?? true,
     noSchemaMigrationsAdded: input.noSchemaMigrationsAdded ?? true,
     noSchemaMigrationsFromFp0119:
       input.noSchemaMigrationsFromFp0119 ?? true,
+    noSchemaMigrationsFromFp0120:
+      input.noSchemaMigrationsFromFp0120 ?? true,
     noSourceMutation: input.noSourceMutation ?? true,
     noSourceMutationFinanceWriteFromFp0119:
       input.noSourceMutationFinanceWriteFromFp0119 ?? true,
+    noSourceMutationFinanceWriteFromFp0120:
+      input.noSourceMutationFinanceWriteFromFp0120 ?? true,
     noTokenSessionImplementation:
       input.noTokenSessionImplementation ?? true,
     noTokenSessionImplementationFromFp0119:
       input.noTokenSessionImplementationFromFp0119 ?? true,
+    noTokenSessionImplementationFromFp0120:
+      input.noTokenSessionImplementationFromFp0120 ?? true,
     noWwwAuthenticateRouteBehaviorImplementation:
       input.noWwwAuthenticateRouteBehaviorImplementation ?? true,
     noWwwAuthenticateRouteBehaviorFromFp0119:
       input.noWwwAuthenticateRouteBehaviorFromFp0119 ?? true,
+    noWwwAuthenticateRouteBehaviorFromFp0120:
+      input.noWwwAuthenticateRouteBehaviorFromFp0120 ?? true,
     protectedResourceAuthorizationServersBoundaryVerified:
       input.protectedResourceAuthorizationServersBoundaryVerified ??
       McpProtectedResourceAuthorizationServersBoundarySchema.safeParse(
@@ -621,9 +686,9 @@ export function verifyFp0119ProtectedResourceMetadataRouteSequencingPlanBoundary
   );
 }
 
-export function verifyFp0120Absent(repoPaths: readonly string[]) {
-  return !repoPaths.some((path) => /(^|\/)FP-0120/u.test(path));
-}
+export { verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts };
+
+export { verifyFp0121Absent };
 
 export function verifyFp0119PlanningTextRequiredTopics(planText: string) {
   const normalized = normalize(planText);

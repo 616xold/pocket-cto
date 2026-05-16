@@ -1,13 +1,13 @@
 # Codex Plugins
 
-This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0119 protected-resource metadata route implementation sequencing plan and proof-gate compatibility slice.
+This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0120 canonical resource/auth-server readiness contracts and proof-gate compatibility slice.
 
 ## Repo-local plugin used
 
 - `pocket-cfo-codex-operator`
   - Marketplace entry: `.agents/plugins/marketplace.json`
   - Bundle path: `plugins/pocket-cfo-codex-operator/`
-  - Skills invoked for this FP-0119 docs-and-plan/proof-gate-only protected-resource metadata route implementation sequencing, WWW-Authenticate `resource_metadata` challenge sequencing, FP-0118 proof-durability polish, doc-refresh, validation, and handoff slice:
+  - Skills invoked for this FP-0120 local/proof-only/read-only canonical public MCP resource URI, `authorization_servers`, route-derivation, no-route-runtime, proof-gate bridge, doc-refresh, validation, and handoff slice:
     - Finance Plan Orchestrator
     - Modular Architecture Guard
     - Source Provenance Guard
