@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   FP0118_PROTECTED_RESOURCE_METADATA_PLAN_PATH,
   FP0119_PROTECTED_RESOURCE_METADATA_ROUTE_SEQUENCING_PLAN_PATH,
+  MCP_PROTECTED_RESOURCE_METADATA_KNOWN_SAFE_ROUTE_LIKE_PATHS,
   MCP_PROTECTED_RESOURCE_METADATA_BEARER_METHODS,
   MCP_PROTECTED_RESOURCE_METADATA_TOKEN_LEAKAGE_SURFACES,
   MCP_PROTECTED_RESOURCE_TOKEN_FAILURE_MODES,
@@ -24,6 +25,7 @@ import {
   buildMcpProtectedResourceMetadataContracts,
   buildMcpProtectedResourceMetadataProof,
   isFp0118ProtectedResourceMetadataNoOpenAiProofSourcePath,
+  listMcpProtectedResourceMetadataRouteLikeRepositoryPaths,
   textHasProtectedResourceTokenLeakage,
   validateMcpProtectedResourceCanonicalUriCandidate,
   validateMcpProtectedResourceMetadataDocumentCandidate,
@@ -409,6 +411,10 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
   });
 
   it("proves local route posture and repository inventory remain unchanged", () => {
+    const routeLikeRepositoryPaths =
+      listMcpProtectedResourceMetadataRouteLikeRepositoryPaths(
+        repoFilePaths(),
+      );
     const inventory = verifyMcpProtectedResourceMetadataRepositoryInventory({
       repoPaths: repoFilePaths(),
       routeSourceText: safeRead(
@@ -420,9 +426,17 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     expect(inventory.protectedResourceRouteRepositoryInventoryVerified).toBe(
       true,
     );
+    expect(routeLikeRepositoryPaths).toEqual([
+      ...MCP_PROTECTED_RESOURCE_METADATA_KNOWN_SAFE_ROUTE_LIKE_PATHS,
+    ]);
     expect(inventory.noNewRoutePathRepositoryInventoryVerified).toBe(true);
+    expect(inventory.knownSafeRouteInventoryVerified).toBe(true);
+    expect(inventory.noUnexpectedRouteLikeRepositoryPaths).toBe(true);
+    expect(inventory.unexpectedRouteLikeRepositoryPaths).toEqual([]);
+    expect(inventory.missingKnownSafeRouteLikeRepositoryPaths).toEqual([]);
     expect(inventory.fp0118RouteInventoryDurabilityVerified).toBe(true);
     expect(inventory.fp0118PostmergeProofDurabilityVerified).toBe(true);
+    expect(inventory.fp0119PostmergeRouteInventoryProofVerified).toBe(true);
     expect(inventory.wwwAuthenticateRouteRepositoryInventoryVerified).toBe(
       true,
     );
@@ -443,36 +457,77 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
   });
 
   it("rejects simulated route inventory, WWW-Authenticate route behavior, OAuth, token/session, and auth middleware", () => {
+    const currentSafeRoutePaths = [
+      ...MCP_PROTECTED_RESOURCE_METADATA_KNOWN_SAFE_ROUTE_LIKE_PATHS,
+    ];
+
     expect(
       verifyMcpProtectedResourceMetadataRepositoryInventory({
-        changedPaths: ["apps/web/app/.well-known/oauth-protected-resource/route.ts"],
-        repoPaths: ["apps/web/app/.well-known/oauth-protected-resource/route.ts"],
+        repoPaths: [
+          ...currentSafeRoutePaths,
+          "apps/web/app/.well-known/oauth-protected-resource/route.ts",
+        ],
       }).protectedResourceRouteRepositoryInventoryVerified,
     ).toBe(false);
     expect(
       verifyMcpProtectedResourceMetadataRepositoryInventory({
-        changedPaths: ["apps/web/app/protected-resource-metadata/route.ts"],
-        repoPaths: ["apps/web/app/protected-resource-metadata/route.ts"],
+        repoPaths: [
+          ...currentSafeRoutePaths,
+          "apps/web/app/.well-known/oauth-protected-resource/route.ts",
+        ],
       }).noNewRoutePathRepositoryInventoryVerified,
     ).toBe(false);
     expect(
       verifyMcpProtectedResourceMetadataRepositoryInventory({
-        changedPaths: ["apps/web/pages/api/oauth-protected-resource.ts"],
-        repoPaths: ["apps/web/pages/api/oauth-protected-resource.ts"],
+        repoPaths: [
+          ...currentSafeRoutePaths,
+          "apps/web/app/.well-known/oauth-protected-resource/route.ts",
+        ],
+      }).noUnexpectedRouteLikeRepositoryPaths,
+    ).toBe(false);
+    expect(
+      verifyMcpProtectedResourceMetadataRepositoryInventory({
+        repoPaths: [
+          ...currentSafeRoutePaths,
+          "apps/web/app/protected-resource-metadata/route.ts",
+        ],
       }).protectedResourceRouteRepositoryInventoryVerified,
     ).toBe(false);
     expect(
       verifyMcpProtectedResourceMetadataRepositoryInventory({
-        changedPaths: [
-          "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts",
-        ],
         repoPaths: [
-          "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts",
+          ...currentSafeRoutePaths,
+          "apps/web/app/protected-resource-metadata/route.ts",
         ],
+      }).fp0119PostmergeRouteInventoryProofVerified,
+    ).toBe(false);
+    expect(
+      verifyMcpProtectedResourceMetadataRepositoryInventory({
+        repoPaths: [
+          ...currentSafeRoutePaths,
+          "apps/web/pages/api/oauth-protected-resource.ts",
+        ],
+      }).protectedResourceRouteRepositoryInventoryVerified,
+    ).toBe(false);
+    expect(
+      verifyMcpProtectedResourceMetadataRepositoryInventory({
+        repoPaths: currentSafeRoutePaths,
         routeSourceText:
           'reply.header("WWW-Authenticate", "Bearer resource_metadata=...")',
       }).wwwAuthenticateRouteRepositoryInventoryVerified,
     ).toBe(false);
+    expect(
+      verifyMcpProtectedResourceMetadataRepositoryInventory({
+        repoPaths: [
+          ...currentSafeRoutePaths,
+          "apps/control-plane/src/modules/new-public-route/routes.ts",
+        ],
+      }),
+    ).toMatchObject({
+      knownSafeRouteInventoryVerified: false,
+      noNewRoutePathRepositoryInventoryVerified: false,
+      noUnexpectedRouteLikeRepositoryPaths: false,
+    });
     expect(
       verifyMcpProtectedResourceMetadataRepositoryInventory({
         repoPaths: [
@@ -496,13 +551,25 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     expect(
       verifyMcpProtectedResourceMetadataRepositoryInventory({
         changedPaths: ["docs/notes/fp-0119-safe-doc.md"],
-        repoPaths: ["docs/notes/fp-0119-safe-doc.md"],
+        repoPaths: [...currentSafeRoutePaths, "docs/notes/fp-0119-safe-doc.md"],
       }),
     ).toMatchObject({
       fp0118RouteInventoryDurabilityVerified: true,
+      fp0119PostmergeRouteInventoryProofVerified: true,
+      knownSafeRouteInventoryVerified: true,
       noNewRoutePathRepositoryInventoryVerified: true,
+      noUnexpectedRouteLikeRepositoryPaths: true,
       protectedResourceRouteRepositoryInventoryVerified: true,
       wwwAuthenticateRouteRepositoryInventoryVerified: true,
+    });
+    expect(
+      verifyMcpProtectedResourceMetadataRepositoryInventory({
+        repoPaths: currentSafeRoutePaths,
+      }),
+    ).toMatchObject({
+      fp0119PostmergeRouteInventoryProofVerified: true,
+      knownSafeRouteInventoryVerified: true,
+      noUnexpectedRouteLikeRepositoryPaths: true,
     });
   });
 

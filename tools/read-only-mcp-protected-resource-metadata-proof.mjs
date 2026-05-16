@@ -150,6 +150,10 @@ const proof = McpProtectedResourceMetadataProofSchema.parse(
       durableSourceScan.protectedResourceMetadataNoOpenAiApiSourceScanVerified,
     fp0118RouteInventoryDurabilityVerified:
       repositoryInventory.fp0118RouteInventoryDurabilityVerified,
+    fp0119PostmergeRouteInventoryProofVerified:
+      repositoryInventory.fp0119PostmergeRouteInventoryProofVerified,
+    knownSafeRouteInventoryVerified:
+      repositoryInventory.knownSafeRouteInventoryVerified,
     noAppSubmission: scopeScan.noAppSubmission,
     noAppsSdkResourceImplementation: scopeScan.noAppsSdkResource,
     noAuthMiddlewareImplementation:
@@ -239,6 +243,8 @@ const proof = McpProtectedResourceMetadataProofSchema.parse(
       repositoryInventory.wwwAuthenticateRouteRepositoryInventoryVerified,
     noNewRoutePathRepositoryInventoryVerified:
       repositoryInventory.noNewRoutePathRepositoryInventoryVerified,
+    noUnexpectedRouteLikeRepositoryPaths:
+      repositoryInventory.noUnexpectedRouteLikeRepositoryPaths,
     oauthRuntimeRepositoryInventoryVerified:
       repositoryInventory.oauthRuntimeRepositoryInventoryVerified,
     protectedResourceMetadataNoOpenAiApiSourceScanVerified:
@@ -384,7 +390,7 @@ function changedScopeScan() {
 
 function isRouteLikeRuntimePath(path) {
   return (
-    /^apps\/web\/app\/.*\/route\.ts$/u.test(path) ||
+    /^apps\/web\/app\/(?:.*\/)?route\.ts$/u.test(path) ||
     path.startsWith("apps/web/pages/api/") ||
     /^apps\/control-plane\/src\/.*\/routes\.ts$/u.test(path) ||
     /^apps\/control-plane\/src\/.*(?:route|router|controller)\.ts$/u.test(path)

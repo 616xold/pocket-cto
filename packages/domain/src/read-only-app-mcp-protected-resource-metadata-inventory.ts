@@ -5,6 +5,8 @@ const trueLiteral = z.literal(true);
 export const McpProtectedResourceMetadataInventoryProofSchema = z
   .object({
     noNewRoutePathRepositoryInventoryVerified: trueLiteral,
+    knownSafeRouteInventoryVerified: trueLiteral,
+    noUnexpectedRouteLikeRepositoryPaths: trueLiteral,
     protectedResourceRouteRepositoryInventoryVerified: trueLiteral,
     wwwAuthenticateRouteRepositoryInventoryVerified: trueLiteral,
     oauthRuntimeRepositoryInventoryVerified: trueLiteral,
@@ -14,6 +16,7 @@ export const McpProtectedResourceMetadataInventoryProofSchema = z
     protectedResourceMetadataNoOpenAiApiSourceScanVerified: trueLiteral,
     fp0118PostmergeProofDurabilityVerified: trueLiteral,
     fp0118RouteInventoryDurabilityVerified: trueLiteral,
+    fp0119PostmergeRouteInventoryProofVerified: trueLiteral,
   })
   .strict();
 
@@ -32,13 +35,45 @@ export type McpProtectedResourceMetadataInventoryProofInput =
 export type McpProtectedResourceMetadataRepositoryInventoryResult = Omit<
   InventoryBooleanFields,
   "protectedResourceMetadataNoOpenAiApiSourceScanVerified"
->;
+> & {
+  missingKnownSafeRouteLikeRepositoryPaths: readonly string[];
+  routeLikeRepositoryPaths: readonly string[];
+  unexpectedRouteLikeRepositoryPaths: readonly string[];
+};
+
+export const MCP_PROTECTED_RESOURCE_METADATA_KNOWN_SAFE_ROUTE_LIKE_PATHS = [
+  "apps/control-plane/src/modules/approvals/routes.ts",
+  "apps/control-plane/src/modules/close-control-acknowledgement/routes.ts",
+  "apps/control-plane/src/modules/close-control-certification-boundary/routes.ts",
+  "apps/control-plane/src/modules/close-control-certification-safety/routes.ts",
+  "apps/control-plane/src/modules/close-control-review-summary/routes.ts",
+  "apps/control-plane/src/modules/close-control/routes.ts",
+  "apps/control-plane/src/modules/delivery-readiness/routes.ts",
+  "apps/control-plane/src/modules/external-delivery-human-confirmation-boundary/routes.ts",
+  "apps/control-plane/src/modules/external-provider-boundary/routes.ts",
+  "apps/control-plane/src/modules/finance-twin/routes.ts",
+  "apps/control-plane/src/modules/github-app/routes.ts",
+  "apps/control-plane/src/modules/health/routes.ts",
+  "apps/control-plane/src/modules/missions/routes.ts",
+  "apps/control-plane/src/modules/monitoring/routes.ts",
+  "apps/control-plane/src/modules/operator-readiness/routes.ts",
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts",
+  "apps/control-plane/src/modules/replay/routes.ts",
+  "apps/control-plane/src/modules/runtime-codex/routes.ts",
+  "apps/control-plane/src/modules/sources/routes.ts",
+  "apps/control-plane/src/modules/twin/routes.ts",
+  "apps/control-plane/src/modules/wiki/routes.ts",
+] as const;
 
 export function buildMcpProtectedResourceMetadataInventoryProof(
   input: McpProtectedResourceMetadataInventoryProofInput = {},
 ): McpProtectedResourceMetadataInventoryProof {
   const noNewRoutePathRepositoryInventoryVerified =
     input.noNewRoutePathRepositoryInventoryVerified ?? true;
+  const knownSafeRouteInventoryVerified =
+    input.knownSafeRouteInventoryVerified ?? true;
+  const noUnexpectedRouteLikeRepositoryPaths =
+    input.noUnexpectedRouteLikeRepositoryPaths ?? true;
   const protectedResourceRouteRepositoryInventoryVerified =
     input.protectedResourceRouteRepositoryInventoryVerified ?? true;
   const wwwAuthenticateRouteRepositoryInventoryVerified =
@@ -59,6 +94,8 @@ export function buildMcpProtectedResourceMetadataInventoryProof(
     fp0118PostmergeProofDurabilityVerified:
       (input.fp0118PostmergeProofDurabilityVerified ?? true) &&
       noNewRoutePathRepositoryInventoryVerified &&
+      knownSafeRouteInventoryVerified &&
+      noUnexpectedRouteLikeRepositoryPaths &&
       protectedResourceRouteRepositoryInventoryVerified &&
       wwwAuthenticateRouteRepositoryInventoryVerified &&
       oauthRuntimeRepositoryInventoryVerified &&
@@ -69,9 +106,20 @@ export function buildMcpProtectedResourceMetadataInventoryProof(
     fp0118RouteInventoryDurabilityVerified:
       (input.fp0118RouteInventoryDurabilityVerified ?? true) &&
       noNewRoutePathRepositoryInventoryVerified &&
+      knownSafeRouteInventoryVerified &&
+      noUnexpectedRouteLikeRepositoryPaths &&
       protectedResourceRouteRepositoryInventoryVerified &&
       wwwAuthenticateRouteRepositoryInventoryVerified,
+    fp0119PostmergeRouteInventoryProofVerified:
+      (input.fp0119PostmergeRouteInventoryProofVerified ?? true) &&
+      noNewRoutePathRepositoryInventoryVerified &&
+      knownSafeRouteInventoryVerified &&
+      noUnexpectedRouteLikeRepositoryPaths &&
+      protectedResourceRouteRepositoryInventoryVerified &&
+      wwwAuthenticateRouteRepositoryInventoryVerified,
+    knownSafeRouteInventoryVerified,
     noNewRoutePathRepositoryInventoryVerified,
+    noUnexpectedRouteLikeRepositoryPaths,
     oauthRuntimeRepositoryInventoryVerified,
     protectedResourceMetadataNoOpenAiApiSourceScanVerified,
     protectedResourceRouteRepositoryInventoryVerified,
@@ -84,15 +132,36 @@ export function buildMcpProtectedResourceMetadataInventoryProof(
 export function verifyMcpProtectedResourceMetadataRepositoryInventory(input: {
   repoPaths: readonly string[];
   changedPaths?: readonly string[];
+  knownSafeRouteLikePaths?: readonly string[];
   routeSourceText?: string;
 }): McpProtectedResourceMetadataRepositoryInventoryResult {
   const runtimePaths = input.repoPaths.map(normalizePath).filter(isRuntimePath);
+  const routeLikeRepositoryPaths =
+    listMcpProtectedResourceMetadataRouteLikeRepositoryPaths(input.repoPaths);
+  const knownSafeRouteLikePaths = sortUnique(
+    (
+      input.knownSafeRouteLikePaths ??
+      MCP_PROTECTED_RESOURCE_METADATA_KNOWN_SAFE_ROUTE_LIKE_PATHS
+    ).map(normalizePath),
+  );
+  const unexpectedRouteLikeRepositoryPaths = routeLikeRepositoryPaths.filter(
+    (path) => !knownSafeRouteLikePaths.includes(path),
+  );
+  const missingKnownSafeRouteLikeRepositoryPaths = knownSafeRouteLikePaths.filter(
+    (path) => !routeLikeRepositoryPaths.includes(path),
+  );
+  const noUnexpectedRouteLikeRepositoryPaths =
+    unexpectedRouteLikeRepositoryPaths.length === 0;
+  const knownSafeRouteInventoryVerified =
+    noUnexpectedRouteLikeRepositoryPaths &&
+    missingKnownSafeRouteLikeRepositoryPaths.length === 0;
   const changedRouteLikePaths = (input.changedPaths ?? [])
     .map(normalizePath)
     .filter(isRouteLikeRuntimePath);
   const routeSourceText = input.routeSourceText ?? "";
   const noNewRoutePathRepositoryInventoryVerified =
     changedRouteLikePaths.length === 0 &&
+    knownSafeRouteInventoryVerified &&
     !routeSourceHasProtectedResourceMetadataBehavior(routeSourceText) &&
     !routeSourceHasWwwAuthenticateBehavior(routeSourceText);
   const protectedResourceRouteRepositoryInventoryVerified =
@@ -118,6 +187,8 @@ export function verifyMcpProtectedResourceMetadataRepositoryInventory(input: {
     authMiddlewareRepositoryInventoryVerified,
     fp0118PostmergeProofDurabilityVerified:
       noNewRoutePathRepositoryInventoryVerified &&
+      knownSafeRouteInventoryVerified &&
+      noUnexpectedRouteLikeRepositoryPaths &&
       protectedResourceRouteRepositoryInventoryVerified &&
       wwwAuthenticateRouteRepositoryInventoryVerified &&
       oauthRuntimeRepositoryInventoryVerified &&
@@ -126,15 +197,34 @@ export function verifyMcpProtectedResourceMetadataRepositoryInventory(input: {
       remoteMcpDeploymentRepositoryInventoryVerified,
     fp0118RouteInventoryDurabilityVerified:
       noNewRoutePathRepositoryInventoryVerified &&
+      knownSafeRouteInventoryVerified &&
+      noUnexpectedRouteLikeRepositoryPaths &&
       protectedResourceRouteRepositoryInventoryVerified &&
       wwwAuthenticateRouteRepositoryInventoryVerified,
+    fp0119PostmergeRouteInventoryProofVerified:
+      noNewRoutePathRepositoryInventoryVerified &&
+      knownSafeRouteInventoryVerified &&
+      noUnexpectedRouteLikeRepositoryPaths &&
+      protectedResourceRouteRepositoryInventoryVerified &&
+      wwwAuthenticateRouteRepositoryInventoryVerified,
+    knownSafeRouteInventoryVerified,
+    missingKnownSafeRouteLikeRepositoryPaths,
     noNewRoutePathRepositoryInventoryVerified,
+    noUnexpectedRouteLikeRepositoryPaths,
     oauthRuntimeRepositoryInventoryVerified,
     protectedResourceRouteRepositoryInventoryVerified,
+    routeLikeRepositoryPaths,
     remoteMcpDeploymentRepositoryInventoryVerified,
     tokenSessionRepositoryInventoryVerified,
+    unexpectedRouteLikeRepositoryPaths,
     wwwAuthenticateRouteRepositoryInventoryVerified,
   };
+}
+
+export function listMcpProtectedResourceMetadataRouteLikeRepositoryPaths(
+  repoPaths: readonly string[],
+) {
+  return sortUnique(repoPaths.map(normalizePath).filter(isRouteLikeRuntimePath));
 }
 
 export function verifyMcpProtectedResourceMetadataNoOpenAiApiSourceScan(input: {
@@ -253,7 +343,7 @@ function isSafeDocsOrProofAbsenceText(line: string) {
 function isRuntimePath(path: string) {
   return (
     path.startsWith("apps/control-plane/src/") ||
-    /^apps\/web\/app\/.*\/route\.ts$/u.test(path) ||
+    /^apps\/web\/app\/(?:.*\/)?route\.ts$/u.test(path) ||
     path.startsWith("apps/web/app/api/") ||
     path.startsWith("apps/web/pages/api/")
   );
@@ -261,7 +351,7 @@ function isRuntimePath(path: string) {
 
 function isRouteLikeRuntimePath(path: string) {
   return (
-    /^apps\/web\/app\/.*\/route\.ts$/u.test(path) ||
+    /^apps\/web\/app\/(?:.*\/)?route\.ts$/u.test(path) ||
     path.startsWith("apps/web/pages/api/") ||
     /^apps\/control-plane\/src\/.*\/routes\.ts$/u.test(path) ||
     /^apps\/control-plane\/src\/.*(?:route|router|controller)\.ts$/u.test(path)
@@ -305,7 +395,7 @@ function isRemoteMcpRuntimePath(path: string) {
 }
 
 function routeSourceHasProtectedResourceMetadataBehavior(sourceText: string) {
-  return /(?:\.well-known\/oauth-protected-resource|oauth-protected-resource|protected-resource-metadata|resource_metadata)/iu.test(
+  return /(?:\.well-known\/oauth-protected-resource|oauth-protected-resource|protected-resource-metadata|resource-metadata|resource_metadata)/iu.test(
     sourceText,
   );
 }
@@ -318,6 +408,10 @@ function routeSourceHasWwwAuthenticateBehavior(sourceText: string) {
 
 function normalizePath(path: string) {
   return path.replace(/\\/gu, "/");
+}
+
+function sortUnique(values: readonly string[]) {
+  return [...new Set(values)].sort();
 }
 
 function escapeRegExp(value: string) {
