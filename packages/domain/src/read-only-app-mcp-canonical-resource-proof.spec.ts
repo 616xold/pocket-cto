@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH,
+  FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
   MCP_CANONICAL_RESOURCE_AUTH_SERVER_KNOWN_SAFE_ROUTE_LIKE_PATHS,
   McpAuthorizationServersReadinessBoundarySchema,
   McpCanonicalResourceAuthServerProofSchema,
@@ -13,7 +14,10 @@ import {
   isFp0120CanonicalResourceAuthServerProofSourcePath,
   verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts,
   verifyFp0120CanonicalResourceAuthServerPlanBoundary,
-  verifyFp0121Absent,
+  verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning,
+  verifyFp0121PlanningTextRequiredTopics,
+  verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
+  verifyFp0122Absent,
   verifyMcpCanonicalResourceAuthServerNoOpenAiApiSourceScan,
   verifyMcpCanonicalResourceAuthServerRepositoryInventory,
 } from "./read-only-app-mcp-canonical-resource";
@@ -38,11 +42,15 @@ function verified(value: boolean): true {
 }
 
 describe("FP-0120 canonical resource/auth-server readiness contracts", () => {
-  it("accepts exactly one FP-0120 path while FP-0121 remains absent", () => {
+  it("accepts exact FP-0120 and FP-0121 planning paths while FP-0122 remains absent", () => {
     const repoPaths = repoFilePaths();
     const planText = safeRead(FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH);
+    const fp0121PlanText = safeRead(
+      FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+    );
     const fp0120Hits = repoPaths.filter((path) => /(^|\/)FP-0120/u.test(path));
     const fp0121Hits = repoPaths.filter((path) => /(^|\/)FP-0121/u.test(path));
+    const fp0122Hits = repoPaths.filter((path) => /(^|\/)FP-0122/u.test(path));
     const proof = buildMcpCanonicalResourceAuthServerProof({
       fp0120AbsentOrLocalCanonicalResourceAuthServerContractsVerified:
         verified(
@@ -57,20 +65,53 @@ describe("FP-0120 canonical resource/auth-server readiness contracts", () => {
           repoPaths,
         }),
       ),
-      fp0121Absent: verified(verifyFp0121Absent(repoPaths)),
+      fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified:
+        verified(
+          verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning(
+            {
+              planText: fp0121PlanText,
+              repoPaths,
+            },
+          ),
+        ),
+      fp0122Absent: verified(verifyFp0122Absent(repoPaths)),
+      protectedResourceMetadataRouteImplementationPlanningBoundaryVerified:
+        verified(
+          verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary(
+            {
+              planText: fp0121PlanText,
+              repoPaths,
+            },
+          ),
+        ),
     });
 
     expect(fp0120Hits).toEqual([FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH]);
-    expect(fp0121Hits).toEqual([]);
+    expect(fp0121Hits).toEqual([
+      FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+    ]);
+    expect(fp0122Hits).toEqual([]);
     expect(proof.fp0120BoundaryVerified).toBe(true);
     expect(
       proof.fp0120AbsentOrLocalCanonicalResourceAuthServerContractsVerified,
     ).toBe(true);
-    expect(proof.fp0121Absent).toBe(true);
+    expect(
+      proof
+        .fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified,
+    ).toBe(true);
+    expect(proof.fp0122Absent).toBe(true);
+    expect(
+      proof.protectedResourceMetadataRouteImplementationPlanningBoundaryVerified,
+    ).toBe(true);
+    expect(
+      Object.values(verifyFp0121PlanningTextRequiredTopics(fp0121PlanText)).every(
+        Boolean,
+      ),
+    ).toBe(true);
     expect(
       McpCanonicalResourceAuthServerProofSchema.safeParse({
         ...proof,
-        fp0121Absent: false,
+        fp0122Absent: false,
       }).success,
     ).toBe(false);
   });

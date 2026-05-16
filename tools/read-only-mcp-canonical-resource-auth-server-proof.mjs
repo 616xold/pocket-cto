@@ -5,6 +5,7 @@ import {
   FP0118_PROTECTED_RESOURCE_METADATA_PLAN_PATH,
   FP0119_PROTECTED_RESOURCE_METADATA_ROUTE_SEQUENCING_PLAN_PATH,
   FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH,
+  FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
   McpCanonicalResourceAuthServerProofSchema,
   buildMcpCanonicalResourceAuthServerProof,
   isFp0120CanonicalResourceAuthServerProofSourcePath,
@@ -15,7 +16,9 @@ import {
   verifyFp0119ProtectedResourceMetadataRouteSequencingPlanBoundary,
   verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts,
   verifyFp0120CanonicalResourceAuthServerPlanBoundary,
-  verifyFp0121Absent,
+  verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning,
+  verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
+  verifyFp0122Absent,
   verifyMcpCanonicalResourceAuthServerNoOpenAiApiSourceScan,
   verifyMcpCanonicalResourceAuthServerRepositoryInventory,
 } from "../packages/domain/src/index.ts";
@@ -47,6 +50,9 @@ const durableSourceScan =
     sourceText: readCanonicalResourceProofSourceText(),
   });
 const fp0120PlanText = safeRead(FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH);
+const fp0121PlanText = safeRead(
+  FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+);
 
 const proof = McpCanonicalResourceAuthServerProofSchema.parse(
   buildMcpCanonicalResourceAuthServerProof({
@@ -112,11 +118,25 @@ const proof = McpCanonicalResourceAuthServerProofSchema.parse(
     }),
     fp0120PostmergeRouteInventoryProofVerified:
       inventory.fp0120PostmergeRouteInventoryProofVerified,
-    fp0121Absent: verifyFp0121Absent(repoPaths),
+    fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified:
+      verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning(
+        {
+          planText: fp0121PlanText,
+          repoPaths,
+        },
+      ),
+    fp0122Absent: verifyFp0122Absent(repoPaths),
+    protectedResourceMetadataRouteImplementationPlanningBoundaryVerified:
+      verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary({
+        planText: fp0121PlanText,
+        repoPaths,
+      }),
     knownSafeRouteInventoryVerified:
       inventory.knownSafeRouteInventoryVerified,
     noAppSubmission: scopeScan.noAppSubmission,
+    noAppSubmissionFromFp0121: scopeScan.noAppSubmission,
     noAppSubmissionFromFp0120: scopeScan.noAppSubmission,
+    noAppsSdkResourceFromFp0121: scopeScan.noAppsSdkResource,
     noAppsSdkResourceFromFp0120: scopeScan.noAppsSdkResource,
     noAppsSdkResourceImplementation: scopeScan.noAppsSdkResource,
     noAuthMiddlewareImplementation:
@@ -125,9 +145,14 @@ const proof = McpCanonicalResourceAuthServerProofSchema.parse(
     noAuthMiddlewareImplementationFromFp0120:
       scopeScan.noAuthMiddlewareImplementation &&
       inventory.authMiddlewareRepositoryInventoryVerified,
+    noAuthMiddlewareImplementationFromFp0121:
+      scopeScan.noAuthMiddlewareImplementation &&
+      inventory.authMiddlewareRepositoryInventoryVerified,
     noDbQueriesAdded: scopeScan.noDbQueries,
+    noDbQueriesFromFp0121: scopeScan.noDbQueries,
     noDbQueriesFromFp0120: scopeScan.noDbQueries,
     noDeploymentConfig: scopeScan.noDeploymentConfig,
+    noDeploymentConfigFromFp0121: scopeScan.noDeploymentConfig,
     noDeploymentConfigFromFp0120: scopeScan.noDeploymentConfig,
     noExternalCommunications: scopeScan.noExternalCommunications,
     noFinanceWrite: scopeScan.noFinanceWrite,
@@ -142,10 +167,17 @@ const proof = McpCanonicalResourceAuthServerProofSchema.parse(
       scopeScan.noNewRoutePath &&
       inventory.noNewRoutePathRepositoryInventoryVerified &&
       localRouteShapeStillVerified(),
+    noNewRoutePathFromFp0121:
+      scopeScan.noNewRoutePath &&
+      inventory.noNewRoutePathRepositoryInventoryVerified &&
+      localRouteShapeStillVerified(),
     noOauthImplementation:
       scopeScan.noOauthImplementation &&
       inventory.oauthRuntimeRepositoryInventoryVerified,
     noOauthImplementationFromFp0120:
+      scopeScan.noOauthImplementation &&
+      inventory.oauthRuntimeRepositoryInventoryVerified,
+    noOauthImplementationFromFp0121:
       scopeScan.noOauthImplementation &&
       inventory.oauthRuntimeRepositoryInventoryVerified,
     noOpenAiApiCalls:
@@ -154,21 +186,38 @@ const proof = McpCanonicalResourceAuthServerProofSchema.parse(
     noOpenAiApiCallsFromFp0120:
       sourceScan.noOpenAiApiCalls &&
       durableSourceScan.canonicalResourceAuthServerNoOpenAiApiSourceScanVerified,
+    noOpenAiApiCallsFromFp0121:
+      sourceScan.noOpenAiApiCalls &&
+      durableSourceScan.canonicalResourceAuthServerNoOpenAiApiSourceScanVerified,
     noOpenAiClientOrKeyUsage:
       sourceScan.noOpenAiClientOrKeyUsage &&
       durableSourceScan.canonicalResourceAuthServerNoOpenAiApiSourceScanVerified,
     noPackageScriptsAdded: scopeScan.noPackageScripts,
+    noPackageScriptsFromFp0121: scopeScan.noPackageScripts,
     noPackageScriptsFromFp0120: scopeScan.noPackageScripts,
     noProtectedResourceMetadataRouteFromFp0120:
+      scopeScan.noProtectedResourceMetadataRoute &&
+      inventory.protectedResourceMetadataRouteRepositoryInventoryVerified,
+    noProtectedResourceMetadataRouteFromFp0121:
       scopeScan.noProtectedResourceMetadataRoute &&
       inventory.protectedResourceMetadataRouteRepositoryInventoryVerified,
     noProtectedResourceMetadataRouteImplementation:
       scopeScan.noProtectedResourceMetadataRoute &&
       inventory.protectedResourceMetadataRouteRepositoryInventoryVerified,
     noProviderCalls: scopeScan.noProviderCalls,
+    noProviderExternalCallsFromFp0121:
+      scopeScan.noProviderCalls && scopeScan.noExternalCommunications,
     noProviderExternalCallsFromFp0120:
       scopeScan.noProviderCalls && scopeScan.noExternalCommunications,
     noPublicAssets: scopeScan.noPublicAssets,
+    noPublicAppImplementationFromFp0121:
+      scopeScan.noPublicAppImplementation,
+    noFixturesSampleDataSourcePacksFromFp0121:
+      scopeScan.noFixturesSampleDataSourcePacks,
+    noListingCopyGeneratedPublicProseFromFp0121:
+      scopeScan.noListingCopy && scopeScan.noGeneratedPublicProse,
+    noPublicAssetsSubmissionArtifactsFromFp0121:
+      scopeScan.noPublicAssets && scopeScan.noAppSubmission,
     noPublicAssetsSubmissionArtifactsFromFp0120:
       scopeScan.noPublicAssets && scopeScan.noAppSubmission,
     noRemoteMcpDeployment:
@@ -177,14 +226,22 @@ const proof = McpCanonicalResourceAuthServerProofSchema.parse(
     noRemoteMcpDeploymentFromFp0120:
       scopeScan.noRemoteMcpDeployment &&
       inventory.remoteMcpDeploymentRepositoryInventoryVerified,
+    noRemoteMcpDeploymentFromFp0121:
+      scopeScan.noRemoteMcpDeployment &&
+      inventory.remoteMcpDeploymentRepositoryInventoryVerified,
     noRouteBehaviorChange:
       scopeScan.noRouteBehaviorChange && localRouteShapeStillVerified(),
     noRouteBehaviorChangeFromFp0120:
       scopeScan.noRouteBehaviorChange && localRouteShapeStillVerified(),
+    noRouteBehaviorChangeFromFp0121:
+      scopeScan.noRouteBehaviorChange && localRouteShapeStillVerified(),
     noSchemaMigrationsAdded: scopeScan.noSchemaMigrations,
+    noSchemaMigrationsFromFp0121: scopeScan.noSchemaMigrations,
     noSchemaMigrationsFromFp0120: scopeScan.noSchemaMigrations,
     noSourceMutation: scopeScan.noSourceMutation,
     noSourceMutationFinanceWriteFromFp0120:
+      scopeScan.noSourceMutation && scopeScan.noFinanceWrite,
+    noSourceMutationFinanceWriteFromFp0121:
       scopeScan.noSourceMutation && scopeScan.noFinanceWrite,
     noTokenSessionImplementation:
       scopeScan.noTokenSessionImplementation &&
@@ -192,7 +249,13 @@ const proof = McpCanonicalResourceAuthServerProofSchema.parse(
     noTokenSessionImplementationFromFp0120:
       scopeScan.noTokenSessionImplementation &&
       inventory.tokenSessionRepositoryInventoryVerified,
+    noTokenSessionImplementationFromFp0121:
+      scopeScan.noTokenSessionImplementation &&
+      inventory.tokenSessionRepositoryInventoryVerified,
     noWwwAuthenticateRouteBehaviorFromFp0120:
+      scopeScan.noWwwAuthenticateRouteBehavior &&
+      inventory.wwwAuthenticateRouteRepositoryInventoryVerified,
+    noWwwAuthenticateRouteBehaviorFromFp0121:
       scopeScan.noWwwAuthenticateRouteBehavior &&
       inventory.wwwAuthenticateRouteRepositoryInventoryVerified,
     noWwwAuthenticateRouteBehaviorImplementation:
@@ -212,6 +275,11 @@ const proof = McpCanonicalResourceAuthServerProofSchema.parse(
       inventory.tokenSessionRepositoryInventoryVerified,
     wwwAuthenticateRouteRepositoryInventoryVerified:
       inventory.wwwAuthenticateRouteRepositoryInventoryVerified,
+    fp0120CanonicalResourceAuthServerBoundaryStillVerified:
+      verifyFp0120CanonicalResourceAuthServerPlanBoundary({
+        planText: fp0120PlanText,
+        repoPaths,
+      }),
   }),
 );
 
@@ -285,6 +353,17 @@ function changedScopeScan() {
       !/\b(?:writeFinanceTwin|updateLedger|financeWrite|postLedger|createJournalEntry)\s*\(/u.test(
         changedExecutableSource,
       ),
+    noFixturesSampleDataSourcePacks: !changedPaths.some((path) =>
+      /(?:^|\/)(?:fixtures|samples|sample-data|datasets|source-packs?|public-demo-data)(?:\/|$)/iu.test(
+        path,
+      ),
+    ),
+    noGeneratedPublicProse: !changedPaths.some((path) =>
+      /(?:generated-public-prose|public-listing|store-listing)/iu.test(path),
+    ),
+    noListingCopy: !changedPaths.some((path) =>
+      /(?:listing-copy|public-listing|store-listing)/iu.test(path),
+    ),
     noNewRoutePath: !changedPaths.some(isRouteLikeRuntimePath),
     noOauthImplementation:
       !/\b(?:oauthCallback|authorizeUrl|tokenExchange|authorizationCode|pkceVerifier)\s*\(/u.test(
@@ -300,6 +379,15 @@ function changedScopeScan() {
       ),
     noProviderCalls:
       !/\b(?:providerConnect|callProvider|createProviderJob|deploy)\s*\(/u.test(
+        changedExecutableSource,
+      ),
+    noPublicAppImplementation:
+      !changedPaths.some((path) =>
+        /(?:public-chatgpt-app|chatgpt-app-public|apps-sdk|app-submission|submission-assets)/iu.test(
+          path,
+        ),
+      ) &&
+      !/\b(?:publicChatGptApp|registerChatGptApp|submitApp|appsSdk)\b/u.test(
         changedExecutableSource,
       ),
     noPublicAssets: !changedPaths.some((path) => publicAssetPattern.test(path)),
