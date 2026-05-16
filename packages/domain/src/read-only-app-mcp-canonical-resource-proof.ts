@@ -70,7 +70,31 @@ const defaultTrueKeys = [
   "noFinanceWrite",
   "fp0120BoundaryVerified",
   "fp0120AbsentOrLocalCanonicalResourceAuthServerContractsVerified",
-  "fp0121Absent",
+  "fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified",
+  "fp0122Absent",
+  "protectedResourceMetadataRouteImplementationPlanningBoundaryVerified",
+  "noRouteBehaviorChangeFromFp0121",
+  "noNewRoutePathFromFp0121",
+  "noProtectedResourceMetadataRouteFromFp0121",
+  "noWwwAuthenticateRouteBehaviorFromFp0121",
+  "noOauthImplementationFromFp0121",
+  "noTokenSessionImplementationFromFp0121",
+  "noAuthMiddlewareImplementationFromFp0121",
+  "noRemoteMcpDeploymentFromFp0121",
+  "noDeploymentConfigFromFp0121",
+  "noAppsSdkResourceFromFp0121",
+  "noPublicAppImplementationFromFp0121",
+  "noAppSubmissionFromFp0121",
+  "noDbQueriesFromFp0121",
+  "noSchemaMigrationsFromFp0121",
+  "noPackageScriptsFromFp0121",
+  "noFixturesSampleDataSourcePacksFromFp0121",
+  "noOpenAiApiCallsFromFp0121",
+  "noProviderExternalCallsFromFp0121",
+  "noSourceMutationFinanceWriteFromFp0121",
+  "noPublicAssetsSubmissionArtifactsFromFp0121",
+  "noListingCopyGeneratedPublicProseFromFp0121",
+  "fp0120CanonicalResourceAuthServerBoundaryStillVerified",
   "noRouteBehaviorChangeFromFp0120",
   "noNewRoutePathFromFp0120",
   "noProtectedResourceMetadataRouteFromFp0120",
@@ -98,6 +122,9 @@ const defaultTrueKeys = [
   "fp0106ProtocolEnvelopeBoundaryStillVerified",
   "fp0100PublicSecurityBoundaryStillVerified",
 ] as const satisfies readonly (keyof McpCanonicalResourceAuthServerProof)[];
+
+export const FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH =
+  "plans/FP-0121-read-only-chatgpt-app-mcp-protected-resource-metadata-route-implementation-planning.md";
 
 const VALID_CANONICAL_RESOURCE_URI = "https://mcp.canonical-finance-host.com/mcp";
 const VALID_PROTECTED_RESOURCE_METADATA_URL =
@@ -252,8 +279,79 @@ export function verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts(in
   );
 }
 
-export function verifyFp0121Absent(repoPaths: readonly string[]) {
-  return !repoPaths.some((path) => /(^|\/)FP-0121/u.test(path));
+export function verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning(input: {
+  repoPaths: readonly string[];
+  planText?: string;
+}) {
+  const fp0121Hits = input.repoPaths.filter((path) =>
+    /(^|\/)FP-0121/u.test(path),
+  );
+  if (fp0121Hits.length === 0) return true;
+  return (
+    fp0121Hits.length === 1 &&
+    fp0121Hits[0] ===
+      FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH &&
+    fp0121PlanTextBoundaryVerified(input.planText ?? "")
+  );
+}
+
+export function verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary(input: {
+  repoPaths: readonly string[];
+  planText: string;
+}) {
+  const fp0121Hits = input.repoPaths.filter((path) =>
+    /(^|\/)FP-0121/u.test(path),
+  );
+  return (
+    fp0121Hits.length === 1 &&
+    fp0121Hits[0] ===
+      FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH &&
+    fp0121PlanTextBoundaryVerified(input.planText)
+  );
+}
+
+export function verifyFp0122Absent(repoPaths: readonly string[]) {
+  return !repoPaths.some((path) => /(^|\/)FP-0122/u.test(path));
+}
+
+export function verifyFp0121PlanningTextRequiredTopics(planText: string) {
+  const normalized = normalize(planText);
+  return {
+    planningTextIncludesAuthenticatedCompanyBinding: normalized.includes(
+      "authenticated company binding",
+    ),
+    planningTextIncludesAuthorizationServersPrerequisite:
+      normalized.includes("authorization_servers") &&
+      normalized.includes("prerequisite"),
+    planningTextIncludesCanonicalUriPrerequisite:
+      normalized.includes("canonical uri prerequisite") ||
+      normalized.includes("canonical public resource uri prerequisite") ||
+      normalized.includes("canonical public mcp resource uri"),
+    planningTextIncludesExactRoutePathDecision:
+      normalized.includes("exact route path decision") ||
+      normalized.includes("root path") ||
+      normalized.includes("/.well-known/oauth-protected-resource/mcp"),
+    planningTextIncludesFp0122Absence:
+      normalized.includes("fp-0122 remains absent") ||
+      normalized.includes("fp-0122 absent"),
+    planningTextIncludesLocalMcpUnchangedBehavior:
+      normalized.includes("/mcp unchanged-behavior") ||
+      normalized.includes("local /mcp unchanged-behavior"),
+    planningTextIncludesMetadataDocumentTests: normalized.includes(
+      "metadata document tests",
+    ),
+    planningTextIncludesNoTokenLeakage: normalized.includes(
+      "no-token-leakage",
+    ),
+    planningTextIncludesProtectedResourceMetadataRouteReadiness:
+      normalized.includes(
+        "protected-resource metadata route implementation readiness",
+      ),
+    planningTextIncludesRouteTests: normalized.includes("route tests"),
+    planningTextIncludesWwwAuthenticateSeparate:
+      normalized.includes("www-authenticate") &&
+      normalized.includes("separate"),
+  };
 }
 
 export function verifyFp0120PlanningTextRequiredTopics(planText: string) {
@@ -324,6 +422,40 @@ function fp0120PlanTextBoundaryVerified(planText: string) {
     (normalized.includes("no fp-0121") ||
       normalized.includes("fp-0121 remains absent")) &&
     Object.values(verifyFp0120PlanningTextRequiredTopics(planText)).every(
+      Boolean,
+    )
+  );
+}
+
+function fp0121PlanTextBoundaryVerified(planText: string) {
+  const normalized = normalize(planText);
+  return (
+    [
+      "docs-and-plan plus proof-gate compatibility",
+      "protected-resource metadata route implementation readiness",
+      "does not implement the route",
+      "does not add route paths",
+      "does not implement www-authenticate route behavior",
+      "does not implement oauth",
+      "does not implement token/session",
+      "does not implement auth middleware",
+      "does not deploy remote mcp",
+      "does not add deployment config",
+      "does not add apps sdk resources",
+      "does not create fp-0122",
+      "canonical uri prerequisite",
+      "authorization_servers prerequisite",
+      "route tests",
+      "metadata document tests",
+      "no-token-leakage",
+      "/mcp unchanged-behavior",
+      "authenticated company binding",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    (normalized.includes("root metadata path") ||
+      normalized.includes("root path")) &&
+    normalized.includes("/.well-known/oauth-protected-resource/mcp") &&
+    normalized.includes("public chatgpt app submission must wait") &&
+    Object.values(verifyFp0121PlanningTextRequiredTopics(planText)).every(
       Boolean,
     )
   );

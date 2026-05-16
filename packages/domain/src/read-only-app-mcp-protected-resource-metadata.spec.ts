@@ -40,8 +40,12 @@ import {
 } from "./read-only-app-mcp-protected-resource-metadata";
 import {
   FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH,
+  FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
   verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts,
-  verifyFp0121Absent,
+  verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning,
+  verifyFp0121PlanningTextRequiredTopics,
+  verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
+  verifyFp0122Absent,
 } from "./read-only-app-mcp-canonical-resource";
 import {
   FP0117_OAUTH_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
@@ -57,18 +61,22 @@ function verified(value: boolean): true {
 }
 
 describe("FP-0118 protected-resource metadata auth challenge readiness contracts", () => {
-  it("accepts exact FP-0118, FP-0119, and FP-0120 planning paths while FP-0121 remains absent", () => {
+  it("accepts exact FP-0118 through FP-0121 planning paths while FP-0122 remains absent", () => {
     const repoPaths = repoFilePaths();
     const fp0118Hits = repoPaths.filter((path) => /(^|\/)FP-0118/u.test(path));
     const fp0119Hits = repoPaths.filter((path) => /(^|\/)FP-0119/u.test(path));
     const fp0120Hits = repoPaths.filter((path) => /(^|\/)FP-0120/u.test(path));
     const fp0121Hits = repoPaths.filter((path) => /(^|\/)FP-0121/u.test(path));
+    const fp0122Hits = repoPaths.filter((path) => /(^|\/)FP-0122/u.test(path));
     const planText = safeRead(FP0118_PROTECTED_RESOURCE_METADATA_PLAN_PATH);
     const fp0119PlanText = safeRead(
       FP0119_PROTECTED_RESOURCE_METADATA_ROUTE_SEQUENCING_PLAN_PATH,
     );
     const fp0120PlanText = safeRead(
       FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH,
+    );
+    const fp0121PlanText = safeRead(
+      FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
     );
     const proof = buildMcpProtectedResourceMetadataProof({
       fp0118AbsentOrLocalProtectedResourceMetadataContractsVerified:
@@ -100,7 +108,25 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
             repoPaths,
           }),
         ),
-      fp0121Absent: verified(verifyFp0121Absent(repoPaths)),
+      fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified:
+        verified(
+          verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning(
+            {
+              planText: fp0121PlanText,
+              repoPaths,
+            },
+          ),
+        ),
+      fp0122Absent: verified(verifyFp0122Absent(repoPaths)),
+      protectedResourceMetadataRouteImplementationPlanningBoundaryVerified:
+        verified(
+          verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary(
+            {
+              planText: fp0121PlanText,
+              repoPaths,
+            },
+          ),
+        ),
       protectedResourceMetadataRouteSequencingPlanBoundaryVerified:
         verified(
           verifyFp0119ProtectedResourceMetadataRouteSequencingPlanBoundary({
@@ -119,7 +145,10 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     expect(fp0120Hits).toEqual([
       FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH,
     ]);
-    expect(fp0121Hits).toEqual([]);
+    expect(fp0121Hits).toEqual([
+      FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+    ]);
+    expect(fp0122Hits).toEqual([]);
     expect(proof.fp0118BoundaryVerified).toBe(true);
     expect(
       proof.fp0118AbsentOrLocalProtectedResourceMetadataContractsVerified,
@@ -131,14 +160,69 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     expect(
       proof.fp0120AbsentOrLocalCanonicalResourceAuthServerContractsVerified,
     ).toBe(true);
-    expect(proof.fp0121Absent).toBe(true);
+    expect(
+      proof
+        .fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified,
+    ).toBe(true);
+    expect(proof.fp0122Absent).toBe(true);
+    expect(
+      proof.protectedResourceMetadataRouteImplementationPlanningBoundaryVerified,
+    ).toBe(true);
+    expect(
+      Object.values(verifyFp0121PlanningTextRequiredTopics(fp0121PlanText)).every(
+        Boolean,
+      ),
+    ).toBe(true);
     expect(
       proof.protectedResourceMetadataRouteSequencingPlanBoundaryVerified,
     ).toBe(true);
     expect(
       McpProtectedResourceMetadataProofSchema.safeParse({
         ...proof,
-        fp0121Absent: false,
+        fp0122Absent: false,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("proves FP-0121 is docs-and-plan route implementation readiness only", () => {
+    const proof = buildMcpProtectedResourceMetadataProof();
+
+    expect(
+      proof
+        .fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified,
+    ).toBe(true);
+    expect(proof.fp0122Absent).toBe(true);
+    expect(
+      proof.protectedResourceMetadataRouteImplementationPlanningBoundaryVerified,
+    ).toBe(true);
+    expect(proof.noRouteBehaviorChangeFromFp0121).toBe(true);
+    expect(proof.noNewRoutePathFromFp0121).toBe(true);
+    expect(proof.noProtectedResourceMetadataRouteFromFp0121).toBe(true);
+    expect(proof.noWwwAuthenticateRouteBehaviorFromFp0121).toBe(true);
+    expect(proof.noOauthImplementationFromFp0121).toBe(true);
+    expect(proof.noTokenSessionImplementationFromFp0121).toBe(true);
+    expect(proof.noAuthMiddlewareImplementationFromFp0121).toBe(true);
+    expect(proof.noRemoteMcpDeploymentFromFp0121).toBe(true);
+    expect(proof.noDeploymentConfigFromFp0121).toBe(true);
+    expect(proof.noAppsSdkResourceFromFp0121).toBe(true);
+    expect(proof.noPublicAppImplementationFromFp0121).toBe(true);
+    expect(proof.noAppSubmissionFromFp0121).toBe(true);
+    expect(proof.noDbQueriesFromFp0121).toBe(true);
+    expect(proof.noSchemaMigrationsFromFp0121).toBe(true);
+    expect(proof.noPackageScriptsFromFp0121).toBe(true);
+    expect(proof.noFixturesSampleDataSourcePacksFromFp0121).toBe(true);
+    expect(proof.noOpenAiApiCallsFromFp0121).toBe(true);
+    expect(proof.noProviderExternalCallsFromFp0121).toBe(true);
+    expect(proof.noSourceMutationFinanceWriteFromFp0121).toBe(true);
+    expect(proof.noPublicAssetsSubmissionArtifactsFromFp0121).toBe(true);
+    expect(proof.noListingCopyGeneratedPublicProseFromFp0121).toBe(true);
+    expect(proof.fp0120CanonicalResourceAuthServerBoundaryStillVerified).toBe(
+      true,
+    );
+    expect(
+      McpProtectedResourceMetadataProofSchema.safeParse({
+        ...proof,
+        noProtectedResourceMetadataRouteFromFp0121: false,
       }).success,
     ).toBe(false);
   });

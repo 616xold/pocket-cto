@@ -19,6 +19,12 @@ import {
   FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
 } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 import {
+  FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+  verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning,
+  verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
+  verifyFp0122Absent,
+} from "../packages/domain/src/read-only-app-mcp-canonical-resource-proof.ts";
+import {
   LocalReadOnlyEvidenceToolDispatchAdapter,
   READ_ONLY_EVIDENCE_DISPATCH_TEXT_MIRROR_MAX_CHARACTERS,
   READ_ONLY_EVIDENCE_DISPATCH_TEXT_MIRROR_SCHEMA_VERSION,
@@ -47,6 +53,9 @@ const DISPATCHER_PATH =
 
 const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
+const fp0121PlanText = safeRead(
+  FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+);
 const routeRuntimeSource = [
   ROUTE_PATH,
   SERVICE_PATH,
@@ -314,6 +323,18 @@ const proof = {
   fp0116AbsentOrLocalRemoteHostResourceContractsVerified:
     fp0116AbsentOrLocalRemoteHostResourceContractsVerified(),
   fp0117Absent: verifyFp0117Absent(repoPaths),
+  fp0121ProtectedResourceMetadataRouteImplementationPlanningBoundaryStillVerified:
+    verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning(
+      {
+        planText: fp0121PlanText,
+        repoPaths,
+      },
+    ) &&
+    verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary({
+      planText: fp0121PlanText,
+      repoPaths,
+    }),
+  fp0122Absent: verifyFp0122Absent(repoPaths),
   oauthSecurityContractsFoundationVerified:
     oauthSecurityContractsFoundationVerified(),
   remoteHostReadinessContractsFoundationVerified:
@@ -369,6 +390,14 @@ const proof = {
   noSourceMutationFinanceWriteFromFp0114:
     fp0113ScopeScan.noSourceMutationFinanceWrite,
   noPublicAssetsSubmissionArtifactsFromFp0114: changedScopeScan.noPublicAssets,
+  noDbQueriesFromFp0121: changedScopeScan.noDbQueriesAdded,
+  noSchemaMigrationsFromFp0121: changedScopeScan.noSchemaMigrationsAdded,
+  noPackageScriptsFromFp0121: changedScopeScan.noPackageScriptsAdded,
+  noRouteBehaviorChangeFromFp0121: changedScopeScan.noRouteBehaviorChange,
+  noProtectedResourceMetadataRouteFromFp0121:
+    changedScopeScan.noProtectedResourceMetadataRoute,
+  noWwwAuthenticateRouteBehaviorFromFp0121:
+    changedScopeScan.noWwwAuthenticateRouteBehavior,
   defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
     fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified(),
   noRouteBehaviorChangeFromFp0110:
@@ -931,6 +960,7 @@ function changedFileScopeScan() {
     "tools/benchmark-community-pack-proof.mjs",
     "plans/FP-0118-read-only-chatgpt-app-mcp-protected-resource-metadata-auth-challenge-readiness-contracts.md",
     "plans/FP-0120-read-only-chatgpt-app-mcp-canonical-resource-auth-server-readiness-contracts.md",
+    FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
     "README.md",
     "CODEX_README.md",
     "START_HERE.md",
@@ -958,12 +988,34 @@ function changedFileScopeScan() {
         path,
       ),
   );
+  const changedProductSource = changedPaths
+    .filter(isProductImplementationSourcePath)
+    .map(safeRead)
+    .join("\n");
+  const changedRouteRuntimeSource = changedPaths
+    .filter(isEndpointRouteRuntimeSourcePath)
+    .map(safeRead)
+    .join("\n");
+  const noDbImplementationPaths = !changedPaths.some(
+    (path) =>
+      /^packages\/db\//u.test(path) ||
+      /(?:^|\/)(?:migrations?|drizzle)\//iu.test(path) ||
+      /\.sql$/iu.test(path),
+  );
+  const noDbImplementationCode =
+    !/\b(?:drizzle\s*\(|select\s*\(|insert\s*\(|update\s*\(|delete\s*\(|sql`)/u.test(
+      changedProductSource,
+    );
+  const noEndpointRouteRuntimeChanged = !changedPaths.some((path) =>
+    /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+      path,
+    ),
+  );
 
   return {
     noAppSubmission: noPublicArtifacts && changedFilesAllowed,
     noDbQueriesAdded:
-      changedFilesAllowed &&
-      !changedPaths.some((path) => /^packages\/db\//u.test(path)),
+      changedFilesAllowed && noDbImplementationPaths && noDbImplementationCode,
     noDeploymentConfig:
       changedFilesAllowed &&
       !changedPaths.some((path) =>
@@ -975,12 +1027,39 @@ function changedFileScopeScan() {
       changedFilesAllowed &&
       !changedPaths.some((path) => /(?:^|\/)package\.json$/u.test(path)),
     noPublicAssets: noPublicArtifacts && changedFilesAllowed,
+    noProtectedResourceMetadataRoute:
+      changedFilesAllowed &&
+      noEndpointRouteRuntimeChanged &&
+      !/\b(?:oauth-protected-resource|protectedResourceMetadataRoute|resourceMetadataRoute)\b/u.test(
+        changedRouteRuntimeSource,
+      ),
+    noRouteBehaviorChange: changedFilesAllowed && noEndpointRouteRuntimeChanged,
     noSchemaMigrationsAdded:
       changedFilesAllowed &&
       !changedPaths.some((path) =>
         /(?:^|\/)(?:migrations?|drizzle)\//iu.test(path),
       ),
+    noWwwAuthenticateRouteBehavior:
+      changedFilesAllowed &&
+      noEndpointRouteRuntimeChanged &&
+      !/\b(?:WWW-Authenticate|wwwAuthenticate|resource_metadata)\b/u.test(
+        changedRouteRuntimeSource,
+      ),
   };
+}
+
+function isEndpointRouteRuntimeSourcePath(path) {
+  return /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+    path,
+  );
+}
+
+function isProductImplementationSourcePath(path) {
+  return (
+    /\.(?:ts|tsx|js|mjs)$/u.test(path) &&
+    !path.startsWith("tools/") &&
+    !/\.spec\.(?:ts|tsx|js|mjs)$/u.test(path)
+  );
 }
 
 function fp0110ChangedScopeScan() {
