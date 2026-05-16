@@ -36,8 +36,8 @@ import {
   verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts,
   verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning,
   verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
-  verifyFp0122Absent,
 } from "./read-only-app-mcp-canonical-resource";
+import { buildMcpProtectedResourceMetadataBuilderContracts } from "./read-only-app-mcp-protected-resource-metadata-builder-proof";
 import {
   MCP_PUBLIC_MCP_ENDPOINT_PATH,
   MCP_PROTECTED_RESOURCE_METADATA_REQUIREMENTS,
@@ -95,7 +95,30 @@ export const McpProtectedResourceMetadataProofSchema = z
       trueLiteral,
     fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified:
       trueLiteral,
-    fp0122Absent: trueLiteral,
+    fp0122AbsentOrLocalProtectedResourceMetadataBuilderContractsVerified:
+      trueLiteral,
+    fp0123Absent: trueLiteral,
+    protectedResourceMetadataBuilderContractsFoundationVerified: trueLiteral,
+    noRouteBehaviorChangeFromFp0122: trueLiteral,
+    noNewRoutePathFromFp0122: trueLiteral,
+    noProtectedResourceMetadataRouteFromFp0122: trueLiteral,
+    noWwwAuthenticateRouteBehaviorFromFp0122: trueLiteral,
+    noOauthImplementationFromFp0122: trueLiteral,
+    noTokenSessionImplementationFromFp0122: trueLiteral,
+    noAuthMiddlewareImplementationFromFp0122: trueLiteral,
+    noRemoteMcpDeploymentFromFp0122: trueLiteral,
+    noDeploymentConfigFromFp0122: trueLiteral,
+    noAppsSdkResourceFromFp0122: trueLiteral,
+    noPublicAppImplementationFromFp0122: trueLiteral,
+    noAppSubmissionFromFp0122: trueLiteral,
+    noDbQueriesFromFp0122: trueLiteral,
+    noSchemaMigrationsFromFp0122: trueLiteral,
+    noPackageScriptsFromFp0122: trueLiteral,
+    noOpenAiApiCallsFromFp0122: trueLiteral,
+    noProviderExternalCallsFromFp0122: trueLiteral,
+    noSourceMutationFinanceWriteFromFp0122: trueLiteral,
+    noPublicAssetsSubmissionArtifactsFromFp0122: trueLiteral,
+    noListingCopyGeneratedPublicProseFromFp0122: trueLiteral,
     protectedResourceMetadataRouteImplementationPlanningBoundaryVerified:
       trueLiteral,
     canonicalResourceAuthServerContractsFoundationVerified: trueLiteral,
@@ -389,7 +412,14 @@ export function buildMcpProtectedResourceMetadataProof(
     fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified:
       input.fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified ??
       true,
-    fp0122Absent: input.fp0122Absent ?? true,
+    fp0122AbsentOrLocalProtectedResourceMetadataBuilderContractsVerified:
+      input.fp0122AbsentOrLocalProtectedResourceMetadataBuilderContractsVerified ??
+      true,
+    fp0123Absent: input.fp0123Absent ?? true,
+    protectedResourceMetadataBuilderContractsFoundationVerified:
+      input.protectedResourceMetadataBuilderContractsFoundationVerified ??
+      buildMcpProtectedResourceMetadataBuilderContracts().proofContract
+        .contractOnly,
     protectedResourceMetadataRouteImplementationPlanningBoundaryVerified:
       input.protectedResourceMetadataRouteImplementationPlanningBoundaryVerified ??
       true,
@@ -450,6 +480,44 @@ export function buildMcpProtectedResourceMetadataProof(
       input.noTokenSessionImplementationFromFp0121 ?? true,
     noWwwAuthenticateRouteBehaviorFromFp0121:
       input.noWwwAuthenticateRouteBehaviorFromFp0121 ?? true,
+    noAppSubmissionFromFp0122: input.noAppSubmissionFromFp0122 ?? true,
+    noAppsSdkResourceFromFp0122:
+      input.noAppsSdkResourceFromFp0122 ?? true,
+    noAuthMiddlewareImplementationFromFp0122:
+      input.noAuthMiddlewareImplementationFromFp0122 ?? true,
+    noDbQueriesFromFp0122: input.noDbQueriesFromFp0122 ?? true,
+    noDeploymentConfigFromFp0122:
+      input.noDeploymentConfigFromFp0122 ?? true,
+    noListingCopyGeneratedPublicProseFromFp0122:
+      input.noListingCopyGeneratedPublicProseFromFp0122 ?? true,
+    noNewRoutePathFromFp0122:
+      input.noNewRoutePathFromFp0122 ?? true,
+    noOauthImplementationFromFp0122:
+      input.noOauthImplementationFromFp0122 ?? true,
+    noOpenAiApiCallsFromFp0122:
+      input.noOpenAiApiCallsFromFp0122 ?? true,
+    noPackageScriptsFromFp0122:
+      input.noPackageScriptsFromFp0122 ?? true,
+    noProtectedResourceMetadataRouteFromFp0122:
+      input.noProtectedResourceMetadataRouteFromFp0122 ?? true,
+    noProviderExternalCallsFromFp0122:
+      input.noProviderExternalCallsFromFp0122 ?? true,
+    noPublicAppImplementationFromFp0122:
+      input.noPublicAppImplementationFromFp0122 ?? true,
+    noPublicAssetsSubmissionArtifactsFromFp0122:
+      input.noPublicAssetsSubmissionArtifactsFromFp0122 ?? true,
+    noRemoteMcpDeploymentFromFp0122:
+      input.noRemoteMcpDeploymentFromFp0122 ?? true,
+    noRouteBehaviorChangeFromFp0122:
+      input.noRouteBehaviorChangeFromFp0122 ?? true,
+    noSchemaMigrationsFromFp0122:
+      input.noSchemaMigrationsFromFp0122 ?? true,
+    noSourceMutationFinanceWriteFromFp0122:
+      input.noSourceMutationFinanceWriteFromFp0122 ?? true,
+    noTokenSessionImplementationFromFp0122:
+      input.noTokenSessionImplementationFromFp0122 ?? true,
+    noWwwAuthenticateRouteBehaviorFromFp0122:
+      input.noWwwAuthenticateRouteBehaviorFromFp0122 ?? true,
     fp0120CanonicalResourceAuthServerBoundaryStillVerified:
       input.fp0120CanonicalResourceAuthServerBoundaryStillVerified ?? true,
     noAppSubmissionFromFp0119: input.noAppSubmissionFromFp0119 ?? true,
@@ -766,7 +834,6 @@ export {
   verifyFp0120AbsentOrLocalCanonicalResourceAuthServerContracts,
   verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning,
   verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
-  verifyFp0122Absent,
 };
 
 export function verifyFp0119PlanningTextRequiredTopics(planText: string) {

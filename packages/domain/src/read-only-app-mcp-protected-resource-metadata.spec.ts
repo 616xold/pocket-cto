@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   FP0118_PROTECTED_RESOURCE_METADATA_PLAN_PATH,
   FP0119_PROTECTED_RESOURCE_METADATA_ROUTE_SEQUENCING_PLAN_PATH,
+  FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
   MCP_PROTECTED_RESOURCE_METADATA_KNOWN_SAFE_ROUTE_LIKE_PATHS,
   MCP_PROTECTED_RESOURCE_METADATA_BEARER_METHODS,
   MCP_PROTECTED_RESOURCE_METADATA_TOKEN_LEAKAGE_SURFACES,
@@ -35,6 +36,9 @@ import {
   verifyFp0119AbsentOrDocsOnlyProtectedResourceMetadataRouteSequencingPlan,
   verifyFp0119PlanningTextRequiredTopics,
   verifyFp0119ProtectedResourceMetadataRouteSequencingPlanBoundary,
+  verifyFp0122AbsentOrLocalProtectedResourceMetadataBuilderContracts,
+  verifyFp0122ProtectedResourceMetadataBuilderContractsBoundary,
+  verifyFp0123Absent,
   verifyMcpProtectedResourceMetadataNoOpenAiApiSourceScan,
   verifyMcpProtectedResourceMetadataRepositoryInventory,
 } from "./read-only-app-mcp-protected-resource-metadata";
@@ -45,7 +49,6 @@ import {
   verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning,
   verifyFp0121PlanningTextRequiredTopics,
   verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
-  verifyFp0122Absent,
 } from "./read-only-app-mcp-canonical-resource";
 import {
   FP0117_OAUTH_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
@@ -61,7 +64,7 @@ function verified(value: boolean): true {
 }
 
 describe("FP-0118 protected-resource metadata auth challenge readiness contracts", () => {
-  it("accepts exact FP-0118 through FP-0121 planning paths while FP-0122 remains absent", () => {
+  it("accepts exact FP-0118 through FP-0122 builder paths while FP-0123 remains absent", () => {
     const repoPaths = repoFilePaths();
     const fp0118Hits = repoPaths.filter((path) => /(^|\/)FP-0118/u.test(path));
     const fp0119Hits = repoPaths.filter((path) => /(^|\/)FP-0119/u.test(path));
@@ -78,6 +81,10 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     const fp0121PlanText = safeRead(
       FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
     );
+    const fp0122PlanText = safeRead(
+      FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
+    );
+    const fp0123Hits = repoPaths.filter((path) => /(^|\/)FP-0123/u.test(path));
     const proof = buildMcpProtectedResourceMetadataProof({
       fp0118AbsentOrLocalProtectedResourceMetadataContractsVerified:
         verified(
@@ -117,7 +124,21 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
             },
           ),
         ),
-      fp0122Absent: verified(verifyFp0122Absent(repoPaths)),
+      fp0122AbsentOrLocalProtectedResourceMetadataBuilderContractsVerified:
+        verified(
+          verifyFp0122AbsentOrLocalProtectedResourceMetadataBuilderContracts({
+            planText: fp0122PlanText,
+            repoPaths,
+          }),
+        ),
+      fp0123Absent: verified(verifyFp0123Absent(repoPaths)),
+      protectedResourceMetadataBuilderContractsFoundationVerified:
+        verified(
+          verifyFp0122ProtectedResourceMetadataBuilderContractsBoundary({
+            planText: fp0122PlanText,
+            repoPaths,
+          }),
+        ),
       protectedResourceMetadataRouteImplementationPlanningBoundaryVerified:
         verified(
           verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary(
@@ -148,7 +169,10 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     expect(fp0121Hits).toEqual([
       FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
     ]);
-    expect(fp0122Hits).toEqual([]);
+    expect(fp0122Hits).toEqual([
+      FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
+    ]);
+    expect(fp0123Hits).toEqual([]);
     expect(proof.fp0118BoundaryVerified).toBe(true);
     expect(
       proof.fp0118AbsentOrLocalProtectedResourceMetadataContractsVerified,
@@ -164,7 +188,13 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
       proof
         .fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified,
     ).toBe(true);
-    expect(proof.fp0122Absent).toBe(true);
+    expect(
+      proof.fp0122AbsentOrLocalProtectedResourceMetadataBuilderContractsVerified,
+    ).toBe(true);
+    expect(proof.fp0123Absent).toBe(true);
+    expect(
+      proof.protectedResourceMetadataBuilderContractsFoundationVerified,
+    ).toBe(true);
     expect(
       proof.protectedResourceMetadataRouteImplementationPlanningBoundaryVerified,
     ).toBe(true);
@@ -179,7 +209,7 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     expect(
       McpProtectedResourceMetadataProofSchema.safeParse({
         ...proof,
-        fp0122Absent: false,
+        fp0123Absent: false,
       }).success,
     ).toBe(false);
   });
@@ -191,7 +221,13 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
       proof
         .fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified,
     ).toBe(true);
-    expect(proof.fp0122Absent).toBe(true);
+    expect(
+      proof.fp0122AbsentOrLocalProtectedResourceMetadataBuilderContractsVerified,
+    ).toBe(true);
+    expect(proof.fp0123Absent).toBe(true);
+    expect(
+      proof.protectedResourceMetadataBuilderContractsFoundationVerified,
+    ).toBe(true);
     expect(
       proof.protectedResourceMetadataRouteImplementationPlanningBoundaryVerified,
     ).toBe(true);

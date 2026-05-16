@@ -19,10 +19,13 @@ import {
   FP0115_REMOTE_HOST_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
 } from "../packages/domain/src/read-only-app-mcp-remote-host-readiness.ts";
 import {
+  FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
   FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
   verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning,
   verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
-  verifyFp0122Absent,
+  verifyFp0122AbsentOrLocalProtectedResourceMetadataBuilderContracts,
+  verifyFp0122ProtectedResourceMetadataBuilderContractsBoundary,
+  verifyFp0123Absent,
 } from "../packages/domain/src/read-only-app-mcp-canonical-resource-proof.ts";
 import {
   LocalReadOnlyEvidenceToolDispatchAdapter,
@@ -55,6 +58,9 @@ const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
 const fp0121PlanText = safeRead(
   FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+);
+const fp0122PlanText = safeRead(
+  FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
 );
 const routeRuntimeSource = [
   ROUTE_PATH,
@@ -334,7 +340,17 @@ const proof = {
       planText: fp0121PlanText,
       repoPaths,
     }),
-  fp0122Absent: verifyFp0122Absent(repoPaths),
+  fp0122AbsentOrLocalProtectedResourceMetadataBuilderContractsVerified:
+    verifyFp0122AbsentOrLocalProtectedResourceMetadataBuilderContracts({
+      planText: fp0122PlanText,
+      repoPaths,
+    }),
+  fp0123Absent: verifyFp0123Absent(repoPaths),
+  protectedResourceMetadataBuilderContractsFoundationVerified:
+    verifyFp0122ProtectedResourceMetadataBuilderContractsBoundary({
+      planText: fp0122PlanText,
+      repoPaths,
+    }),
   oauthSecurityContractsFoundationVerified:
     oauthSecurityContractsFoundationVerified(),
   remoteHostReadinessContractsFoundationVerified:
@@ -398,6 +414,38 @@ const proof = {
     changedScopeScan.noProtectedResourceMetadataRoute,
   noWwwAuthenticateRouteBehaviorFromFp0121:
     changedScopeScan.noWwwAuthenticateRouteBehavior,
+  noRouteBehaviorChangeFromFp0122: changedScopeScan.noRouteBehaviorChange,
+  noNewRoutePathFromFp0122: changedScopeScan.noRouteBehaviorChange,
+  noProtectedResourceMetadataRouteFromFp0122:
+    changedScopeScan.noProtectedResourceMetadataRoute,
+  noWwwAuthenticateRouteBehaviorFromFp0122:
+    changedScopeScan.noWwwAuthenticateRouteBehavior,
+  noOauthImplementationFromFp0122: fp0113ScopeScan.noOauthImplementation,
+  noTokenSessionImplementationFromFp0122:
+    fp0113ScopeScan.noTokenSessionImplementation,
+  noAuthMiddlewareImplementationFromFp0122:
+    fp0113ScopeScan.noAuthMiddlewareImplementation,
+  noRemoteMcpDeploymentFromFp0122: runtimeScopeScan.noRemoteMcpDeployment,
+  noDeploymentConfigFromFp0122: changedScopeScan.noDeploymentConfig,
+  noAppsSdkResourceFromFp0122:
+    runtimeScopeScan.noAppsSdkResourceImplementation,
+  noPublicAppImplementationFromFp0122:
+    changedScopeScan.noAppSubmission &&
+    runtimeScopeScan.noAppsSdkResourceImplementation,
+  noAppSubmissionFromFp0122: changedScopeScan.noAppSubmission,
+  noDbQueriesFromFp0122: changedScopeScan.noDbQueriesAdded,
+  noSchemaMigrationsFromFp0122: changedScopeScan.noSchemaMigrationsAdded,
+  noPackageScriptsFromFp0122: changedScopeScan.noPackageScriptsAdded,
+  noOpenAiApiCallsFromFp0122: proofSourceScan.noOpenAiApiCalls,
+  noProviderExternalCallsFromFp0122:
+    runtimeScopeScan.noProviderCalls &&
+    runtimeScopeScan.noExternalCommunications,
+  noSourceMutationFinanceWriteFromFp0122:
+    runtimeScopeScan.noSourceMutation && runtimeScopeScan.noFinanceWrite,
+  noPublicAssetsSubmissionArtifactsFromFp0122:
+    changedScopeScan.noPublicAssets && changedScopeScan.noAppSubmission,
+  noListingCopyGeneratedPublicProseFromFp0122:
+    changedScopeScan.noListingCopyGeneratedPublicProse,
   defaultLocalEvidenceDispatchEnablementPlanBoundaryVerified:
     fp0110DefaultLocalEvidenceDispatchEnablementPlanBoundaryVerified(),
   noRouteBehaviorChangeFromFp0110:
@@ -957,10 +1005,12 @@ function changedFileScopeScan() {
     "tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs",
     "tools/read-only-mcp-protected-resource-metadata-proof.mjs",
     "tools/read-only-mcp-canonical-resource-auth-server-proof.mjs",
+    "tools/read-only-mcp-protected-resource-metadata-builder-proof.mjs",
     "tools/benchmark-community-pack-proof.mjs",
     "plans/FP-0118-read-only-chatgpt-app-mcp-protected-resource-metadata-auth-challenge-readiness-contracts.md",
     "plans/FP-0120-read-only-chatgpt-app-mcp-canonical-resource-auth-server-readiness-contracts.md",
     FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+    FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
     "README.md",
     "CODEX_README.md",
     "START_HERE.md",
@@ -1026,6 +1076,13 @@ function changedFileScopeScan() {
     noPackageScriptsAdded:
       changedFilesAllowed &&
       !changedPaths.some((path) => /(?:^|\/)package\.json$/u.test(path)),
+    noListingCopyGeneratedPublicProse:
+      changedFilesAllowed &&
+      !changedPaths.some((path) =>
+        /(?:listing-copy|generated-public-prose|public-listing|store-listing)/iu.test(
+          path,
+        ),
+      ),
     noPublicAssets: noPublicArtifacts && changedFilesAllowed,
     noProtectedResourceMetadataRoute:
       changedFilesAllowed &&

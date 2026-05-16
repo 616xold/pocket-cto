@@ -34,6 +34,12 @@ import {
   validateMcpCanonicalPublicResourceUriCandidate,
   validateMcpWwwAuthenticateResourceMetadataUrl,
 } from "./read-only-app-mcp-canonical-resource-validator";
+import {
+  verifyFp0122AbsentOrLocalProtectedResourceMetadataBuilderContracts,
+  verifyFp0122ProtectedResourceMetadataBuilderContractsBoundary,
+  verifyFp0123Absent,
+} from "./read-only-app-mcp-protected-resource-metadata-builder-proof";
+import { FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH } from "./read-only-app-mcp-protected-resource-metadata-builder-contracts";
 
 type ProofInput = Partial<
   Omit<
@@ -71,7 +77,29 @@ const defaultTrueKeys = [
   "fp0120BoundaryVerified",
   "fp0120AbsentOrLocalCanonicalResourceAuthServerContractsVerified",
   "fp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanningVerified",
-  "fp0122Absent",
+  "fp0122AbsentOrLocalProtectedResourceMetadataBuilderContractsVerified",
+  "fp0123Absent",
+  "protectedResourceMetadataBuilderContractsFoundationVerified",
+  "noRouteBehaviorChangeFromFp0122",
+  "noNewRoutePathFromFp0122",
+  "noProtectedResourceMetadataRouteFromFp0122",
+  "noWwwAuthenticateRouteBehaviorFromFp0122",
+  "noOauthImplementationFromFp0122",
+  "noTokenSessionImplementationFromFp0122",
+  "noAuthMiddlewareImplementationFromFp0122",
+  "noRemoteMcpDeploymentFromFp0122",
+  "noDeploymentConfigFromFp0122",
+  "noAppsSdkResourceFromFp0122",
+  "noPublicAppImplementationFromFp0122",
+  "noAppSubmissionFromFp0122",
+  "noDbQueriesFromFp0122",
+  "noSchemaMigrationsFromFp0122",
+  "noPackageScriptsFromFp0122",
+  "noOpenAiApiCallsFromFp0122",
+  "noProviderExternalCallsFromFp0122",
+  "noSourceMutationFinanceWriteFromFp0122",
+  "noPublicAssetsSubmissionArtifactsFromFp0122",
+  "noListingCopyGeneratedPublicProseFromFp0122",
   "protectedResourceMetadataRouteImplementationPlanningBoundaryVerified",
   "noRouteBehaviorChangeFromFp0121",
   "noNewRoutePathFromFp0121",
@@ -313,6 +341,13 @@ export function verifyFp0121ProtectedResourceMetadataRouteImplementationPlanning
 export function verifyFp0122Absent(repoPaths: readonly string[]) {
   return !repoPaths.some((path) => /(^|\/)FP-0122/u.test(path));
 }
+
+export {
+  FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
+  verifyFp0122AbsentOrLocalProtectedResourceMetadataBuilderContracts,
+  verifyFp0122ProtectedResourceMetadataBuilderContractsBoundary,
+  verifyFp0123Absent,
+};
 
 export function verifyFp0121PlanningTextRequiredTopics(planText: string) {
   const normalized = normalize(planText);

@@ -6,6 +6,7 @@ import {
   FP0119_PROTECTED_RESOURCE_METADATA_ROUTE_SEQUENCING_PLAN_PATH,
   FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH,
   FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+  FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
   McpOauthImplementationSequencingProofSchema,
   buildMcpOauthImplementationSequencingProof,
   isFp0117OauthSequencingNoOpenAiProofSourcePath,
@@ -21,7 +22,9 @@ import {
   verifyFp0120CanonicalResourceAuthServerPlanBoundary,
   verifyFp0121AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlanning,
   verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
-  verifyFp0122Absent,
+  verifyFp0122AbsentOrLocalProtectedResourceMetadataBuilderContracts,
+  verifyFp0122ProtectedResourceMetadataBuilderContractsBoundary,
+  verifyFp0123Absent,
 } from "../packages/domain/src/index.ts";
 
 const FP0116_PLAN =
@@ -59,6 +62,9 @@ const fp0119PlanText = safeRead(
 const fp0120PlanText = safeRead(FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH);
 const fp0121PlanText = safeRead(
   FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
+);
+const fp0122PlanText = safeRead(
+  FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
 );
 const scopeScan = changedScopeScan();
 const changedSourceScan = noExecutableApiModelKeyUsage(
@@ -165,7 +171,17 @@ const proof = McpOauthImplementationSequencingProofSchema.parse(
           repoPaths,
         },
       ),
-    fp0122Absent: verifyFp0122Absent(repoPaths),
+    fp0122AbsentOrLocalProtectedResourceMetadataBuilderContractsVerified:
+      verifyFp0122AbsentOrLocalProtectedResourceMetadataBuilderContracts({
+        planText: fp0122PlanText,
+        repoPaths,
+      }),
+    fp0123Absent: verifyFp0123Absent(repoPaths),
+    protectedResourceMetadataBuilderContractsFoundationVerified:
+      verifyFp0122ProtectedResourceMetadataBuilderContractsBoundary({
+        planText: fp0122PlanText,
+        repoPaths,
+      }),
     protectedResourceMetadataRouteImplementationPlanningBoundaryVerified:
       verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary({
         planText: fp0121PlanText,
@@ -216,6 +232,46 @@ const proof = McpOauthImplementationSequencingProofSchema.parse(
       scopeScan.noTokenSessionImplementation &&
       repositoryInventory.tokenSessionRepositoryInventoryVerified,
     noWwwAuthenticateRouteBehaviorFromFp0121:
+      scopeScan.noWwwAuthenticateRouteBehavior &&
+      repositoryInventory.wwwAuthenticateRouteBehaviorRepositoryInventoryVerified,
+    noAppSubmissionFromFp0122: scopeScan.noAppSubmission,
+    noAppsSdkResourceFromFp0122: scopeScan.noAppsSdkResource,
+    noAuthMiddlewareImplementationFromFp0122:
+      scopeScan.noAuthMiddlewareImplementation &&
+      repositoryInventory.authMiddlewareRepositoryInventoryVerified,
+    noDbQueriesFromFp0122: scopeScan.noDbQueries,
+    noDeploymentConfigFromFp0122: scopeScan.noDeploymentConfig,
+    noListingCopyGeneratedPublicProseFromFp0122:
+      scopeScan.noListingCopyGeneratedPublicProse,
+    noNewRoutePathFromFp0122:
+      scopeScan.noNewRoutePath && localRouteShapeStillVerified(),
+    noOauthImplementationFromFp0122:
+      scopeScan.noOauthImplementation &&
+      repositoryInventory.oauthImplementationRepositoryInventoryVerified,
+    noOpenAiApiCallsFromFp0122:
+      changedSourceScan.noOpenAiApiCalls &&
+      changedSourceScan.noModelCalls &&
+      durableSourceScan.oauthSequencingNoOpenAiApiSourceScanVerified,
+    noPackageScriptsFromFp0122: scopeScan.noPackageScripts,
+    noProtectedResourceMetadataRouteFromFp0122:
+      scopeScan.noProtectedResourceMetadataRoute &&
+      repositoryInventory.protectedResourceMetadataRouteRepositoryInventoryVerified,
+    noProviderExternalCallsFromFp0122:
+      scopeScan.noProviderCalls && scopeScan.noExternalCommunications,
+    noPublicAppImplementationFromFp0122:
+      scopeScan.noPublicAppImplementation,
+    noPublicAssetsSubmissionArtifactsFromFp0122:
+      scopeScan.noPublicAssets && scopeScan.noAppSubmission,
+    noRemoteMcpDeploymentFromFp0122: scopeScan.noRemoteMcpDeployment,
+    noRouteBehaviorChangeFromFp0122:
+      scopeScan.noRouteBehaviorChange && localRouteShapeStillVerified(),
+    noSchemaMigrationsFromFp0122: scopeScan.noSchemaMigrations,
+    noSourceMutationFinanceWriteFromFp0122:
+      scopeScan.noSourceMutation && scopeScan.noFinanceWrite,
+    noTokenSessionImplementationFromFp0122:
+      scopeScan.noTokenSessionImplementation &&
+      repositoryInventory.tokenSessionRepositoryInventoryVerified,
+    noWwwAuthenticateRouteBehaviorFromFp0122:
       scopeScan.noWwwAuthenticateRouteBehavior &&
       repositoryInventory.wwwAuthenticateRouteBehaviorRepositoryInventoryVerified,
     noAppSubmissionFromFp0117: scopeScan.noAppSubmission,
@@ -555,9 +611,8 @@ function changedFilePaths() {
   );
   return status
     .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.replace(/^.. /u, "").replace(/.* -> /u, ""))
+    .filter((line) => line.trim())
+    .map((line) => line.replace(/^.. /u, "").replace(/.* -> /u, "").trim())
     .sort();
 }
 
