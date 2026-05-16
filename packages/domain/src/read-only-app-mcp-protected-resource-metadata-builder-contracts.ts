@@ -65,6 +65,23 @@ export const MCP_PROTECTED_RESOURCE_METADATA_BUILDER_FORBIDDEN_METADATA_TOKENS =
   "token=",
 ] as const;
 
+export const MCP_PROTECTED_RESOURCE_METADATA_BUILDER_FORBIDDEN_URI_MATERIAL_TOKENS = [
+  "api_key",
+  "apikey",
+  "accesskey",
+  "password",
+  "passwd",
+  "secret",
+  "jwt",
+  "id_token",
+  "sessionid",
+  "session_id",
+  "credential",
+  "private_key",
+  "bearer",
+  "basic",
+] as const;
+
 export const McpProtectedResourceMetadataBuilderContractKindSchema = z.enum([
   "McpProtectedResourceMetadataBuilderProofContract",
   "McpProtectedResourceMetadataBuilderInputBoundary",
@@ -144,6 +161,9 @@ export const McpProtectedResourceMetadataBuilderCanonicalUriBoundarySchema =
     queryStringAllowed: falseLiteral,
     fragmentAllowed: falseLiteral,
     workspaceTenantTemplateAllowed: falseLiteral,
+    userinfoCredentialsAllowed: falseLiteral,
+    credentialBearingUrlAllowed: falseLiteral,
+    secretLikeUriMaterialAllowed: falseLiteral,
   }).strict();
 
 export const McpProtectedResourceMetadataBuilderAuthorizationServersBoundarySchema =
@@ -156,6 +176,9 @@ export const McpProtectedResourceMetadataBuilderAuthorizationServersBoundarySche
     authorizationServersMustBeHttps: trueLiteral,
     authorizationServersMustBeExactStableIssuers: trueLiteral,
     providerNeutralUntilLaterPlan: trueLiteral,
+    userinfoCredentialsAllowed: falseLiteral,
+    credentialBearingUrlAllowed: falseLiteral,
+    secretLikeUriMaterialAllowed: falseLiteral,
   }).strict();
 
 export const McpProtectedResourceMetadataBuilderScopesBoundarySchema =
@@ -193,6 +216,8 @@ export const McpProtectedResourceMetadataBuilderNoTokenLeakageBoundarySchema =
     rawFinanceDataAllowed: falseLiteral,
     rawSourceDumpsAllowed: falseLiteral,
     companyKeyAuthorityAllowed: falseLiteral,
+    credentialBearingUrlsAllowed: falseLiteral,
+    secretLikeUriMaterialAllowed: falseLiteral,
   }).strict();
 
 export const McpProtectedResourceMetadataBuilderRouteResponseDeferredBoundarySchema =

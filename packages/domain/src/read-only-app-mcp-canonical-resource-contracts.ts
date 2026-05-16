@@ -44,6 +44,23 @@ export const MCP_CANONICAL_RESOURCE_REJECTED_LOCAL_TUNNEL_HOST_TOKENS = [
   "serveo.net",
 ] as const;
 
+export const MCP_CANONICAL_RESOURCE_REJECTED_CREDENTIAL_URI_TOKENS = [
+  "api_key",
+  "apikey",
+  "accesskey",
+  "password",
+  "passwd",
+  "secret",
+  "jwt",
+  "id_token",
+  "sessionid",
+  "session_id",
+  "credential",
+  "private_key",
+  "bearer",
+  "basic",
+] as const;
+
 export const McpCanonicalResourceAuthServerContractKindSchema = z.enum([
   "McpCanonicalResourceAuthServerProofContract",
   "McpCanonicalPublicResourceUriBoundary",

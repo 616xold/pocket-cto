@@ -1,13 +1,13 @@
 # Codex Plugins
 
-This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0122 protected-resource metadata document-builder contract and proof-gate compatibility slice.
+This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0122 protected-resource metadata document-builder credential/userinfo hardening correction.
 
 ## Repo-local plugin used
 
 - `pocket-cfo-codex-operator`
   - Marketplace entry: `.agents/plugins/marketplace.json`
   - Bundle path: `plugins/pocket-cfo-codex-operator/`
-  - Skills invoked for this FP-0122 local/proof-only/read-only protected-resource metadata document-builder, canonical URI and `authorization_servers` input guardrails, read-only scope and header bearer method guardrails, no-token-leakage proof, deferred route-response contract, FP-0123 absence, proof-gate bridge, doc-refresh, validation, and handoff slice:
+  - Skills invoked for this FP-0122 post-merge local/proof-only/read-only protected-resource metadata document-builder correction, canonical URI and `authorization_servers` credential/userinfo guardrails, secret-like URI material scanning, read-only scope and header bearer method guardrails, no-token-leakage proof, deferred route-response contract, FP-0123 absence, proof-gate bridge, doc-refresh, validation, and handoff slice:
     - Finance Plan Orchestrator
     - Modular Architecture Guard
     - Source Provenance Guard

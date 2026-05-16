@@ -2,6 +2,7 @@ import {
   MCP_PROTECTED_RESOURCE_METADATA_BUILDER_ALLOWED_SCOPES,
   MCP_PROTECTED_RESOURCE_METADATA_BUILDER_BEARER_METHODS,
   MCP_PROTECTED_RESOURCE_METADATA_BUILDER_FORBIDDEN_METADATA_TOKENS,
+  MCP_PROTECTED_RESOURCE_METADATA_BUILDER_FORBIDDEN_URI_MATERIAL_TOKENS,
   MCP_PROTECTED_RESOURCE_METADATA_BUILDER_FORBIDDEN_SCOPE_TOKENS,
   MCP_PROTECTED_RESOURCE_METADATA_BUILDER_PERMITTED_METADATA_FIELDS,
   McpProtectedResourceMetadataBuilderDocumentSchema,
@@ -35,7 +36,7 @@ export function validateProtectedResourceMetadataBuilderInput(
   const canonicalUriAccepted =
     validateMcpCanonicalPublicResourceUriCandidate(
       parsed.data.canonicalResourceUri,
-    ).accepted && !hasForbiddenMetadataToken(parsed.data.canonicalResourceUri);
+    ).accepted && isCredentialFreeMetadataUri(parsed.data.canonicalResourceUri);
   const authorizationServersAccepted = parsed.data.authorizationServers.every(
     validateAuthorizationServer,
   );
@@ -116,7 +117,7 @@ function buildCandidateDocument(
 }
 
 function validateAuthorizationServer(value: string) {
-  if (hasForbiddenMetadataToken(value)) return false;
+  if (!isCredentialFreeMetadataUri(value)) return false;
 
   try {
     const url = new URL(value);
@@ -166,13 +167,66 @@ function validateBearerMethods(methods: readonly string[]) {
 }
 
 function noTokenLeakage(input: McpProtectedResourceMetadataBuilderInput) {
-  return !hasForbiddenMetadataToken(JSON.stringify(input));
+  return (
+    !hasForbiddenMetadataToken(input.canonicalResourceUri) &&
+    !input.authorizationServers.some(hasForbiddenMetadataToken) &&
+    !input.scopesSupported.some(hasForbiddenMetadataToken) &&
+    !input.bearerMethodsSupported.some(hasForbiddenMetadataToken) &&
+    isCredentialFreeMetadataUri(input.canonicalResourceUri) &&
+    input.authorizationServers.every(isCredentialFreeMetadataUri)
+  );
 }
 
 function hasForbiddenMetadataToken(value: string) {
   const normalized = normalize(value);
   return MCP_PROTECTED_RESOURCE_METADATA_BUILDER_FORBIDDEN_METADATA_TOKENS.some(
     (token) => normalized.includes(normalize(token)),
+  );
+}
+
+function isCredentialFreeMetadataUri(value: string) {
+  return (
+    !hasForbiddenMetadataToken(value) &&
+    !hasUrlUserinfoCredentials(value) &&
+    !hasSecretLikeUriMaterial(value)
+  );
+}
+
+function hasUrlUserinfoCredentials(value: string) {
+  try {
+    const url = new URL(value);
+    return url.username !== "" || url.password !== "";
+  } catch {
+    return false;
+  }
+}
+
+function hasSecretLikeUriMaterial(value: string) {
+  try {
+    const url = new URL(value);
+    const authorityAndPath = [
+      url.username,
+      url.password,
+      url.hostname,
+      url.pathname,
+    ]
+      .map(safeDecode)
+      .join("/");
+    const normalized = normalizeUriMaterial(authorityAndPath);
+
+    return (
+      MCP_PROTECTED_RESOURCE_METADATA_BUILDER_FORBIDDEN_URI_MATERIAL_TOKENS.some(
+        (token) => normalized.includes(normalizeUriMaterial(token)),
+      ) || hasJwtLikeMaterial(authorityAndPath)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function hasJwtLikeMaterial(value: string) {
+  return /(?:^|[^A-Za-z0-9_-])[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}(?:$|[^A-Za-z0-9_-])/u.test(
+    value,
   );
 }
 
@@ -241,4 +295,16 @@ function rejected(
 
 function normalize(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9:=*._/-]/gu, "");
+}
+
+function normalizeUriMaterial(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/gu, "");
+}
+
+function safeDecode(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }

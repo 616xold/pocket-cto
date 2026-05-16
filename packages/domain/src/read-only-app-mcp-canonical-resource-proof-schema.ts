@@ -22,6 +22,7 @@ export const McpCanonicalResourceAuthServerProofSchema = z
     metadataRouteDerivationRequiresAcceptedCanonicalUri: trueLiteral,
     invalidCanonicalUriMetadataDerivationFailsClosed: trueLiteral,
     queryFragmentSelectorCanonicalUriCannotDeriveMetadataUrl: trueLiteral,
+    canonicalUriNoUserinfoCredentialsBoundaryVerified: trueLiteral,
     noLocalTunnelAuthorityBoundaryVerified: trueLiteral,
     noRouteRuntimeBoundaryVerified: trueLiteral,
     noRouteBehaviorChange: trueLiteral,

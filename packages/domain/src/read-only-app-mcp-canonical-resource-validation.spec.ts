@@ -62,6 +62,41 @@ describe("FP-0120 canonical public resource URI validation", () => {
     }
   });
 
+  it("rejects URL userinfo credentials before metadata derivation", () => {
+    for (const uri of [
+      "https://user:pass@mcp.canonical-finance-host.com/mcp",
+      "https://client_secret@mcp.canonical-finance-host.com/mcp",
+      "https://bearer-token@mcp.canonical-finance-host.com/mcp",
+      "https://jwt@mcp.canonical-finance-host.com/mcp",
+    ]) {
+      const result = validateMcpCanonicalPublicResourceUriCandidate(uri);
+
+      expect(result.accepted, uri).toBe(false);
+      expect(result.noUserinfoCredentials).toBe(false);
+      expect(
+        tryDeriveMcpProtectedResourceMetadataUrlFromCanonicalUri(uri),
+      ).toMatchObject({
+        derivation: null,
+        derived: false,
+        validation: { accepted: false },
+      });
+    }
+  });
+
+  it("rejects secret-like authority and path material", () => {
+    for (const uri of [
+      "https://api-key.canonical-finance-host.com/mcp",
+      "https://mcp.canonical-finance-host.com/private_key/mcp",
+      "https://mcp.canonical-finance-host.com/basic/mcp",
+      "https://mcp.canonical-finance-host.com/bearer/mcp",
+    ]) {
+      const result = validateMcpCanonicalPublicResourceUriCandidate(uri);
+
+      expect(result.accepted, uri).toBe(false);
+      expect(result.noCredentialLikeAuthorityOrPath).toBe(false);
+    }
+  });
+
   it("rejects localhost, local network placeholders, and tunnel authorities", () => {
     for (const uri of [
       "https://localhost:3000/mcp",

@@ -154,6 +154,7 @@ describe("FP-0120 canonical resource/auth-server readiness contracts", () => {
       true,
     );
     expect(proof.localProofOnly).toBe(true);
+    expect(proof.canonicalUriNoUserinfoCredentialsBoundaryVerified).toBe(true);
     expect(proof.noRouteBehaviorChange).toBe(true);
     expect(proof.noNewRoutePath).toBe(true);
     expect(proof.noProtectedResourceMetadataRouteImplementation).toBe(true);

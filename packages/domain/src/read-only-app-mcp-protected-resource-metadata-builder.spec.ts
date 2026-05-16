@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -114,6 +115,36 @@ describe("FP-0122 protected-resource metadata document-builder contracts", () =>
     }
   });
 
+  it("fails closed for canonicalResourceUri URL username and password credentials", () => {
+    const validation = validateProtectedResourceMetadataBuilderInput({
+      ...validInput,
+      canonicalResourceUri:
+        "https://user:pass@mcp.canonical-finance-host.com/mcp",
+    });
+
+    expect(validation.accepted).toBe(false);
+    expect(validation.canonicalUriAccepted).toBe(false);
+    expect(validation.rejectionReasons).toContain(
+      "canonical_resource_uri_unaccepted",
+    );
+  });
+
+  it("fails closed for canonicalResourceUri secret-like userinfo", () => {
+    for (const canonicalResourceUri of [
+      "https://client_secret@mcp.canonical-finance-host.com/mcp",
+      "https://bearer-token@mcp.canonical-finance-host.com/mcp",
+      "https://jwt@mcp.canonical-finance-host.com/mcp",
+    ]) {
+      const validation = validateProtectedResourceMetadataBuilderInput({
+        ...validInput,
+        canonicalResourceUri,
+      });
+
+      expect(validation.accepted, canonicalResourceUri).toBe(false);
+      expect(validation.canonicalUriAccepted).toBe(false);
+    }
+  });
+
   it("requires provider-neutral HTTPS authorization_servers", () => {
     const rejectedAuthorizationServers = [
       [],
@@ -142,6 +173,65 @@ describe("FP-0122 protected-resource metadata document-builder contracts", () =>
           ].includes(reason),
         ),
       ).toBe(true);
+    }
+  });
+
+  it("fails closed for authorization_servers URL username and password credentials", () => {
+    for (const authorizationServer of [
+      "https://user:pass@auth.canonical-finance-host.com",
+      "https://client:secret@auth.canonical-finance-host.com",
+    ]) {
+      const validation = validateProtectedResourceMetadataBuilderInput({
+        ...validInput,
+        authorizationServers: [authorizationServer],
+      });
+
+      expect(validation.accepted, authorizationServer).toBe(false);
+      expect(validation.authorizationServersAccepted).toBe(false);
+      expect(validation.rejectionReasons).toContain(
+        "authorization_servers_unaccepted",
+      );
+    }
+  });
+
+  it("fails closed for authorization_servers secret-like userinfo", () => {
+    const validation = validateProtectedResourceMetadataBuilderInput({
+      ...validInput,
+      authorizationServers: ["https://token@auth.canonical-finance-host.com"],
+    });
+
+    expect(validation.accepted).toBe(false);
+    expect(validation.authorizationServersAccepted).toBe(false);
+    expect(validation.rejectionReasons).toContain(
+      "authorization_servers_unaccepted",
+    );
+  });
+
+  it("fails closed for authorization_servers secret-like path fragments", () => {
+    for (const token of [
+      "api_key",
+      "apikey",
+      "accesskey",
+      "password",
+      "passwd",
+      "secret",
+      "jwt",
+      "id_token",
+      "sessionid",
+      "session_id",
+      "credential",
+      "private_key",
+      "bearer",
+      "basic",
+    ]) {
+      const authorizationServer = `https://auth.canonical-finance-host.com/${token}`;
+      const validation = validateProtectedResourceMetadataBuilderInput({
+        ...validInput,
+        authorizationServers: [authorizationServer],
+      });
+
+      expect(validation.accepted, authorizationServer).toBe(false);
+      expect(validation.authorizationServersAccepted).toBe(false);
     }
   });
 
@@ -232,10 +322,31 @@ describe("FP-0122 protected-resource metadata document-builder contracts", () =>
     );
   });
 
+  it("keeps route files unchanged in this hardening slice", () => {
+    const changedRouteFiles = changedFilePaths().filter((path) =>
+      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
+        path,
+      ),
+    );
+
+    expect(changedRouteFiles).toEqual([]);
+  });
+
   it("proves local no-runtime posture and prior boundaries remain intact", () => {
     const proof = buildMcpProtectedResourceMetadataBuilderProof();
 
     expect(proof.protectedResourceMetadataBuilderContractsVerified).toBe(true);
+    expect(proof.canonicalUriNoUserinfoCredentialsBoundaryVerified).toBe(true);
+    expect(
+      proof.authorizationServersNoUserinfoCredentialsBoundaryVerified,
+    ).toBe(true);
+    expect(
+      proof.protectedResourceMetadataBuilderNoCredentialBearingUrlsVerified,
+    ).toBe(true);
+    expect(
+      proof.protectedResourceMetadataBuilderSecretPatternScanVerified,
+    ).toBe(true);
+    expect(proof.fp0122PostmergeCredentialLeakageHardeningVerified).toBe(true);
     expect(proof.builderRouteResponseDeferredBoundaryVerified).toBe(true);
     expect(proof.noRouteBehaviorChange).toBe(true);
     expect(proof.noNewRoutePath).toBe(true);
@@ -306,4 +417,15 @@ function repoFilePaths() {
 
 function safeRead(relativePath: string) {
   return readFileSync(join(repoRoot, relativePath), "utf8");
+}
+
+function changedFilePaths() {
+  return execFileSync("git", ["status", "--short", "--untracked-files=all"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  })
+    .split("\n")
+    .filter((line) => line.trim())
+    .map((line) => line.replace(/^.. /u, "").replace(/.* -> /u, "").trim())
+    .sort();
 }

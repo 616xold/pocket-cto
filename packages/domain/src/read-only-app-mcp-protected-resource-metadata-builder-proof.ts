@@ -20,6 +20,7 @@ import {
   deriveProtectedResourceMetadataRouteResponseContract,
   validateProtectedResourceMetadataBuilderInput,
 } from "./read-only-app-mcp-protected-resource-metadata-builder";
+import { validateMcpCanonicalPublicResourceUriCandidate } from "./read-only-app-mcp-canonical-resource-validator";
 
 const trueLiteral = z.literal(true);
 
@@ -38,6 +39,12 @@ export const McpProtectedResourceMetadataBuilderProofSchema = z
     builderNoTokenLeakageBoundaryVerified: trueLiteral,
     builderRouteResponseDeferredBoundaryVerified: trueLiteral,
     builderNoRuntimeBoundaryVerified: trueLiteral,
+    canonicalUriNoUserinfoCredentialsBoundaryVerified: trueLiteral,
+    authorizationServersNoUserinfoCredentialsBoundaryVerified: trueLiteral,
+    protectedResourceMetadataBuilderNoCredentialBearingUrlsVerified:
+      trueLiteral,
+    protectedResourceMetadataBuilderSecretPatternScanVerified: trueLiteral,
+    fp0122PostmergeCredentialLeakageHardeningVerified: trueLiteral,
     noRouteBehaviorChange: trueLiteral,
     noNewRoutePath: trueLiteral,
     noProtectedResourceMetadataRouteImplementation: trueLiteral,
@@ -91,7 +98,10 @@ export function buildMcpProtectedResourceMetadataBuilderContracts() {
           authorizationServersMustBeHttps: true,
           authorizationServersMustBeNonEmpty: true,
           authorizationServersRequired: true,
+          credentialBearingUrlAllowed: false,
           providerNeutralUntilLaterPlan: true,
+          secretLikeUriMaterialAllowed: false,
+          userinfoCredentialsAllowed: false,
         },
       ),
     bearerMethodsBoundary:
@@ -112,6 +122,9 @@ export function buildMcpProtectedResourceMetadataBuilderContracts() {
         placeholderResourceAllowed: false,
         queryStringAllowed: false,
         selectorAuthorityAllowed: false,
+        credentialBearingUrlAllowed: false,
+        secretLikeUriMaterialAllowed: false,
+        userinfoCredentialsAllowed: false,
         workspaceTenantTemplateAllowed: false,
       }),
     inputBoundary:
@@ -136,9 +149,11 @@ export function buildMcpProtectedResourceMetadataBuilderContracts() {
       McpProtectedResourceMetadataBuilderNoTokenLeakageBoundarySchema.parse({
         ...base("McpProtectedResourceMetadataBuilderNoTokenLeakageBoundary"),
         companyKeyAuthorityAllowed: false,
+        credentialBearingUrlsAllowed: false,
         cookiesSessionsSecretsCredentialsAllowed: false,
         rawFinanceDataAllowed: false,
         rawSourceDumpsAllowed: false,
+        secretLikeUriMaterialAllowed: false,
         tokenValuesAllowedInMetadata: false,
       }),
     proofContract:
@@ -208,6 +223,36 @@ export function buildMcpProtectedResourceMetadataBuilderProof(
   const validInput = validateProtectedResourceMetadataBuilderInput(
     validBuilderInput,
   );
+  const canonicalUriNoUserinfoCredentialsBoundaryVerified =
+    canonicalResourceCredentialCandidates.every(
+      (canonicalResourceUri) =>
+        !validateMcpCanonicalPublicResourceUriCandidate(canonicalResourceUri)
+          .accepted &&
+        !validateProtectedResourceMetadataBuilderInput({
+          ...validBuilderInput,
+          canonicalResourceUri,
+        }).accepted,
+    );
+  const authorizationServersNoUserinfoCredentialsBoundaryVerified =
+    authorizationServerCredentialCandidates.every(
+      (authorizationServer) =>
+        !validateProtectedResourceMetadataBuilderInput({
+          ...validBuilderInput,
+          authorizationServers: [authorizationServer],
+        }).accepted,
+    );
+  const protectedResourceMetadataBuilderSecretPatternScanVerified =
+    secretLikeUriMaterialCandidates.every(
+      (authorizationServer) =>
+        !validateProtectedResourceMetadataBuilderInput({
+          ...validBuilderInput,
+          authorizationServers: [authorizationServer],
+        }).accepted,
+    );
+  const protectedResourceMetadataBuilderNoCredentialBearingUrlsVerified =
+    canonicalUriNoUserinfoCredentialsBoundaryVerified &&
+    authorizationServersNoUserinfoCredentialsBoundaryVerified &&
+    protectedResourceMetadataBuilderSecretPatternScanVerified;
 
   return McpProtectedResourceMetadataBuilderProofSchema.parse({
     builderAuthorizationServersBoundaryVerified:
@@ -252,6 +297,21 @@ export function buildMcpProtectedResourceMetadataBuilderProof(
       McpProtectedResourceMetadataBuilderScopesBoundarySchema.safeParse(
         contracts.scopesBoundary,
       ).success,
+    authorizationServersNoUserinfoCredentialsBoundaryVerified:
+      input.authorizationServersNoUserinfoCredentialsBoundaryVerified ??
+      authorizationServersNoUserinfoCredentialsBoundaryVerified,
+    canonicalUriNoUserinfoCredentialsBoundaryVerified:
+      input.canonicalUriNoUserinfoCredentialsBoundaryVerified ??
+      canonicalUriNoUserinfoCredentialsBoundaryVerified,
+    fp0122PostmergeCredentialLeakageHardeningVerified:
+      input.fp0122PostmergeCredentialLeakageHardeningVerified ??
+      protectedResourceMetadataBuilderNoCredentialBearingUrlsVerified,
+    protectedResourceMetadataBuilderNoCredentialBearingUrlsVerified:
+      input.protectedResourceMetadataBuilderNoCredentialBearingUrlsVerified ??
+      protectedResourceMetadataBuilderNoCredentialBearingUrlsVerified,
+    protectedResourceMetadataBuilderSecretPatternScanVerified:
+      input.protectedResourceMetadataBuilderSecretPatternScanVerified ??
+      protectedResourceMetadataBuilderSecretPatternScanVerified,
     fp0100PublicSecurityBoundaryStillVerified:
       input.fp0100PublicSecurityBoundaryStillVerified ?? true,
     fp0106ProtocolEnvelopeBoundaryStillVerified:
@@ -375,6 +435,36 @@ const validBuilderInput = {
   canonicalResourceUri: "https://mcp.canonical-finance-host.com/mcp",
   scopesSupported: ["mcp:read", "evidence:read"],
 } satisfies McpProtectedResourceMetadataBuilderInput;
+
+const canonicalResourceCredentialCandidates = [
+  "https://user:pass@mcp.canonical-finance-host.com/mcp",
+  "https://client_secret@mcp.canonical-finance-host.com/mcp",
+  "https://bearer-token@mcp.canonical-finance-host.com/mcp",
+  "https://jwt@mcp.canonical-finance-host.com/mcp",
+] as const;
+
+const authorizationServerCredentialCandidates = [
+  "https://user:pass@auth.canonical-finance-host.com",
+  "https://client:secret@auth.canonical-finance-host.com",
+  "https://token@auth.canonical-finance-host.com",
+] as const;
+
+const secretLikeUriMaterialCandidates = [
+  "https://auth.canonical-finance-host.com/api_key",
+  "https://auth.canonical-finance-host.com/apikey",
+  "https://auth.canonical-finance-host.com/accesskey",
+  "https://auth.canonical-finance-host.com/password",
+  "https://auth.canonical-finance-host.com/passwd",
+  "https://auth.canonical-finance-host.com/secret",
+  "https://auth.canonical-finance-host.com/jwt",
+  "https://auth.canonical-finance-host.com/id_token",
+  "https://auth.canonical-finance-host.com/sessionid",
+  "https://auth.canonical-finance-host.com/session_id",
+  "https://auth.canonical-finance-host.com/credential",
+  "https://auth.canonical-finance-host.com/private_key",
+  "https://auth.canonical-finance-host.com/bearer",
+  "https://auth.canonical-finance-host.com/basic",
+] as const;
 
 function allContractsParse(
   contracts: ReturnType<typeof buildMcpProtectedResourceMetadataBuilderContracts>,

@@ -1,4 +1,5 @@
 import {
+  MCP_CANONICAL_RESOURCE_REJECTED_CREDENTIAL_URI_TOKENS,
   MCP_CANONICAL_RESOURCE_REJECTED_LOCAL_TUNNEL_HOST_TOKENS,
   MCP_CANONICAL_RESOURCE_REJECTED_SELECTOR_TOKENS,
   MCP_PROTECTED_RESOURCE_METADATA_WELL_KNOWN_PATH,
@@ -16,6 +17,8 @@ export type McpCanonicalPublicResourceUriValidation = {
   noLocalhostAuthority: boolean;
   noLocalTunnelAuthority: boolean;
   noUnauthenticatedSelectorAuthority: boolean;
+  noUserinfoCredentials: boolean;
+  noCredentialLikeAuthorityOrPath: boolean;
 };
 
 export type McpProtectedResourceMetadataUrlDerivation = {
@@ -45,6 +48,10 @@ export const MCP_CANONICAL_RESOURCE_INVALID_METADATA_DERIVATION_CANDIDATES = [
   "https://mcp.canonical-finance-host.com/org/acme/mcp",
   "https://mcp.canonical-finance-host.com/workspace/acme/mcp",
   "https://mcp.canonical-finance-host.com/{tenant}/mcp",
+  "https://user:pass@mcp.canonical-finance-host.com/mcp",
+  "https://client_secret@mcp.canonical-finance-host.com/mcp",
+  "https://bearer-token@mcp.canonical-finance-host.com/mcp",
+  "https://jwt@mcp.canonical-finance-host.com/mcp",
   "https://localhost:3000/mcp",
   "https://pocket-cfo.ngrok-free.app/mcp",
   "https://your-mcp.example.com/mcp",
@@ -71,13 +78,19 @@ export function validateMcpCanonicalPublicResourceUriCandidate(
     const noLocalTunnelAuthority = !isLocalTunnelAuthority(host);
     const noUnauthenticatedSelectorAuthority =
       noCompanyKeyUserOrgSelectors && noWorkspaceTenantTemplateValues;
+    const noUserinfoCredentials =
+      parsed.username === "" && parsed.password === "";
+    const noCredentialLikeAuthorityOrPath =
+      !hasCredentialLikeAuthorityOrPath(parsed);
     const exactStableHttpsVerified =
       httpsVerified &&
       noPlaceholder &&
       noQuery &&
       noFragment &&
       noLocalhostAuthority &&
-      noLocalTunnelAuthority;
+      noLocalTunnelAuthority &&
+      noUserinfoCredentials &&
+      noCredentialLikeAuthorityOrPath;
 
     return {
       accepted:
@@ -87,6 +100,7 @@ export function validateMcpCanonicalPublicResourceUriCandidate(
         noUnauthenticatedSelectorAuthority,
       exactStableHttpsVerified,
       httpsVerified,
+      noCredentialLikeAuthorityOrPath,
       noCompanyKeyUserOrgSelectors,
       noFragment,
       noLocalTunnelAuthority,
@@ -94,6 +108,7 @@ export function validateMcpCanonicalPublicResourceUriCandidate(
       noPlaceholder,
       noQuery,
       noUnauthenticatedSelectorAuthority,
+      noUserinfoCredentials,
       noWorkspaceTenantTemplateValues,
     };
   } catch {
@@ -212,6 +227,8 @@ function invalidCanonicalUriValidation(): McpCanonicalPublicResourceUriValidatio
     noPlaceholder: false,
     noQuery: false,
     noUnauthenticatedSelectorAuthority: false,
+    noUserinfoCredentials: false,
+    noCredentialLikeAuthorityOrPath: false,
     noWorkspaceTenantTemplateValues: false,
   };
 }
@@ -261,6 +278,39 @@ function isLocalTunnelAuthority(host: string): boolean {
   return MCP_CANONICAL_RESOURCE_REJECTED_LOCAL_TUNNEL_HOST_TOKENS.some(
     (token) => host === token || host.endsWith(`.${token}`) || host.includes(token),
   );
+}
+
+function hasCredentialLikeAuthorityOrPath(url: URL): boolean {
+  const authorityAndPath = [
+    url.username,
+    url.password,
+    url.hostname,
+    url.pathname,
+  ]
+    .map(safeDecode)
+    .join("/");
+  const normalized = normalizeToken(authorityAndPath);
+
+  return (
+    MCP_CANONICAL_RESOURCE_REJECTED_CREDENTIAL_URI_TOKENS.map(
+      normalizeToken,
+    ).some((token) => normalized.includes(token)) ||
+    hasJwtLikeMaterial(authorityAndPath)
+  );
+}
+
+function hasJwtLikeMaterial(value: string): boolean {
+  return /(?:^|[^A-Za-z0-9_-])[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}(?:$|[^A-Za-z0-9_-])/u.test(
+    value,
+  );
+}
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 function normalizeToken(value: string): string {

@@ -188,6 +188,13 @@ export function buildMcpCanonicalResourceAuthServerProof(
       "https://mcp.canonical-finance-host.com/org/acme/mcp",
       "https://mcp.canonical-finance-host.com/workspace/acme/mcp",
     ]);
+  const userinfoCredentialsDerivation =
+    invalidCanonicalUriCandidatesFailClosedBeforeDerivation([
+      "https://user:pass@mcp.canonical-finance-host.com/mcp",
+      "https://client_secret@mcp.canonical-finance-host.com/mcp",
+      "https://bearer-token@mcp.canonical-finance-host.com/mcp",
+      "https://jwt@mcp.canonical-finance-host.com/mcp",
+    ]);
 
   return McpCanonicalResourceAuthServerProofSchema.parse({
     ...buildMcpCanonicalResourceAuthServerInventoryProof(input),
@@ -237,6 +244,9 @@ export function buildMcpCanonicalResourceAuthServerProof(
     invalidCanonicalUriMetadataDerivationFailsClosed:
       input.invalidCanonicalUriMetadataDerivationFailsClosed ??
       invalidDerivation.invalidCanonicalUriMetadataDerivationFailsClosed,
+    canonicalUriNoUserinfoCredentialsBoundaryVerified:
+      input.canonicalUriNoUserinfoCredentialsBoundaryVerified ??
+      userinfoCredentialsDerivation.invalidCanonicalUriMetadataDerivationFailsClosed,
     metadataRouteDerivationRequiresAcceptedCanonicalUri:
       input.metadataRouteDerivationRequiresAcceptedCanonicalUri ??
       (canonicalResourceValidation.accepted &&
