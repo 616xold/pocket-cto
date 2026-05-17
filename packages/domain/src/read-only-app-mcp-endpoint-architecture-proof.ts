@@ -379,6 +379,12 @@ export type EndpointRuntimeRepositoryInventoryResult = {
   violations: string[];
 };
 
+const FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
+
+const FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_SPEC_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts";
+
 export function inspectEndpointRuntimeRepositoryInventory(
   files: readonly EndpointRuntimeRepositoryInventoryFile[],
 ): EndpointRuntimeRepositoryInventoryResult {
@@ -399,6 +405,9 @@ function endpointRuntimeRepositoryViolation(
   if (isAllowedEndpointArchitectureProofSurface(file.path)) return false;
   if (isAllowedHistoricalLocalPreviewSurface(file.path)) return false;
   if (isAllowedFp0107LocalRouteAdapterSurface(file)) return false;
+  if (isAllowedFp0125LocalProtectedResourceMetadataRouteSurface(file)) {
+    return false;
+  }
   if (isAllowedShippedNonPublicRouteSurface(file.path)) return false;
   if (isAllowedHistoricalConnectorSurface(file.path)) return false;
 
@@ -406,6 +415,29 @@ function endpointRuntimeRepositoryViolation(
   return (
     looksLikePublicAppEndpointRuntimePath(file.path) ||
     looksLikePublicAppEndpointRuntimeSource(source)
+  );
+}
+
+function isAllowedFp0125LocalProtectedResourceMetadataRouteSurface(
+  file: EndpointRuntimeRepositoryInventoryFile,
+): boolean {
+  if (file.path === FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_SPEC_PATH) {
+    return true;
+  }
+
+  if (file.path !== FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH) {
+    return false;
+  }
+
+  const source = file.source ?? "";
+  return (
+    source.includes("registerReadOnlyAppMcpProtectedResourceMetadataRoute") &&
+    source.includes("READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH") &&
+    source.includes('app.get(') &&
+    !forbiddenFp0107RouteAdapterRuntimeSource(source) &&
+    !/WWW-Authenticate|setCookie|tokenExchange|sessionHandler|listen\s*\(/iu.test(
+      source,
+    )
   );
 }
 

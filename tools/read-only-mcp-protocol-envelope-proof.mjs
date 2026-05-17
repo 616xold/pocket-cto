@@ -24,6 +24,14 @@ const fp0123RouteInputSourceScanExcludedPaths = new Set([
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input-inventory-rules.ts",
   "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
 ]);
+const FP0125_LOCAL_ROUTE_PLAN =
+  "plans/FP-0125-read-only-chatgpt-app-mcp-protected-resource-metadata-local-route-implementation.md";
+const FP0125_LOCAL_ROUTE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
+const FP0125_LOCAL_ROUTE_SPEC_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts";
+const FP0125_LOCAL_ROUTE_PROOF_PATH =
+  "tools/read-only-mcp-protected-resource-metadata-local-route-proof.mjs";
 
 const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
@@ -324,7 +332,8 @@ function changedRuntimeSurfaceBoundary() {
     .filter(
       (path) =>
         !isAllowedFp0107LocalRouteAdapterPath(path) &&
-        !isAllowedFp0109EvidenceDispatchAdapterHardeningPath(path),
+        !isAllowedFp0109EvidenceDispatchAdapterHardeningPath(path) &&
+        !isAllowedFp0125LocalProtectedResourceMetadataRoutePath(path),
     )
     .filter((path) =>
       [
@@ -391,6 +400,7 @@ function isAllowedMcpProtocolProofPath(path) {
       "plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md" ||
     path ===
       "plans/FP-0117-read-only-chatgpt-app-mcp-oauth-token-session-auth-implementation-sequencing-master-plan.md" ||
+    isAllowedFp0125LocalProtectedResourceMetadataRoutePath(path) ||
     path === "packages/domain/src/index.ts" ||
     path === "tools/read-only-mcp-oauth-security-boundary-proof.mjs" ||
     path === "tools/read-only-mcp-remote-host-readiness-proof.mjs" ||
@@ -411,6 +421,15 @@ function isAllowedMcpProtocolProofPath(path) {
 function isAllowedFp0109EvidenceDispatchAdapterHardeningPath(path) {
   return /^apps\/control-plane\/src\/modules\/evidence-index\/tools\/service(?:\.spec)?\.ts$/u.test(
     path,
+  );
+}
+
+function isAllowedFp0125LocalProtectedResourceMetadataRoutePath(path) {
+  return (
+    path === FP0125_LOCAL_ROUTE_PLAN ||
+    path === FP0125_LOCAL_ROUTE_PATH ||
+    path === FP0125_LOCAL_ROUTE_SPEC_PATH ||
+    path === FP0125_LOCAL_ROUTE_PROOF_PATH
   );
 }
 

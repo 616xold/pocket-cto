@@ -34,6 +34,14 @@ const fp0123RouteInputSourceScanExcludedPaths = new Set([
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input-inventory-rules.ts",
   "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
 ]);
+const FP0125_LOCAL_ROUTE_PLAN =
+  "plans/FP-0125-read-only-chatgpt-app-mcp-protected-resource-metadata-local-route-implementation.md";
+const FP0125_LOCAL_ROUTE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
+const FP0125_LOCAL_ROUTE_SPEC_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts";
+const FP0125_LOCAL_ROUTE_PROOF_PATH =
+  "tools/read-only-mcp-protected-resource-metadata-local-route-proof.mjs";
 
 const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
@@ -381,7 +389,8 @@ function routeRuntimeChangedFilesBoundary() {
     .filter(
       (path) =>
         !isAllowedFp0107LocalRouteAdapterPath(path) &&
-        !isAllowedFp0109EvidenceDispatchAdapterHardeningPath(path),
+        !isAllowedFp0109EvidenceDispatchAdapterHardeningPath(path) &&
+        !isAllowedFp0125LocalProtectedResourceMetadataRoutePath(path),
     )
     .filter((path) =>
       [
@@ -398,6 +407,9 @@ function routeRuntimeChangedFilesBoundary() {
   const forbiddenRuntimeMarkers = changedPaths.filter((path) => {
     if (isAllowedFp0107LocalRouteAdapterPath(path)) return false;
     if (isAllowedFp0109EvidenceDispatchAdapterHardeningPath(path)) return false;
+    if (isAllowedFp0125LocalProtectedResourceMetadataRoutePath(path)) {
+      return false;
+    }
     if (!isRuntimeCandidate(path)) return false;
     const source = readFileSync(path, "utf8");
     return routeRuntimeMarkerPatterns().some((pattern) => pattern.test(source));
@@ -422,6 +434,7 @@ function routeRuntimeChangedFilesBoundary() {
         (path) =>
           !isAllowedFp0107LocalRouteAdapterPath(path) &&
           !isAllowedFp0109EvidenceDispatchAdapterHardeningPath(path) &&
+          !isAllowedFp0125LocalProtectedResourceMetadataRoutePath(path) &&
           /^(apps\/control-plane|packages\/backend|packages\/server)\//u.test(
             path,
           ),
@@ -703,6 +716,7 @@ function isAllowedEndpointProofPlanPath(path) {
     path === FP0103_PLAN ||
     path === FP0104_PLAN ||
     path === FP0105_PLAN ||
+    isAllowedFp0125LocalProtectedResourceMetadataRoutePath(path) ||
     path === FP0112_PLAN ||
     path === FP0113_PLAN ||
     path ===
@@ -742,6 +756,15 @@ function isAllowedEndpointProofPlanPath(path) {
 function isAllowedFp0109EvidenceDispatchAdapterHardeningPath(path) {
   return /^apps\/control-plane\/src\/modules\/evidence-index\/tools\/service(?:\.spec)?\.ts$/u.test(
     path,
+  );
+}
+
+function isAllowedFp0125LocalProtectedResourceMetadataRoutePath(path) {
+  return (
+    path === FP0125_LOCAL_ROUTE_PLAN ||
+    path === FP0125_LOCAL_ROUTE_PATH ||
+    path === FP0125_LOCAL_ROUTE_SPEC_PATH ||
+    path === FP0125_LOCAL_ROUTE_PROOF_PATH
   );
 }
 

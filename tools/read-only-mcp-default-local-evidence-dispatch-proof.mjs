@@ -42,6 +42,8 @@ const APP_PATH = "apps/control-plane/src/app.ts";
 const TYPES_PATH = "apps/control-plane/src/lib/types.ts";
 const ROUTE_PATH =
   "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts";
+const FP0125_LOCAL_ROUTE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
 const SERVICE_PATH =
   "apps/control-plane/src/modules/read-only-app-mcp-endpoint/service.ts";
 const DISPATCHER_PATH =
@@ -719,7 +721,9 @@ function changedScopeBoundary() {
       !changedPaths.includes("package.json") &&
       !changedPaths.some((path) => /\/package\.json$/u.test(path)),
     noPublicAssets: !changedPaths.some((path) => publicAssetPattern.test(path)),
-    noRouteBehaviorChange: !changedPaths.some(isAppRuntimeWiringPath),
+    noRouteBehaviorChange: !changedPaths.some(
+      isUnauthorizedAppRuntimeWiringPath,
+    ),
     noSchemaMigrationsAdded: !changedPaths.some(
       (path) =>
         /(?:^|\/)(?:migrations?|drizzle)\//iu.test(path) ||
@@ -735,6 +739,20 @@ function isAppRuntimeWiringPath(path) {
     /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
       path,
     )
+  );
+}
+
+function isUnauthorizedAppRuntimeWiringPath(path) {
+  return isAppRuntimeWiringPath(path) && !isFp0125AllowedWiringPath(path);
+}
+
+function isFp0125AllowedWiringPath(path) {
+  return (
+    path === APP_PATH ||
+    path === TYPES_PATH ||
+    path === FP0125_LOCAL_ROUTE_PATH ||
+    path ===
+      "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts"
   );
 }
 
@@ -798,7 +816,9 @@ function fp0112ChangedScopeScan() {
     noRemoteMcp: !/\b(?:remoteMcp|mcpServerRuntime|listen\s*\(|deploy)\b/u.test(
       changedRuntimeSource,
     ),
-    noRouteBehaviorChange: !changedPaths.some(isAppRuntimeWiringPath),
+    noRouteBehaviorChange: !changedPaths.some(
+      isUnauthorizedAppRuntimeWiringPath,
+    ),
     noSourceMutationFinanceWrite:
       !/\b(?:uploadSource|mutateSource|rewriteSource|deleteSource|writeFinanceTwin|updateLedger|financeWrite|generatedFinanceAdviceAllowed:\s*true)\b/u.test(
         changedRuntimeSource,
@@ -834,7 +854,9 @@ function fp0113ChangedScopeScan() {
     noRemoteMcp: !/\b(?:remoteMcp|mcpServerRuntime|listen\s*\(|deploy)\b/u.test(
       changedRuntimeSource,
     ),
-    noRouteBehaviorChange: !changedPaths.some(isAppRuntimeWiringPath),
+    noRouteBehaviorChange: !changedPaths.some(
+      isUnauthorizedAppRuntimeWiringPath,
+    ),
     noSourceMutationFinanceWrite:
       !/\b(?:uploadSource|mutateSource|rewriteSource|deleteSource|writeFinanceTwin|updateLedger|financeWrite|generatedFinanceAdviceAllowed:\s*true)\b/u.test(
         changedRuntimeSource,

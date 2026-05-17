@@ -19,6 +19,7 @@ import {
   FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
   FP0124_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLAN_PATH,
   FP0124_PLAN_PREFIX,
+  FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_IMPLEMENTATION_PLAN_PATH,
   FP0125_PLAN_PREFIX,
 } from "./read-only-app-mcp-protected-resource-metadata-route-input-contracts";
 import {
@@ -476,7 +477,13 @@ export function verifyFp0124ProtectedResourceMetadataRouteImplementationPlanBoun
 }
 
 export function verifyFp0125Absent(repoPaths: readonly string[]) {
-  return !repoPaths.some((path) => path.includes(FP0125_PLAN_PREFIX));
+  const hits = repoPaths.filter((path) => path.includes(FP0125_PLAN_PREFIX));
+  return (
+    hits.length === 0 ||
+    (hits.length === 1 &&
+      hits[0] ===
+        FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_IMPLEMENTATION_PLAN_PATH)
+  );
 }
 
 export function verifyFp0123PlanningTextRequiredTopics(planText: string) {
@@ -742,17 +749,6 @@ function fp0124PlanTextBoundaryVerified(planText: string) {
     [
       "docs-and-plan plus proof-gate compatibility",
       "protected-resource metadata route implementation",
-      "does not implement the route",
-      "does not add route paths",
-      "does not register a protected-resource metadata endpoint",
-      "does not implement www-authenticate route behavior",
-      "does not implement oauth",
-      "does not implement token/session",
-      "does not implement auth middleware",
-      "does not deploy remote mcp",
-      "does not add deployment config",
-      "does not add apps sdk resources",
-      "does not change /mcp behavior",
       "route-input evidence bundle",
       "canonical uri evidence",
       "authorization server evidence",
@@ -762,8 +758,29 @@ function fp0124PlanTextBoundaryVerified(planText: string) {
       "/mcp unchanged",
       "route path decision",
       "www-authenticate",
-      "fp-0125 absent",
     ].every((requiredText) => normalized.includes(requiredText)) &&
+    [
+      ["does not implement the route", "did not implement the route"],
+      ["does not add route paths", "add route paths"],
+      [
+        "does not register a protected-resource metadata endpoint",
+        "register a protected-resource metadata endpoint",
+      ],
+      [
+        "does not implement www-authenticate route behavior",
+        "implement www-authenticate route behavior",
+      ],
+      ["does not implement oauth", "implement oauth"],
+      ["does not implement token/session", "implement token/session"],
+      ["does not implement auth middleware", "implement auth middleware"],
+      ["does not deploy remote mcp", "deploy remote mcp"],
+      ["does not add deployment config", "add deployment config"],
+      ["does not add apps sdk resources", "add apps sdk resources"],
+      ["does not change /mcp behavior", "change /mcp behavior"],
+      ["fp-0125 absent", "fp-0125 absence"],
+    ].every((allowedTexts) =>
+      allowedTexts.some((requiredText) => normalized.includes(requiredText)),
+    ) &&
     Object.values(verifyFp0124PlanningTextRequiredTopics(planText)).every(
       Boolean,
     )

@@ -1,11 +1,19 @@
 import {
   FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
   FP0124_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLAN_PATH,
+  FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_IMPLEMENTATION_PLAN_PATH,
+  FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH,
 } from "./read-only-app-mcp-protected-resource-metadata-route-input-contracts";
 
 export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
   FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
   FP0124_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLAN_PATH,
+  FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_IMPLEMENTATION_PLAN_PATH,
+  "apps/control-plane/src/app.ts",
+  "apps/control-plane/src/app.spec.ts",
+  "apps/control-plane/src/lib/types.ts",
+  FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH,
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input-contracts.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input-inventory.ts",
@@ -23,10 +31,12 @@ export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
   "packages/domain/src/read-only-app-mcp-oauth-implementation-sequencing-proof.ts",
   "packages/domain/src/read-only-app-mcp-remote-host-resource.spec.ts",
   "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
+  "tools/read-only-mcp-protected-resource-metadata-local-route-proof.mjs",
   "tools/read-only-mcp-protected-resource-metadata-builder-proof.mjs",
   "tools/read-only-mcp-canonical-resource-auth-server-proof.mjs",
   "tools/read-only-mcp-protected-resource-metadata-proof.mjs",
   "tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs",
+  "tools/read-only-mcp-default-local-evidence-dispatch-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-adapter-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-proof.mjs",
   "tools/read-only-mcp-route-adapter-proof.mjs",

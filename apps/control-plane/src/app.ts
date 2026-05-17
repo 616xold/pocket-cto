@@ -17,6 +17,7 @@ import { registerGitHubWebhookRoutes } from "./modules/github-app/webhook-routes
 import { registerMissionRoutes } from "./modules/missions/routes";
 import { registerMonitoringRoutes } from "./modules/monitoring/routes";
 import { registerOperatorReadinessRoutes } from "./modules/operator-readiness/routes";
+import { registerReadOnlyAppMcpProtectedResourceMetadataRoute } from "./modules/read-only-app-mcp-endpoint/protected-resource-metadata-route";
 import { registerReadOnlyAppMcpEndpointRoutes } from "./modules/read-only-app-mcp-endpoint/routes";
 import { registerReplayRoutes } from "./modules/replay/routes";
 import { registerApprovalRoutes } from "./modules/approvals/routes";
@@ -111,6 +112,10 @@ export async function buildApp(options?: { container?: AppContainer }) {
   });
   await registerReadOnlyAppMcpEndpointRoutes(app, {
     readOnlyAppMcpEndpointService: container.readOnlyAppMcpEndpointService,
+  });
+  await registerReadOnlyAppMcpProtectedResourceMetadataRoute(app, {
+    routeInputEvidenceBundle:
+      container.readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle,
   });
   await registerSourceRoutes(app, {
     sourceService: container.sourceService,

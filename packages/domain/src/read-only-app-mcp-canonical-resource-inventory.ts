@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  MCP_PROTECTED_RESOURCE_METADATA_OPTIONAL_FP0125_ROUTE_LIKE_PATHS,
   MCP_PROTECTED_RESOURCE_METADATA_KNOWN_SAFE_ROUTE_LIKE_PATHS,
   listMcpProtectedResourceMetadataRouteLikeRepositoryPaths,
 } from "./read-only-app-mcp-protected-resource-metadata-inventory";
@@ -116,8 +117,12 @@ export function verifyMcpCanonicalResourceAuthServerRepositoryInventory(input: {
       MCP_CANONICAL_RESOURCE_AUTH_SERVER_KNOWN_SAFE_ROUTE_LIKE_PATHS
     ).map(normalizePath),
   );
+  const allowedRouteLikePaths = sortUnique([
+    ...knownSafeRouteLikePaths,
+    ...MCP_PROTECTED_RESOURCE_METADATA_OPTIONAL_FP0125_ROUTE_LIKE_PATHS,
+  ]);
   const unexpectedRouteLikeRepositoryPaths = routeLikeRepositoryPaths.filter(
-    (path) => !knownSafeRouteLikePaths.includes(path),
+    (path) => !allowedRouteLikePaths.includes(path),
   );
   const missingKnownSafeRouteLikeRepositoryPaths = knownSafeRouteLikePaths.filter(
     (path) => !routeLikeRepositoryPaths.includes(path),
@@ -131,14 +136,25 @@ export function verifyMcpCanonicalResourceAuthServerRepositoryInventory(input: {
   const changedRouteLikePaths = (input.changedPaths ?? [])
     .map(normalizePath)
     .filter(isRouteLikeRuntimePath);
+  const unauthorizedChangedRouteLikePaths = changedRouteLikePaths.filter(
+    (path) => !isFp0125ProtectedResourceMetadataLocalRoutePath(path),
+  );
+  const routeSourceHasAllowedFp0125Behavior =
+    routeSourceHasProtectedResourceMetadataBehavior(routeSourceText) &&
+    routeSourceHasOnlyFp0125ProtectedResourceMetadataBehavior(routeSourceText);
   const noNewRoutePathRepositoryInventoryVerified =
-    changedRouteLikePaths.length === 0 &&
+    unauthorizedChangedRouteLikePaths.length === 0 &&
     knownSafeRouteInventoryVerified &&
-    !routeSourceHasProtectedResourceMetadataBehavior(routeSourceText) &&
+    (!routeSourceHasProtectedResourceMetadataBehavior(routeSourceText) ||
+      routeSourceHasAllowedFp0125Behavior) &&
     !routeSourceHasWwwAuthenticateBehavior(routeSourceText);
+  const unauthorizedProtectedResourceRoutePaths = runtimePaths
+    .filter(isProtectedResourceMetadataRoutePath)
+    .filter((path) => !isFp0125ProtectedResourceMetadataLocalRoutePath(path));
   const protectedResourceMetadataRouteRepositoryInventoryVerified =
-    !runtimePaths.some(isProtectedResourceMetadataRoutePath) &&
-    !routeSourceHasProtectedResourceMetadataBehavior(routeSourceText);
+    unauthorizedProtectedResourceRoutePaths.length === 0 &&
+    (!routeSourceHasProtectedResourceMetadataBehavior(routeSourceText) ||
+      routeSourceHasAllowedFp0125Behavior);
   const wwwAuthenticateRouteRepositoryInventoryVerified =
     !runtimePaths.some(isWwwAuthenticateRouteBehaviorPath) &&
     !routeSourceHasWwwAuthenticateBehavior(routeSourceText);
@@ -246,9 +262,10 @@ function collectForbiddenOpenAiExecutableMatches(sourceText: string) {
 
 function isRuntimePath(path: string) {
   return (
-    path.startsWith("apps/") ||
+    !/\.spec\.ts$/u.test(path) &&
+    (path.startsWith("apps/") ||
     path.startsWith("packages/") ||
-    path.startsWith("tools/")
+    path.startsWith("tools/"))
   );
 }
 
@@ -267,6 +284,13 @@ function isProtectedResourceMetadataRoutePath(path: string) {
     /(?:\.well-known\/oauth-protected-resource|oauth-protected-resource|protected-resource-metadata|resource-metadata|resource_metadata)/iu.test(
       path,
     )
+  );
+}
+
+function isFp0125ProtectedResourceMetadataLocalRoutePath(path: string) {
+  return (
+    normalizePath(path) ===
+    MCP_PROTECTED_RESOURCE_METADATA_OPTIONAL_FP0125_ROUTE_LIKE_PATHS[0]
   );
 }
 
@@ -313,8 +337,30 @@ function routeSourceHasProtectedResourceMetadataBehavior(sourceText: string) {
   );
 }
 
+function routeSourceHasOnlyFp0125ProtectedResourceMetadataBehavior(
+  sourceText: string,
+) {
+  const metadataRouteMatches = sourceText.match(
+    /\/\.well-known\/oauth-protected-resource(?:\/mcp)?/gu,
+  );
+  const exactPathOnly =
+    metadataRouteMatches?.every(
+      (path) => path === "/.well-known/oauth-protected-resource/mcp",
+    ) ?? true;
+
+  return (
+    sourceText.includes(
+      "READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH",
+    ) &&
+    exactPathOnly &&
+    !/app\.(?:post|put|patch|delete)\(\s*READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH/u.test(
+      sourceText,
+    )
+  );
+}
+
 function routeSourceHasWwwAuthenticateBehavior(sourceText: string) {
-  return /(?:www-authenticate|resource_metadata|reply\.header\(\s*["']WWW-Authenticate["'])/iu.test(
+  return /(?:www-authenticate|resource_metadata\s*=|reply\.header\(\s*["']WWW-Authenticate["'])/iu.test(
     sourceText,
   );
 }

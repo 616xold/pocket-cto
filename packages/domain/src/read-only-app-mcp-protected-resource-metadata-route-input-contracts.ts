@@ -21,6 +21,12 @@ export const FP0124_PLAN_PREFIX = "FP-0124";
 
 export const FP0125_PLAN_PREFIX = "FP-0125";
 
+export const FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_IMPLEMENTATION_PLAN_PATH =
+  "plans/FP-0125-read-only-chatgpt-app-mcp-protected-resource-metadata-local-route-implementation.md";
+
+export const FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
+
 export const MCP_ROUTE_INPUT_EXPECTED_MCP_METADATA_ROUTE_PATH =
   `${MCP_PROTECTED_RESOURCE_METADATA_WELL_KNOWN_PATH}/mcp`;
 
