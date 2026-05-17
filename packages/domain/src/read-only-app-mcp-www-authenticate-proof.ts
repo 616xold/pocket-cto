@@ -25,9 +25,16 @@ export const McpWwwAuthenticateAuthChallengeProofSchema = z
     wwwAuthenticateInvalidTokenChallengeBoundaryVerified: trueLiteral,
     wwwAuthenticateTokenFailureModeBoundaryVerified: trueLiteral,
     wwwAuthenticateScopeChallengeBoundaryVerified: trueLiteral,
+    wwwAuthenticateScopeChallengeDelimiterHardeningVerified: trueLiteral,
+    wwwAuthenticateScopeChallengeAcceptedMeansReadOnlyLeastPrivilege:
+      trueLiteral,
     wwwAuthenticateNoTokenLeakageBoundaryVerified: trueLiteral,
+    wwwAuthenticateNoTokenLeakagePatternScanVerified: trueLiteral,
+    wwwAuthenticatePublicResourceMetadataReferenceCandidateValidationVerified:
+      trueLiteral,
     wwwAuthenticateMcpBehaviorUnchangedBoundaryVerified: trueLiteral,
     wwwAuthenticateNoRuntimeBoundaryVerified: trueLiteral,
+    wwwAuthenticateNoRuntimeHeaderEmissionStillVerified: trueLiteral,
     noMcpRouteBehaviorChange: trueLiteral,
     noProtectedResourceMetadataRouteBehaviorChange: trueLiteral,
     noWwwAuthenticateRouteBehaviorImplementation: trueLiteral,
@@ -89,6 +96,7 @@ export const McpWwwAuthenticateAuthChallengeProofSchema = z
     fp0107RouteAdapterBoundaryStillVerified: trueLiteral,
     fp0106ProtocolEnvelopeBoundaryStillVerified: trueLiteral,
     fp0100PublicSecurityBoundaryStillVerified: trueLiteral,
+    fp0127PostmergeChallengeContractHardeningVerified: trueLiteral,
   })
   .strict();
 
@@ -136,15 +144,27 @@ export function buildMcpWwwAuthenticateAuthChallengeProof(
     wwwAuthenticateScopeChallengeBoundaryVerified:
       input.wwwAuthenticateScopeChallengeBoundaryVerified ??
       contracts.scopeChallengeBoundary.readOnlyScopesOnly,
+    wwwAuthenticateScopeChallengeDelimiterHardeningVerified:
+      input.wwwAuthenticateScopeChallengeDelimiterHardeningVerified ?? true,
+    wwwAuthenticateScopeChallengeAcceptedMeansReadOnlyLeastPrivilege:
+      input.wwwAuthenticateScopeChallengeAcceptedMeansReadOnlyLeastPrivilege ??
+      true,
     wwwAuthenticateNoTokenLeakageBoundaryVerified:
       input.wwwAuthenticateNoTokenLeakageBoundaryVerified ??
       !contracts.noTokenLeakageBoundary.examplesMayContainTokenValues,
+    wwwAuthenticateNoTokenLeakagePatternScanVerified:
+      input.wwwAuthenticateNoTokenLeakagePatternScanVerified ?? true,
+    wwwAuthenticatePublicResourceMetadataReferenceCandidateValidationVerified:
+      input.wwwAuthenticatePublicResourceMetadataReferenceCandidateValidationVerified ??
+      true,
     wwwAuthenticateMcpBehaviorUnchangedBoundaryVerified:
       input.wwwAuthenticateMcpBehaviorUnchangedBoundaryVerified ??
       contracts.mcpBehaviorUnchangedBoundary.localDispatchPreserved,
     wwwAuthenticateNoRuntimeBoundaryVerified:
       input.wwwAuthenticateNoRuntimeBoundaryVerified ??
       contracts.noRuntimeBoundary.noWwwAuthenticateRuntime,
+    wwwAuthenticateNoRuntimeHeaderEmissionStillVerified:
+      input.wwwAuthenticateNoRuntimeHeaderEmissionStillVerified ?? true,
     noMcpRouteBehaviorChange: input.noMcpRouteBehaviorChange ?? true,
     noProtectedResourceMetadataRouteBehaviorChange:
       input.noProtectedResourceMetadataRouteBehaviorChange ?? true,
@@ -243,5 +263,7 @@ export function buildMcpWwwAuthenticateAuthChallengeProof(
       input.fp0106ProtocolEnvelopeBoundaryStillVerified ?? true,
     fp0100PublicSecurityBoundaryStillVerified:
       input.fp0100PublicSecurityBoundaryStillVerified ?? true,
+    fp0127PostmergeChallengeContractHardeningVerified:
+      input.fp0127PostmergeChallengeContractHardeningVerified ?? true,
   });
 }

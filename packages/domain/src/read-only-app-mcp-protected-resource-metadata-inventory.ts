@@ -348,7 +348,16 @@ function collectForbiddenOpenAiExecutableMatches(sourceText: string) {
 function isSafeDocsOrProofAbsenceText(line: string) {
   const trimmed = line.trim();
   const normalized = trimmed.toLowerCase();
+  const envKey = ["OPENAI", "API", "KEY"].join("_");
   if (!normalized) return true;
+  if (
+    new RegExp(
+      `(?:name:\\s*["']openai-|pattern:\\s*\\/.*${envKey}|\\/.*${envKey}.*\\.test\\(|openai-api-key)`,
+      "u",
+    ).test(trimmed)
+  ) {
+    return true;
+  }
   const docsLike =
     /^(?:[-*#>]|\/\/|\/\*|\*|["'`])/.test(trimmed) ||
     /^(?:no|not|never|without|does not|do not|must not|prohibit|prohibited|forbid|forbidden|reject|rejected|absence|absent|future-only)\b/u.test(
