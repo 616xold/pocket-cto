@@ -5,6 +5,7 @@ import {
   FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH,
   FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH,
 } from "./read-only-app-mcp-protected-resource-metadata-route-input-contracts";
+import { FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH } from "./read-only-app-mcp-token-validation-contracts";
 import { FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH } from "./read-only-app-mcp-www-authenticate-contracts";
 
 export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
@@ -13,6 +14,7 @@ export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
   FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_IMPLEMENTATION_PLAN_PATH,
   FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH,
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
+  FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
   "apps/control-plane/src/app.ts",
   "apps/control-plane/src/app.spec.ts",
   "apps/control-plane/src/lib/types.ts",
@@ -39,6 +41,11 @@ export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
   "packages/domain/src/read-only-app-mcp-www-authenticate-contracts.ts",
   "packages/domain/src/read-only-app-mcp-www-authenticate-proof.ts",
   "packages/domain/src/read-only-app-mcp-www-authenticate.spec.ts",
+  "packages/domain/src/read-only-app-mcp-www-authenticate-boundary-hardening.spec.ts",
+  "packages/domain/src/read-only-app-mcp-token-validation.ts",
+  "packages/domain/src/read-only-app-mcp-token-validation-contracts.ts",
+  "packages/domain/src/read-only-app-mcp-token-validation-proof.ts",
+  "packages/domain/src/read-only-app-mcp-token-validation.spec.ts",
   "packages/domain/src/read-only-app-mcp-remote-host-resource.spec.ts",
   "packages/domain/src/index.ts",
   "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
@@ -48,6 +55,7 @@ export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
   "tools/read-only-mcp-protected-resource-metadata-proof.mjs",
   "tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs",
   "tools/read-only-mcp-www-authenticate-auth-challenge-proof.mjs",
+  "tools/read-only-mcp-token-validation-readiness-proof.mjs",
   "tools/read-only-mcp-default-local-evidence-dispatch-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-adapter-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-proof.mjs",
@@ -85,6 +93,9 @@ export function isFp0123RouteInputAllowedChangedPath(path: string) {
       path,
     ) ||
     /^packages\/domain\/src\/read-only-app-mcp-www-authenticate.*\.ts$/u.test(
+      path,
+    ) ||
+    /^packages\/domain\/src\/read-only-app-mcp-token-validation.*\.ts$/u.test(
       path,
     ) ||
     /^packages\/domain\/src\/benchmark-community.*\.ts$/u.test(path)

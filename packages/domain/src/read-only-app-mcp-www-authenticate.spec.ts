@@ -25,8 +25,15 @@ import {
   verifyFp0127AbsentOrLocalWwwAuthenticateAuthChallengeContracts,
   verifyFp0127PlanningTextRequiredTopics,
   verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary,
-  verifyFp0128Absent,
 } from "./read-only-app-mcp-www-authenticate";
+import {
+  FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
+} from "./read-only-app-mcp-token-validation";
+import {
+  verifyFp0128AbsentOrLocalTokenValidationReadinessContracts,
+  verifyFp0128TokenValidationReadinessContractsBoundary,
+  verifyFp0129Absent,
+} from "./read-only-app-mcp-token-validation-proof";
 import {
   FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH,
   verifyFp0120CanonicalResourceAuthServerPlanBoundary,
@@ -43,10 +50,13 @@ const metadataRoutePath =
   "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
 
 describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
-  it("accepts exactly one FP-0127 local proof plan while FP-0128 remains absent", () => {
+  it("accepts exactly one FP-0127 local proof plan and exact FP-0128 token-readiness plan", () => {
     const repoPaths = repoFilePaths();
     const planText = safeRead(
       FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
+    );
+    const fp0128PlanText = safeRead(
+      FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
     );
     const fp0127Hits = repoPaths.filter((path) => /(^|\/)FP-0127/u.test(path));
 
@@ -65,7 +75,19 @@ describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
         repoPaths,
       }),
     ).toBe(true);
-    expect(verifyFp0128Absent(repoPaths)).toBe(true);
+    expect(
+      verifyFp0128AbsentOrLocalTokenValidationReadinessContracts({
+        planText: fp0128PlanText,
+        repoPaths,
+      }),
+    ).toBe(true);
+    expect(
+      verifyFp0128TokenValidationReadinessContractsBoundary({
+        planText: fp0128PlanText,
+        repoPaths,
+      }),
+    ).toBe(true);
+    expect(verifyFp0129Absent(repoPaths)).toBe(true);
     expect(
       Object.values(verifyFp0127PlanningTextRequiredTopics(planText)).every(
         Boolean,
@@ -87,11 +109,16 @@ describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
       }),
     ).toBe(false);
     expect(
-      verifyFp0128Absent([
+      verifyFp0128AbsentOrLocalTokenValidationReadinessContracts({
+        planText: fp0128PlanText,
+        repoPaths: [
         ...repoPaths,
         "plans/FP-0128-read-only-chatgpt-app-mcp-auth-runtime.md",
-      ]),
+        ],
+      }),
     ).toBe(false);
+    expect(verifyFp0129Absent([...repoPaths, "plans/FP-0129-runtime.md"]))
+      .toBe(false);
   });
 
   it("builds Bearer resource_metadata contract data without runtime header behavior", () => {

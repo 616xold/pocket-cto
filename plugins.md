@@ -1,13 +1,13 @@
 # Codex Plugins
 
-This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0127 WWW-Authenticate auth-challenge contracts foundation and post-merge proof-contract hardening slices.
+This file records the plugins available in this Codex local thread and the repo-local Pocket CFO plugin used for the FP-0128 token-validation failure-mode readiness contract slice.
 
 ## Repo-local plugin used
 
 - `pocket-cfo-codex-operator`
   - Marketplace entry: `.agents/plugins/marketplace.json`
   - Bundle path: `plugins/pocket-cfo-codex-operator/`
-  - Skills invoked for this FP-0127 local/proof-only/read-only contract and hardening slice covering future WWW-Authenticate `resource_metadata` auth-challenge contract foundations, scope delimiter/case forbidden-token proof hardening, realistic no-token-leakage pattern proof hardening, strict public `resource_metadata` reference candidate proof hardening, FP-0126 sequencing preservation, FP-0125 protected-resource metadata route preservation, FP-0125 evidence-coherence preservation, `/mcp` unchanged behavior, no WWW-Authenticate route behavior/header emission, no OAuth/token/session/auth middleware or token validation runtime, no remote/public/App SDK/app-submission scope, FP-0128 absence, proof-gate bridge, doc-refresh, validation, and handoff:
+  - Skills invoked for this FP-0128 local/proof-only/read-only contract slice covering future token-validation failure taxonomy, audience/resource validation prerequisites, read-only least-privilege scope challenge prerequisites, authenticated company binding, client `companyKey` selector-only posture, token passthrough prohibition, no-token-leakage boundaries, FP-0127 WWW-Authenticate auth-challenge preservation, FP-0126 sequencing preservation, FP-0125 protected-resource metadata route and evidence-coherence preservation, `/mcp` unchanged behavior, no WWW-Authenticate route behavior/header emission, no OAuth/token/session/auth middleware or token validation runtime, no remote/public/App SDK/app-submission scope, FP-0129 absence, proof-gate bridge, doc-refresh, validation, and handoff:
     - Finance Plan Orchestrator
     - Modular Architecture Guard
     - Source Provenance Guard

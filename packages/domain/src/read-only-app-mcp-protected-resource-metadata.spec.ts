@@ -54,8 +54,15 @@ import {
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   verifyFp0127AbsentOrLocalWwwAuthenticateAuthChallengeContracts,
   verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary,
-  verifyFp0128Absent,
 } from "./read-only-app-mcp-www-authenticate";
+import {
+  FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
+} from "./read-only-app-mcp-token-validation";
+import {
+  verifyFp0128AbsentOrLocalTokenValidationReadinessContracts,
+  verifyFp0128TokenValidationReadinessContractsBoundary,
+  verifyFp0129Absent,
+} from "./read-only-app-mcp-token-validation-proof";
 import {
   FP0120_CANONICAL_RESOURCE_AUTH_SERVER_PLAN_PATH,
   FP0121_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLANNING_PLAN_PATH,
@@ -255,13 +262,16 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     ).toBe(false);
   });
 
-  it("accepts FP-0126 sequencing plus exact FP-0127 local WWW-Authenticate contracts while FP-0128 remains absent", () => {
+  it("accepts FP-0126, FP-0127, and exact FP-0128 local token-readiness contracts", () => {
     const repoPaths = repoFilePaths();
     const planText = safeRead(
       FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH,
     );
     const fp0127PlanText = safeRead(
       FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
+    );
+    const fp0128PlanText = safeRead(
+      FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
     );
     const fp0126Hits = repoPaths.filter((path) => /(^|\/)FP-0126/u.test(path));
     const fp0127Hits = repoPaths.filter((path) => /(^|\/)FP-0127/u.test(path));
@@ -283,7 +293,19 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
             repoPaths,
           }),
         ),
-      fp0128Absent: verified(verifyFp0128Absent(repoPaths)),
+      fp0128AbsentOrLocalTokenValidationReadinessContractsVerified: verified(
+        verifyFp0128AbsentOrLocalTokenValidationReadinessContracts({
+          planText: fp0128PlanText,
+          repoPaths,
+        }),
+      ),
+      fp0128TokenValidationReadinessBoundaryStillVerified: verified(
+        verifyFp0128TokenValidationReadinessContractsBoundary({
+          planText: fp0128PlanText,
+          repoPaths,
+        }),
+      ),
+      fp0129Absent: verified(verifyFp0129Absent(repoPaths)),
       wwwAuthenticateAuthChallengeContractsFoundationVerified: verified(
         verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary({
           planText: fp0127PlanText,
@@ -311,7 +333,11 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     expect(
       proof.fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified,
     ).toBe(true);
-    expect(proof.fp0128Absent).toBe(true);
+    expect(
+      proof.fp0128AbsentOrLocalTokenValidationReadinessContractsVerified,
+    ).toBe(true);
+    expect(proof.fp0128TokenValidationReadinessBoundaryStillVerified).toBe(true);
+    expect(proof.fp0129Absent).toBe(true);
     expect(
       proof.wwwAuthenticateAuthChallengeContractsFoundationVerified,
     ).toBe(true);
