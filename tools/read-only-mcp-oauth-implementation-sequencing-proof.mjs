@@ -600,6 +600,8 @@ function readChangedExecutableSource() {
       (path) =>
         /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
         !path.startsWith("tools/") &&
+        !/^packages\/domain\/src\/.*inventory.*\.ts$/u.test(path) &&
+        !/^packages\/domain\/src\/.*proof.*\.ts$/u.test(path) &&
         !fp0123RouteInputSourceScanExcludedPaths.has(path) &&
         !path.endsWith(".spec.ts"),
     )

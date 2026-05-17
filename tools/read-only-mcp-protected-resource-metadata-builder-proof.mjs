@@ -29,11 +29,19 @@ const FP0100_PLAN =
   "plans/FP-0100-read-only-chatgpt-app-mcp-public-app-security-boundary-contracts-foundation.md";
 const ROUTE_PATH =
   "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts";
+const FP0125_LOCAL_ROUTE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
 
 const allowedChangedPaths = new Set([
   FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
   FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
   FP0124_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLAN_PATH,
+  "plans/FP-0125-read-only-chatgpt-app-mcp-protected-resource-metadata-local-route-implementation.md",
+  "apps/control-plane/src/app.ts",
+  "apps/control-plane/src/app.spec.ts",
+  "apps/control-plane/src/lib/types.ts",
+  FP0125_LOCAL_ROUTE_PATH,
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-builder.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-builder-contracts.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-builder-proof.ts",
@@ -45,8 +53,10 @@ const allowedChangedPaths = new Set([
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input-proof.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input.spec.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata.ts",
+  "packages/domain/src/read-only-app-mcp-protected-resource-metadata-inventory.ts",
   "packages/domain/src/read-only-app-mcp-canonical-resource-proof.ts",
   "packages/domain/src/read-only-app-mcp-canonical-resource-proof-schema.ts",
+  "packages/domain/src/read-only-app-mcp-canonical-resource-inventory.ts",
   "packages/domain/src/read-only-app-mcp-canonical-resource-proof.spec.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-proof.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata.spec.ts",
@@ -55,9 +65,11 @@ const allowedChangedPaths = new Set([
   "packages/domain/src/index.ts",
   "tools/read-only-mcp-protected-resource-metadata-builder-proof.mjs",
   "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
+  "tools/read-only-mcp-protected-resource-metadata-local-route-proof.mjs",
   "tools/read-only-mcp-canonical-resource-auth-server-proof.mjs",
   "tools/read-only-mcp-protected-resource-metadata-proof.mjs",
   "tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs",
+  "tools/read-only-mcp-default-local-evidence-dispatch-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-adapter-proof.mjs",
   "tools/read-only-mcp-route-adapter-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-proof.mjs",
@@ -285,7 +297,11 @@ function changedScopeScan(changedExecutableSource, currentRouteSource) {
       ),
     noNewRoutePath:
       changedFilesAllowed &&
-      !changedPaths.some((path) => routeRuntimePattern.test(path)),
+      !changedPaths.some(
+        (path) =>
+          routeRuntimePattern.test(path) ||
+          (isRouteLikeRuntimePath(path) && path !== FP0125_LOCAL_ROUTE_PATH),
+      ),
     noOauthImplementation:
       changedFilesAllowed &&
       !/\b(?:oauthCallback|authorizeUrl|tokenExchange|authorizationCode|pkceVerifier)\s*\(/u.test(
@@ -311,7 +327,12 @@ function changedScopeScan(changedExecutableSource, currentRouteSource) {
       !changedPaths.some((path) => /\/package\.json$/u.test(path)),
     noProtectedResourceMetadataRoute:
       changedFilesAllowed &&
-      !changedPaths.some((path) => routeRuntimePattern.test(path)) &&
+      !changedPaths.some(
+        (path) =>
+          routeRuntimePattern.test(path) ||
+          (isProtectedResourceMetadataRouteLikePath(path) &&
+            path !== FP0125_LOCAL_ROUTE_PATH),
+      ) &&
       !/oauth-protected-resource|resource_metadata|protectedResourceMetadataRoute/iu.test(
         currentRouteSource,
       ),
@@ -335,7 +356,11 @@ function changedScopeScan(changedExecutableSource, currentRouteSource) {
       ),
     noRouteBehaviorChange:
       changedFilesAllowed &&
-      !changedPaths.some((path) => routeRuntimePattern.test(path)),
+      !changedPaths.some(
+        (path) =>
+          routeRuntimePattern.test(path) ||
+          (isRouteLikeRuntimePath(path) && path !== FP0125_LOCAL_ROUTE_PATH),
+      ),
     noSchemaMigrations:
       changedFilesAllowed &&
       !changedPaths.some(
@@ -361,6 +386,24 @@ function changedScopeScan(changedExecutableSource, currentRouteSource) {
   };
 }
 
+function isRouteLikeRuntimePath(path) {
+  return (
+    /^apps\/web\/app\/(?:.*\/)?route\.ts$/u.test(path) ||
+    path.startsWith("apps/web/pages/api/") ||
+    /^apps\/control-plane\/src\/.*\/routes\.ts$/u.test(path) ||
+    /^apps\/control-plane\/src\/.*(?:route|router|controller)\.ts$/u.test(path)
+  );
+}
+
+function isProtectedResourceMetadataRouteLikePath(path) {
+  return (
+    isRouteLikeRuntimePath(path) &&
+    /(?:\.well-known\/oauth-protected-resource|oauth-protected-resource|protected-resource-metadata|resource-metadata|resource_metadata)/iu.test(
+      path,
+    )
+  );
+}
+
 function localRouteShapeStillVerified() {
   const source = safeRead(ROUTE_PATH);
   return (
@@ -384,6 +427,8 @@ function readChangedExecutableSource() {
       (path) =>
         /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
         !path.startsWith("tools/") &&
+        !/^packages\/domain\/src\/.*inventory.*\.ts$/u.test(path) &&
+        !/^packages\/domain\/src\/.*proof.*\.ts$/u.test(path) &&
         path !==
           "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input-inventory-rules.ts" &&
         !path.endsWith(".spec.ts"),

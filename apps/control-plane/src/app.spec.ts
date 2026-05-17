@@ -4,12 +4,15 @@ import {
   FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS,
   MCP_TOOL_ALLOWLIST,
   type EvidenceToolResponse,
+  buildProtectedResourceMetadataRouteInputEvidenceBundle,
   type ProofBundleManifest,
   ProofBundleManifestSchema,
+  validRouteInput,
 } from "@pocket-cto/domain";
 import { buildApp } from "./app";
 import { createInMemoryContainer } from "./bootstrap";
 import type { AppContainer } from "./lib/types";
+import { READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH } from "./modules/read-only-app-mcp-endpoint/protected-resource-metadata-route";
 import {
   LocalReadOnlyEvidenceToolDispatchAdapter,
   type ReadOnlyEvidenceToolServicePort,
@@ -70,6 +73,189 @@ describe("control-plane app", () => {
           toolName: "search_evidence",
         },
       },
+    });
+  });
+
+  it("does not register the protected-resource metadata route by default", async () => {
+    const app = await createTestApp(apps);
+
+    const response = await app.inject({
+      method: "GET",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
+
+    expect(
+      app.hasRoute({
+        method: "GET",
+        url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+      }),
+    ).toBe(false);
+    expect(response.statusCode).toBe(404);
+  });
+
+  it("registers the protected-resource metadata route only with explicit valid route-input evidence", async () => {
+    const evidenceBundle = buildProtectedResourceMetadataRouteInputEvidenceBundle(
+      validRouteInput,
+    );
+    const app = await createStubApp(apps, {
+      readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle:
+        evidenceBundle,
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
+    const postResponse = await app.inject({
+      method: "POST",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
+
+    expect(
+      app.hasRoute({
+        method: "GET",
+        url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+      }),
+    ).toBe(true);
+    expect(
+      app.hasRoute({
+        method: "POST",
+        url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+      }),
+    ).toBe(false);
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["www-authenticate"]).toBeUndefined();
+    expect(Object.keys(response.json()).sort()).toEqual([
+      "authorization_servers",
+      "bearer_methods_supported",
+      "resource",
+      "scopes_supported",
+    ]);
+    expect(response.json()).toEqual(evidenceBundle.builderOutput.document);
+    expect(JSON.stringify(response.json())).not.toMatch(
+      /access_token|client_secret|companyKey|cookie|credential|generatedAdvice|generated_advice|internal|password|proof|rawFinance|raw_finance|rawSource|raw_source|refresh_token|secret|session/u,
+    );
+    expect(postResponse.statusCode).toBe(404);
+  });
+
+  it("fails closed during buildApp before metadata route registration when explicit route-input evidence is invalid", async () => {
+    const base = createInMemoryContainer();
+    const evidenceBundle = buildProtectedResourceMetadataRouteInputEvidenceBundle(
+      validRouteInput,
+    );
+    const invalidEvidenceBundle = {
+      ...evidenceBundle,
+      noTokenLeakage: {
+        ...evidenceBundle.noTokenLeakage,
+        accepted: false,
+      },
+    } as unknown as ReturnType<
+      typeof buildProtectedResourceMetadataRouteInputEvidenceBundle
+    >;
+
+    await expect(
+      buildApp({
+        container: {
+          ...base,
+          readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle:
+            invalidEvidenceBundle,
+        },
+      }),
+    ).rejects.toThrow(/metadata route evidence dependency/u);
+  });
+
+  it("keeps /mcp behavior unchanged when explicit metadata route evidence is supplied", async () => {
+    const app = await createStubApp(apps, {
+      readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle:
+        buildProtectedResourceMetadataRouteInputEvidenceBundle(validRouteInput),
+    });
+
+    const getResponse = await app.inject({
+      headers: {
+        accept: "text/event-stream",
+      },
+      method: "GET",
+      url: "/mcp",
+    });
+    const initializeResponse = await app.inject({
+      method: "POST",
+      payload: {
+        id: "init-metadata-route",
+        jsonrpc: "2.0",
+        method: "initialize",
+      },
+      url: "/mcp",
+    });
+    const pingResponse = await app.inject({
+      method: "POST",
+      payload: {
+        id: "ping-metadata-route",
+        jsonrpc: "2.0",
+        method: "ping",
+      },
+      url: "/mcp",
+    });
+    const toolsListResponse = await app.inject({
+      method: "POST",
+      payload: {
+        id: "tools-metadata-route",
+        jsonrpc: "2.0",
+        method: "tools/list",
+      },
+      url: "/mcp",
+    });
+    const notificationResponse = await app.inject({
+      method: "POST",
+      payload: {
+        jsonrpc: "2.0",
+        method: "notifications/initialized",
+      },
+      url: "/mcp",
+    });
+    const originRejectedResponse = await app.inject({
+      headers: {
+        origin: "https://attacker.example",
+      },
+      method: "POST",
+      payload: {
+        id: "origin-metadata-route",
+        jsonrpc: "2.0",
+        method: "initialize",
+      },
+      url: "/mcp",
+    });
+
+    expect(getResponse.statusCode).toBe(405);
+    expect(getResponse.headers.allow).toBe("POST");
+    expect(getResponse.body).toBe("");
+    expect(initializeResponse.statusCode).toBe(200);
+    expect(initializeResponse.json()).toMatchObject({
+      id: "init-metadata-route",
+      result: {
+        capabilities: {
+          tools: {
+            listChanged: false,
+          },
+        },
+      },
+    });
+    expect(pingResponse.json()).toEqual({
+      id: "ping-metadata-route",
+      jsonrpc: "2.0",
+      result: {},
+    });
+    expect(
+      toolsListResponse
+        .json()
+        .result.tools.map((tool: { name: string }) => tool.name),
+    ).toEqual([...MCP_TOOL_ALLOWLIST]);
+    expect(notificationResponse.statusCode).toBe(202);
+    expect(notificationResponse.body).toBe("");
+    expect(originRejectedResponse.statusCode).toBe(403);
+    expect(originRejectedResponse.json()).toMatchObject({
+      failClosed: true,
+      localRouteAdapterOnly: true,
+      reason: "invalid_origin",
     });
   });
 
@@ -4574,6 +4760,7 @@ async function createStubApp(
       >;
     };
     readOnlyAppMcpEndpointService?: AppContainer["readOnlyAppMcpEndpointService"];
+    readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle?: AppContainer["readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle"];
     replayService?: Partial<AppContainer["replayService"]>;
     sourceService?: Partial<AppContainer["sourceService"]>;
     twinService?: Partial<AppContainer["twinService"]>;

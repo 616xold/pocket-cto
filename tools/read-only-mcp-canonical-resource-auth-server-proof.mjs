@@ -40,6 +40,8 @@ const FP0100_PLAN =
   "plans/FP-0100-read-only-chatgpt-app-mcp-public-app-security-boundary-contracts-foundation.md";
 const ROUTE_PATH =
   "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts";
+const FP0125_LOCAL_ROUTE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
 const fp0123RouteInputSourceScanExcludedPaths = new Set([
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input-inventory-rules.ts",
   "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
@@ -443,7 +445,9 @@ function changedScopeScan() {
     noListingCopy: !changedPaths.some((path) =>
       /(?:listing-copy|public-listing|store-listing)/iu.test(path),
     ),
-    noNewRoutePath: !changedPaths.some(isRouteLikeRuntimePath),
+    noNewRoutePath: !changedPaths.some(
+      (path) => isRouteLikeRuntimePath(path) && path !== FP0125_LOCAL_ROUTE_PATH,
+    ),
     noOauthImplementation:
       !/\b(?:oauthCallback|authorizeUrl|tokenExchange|authorizationCode|pkceVerifier)\s*\(/u.test(
         changedExecutableSource,
@@ -452,7 +456,11 @@ function changedScopeScan() {
       !changedPaths.includes("package.json") &&
       !changedPaths.some((path) => /\/package\.json$/u.test(path)),
     noProtectedResourceMetadataRoute:
-      !changedPaths.some(isProtectedResourceMetadataRouteLikePath) &&
+      !changedPaths.some(
+        (path) =>
+          isProtectedResourceMetadataRouteLikePath(path) &&
+          path !== FP0125_LOCAL_ROUTE_PATH,
+      ) &&
       !/protected-resource|oauth-protected-resource|resource_metadata/iu.test(
         changedRouteSource,
       ),
@@ -479,7 +487,9 @@ function changedScopeScan() {
       !/\b(?:remoteMcpRuntime|mcpServerRuntime|startRemoteMcp|listen\s*\(|deploy\s*\()\b/u.test(
         changedExecutableSource,
       ),
-    noRouteBehaviorChange: !changedPaths.some(isRouteLikeRuntimePath),
+    noRouteBehaviorChange: !changedPaths.some(
+      (path) => isRouteLikeRuntimePath(path) && path !== FP0125_LOCAL_ROUTE_PATH,
+    ),
     noSchemaMigrations: !changedPaths.some(
       (path) =>
         /^packages\/db\//u.test(path) ||
@@ -496,7 +506,7 @@ function changedScopeScan() {
       ),
     noWwwAuthenticateRouteBehavior:
       !changedPaths.some(isWwwAuthenticateRouteLikePath) &&
-      !/www-authenticate|resource_metadata/iu.test(changedRouteSource),
+      !/www-authenticate|resource_metadata\s*=/iu.test(changedRouteSource),
   };
 }
 
@@ -553,6 +563,8 @@ function readChangedExecutableSource() {
       (path) =>
         /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
         !path.startsWith("tools/") &&
+        !/^packages\/domain\/src\/.*inventory.*\.ts$/u.test(path) &&
+        !/^packages\/domain\/src\/.*proof.*\.ts$/u.test(path) &&
         !fp0123RouteInputSourceScanExcludedPaths.has(path) &&
         !path.endsWith(".spec.ts"),
     )

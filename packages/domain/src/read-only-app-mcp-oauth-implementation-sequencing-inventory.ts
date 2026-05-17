@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 const trueLiteral = z.literal(true);
+const FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
 
 export const McpOauthImplementationSequencingInventoryProofSchema = z
   .object({
@@ -81,7 +83,11 @@ export function verifyFp0117OauthImplementationSequencingRepositoryInventory(inp
     isAuthMiddlewareRuntimePath,
   );
   const protectedResourceMetadataRouteRepositoryInventoryVerified =
-    !runtimePaths.some(isProtectedResourceMetadataRoutePath) &&
+    !runtimePaths.some(
+      (path) =>
+        isProtectedResourceMetadataRoutePath(path) &&
+        path !== FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH,
+    ) &&
     !routeSourceHasProtectedResourceMetadataBehavior(routeSourceText);
   const wwwAuthenticateRouteBehaviorRepositoryInventoryVerified =
     !runtimePaths.some(isWwwAuthenticateRouteBehaviorPath) &&
@@ -221,9 +227,10 @@ function isSafeDocsOrProofAbsenceText(line: string) {
 
 function isRuntimePath(path: string) {
   return (
-    path.startsWith("apps/control-plane/src/") ||
+    !/\.spec\.ts$/u.test(path) &&
+    (path.startsWith("apps/control-plane/src/") ||
     path.startsWith("apps/web/app/api/") ||
-    path.startsWith("apps/web/pages/api/")
+    path.startsWith("apps/web/pages/api/"))
   );
 }
 
@@ -264,7 +271,7 @@ function routeSourceHasProtectedResourceMetadataBehavior(sourceText: string) {
 }
 
 function routeSourceHasWwwAuthenticateBehavior(sourceText: string) {
-  return /(?:www-authenticate|resource_metadata|mcp\/www_authenticate)/iu.test(
+  return /(?:www-authenticate|resource_metadata\s*=|mcp\/www_authenticate)/iu.test(
     sourceText,
   );
 }

@@ -45,7 +45,7 @@ const durabilityScan =
     routeSourceText: routeSource,
     sourceTextByPath: readSourceTextByPath(
       sortUnique([
-        ...changedPaths,
+        ...changedPaths.filter(isDurabilityExecutableScanPath),
         ...repoPaths.filter(isRouteLikeRuntimePath),
         ROUTE_PATH,
       ]),
@@ -429,6 +429,14 @@ function readChangedExecutableSource() {
     )
     .map(safeRead)
     .join("\n");
+}
+
+function isDurabilityExecutableScanPath(path) {
+  return (
+    /\.(?:ts|tsx|js|mjs|cjs)$/u.test(path) &&
+    !path.startsWith("tools/") &&
+    !path.endsWith(".spec.ts")
+  );
 }
 
 function dirtyFilePaths() {

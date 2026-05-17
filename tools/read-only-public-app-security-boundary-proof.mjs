@@ -15,6 +15,14 @@ const fp0123RouteInputSourceScanExcludedPaths = new Set([
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input-inventory-rules.ts",
   "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
 ]);
+const FP0125_LOCAL_ROUTE_PLAN =
+  "plans/FP-0125-read-only-chatgpt-app-mcp-protected-resource-metadata-local-route-implementation.md";
+const FP0125_LOCAL_ROUTE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
+const FP0125_LOCAL_ROUTE_SPEC_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts";
+const FP0125_LOCAL_ROUTE_PROOF_PATH =
+  "tools/read-only-mcp-protected-resource-metadata-local-route-proof.mjs";
 
 const fp0101Boundary = fp0101PublicAppImplementationSequencingBoundary();
 const noRoutesAdded = noFp0100RouteOrEndpointPaths();
@@ -906,6 +914,10 @@ function isAllowedFp0107LocalRouteAdapterPath(path) {
   return (
     path ===
       "plans/FP-0107-read-only-chatgpt-app-mcp-local-fastify-mcp-route-adapter-foundation.md" ||
+    path === FP0125_LOCAL_ROUTE_PLAN ||
+    path === FP0125_LOCAL_ROUTE_PATH ||
+    path === FP0125_LOCAL_ROUTE_SPEC_PATH ||
+    path === FP0125_LOCAL_ROUTE_PROOF_PATH ||
     path === "apps/control-plane/src/app.ts" ||
     path === "tools/read-only-mcp-route-adapter-proof.mjs" ||
     /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|schema|formatter|service|evidence-dispatcher)(?:\.spec)?\.ts$/u.test(

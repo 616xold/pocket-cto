@@ -8,6 +8,7 @@ import {
   FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
   FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
   MCP_PROTECTED_RESOURCE_METADATA_KNOWN_SAFE_ROUTE_LIKE_PATHS,
+  MCP_PROTECTED_RESOURCE_METADATA_OPTIONAL_FP0125_ROUTE_LIKE_PATHS,
   MCP_PROTECTED_RESOURCE_METADATA_BEARER_METHODS,
   MCP_PROTECTED_RESOURCE_METADATA_TOKEN_LEAKAGE_SURFACES,
   MCP_PROTECTED_RESOURCE_TOKEN_FAILURE_MODES,
@@ -590,7 +591,8 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     );
     expect(routeLikeRepositoryPaths).toEqual([
       ...MCP_PROTECTED_RESOURCE_METADATA_KNOWN_SAFE_ROUTE_LIKE_PATHS,
-    ]);
+      ...MCP_PROTECTED_RESOURCE_METADATA_OPTIONAL_FP0125_ROUTE_LIKE_PATHS,
+    ].sort());
     expect(inventory.noNewRoutePathRepositoryInventoryVerified).toBe(true);
     expect(inventory.knownSafeRouteInventoryVerified).toBe(true);
     expect(inventory.noUnexpectedRouteLikeRepositoryPaths).toBe(true);

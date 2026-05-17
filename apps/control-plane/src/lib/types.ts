@@ -1,4 +1,7 @@
-import type { OperatorControlAvailability as DomainOperatorControlAvailability } from "@pocket-cto/domain";
+import type {
+  McpProtectedResourceMetadataRouteInputEvidenceBundle,
+  OperatorControlAvailability as DomainOperatorControlAvailability,
+} from "@pocket-cto/domain";
 import type { ApprovalService } from "../modules/approvals/service";
 import type { CloseControlAcknowledgementService } from "../modules/close-control-acknowledgement/service";
 import type { CloseControlCertificationBoundaryService } from "../modules/close-control-certification-boundary/service";
@@ -134,6 +137,9 @@ export type ReadOnlyAppMcpEndpointServicePort = Pick<
   "handle"
 >;
 
+export type ReadOnlyAppMcpProtectedResourceMetadataRouteEvidencePort =
+  McpProtectedResourceMetadataRouteInputEvidenceBundle;
+
 export type SourceServicePort = Pick<
   SourceRegistryService,
   | "createSource"
@@ -243,6 +249,7 @@ export type AppContainer = {
   monitoringService?: MonitoringServicePort;
   operatorReadinessService: OperatorReadinessServicePort;
   readOnlyAppMcpEndpointService?: ReadOnlyAppMcpEndpointServicePort;
+  readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle?: ReadOnlyAppMcpProtectedResourceMetadataRouteEvidencePort;
   operatorControl: {
     approvalService: Pick<
       ApprovalService,

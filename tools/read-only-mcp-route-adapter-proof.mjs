@@ -66,6 +66,14 @@ const EVIDENCE_TOOL_SERVICE_PATH =
   "apps/control-plane/src/modules/evidence-index/tools/service.ts";
 const EVIDENCE_TOOL_SERVICE_SPEC_PATH =
   "apps/control-plane/src/modules/evidence-index/tools/service.spec.ts";
+const FP0125_LOCAL_ROUTE_PLAN =
+  "plans/FP-0125-read-only-chatgpt-app-mcp-protected-resource-metadata-local-route-implementation.md";
+const FP0125_LOCAL_ROUTE_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
+const FP0125_LOCAL_ROUTE_SPEC_PATH =
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts";
+const FP0125_LOCAL_ROUTE_PROOF_PATH =
+  "tools/read-only-mcp-protected-resource-metadata-local-route-proof.mjs";
 
 const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
@@ -863,6 +871,7 @@ function changedFilesAreAllowed() {
     FP0122_PROTECTED_RESOURCE_METADATA_BUILDER_PLAN_PATH,
     FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
     FP0124_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLAN_PATH,
+    FP0125_LOCAL_ROUTE_PLAN,
     ROUTE_PATH,
     SERVICE_PATH,
     FORMATTER_PATH,
@@ -873,6 +882,8 @@ function changedFilesAreAllowed() {
     EVIDENCE_DISPATCHER_SPEC_PATH,
     EVIDENCE_TOOL_SERVICE_PATH,
     EVIDENCE_TOOL_SERVICE_SPEC_PATH,
+    FP0125_LOCAL_ROUTE_PATH,
+    FP0125_LOCAL_ROUTE_SPEC_PATH,
     "apps/control-plane/src/app.ts",
     "apps/control-plane/src/app.spec.ts",
     "apps/control-plane/src/lib/types.ts",
@@ -894,6 +905,7 @@ function changedFilesAreAllowed() {
     "tools/read-only-mcp-canonical-resource-auth-server-proof.mjs",
     "tools/read-only-mcp-protected-resource-metadata-builder-proof.mjs",
     "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
+    FP0125_LOCAL_ROUTE_PROOF_PATH,
     "tools/benchmark-community-pack-proof.mjs",
     "packages/domain/src/index.ts",
     "packages/domain/src/benchmark-community.spec.ts",
