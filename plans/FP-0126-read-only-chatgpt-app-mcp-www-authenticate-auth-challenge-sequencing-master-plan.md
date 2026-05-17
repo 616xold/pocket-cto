@@ -6,7 +6,7 @@ FP-0126 is a docs-and-plan plus proof-gate compatibility master plan for future 
 
 FP-0126 plans future WWW-Authenticate resource_metadata auth-challenge behavior sequencing only. It does not implement WWW-Authenticate behavior, does not change /mcp behavior, and does not add OAuth/token/session/auth middleware. It does not add remote MCP, deployment config, Apps SDK resources, public app behavior, app submission. It does not add DB queries, schemas, migrations, package scripts, public assets, listing copy, generated public prose, OpenAI API/model calls, provider calls, source mutation, finance writes, or autonomous action.
 
-The compelling proof point for this slice is compatibility, not runtime auth. FP-0126 lets the repo accept exactly one plan for the next auth-challenge sequencing lane while keeping FP-0125 local-only metadata route behavior unchanged and keeping FP-0127 absent.
+The compelling proof point for this slice is compatibility, not runtime auth. FP-0126 let the repo accept exactly one plan for the next auth-challenge sequencing lane while keeping FP-0125 local-only metadata route behavior unchanged and leaving FP-0127 not yet created at FP-0126 closeout.
 
 ## Progress
 
@@ -15,7 +15,7 @@ The compelling proof point for this slice is compatibility, not runtime auth. FP
 - [x] 2026-05-17T14:28:17Z: Ran pre-edit FP-0125 local route, route-input, route-adapter, and protocol-envelope proofs and confirmed default buildApp metadata route absence, explicit valid dependency route registration, unchanged /mcp behavior, and FP-0125 evidence-coherence proof.
 - [x] 2026-05-17T14:28:17Z: Reviewed official MCP Authorization, MCP Transports, MCP Security Best Practices, RFC 9728, and OpenAI Apps SDK Authentication/Security docs as read-only protocol context.
 - [x] 2026-05-17T14:28:17Z: Opened FP-0126 as docs-and-plan/proof-gate compatibility only, with no runtime route/auth implementation scope.
-- [x] 2026-05-17T14:28:17Z: Added the proof-gate bridge accepting exactly this FP-0126 plan while FP-0127 remains absent.
+- [x] 2026-05-17T14:28:17Z: Added the proof-gate bridge accepting exactly this FP-0126 plan while FP-0127 stayed absent at FP-0126 closeout.
 - [x] 2026-05-17T14:28:17Z: Refreshed directly stale docs and plugin notes that still described FP-0126 as absent/future-only.
 - [x] 2026-05-17T14:28:17Z: Completed same-branch validation after plan, proof bridge, docs refresh, and closeout.
 - [x] 2026-05-17T14:46:22Z: Corrected the FP-0126 proof helper type narrowing found by `pnpm typecheck` and reran the full validation ladder through `pnpm ci:repro:current`.
@@ -45,7 +45,7 @@ The compelling proof point for this slice is compatibility, not runtime auth. FP
 - Decision: Apps SDK resources remain future-only.
 - Decision: Public app submission remains future-only.
 - Decision: FP-0124 route implementation planning boundary remains preserved, FP-0123 route-input evidence boundary remains preserved, FP-0122 metadata builder boundary remains preserved, FP-0120 canonical resource/auth-server boundary remains preserved, FP-0118 protected-resource metadata boundary remains preserved, FP-0117 OAuth sequencing boundary remains preserved, FP-0107 route adapter boundary remains preserved, FP-0106 protocol envelope boundary remains preserved, and FP-0100 public security boundary remains preserved.
-- Decision: FP-0127 remains absent.
+- Decision: FP-0127 was absent at FP-0126 closeout; successor auth-challenge contract work requires its own named Finance Plan.
 
 ## Context and Orientation
 
@@ -98,14 +98,14 @@ OpenAI Developers was not exposed as a read-only docs connector in this thread; 
    - `fp0125ProtectedResourceMetadataLocalRouteBoundaryStillVerified`
    - `fp0125EvidenceCoherenceBoundaryStillVerified`
 3. Keep existing prior-boundary gates for FP-0124, FP-0123, FP-0122, FP-0120, FP-0118, FP-0117, FP-0107, FP-0106, and FP-0100 green.
-4. Add focused tests proving exactly one FP-0126 path is accepted, FP-0127 remains absent, FP-0126 is docs-and-plan/proof-gate only, no /mcp route behavior changed, no protected-resource metadata route behavior changed, no WWW-Authenticate header behavior was added, no OAuth/token/session/auth middleware was added, no remote MCP/deployment config was added, no DB/schema/package/data/source-pack/public-asset/OpenAI/provider/source/finance-write scope exists, FP-0125 route remains exact and explicit-dependency-only, FP-0125 evidence-coherence proof remains green, and existing prior boundaries remain intact.
+4. Add focused tests proving exactly one FP-0126 path is accepted, FP-0127 was absent at FP-0126 closeout, FP-0126 is docs-and-plan/proof-gate only, no /mcp route behavior changed, no protected-resource metadata route behavior changed, no WWW-Authenticate header behavior was added, no OAuth/token/session/auth middleware was added, no remote MCP/deployment config was added, no DB/schema/package/data/source-pack/public-asset/OpenAI/provider/source/finance-write scope exists, FP-0125 route remains exact and explicit-dependency-only, FP-0125 evidence-coherence proof remains green, and existing prior boundaries remain intact.
 
 ## Validation and Acceptance
 
 Acceptance requires:
 
 - exactly one FP-0126 plan path
-- FP-0127 remains absent
+- FP-0127 was absent at FP-0126 closeout
 - FP-0126 is docs-and-plan/proof-gate compatibility only
 - no /mcp route behavior change
 - no protected-resource metadata route behavior change
@@ -172,6 +172,6 @@ This plan is idempotent because it adds no route behavior, no auth runtime, no d
 
 ## Outcomes & Retrospective
 
-FP-0126 records the next safe auth-adjacent step as sequencing and compatibility only. It keeps the shipped FP-0125 protected-resource metadata local route exact and explicit-dependency-only, preserves default buildApp metadata route absence, keeps /mcp behavior unchanged, keeps WWW-Authenticate behavior absent, keeps OAuth/token/session/auth middleware absent, keeps remote/public/App SDK/app submission work absent, and keeps FP-0127 absent.
+FP-0126 records the next safe auth-adjacent step as sequencing and compatibility only. It kept the shipped FP-0125 protected-resource metadata local route exact and explicit-dependency-only, preserved default buildApp metadata route absence, kept /mcp behavior unchanged, kept WWW-Authenticate behavior absent, kept OAuth/token/session/auth middleware absent, kept remote/public/App SDK/app submission work absent, and left FP-0127 not yet created at FP-0126 closeout.
 
-The next slice should be a narrow contracts-only successor if the team wants to prepare WWW-Authenticate challenge implementation contracts. Runtime implementation should not start until a later plan resolves token validation, authenticated company binding, public canonical URL, exact scope semantics, and route behavior authorization. Public ChatGPT App submission should wait.
+The next slice after FP-0126 was expected to be a narrow contracts-only successor if the team wanted to prepare WWW-Authenticate challenge implementation contracts. Runtime implementation should not start until a later plan resolves token validation, authenticated company binding, public canonical URL, exact scope semantics, and route behavior authorization. Public ChatGPT App submission should wait.

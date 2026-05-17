@@ -43,6 +43,7 @@ import {
   verifyFp0121ProtectedResourceMetadataRouteImplementationPlanningBoundary,
 } from "./read-only-app-mcp-canonical-resource";
 import { buildMcpProtectedResourceMetadataBuilderContracts } from "./read-only-app-mcp-protected-resource-metadata-builder-proof";
+import { buildMcpWwwAuthenticateAuthChallengeContracts } from "./read-only-app-mcp-www-authenticate-builders";
 import {
   MCP_PUBLIC_MCP_ENDPOINT_PATH,
   MCP_PROTECTED_RESOURCE_METADATA_REQUIREMENTS,
@@ -109,7 +110,29 @@ export const McpProtectedResourceMetadataProofSchema = z
     fp0125Absent: trueLiteral,
     fp0126AbsentOrDocsOnlyWwwAuthenticateAuthChallengeSequencingPlanVerified:
       trueLiteral,
-    fp0127Absent: trueLiteral,
+    fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified:
+      trueLiteral,
+    fp0128Absent: trueLiteral,
+    wwwAuthenticateAuthChallengeContractsFoundationVerified: trueLiteral,
+    noMcpRouteBehaviorChangeFromFp0127: trueLiteral,
+    noProtectedResourceMetadataRouteBehaviorChangeFromFp0127: trueLiteral,
+    noWwwAuthenticateRouteBehaviorFromFp0127: trueLiteral,
+    noTokenValidationImplementationFromFp0127: trueLiteral,
+    noOauthImplementationFromFp0127: trueLiteral,
+    noTokenSessionImplementationFromFp0127: trueLiteral,
+    noAuthMiddlewareImplementationFromFp0127: trueLiteral,
+    noRemoteMcpDeploymentFromFp0127: trueLiteral,
+    noDeploymentConfigFromFp0127: trueLiteral,
+    noAppsSdkResourceFromFp0127: trueLiteral,
+    noAppSubmissionFromFp0127: trueLiteral,
+    noDbQueriesFromFp0127: trueLiteral,
+    noSchemaMigrationsFromFp0127: trueLiteral,
+    noPackageScriptsFromFp0127: trueLiteral,
+    noOpenAiApiCallsFromFp0127: trueLiteral,
+    noProviderExternalCallsFromFp0127: trueLiteral,
+    noSourceMutationFinanceWriteFromFp0127: trueLiteral,
+    noPublicAssetsSubmissionArtifactsFromFp0127: trueLiteral,
+    noListingCopyGeneratedPublicProseFromFp0127: trueLiteral,
     wwwAuthenticateAuthChallengeSequencingBoundaryVerified: trueLiteral,
     noMcpRouteBehaviorChangeFromFp0126: trueLiteral,
     noWwwAuthenticateBehaviorFromFp0126: trueLiteral,
@@ -459,7 +482,45 @@ export function buildMcpProtectedResourceMetadataProof(
     fp0126AbsentOrDocsOnlyWwwAuthenticateAuthChallengeSequencingPlanVerified:
       input.fp0126AbsentOrDocsOnlyWwwAuthenticateAuthChallengeSequencingPlanVerified ??
       true,
-    fp0127Absent: input.fp0127Absent ?? true,
+    fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified:
+      input.fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified ??
+      true,
+    fp0128Absent: input.fp0128Absent ?? true,
+    wwwAuthenticateAuthChallengeContractsFoundationVerified:
+      input.wwwAuthenticateAuthChallengeContractsFoundationVerified ??
+      buildMcpWwwAuthenticateAuthChallengeContracts().proofContract
+        .contractOnly,
+    noAppSubmissionFromFp0127: input.noAppSubmissionFromFp0127 ?? true,
+    noAppsSdkResourceFromFp0127: input.noAppsSdkResourceFromFp0127 ?? true,
+    noAuthMiddlewareImplementationFromFp0127:
+      input.noAuthMiddlewareImplementationFromFp0127 ?? true,
+    noDbQueriesFromFp0127: input.noDbQueriesFromFp0127 ?? true,
+    noDeploymentConfigFromFp0127: input.noDeploymentConfigFromFp0127 ?? true,
+    noListingCopyGeneratedPublicProseFromFp0127:
+      input.noListingCopyGeneratedPublicProseFromFp0127 ?? true,
+    noMcpRouteBehaviorChangeFromFp0127:
+      input.noMcpRouteBehaviorChangeFromFp0127 ?? true,
+    noOauthImplementationFromFp0127:
+      input.noOauthImplementationFromFp0127 ?? true,
+    noOpenAiApiCallsFromFp0127: input.noOpenAiApiCallsFromFp0127 ?? true,
+    noPackageScriptsFromFp0127: input.noPackageScriptsFromFp0127 ?? true,
+    noProtectedResourceMetadataRouteBehaviorChangeFromFp0127:
+      input.noProtectedResourceMetadataRouteBehaviorChangeFromFp0127 ?? true,
+    noProviderExternalCallsFromFp0127:
+      input.noProviderExternalCallsFromFp0127 ?? true,
+    noPublicAssetsSubmissionArtifactsFromFp0127:
+      input.noPublicAssetsSubmissionArtifactsFromFp0127 ?? true,
+    noRemoteMcpDeploymentFromFp0127:
+      input.noRemoteMcpDeploymentFromFp0127 ?? true,
+    noSchemaMigrationsFromFp0127: input.noSchemaMigrationsFromFp0127 ?? true,
+    noSourceMutationFinanceWriteFromFp0127:
+      input.noSourceMutationFinanceWriteFromFp0127 ?? true,
+    noTokenSessionImplementationFromFp0127:
+      input.noTokenSessionImplementationFromFp0127 ?? true,
+    noTokenValidationImplementationFromFp0127:
+      input.noTokenValidationImplementationFromFp0127 ?? true,
+    noWwwAuthenticateRouteBehaviorFromFp0127:
+      input.noWwwAuthenticateRouteBehaviorFromFp0127 ?? true,
     noAppSubmissionFromFp0126: input.noAppSubmissionFromFp0126 ?? true,
     noAppsSdkResourceFromFp0126: input.noAppsSdkResourceFromFp0126 ?? true,
     noAuthMiddlewareImplementationFromFp0126:
@@ -1106,7 +1167,10 @@ export function verifyFp0126PlanningTextRequiredTopics(planText: string) {
     fp0125MetadataRouteUnchanged: normalized.includes(
       "fp-0125 metadata route remains unchanged",
     ),
-    fp0127Absent: normalized.includes("fp-0127 remains absent"),
+    fp0127Absent:
+      normalized.includes("fp-0127 was absent at fp-0126 closeout") ||
+      normalized.includes("fp-0127 stayed absent at fp-0126 closeout") ||
+      normalized.includes("fp-0127 not yet created at fp-0126 closeout"),
     localDispatchUnchanged: normalized.includes(
       "/mcp initialize/ping/tools/list/tools/call behavior remains unchanged",
     ),

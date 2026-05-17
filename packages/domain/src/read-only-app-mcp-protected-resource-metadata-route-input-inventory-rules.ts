@@ -5,12 +5,14 @@ import {
   FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH,
   FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH,
 } from "./read-only-app-mcp-protected-resource-metadata-route-input-contracts";
+import { FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH } from "./read-only-app-mcp-www-authenticate-contracts";
 
 export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
   FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
   FP0124_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLAN_PATH,
   FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_IMPLEMENTATION_PLAN_PATH,
   FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH,
+  FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   "apps/control-plane/src/app.ts",
   "apps/control-plane/src/app.spec.ts",
   "apps/control-plane/src/lib/types.ts",
@@ -31,13 +33,21 @@ export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
   "packages/domain/src/read-only-app-mcp-canonical-resource-proof-schema.ts",
   "packages/domain/src/read-only-app-mcp-canonical-resource-proof.spec.ts",
   "packages/domain/src/read-only-app-mcp-oauth-implementation-sequencing-proof.ts",
+  "packages/domain/src/read-only-app-mcp-oauth-implementation-sequencing-inventory.ts",
+  "packages/domain/src/read-only-app-mcp-www-authenticate.ts",
+  "packages/domain/src/read-only-app-mcp-www-authenticate-builders.ts",
+  "packages/domain/src/read-only-app-mcp-www-authenticate-contracts.ts",
+  "packages/domain/src/read-only-app-mcp-www-authenticate-proof.ts",
+  "packages/domain/src/read-only-app-mcp-www-authenticate.spec.ts",
   "packages/domain/src/read-only-app-mcp-remote-host-resource.spec.ts",
+  "packages/domain/src/index.ts",
   "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
   "tools/read-only-mcp-protected-resource-metadata-local-route-proof.mjs",
   "tools/read-only-mcp-protected-resource-metadata-builder-proof.mjs",
   "tools/read-only-mcp-canonical-resource-auth-server-proof.mjs",
   "tools/read-only-mcp-protected-resource-metadata-proof.mjs",
   "tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs",
+  "tools/read-only-mcp-www-authenticate-auth-challenge-proof.mjs",
   "tools/read-only-mcp-default-local-evidence-dispatch-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-adapter-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-proof.mjs",
@@ -72,6 +82,9 @@ export function isFp0123RouteInputAllowedChangedPath(path: string) {
       path,
     ) ||
     /^packages\/domain\/src\/read-only-app-mcp-(?:canonical-resource|oauth-implementation-sequencing|remote-host-resource|oauth-security|remote-host-readiness|evidence-tool-dispatch|protocol-envelope|endpoint-route-ownership|endpoint-architecture|public-security).*\.ts$/u.test(
+      path,
+    ) ||
+    /^packages\/domain\/src\/read-only-app-mcp-www-authenticate.*\.ts$/u.test(
       path,
     ) ||
     /^packages\/domain\/src\/benchmark-community.*\.ts$/u.test(path)

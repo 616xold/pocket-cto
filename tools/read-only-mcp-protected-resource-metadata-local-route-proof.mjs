@@ -18,7 +18,9 @@ import {
   verifyFp0124AbsentOrDocsOnlyProtectedResourceMetadataRouteImplementationPlan,
   verifyFp0126AbsentOrDocsOnlyWwwAuthenticateAuthChallengeSequencingPlan,
   verifyFp0126WwwAuthenticateAuthChallengeSequencingPlanBoundary,
-  verifyFp0127Absent,
+  verifyFp0127AbsentOrLocalWwwAuthenticateAuthChallengeContracts,
+  verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary,
+  verifyFp0128Absent,
 } from "../packages/domain/src/index.ts";
 import { buildApp } from "../apps/control-plane/src/app.ts";
 import { createInMemoryContainer } from "../apps/control-plane/src/bootstrap.ts";
@@ -32,6 +34,8 @@ import { registerReadOnlyAppMcpEndpointRoutes } from "../apps/control-plane/src/
 const FP0125_PLAN =
   "plans/FP-0125-read-only-chatgpt-app-mcp-protected-resource-metadata-local-route-implementation.md";
 const FP0126_PLAN = FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH;
+const FP0127_PLAN =
+  "plans/FP-0127-read-only-chatgpt-app-mcp-www-authenticate-auth-challenge-contracts-foundation.md";
 const FP0124_PLAN =
   "plans/FP-0124-read-only-chatgpt-app-mcp-protected-resource-metadata-route-implementation-master-plan.md";
 const FP0123_PLAN =
@@ -161,7 +165,11 @@ const proof = {
   fp0125BoundaryVerified: planProof.fp0125BoundaryVerified,
   fp0126AbsentOrDocsOnlyWwwAuthenticateAuthChallengeSequencingPlanVerified:
     planProof.fp0126AbsentOrDocsOnlyWwwAuthenticateAuthChallengeSequencingPlanVerified,
-  fp0127Absent: planProof.fp0127Absent,
+  fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified:
+    planProof.fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified,
+  fp0128Absent: planProof.fp0128Absent,
+  wwwAuthenticateAuthChallengeContractsFoundationVerified:
+    planProof.wwwAuthenticateAuthChallengeContractsFoundationVerified,
   wwwAuthenticateAuthChallengeSequencingBoundaryVerified:
     planProof.wwwAuthenticateAuthChallengeSequencingBoundaryVerified,
   noMcpRouteBehaviorChangeFromFp0126: appProof.mcpRouteBehaviorUnchanged,
@@ -177,6 +185,39 @@ const proof = {
   noDeploymentConfigFromFp0126: repositoryProof.noDeploymentConfig,
   noAppsSdkResourceFromFp0126: repositoryProof.noAppsSdkResourceImplementation,
   noAppSubmissionFromFp0126: repositoryProof.noAppSubmission,
+  noMcpRouteBehaviorChangeFromFp0127: appProof.mcpRouteBehaviorUnchanged,
+  noProtectedResourceMetadataRouteBehaviorChangeFromFp0127:
+    appProof.explicitEvidenceDependencyEnablesMetadataRoute &&
+    appProof.metadataResponseBoundedFieldsVerified &&
+    appProof.metadataResponseNoTokenLeakageVerified,
+  noWwwAuthenticateRouteBehaviorFromFp0127:
+    appProof.noWwwAuthenticateRouteBehaviorImplementation &&
+    sourceProof.noWwwAuthenticateRouteBehaviorImplementation,
+  noTokenValidationImplementationFromFp0127:
+    sourceProof.noTokenValidationImplementation,
+  noOauthImplementationFromFp0127: sourceProof.noOauthImplementation,
+  noTokenSessionImplementationFromFp0127:
+    sourceProof.noTokenSessionImplementation,
+  noAuthMiddlewareImplementationFromFp0127:
+    sourceProof.noAuthMiddlewareImplementation,
+  noRemoteMcpDeploymentFromFp0127: repositoryProof.noRemoteMcpDeployment,
+  noDeploymentConfigFromFp0127: repositoryProof.noDeploymentConfig,
+  noAppsSdkResourceFromFp0127: repositoryProof.noAppsSdkResourceImplementation,
+  noAppSubmissionFromFp0127: repositoryProof.noAppSubmission,
+  noDbQueriesFromFp0127: repositoryProof.noDbQueriesFromFp0126,
+  noSchemaMigrationsFromFp0127: repositoryProof.noSchemaMigrationsAdded,
+  noPackageScriptsFromFp0127: repositoryProof.noPackageScriptsAdded,
+  noOpenAiApiCallsFromFp0127: repositoryProof.noOpenAiApiCallsFromFp0126,
+  noProviderExternalCallsFromFp0127:
+    repositoryProof.noProviderExternalCallsFromFp0126,
+  noSourceMutationFinanceWriteFromFp0127:
+    repositoryProof.noSourceMutationFinanceWriteFromFp0126,
+  noPublicAssetsSubmissionArtifactsFromFp0127:
+    repositoryProof.noPublicAssets &&
+    repositoryProof.noAppSubmission &&
+    repositoryProof.noGeneratedPublicProse,
+  noListingCopyGeneratedPublicProseFromFp0127:
+    repositoryProof.noListingCopy && repositoryProof.noGeneratedPublicProse,
   fp0125ProtectedResourceMetadataLocalRouteBoundaryStillVerified:
     planProof.fp0125BoundaryVerified,
   fp0125EvidenceCoherenceBoundaryStillVerified:
@@ -627,6 +668,10 @@ function verifySourceBoundaries() {
       !/\b(?:tokenStore|sessionStore|sessionHandler|refreshTokenStore|setCookie)\s*\(/u.test(
         executableChangedSource,
       ),
+    noTokenValidationImplementation:
+      !/\b(?:validateToken|verifyToken|tokenValidator|jwtVerify|verifyJwt|validateBearer|verifyBearer)\s*\(/u.test(
+        executableChangedSource,
+      ),
     noAuthMiddlewareImplementation:
       !/\b(?:authMiddleware|authorizationMiddleware|routeGuard|verifyBearer|requireAuth|authenticateRequest)\s*\(/u.test(
         executableChangedSource,
@@ -702,6 +747,7 @@ function verifyPlanBoundaries() {
   const fp0125Hits = repoPaths.filter((path) => path.includes("FP-0125"));
   const fp0125PlanText = safeRead(FP0125_PLAN);
   const fp0126PlanText = safeRead(FP0126_PLAN);
+  const fp0127PlanText = safeRead(FP0127_PLAN);
   const fp0125TextBoundary =
     fp0125PlanText.includes("local-only/read-only/proof-gated") &&
     fp0125PlanText.includes("explicit FP-0123") &&
@@ -719,7 +765,17 @@ function verifyPlanBoundaries() {
         planText: fp0126PlanText,
         repoPaths,
       }),
-    fp0127Absent: verifyFp0127Absent(repoPaths),
+    fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified:
+      verifyFp0127AbsentOrLocalWwwAuthenticateAuthChallengeContracts({
+        planText: fp0127PlanText,
+        repoPaths,
+      }),
+    fp0128Absent: verifyFp0128Absent(repoPaths),
+    wwwAuthenticateAuthChallengeContractsFoundationVerified:
+      verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary({
+        planText: fp0127PlanText,
+        repoPaths,
+      }),
     wwwAuthenticateAuthChallengeSequencingBoundaryVerified:
       verifyFp0126WwwAuthenticateAuthChallengeSequencingPlanBoundary({
         planText: fp0126PlanText,

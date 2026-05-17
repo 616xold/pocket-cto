@@ -31,6 +31,7 @@ export * from "./read-only-app-mcp-protected-resource-metadata";
 export * from "./read-only-app-mcp-protocol-envelope";
 export * from "./read-only-app-mcp-public-security";
 export * from "./read-only-app-mcp-remote-host-resource";
+export * from "./read-only-app-mcp-www-authenticate";
 export * from "./replay-event";
 export * from "./reporting-mission";
 export * from "./source-registry";
