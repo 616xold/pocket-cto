@@ -18,7 +18,11 @@ import {
   type McpProtectedResourceMetadataRouteInputEvidenceBundle,
   type McpProtectedResourceMetadataRoutePathDecision,
 } from "./read-only-app-mcp-protected-resource-metadata-route-input-contracts";
-import type { McpProtectedResourceMetadataBuilderDocument } from "./read-only-app-mcp-protected-resource-metadata-builder-contracts";
+import {
+  MCP_PROTECTED_RESOURCE_METADATA_BUILDER_ALLOWED_SCOPES,
+  MCP_PROTECTED_RESOURCE_METADATA_BUILDER_BEARER_METHODS,
+  type McpProtectedResourceMetadataBuilderDocument,
+} from "./read-only-app-mcp-protected-resource-metadata-builder-contracts";
 
 export type McpProtectedResourceMetadataRouteInputEvidenceBundleValidation = {
   accepted: boolean;
@@ -32,6 +36,22 @@ export type McpProtectedResourceMetadataRouteInputEvidenceBundleValidation = {
   noRuntimeAccepted: boolean;
   rejectionReasons: readonly string[];
 };
+
+export type McpProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence =
+  {
+    accepted: boolean;
+    routeInputEvidenceSemanticCoherenceVerified: boolean;
+    routeInputEvidenceSchemaVersionVerified: boolean;
+    metadataDocumentResourceMatchesCanonicalUriEvidence: boolean;
+    pathDecisionCanonicalUriMatchesEvidence: boolean;
+    pathDecisionMetadataUrlMatchesEvidence: boolean;
+    routePathMatchesPathDecision: boolean;
+    metadataDocumentAuthorizationServersMatchEvidence: boolean;
+    metadataDocumentScopesRemainReadOnly: boolean;
+    metadataDocumentBearerMethodsRemainHeaderOnly: boolean;
+    metadataDocumentFp0122BuilderPostureAccepted: boolean;
+    rejectionReasons: readonly string[];
+  };
 
 export function validateProtectedResourceMetadataRouteInputEvidenceBundle(
   input: unknown,
@@ -105,6 +125,108 @@ export function validateProtectedResourceMetadataRouteInputEvidenceBundle(
     rejectionReasons,
     routePathDecisionAccepted,
   };
+}
+
+export function validateProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence(
+  bundle: McpProtectedResourceMetadataRouteInputEvidenceBundle,
+): McpProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence {
+  const document = bundle.builderOutput.document;
+  const canonicalResourceUri =
+    bundle.canonicalUriEvidence.canonicalResourceUri;
+  const metadataDocumentResourceMatchesCanonicalUriEvidence =
+    document.resource === canonicalResourceUri;
+  const pathDecisionCanonicalUriMatchesEvidence =
+    bundle.pathDecision.canonicalResourceUri === canonicalResourceUri;
+  const pathDecisionMetadataUrlMatchesEvidence =
+    bundle.pathDecision.metadataUrl ===
+    bundle.canonicalUriEvidence.metadataUrl;
+  const routePathMatchesPathDecision =
+    bundle.pathDecision.metadataRoutePath ===
+    MCP_ROUTE_INPUT_EXPECTED_MCP_METADATA_ROUTE_PATH;
+  const metadataDocumentAuthorizationServersMatchEvidence = sameList(
+    document.authorization_servers,
+    bundle.authorizationServerEvidence.authorizationServers,
+  );
+  const metadataDocumentScopesRemainReadOnly =
+    document.scopes_supported.length > 0 &&
+    document.scopes_supported.every((scope) =>
+      MCP_PROTECTED_RESOURCE_METADATA_BUILDER_ALLOWED_SCOPES.includes(
+        scope as (typeof MCP_PROTECTED_RESOURCE_METADATA_BUILDER_ALLOWED_SCOPES)[number],
+      ),
+    );
+  const metadataDocumentBearerMethodsRemainHeaderOnly =
+    document.bearer_methods_supported.length > 0 &&
+    document.bearer_methods_supported.every(
+      (method) =>
+        method === MCP_PROTECTED_RESOURCE_METADATA_BUILDER_BEARER_METHODS[0],
+    );
+  const metadataDocumentFp0122BuilderPostureAccepted =
+    validateProtectedResourceMetadataBuilderInput({
+      authorizationServers: [...document.authorization_servers],
+      bearerMethodsSupported: [...document.bearer_methods_supported],
+      canonicalResourceUri: document.resource,
+      scopesSupported: [...document.scopes_supported],
+    }).accepted;
+  const routeInputEvidenceSchemaVersionVerified =
+    bundle.schemaVersion ===
+    MCP_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_SCHEMA_VERSION;
+  const rejectionReasons = [
+    routeInputEvidenceSchemaVersionVerified ? "" : "schema_version_mismatch",
+    metadataDocumentResourceMatchesCanonicalUriEvidence
+      ? ""
+      : "metadata_document_resource_mismatch",
+    pathDecisionCanonicalUriMatchesEvidence
+      ? ""
+      : "path_decision_canonical_uri_mismatch",
+    pathDecisionMetadataUrlMatchesEvidence
+      ? ""
+      : "path_decision_metadata_url_mismatch",
+    routePathMatchesPathDecision ? "" : "metadata_route_path_mismatch",
+    metadataDocumentAuthorizationServersMatchEvidence
+      ? ""
+      : "metadata_document_authorization_servers_mismatch",
+    metadataDocumentScopesRemainReadOnly
+      ? ""
+      : "metadata_document_scopes_unaccepted",
+    metadataDocumentBearerMethodsRemainHeaderOnly
+      ? ""
+      : "metadata_document_bearer_methods_unaccepted",
+    metadataDocumentFp0122BuilderPostureAccepted
+      ? ""
+      : "metadata_document_fp0122_builder_posture_unaccepted",
+  ].filter(Boolean);
+  const routeInputEvidenceSemanticCoherenceVerified =
+    rejectionReasons.length === 0;
+
+  return {
+    accepted: routeInputEvidenceSemanticCoherenceVerified,
+    metadataDocumentAuthorizationServersMatchEvidence,
+    metadataDocumentBearerMethodsRemainHeaderOnly,
+    metadataDocumentFp0122BuilderPostureAccepted,
+    metadataDocumentResourceMatchesCanonicalUriEvidence,
+    metadataDocumentScopesRemainReadOnly,
+    pathDecisionCanonicalUriMatchesEvidence,
+    pathDecisionMetadataUrlMatchesEvidence,
+    rejectionReasons,
+    routeInputEvidenceSchemaVersionVerified,
+    routeInputEvidenceSemanticCoherenceVerified,
+    routePathMatchesPathDecision,
+  };
+}
+
+export function assertProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence(
+  bundle: McpProtectedResourceMetadataRouteInputEvidenceBundle,
+) {
+  const coherence =
+    validateProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence(
+      bundle,
+    );
+
+  if (!coherence.accepted) {
+    throw new Error(
+      `Protected-resource metadata route evidence dependency is semantically incoherent: ${coherence.rejectionReasons.join(", ")}`,
+    );
+  }
 }
 
 export function deriveProtectedResourceMetadataRoutePathDecision(
@@ -269,6 +391,13 @@ function builderOutputAccepted(
 
   return (
     JSON.stringify(input.builderOutput) === JSON.stringify(expectedDocument)
+  );
+}
+
+function sameList(left: readonly string[], right: readonly string[]) {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
   );
 }
 

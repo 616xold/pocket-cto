@@ -4,9 +4,11 @@ import { fileURLToPath } from "node:url";
 import Fastify from "fastify";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  MCP_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_SCHEMA_VERSION,
   MCP_TOOL_ALLOWLIST,
   buildProtectedResourceMetadataRouteInputEvidenceBundle,
   validRouteInput,
+  validateProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence,
 } from "@pocket-cto/domain";
 import { registerHttpErrorHandler } from "../../lib/http-errors";
 import {
@@ -52,6 +54,22 @@ describe("read-only app MCP protected-resource metadata route", () => {
       method: "POST",
       url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
     });
+    const putResponse = await app.inject({
+      method: "PUT",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
+    const patchResponse = await app.inject({
+      method: "PATCH",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
+    const deleteResponse = await app.inject({
+      method: "DELETE",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
+    const headResponse = await app.inject({
+      method: "HEAD",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
     const rootResponse = await app.inject({
       method: "GET",
       url: "/.well-known/oauth-protected-resource",
@@ -69,6 +87,12 @@ describe("read-only app MCP protected-resource metadata route", () => {
         url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
       }),
     ).toBe(false);
+    expect(
+      app.hasRoute({
+        method: "HEAD",
+        url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+      }),
+    ).toBe(false);
     expect(response.statusCode).toBe(200);
     expect(String(response.headers["content-type"] ?? "")).toContain(
       "application/json",
@@ -83,7 +107,13 @@ describe("read-only app MCP protected-resource metadata route", () => {
     expect(response.json()).toEqual(
       validEvidenceBundle().builderOutput.document,
     );
-    expect(postResponse.statusCode).toBe(404);
+    expect([
+      postResponse.statusCode,
+      putResponse.statusCode,
+      patchResponse.statusCode,
+      deleteResponse.statusCode,
+    ]).toEqual([404, 404, 404, 404]);
+    expect(headResponse.statusCode).toBe(404);
     expect(rootResponse.statusCode).toBe(404);
   });
 
@@ -190,6 +220,158 @@ describe("read-only app MCP protected-resource metadata route", () => {
       }),
     ).toBe(false);
   });
+
+  it("verifies schema version and semantic coherence for a valid evidence bundle", () => {
+    const coherence =
+      validateProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence(
+        validEvidenceBundle(),
+      );
+
+    expect(validEvidenceBundle().schemaVersion).toBe(
+      MCP_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_SCHEMA_VERSION,
+    );
+    expect(coherence.routeInputEvidenceSchemaVersionVerified).toBe(true);
+    expect(coherence.metadataDocumentResourceMatchesCanonicalUriEvidence).toBe(
+      true,
+    );
+    expect(coherence.pathDecisionCanonicalUriMatchesEvidence).toBe(true);
+    expect(coherence.pathDecisionMetadataUrlMatchesEvidence).toBe(true);
+    expect(coherence.routePathMatchesPathDecision).toBe(true);
+    expect(
+      coherence.metadataDocumentAuthorizationServersMatchEvidence,
+    ).toBe(true);
+    expect(coherence.metadataDocumentScopesRemainReadOnly).toBe(true);
+    expect(coherence.metadataDocumentBearerMethodsRemainHeaderOnly).toBe(true);
+    expect(coherence.routeInputEvidenceSemanticCoherenceVerified).toBe(true);
+  });
+
+  it.each([
+    [
+      "mismatched document.resource",
+      (bundle: ReturnType<typeof validEvidenceBundle>) => ({
+        ...bundle,
+        builderOutput: {
+          ...bundle.builderOutput,
+          document: {
+            ...bundle.builderOutput.document,
+            resource: "https://mcp.canonical-finance-host.com/other",
+          },
+        },
+      }),
+    ],
+    [
+      "mismatched pathDecision.canonicalResourceUri",
+      (bundle: ReturnType<typeof validEvidenceBundle>) => ({
+        ...bundle,
+        pathDecision: {
+          ...bundle.pathDecision,
+          canonicalResourceUri:
+            "https://mcp.canonical-finance-host.com/other",
+        },
+      }),
+    ],
+    [
+      "mismatched pathDecision.metadataUrl",
+      (bundle: ReturnType<typeof validEvidenceBundle>) => ({
+        ...bundle,
+        pathDecision: {
+          ...bundle.pathDecision,
+          metadataUrl:
+            "https://mcp.canonical-finance-host.com/.well-known/oauth-protected-resource/other",
+        },
+      }),
+    ],
+    [
+      "mismatched metadataRoutePath",
+      (bundle: ReturnType<typeof validEvidenceBundle>) => ({
+        ...bundle,
+        pathDecision: {
+          ...bundle.pathDecision,
+          metadataRoutePath:
+            "/.well-known/oauth-protected-resource/other",
+        },
+      }),
+    ],
+    [
+      "mismatched authorization_servers",
+      (bundle: ReturnType<typeof validEvidenceBundle>) => ({
+        ...bundle,
+        builderOutput: {
+          ...bundle.builderOutput,
+          document: {
+            ...bundle.builderOutput.document,
+            authorization_servers: [
+              "https://other-auth.canonical-finance-host.com",
+            ],
+          },
+        },
+      }),
+    ],
+    [
+      "non-read-only scope in document",
+      (bundle: ReturnType<typeof validEvidenceBundle>) => ({
+        ...bundle,
+        builderOutput: {
+          ...bundle.builderOutput,
+          document: {
+            ...bundle.builderOutput.document,
+            scopes_supported: ["mcp:read", "finance:write"],
+          },
+        },
+      }),
+    ],
+    [
+      "query bearer method in document",
+      (bundle: ReturnType<typeof validEvidenceBundle>) => ({
+        ...bundle,
+        builderOutput: {
+          ...bundle.builderOutput,
+          document: {
+            ...bundle.builderOutput.document,
+            bearer_methods_supported: ["query"],
+          },
+        },
+      }),
+    ],
+    [
+      "wrong schemaVersion",
+      (bundle: ReturnType<typeof validEvidenceBundle>) => ({
+        ...bundle,
+        schemaVersion: "v2aq.read-only-app-mcp-protected-resource-metadata-route-input.v0",
+      }),
+    ],
+    [
+      "schema-valid but semantically incoherent evidence",
+      (bundle: ReturnType<typeof validEvidenceBundle>) => ({
+        ...bundle,
+        canonicalUriEvidence: {
+          ...bundle.canonicalUriEvidence,
+          metadataUrl:
+            "https://mcp.canonical-finance-host.com/.well-known/oauth-protected-resource/other",
+        },
+      }),
+    ],
+  ] satisfies Array<
+    [string, (bundle: ReturnType<typeof validEvidenceBundle>) => unknown]
+  >)(
+    "fails closed before route registration for %s",
+    async (_name, mutate) => {
+      const app = Fastify();
+      apps.push(app);
+
+      await expect(
+        registerReadOnlyAppMcpProtectedResourceMetadataRoute(app, {
+          routeInputEvidenceBundle: mutate(validEvidenceBundle()),
+        }),
+      ).rejects.toThrow(/metadata route evidence dependency/u);
+      expect(
+        app.hasRoute({
+          method: "GET",
+          url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+        }),
+      ).toBe(false);
+    },
+  );
 
   it("keeps existing /mcp behavior unchanged when the metadata route is registered", async () => {
     const app = Fastify();

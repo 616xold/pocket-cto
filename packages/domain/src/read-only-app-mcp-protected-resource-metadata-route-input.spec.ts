@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
   FP0124_PROTECTED_RESOURCE_METADATA_ROUTE_IMPLEMENTATION_PLAN_PATH,
+  MCP_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_SCHEMA_VERSION,
   MCP_ROUTE_INPUT_EXPECTED_MCP_METADATA_ROUTE_PATH,
   McpProtectedResourceMetadataRouteInputEvidenceBundleSchema,
   McpProtectedResourceMetadataRouteInputProofSchema,
@@ -14,6 +15,7 @@ import {
   buildProtectedResourceMetadataRouteInputEvidenceBundle,
   deriveProtectedResourceMetadataRoutePathDecision,
   validateProtectedResourceMetadataRouteInputEvidenceBundle,
+  validateProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence,
   verifyFp0123AbsentOrLocalProtectedResourceMetadataRouteInputContracts,
   verifyFp0123PlanningTextRequiredTopics,
   verifyFp0123ProtectedResourceMetadataRouteInputContractsBoundary,
@@ -186,6 +188,60 @@ describe("FP-0123 protected-resource metadata route-input evidence contracts", (
         bundle,
       ).success,
     ).toBe(true);
+  });
+
+  it("proves route-input evidence bundle semantic coherence beyond schema validity", () => {
+    const bundle =
+      buildProtectedResourceMetadataRouteInputEvidenceBundle(validRouteInput);
+    const coherence =
+      validateProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence(
+        bundle,
+      );
+
+    expect(bundle.schemaVersion).toBe(
+      MCP_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_SCHEMA_VERSION,
+    );
+    expect(coherence).toMatchObject({
+      accepted: true,
+      metadataDocumentAuthorizationServersMatchEvidence: true,
+      metadataDocumentBearerMethodsRemainHeaderOnly: true,
+      metadataDocumentResourceMatchesCanonicalUriEvidence: true,
+      metadataDocumentScopesRemainReadOnly: true,
+      pathDecisionCanonicalUriMatchesEvidence: true,
+      pathDecisionMetadataUrlMatchesEvidence: true,
+      routeInputEvidenceSchemaVersionVerified: true,
+      routeInputEvidenceSemanticCoherenceVerified: true,
+      routePathMatchesPathDecision: true,
+    });
+  });
+
+  it("rejects schema-valid but semantically incoherent route-input evidence", () => {
+    const bundle =
+      buildProtectedResourceMetadataRouteInputEvidenceBundle(validRouteInput);
+    const incoherentBundle =
+      McpProtectedResourceMetadataRouteInputEvidenceBundleSchema.parse({
+        ...bundle,
+        builderOutput: {
+          ...bundle.builderOutput,
+          document: {
+            ...bundle.builderOutput.document,
+            resource: "https://mcp.canonical-finance-host.com/other",
+          },
+        },
+      });
+    const coherence =
+      validateProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence(
+        incoherentBundle,
+      );
+
+    expect(coherence.accepted).toBe(false);
+    expect(coherence.routeInputEvidenceSemanticCoherenceVerified).toBe(false);
+    expect(coherence.metadataDocumentResourceMatchesCanonicalUriEvidence).toBe(
+      false,
+    );
+    expect(coherence.rejectionReasons).toContain(
+      "metadata_document_resource_mismatch",
+    );
   });
 
   it("fails closed for unsafe route-input evidence candidates", () => {

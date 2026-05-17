@@ -2,8 +2,11 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import Fastify from "../apps/control-plane/node_modules/fastify/fastify.js";
 import {
+  MCP_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_SCHEMA_VERSION,
+  McpProtectedResourceMetadataRouteInputEvidenceBundleSchema,
   buildProtectedResourceMetadataRouteInputEvidenceBundle,
   validRouteInput,
+  validateProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence,
   verifyFp0117OauthImplementationSequencingPlanBoundary,
   verifyFp0118ProtectedResourceMetadataPlanBoundary,
   verifyFp0120CanonicalResourceAuthServerPlanBoundary,
@@ -87,6 +90,28 @@ const proof = {
     appProof.explicitEvidenceDependencyEnablesMetadataRoute,
   invalidEvidenceDependencyFailsClosedBeforeRouteRegistration:
     appProof.invalidEvidenceDependencyFailsClosedBeforeRouteRegistration,
+  routeInputEvidenceSemanticCoherenceVerified:
+    appProof.routeInputEvidenceSemanticCoherenceVerified,
+  routeInputEvidenceSchemaVersionVerified:
+    appProof.routeInputEvidenceSchemaVersionVerified,
+  metadataDocumentResourceMatchesCanonicalUriEvidence:
+    appProof.metadataDocumentResourceMatchesCanonicalUriEvidence,
+  pathDecisionCanonicalUriMatchesEvidence:
+    appProof.pathDecisionCanonicalUriMatchesEvidence,
+  pathDecisionMetadataUrlMatchesEvidence:
+    appProof.pathDecisionMetadataUrlMatchesEvidence,
+  routePathMatchesPathDecision: appProof.routePathMatchesPathDecision,
+  metadataDocumentAuthorizationServersMatchEvidence:
+    appProof.metadataDocumentAuthorizationServersMatchEvidence,
+  metadataDocumentScopesRemainReadOnly:
+    appProof.metadataDocumentScopesRemainReadOnly,
+  metadataDocumentBearerMethodsRemainHeaderOnly:
+    appProof.metadataDocumentBearerMethodsRemainHeaderOnly,
+  mismatchedRouteInputEvidenceFailsClosedBeforeRegistration:
+    appProof.mismatchedRouteInputEvidenceFailsClosedBeforeRegistration,
+  noSchemaOnlyEvidenceAcceptance: appProof.noSchemaOnlyEvidenceAcceptance,
+  metadataRouteMutatingMethodsRejected:
+    appProof.metadataRouteMutatingMethodsRejected,
   metadataResponseBoundedFieldsVerified:
     appProof.metadataResponseBoundedFieldsVerified,
   metadataResponseNoTokenLeakageVerified:
@@ -99,6 +124,7 @@ const proof = {
   routeDoesNotUseSourceMutation: sourceProof.routeDoesNotUseSourceMutation,
   routeDoesNotUseFinanceWrite: sourceProof.routeDoesNotUseFinanceWrite,
   mcpRouteBehaviorUnchanged: appProof.mcpRouteBehaviorUnchanged,
+  mcpRouteBehaviorStillUnchanged: appProof.mcpRouteBehaviorUnchanged,
   noWwwAuthenticateRouteBehaviorImplementation:
     appProof.noWwwAuthenticateRouteBehaviorImplementation &&
     sourceProof.noWwwAuthenticateRouteBehaviorImplementation,
@@ -137,6 +163,12 @@ const proof = {
     planProof.fp0106ProtocolEnvelopeBoundaryStillVerified,
   fp0100PublicSecurityBoundaryStillVerified:
     planProof.fp0100PublicSecurityBoundaryStillVerified,
+  fp0125EvidenceCoherenceHardeningVerified:
+    appProof.routeInputEvidenceSemanticCoherenceVerified &&
+    appProof.mismatchedRouteInputEvidenceFailsClosedBeforeRegistration &&
+    appProof.noSchemaOnlyEvidenceAcceptance &&
+    appProof.metadataRouteMutatingMethodsRejected &&
+    appProof.mcpRouteBehaviorUnchanged,
 };
 
 for (const [key, value] of Object.entries(proof)) {
@@ -172,8 +204,16 @@ async function verifyAppBehavior() {
       method: "GET",
       url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
     });
-    const metadataPostResponse = await explicitApp.inject({
-      method: "POST",
+    const metadataMutatingResponses = await Promise.all(
+      ["POST", "PUT", "PATCH", "DELETE"].map((method) =>
+        explicitApp.inject({
+          method,
+          url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+        }),
+      ),
+    );
+    const metadataHeadResponse = await explicitApp.inject({
+      method: "HEAD",
       url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
     });
     const rootMetadataResponse = await explicitApp.inject({
@@ -197,6 +237,27 @@ async function verifyAppBehavior() {
     } catch {
       invalidDependencyRejected = true;
     }
+    const mismatchedEvidenceRejected = await Promise.all(
+      mismatchedEvidenceBundles().map((bundle) =>
+        routeRegistrationRejectedBeforeRegistration(bundle, apps),
+      ),
+    );
+    const schemaOnlyIncoherentBundle = {
+      ...validEvidenceBundle,
+      canonicalUriEvidence: {
+        ...validEvidenceBundle.canonicalUriEvidence,
+        metadataUrl:
+          "https://mcp.canonical-finance-host.com/.well-known/oauth-protected-resource/other",
+      },
+    };
+    const noSchemaOnlyEvidenceAcceptance =
+      McpProtectedResourceMetadataRouteInputEvidenceBundleSchema.safeParse(
+        schemaOnlyIncoherentBundle,
+      ).success &&
+      (await routeRegistrationRejectedBeforeRegistration(
+        schemaOnlyIncoherentBundle,
+        apps,
+      ));
 
     const mcpApp = Fastify();
     apps.push(mcpApp);
@@ -263,6 +324,10 @@ async function verifyAppBehavior() {
     const metadataBody = metadataResponse.json();
     const boundedFieldNames = Object.keys(metadataBody).sort();
     const mcpListBody = toolsListResponse.json();
+    const semanticCoherence =
+      validateProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence(
+        validEvidenceBundle,
+      );
 
     return {
       buildAppDefaultMetadataRouteAbsent:
@@ -285,6 +350,29 @@ async function verifyAppBehavior() {
           method: "GET",
           url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
         }),
+      routeInputEvidenceSemanticCoherenceVerified:
+        semanticCoherence.routeInputEvidenceSemanticCoherenceVerified,
+      routeInputEvidenceSchemaVersionVerified:
+        validEvidenceBundle.schemaVersion ===
+          MCP_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_SCHEMA_VERSION &&
+        semanticCoherence.routeInputEvidenceSchemaVersionVerified,
+      metadataDocumentResourceMatchesCanonicalUriEvidence:
+        semanticCoherence.metadataDocumentResourceMatchesCanonicalUriEvidence,
+      pathDecisionCanonicalUriMatchesEvidence:
+        semanticCoherence.pathDecisionCanonicalUriMatchesEvidence,
+      pathDecisionMetadataUrlMatchesEvidence:
+        semanticCoherence.pathDecisionMetadataUrlMatchesEvidence,
+      routePathMatchesPathDecision:
+        semanticCoherence.routePathMatchesPathDecision,
+      metadataDocumentAuthorizationServersMatchEvidence:
+        semanticCoherence.metadataDocumentAuthorizationServersMatchEvidence,
+      metadataDocumentScopesRemainReadOnly:
+        semanticCoherence.metadataDocumentScopesRemainReadOnly,
+      metadataDocumentBearerMethodsRemainHeaderOnly:
+        semanticCoherence.metadataDocumentBearerMethodsRemainHeaderOnly,
+      mismatchedRouteInputEvidenceFailsClosedBeforeRegistration:
+        mismatchedEvidenceRejected.every(Boolean),
+      noSchemaOnlyEvidenceAcceptance,
       metadataResponseBoundedFieldsVerified:
         metadataResponse.statusCode === 200 &&
         JSON.stringify(boundedFieldNames) ===
@@ -316,8 +404,18 @@ async function verifyAppBehavior() {
           method: "POST",
           url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
         }) &&
-        metadataPostResponse.statusCode === 404 &&
+        !explicitApp.hasRoute({
+          method: "HEAD",
+          url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+        }) &&
+        metadataHeadResponse.statusCode === 404 &&
+        metadataMutatingResponses.every(
+          (response) => response.statusCode === 404,
+        ) &&
         rootMetadataResponse.statusCode === 404,
+      metadataRouteMutatingMethodsRejected: metadataMutatingResponses.every(
+        (response) => response.statusCode === 404,
+      ),
       mcpRouteBehaviorUnchanged:
         mcpGetResponse.statusCode === 405 &&
         mcpGetResponse.headers.allow === "POST" &&
@@ -342,6 +440,104 @@ async function verifyAppBehavior() {
   } finally {
     await Promise.all(apps.map((app) => app.close()));
   }
+}
+
+function mismatchedEvidenceBundles() {
+  return [
+    {
+      ...validEvidenceBundle,
+      builderOutput: {
+        ...validEvidenceBundle.builderOutput,
+        document: {
+          ...validEvidenceBundle.builderOutput.document,
+          resource: "https://mcp.canonical-finance-host.com/other",
+        },
+      },
+    },
+    {
+      ...validEvidenceBundle,
+      pathDecision: {
+        ...validEvidenceBundle.pathDecision,
+        canonicalResourceUri: "https://mcp.canonical-finance-host.com/other",
+      },
+    },
+    {
+      ...validEvidenceBundle,
+      pathDecision: {
+        ...validEvidenceBundle.pathDecision,
+        metadataUrl:
+          "https://mcp.canonical-finance-host.com/.well-known/oauth-protected-resource/other",
+      },
+    },
+    {
+      ...validEvidenceBundle,
+      pathDecision: {
+        ...validEvidenceBundle.pathDecision,
+        metadataRoutePath: "/.well-known/oauth-protected-resource/other",
+      },
+    },
+    {
+      ...validEvidenceBundle,
+      builderOutput: {
+        ...validEvidenceBundle.builderOutput,
+        document: {
+          ...validEvidenceBundle.builderOutput.document,
+          authorization_servers: [
+            "https://other-auth.canonical-finance-host.com",
+          ],
+        },
+      },
+    },
+    {
+      ...validEvidenceBundle,
+      builderOutput: {
+        ...validEvidenceBundle.builderOutput,
+        document: {
+          ...validEvidenceBundle.builderOutput.document,
+          scopes_supported: ["mcp:read", "finance:write"],
+        },
+      },
+    },
+    {
+      ...validEvidenceBundle,
+      builderOutput: {
+        ...validEvidenceBundle.builderOutput,
+        document: {
+          ...validEvidenceBundle.builderOutput.document,
+          bearer_methods_supported: ["query"],
+        },
+      },
+    },
+    {
+      ...validEvidenceBundle,
+      schemaVersion:
+        "v2aq.read-only-app-mcp-protected-resource-metadata-route-input.v0",
+    },
+  ];
+}
+
+async function routeRegistrationRejectedBeforeRegistration(
+  routeInputEvidenceBundle,
+  apps,
+) {
+  const app = Fastify();
+  apps.push(app);
+  let rejected = false;
+  try {
+    await registerReadOnlyAppMcpProtectedResourceMetadataRoute(app, {
+      routeInputEvidenceBundle,
+    });
+  } catch {
+    rejected = true;
+  }
+
+  return (
+    rejected &&
+    !app.hasRoute({
+      method: "GET",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    })
+  );
 }
 
 async function withStdoutSilenced(callback) {

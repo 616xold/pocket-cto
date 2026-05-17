@@ -110,6 +110,22 @@ describe("control-plane app", () => {
       method: "POST",
       url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
     });
+    const putResponse = await app.inject({
+      method: "PUT",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
+    const patchResponse = await app.inject({
+      method: "PATCH",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
+    const deleteResponse = await app.inject({
+      method: "DELETE",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
+    const headResponse = await app.inject({
+      method: "HEAD",
+      url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    });
 
     expect(
       app.hasRoute({
@@ -120,6 +136,12 @@ describe("control-plane app", () => {
     expect(
       app.hasRoute({
         method: "POST",
+        url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+      }),
+    ).toBe(false);
+    expect(
+      app.hasRoute({
+        method: "HEAD",
         url: READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
       }),
     ).toBe(false);
@@ -135,7 +157,13 @@ describe("control-plane app", () => {
     expect(JSON.stringify(response.json())).not.toMatch(
       /access_token|client_secret|companyKey|cookie|credential|generatedAdvice|generated_advice|internal|password|proof|rawFinance|raw_finance|rawSource|raw_source|refresh_token|secret|session/u,
     );
-    expect(postResponse.statusCode).toBe(404);
+    expect([
+      postResponse.statusCode,
+      putResponse.statusCode,
+      patchResponse.statusCode,
+      deleteResponse.statusCode,
+    ]).toEqual([404, 404, 404, 404]);
+    expect(headResponse.statusCode).toBe(404);
   });
 
   it("fails closed during buildApp before metadata route registration when explicit route-input evidence is invalid", async () => {

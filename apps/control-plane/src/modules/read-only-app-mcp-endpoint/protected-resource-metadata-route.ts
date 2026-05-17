@@ -3,6 +3,7 @@ import {
   MCP_ROUTE_INPUT_EXPECTED_MCP_METADATA_ROUTE_PATH,
   McpProtectedResourceMetadataBuilderDocumentSchema,
   McpProtectedResourceMetadataRouteInputEvidenceBundleSchema,
+  assertProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence,
   type McpProtectedResourceMetadataBuilderDocument,
   type McpProtectedResourceMetadataRouteInputEvidenceBundle,
 } from "@pocket-cto/domain";
@@ -32,6 +33,7 @@ export async function registerReadOnlyAppMcpProtectedResourceMetadataRoute(
 
   app.get(
     READ_ONLY_APP_MCP_PROTECTED_RESOURCE_METADATA_ROUTE_PATH,
+    { exposeHeadRoute: false },
     async (_request, reply) => reply.type("application/json").send(document),
   );
 }
@@ -94,6 +96,10 @@ function parseValidRouteInputEvidenceBundle(
       "Protected-resource metadata route evidence dependency was not accepted",
     );
   }
+
+  assertProtectedResourceMetadataRouteInputEvidenceBundleSemanticCoherence(
+    bundle,
+  );
 
   return bundle;
 }

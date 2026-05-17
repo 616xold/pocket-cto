@@ -7,7 +7,7 @@ This file records the plugins available in this Codex local thread and the repo-
 - `pocket-cfo-codex-operator`
   - Marketplace entry: `.agents/plugins/marketplace.json`
   - Bundle path: `plugins/pocket-cfo-codex-operator/`
-  - Skills invoked for this FP-0125 local-only/read-only protected-resource metadata route implementation slice covering explicit FP-0123 route-input evidence bundle dependency, exact GET `/.well-known/oauth-protected-resource/mcp`, default `buildApp()` route absence, bounded metadata fields, `/mcp` unchanged behavior, deferred WWW-Authenticate behavior, FP-0126 absence, proof-gate bridge, doc-refresh, validation, and handoff:
+  - Skills invoked for this FP-0125 local-only/read-only protected-resource metadata route implementation slice and targeted post-merge evidence-coherence hardening correction covering explicit FP-0123 route-input evidence bundle dependency, semantic coherence before route registration, exact GET `/.well-known/oauth-protected-resource/mcp`, default `buildApp()` route absence, bounded metadata fields, mutating metadata-method rejection, `/mcp` unchanged behavior, deferred WWW-Authenticate behavior, FP-0126 absence, proof-gate bridge, doc-refresh, validation, and handoff:
     - Finance Plan Orchestrator
     - Modular Architecture Guard
     - Source Provenance Guard
