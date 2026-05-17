@@ -41,7 +41,9 @@ export const McpOauthImplementationSequencingProofSchema = z
       trueLiteral,
     fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified:
       trueLiteral,
-    fp0128Absent: trueLiteral,
+    fp0128AbsentOrLocalTokenValidationReadinessContractsVerified: trueLiteral,
+    fp0128TokenValidationReadinessBoundaryStillVerified: trueLiteral,
+    fp0129Absent: trueLiteral,
     wwwAuthenticateAuthChallengeContractsFoundationVerified: trueLiteral,
     noMcpRouteBehaviorChangeFromFp0127: trueLiteral,
     noProtectedResourceMetadataRouteBehaviorChangeFromFp0127: trueLiteral,
@@ -229,7 +231,9 @@ export function buildMcpOauthImplementationSequencingProof(
     fp0125ProtectedResourceMetadataLocalRouteBoundaryStillVerified: boolean;
     fp0126AbsentOrDocsOnlyWwwAuthenticateAuthChallengeSequencingPlanVerified: boolean;
     fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified: boolean;
-    fp0128Absent: boolean;
+    fp0128AbsentOrLocalTokenValidationReadinessContractsVerified: boolean;
+    fp0128TokenValidationReadinessBoundaryStillVerified: boolean;
+    fp0129Absent: boolean;
     wwwAuthenticateAuthChallengeContractsFoundationVerified: boolean;
     noMcpRouteBehaviorChangeFromFp0127: boolean;
     noProtectedResourceMetadataRouteBehaviorChangeFromFp0127: boolean;
@@ -458,7 +462,12 @@ export function buildMcpOauthImplementationSequencingProof(
     fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified:
       input.fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified ??
       true,
-    fp0128Absent: input.fp0128Absent ?? true,
+    fp0128AbsentOrLocalTokenValidationReadinessContractsVerified:
+      input.fp0128AbsentOrLocalTokenValidationReadinessContractsVerified ??
+      true,
+    fp0128TokenValidationReadinessBoundaryStillVerified:
+      input.fp0128TokenValidationReadinessBoundaryStillVerified ?? true,
+    fp0129Absent: input.fp0129Absent ?? true,
     wwwAuthenticateAuthChallengeContractsFoundationVerified:
       input.wwwAuthenticateAuthChallengeContractsFoundationVerified ??
       buildMcpWwwAuthenticateAuthChallengeContracts().proofContract

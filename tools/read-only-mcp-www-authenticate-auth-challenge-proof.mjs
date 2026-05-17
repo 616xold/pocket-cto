@@ -8,6 +8,7 @@ import {
   FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
   FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH,
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
+  FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
   McpWwwAuthenticateAuthChallengeProofSchema,
   buildMcpWwwAuthenticateAuthChallengeProof,
   buildWwwAuthenticateAuthChallengeContract,
@@ -26,7 +27,9 @@ import {
   verifyFp0126WwwAuthenticateAuthChallengeSequencingPlanBoundary,
   verifyFp0127AbsentOrLocalWwwAuthenticateAuthChallengeContracts,
   verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary,
-  verifyFp0128Absent,
+  verifyFp0128AbsentOrLocalTokenValidationReadinessContracts,
+  verifyFp0128TokenValidationReadinessContractsBoundary,
+  verifyFp0129Absent,
 } from "../packages/domain/src/index.ts";
 
 const FP0125_PLAN =
@@ -48,6 +51,9 @@ const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
 const fp0127PlanText = safeRead(
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
+);
+const fp0128PlanText = safeRead(
+  FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
 );
 const mcpRouteSource = safeRead(MCP_ROUTE_PATH);
 const metadataRouteSource = safeRead(METADATA_ROUTE_PATH);
@@ -135,7 +141,17 @@ const proof = McpWwwAuthenticateAuthChallengeProofSchema.parse(
         planText: fp0127PlanText,
         repoPaths,
       }),
-    fp0128Absent: verifyFp0128Absent(repoPaths),
+    fp0128AbsentOrLocalTokenValidationReadinessContractsVerified:
+      verifyFp0128AbsentOrLocalTokenValidationReadinessContracts({
+        planText: fp0128PlanText,
+        repoPaths,
+      }),
+    fp0128TokenValidationReadinessBoundaryStillVerified:
+      verifyFp0128TokenValidationReadinessContractsBoundary({
+        planText: fp0128PlanText,
+        repoPaths,
+      }),
+    fp0129Absent: verifyFp0129Absent(repoPaths),
     fp0127PostmergeChallengeContractHardeningVerified:
       scopeChallengeHardeningProof.verified &&
       scopeChallengeHardeningProof.acceptedMeansReadOnlyLeastPrivilege &&

@@ -106,6 +106,8 @@ FP-0126 is the shipped V2AT docs-and-plan plus proof-gate compatibility master p
 
 FP-0127 is the shipped V2AU local/proof-only/read-only WWW-Authenticate `resource_metadata` auth-challenge contract foundation. It adds pure domain contracts, focused specs, and direct proof tooling for future Bearer challenge shape, exact local proof metadata reference posture, public URL deferral, missing/invalid token challenge posture, future-only token failure modes, read-only least-privilege scope challenge guidance, no-token-leakage, unchanged `/mcp`, and no-runtime posture. It adds no route behavior, WWW-Authenticate header emission, protected-resource metadata route behavior change, OAuth/token/session/auth middleware, token validation runtime, remote MCP deployment, deployment config, Apps SDK resources, public app behavior, app submission, DB/schema/package/data/source-pack work, public assets/listing copy/generated public prose, OpenAI API/model/provider calls, external communications, source mutation, finance writes, generated finance advice, runtime-Codex finance output, or autonomous action.
 
+FP-0128 is the shipped V2AV local/proof-only/read-only token-validation failure readiness contract foundation. It adds pure domain contracts, focused specs, and direct proof tooling for token-validation runtime deferral, token parsing deferral, token/session storage deferral, auth middleware deferral, token failure taxonomy, audience/resource validation prerequisites, read-only scope challenge prerequisites, authenticated user/org/company binding prerequisites, client `companyKey` selector-only posture, token passthrough prohibition, no-token-leakage, no-runtime posture, FP-0127 challenge contract preservation, and FP-0129 absence. It adds no route behavior, WWW-Authenticate header emission, protected-resource metadata route behavior change, OAuth/token/session/auth middleware, token validation runtime, token parsing runtime, remote MCP deployment, deployment config, Apps SDK resources, public app behavior, app submission, DB/schema/package/data/source-pack work, public assets/listing copy/generated public prose, OpenAI API/model/provider calls, external communications, source mutation, finance writes, generated finance advice, runtime-Codex finance output, or autonomous action.
+
 ## Shipped Architecture Summary
 
 The shipped system is organized around:
@@ -180,6 +182,7 @@ The shipped system is organized around:
 - **V2AS read-only ChatGPT App/MCP protected-resource metadata local route implementation**: shipped through FP-0125 as a local-only/read-only explicit-dependency route slice for GET `/.well-known/oauth-protected-resource/mcp`.
 - **V2AT read-only ChatGPT App/MCP WWW-Authenticate auth-challenge sequencing**: shipped through FP-0126 as docs-and-plan plus proof-gate compatibility only.
 - **V2AU read-only ChatGPT App/MCP WWW-Authenticate auth-challenge contracts**: shipped through FP-0127 as local/proof-only/read-only pure domain contracts and direct proof tooling only.
+- **V2AV read-only ChatGPT App/MCP token-validation failure readiness contracts**: shipped through FP-0128 as local/proof-only/read-only pure domain contracts and direct proof tooling only.
 
 ## Latest Shipped V2 Plan
 
@@ -197,10 +200,11 @@ The shipped system is organized around:
 - **V2AS read-only ChatGPT App/MCP protected-resource metadata local route implementation**: shipped through FP-0125.
 - **V2AT read-only ChatGPT App/MCP WWW-Authenticate auth-challenge sequencing**: shipped through FP-0126.
 - **V2AU read-only ChatGPT App/MCP WWW-Authenticate auth-challenge contracts**: shipped through FP-0127.
+- **V2AV read-only ChatGPT App/MCP token-validation failure readiness contracts**: shipped through FP-0128.
 
 ## Active V2 Plan
 
-FP-0127 is the active shipped local/proof-only/read-only WWW-Authenticate `resource_metadata` auth-challenge contract boundary after the FP-0126 sequencing plan and FP-0125 protected-resource metadata local route. Further protected-resource metadata route work beyond GET `/.well-known/oauth-protected-resource/mcp`, any root or dual metadata path, WWW-Authenticate route behavior, OAuth/token/session/auth middleware, token validation runtime, remote/public host work, Apps SDK resources, public app behavior, app submission, provider/OpenAI calls, source mutation, finance writes, or FP-0128 remains future-plan-only.
+FP-0128 is the active shipped local/proof-only/read-only token-validation failure readiness contract boundary after the FP-0127 WWW-Authenticate auth-challenge contracts, FP-0126 sequencing plan, and FP-0125 protected-resource metadata local route. Further protected-resource metadata route work beyond GET `/.well-known/oauth-protected-resource/mcp`, any root or dual metadata path, WWW-Authenticate route behavior, OAuth/token/session/auth middleware, token validation runtime, token parsing runtime, remote/public host work, Apps SDK resources, public app behavior, app submission, provider/OpenAI calls, source mutation, finance writes, or FP-0129 remains future-plan-only.
 
 ## Fixed Shipped Monitor Families
 

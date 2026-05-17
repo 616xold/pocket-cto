@@ -10,6 +10,7 @@ import {
   FP0123_PROTECTED_RESOURCE_METADATA_ROUTE_INPUT_PLAN_PATH,
   FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH,
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
+  FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
   McpProtectedResourceMetadataProofSchema,
   buildMcpProtectedResourceMetadataProof,
   isFp0118ProtectedResourceMetadataNoOpenAiProofSourcePath,
@@ -32,7 +33,9 @@ import {
   verifyFp0126WwwAuthenticateAuthChallengeSequencingPlanBoundary,
   verifyFp0127AbsentOrLocalWwwAuthenticateAuthChallengeContracts,
   verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary,
-  verifyFp0128Absent,
+  verifyFp0128AbsentOrLocalTokenValidationReadinessContracts,
+  verifyFp0128TokenValidationReadinessContractsBoundary,
+  verifyFp0129Absent,
   verifyMcpProtectedResourceMetadataNoOpenAiApiSourceScan,
   verifyMcpProtectedResourceMetadataRepositoryInventory,
 } from "../packages/domain/src/index.ts";
@@ -92,6 +95,9 @@ const fp0126PlanText = safeRead(
 );
 const fp0127PlanText = safeRead(
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
+);
+const fp0128PlanText = safeRead(
+  FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
 );
 const scopeScan = changedScopeScan();
 const changedSourceScan = noExecutableApiModelKeyUsage(
@@ -228,7 +234,17 @@ const proof = McpProtectedResourceMetadataProofSchema.parse(
         planText: fp0127PlanText,
         repoPaths,
       }),
-    fp0128Absent: verifyFp0128Absent(repoPaths),
+    fp0128AbsentOrLocalTokenValidationReadinessContractsVerified:
+      verifyFp0128AbsentOrLocalTokenValidationReadinessContracts({
+        planText: fp0128PlanText,
+        repoPaths,
+      }),
+    fp0128TokenValidationReadinessBoundaryStillVerified:
+      verifyFp0128TokenValidationReadinessContractsBoundary({
+        planText: fp0128PlanText,
+        repoPaths,
+      }),
+    fp0129Absent: verifyFp0129Absent(repoPaths),
     wwwAuthenticateAuthChallengeContractsFoundationVerified:
       verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary({
         planText: fp0127PlanText,

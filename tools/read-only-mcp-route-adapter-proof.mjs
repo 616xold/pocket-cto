@@ -78,6 +78,8 @@ const FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH =
   "plans/FP-0126-read-only-chatgpt-app-mcp-www-authenticate-auth-challenge-sequencing-master-plan.md";
 const FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH =
   "plans/FP-0127-read-only-chatgpt-app-mcp-www-authenticate-auth-challenge-contracts-foundation.md";
+const FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH =
+  "plans/FP-0128-read-only-chatgpt-app-mcp-token-validation-failure-readiness-contracts.md";
 
 const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
@@ -878,6 +880,7 @@ function changedFilesAreAllowed() {
     FP0125_LOCAL_ROUTE_PLAN,
     FP0126_WWW_AUTHENTICATE_AUTH_CHALLENGE_SEQUENCING_PLAN_PATH,
     FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
+    FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
     ROUTE_PATH,
     SERVICE_PATH,
     FORMATTER_PATH,
@@ -913,6 +916,7 @@ function changedFilesAreAllowed() {
     "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
     FP0125_LOCAL_ROUTE_PROOF_PATH,
     "tools/read-only-mcp-www-authenticate-auth-challenge-proof.mjs",
+    "tools/read-only-mcp-token-validation-readiness-proof.mjs",
     "tools/benchmark-community-pack-proof.mjs",
     "packages/domain/src/index.ts",
     "packages/domain/src/benchmark-community.spec.ts",

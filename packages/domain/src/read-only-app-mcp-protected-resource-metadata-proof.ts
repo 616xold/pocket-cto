@@ -112,7 +112,9 @@ export const McpProtectedResourceMetadataProofSchema = z
       trueLiteral,
     fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified:
       trueLiteral,
-    fp0128Absent: trueLiteral,
+    fp0128AbsentOrLocalTokenValidationReadinessContractsVerified: trueLiteral,
+    fp0128TokenValidationReadinessBoundaryStillVerified: trueLiteral,
+    fp0129Absent: trueLiteral,
     wwwAuthenticateAuthChallengeContractsFoundationVerified: trueLiteral,
     noMcpRouteBehaviorChangeFromFp0127: trueLiteral,
     noProtectedResourceMetadataRouteBehaviorChangeFromFp0127: trueLiteral,
@@ -485,7 +487,12 @@ export function buildMcpProtectedResourceMetadataProof(
     fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified:
       input.fp0127AbsentOrLocalWwwAuthenticateAuthChallengeContractsVerified ??
       true,
-    fp0128Absent: input.fp0128Absent ?? true,
+    fp0128AbsentOrLocalTokenValidationReadinessContractsVerified:
+      input.fp0128AbsentOrLocalTokenValidationReadinessContractsVerified ??
+      true,
+    fp0128TokenValidationReadinessBoundaryStillVerified:
+      input.fp0128TokenValidationReadinessBoundaryStillVerified ?? true,
+    fp0129Absent: input.fp0129Absent ?? true,
     wwwAuthenticateAuthChallengeContractsFoundationVerified:
       input.wwwAuthenticateAuthChallengeContractsFoundationVerified ??
       buildMcpWwwAuthenticateAuthChallengeContracts().proofContract

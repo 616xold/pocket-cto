@@ -32,6 +32,10 @@ const FP0125_LOCAL_ROUTE_SPEC_PATH =
   "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts";
 const FP0125_LOCAL_ROUTE_PROOF_PATH =
   "tools/read-only-mcp-protected-resource-metadata-local-route-proof.mjs";
+const FP0128_TOKEN_VALIDATION_READINESS_PLAN =
+  "plans/FP-0128-read-only-chatgpt-app-mcp-token-validation-failure-readiness-contracts.md";
+const FP0128_TOKEN_VALIDATION_READINESS_PROOF_PATH =
+  "tools/read-only-mcp-token-validation-readiness-proof.mjs";
 
 const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
@@ -396,6 +400,7 @@ function isAllowedMcpProtocolProofPath(path) {
     path === FP0106_MCP_PROTOCOL_ENVELOPE_PLAN_PATH ||
     path === FP0112_PLAN ||
     path === FP0113_PLAN ||
+    path === FP0128_TOKEN_VALIDATION_READINESS_PLAN ||
     path ===
       "plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md" ||
     path ===
@@ -411,6 +416,7 @@ function isAllowedMcpProtocolProofPath(path) {
     path === "tools/read-only-mcp-descriptor-response-envelope-proof.mjs" ||
     path === "tools/read-only-chatgpt-app-mcp-proof.mjs" ||
     path === "tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs" ||
+    path === FP0128_TOKEN_VALIDATION_READINESS_PROOF_PATH ||
     path === "tools/benchmark-community-pack-proof.mjs" ||
     /^packages\/domain\/src\/read-only-app-mcp.*\.ts$/u.test(path) ||
     /^packages\/domain\/src\/benchmark-community.*\.ts$/u.test(path) ||
