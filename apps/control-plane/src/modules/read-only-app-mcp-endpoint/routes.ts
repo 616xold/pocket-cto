@@ -1,5 +1,11 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 import {
+  assertMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency,
+  buildMcpWwwAuthenticateAuthorizationHeaderNoValidationResponse,
+  buildMcpWwwAuthenticateMissingTokenChallengeResponse,
+  type McpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency,
+} from "@pocket-cto/domain";
+import {
   ReadOnlyAppMcpEndpointService,
   type ReadOnlyAppMcpEndpointResult,
 } from "./service";
@@ -15,10 +21,17 @@ export async function registerReadOnlyAppMcpEndpointRoutes(
       ReadOnlyAppMcpEndpointService,
       "handle"
     >;
+    readOnlyAppMcpLocalProofGatedMissingTokenChallenge?: McpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency;
   } = {},
 ) {
   const service =
     deps.readOnlyAppMcpEndpointService ?? new ReadOnlyAppMcpEndpointService();
+  const missingTokenChallenge =
+    deps.readOnlyAppMcpLocalProofGatedMissingTokenChallenge === undefined
+      ? null
+      : assertMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency(
+          deps.readOnlyAppMcpLocalProofGatedMissingTokenChallenge,
+        );
 
   app.get("/mcp", async (request, reply) => {
     const originValidation = validateLocalMcpOriginHeader(
@@ -37,6 +50,23 @@ export async function registerReadOnlyAppMcpEndpointRoutes(
     );
     if (!originValidation.allowed) {
       return sendOriginRejected(reply, originValidation);
+    }
+
+    if (missingTokenChallenge) {
+      if (request.headers.authorization === undefined) {
+        const challenge =
+          buildMcpWwwAuthenticateMissingTokenChallengeResponse(
+            missingTokenChallenge,
+          );
+        return reply
+          .header("WWW-Authenticate", challenge.wwwAuthenticate)
+          .code(challenge.statusCode)
+          .send(challenge.body);
+      }
+
+      const failClosed =
+        buildMcpWwwAuthenticateAuthorizationHeaderNoValidationResponse();
+      return reply.code(failClosed.statusCode).send(failClosed.body);
     }
 
     const response: ReadOnlyAppMcpEndpointResult = service.handle(request.body);

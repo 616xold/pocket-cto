@@ -16,13 +16,18 @@ import {
 import {
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   MCP_WWW_AUTHENTICATE_ALLOWED_SCOPE_CHALLENGES,
   MCP_WWW_AUTHENTICATE_CHALLENGE_SCHEME,
   MCP_WWW_AUTHENTICATE_LOCAL_RESOURCE_METADATA_REFERENCE,
+  MCP_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_HEADER,
   MCP_WWW_AUTHENTICATE_RESOURCE_METADATA_PARAMETER,
   McpWwwAuthenticateAuthChallengeProofSchema,
+  buildMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency,
+  buildMcpWwwAuthenticateAuthorizationHeaderNoValidationResponse,
   buildMcpWwwAuthenticateAuthChallengeContracts,
   buildMcpWwwAuthenticateAuthChallengeProof,
+  buildMcpWwwAuthenticateMissingTokenChallengeResponse,
   verifyFp0127AbsentOrLocalWwwAuthenticateAuthChallengeContracts,
   verifyFp0127PlanningTextRequiredTopics,
   verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary,
@@ -30,6 +35,10 @@ import {
   verifyFp0129PlanningTextRequiredTopics,
   verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlanBoundary,
   verifyFp0130Absent,
+  verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation,
+  verifyFp0130LocalMissingTokenChallengeImplementationBoundary,
+  verifyFp0130PlanningTextRequiredTopics,
+  verifyFp0131Absent,
 } from "./read-only-app-mcp-www-authenticate";
 import { FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH } from "./read-only-app-mcp-token-validation";
 import {
@@ -52,7 +61,7 @@ const metadataRoutePath =
   "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.ts";
 
 describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
-  it("accepts exact FP-0127/FP-0128 plans and exact FP-0129 docs-only sequencing plan while FP-0130 remains absent", () => {
+  it("accepts exact FP-0127/FP-0128/FP-0129 plans and the exact FP-0130 local missing-token implementation plan while FP-0131 remains absent", () => {
     const repoPaths = repoFilePaths();
     const planText = safeRead(
       FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
@@ -62,6 +71,9 @@ describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
     );
     const fp0129PlanText = safeRead(
       FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+    );
+    const fp0130PlanText = safeRead(
+      FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
     );
     const fp0127Hits = repoPaths.filter((path) => /(^|\/)FP-0127/u.test(path));
 
@@ -109,7 +121,28 @@ describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
         repoPaths,
       }),
     ).toBe(true);
-    expect(verifyFp0130Absent(repoPaths)).toBe(true);
+    expect(verifyFp0130Absent(repoPaths)).toBe(false);
+    expect(repoPaths.filter((path) => /(^|\/)FP-0130/u.test(path))).toEqual([
+      FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
+    ]);
+    expect(
+      verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation({
+        planText: fp0130PlanText,
+        repoPaths,
+      }),
+    ).toBe(true);
+    expect(
+      verifyFp0130LocalMissingTokenChallengeImplementationBoundary({
+        planText: fp0130PlanText,
+        repoPaths,
+      }),
+    ).toBe(true);
+    expect(verifyFp0131Absent(repoPaths)).toBe(true);
+    expect(
+      Object.values(
+        verifyFp0130PlanningTextRequiredTopics(fp0130PlanText),
+      ).every(Boolean),
+    ).toBe(true);
     expect(
       Object.values(
         verifyFp0129PlanningTextRequiredTopics(fp0129PlanText),
@@ -152,18 +185,26 @@ describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
         },
       ),
     ).toBe(false);
-    expect(verifyFp0130Absent([...repoPaths, "plans/FP-0130-runtime.md"])).toBe(
+    expect(
+      verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation({
+        planText: fp0130PlanText,
+        repoPaths: [...repoPaths, "plans/FP-0130-runtime.md"],
+      }),
+    ).toBe(false);
+    expect(verifyFp0131Absent([...repoPaths, "plans/FP-0131-runtime.md"])).toBe(
       false,
     );
   });
 
-  it("records FP-0129 challenge implementation sequencing decisions without route or token runtime scope", () => {
+  it("records FP-0129 sequencing plus FP-0130 explicit missing-token challenge boundaries without token runtime scope", () => {
     const planText = safeRead(
       FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
     ).toLowerCase();
     const proof = buildMcpWwwAuthenticateAuthChallengeProof({
       fp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlanVerified: true,
-      fp0130Absent: true,
+      fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified: true,
+      fp0130LocalMissingTokenChallengeImplementationBoundaryVerified: true,
+      fp0131Absent: true,
       wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified: true,
     });
 
@@ -202,7 +243,13 @@ describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
     expect(proof.noWwwAuthenticateRouteBehaviorImplementation).toBe(true);
     expect(proof.noTokenValidationImplementation).toBe(true);
     expect(proof.noOauthImplementation).toBe(true);
-    expect(proof.fp0130Absent).toBe(true);
+    expect(
+      proof.fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified,
+    ).toBe(true);
+    expect(
+      proof.fp0130LocalMissingTokenChallengeImplementationBoundaryVerified,
+    ).toBe(true);
+    expect(proof.fp0131Absent).toBe(true);
   });
 
   it("builds Bearer resource_metadata contract data without runtime header behavior", () => {
@@ -235,6 +282,70 @@ describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
         noOauthImplementation: false,
       }).success,
     ).toBe(false);
+  });
+
+  it("builds the exact local proof-gated missing-token challenge dependency and bounded responses", () => {
+    const dependency =
+      buildMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency();
+    const missingTokenResponse =
+      buildMcpWwwAuthenticateMissingTokenChallengeResponse(dependency);
+    const authorizationPresentResponse =
+      buildMcpWwwAuthenticateAuthorizationHeaderNoValidationResponse();
+
+    expect(dependency).toMatchObject({
+      authorizationHeaderBehavior:
+        "fail_closed_no_token_validation_runtime",
+      explicitDependencyOnly: true,
+      localOnly: true,
+      missingTokenOnly: true,
+      noAuthMiddlewareImplementation: true,
+      noOauthImplementation: true,
+      noProtectedResourceMetadataRouteBehaviorChange: true,
+      noTokenMaterialInChallenge: true,
+      noTokenParsingRuntime: true,
+      noTokenSessionStorage: true,
+      noTokenValidationRuntime: true,
+      proofGated: true,
+      readOnly: true,
+      resourceMetadataReference:
+        MCP_WWW_AUTHENTICATE_LOCAL_RESOURCE_METADATA_REFERENCE,
+      wwwAuthenticate: MCP_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_HEADER,
+    });
+    expect(missingTokenResponse).toEqual({
+      body: {
+        error: "authorization_required",
+        explicitDependencyOnly: true,
+        localOnly: true,
+        message:
+          "Authorization is required for this local read-only MCP preview.",
+        missingTokenOnly: true,
+        readOnly: true,
+        resourceMetadata:
+          MCP_WWW_AUTHENTICATE_LOCAL_RESOURCE_METADATA_REFERENCE,
+      },
+      statusCode: 401,
+      wwwAuthenticate: `Bearer resource_metadata="${MCP_WWW_AUTHENTICATE_LOCAL_RESOURCE_METADATA_REFERENCE}"`,
+    });
+    expect(authorizationPresentResponse).toEqual({
+      body: {
+        error: "token_validation_runtime_not_implemented",
+        failClosed: true,
+        localOnly: true,
+        message:
+          "Authorization was supplied, but this local read-only MCP preview does not implement token validation.",
+        noTokenParsingRuntime: true,
+        noTokenValidationRuntime: true,
+        readOnly: true,
+      },
+      statusCode: 401,
+    });
+    expect(
+      textHasWwwAuthenticateNoTokenLeakage(
+        `${missingTokenResponse.wwwAuthenticate}\n${JSON.stringify(
+          missingTokenResponse.body,
+        )}\n${JSON.stringify(authorizationPresentResponse.body)}`,
+      ),
+    ).toBe(true);
   });
 
   it("keeps local metadata reference proof-only and blocks public reference until future proof", () => {
@@ -307,14 +418,17 @@ describe("FP-0127 WWW-Authenticate auth-challenge contract foundations", () => {
     );
   });
 
-  it("proves /mcp and protected-resource metadata route sources remain runtime-auth free", () => {
+  it("proves /mcp and protected-resource metadata route sources remain token/OAuth runtime free", () => {
     const mcpRouteSource = safeRead(mcpRoutePath);
     const metadataRouteSource = safeRead(metadataRoutePath);
     const executableSource = `${mcpRouteSource}\n${metadataRouteSource}`;
 
     expect(countMatches(mcpRouteSource, /app\.post\("\/mcp"/gu)).toBe(1);
     expect(countMatches(mcpRouteSource, /app\.get\("\/mcp"/gu)).toBe(1);
-    expect(mcpRouteSource).not.toMatch(/WWW-Authenticate|resource_metadata/iu);
+    expect(mcpRouteSource).toMatch(/WWW-Authenticate/u);
+    expect(mcpRouteSource).toMatch(
+      /readOnlyAppMcpLocalProofGatedMissingTokenChallenge/u,
+    );
     expect(metadataRouteSource).not.toMatch(/WWW-Authenticate/iu);
     expect(executableSource).not.toMatch(
       /\b(?:oauthCallback|tokenStore|sessionStore|authMiddleware|validateToken|verifyToken|verifyBearer)\s*\(/u,

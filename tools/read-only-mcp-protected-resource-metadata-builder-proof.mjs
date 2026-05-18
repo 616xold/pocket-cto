@@ -12,6 +12,7 @@ import {
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   McpProtectedResourceMetadataBuilderProofSchema,
   buildMcpProtectedResourceMetadataBuilderProof,
   textHasProtectedResourceMetadataBuilderTokenLeakage,
@@ -45,9 +46,12 @@ const allowedChangedPaths = new Set([
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   "apps/control-plane/src/app.ts",
   "apps/control-plane/src/app.spec.ts",
   "apps/control-plane/src/lib/types.ts",
+  ROUTE_PATH,
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.spec.ts",
   FP0125_LOCAL_ROUTE_PATH,
   "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-builder.ts",
@@ -73,11 +77,14 @@ const allowedChangedPaths = new Set([
   "packages/domain/src/read-only-app-mcp-www-authenticate.ts",
   "packages/domain/src/read-only-app-mcp-www-authenticate-builders.ts",
   "packages/domain/src/read-only-app-mcp-www-authenticate-contracts.ts",
+  "packages/domain/src/read-only-app-mcp-www-authenticate-missing-token-challenge.ts",
+  "packages/domain/src/read-only-app-mcp-www-authenticate-plan-boundary.ts",
   "packages/domain/src/read-only-app-mcp-www-authenticate-proof.ts",
   "packages/domain/src/read-only-app-mcp-www-authenticate.spec.ts",
   "packages/domain/src/read-only-app-mcp-www-authenticate-boundary-hardening.spec.ts",
   "packages/domain/src/read-only-app-mcp-token-validation.ts",
   "packages/domain/src/read-only-app-mcp-token-validation-contracts.ts",
+  "packages/domain/src/read-only-app-mcp-token-validation-inventory.ts",
   "packages/domain/src/read-only-app-mcp-token-validation-proof.ts",
   "packages/domain/src/read-only-app-mcp-token-validation.spec.ts",
   "packages/domain/src/read-only-app-mcp-remote-host-resource.spec.ts",
@@ -89,6 +96,7 @@ const allowedChangedPaths = new Set([
   "tools/read-only-mcp-protected-resource-metadata-proof.mjs",
   "tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs",
   "tools/read-only-mcp-www-authenticate-auth-challenge-proof.mjs",
+  "tools/read-only-mcp-www-authenticate-missing-token-challenge-proof.mjs",
   "tools/read-only-mcp-token-validation-readiness-proof.mjs",
   "tools/read-only-mcp-default-local-evidence-dispatch-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-adapter-proof.mjs",
@@ -260,6 +268,14 @@ function changedScopeScan(changedExecutableSource, currentRouteSource) {
       ) ||
       /^packages\/domain\/src\/benchmark-community.*\.ts$/u.test(path),
   );
+  const routeLikeRuntimeChangeLimitedToFp0130MissingTokenChallenge =
+    changedPaths
+      .filter(
+        (path) =>
+          routeRuntimePattern.test(path) ||
+          (isRouteLikeRuntimePath(path) && path !== FP0125_LOCAL_ROUTE_PATH),
+      )
+      .every((path) => path === ROUTE_PATH) && localRouteShapeStillVerified();
 
   return {
     noAppSubmission:
@@ -324,11 +340,7 @@ function changedScopeScan(changedExecutableSource, currentRouteSource) {
       ),
     noNewRoutePath:
       changedFilesAllowed &&
-      !changedPaths.some(
-        (path) =>
-          routeRuntimePattern.test(path) ||
-          (isRouteLikeRuntimePath(path) && path !== FP0125_LOCAL_ROUTE_PATH),
-      ),
+      routeLikeRuntimeChangeLimitedToFp0130MissingTokenChallenge,
     noOauthImplementation:
       changedFilesAllowed &&
       !/\b(?:oauthCallback|authorizeUrl|tokenExchange|authorizationCode|pkceVerifier)\s*\(/u.test(
@@ -354,11 +366,11 @@ function changedScopeScan(changedExecutableSource, currentRouteSource) {
       !changedPaths.some((path) => /\/package\.json$/u.test(path)),
     noProtectedResourceMetadataRoute:
       changedFilesAllowed &&
+      routeLikeRuntimeChangeLimitedToFp0130MissingTokenChallenge &&
       !changedPaths.some(
         (path) =>
-          routeRuntimePattern.test(path) ||
-          (isProtectedResourceMetadataRouteLikePath(path) &&
-            path !== FP0125_LOCAL_ROUTE_PATH),
+          isProtectedResourceMetadataRouteLikePath(path) &&
+          path !== FP0125_LOCAL_ROUTE_PATH,
       ) &&
       !/oauth-protected-resource|resource_metadata|protectedResourceMetadataRoute/iu.test(
         currentRouteSource,
@@ -383,11 +395,7 @@ function changedScopeScan(changedExecutableSource, currentRouteSource) {
       ),
     noRouteBehaviorChange:
       changedFilesAllowed &&
-      !changedPaths.some(
-        (path) =>
-          routeRuntimePattern.test(path) ||
-          (isRouteLikeRuntimePath(path) && path !== FP0125_LOCAL_ROUTE_PATH),
-      ),
+      routeLikeRuntimeChangeLimitedToFp0130MissingTokenChallenge,
     noSchemaMigrations:
       changedFilesAllowed &&
       !changedPaths.some(
@@ -408,8 +416,8 @@ function changedScopeScan(changedExecutableSource, currentRouteSource) {
       ),
     noWwwAuthenticateRouteBehavior:
       changedFilesAllowed &&
-      !changedPaths.some((path) => routeRuntimePattern.test(path)) &&
-      !/www-authenticate|resource_metadata/iu.test(currentRouteSource),
+      routeLikeRuntimeChangeLimitedToFp0130MissingTokenChallenge &&
+      !/resource_metadata/iu.test(currentRouteSource),
   };
 }
 
@@ -433,10 +441,23 @@ function isProtectedResourceMetadataRouteLikePath(path) {
 
 function localRouteShapeStillVerified() {
   const source = safeRead(ROUTE_PATH);
+  const noWwwAuthenticateRuntime = !/www-authenticate/iu.test(source);
+  const fp0130WwwAuthenticateRuntime =
+    countMatches(
+      source,
+      /\.header\("WWW-Authenticate", challenge\.wwwAuthenticate\)/gu,
+    ) === 1 &&
+    source.includes("readOnlyAppMcpLocalProofGatedMissingTokenChallenge") &&
+    source.includes(
+      "assertMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency",
+    );
+
   return (
     countMatches(source, /app\.post\("\/mcp"/gu) === 1 &&
     countMatches(source, /app\.get\("\/mcp"/gu) === 1 &&
-    !/app\.(?:get|post|put|patch|delete)\("\/mcp\//u.test(source)
+    !/app\.(?:get|post|put|patch|delete)\("\/mcp\//u.test(source) &&
+    !/resource_metadata|oauth-protected-resource/iu.test(source) &&
+    (noWwwAuthenticateRuntime || fp0130WwwAuthenticateRuntime)
   );
 }
 

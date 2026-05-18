@@ -45,7 +45,9 @@ export const McpOauthImplementationSequencingProofSchema = z
     fp0128TokenValidationReadinessBoundaryStillVerified: trueLiteral,
     fp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlanVerified:
       trueLiteral,
-    fp0130Absent: trueLiteral,
+    fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified:
+      trueLiteral,
+    fp0131Absent: trueLiteral,
     wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified:
       trueLiteral,
     wwwAuthenticateAuthChallengeContractsFoundationVerified: trueLiteral,
@@ -238,7 +240,8 @@ export function buildMcpOauthImplementationSequencingProof(
     fp0128AbsentOrLocalTokenValidationReadinessContractsVerified: boolean;
     fp0128TokenValidationReadinessBoundaryStillVerified: boolean;
     fp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlanVerified: boolean;
-    fp0130Absent: boolean;
+  fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified: boolean;
+  fp0131Absent: boolean;
     wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified: boolean;
     wwwAuthenticateAuthChallengeContractsFoundationVerified: boolean;
     noMcpRouteBehaviorChangeFromFp0127: boolean;
@@ -476,7 +479,10 @@ export function buildMcpOauthImplementationSequencingProof(
     fp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlanVerified:
       input.fp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlanVerified ??
       true,
-    fp0130Absent: input.fp0130Absent ?? true,
+    fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified:
+      input.fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified ??
+      true,
+    fp0131Absent: input.fp0131Absent ?? true,
     wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified:
       input.wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified ??
       true,

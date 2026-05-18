@@ -26,7 +26,7 @@ The target phase is V2AW read-only ChatGPT App/MCP WWW-Authenticate challenge im
 - [x] 2026-05-17T22:57:10Z: Added the FP-0122 builder proof tool path to the FP-0128 token-validation inventory after that exact proof-gate tool changed during compatibility QA.
 - [x] 2026-05-17T22:58:40Z: Restarted final validation and found the FP-0107 route-adapter proof tool also needed the exact FP-0129 plan path in its changed-file allowlist. Patched that proof tool and added its exact tool path to the FP-0128 token-validation inventory.
 - [x] 2026-05-17T23:07:07Z: Final validation passed after same-branch compatibility corrections: `git diff --check`, all 19 requested proof tools, focused domain specs with 65 tests, focused control-plane route/app specs with 114 tests, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm ci:repro:current`.
-- [ ] Rerun required post-closeout validation (`git diff --check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm ci:repro:current`), then commit once, push, and publish the PR.
+- [x] 2026-05-17T23:16:17Z: PR #304 merged to `main`; FP-0129 is shipped as a docs-and-plan plus proof-gate compatibility record.
 
 ## Surprises & Discoveries
 
@@ -167,4 +167,4 @@ The only interface introduced is proof-gate compatibility around a docs-only pla
 
 FP-0129 is opened as a docs-and-plan plus proof-gate compatibility master plan only. It decides that a later narrow WWW-Authenticate challenge route implementation may be considered next, but only for missing-token first and possibly generic invalid-token challenge behavior under strict no-token-runtime constraints. Semantic token-validation failures remain in the later token-validation runtime lane.
 
-FP-0129 closes as a docs-and-plan plus proof-gate compatibility master plan. It authorizes no route behavior, no `WWW-Authenticate` header emission, no token validation/parsing/session/auth runtime, no OAuth implementation, no remote/public deployment, no Apps SDK resource, no app submission, no DB/schema/package/data/source-pack/public-asset/OpenAI/provider/source/finance-write work, and no autonomous action. Closeout is pending the required post-closeout validation rerun, one commit, push, and PR.
+FP-0129 closes as a docs-and-plan plus proof-gate compatibility master plan. It authorizes no route behavior, no `WWW-Authenticate` header emission, no token validation/parsing/session/auth runtime, no OAuth implementation, no remote/public deployment, no Apps SDK resource, no app submission, no DB/schema/package/data/source-pack/public-asset/OpenAI/provider/source/finance-write work, and no autonomous action. PR #304 merged on 2026-05-17, so this plan is a shipped historical record; FP-0130 is the follow-on missing-token implementation slice.

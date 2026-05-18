@@ -3,7 +3,10 @@ import type { FastifyInstance } from "fastify";
 import {
   FINANCE_DISCOVERY_STORED_STATE_QUESTION_KINDS,
   MCP_TOOL_ALLOWLIST,
+  MCP_WWW_AUTHENTICATE_LOCAL_RESOURCE_METADATA_REFERENCE,
+  MCP_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_HEADER,
   type EvidenceToolResponse,
+  buildMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency,
   buildProtectedResourceMetadataRouteInputEvidenceBundle,
   type ProofBundleManifest,
   ProofBundleManifestSchema,
@@ -58,6 +61,7 @@ describe("control-plane app", () => {
     });
 
     expect(response.statusCode).toBe(200);
+    expect(response.headers["www-authenticate"]).toBeUndefined();
     expect(response.json()).toMatchObject({
       id: "mcp-default-call",
       jsonrpc: "2.0",
@@ -73,6 +77,100 @@ describe("control-plane app", () => {
           toolName: "search_evidence",
         },
       },
+    });
+  });
+
+  it("keeps buildApp default /mcp missing-token posture unchanged without the explicit challenge dependency", async () => {
+    const app = await createTestApp(apps);
+
+    const initializeResponse = await app.inject({
+      method: "POST",
+      payload: {
+        id: "mcp-default-init-no-challenge",
+        jsonrpc: "2.0",
+        method: "initialize",
+      },
+      url: "/mcp",
+    });
+    const getResponse = await app.inject({
+      headers: {
+        accept: "text/event-stream",
+      },
+      method: "GET",
+      url: "/mcp",
+    });
+
+    expect(initializeResponse.statusCode).toBe(200);
+    expect(initializeResponse.headers["www-authenticate"]).toBeUndefined();
+    expect(initializeResponse.json()).toMatchObject({
+      id: "mcp-default-init-no-challenge",
+      jsonrpc: "2.0",
+      result: {
+        capabilities: {
+          tools: {
+            listChanged: false,
+          },
+        },
+      },
+    });
+    expect(getResponse.statusCode).toBe(405);
+    expect(getResponse.headers.allow).toBe("POST");
+    expect(getResponse.headers["www-authenticate"]).toBeUndefined();
+    expect(getResponse.body).toBe("");
+  });
+
+  it("wires explicit local proof-gated missing-token challenge dependency through buildApp", async () => {
+    const app = await createStubApp(apps, {
+      readOnlyAppMcpLocalProofGatedMissingTokenChallenge:
+        buildMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency(),
+    });
+
+    const missingAuthorizationResponse = await app.inject({
+      method: "POST",
+      payload: {
+        id: "mcp-explicit-missing-token",
+        jsonrpc: "2.0",
+        method: "initialize",
+      },
+      url: "/mcp",
+    });
+    const authorizationPresentResponse = await app.inject({
+      headers: {
+        authorization: "Bearer route-wiring-proof-token",
+      },
+      method: "POST",
+      payload: {
+        id: "mcp-explicit-token-present",
+        jsonrpc: "2.0",
+        method: "initialize",
+      },
+      url: "/mcp",
+    });
+
+    expect(missingAuthorizationResponse.statusCode).toBe(401);
+    expect(missingAuthorizationResponse.headers["www-authenticate"]).toBe(
+      MCP_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_HEADER,
+    );
+    expect(missingAuthorizationResponse.json()).toMatchObject({
+      error: "authorization_required",
+      explicitDependencyOnly: true,
+      localOnly: true,
+      missingTokenOnly: true,
+      readOnly: true,
+      resourceMetadata: MCP_WWW_AUTHENTICATE_LOCAL_RESOURCE_METADATA_REFERENCE,
+    });
+    expect(authorizationPresentResponse.statusCode).toBe(401);
+    expect(
+      authorizationPresentResponse.headers["www-authenticate"],
+    ).toBeUndefined();
+    expect(authorizationPresentResponse.body).not.toContain(
+      "route-wiring-proof-token",
+    );
+    expect(authorizationPresentResponse.json()).toMatchObject({
+      error: "token_validation_runtime_not_implemented",
+      failClosed: true,
+      noTokenParsingRuntime: true,
+      noTokenValidationRuntime: true,
     });
   });
 
@@ -4788,6 +4886,7 @@ async function createStubApp(
       >;
     };
     readOnlyAppMcpEndpointService?: AppContainer["readOnlyAppMcpEndpointService"];
+    readOnlyAppMcpLocalProofGatedMissingTokenChallenge?: AppContainer["readOnlyAppMcpLocalProofGatedMissingTokenChallenge"];
     readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle?: AppContainer["readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle"];
     replayService?: Partial<AppContainer["replayService"]>;
     sourceService?: Partial<AppContainer["sourceService"]>;

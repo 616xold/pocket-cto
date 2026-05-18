@@ -167,18 +167,23 @@ export function verifyMcpProtectedResourceMetadataRepositoryInventory(input: {
     .map(normalizePath)
     .filter(isRouteLikeRuntimePath);
   const unauthorizedChangedRouteLikePaths = changedRouteLikePaths.filter(
-    (path) => !isFp0125ProtectedResourceMetadataLocalRoutePath(path),
+    (path) =>
+      !isFp0125ProtectedResourceMetadataLocalRoutePath(path) &&
+      !isFp0130McpMissingTokenChallengeRoutePath(path),
   );
   const routeSourceText = input.routeSourceText ?? "";
   const routeSourceHasAllowedFp0125Behavior =
     routeSourceHasProtectedResourceMetadataBehavior(routeSourceText) &&
     routeSourceHasOnlyFp0125ProtectedResourceMetadataBehavior(routeSourceText);
+  const routeSourceHasAllowedFp0130Behavior =
+    routeSourceHasOnlyFp0130MissingTokenChallengeBehavior(routeSourceText);
   const noNewRoutePathRepositoryInventoryVerified =
     unauthorizedChangedRouteLikePaths.length === 0 &&
     knownSafeRouteInventoryVerified &&
     (!routeSourceHasProtectedResourceMetadataBehavior(routeSourceText) ||
       routeSourceHasAllowedFp0125Behavior) &&
-    !routeSourceHasWwwAuthenticateBehavior(routeSourceText);
+    (!routeSourceHasWwwAuthenticateBehavior(routeSourceText) ||
+      routeSourceHasAllowedFp0130Behavior);
   const unauthorizedProtectedResourceRoutePaths = runtimePaths
     .filter(isProtectedResourceMetadataRoutePath)
     .filter((path) => !isFp0125ProtectedResourceMetadataLocalRoutePath(path));
@@ -188,7 +193,8 @@ export function verifyMcpProtectedResourceMetadataRepositoryInventory(input: {
       routeSourceHasAllowedFp0125Behavior);
   const wwwAuthenticateRouteRepositoryInventoryVerified =
     !runtimePaths.some(isWwwAuthenticateRouteBehaviorPath) &&
-    !routeSourceHasWwwAuthenticateBehavior(routeSourceText);
+    (!routeSourceHasWwwAuthenticateBehavior(routeSourceText) ||
+      routeSourceHasAllowedFp0130Behavior);
   const oauthRuntimeRepositoryInventoryVerified = !runtimePaths.some(
     isOauthRuntimePath,
   );
@@ -424,6 +430,13 @@ function isFp0125ProtectedResourceMetadataLocalRoutePath(path: string) {
   );
 }
 
+function isFp0130McpMissingTokenChallengeRoutePath(path: string) {
+  return (
+    normalizePath(path) ===
+    "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts"
+  );
+}
+
 function isWwwAuthenticateRouteBehaviorPath(path: string) {
   return /(?:www-authenticate|resource-metadata-challenge|auth-challenge)(?:\/|\.|-|_)/iu.test(
     path,
@@ -467,6 +480,33 @@ function routeSourceHasOnlyFp0125ProtectedResourceMetadataBehavior(
 function routeSourceHasWwwAuthenticateBehavior(sourceText: string) {
   return /(?:www-authenticate|resource_metadata\s*=|reply\.header\(\s*["']WWW-Authenticate["'])/iu.test(
     sourceText,
+  );
+}
+
+function routeSourceHasOnlyFp0130MissingTokenChallengeBehavior(
+  sourceText: string,
+) {
+  if (!routeSourceHasWwwAuthenticateBehavior(sourceText)) return true;
+  return (
+    /readOnlyAppMcpLocalProofGatedMissingTokenChallenge/u.test(sourceText) &&
+    /assertMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency/u.test(
+      sourceText,
+    ) &&
+    /buildMcpWwwAuthenticateMissingTokenChallengeResponse/u.test(
+      sourceText,
+    ) &&
+    /buildMcpWwwAuthenticateAuthorizationHeaderNoValidationResponse/u.test(
+      sourceText,
+    ) &&
+    /(?:reply\s*)?\.header\(\s*["']WWW-Authenticate["']\s*,\s*challenge\.wwwAuthenticate\s*\)/u.test(
+      sourceText,
+    ) &&
+    !/\b(?:oauthCallback|tokenStore|sessionStore|authMiddleware|validateToken|verifyToken|verifyBearer|jwtVerify|decodeJwt|parseJwt|parseToken|introspectToken)\s*\(/u.test(
+      sourceText,
+    ) &&
+    !/resource_metadata\s*=|Bearer\s+resource_metadata/iu.test(
+      sourceText,
+    )
   );
 }
 

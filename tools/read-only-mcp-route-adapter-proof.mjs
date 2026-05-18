@@ -82,6 +82,10 @@ const FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH =
   "plans/FP-0128-read-only-chatgpt-app-mcp-token-validation-failure-readiness-contracts.md";
 const FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH =
   "plans/FP-0129-read-only-chatgpt-app-mcp-www-authenticate-challenge-implementation-sequencing-master-plan.md";
+const FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH =
+  "plans/FP-0130-read-only-chatgpt-app-mcp-www-authenticate-missing-token-challenge-local-implementation.md";
+const READ_ONLY_MCP_ENDPOINT_RUNTIME_PATH_PATTERN =
+  /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u;
 
 const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
@@ -884,6 +888,7 @@ function changedFilesAreAllowed() {
     FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
     FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
     FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+    FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
     ROUTE_PATH,
     SERVICE_PATH,
     FORMATTER_PATH,
@@ -919,6 +924,7 @@ function changedFilesAreAllowed() {
     "tools/read-only-mcp-protected-resource-metadata-route-input-proof.mjs",
     FP0125_LOCAL_ROUTE_PROOF_PATH,
     "tools/read-only-mcp-www-authenticate-auth-challenge-proof.mjs",
+    "tools/read-only-mcp-www-authenticate-missing-token-challenge-proof.mjs",
     "tools/read-only-mcp-token-validation-readiness-proof.mjs",
     "tools/benchmark-community-pack-proof.mjs",
     "packages/domain/src/index.ts",
@@ -984,23 +990,22 @@ function fp0110ChangedScopeScan() {
       !/\b(?:drizzle|select\s*\(|insert\s*\(|update\s*\(|delete\s*\(|sql`)\b/u.test(
         changedRuntimeSource,
       ),
-    noDefaultDispatchRuntime: !changedPaths.some((path) =>
-      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
-        path,
-      ),
-    ),
+    noDefaultDispatchRuntime:
+      !changedPaths.some((path) =>
+        READ_ONLY_MCP_ENDPOINT_RUNTIME_PATH_PATTERN.test(path),
+      ) || endpointRuntimeChangeLimitedToFp0130MissingTokenChallenge(),
     noOauthTokenSession:
-      !/\b(?:oauth|tokenExchange|sessionHandler|setCookie|authorization)\b/u.test(
+      (!/\b(?:oauth|tokenExchange|sessionHandler|setCookie|authorization)\b/u.test(
         changedRuntimeSource,
-      ),
+      ) ||
+        endpointRuntimeChangeLimitedToFp0130MissingTokenChallenge()),
     noRemoteMcp: !/\b(?:remoteMcp|mcpServerRuntime|listen\s*\(|deploy)\b/u.test(
       changedRuntimeSource,
     ),
-    noRouteBehaviorChange: !changedPaths.some((path) =>
-      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
-        path,
-      ),
-    ),
+    noRouteBehaviorChange:
+      !changedPaths.some((path) =>
+        READ_ONLY_MCP_ENDPOINT_RUNTIME_PATH_PATTERN.test(path),
+      ) || endpointRuntimeChangeLimitedToFp0130MissingTokenChallenge(),
     noSchemaMigrations: !changedPaths.some(
       (path) =>
         /(?:^|\/)(?:migrations?|drizzle)\//iu.test(path) ||
@@ -1017,8 +1022,41 @@ function isFp0110RuntimeScopePath(path) {
   return (
     path === "apps/control-plane/src/app.ts" ||
     path === "apps/control-plane/src/lib/types.ts" ||
-    /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
-      path,
+    READ_ONLY_MCP_ENDPOINT_RUNTIME_PATH_PATTERN.test(path)
+  );
+}
+
+function endpointRuntimeChangeLimitedToFp0130MissingTokenChallenge() {
+  return (
+    changedPaths
+      .filter((path) => READ_ONLY_MCP_ENDPOINT_RUNTIME_PATH_PATTERN.test(path))
+      .every((path) => path === ROUTE_PATH) &&
+    countMatches(routeSource, /app\.post\("\/mcp"/gu) === 1 &&
+    countMatches(routeSource, /app\.get\("\/mcp"/gu) === 1 &&
+    !/app\.(?:get|post|put|patch|delete)\("\/mcp\//u.test(routeSource) &&
+    !/resource_metadata|oauth-protected-resource/iu.test(routeSource) &&
+    routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge()
+  );
+}
+
+function routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge() {
+  if (!/WWW-Authenticate|www-authenticate/iu.test(routeSource)) return true;
+  return (
+    /readOnlyAppMcpLocalProofGatedMissingTokenChallenge/u.test(routeSource) &&
+    /assertMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency/u.test(
+      routeSource,
+    ) &&
+    /buildMcpWwwAuthenticateMissingTokenChallengeResponse/u.test(
+      routeSource,
+    ) &&
+    /buildMcpWwwAuthenticateAuthorizationHeaderNoValidationResponse/u.test(
+      routeSource,
+    ) &&
+    /(?:reply\s*)?\.header\(\s*["']WWW-Authenticate["']\s*,\s*challenge\.wwwAuthenticate\s*\)/u.test(
+      routeSource,
+    ) &&
+    !/\b(?:oauthCallback|tokenStore|sessionStore|authMiddleware|validateToken|verifyToken|verifyBearer|jwtVerify|decodeJwt|parseJwt|parseToken|introspectToken)\s*\(/u.test(
+      routeSource,
     )
   );
 }
@@ -1052,11 +1090,10 @@ function fp0112ChangedScopeScan() {
     noRemoteMcp: !/\b(?:remoteMcp|mcpServerRuntime|listen\s*\(|deploy)\b/u.test(
       changedRuntimeSource,
     ),
-    noRouteBehaviorChange: !changedPaths.some((path) =>
-      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
-        path,
-      ),
-    ),
+    noRouteBehaviorChange:
+      !changedPaths.some((path) =>
+        READ_ONLY_MCP_ENDPOINT_RUNTIME_PATH_PATTERN.test(path),
+      ) || endpointRuntimeChangeLimitedToFp0130MissingTokenChallenge(),
     noSchemaMigrations: !changedPaths.some(
       (path) =>
         /(?:^|\/)(?:migrations?|drizzle)\//iu.test(path) ||
@@ -1102,11 +1139,10 @@ function fp0113ChangedScopeScan() {
     noRemoteMcp: !/\b(?:remoteMcp|mcpServerRuntime|listen\s*\(|deploy)\b/u.test(
       changedRuntimeSource,
     ),
-    noRouteBehaviorChange: !changedPaths.some((path) =>
-      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
-        path,
-      ),
-    ),
+    noRouteBehaviorChange:
+      !changedPaths.some((path) =>
+        READ_ONLY_MCP_ENDPOINT_RUNTIME_PATH_PATTERN.test(path),
+      ) || endpointRuntimeChangeLimitedToFp0130MissingTokenChallenge(),
     noSchemaMigrations: !changedPaths.some(
       (path) =>
         /(?:^|\/)(?:migrations?|drizzle)\//iu.test(path) ||

@@ -339,19 +339,21 @@ describe("FP-0122 protected-resource metadata document-builder contracts", () =>
     ).toBe(true);
     expect(routeSource.match(/app\.post\("\/mcp"/gu)?.length).toBe(1);
     expect(routeSource.match(/app\.get\("\/mcp"/gu)?.length).toBe(1);
-    expect(routeSource).not.toMatch(
-      /oauth-protected-resource|resource_metadata|www-authenticate/iu,
-    );
+    expect(routeSource).not.toMatch(/oauth-protected-resource|resource_metadata/iu);
+    expect(routeSource.match(/WWW-Authenticate/gu)?.length).toBe(1);
   });
 
-  it("keeps route files unchanged in this hardening slice", () => {
+  it("keeps route files limited to the FP-0130 missing-token seam in this branch", () => {
     const changedRouteFiles = changedFilePaths().filter((path) =>
       /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
         path,
       ),
     );
 
-    expect(changedRouteFiles).toEqual([]);
+    expect([
+      [],
+      ["apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts"],
+    ]).toContainEqual(changedRouteFiles);
   });
 
   it("proves local no-runtime posture and prior boundaries remain intact", () => {

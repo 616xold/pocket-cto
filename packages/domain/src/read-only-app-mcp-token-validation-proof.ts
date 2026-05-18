@@ -61,7 +61,9 @@ export const McpTokenValidationReadinessProofSchema = z
     fp0128BoundaryVerified: trueLiteral,
     fp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlanVerified:
       trueLiteral,
-    fp0130Absent: trueLiteral,
+    fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified:
+      trueLiteral,
+    fp0131Absent: trueLiteral,
     wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified:
       trueLiteral,
     fp0127WwwAuthenticateAuthChallengeBoundaryStillVerified: trueLiteral,
@@ -95,6 +97,8 @@ export const McpTokenValidationReadinessProofSchema = z
     tokenValidationNoRouteRuntimeRepositoryInventoryVerified: trueLiteral,
     tokenValidationNoCurrentRouteImportsVerified: trueLiteral,
     tokenValidationNoWwwAuthenticateRuntimeRepositoryInventoryVerified:
+      trueLiteral,
+    tokenValidationWwwAuthenticateRuntimeLimitedToFp0130MissingTokenChallengeVerified:
       trueLiteral,
     tokenValidationNoAuthRuntimeRepositoryInventoryVerified: trueLiteral,
     tokenValidationNoDeploymentPublicAssetRepositoryInventoryVerified:
@@ -203,7 +207,10 @@ export function buildMcpTokenValidationReadinessProof(
     fp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlanVerified:
       input.fp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlanVerified ??
       true,
-    fp0130Absent: input.fp0130Absent ?? true,
+    fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified:
+      input.fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified ??
+      true,
+    fp0131Absent: input.fp0131Absent ?? true,
     wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified:
       input.wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified ??
       true,
@@ -265,6 +272,9 @@ export function buildMcpTokenValidationReadinessProof(
       input.tokenValidationNoCurrentRouteImportsVerified ?? true,
     tokenValidationNoWwwAuthenticateRuntimeRepositoryInventoryVerified:
       input.tokenValidationNoWwwAuthenticateRuntimeRepositoryInventoryVerified ??
+      true,
+    tokenValidationWwwAuthenticateRuntimeLimitedToFp0130MissingTokenChallengeVerified:
+      input.tokenValidationWwwAuthenticateRuntimeLimitedToFp0130MissingTokenChallengeVerified ??
       true,
     tokenValidationNoAuthRuntimeRepositoryInventoryVerified:
       input.tokenValidationNoAuthRuntimeRepositoryInventoryVerified ?? true,

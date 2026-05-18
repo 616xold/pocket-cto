@@ -12,6 +12,7 @@ import {
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   McpOauthImplementationSequencingProofSchema,
   buildMcpOauthImplementationSequencingProof,
   isFp0117OauthSequencingNoOpenAiProofSourcePath,
@@ -39,7 +40,8 @@ import {
   verifyFp0128TokenValidationReadinessContractsBoundary,
   verifyFp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlan,
   verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlanBoundary,
-  verifyFp0130Absent,
+  verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation,
+  verifyFp0131Absent,
 } from "../packages/domain/src/index.ts";
 
 const FP0116_PLAN =
@@ -101,6 +103,9 @@ const fp0128PlanText = safeRead(
 );
 const fp0129PlanText = safeRead(
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+);
+const fp0130PlanText = safeRead(
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
 );
 const scopeScan = changedScopeScan();
 const changedSourceScan = noExecutableApiModelKeyUsage(
@@ -248,7 +253,12 @@ const proof = McpOauthImplementationSequencingProofSchema.parse(
           repoPaths,
         },
       ),
-    fp0130Absent: verifyFp0130Absent(repoPaths),
+    fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified:
+      verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation({
+        planText: fp0130PlanText,
+        repoPaths,
+      }),
+    fp0131Absent: verifyFp0131Absent(repoPaths),
     wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified:
       verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlanBoundary({
         planText: fp0129PlanText,
@@ -667,7 +677,10 @@ function changedScopeScan() {
         path,
       ),
     ),
-    noNewRoutePath: !changedPaths.some((path) => routePathPattern.test(path)),
+    noNewRoutePath:
+      !changedPaths.some(
+        (path) => routePathPattern.test(path) && path !== ROUTE_PATH,
+      ) && routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge(),
     noOauthImplementation:
       !/\b(?:oauthCallback|authorizeUrl|tokenExchange|authorizationCode|pkceVerifier)\s*\(/u.test(
         changedExecutableSource,
@@ -676,7 +689,10 @@ function changedScopeScan() {
       !changedPaths.includes("package.json") &&
       !changedPaths.some((path) => /\/package\.json$/u.test(path)),
     noProtectedResourceMetadataRoute:
-      !changedPaths.some((path) => routePathPattern.test(path)) &&
+      !changedPaths.some(
+        (path) => routePathPattern.test(path) && path !== ROUTE_PATH,
+      ) &&
+      routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge() &&
       !/protected-resource|oauth-protected-resource|resource_metadata/iu.test(
         changedRouteSource,
       ),
@@ -703,9 +719,10 @@ function changedScopeScan() {
       !/\b(?:remoteMcpRuntime|mcpServerRuntime|startRemoteMcp|listen\s*\(|deploy\s*\()\b/u.test(
         changedExecutableSource,
       ),
-    noRouteBehaviorChange: !changedPaths.some((path) =>
-      routePathPattern.test(path),
-    ),
+    noRouteBehaviorChange:
+      !changedPaths.some(
+        (path) => routePathPattern.test(path) && path !== ROUTE_PATH,
+      ) && routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge(),
     noSchemaMigrations: !changedPaths.some(
       (path) =>
         /^packages\/db\//u.test(path) ||
@@ -725,9 +742,33 @@ function changedScopeScan() {
         changedExecutableSource,
       ),
     noWwwAuthenticateRouteBehavior:
-      !changedPaths.some((path) => routePathPattern.test(path)) &&
-      !/www-authenticate|resource_metadata/iu.test(changedRouteSource),
+      (!changedPaths.some((path) => routePathPattern.test(path)) ||
+        routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge()) &&
+      !/resource_metadata/iu.test(changedRouteSource),
   };
+}
+
+function routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge() {
+  const routeSource = safeRead(ROUTE_PATH);
+  if (!/WWW-Authenticate|www-authenticate/iu.test(routeSource)) return true;
+  return (
+    /readOnlyAppMcpLocalProofGatedMissingTokenChallenge/u.test(routeSource) &&
+    /assertMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency/u.test(
+      routeSource,
+    ) &&
+    /buildMcpWwwAuthenticateMissingTokenChallengeResponse/u.test(
+      routeSource,
+    ) &&
+    /buildMcpWwwAuthenticateAuthorizationHeaderNoValidationResponse/u.test(
+      routeSource,
+    ) &&
+    /(?:reply\s*)?\.header\(\s*["']WWW-Authenticate["']\s*,\s*challenge\.wwwAuthenticate\s*\)/u.test(
+      routeSource,
+    ) &&
+    !/\b(?:oauthCallback|tokenStore|sessionStore|authMiddleware|validateToken|verifyToken|verifyBearer|jwtVerify|decodeJwt|parseJwt|parseToken|introspectToken)\s*\(/u.test(
+      routeSource,
+    )
+  );
 }
 
 function localRouteShapeStillVerified() {
@@ -735,7 +776,9 @@ function localRouteShapeStillVerified() {
   return (
     countMatches(routeSource, /app\.post\("\/mcp"/gu) === 1 &&
     countMatches(routeSource, /app\.get\("\/mcp"/gu) === 1 &&
-    !/app\.(?:get|post|put|patch|delete)\("\/mcp\//u.test(routeSource)
+    !/app\.(?:get|post|put|patch|delete)\("\/mcp\//u.test(routeSource) &&
+    !/resource_metadata|oauth-protected-resource/iu.test(routeSource) &&
+    routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge()
   );
 }
 

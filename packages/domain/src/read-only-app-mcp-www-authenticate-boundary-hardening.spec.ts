@@ -5,9 +5,12 @@ import { describe, expect, it } from "vitest";
 import {
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   verifyFp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlan,
   verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlanBoundary,
   verifyFp0130Absent,
+  verifyFp0130LocalMissingTokenChallengeImplementationBoundary,
+  verifyFp0131Absent,
 } from "./read-only-app-mcp-www-authenticate";
 import { FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH } from "./read-only-app-mcp-token-validation";
 import { verifyFp0128TokenValidationReadinessContractsBoundary } from "./read-only-app-mcp-token-validation-proof";
@@ -44,15 +47,16 @@ const fp0100PlanPath =
   "plans/FP-0100-read-only-chatgpt-app-mcp-public-app-security-boundary-contracts-foundation.md";
 
 describe("FP-0127 WWW-Authenticate route and prior-boundary hardening", () => {
-  it("keeps route files free of FP-0127 helper imports and WWW-Authenticate behavior", () => {
+  it("limits route WWW-Authenticate behavior to the FP-0130 explicit missing-token challenge", () => {
     const routeSources = routeLikeRuntimePaths().map((path) => safeRead(path));
     const executableRouteSource = routeSources.join("\n");
 
-    expect(executableRouteSource).not.toMatch(
-      /read-only-app-mcp-www-authenticate/u,
+    expect(executableRouteSource).toMatch(/WWW-Authenticate/u);
+    expect(executableRouteSource).toMatch(
+      /readOnlyAppMcpLocalProofGatedMissingTokenChallenge/u,
     );
     expect(executableRouteSource).not.toMatch(
-      /WWW-Authenticate|www-authenticate|resource_metadata\s*=/iu,
+      /\b(?:oauthCallback|tokenStore|sessionStore|authMiddleware|validateToken|verifyToken|verifyBearer|jwtVerify|decodeJwt|parseJwt)\s*\(/u,
     );
     expect(countMatches(safeRead(mcpRoutePath), /app\.post\("\/mcp"/gu)).toBe(
       1,
@@ -89,7 +93,16 @@ describe("FP-0127 WWW-Authenticate route and prior-boundary hardening", () => {
         repoPaths,
       }),
     ).toBe(true);
-    expect(verifyFp0130Absent(repoPaths)).toBe(true);
+    expect(verifyFp0130Absent(repoPaths)).toBe(false);
+    expect(
+      verifyFp0130LocalMissingTokenChallengeImplementationBoundary({
+        planText: safeRead(
+          FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
+        ),
+        repoPaths,
+      }),
+    ).toBe(true);
+    expect(verifyFp0131Absent(repoPaths)).toBe(true);
     expect(repoPaths.filter((path) => path.includes("FP-0127"))).toEqual([
       FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
     ]);

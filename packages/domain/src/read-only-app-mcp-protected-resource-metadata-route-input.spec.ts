@@ -344,22 +344,24 @@ describe("FP-0123 protected-resource metadata route-input evidence contracts", (
     expect(decision.routeImplementationDeferred).toBe(true);
   });
 
-  it("keeps route implementation deferred and registers no protected-resource metadata or WWW-Authenticate route behavior", () => {
+  it("keeps protected-resource metadata route implementation deferred while allowing only the FP-0130 WWW-Authenticate seam", () => {
     const routeSource = safeRead(
       "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts",
     );
-    const changedRouteFiles = changedFilePaths().filter((path) =>
-      /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u.test(
-        path,
-      ),
-    );
+    const fp0130RouteSeamScan = routeInputDurabilityScan({
+      branchDiffPaths: [
+        "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts",
+      ],
+    });
     const proof = buildMcpProtectedResourceMetadataRouteInputProof();
 
-    expect(changedRouteFiles).toEqual([]);
+    expect(fp0130RouteSeamScan.routeInputBranchDiffScopeVerified).toBe(true);
     expect(routeSource.match(/app\.post\("\/mcp"/gu)?.length).toBe(1);
     expect(routeSource.match(/app\.get\("\/mcp"/gu)?.length).toBe(1);
-    expect(routeSource).not.toMatch(
-      /oauth-protected-resource|resource_metadata|www-authenticate/iu,
+    expect(routeSource).not.toMatch(/oauth-protected-resource/u);
+    expect(routeSource).toMatch(/WWW-Authenticate/u);
+    expect(routeSource).toMatch(
+      /readOnlyAppMcpLocalProofGatedMissingTokenChallenge/u,
     );
     expect(proof.noRouteBehaviorChange).toBe(true);
     expect(proof.noNewRoutePath).toBe(true);

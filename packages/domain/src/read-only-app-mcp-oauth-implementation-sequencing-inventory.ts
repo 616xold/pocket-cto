@@ -91,7 +91,8 @@ export function verifyFp0117OauthImplementationSequencingRepositoryInventory(inp
     !routeSourceHasProtectedResourceMetadataBehavior(routeSourceText);
   const wwwAuthenticateRouteBehaviorRepositoryInventoryVerified =
     !runtimePaths.some(isWwwAuthenticateRouteBehaviorPath) &&
-    !routeSourceHasWwwAuthenticateBehavior(routeSourceText);
+    (!routeSourceHasWwwAuthenticateBehavior(routeSourceText) ||
+      routeSourceHasOnlyFp0130MissingTokenChallengeBehavior(routeSourceText));
 
   return {
     authMiddlewareRepositoryInventoryVerified,
@@ -285,6 +286,33 @@ function routeSourceHasProtectedResourceMetadataBehavior(sourceText: string) {
 function routeSourceHasWwwAuthenticateBehavior(sourceText: string) {
   return /(?:www-authenticate|resource_metadata\s*=|mcp\/www_authenticate)/iu.test(
     sourceText,
+  );
+}
+
+function routeSourceHasOnlyFp0130MissingTokenChallengeBehavior(
+  sourceText: string,
+) {
+  if (!routeSourceHasWwwAuthenticateBehavior(sourceText)) return true;
+  return (
+    /readOnlyAppMcpLocalProofGatedMissingTokenChallenge/u.test(sourceText) &&
+    /assertMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency/u.test(
+      sourceText,
+    ) &&
+    /buildMcpWwwAuthenticateMissingTokenChallengeResponse/u.test(
+      sourceText,
+    ) &&
+    /buildMcpWwwAuthenticateAuthorizationHeaderNoValidationResponse/u.test(
+      sourceText,
+    ) &&
+    /(?:reply\s*)?\.header\(\s*["']WWW-Authenticate["']\s*,\s*challenge\.wwwAuthenticate\s*\)/u.test(
+      sourceText,
+    ) &&
+    !/\b(?:oauthCallback|tokenStore|sessionStore|authMiddleware|validateToken|verifyToken|verifyBearer|jwtVerify|decodeJwt|parseJwt|parseToken|introspectToken)\s*\(/u.test(
+      sourceText,
+    ) &&
+    !/resource_metadata\s*=|Bearer\s+resource_metadata/iu.test(
+      sourceText,
+    )
   );
 }
 

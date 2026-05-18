@@ -10,6 +10,7 @@ import {
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   McpWwwAuthenticateAuthChallengeProofSchema,
   buildMcpWwwAuthenticateAuthChallengeProof,
   buildWwwAuthenticateAuthChallengeContract,
@@ -32,7 +33,9 @@ import {
   verifyFp0128TokenValidationReadinessContractsBoundary,
   verifyFp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlan,
   verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlanBoundary,
-  verifyFp0130Absent,
+  verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation,
+  verifyFp0130LocalMissingTokenChallengeImplementationBoundary,
+  verifyFp0131Absent,
 } from "../packages/domain/src/index.ts";
 
 const FP0125_PLAN =
@@ -60,6 +63,9 @@ const fp0128PlanText = safeRead(
 );
 const fp0129PlanText = safeRead(
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+);
+const fp0130PlanText = safeRead(
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
 );
 const mcpRouteSource = safeRead(MCP_ROUTE_PATH);
 const metadataRouteSource = safeRead(METADATA_ROUTE_PATH);
@@ -168,7 +174,17 @@ const proof = McpWwwAuthenticateAuthChallengeProofSchema.parse(
           repoPaths,
         },
       ),
-    fp0130Absent: verifyFp0130Absent(repoPaths),
+    fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified:
+      verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation({
+        planText: fp0130PlanText,
+        repoPaths,
+      }),
+    fp0130LocalMissingTokenChallengeImplementationBoundaryVerified:
+      verifyFp0130LocalMissingTokenChallengeImplementationBoundary({
+        planText: fp0130PlanText,
+        repoPaths,
+      }),
+    fp0131Absent: verifyFp0131Absent(repoPaths),
     wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified:
       verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlanBoundary({
         planText: fp0129PlanText,
@@ -492,7 +508,9 @@ function changedScopeScan() {
     noListingCopy: !changedPaths.some((path) =>
       /(?:listing-copy|public-listing|store-listing)/iu.test(path),
     ),
-    noMcpRouteBehaviorChange: !changedPaths.includes(MCP_ROUTE_PATH),
+    noMcpRouteBehaviorChange:
+      !changedPaths.includes(MCP_ROUTE_PATH) ||
+      routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge(),
     noOauthImplementation:
       !/\b(?:oauthCallback|authorizeUrl|tokenExchange|authorizationCode|pkceVerifier)\s*\(/u.test(
         changedExecutableSource,
@@ -537,7 +555,8 @@ function changedScopeScan() {
         changedExecutableSource,
       ),
     noWwwAuthenticateRouteBehavior:
-      !changedPaths.some(isRouteLikeRuntimePath) &&
+      (!changedPaths.some(isRouteLikeRuntimePath) ||
+        routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge()) &&
       routeSourcesHaveNoWwwAuthenticateRuntime(),
   };
 }
@@ -679,9 +698,31 @@ function readChangedExecutableSource() {
 
 function routeSourcesHaveNoWwwAuthenticateRuntime() {
   return (
-    !/WWW-Authenticate|www-authenticate|resource_metadata\s*=/iu.test(
+    routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge() &&
+    !/WWW-Authenticate|www-authenticate/iu.test(metadataRouteSource)
+  );
+}
+
+function routeWwwAuthenticateLimitedToFp0130MissingTokenChallenge() {
+  return (
+    /readOnlyAppMcpLocalProofGatedMissingTokenChallenge/u.test(
       mcpRouteSource,
-    ) && !/WWW-Authenticate|www-authenticate/iu.test(metadataRouteSource)
+    ) &&
+    /assertMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency/u.test(
+      mcpRouteSource,
+    ) &&
+    /buildMcpWwwAuthenticateMissingTokenChallengeResponse/u.test(
+      mcpRouteSource,
+    ) &&
+    /buildMcpWwwAuthenticateAuthorizationHeaderNoValidationResponse/u.test(
+      mcpRouteSource,
+    ) &&
+    /(?:reply\s*)?\.header\(\s*["']WWW-Authenticate["']\s*,\s*challenge\.wwwAuthenticate\s*\)/u.test(
+      mcpRouteSource,
+    ) &&
+    !/\b(?:oauthCallback|tokenStore|sessionStore|authMiddleware|validateToken|verifyToken|verifyBearer|jwtVerify|decodeJwt|parseJwt|parseToken|introspectToken)\s*\(/u.test(
+      mcpRouteSource,
+    )
   );
 }
 

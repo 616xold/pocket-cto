@@ -1,10 +1,12 @@
 import {
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   MCP_WWW_AUTHENTICATE_FP0127_PLAN_PREFIX,
   MCP_WWW_AUTHENTICATE_FP0128_PLAN_PREFIX,
   MCP_WWW_AUTHENTICATE_FP0129_PLAN_PREFIX,
   MCP_WWW_AUTHENTICATE_FP0130_PLAN_PREFIX,
+  MCP_WWW_AUTHENTICATE_FP0131_PLAN_PREFIX,
 } from "./read-only-app-mcp-www-authenticate-contracts";
 
 type Fp0127BoundaryInput =
@@ -97,6 +99,49 @@ export function verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlan
 export function verifyFp0130Absent(repoPaths: readonly string[]) {
   return (
     fpPlanHits(repoPaths, MCP_WWW_AUTHENTICATE_FP0130_PLAN_PREFIX).length === 0
+  );
+}
+
+export function verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation(
+  input: Fp0127BoundaryInput,
+) {
+  const { planText, repoPaths } = normalizeFp0127BoundaryInput(input);
+  const fp0130Hits = fpPlanHits(
+    repoPaths,
+    MCP_WWW_AUTHENTICATE_FP0130_PLAN_PREFIX,
+  );
+  if (fp0130Hits.length === 0) return true;
+
+  return (
+    fp0130Hits.length === 1 &&
+    fp0130Hits[0] ===
+      FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH &&
+    typeof planText === "string" &&
+    fp0130PlanTextBoundaryVerified(planText)
+  );
+}
+
+export function verifyFp0130LocalMissingTokenChallengeImplementationBoundary(
+  input: Fp0127BoundaryInput,
+) {
+  const { planText, repoPaths } = normalizeFp0127BoundaryInput(input);
+  const fp0130Hits = fpPlanHits(
+    repoPaths,
+    MCP_WWW_AUTHENTICATE_FP0130_PLAN_PREFIX,
+  );
+
+  return (
+    fp0130Hits.length === 1 &&
+    fp0130Hits[0] ===
+      FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH &&
+    typeof planText === "string" &&
+    fp0130PlanTextBoundaryVerified(planText)
+  );
+}
+
+export function verifyFp0131Absent(repoPaths: readonly string[]) {
+  return (
+    fpPlanHits(repoPaths, MCP_WWW_AUTHENTICATE_FP0131_PLAN_PREFIX).length === 0
   );
 }
 
@@ -203,6 +248,48 @@ export function verifyFp0129PlanningTextRequiredTopics(planText: string) {
   };
 }
 
+export function verifyFp0130PlanningTextRequiredTopics(planText: string) {
+  const normalized = normalize(planText);
+  return {
+    authorizationPresentFailsClosed:
+      normalized.includes("authorization") &&
+      (normalized.includes("fail closed") ||
+        normalized.includes("fail-closed")) &&
+      (normalized.includes("does not implement token validation") ||
+        normalized.includes("no-token-validation-runtime") ||
+        normalized.includes("not token validation")),
+    defaultBehaviorUnchanged:
+      normalized.includes("default `buildapp()`") &&
+      normalized.includes("default `/mcp` behavior remain unchanged"),
+    explicitDependencyOnly:
+      normalized.includes("explicit app/container dependency") ||
+      normalized.includes("explicit dependency"),
+    localMissingTokenOnly:
+      normalized.includes("local-only") &&
+      normalized.includes("read-only") &&
+      normalized.includes("missing-token-only"),
+    noOpenAiProviderSourceFinance:
+      normalized.includes("openai api/model work") &&
+      normalized.includes("provider work") &&
+      normalized.includes("source mutation") &&
+      normalized.includes("finance write"),
+    noRuntimeAuthExpansion:
+      normalized.includes("not token validation") &&
+      normalized.includes("token parsing") &&
+      normalized.includes("oauth") &&
+      normalized.includes("auth middleware"),
+    protectedResourceMetadataUnchanged: normalized.includes(
+      "protected-resource metadata route behavior remains unchanged",
+    ),
+    resourceMetadataReference: normalized.includes(
+      "/.well-known/oauth-protected-resource/mcp",
+    ),
+    validationLadder:
+      normalized.includes("read-only-mcp-www-authenticate-missing-token-challenge-proof") &&
+      normalized.includes("pnpm ci:repro:current"),
+  };
+}
+
 function fp0127PlanTextBoundaryVerified(planText: string) {
   const normalized = normalize(planText);
   return (
@@ -244,6 +331,32 @@ function fp0129PlanTextBoundaryVerified(planText: string) {
       "no route/runtime module may import or call these helpers",
     ].every((requiredText) => normalized.includes(requiredText)) &&
     Object.values(verifyFp0129PlanningTextRequiredTopics(planText)).every(
+      Boolean,
+    )
+  );
+}
+
+function fp0130PlanTextBoundaryVerified(planText: string) {
+  const normalized = normalize(planText);
+  return (
+    [
+      "first narrow implementation slice",
+      "bounded `401 unauthorized` `www-authenticate: bearer` challenge",
+      "only when app construction explicitly supplies",
+      "default `buildapp()` and default `/mcp` behavior remain unchanged",
+      "not token validation",
+      "token parsing",
+      "token/session storage",
+      "auth middleware",
+      "no new route path",
+      "protected-resource metadata route behavior remains unchanged",
+      "requests with any `authorization` header fail closed",
+      "does not parse, decode, validate, introspect, store, forward, or rely on the header value",
+      "source snapshots",
+      "does not create mission state changes",
+      "fp-0131 remains absent",
+    ].every((requiredText) => normalized.includes(requiredText)) &&
+    Object.values(verifyFp0130PlanningTextRequiredTopics(planText)).every(
       Boolean,
     )
   );

@@ -1,4 +1,5 @@
 import type {
+  McpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency,
   McpProtectedResourceMetadataRouteInputEvidenceBundle,
   OperatorControlAvailability as DomainOperatorControlAvailability,
 } from "@pocket-cto/domain";
@@ -140,6 +141,9 @@ export type ReadOnlyAppMcpEndpointServicePort = Pick<
 export type ReadOnlyAppMcpProtectedResourceMetadataRouteEvidencePort =
   McpProtectedResourceMetadataRouteInputEvidenceBundle;
 
+export type ReadOnlyAppMcpLocalProofGatedMissingTokenChallengePort =
+  McpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency;
+
 export type SourceServicePort = Pick<
   SourceRegistryService,
   | "createSource"
@@ -249,6 +253,7 @@ export type AppContainer = {
   monitoringService?: MonitoringServicePort;
   operatorReadinessService: OperatorReadinessServicePort;
   readOnlyAppMcpEndpointService?: ReadOnlyAppMcpEndpointServicePort;
+  readOnlyAppMcpLocalProofGatedMissingTokenChallenge?: ReadOnlyAppMcpLocalProofGatedMissingTokenChallengePort;
   readOnlyAppMcpProtectedResourceMetadataRouteInputEvidenceBundle?: ReadOnlyAppMcpProtectedResourceMetadataRouteEvidencePort;
   operatorControl: {
     approvalService: Pick<

@@ -22,10 +22,14 @@ import {
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   verifyFp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlan,
   verifyFp0129PlanningTextRequiredTopics,
   verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlanBoundary,
   verifyFp0130Absent,
+  verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation,
+  verifyFp0130LocalMissingTokenChallengeImplementationBoundary,
+  verifyFp0131Absent,
 } from "./read-only-app-mcp-www-authenticate";
 import {
   FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
@@ -63,13 +67,16 @@ const metadataRoutePath =
 const appPath = "apps/control-plane/src/app.ts";
 
 describe("FP-0128 token-validation failure readiness contracts", () => {
-  it("accepts exactly one FP-0128 local proof plan and exact FP-0129 docs-only sequencing plan while FP-0130 remains absent", () => {
+  it("accepts FP-0128/FP-0129 plus exact FP-0130 missing-token implementation while FP-0131 remains absent", () => {
     const repoPaths = repoFilePaths();
     const planText = safeRead(
       FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
     );
     const fp0129PlanText = safeRead(
       FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+    );
+    const fp0130PlanText = safeRead(
+      FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
     );
     const fp0128Hits = repoPaths.filter((path) => /(^|\/)FP-0128/u.test(path));
     const fp0129Hits = repoPaths.filter((path) => /(^|\/)FP-0129/u.test(path));
@@ -106,7 +113,20 @@ describe("FP-0128 token-validation failure readiness contracts", () => {
         repoPaths,
       }),
     ).toBe(true);
-    expect(verifyFp0130Absent(repoPaths)).toBe(true);
+    expect(verifyFp0130Absent(repoPaths)).toBe(false);
+    expect(
+      verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation({
+        planText: fp0130PlanText,
+        repoPaths,
+      }),
+    ).toBe(true);
+    expect(
+      verifyFp0130LocalMissingTokenChallengeImplementationBoundary({
+        planText: fp0130PlanText,
+        repoPaths,
+      }),
+    ).toBe(true);
+    expect(verifyFp0131Absent(repoPaths)).toBe(true);
     expect(
       Object.values(
         verifyFp0129PlanningTextRequiredTopics(fp0129PlanText),
@@ -149,7 +169,13 @@ describe("FP-0128 token-validation failure readiness contracts", () => {
         ],
       }),
     ).toBe(false);
-    expect(verifyFp0130Absent([...repoPaths, "plans/FP-0130-runtime.md"])).toBe(
+    expect(
+      verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation({
+        planText: fp0130PlanText,
+        repoPaths: [...repoPaths, "plans/FP-0130-runtime.md"],
+      }),
+    ).toBe(false);
+    expect(verifyFp0131Absent([...repoPaths, "plans/FP-0131-runtime.md"])).toBe(
       false,
     );
   });
@@ -185,7 +211,7 @@ describe("FP-0128 token-validation failure readiness contracts", () => {
     ).toBe(false);
   });
 
-  it("keeps token validation, parsing, session storage, auth middleware, and challenges unimplemented", () => {
+  it("keeps token validation, parsing, session storage, auth middleware, and semantic token challenges unimplemented", () => {
     const proof = buildMcpTokenValidationReadinessProof();
     const readiness = deriveTokenFailureChallengeReadiness({
       failureMode: "missing_token",
@@ -318,7 +344,7 @@ describe("FP-0128 token-validation failure readiness contracts", () => {
     ).toBe(false);
   });
 
-  it("proves current routes do not import token-validation helpers or runtime auth behavior", () => {
+  it("proves current routes do not import token-validation helpers or token/OAuth runtime auth behavior", () => {
     const routeSources = [mcpRoutePath, metadataRoutePath, appPath]
       .map(safeRead)
       .join("\n");
@@ -327,7 +353,10 @@ describe("FP-0128 token-validation failure readiness contracts", () => {
     expect(routeSources).not.toMatch(
       /\b(?:validateToken|verifyToken|tokenValidator|jwtVerify|verifyJwt|validateBearer|verifyBearer|authMiddleware|setCookie)\b/u,
     );
-    expect(routeSources).not.toMatch(/WWW-Authenticate/iu);
+    expect(routeSources).toMatch(/WWW-Authenticate/u);
+    expect(routeSources).toMatch(
+      /readOnlyAppMcpLocalProofGatedMissingTokenChallenge/u,
+    );
     expect(countMatches(safeRead(mcpRoutePath), /app\.post\("\/mcp"/gu)).toBe(
       1,
     );
@@ -405,7 +434,7 @@ describe("FP-0128 token-validation failure readiness contracts", () => {
     );
     expect(scan.tokenValidationNoCurrentRouteImportsVerified).toBe(true);
     expect(
-      scan.tokenValidationNoWwwAuthenticateRuntimeRepositoryInventoryVerified,
+      scan.tokenValidationWwwAuthenticateRuntimeLimitedToFp0130MissingTokenChallengeVerified,
     ).toBe(true);
     expect(scan.tokenValidationNoAuthRuntimeRepositoryInventoryVerified).toBe(
       true,
@@ -457,13 +486,13 @@ describe("FP-0128 token-validation failure readiness contracts", () => {
     }
   });
 
-  it("fails simulated committed WWW-Authenticate route behavior", () => {
+  it("fails simulated committed WWW-Authenticate route behavior outside the FP-0130 missing-token seam", () => {
     const scan = simulatedCommittedRouteScan(
       `reply.header("WWW-Authenticate", "Bearer resource_metadata=\\"/.well-known/oauth-protected-resource/mcp\\"");`,
     );
 
     expect(
-      scan.tokenValidationNoWwwAuthenticateRuntimeRepositoryInventoryVerified,
+      scan.tokenValidationWwwAuthenticateRuntimeLimitedToFp0130MissingTokenChallengeVerified,
     ).toBe(false);
     expect(scan.tokenValidationRepositoryInventoryVerified).toBe(false);
   });

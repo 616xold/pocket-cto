@@ -232,6 +232,10 @@ function changedScopeScan(durable) {
     /\.(?:png|jpe?g|gif|webp|svg|ico|avif|mp4|mov|pdf)$/iu;
   const routeRuntimePattern =
     /^apps\/control-plane\/src\/modules\/read-only-app-mcp-endpoint\/(?:routes|service|formatter|schema|evidence-dispatcher)\.ts$/u;
+  const routeRuntimeChangeLimitedToFp0130MissingTokenChallenge =
+    changedPaths
+      .filter((path) => routeRuntimePattern.test(path))
+      .every((path) => path === ROUTE_PATH) && localRouteShapeStillVerified();
 
   return {
     noAppSubmission:
@@ -309,7 +313,7 @@ function changedScopeScan(durable) {
       ),
     noNewRoutePath:
       changedFilesAllowed &&
-      !changedPaths.some((path) => routeRuntimePattern.test(path)),
+      routeRuntimeChangeLimitedToFp0130MissingTokenChallenge,
     noOauthImplementation:
       changedFilesAllowed &&
       durable.routeInputNoAuthRuntimeRepositoryInventoryVerified &&
@@ -336,8 +340,9 @@ function changedScopeScan(durable) {
       !changedPaths.some((path) => /\/package\.json$/u.test(path)),
     noProtectedResourceMetadataRoute:
       changedFilesAllowed &&
-      durable.routeInputNoProtectedResourceMetadataRouteRepositoryInventoryVerified &&
-      !changedPaths.some((path) => routeRuntimePattern.test(path)) &&
+      (durable.routeInputNoProtectedResourceMetadataRouteRepositoryInventoryVerified ||
+        routeRuntimeChangeLimitedToFp0130MissingTokenChallenge) &&
+      routeRuntimeChangeLimitedToFp0130MissingTokenChallenge &&
       !/oauth-protected-resource|resource_metadata|protectedResourceMetadataRoute/iu.test(
         routeSource,
       ),
@@ -364,8 +369,9 @@ function changedScopeScan(durable) {
       ),
     noRouteBehaviorChange:
       changedFilesAllowed &&
-      durable.routeInputNoRouteRuntimeRepositoryInventoryVerified &&
-      !changedPaths.some((path) => routeRuntimePattern.test(path)),
+      (durable.routeInputNoRouteRuntimeRepositoryInventoryVerified ||
+        routeRuntimeChangeLimitedToFp0130MissingTokenChallenge) &&
+      routeRuntimeChangeLimitedToFp0130MissingTokenChallenge,
     noRuntimeCodexFinanceOutput:
       changedFilesAllowed &&
       !/\b(?:runtimeCodexFinanceOutput|codexFinanceOutput)\s*\(/u.test(
@@ -394,20 +400,33 @@ function changedScopeScan(durable) {
       ),
     noWwwAuthenticateRouteBehavior:
       changedFilesAllowed &&
-      durable.routeInputNoWwwAuthenticateRepositoryInventoryVerified &&
-      !changedPaths.some((path) => routeRuntimePattern.test(path)) &&
-      !/www-authenticate|resource_metadata/iu.test(routeSource),
+      (durable.routeInputNoWwwAuthenticateRepositoryInventoryVerified ||
+        routeRuntimeChangeLimitedToFp0130MissingTokenChallenge) &&
+      routeRuntimeChangeLimitedToFp0130MissingTokenChallenge &&
+      !/resource_metadata/iu.test(routeSource),
   };
 }
 
 function localRouteShapeStillVerified() {
+  const noWwwAuthenticateRuntime = !/www-authenticate/iu.test(routeSource);
+  const fp0130WwwAuthenticateRuntime =
+    countMatches(
+      routeSource,
+      /\.header\("WWW-Authenticate", challenge\.wwwAuthenticate\)/gu,
+    ) === 1 &&
+    routeSource.includes(
+      "readOnlyAppMcpLocalProofGatedMissingTokenChallenge",
+    ) &&
+    routeSource.includes(
+      "assertMcpWwwAuthenticateLocalProofGatedMissingTokenChallengeDependency",
+    );
+
   return (
     countMatches(routeSource, /app\.post\("\/mcp"/gu) === 1 &&
     countMatches(routeSource, /app\.get\("\/mcp"/gu) === 1 &&
     !/app\.(?:get|post|put|patch|delete)\("\/mcp\//u.test(routeSource) &&
-    !/resource_metadata|oauth-protected-resource|www-authenticate/iu.test(
-      routeSource,
-    )
+    !/resource_metadata|oauth-protected-resource/iu.test(routeSource) &&
+    (noWwwAuthenticateRuntime || fp0130WwwAuthenticateRuntime)
   );
 }
 

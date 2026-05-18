@@ -53,11 +53,14 @@ import {
 import {
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   verifyFp0127AbsentOrLocalWwwAuthenticateAuthChallengeContracts,
   verifyFp0127WwwAuthenticateAuthChallengeContractsBoundary,
   verifyFp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlan,
   verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlanBoundary,
   verifyFp0130Absent,
+  verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation,
+  verifyFp0131Absent,
 } from "./read-only-app-mcp-www-authenticate";
 import { FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH } from "./read-only-app-mcp-token-validation";
 import {
@@ -277,6 +280,9 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     const fp0129PlanText = safeRead(
       FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
     );
+    const fp0130PlanText = safeRead(
+      FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
+    );
     const fp0126Hits = repoPaths.filter((path) => /(^|\/)FP-0126/u.test(path));
     const fp0127Hits = repoPaths.filter((path) => /(^|\/)FP-0127/u.test(path));
     const topics = verifyFp0126PlanningTextRequiredTopics(planText);
@@ -318,7 +324,14 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
             },
           ),
         ),
-      fp0130Absent: verified(verifyFp0130Absent(repoPaths)),
+      fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified:
+        verified(
+          verifyFp0130AbsentOrLocalMissingTokenChallengeImplementation({
+            planText: fp0130PlanText,
+            repoPaths,
+          }),
+        ),
+      fp0131Absent: verified(verifyFp0131Absent(repoPaths)),
       wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified:
         verified(
           verifyFp0129WwwAuthenticateChallengeImplementationSequencingPlanBoundary(
@@ -364,7 +377,11 @@ describe("FP-0118 protected-resource metadata auth challenge readiness contracts
     expect(
       proof.fp0129AbsentOrDocsOnlyWwwAuthenticateChallengeImplementationSequencingPlanVerified,
     ).toBe(true);
-    expect(proof.fp0130Absent).toBe(true);
+    expect(verifyFp0130Absent(repoPaths)).toBe(false);
+    expect(
+      proof.fp0130AbsentOrLocalMissingTokenChallengeImplementationVerified,
+    ).toBe(true);
+    expect(proof.fp0131Absent).toBe(true);
     expect(
       proof.wwwAuthenticateChallengeImplementationSequencingPlanBoundaryVerified,
     ).toBe(true);

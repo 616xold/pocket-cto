@@ -36,6 +36,10 @@ const FP0128_TOKEN_VALIDATION_READINESS_PLAN =
   "plans/FP-0128-read-only-chatgpt-app-mcp-token-validation-failure-readiness-contracts.md";
 const FP0128_TOKEN_VALIDATION_READINESS_PROOF_PATH =
   "tools/read-only-mcp-token-validation-readiness-proof.mjs";
+const FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH =
+  "plans/FP-0130-read-only-chatgpt-app-mcp-www-authenticate-missing-token-challenge-local-implementation.md";
+const FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_PROOF_PATH =
+  "tools/read-only-mcp-www-authenticate-missing-token-challenge-proof.mjs";
 
 const repoPaths = repoFilePaths();
 const changedPaths = changedFilePaths();
@@ -401,6 +405,7 @@ function isAllowedMcpProtocolProofPath(path) {
     path === FP0112_PLAN ||
     path === FP0113_PLAN ||
     path === FP0128_TOKEN_VALIDATION_READINESS_PLAN ||
+    path === FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH ||
     path ===
       "plans/FP-0114-read-only-chatgpt-app-mcp-remote-host-readiness-security-contracts-foundation.md" ||
     path ===
@@ -417,6 +422,7 @@ function isAllowedMcpProtocolProofPath(path) {
     path === "tools/read-only-chatgpt-app-mcp-proof.mjs" ||
     path === "tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs" ||
     path === FP0128_TOKEN_VALIDATION_READINESS_PROOF_PATH ||
+    path === FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_PROOF_PATH ||
     path === "tools/benchmark-community-pack-proof.mjs" ||
     /^packages\/domain\/src\/read-only-app-mcp.*\.ts$/u.test(path) ||
     /^packages\/domain\/src\/benchmark-community.*\.ts$/u.test(path) ||

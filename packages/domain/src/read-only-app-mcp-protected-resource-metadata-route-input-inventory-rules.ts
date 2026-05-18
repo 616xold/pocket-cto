@@ -9,6 +9,7 @@ import { FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH } from "./read-on
 import {
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
 } from "./read-only-app-mcp-www-authenticate-contracts";
 
 export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
@@ -19,9 +20,12 @@ export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
   FP0127_WWW_AUTHENTICATE_AUTH_CHALLENGE_CONTRACTS_PLAN_PATH,
   FP0128_TOKEN_VALIDATION_READINESS_CONTRACTS_PLAN_PATH,
   FP0129_WWW_AUTHENTICATE_CHALLENGE_IMPLEMENTATION_SEQUENCING_PLAN_PATH,
+  FP0130_WWW_AUTHENTICATE_MISSING_TOKEN_CHALLENGE_LOCAL_IMPLEMENTATION_PLAN_PATH,
   "apps/control-plane/src/app.ts",
   "apps/control-plane/src/app.spec.ts",
   "apps/control-plane/src/lib/types.ts",
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.ts",
+  "apps/control-plane/src/modules/read-only-app-mcp-endpoint/routes.spec.ts",
   FP0125_PROTECTED_RESOURCE_METADATA_LOCAL_ROUTE_MODULE_PATH,
   "apps/control-plane/src/modules/read-only-app-mcp-endpoint/protected-resource-metadata-route.spec.ts",
   "packages/domain/src/read-only-app-mcp-protected-resource-metadata-route-input.ts",
@@ -59,6 +63,7 @@ export const FP0123_ROUTE_INPUT_ALLOWED_CHANGED_PATHS = [
   "tools/read-only-mcp-protected-resource-metadata-proof.mjs",
   "tools/read-only-mcp-oauth-implementation-sequencing-proof.mjs",
   "tools/read-only-mcp-www-authenticate-auth-challenge-proof.mjs",
+  "tools/read-only-mcp-www-authenticate-missing-token-challenge-proof.mjs",
   "tools/read-only-mcp-token-validation-readiness-proof.mjs",
   "tools/read-only-mcp-default-local-evidence-dispatch-proof.mjs",
   "tools/read-only-mcp-evidence-tool-dispatch-adapter-proof.mjs",
